@@ -33,9 +33,13 @@ Of course, stage 4 is totally unimplemented so it might be a priority as well:
 
 - Build up a paper (use overleaf.com)
 - Write unit tests
-- Write bona fide, accurate benchmarks (with fair comparisons using good alternatives).
+- Write bona fide, accurate benchmarks (with fair comparisons using good alternatives). See https://github.com/Geal/parser_benchmarks
 - Document better the code, make the code easier to use
 - Add some measure of error handling (maybe optional)
+
+
+
+
 
 ## Academic References
 
@@ -89,6 +93,7 @@ APA
 - https://tools.ietf.org/html/rfc7159
 - The only public Mison implementation (in rust)  https://github.com/pikkr/pikkr
 - http://rapidjson.org/md_doc_sax.html
+- https://github.com/Geal/parser_benchmarks/tree/master/json
 
 
 Inspiring links:
@@ -144,3 +149,7 @@ containing structural element ("up").
 - Per input byte,  multiple bytes are allocated which could potentially be a problem when processing a very large document, hence one might want to be more incremental in practice maybe to minimize memory usage. For really large documents, there might be caching issues as well.
 - The ``clmul`` thing is tricky but nice. (Geoff's remark:  find the spaces between quotes, is actually a ponderous way of doing parallel prefix over XOR, which a mathematically adept person would have realized could be done with clmul by -1. Not me, I had to look it up: http://bitmath.blogspot.com.au/2016/11/parallel-prefixsuffix-operations.html.)
 - It is possible, though maybe unlikely, that parallelizing the bitset decoding could be useful (https://lemire.me/blog/2018/03/08/iterating-over-set-bits-quickly-simd-edition/), and there is VCOMPRESSB (AVX-512)
+
+## Future work 
+
+ Long term we should keep in mind the idea that what would be cool is a method to extract something like this code from an abstract description of something closer to a grammar.
