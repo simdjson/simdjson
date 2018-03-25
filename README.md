@@ -43,6 +43,8 @@ Of course, stage 4 is totally unimplemented so it might be a priority as well:
 
 ## Academic References
 
+- T.Mu ̈hlbauer,W.Ro ̈diger,R.Seilbeck,A.Reiser,A.Kemper,andT.Neumann. Instant loading for main memory databases. PVLDB, 6(14):1702–1713, 2013. (SIMD-based CSV parsing)
+
 - Mytkowicz, Todd, Madanlal Musuvathi, and Wolfram Schulte. "Data-parallel finite-state machines." ACM SIGARCH Computer Architecture News. Vol. 42. No. 1. ACM, 2014.
 
 - Lu, Yifan, et al. "Tree structured data processing on GPUs." Cloud Computing, Data Science & Engineering-Confluence, 2017 7th International Conference on. IEEE, 2017.
