@@ -130,7 +130,7 @@ Inspiring links:
 
    - Values must be one of false / null / true / object / array / number / string
 
-   - A string begins and ends with  quotation marks.  All Unicode characters may be placed within the   quotation marks, except for the characters that must be escaped:   quotation mark, reverse solidus, and the control characters (U+0000 through U+001F).
+   - A string begins and ends with  quotation marks.  All Unicode characters may be placed within the   quotation marks, except for the characters that must be escaped:   quotation mark, reverse solidus, and the control characters (U+0000 through U+001F). [Decoding UTF-8 is fun](https://github.com/skeeto/branchless-utf8/blob/master/utf8.h).
 
    - Regarding strings, Geoff wrote:
    > For example, in Stage 2 ("string detection") we could validate that the only place we saw backslashes was in places we consider "inside strings".
