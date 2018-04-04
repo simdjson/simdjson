@@ -26,6 +26,8 @@ typedef __m256i m256;
 #define really_inline inline __attribute__ ((always_inline, unused))
 #define never_inline inline __attribute__ ((noinline, unused))
 
+#define UNUSED __attribute__ ((unused))
+
 #ifndef likely
   #define likely(x)     __builtin_expect(!!(x), 1)
 #endif

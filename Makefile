@@ -6,7 +6,8 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
+CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow 
+#CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
 EXECUTABLES=parse
 

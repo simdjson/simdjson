@@ -12,7 +12,7 @@
 #include <x86intrin.h>
 #include <assert.h>
 #include "common_defs.h"
-
+ 
 using namespace std;
 
 #define DEBUG
@@ -31,7 +31,7 @@ inline void dump256(m256 d, string msg) {
     cout << " " << msg << "\n";
 }
 
-// dump bits low to high
+// dump bits low to high 
 void dumpbits(u64 v, string msg) {
 	for (u32 i = 0; i < 64; i++) {
         std::cout << (((v>>(u64)i) & 0x1ULL) ? "1" : "_");
@@ -54,8 +54,8 @@ ifstream is(filename, ios::binary);
         if (posix_memalign( (void **)&aligned_buffer, 64, ROUNDUP_N(length, 64))) {
             throw "Allocation failed";
         };
-        bzero(aligned_buffer, ROUNDUP_N(length, 64));
-        memcpy(aligned_buffer, buffer.str().c_str(), length);
+        memset(aligned_buffer, 0x20, ROUNDUP_N(length, 64));
+        memcpy(aligned_buffer, buffer.str().c_str(), length); 
         is.close();
         return make_pair((u8 *)aligned_buffer, length);
     }
@@ -85,40 +85,18 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask
     return res_0 | (res_1 << 32);
 }
 
-// note this one is limited to masks that are aiming to detect things that don't have
-// a high bit set. The 0x80 bit is *not* masked off when we PSHUFB against shufti_low_nibble,
-// and will force us to 0 - which is fine and we can save the operations
-really_inline u64 shufti_against_input(m256 input_lo, m256 input_hi, m256 shufti_low_nibble, m256 shufti_high_nibble) {
-        m256 v_lo = _mm256_and_si256(
-                        _mm256_shuffle_epi8(shufti_low_nibble, input_lo),
-                        _mm256_shuffle_epi8(shufti_high_nibble,
-                                           _mm256_and_si256(_mm256_srli_epi32(input_lo, 4), _mm256_set1_epi8(0x7f))));
-
-        m256 v_hi = _mm256_and_si256(
-                        _mm256_shuffle_epi8(shufti_low_nibble, input_hi),
-                        _mm256_shuffle_epi8(shufti_high_nibble,
-                                           _mm256_and_si256(_mm256_srli_epi32(input_hi, 4), _mm256_set1_epi8(0x7f))));
-        v_lo = _mm256_cmpeq_epi8(v_lo, _mm256_set1_epi8(0));
-        v_hi = _mm256_cmpeq_epi8(v_hi, _mm256_set1_epi8(0));
-        u64 res_0 = (u32)_mm256_movemask_epi8(v_lo);
-        u64 res_1 = _mm256_movemask_epi8(v_hi);
-        return ~(res_0 | (res_1 << 32));
-}
-
-
 never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & pj) {
     // Useful constant masks
     const u64 even_bits = 0x5555555555555555ULL;
-    const u64 odd_bits = ~even_bits;
+    const u64 odd_bits = ~even_bits; 
 
     // for now, just work in 64-byte chunks
     // we have padded the input out to 64 byte multiple with the remainder being zeros
 
     // persistent state across loop
     u64 prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
-    u64 prev_iter_inside_quote = 0ULL; // either all zeros or all ones
-    //u64 prev_iter_inside_quote2 = 0ULL; // either all zeros or all ones
-    //m256 prev_iter_prefix_sum = _mm256_setzero_si256();
+    u64 prev_iter_inside_quote = 0ULL; // either all zeros or all ones 
+    u64 prev_iter_pseudo_structural_carry = 0ULL;
 
     for (size_t idx = 0; idx < len; idx+=64) {
 #ifdef DEBUG
@@ -130,7 +108,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
             } else {
                 cout << '_';
             }
-        }
+        }   
         cout << "|  ... input\n";
 #endif
         m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
@@ -148,11 +126,11 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         // flip lowest if we have an odd-length run at the end of the prior iteration
         u64 even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
         u64 even_starts = start_edges & even_start_mask;
-        u64 odd_starts = start_edges & ~even_start_mask;
+        u64 odd_starts = start_edges & ~even_start_mask; 
 
         dumpbits(even_starts, "even_starts");
         dumpbits(odd_starts, "odd_starts");
-
+        
         u64 even_carries = bs_bits + even_starts;
 
         u64 odd_carries;
@@ -180,9 +158,9 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         u64 odd_ends = even_start_odd_end | odd_start_even_end;
         dumpbits(odd_ends, "odd_ends");
-
+    
         ////////////////////////////////////////////////////////////////////////////////////////////
-        //     Step 2: detect insides of quote pairs
+        //     Step 2: detect insides of quote pairs 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         u64 quote_bits = cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
@@ -197,45 +175,105 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         // How do we build up a user traversable data structure
         // first, do a 'shufti' to detect structural JSON characters
         // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
+        // these go into the first 3 buckets of the comparison (1/2/4)
+
+        // we are also interested in the four whitespace characters
+        // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
+        // these go into the next 2 buckets of the comparison (8/16)
         const m256 low_nibble_mask = _mm256_setr_epi8(
-        //                                a  b  c  d
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 2, 1, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 2, 1, 0, 0
+        //  0                           9  a   b  c  d
+            16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0,
+            16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0
         );
         const m256 high_nibble_mask = _mm256_setr_epi8(
-        //        2  3     5     7
-            0, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0,
-            0, 0, 2, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0
+        //  0     2   3     5     7
+            8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0,
+            8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0
         );
 
-        u64 structurals = shufti_against_input(input_lo, input_hi, low_nibble_mask, high_nibble_mask);
+        m256 structural_shufti_mask = _mm256_set1_epi8(0x7);
+        m256 whitespace_shufti_mask = _mm256_set1_epi8(0x18);
+
+        m256 v_lo = _mm256_and_si256(
+                        _mm256_shuffle_epi8(low_nibble_mask, input_lo),
+                        _mm256_shuffle_epi8(high_nibble_mask,
+                           _mm256_and_si256(_mm256_srli_epi32(input_lo, 4), _mm256_set1_epi8(0x7f))));
+
+        m256 v_hi = _mm256_and_si256(
+                        _mm256_shuffle_epi8(low_nibble_mask, input_hi),
+                        _mm256_shuffle_epi8(high_nibble_mask,
+                           _mm256_and_si256(_mm256_srli_epi32(input_hi, 4), _mm256_set1_epi8(0x7f))));
+        m256 tmp_lo = _mm256_cmpeq_epi8(_mm256_and_si256(v_lo, structural_shufti_mask),
+                                        _mm256_set1_epi8(0));
+        m256 tmp_hi = _mm256_cmpeq_epi8(_mm256_and_si256(v_hi, structural_shufti_mask),
+                                        _mm256_set1_epi8(0));
+
+        u64 structural_res_0 = (u32)_mm256_movemask_epi8(tmp_lo);
+        u64 structural_res_1 = _mm256_movemask_epi8(tmp_hi);
+        u64 structurals =  ~(structural_res_0 | (structural_res_1 << 32));
+
+        // this additional mask and transfer is non-trivially expensive, unfortunately
+        m256 tmp_ws_lo = _mm256_cmpeq_epi8(_mm256_and_si256(v_lo, whitespace_shufti_mask),
+                                        _mm256_set1_epi8(0));
+        m256 tmp_ws_hi = _mm256_cmpeq_epi8(_mm256_and_si256(v_hi, whitespace_shufti_mask),
+                                        _mm256_set1_epi8(0));
+
+        u64 ws_res_0 = (u32)_mm256_movemask_epi8(tmp_ws_lo);
+        u64 ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
+        u64 whitespace =  ~(ws_res_0 | (ws_res_1 << 32));
+
         dumpbits(structurals, "structurals");
+        dumpbits(whitespace, "whitespace");
 
         // mask off anything inside quotes
         structurals &= ~quote_mask;
+        
+        // whitespace inside our quotes also doesn't count; otherwise "    foo" would generate a spurious
+        // pseudo-structural-character at 'foo'
+        whitespace &= ~quote_mask;
 
         // add the real quote bits back into our bitmask as well, so we can
         // quickly traverse the strings we've spent all this trouble gathering
         structurals |= quote_bits;
-        dumpbits(structurals, "final structurals");
+
+        // Now, establish "pseudo-structural characters". These are characters that follow a structural
+        // character followed by zero or more  whitespace
+        // this allows us to discover true/false/null and numbers in any location where they might legally
+        // occur; it will also create another 'checkpoint' where if a non-quoted region of our input
+        // has whitespace after a structural character fullowed by a syntax error, we can detect this
+        // and get an error in a later stage (i.e. the state machine)
+
+        // Slightly more painful than it would seem. It's possible that either structurals or whitespace are
+        // all 1s (e.g. {{{{{{{....{{{{x64, or a really long whitespace). As such there is no safe place
+        // to add a '1' from the previous iteration without *that* triggering the carry we are looking 
+        // out for, so we must check both carries for overflow
+        
+        u64 tmp = structurals | whitespace;
+        u64 tmp2;
+        bool ps_carry = __builtin_uaddll_overflow(tmp, structurals, &tmp2);
+        dumpbits(tmp2, "pseudo_structural add calculation first part");
+        u64 tmp3;
+        ps_carry = ps_carry | __builtin_uaddll_overflow(tmp2, prev_iter_pseudo_structural_carry, &tmp3);
+        prev_iter_pseudo_structural_carry = ps_carry ? 0x1ULL : 0x0ULL;
+        dumpbits(tmp3, "pseudo_structural add calculation after adding carry");
+        tmp3 &= ~quote_mask;
+        tmp3 &= ~whitespace;
+        dumpbits(tmp3, "pseudo_structural add calculation without quotes and whitespace");
+        dumpbits(structurals, "final structurals without quotes");
+        structurals |= tmp3;       
+        dumpbits(structurals, "final structurals and pseudo structurals");
+
         *(u64 *)(pj.structurals + idx/8) = structurals;
-
-        // fifth, we will then call a function that takes nothing more than the array of integers
-        // and our input and the parsed_json structure. Alternately, *this* function becomes the
-        // thing that generates that array of input.
-
-        // TODO: think about error handling
-        // TODO: think about 'streaming' - how to process as we go?
     }
     return true;
 }
 
 const u32 NUM_RESERVED_NODES = 2;
 const u32 DUMMY_NODE = 0;
-const u32 ROOT_NODE = 0;
+const u32 ROOT_NODE = 1;
 
 // just transform the bitmask to a big list of 32-bit integers for now
-// that's all; the type of character under the gun (now this is : {};[],") - will
+// that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
 never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 base = NUM_RESERVED_NODES;
@@ -259,7 +297,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
 // Parse our json given a big array of 32-bit integers telling us where
 // the interesting stuff is
 
-never_inline bool json_parse(const u8 * buf, size_t len, ParsedJson & pj) {
+never_inline bool json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
     u32 last; // index of previous structure at this level or 0 if none
     u32 up; // index of structure that contains this one
 
@@ -305,13 +343,17 @@ never_inline bool json_parse(const u8 * buf, size_t len, ParsedJson & pj) {
         cout << " n.up: " << n.up;
         cout << " n.next: " << n.next;
         cout << " n.prev: " << n.prev;
-        //cout << " idx: " << idx << " buf[idx] " << buf[idx] << "\n"; // this line causes problems (segfault)
+        cout << " idx: " << idx << " buf[idx] " << buf[idx] << "\n";
     }
 #endif
     return true;
 }
 
 int main(int argc, char * argv[]) {
+    if (argc != 2) {
+        cerr << "Usage: " << argv[0] << " <jsonfile>\n";
+        exit(1);
+    }
     pair<u8 *, size_t> p = get_corpus(argv[1]);
     ParsedJson pj;
 
@@ -326,7 +368,7 @@ int main(int argc, char * argv[]) {
     pj.structural_indexes = new u32[max_structures];
     pj.nodes = new JsonNode[max_structures];
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(DEBUG_FSM)
     const u32 iterations = 1;
 #else
     const u32 iterations = 1000;
