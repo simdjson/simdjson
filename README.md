@@ -57,7 +57,7 @@ Of course, stage 4 is totally unimplemented so it might be a priority as well:
 > Using this parallel bit stream approach, the vast majority of conditional branches used to identify key positions and/or syntax errors at each parsing position are mostly eliminated, which, as Section 6.2 shows, minimizes branch misprediction penalties. Accurate parsing and parallel lexical analysis is done through processor-friendly equations that require neither speculation nor multithreading.
 
 - Deshmukh, V. M., and G. R. Bamnote. "An empirical evaluation of optimization parameters in XML parsing for performance enhancement." Computer, Communication and Control (IC4), 2015 International Conference on. IEEE, 2015.
-APA	
+APA
 
 
 - Moussalli, Roger, et al. "Efficient XML Path Filtering Using GPUs." ADMS@ VLDB. 2011.
@@ -97,6 +97,10 @@ APA
 - http://rapidjson.org/md_doc_sax.html
 - https://github.com/Geal/parser_benchmarks/tree/master/json
 - Gron: A command line tool that makes JSON greppable https://news.ycombinator.com/item?id=16727665
+- GoogleGson https://github.com/google/gson
+- Jackson https://github.com/FasterXML/jackson
+- https://www.yelp.com/dataset_challenge
+- RapidJSON. http://rapidjson.org/
 
 Inspiring links:
 - https://auth0.com/blog/beating-json-performance-with-protobuf/
@@ -152,6 +156,6 @@ containing structural element ("up").
 - The ``clmul`` thing is tricky but nice. (Geoff's remark:  find the spaces between quotes, is actually a ponderous way of doing parallel prefix over XOR, which a mathematically adept person would have realized could be done with clmul by -1. Not me, I had to look it up: http://bitmath.blogspot.com.au/2016/11/parallel-prefixsuffix-operations.html.)
 - It is possible, though maybe unlikely, that parallelizing the bitset decoding could be useful (https://lemire.me/blog/2018/03/08/iterating-over-set-bits-quickly-simd-edition/), and there is VCOMPRESSB (AVX-512)
 
-## Future work 
+## Future work
 
  Long term we should keep in mind the idea that what would be cool is a method to extract something like this code from an abstract description of something closer to a grammar.
