@@ -142,9 +142,9 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
     if (verbose)                                                               \
-      printf(" %.3f %s per operation (best) ", cycle_per_op, unitname);        \
+      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);        \
     if (verbose)                                                               \
-      printf(" %.3f %s per operation (avg) ", avg_cycle_per_op, unitname);        \
+      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);        \
      if (verbose)                                                               \
       printf("\n");                                                            \
     if (!verbose)                                                              \

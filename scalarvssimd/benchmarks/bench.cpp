@@ -21,7 +21,14 @@ int main(int argc, char * argv[]) {
     }
     pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
     ParsedJson pj;
-    std::cout << "Input has "<< p.second << " bytes."<<std::endl;
+    std::cout << "Input has ";
+    if(p.second > 1024 * 1024)
+      std::cout << p.second / (1024*1024) << " MB ";
+    else if (p.second > 1024)
+      std::cout << p.second / 1024 << " KB ";
+    else 
+      std::cout << p.second << " B ";
+    std::cout << std::endl;
 
     if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
         throw "Allocation failed";
@@ -46,7 +53,7 @@ int main(int argc, char * argv[]) {
       colorfuldisplay(pj, p.first);
       debugdisplay(pj,p.first);
     }
-    int repeat = 5;
+    int repeat = 10;
     int volume = p.second;
     BEST_TIME_NOCHECK(avx_json_parse(p.first,  p.second, pj), , repeat, volume, true);
     BEST_TIME_NOCHECK(scalar_json_parse(p.first,  p.second, pj), , repeat, volume, true);
