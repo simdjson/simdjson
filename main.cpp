@@ -12,7 +12,7 @@
 #include <x86intrin.h>
 #include <assert.h>
 #include "common_defs.h"
- 
+
 using namespace std;
 
 #define DEBUG
@@ -31,7 +31,7 @@ inline void dump256(m256 d, string msg) {
     cout << " " << msg << "\n";
 }
 
-// dump bits low to high 
+// dump bits low to high
 void dumpbits(u64 v, string msg) {
 	for (u32 i = 0; i < 64; i++) {
         std::cout << (((v>>(u64)i) & 0x1ULL) ? "1" : "_");
@@ -55,7 +55,7 @@ ifstream is(filename, ios::binary);
             throw "Allocation failed";
         };
         memset(aligned_buffer, 0x20, ROUNDUP_N(length, 64));
-        memcpy(aligned_buffer, buffer.str().c_str(), length); 
+        memcpy(aligned_buffer, buffer.str().c_str(), length);
         is.close();
         return make_pair((u8 *)aligned_buffer, length);
     }
@@ -88,14 +88,14 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask
 never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & pj) {
     // Useful constant masks
     const u64 even_bits = 0x5555555555555555ULL;
-    const u64 odd_bits = ~even_bits; 
+    const u64 odd_bits = ~even_bits;
 
     // for now, just work in 64-byte chunks
     // we have padded the input out to 64 byte multiple with the remainder being zeros
 
     // persistent state across loop
     u64 prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
-    u64 prev_iter_inside_quote = 0ULL; // either all zeros or all ones 
+    u64 prev_iter_inside_quote = 0ULL; // either all zeros or all ones
     u64 prev_iter_pseudo_structural_carry = 0ULL;
 
     for (size_t idx = 0; idx < len; idx+=64) {
@@ -108,7 +108,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
             } else {
                 cout << '_';
             }
-        }   
+        }
         cout << "|  ... input\n";
 #endif
         m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
@@ -126,11 +126,11 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         // flip lowest if we have an odd-length run at the end of the prior iteration
         u64 even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
         u64 even_starts = start_edges & even_start_mask;
-        u64 odd_starts = start_edges & ~even_start_mask; 
+        u64 odd_starts = start_edges & ~even_start_mask;
 
         dumpbits(even_starts, "even_starts");
         dumpbits(odd_starts, "odd_starts");
-        
+
         u64 even_carries = bs_bits + even_starts;
 
         u64 odd_carries;
@@ -158,9 +158,9 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         u64 odd_ends = even_start_odd_end | odd_start_even_end;
         dumpbits(odd_ends, "odd_ends");
-    
+
         ////////////////////////////////////////////////////////////////////////////////////////////
-        //     Step 2: detect insides of quote pairs 
+        //     Step 2: detect insides of quote pairs
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         u64 quote_bits = cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
@@ -227,7 +227,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         // mask off anything inside quotes
         structurals &= ~quote_mask;
-        
+
         // whitespace inside our quotes also doesn't count; otherwise "    foo" would generate a spurious
         // pseudo-structural-character at 'foo'
         whitespace &= ~quote_mask;
@@ -245,9 +245,9 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         // Slightly more painful than it would seem. It's possible that either structurals or whitespace are
         // all 1s (e.g. {{{{{{{....{{{{x64, or a really long whitespace). As such there is no safe place
-        // to add a '1' from the previous iteration without *that* triggering the carry we are looking 
+        // to add a '1' from the previous iteration without *that* triggering the carry we are looking
         // out for, so we must check both carries for overflow
-        
+
         u64 tmp = structurals | whitespace;
         u64 tmp2;
         bool ps_carry = __builtin_uaddll_overflow(tmp, structurals, &tmp2);
@@ -260,7 +260,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         tmp3 &= ~whitespace;
         dumpbits(tmp3, "pseudo_structural add calculation without quotes and whitespace");
         dumpbits(structurals, "final structurals without quotes");
-        structurals |= tmp3;       
+        structurals |= tmp3;
         dumpbits(structurals, "final structurals and pseudo structurals");
 
         *(u64 *)(pj.structurals + idx/8) = structurals;
@@ -366,6 +366,55 @@ never_inline bool json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj)
     return true;
 }
 
+// https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
+namespace Color {
+    enum Code {
+        FG_DEFAULT = 39, FG_BLACK = 30, FG_RED = 31, FG_GREEN = 32,
+        FG_YELLOW = 33, FG_BLUE = 34, FG_MAGENTA = 35, FG_CYAN = 36,
+        FG_LIGHT_GRAY = 37, FG_DARK_GRAY = 90, FG_LIGHT_RED = 91,
+        FG_LIGHT_GREEN = 92, FG_LIGHT_YELLOW = 93, FG_LIGHT_BLUE = 94,
+        FG_LIGHT_MAGENTA = 95, FG_LIGHT_CYAN = 96, FG_WHITE = 97,
+        BG_RED = 41, BG_GREEN = 42, BG_BLUE = 44, BG_DEFAULT = 49
+    };
+    class Modifier {
+        Code code;
+    public:
+        Modifier(Code pCode) : code(pCode) {}
+        friend std::ostream&
+        operator<<(std::ostream& os, const Modifier& mod) {
+            return os << "\033[" << mod.code << "m";
+        }
+    };
+}
+
+void colorfuldisplay(ParsedJson & pj, const u8 * buf) {
+    Color::Modifier greenfg(Color::FG_GREEN);
+    Color::Modifier yellowfg(Color::FG_YELLOW);
+    Color::Modifier deffg(Color::FG_DEFAULT);
+    size_t i = 0;
+    // skip initial fluff
+    while((i+1< pj.n_structural_indexes) && (pj.structural_indexes[i]==pj.structural_indexes[i+1])){
+      i++;
+    }
+    for (; i < pj.n_structural_indexes; i++) {
+        u32 idx = pj.structural_indexes[i];
+        u8 c = buf[idx];
+        if (((c & 0xdf) == 0x5b)) { // meaning 7b or 5b, { or [
+            std::cout << greenfg <<  buf[idx] << deffg;
+        } else if (((c & 0xdf) == 0x5d)) { // meaning 7d or 5d, } or ]
+            std::cout << greenfg <<  buf[idx] << deffg;
+        } else {
+            std::cout << yellowfg <<  buf[idx] << deffg;
+        }
+        if(i + 1 < pj.n_structural_indexes) {
+          u32 nextidx = pj.structural_indexes[i + 1];
+          for(u32 pos = idx + 1 ; pos < nextidx; pos++) {
+            std::cout << buf[pos];
+          }
+        }
+    }
+    std::cout << std::endl;
+}
 int main(int argc, char * argv[]) {
     if (argc != 2) {
         cerr << "Usage: " << argv[0] << " <jsonfile>\n";
@@ -382,7 +431,7 @@ int main(int argc, char * argv[]) {
     // we have potentially 1 structure per byte of input
     // as well as a dummy structure and a root structure
     // we also potentially write up to 7 iterations beyond
-    // in our 'cheesy flatten', so make some worst-case 
+    // in our 'cheesy flatten', so make some worst-case
     // sapce for that too
     u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
     pj.structural_indexes = new u32[max_structures];
@@ -404,6 +453,7 @@ int main(int argc, char * argv[]) {
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
     }
+    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
 	cout << "Min:  " << min_result << " bytes read: " << p.second  << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0) << "\n";
     return 0;
