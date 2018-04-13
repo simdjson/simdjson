@@ -153,6 +153,19 @@ prev structural element at the same level
 containing structural element ("up").
 
 
+### Pseudo-structural elements
+
+A character is pseudo-structural if and only if:
+
+1. Not enclosed in quotes, AND
+2. Is a non-whitespace character, AND
+3. It's preceding chararacter is either:
+(a) a structural character, OR
+(b) whitespace.
+
+This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
+
+> { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null } 
 
 ## Remarks on the code
 
