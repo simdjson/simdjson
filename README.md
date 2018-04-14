@@ -15,18 +15,7 @@ The parser works in three stages:
 
 ## Todo (Priority)
 
-Geoff is unhappy with stage 3. He writes:
-
-> 44% of the time is in the tree construction. Of the remaining 56%, pretty much half is in the code to discover structural characters and half is in the naive code to flatten that out into a vector of u32 offsets (the 'iterate over set bits' problem).
-
-> I'm focusing on the tree construction at the moment. I think we can abstract the structural characters to 3 operations during that stage (UP, DOWN, SIDEWAYS), batch them, and build out tree structure in bulk with data-driven SIMD operations rather than messing around with branches. It's probably OK to have a table with 3^^5 or even 3^^6 entries, and it's still probably OK to have some hard cases eliminated and handled on a slow path (e.g. someone hits you with 6 scope closes in a row, forcing you to pop 24 bytes into your tree construction stack). (...) I spend some time with SIMD and found myself going in circles. There's an utterly fantastic solution in there somewhere involving turning the tree building code into a transformation over multiple abstracted symbols (e.g. UP/UP/SIDEWAYS/DOWN). It looked great until I smacked up against the fact that the oh-so-elegant solution I had sketched out had, on its critical path, an unaligned store followed by load partially overlapping with that store, to maintain the stack of 'up' pointers. Ugh. (...) So I worked through about 6 alternate solutions of various levels of pretentiousness none of which made me particularly happy.
-
-> The structure building is too slow for my taste. I'm not sure I want too much richer functionality in it. Many of the transformations which I would like to do seem better done on the tree (i.e. pruning out every second " character). But this code takes 44% of our time; it's outrageous.
-
-
-Of course, stage 4 is totally unimplemented so it might be a priority as well:
-
-> A future goal for Stage 3 will also be to thread together vectors or lists of similar structural elements (e.g. strings, objects, numbers, etc). A putative 'stage 4' will then be able to iterate in parallel fashion over these vectors (branchlessly, or at least without a pipeline-killing "Giant What I Am Doing Anyway" switch at the top) and transform them into more usable values. Some of this code is also inherently interesting (de-escaping strings, high speed atoi - an old favorite).
+FIXME: The older stuff is now irrelevant.
 
 
 ## Todo (Secondary)
@@ -144,13 +133,6 @@ Inspiring links:
    - Regarding strings, Geoff wrote:
    > For example, in Stage 2 ("string detection") we could validate that the only place we saw backslashes was in places we consider "inside strings".
 
-
-- Geoff's remark regarding the structure:
-> next structural element
-prev structural element
-next structural element at the same level (i.e. skip over complex structures)
-prev structural element at the same level
-containing structural element ("up").
 
 
 ### Pseudo-structural elements
