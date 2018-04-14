@@ -43,8 +43,7 @@ over bit vectors to discover backslash sequences and quote pairs; we introduce b
 these properties.
 
 We also make use of our ability to quickly detect whitespace in this early stage. We can use another bit-vector based 
-transformation to discover locations in our data that follow a structural character or quote followed by zero or more 
-characters of whitespace; excluding locations within strings, and the structural characters we have already discovered, 
+transformation to discover locations in our data that follow a structural character or quote or whitespace and are not whitesapce.  Excluding locations within strings, and the structural characters we have already discovered, 
 these locations are the only place that we can expect to see the starts of the JSON 'atoms'. These locations are thus 
 treated as 'structural' ('pseudo-structural characters').
 
@@ -77,17 +76,10 @@ for each bitmap.
 
 ### Stage 3: Operation over indices
 
-The indices form a relatively concise map of structurally important parts of our JSON input. However, since JSON is 
-recursively defined, we may nest structures (JSON "objects" and "arrays") inside other JSON structures. It is important 
-to be able to quickly traverse portions of our JSON structure at any given level - it is trivial for us to move around 
-in a way that follows the input text, but skipping to the next item at a given level may involve searching hundreds of 
-bytes of text).
+This now works over a dual structure.
 
-We can construct a simple data structure that allows us to thread together such structures relatively simply; at this 
-stage this code is not branch-free. We use an implicit 'stack' structure by virtue of threading together 'up-level 
-pointers' within the structure as we build it (these are pointers that, for each item in the structure we have seen 
-already, tell us which item in the structure that contains this one); to pop up a level, we simply follow one layer 
-of 'up-level pointers'.
+1. The "state machine", whose role it is to validate the sequence of structural characters and ensure that the input is at least generally structured like valid JSON (after this stage, the only errors permissible should be malformed atoms and numbers). If and only if the "state machine" reached all accept states, then,
 
-An equivalent operation requiring an external data structure would be to maintain a stack that essentially describes 
-all current levels of our structure as we traverse it; this may have performance advantages.
+2. The "tape machine" will have produced valid output. The tape machine works blindly over characters writing records to tapes. These records create a lean but somewhat traversable linked structure that, for valid inputs, should represent what we need to know about the JSON input.
+
+FIXME: a lot more detail is required on the operation of both these machines.
