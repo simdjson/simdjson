@@ -96,7 +96,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
     // persistent state across loop
     u64 prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
     u64 prev_iter_inside_quote = 0ULL; // either all zeros or all ones
-    u64 prev_iter_pseudo_structural_carry = 0ULL;
+    u64 prev_iter_ends_pseudo_pred = 0ULL;
 
     for (size_t idx = 0; idx < len; idx+=64) {
 #ifdef DEBUG
@@ -228,39 +228,27 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         // mask off anything inside quotes
         structurals &= ~quote_mask;
 
-        // whitespace inside our quotes also doesn't count; otherwise "    foo" would generate a spurious
-        // pseudo-structural-character at 'foo'
-        whitespace &= ~quote_mask;
-
         // add the real quote bits back into our bitmask as well, so we can
         // quickly traverse the strings we've spent all this trouble gathering
         structurals |= quote_bits;
 
-        // Now, establish "pseudo-structural characters". These are characters that follow a structural
-        // character followed by zero or more  whitespace
-        // this allows us to discover true/false/null and numbers in any location where they might legally
-        // occur; it will also create another 'checkpoint' where if a non-quoted region of our input
-        // has whitespace after a structural character fullowed by a syntax error, we can detect this
-        // and get an error in a later stage (i.e. the state machine)
+        // Now, establish "pseudo-structural characters". These are non-whitespace characters
+        // that are (a) outside quotes and (b) have a predecessor that's either whitespace or a structural
+        // character. This means that subsequent passes will get a chance to encounter the first character 
+        // of every string of non-whitespace and, if we're parsing an atom like true/false/null or a number
+        // we can stop at the first whitespace or structural character following it.
 
-        // Slightly more painful than it would seem. It's possible that either structurals or whitespace are
-        // all 1s (e.g. {{{{{{{....{{{{x64, or a really long whitespace). As such there is no safe place
-        // to add a '1' from the previous iteration without *that* triggering the carry we are looking
-        // out for, so we must check both carries for overflow
-
-        u64 tmp = structurals | whitespace;
-        u64 tmp2;
-        bool ps_carry = __builtin_uaddll_overflow(tmp, structurals, &tmp2);
-        dumpbits(tmp2, "pseudo_structural add calculation first part");
-        u64 tmp3;
-        ps_carry = ps_carry | __builtin_uaddll_overflow(tmp2, prev_iter_pseudo_structural_carry, &tmp3);
-        prev_iter_pseudo_structural_carry = ps_carry ? 0x1ULL : 0x0ULL;
-        dumpbits(tmp3, "pseudo_structural add calculation after adding carry");
-        tmp3 &= ~quote_mask;
-        tmp3 &= ~whitespace;
-        dumpbits(tmp3, "pseudo_structural add calculation without quotes and whitespace");
-        dumpbits(structurals, "final structurals without quotes");
-        structurals |= tmp3;
+        // a qualified predecessor is something that can happen 1 position before an
+        // psuedo-structural character
+        u64 pseudo_pred = structurals | whitespace;
+        dumpbits(pseudo_pred, "pseudo_pred");
+        u64 shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+        dumpbits(shifted_pseudo_pred, "shifted_pseudo_pred");
+        prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
+        u64 pseudo_structurals = shifted_pseudo_pred & (~whitespace) & (~quote_mask);
+        dumpbits(pseudo_structurals, "pseudo_structurals");
+        dumpbits(structurals, "final structurals without pseudos");
+        structurals |= pseudo_structurals;
         dumpbits(structurals, "final structurals and pseudo structurals");
 
         *(u64 *)(pj.structurals + idx/8) = structurals;
@@ -596,12 +584,12 @@ int main(int argc, char * argv[]) {
     // as well as a dummy structure and a root structure
     // we also potentially write up to 7 iterations beyond
     // in our 'cheesy flatten', so make some worst-case
-    // sapce for that too
+    // space for that too
     u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
     pj.structural_indexes = new u32[max_structures];
     pj.nodes = new JsonNode[max_structures];
 
-#if defined(DEBUG) || defined(DEBUG_FSM)
+#if defined(DEBUG) 
     const u32 iterations = 1;
 #else
     const u32 iterations = 1000;
@@ -609,15 +597,15 @@ int main(int argc, char * argv[]) {
     vector<double> res;
     res.resize(iterations);
     for (u32 i = 0; i < iterations; i++) {
+        auto start = std::chrono::steady_clock::now();
         find_structural_bits(p.first, p.second, pj);
         flatten_indexes(p.second, pj);
-        auto start = std::chrono::steady_clock::now();
         ape_machine(p.first, p.second, pj);
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
     }
-    colorfuldisplay(pj, p.first);
+//    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
 	cout << "Min:  " << min_result << " bytes read: " << p.second  << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0) << "\n";
     return 0;
