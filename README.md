@@ -57,7 +57,7 @@ Of course, stage 4 is totally unimplemented so it might be a priority as well:
 > Using this parallel bit stream approach, the vast majority of conditional branches used to identify key positions and/or syntax errors at each parsing position are mostly eliminated, which, as Section 6.2 shows, minimizes branch misprediction penalties. Accurate parsing and parallel lexical analysis is done through processor-friendly equations that require neither speculation nor multithreading.
 
 - Deshmukh, V. M., and G. R. Bamnote. "An empirical evaluation of optimization parameters in XML parsing for performance enhancement." Computer, Communication and Control (IC4), 2015 International Conference on. IEEE, 2015.
-APA	
+APA
 
 
 - Moussalli, Roger, et al. "Efficient XML Path Filtering Using GPUs." ADMS@ VLDB. 2011.
@@ -97,6 +97,10 @@ APA
 - http://rapidjson.org/md_doc_sax.html
 - https://github.com/Geal/parser_benchmarks/tree/master/json
 - Gron: A command line tool that makes JSON greppable https://news.ycombinator.com/item?id=16727665
+- GoogleGson https://github.com/google/gson
+- Jackson https://github.com/FasterXML/jackson
+- https://www.yelp.com/dataset_challenge
+- RapidJSON. http://rapidjson.org/
 
 Inspiring links:
 - https://auth0.com/blog/beating-json-performance-with-protobuf/
@@ -107,6 +111,11 @@ Inspiring links:
 
 - The JSON spec defines what a JSON parser is:
 >  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings."
+
+
+- JSON is not JavaScript:
+
+> All JSON is Javascript but NOT all Javascript is JSON. So {property:1} is invalid because property does not have double quotes around it. {'property':1} is also invalid, because it's single quoted while the only thing that can placate the JSON specification is double quoting. JSON is even fussy enough that {"property":.1} is invalid too, because you should have of course written {"property":0.1}. Also, don't even think about having comments or semicolons, you guessed it: they're invalid. (credit:https://github.com/elzr/vim-json)
 
 - The  structural characters are:
 
@@ -130,7 +139,7 @@ Inspiring links:
 
    - Values must be one of false / null / true / object / array / number / string
 
-   - A string begins and ends with  quotation marks.  All Unicode characters may be placed within the   quotation marks, except for the characters that must be escaped:   quotation mark, reverse solidus, and the control characters (U+0000 through U+001F). [Decoding UTF-8 is fun](https://github.com/skeeto/branchless-utf8/blob/master/utf8.h).
+   - A string begins and ends with  quotation marks.  All Unicode characters may be placed within the   quotation marks, except for the characters that must be escaped:   quotation mark, reverse solidus, and the control characters (U+0000 through U+001F). We can probably safely assume that strings are in UTF-8. [Decoding UTF-8 is fun](https://github.com/skeeto/branchless-utf8/blob/master/utf8.h). However, any character can be escaped in JSON string and escaping them might be required? Well, maybe you can quickly check whether a string needs escaping.
 
    - Regarding strings, Geoff wrote:
    > For example, in Stage 2 ("string detection") we could validate that the only place we saw backslashes was in places we consider "inside strings".
@@ -144,6 +153,19 @@ prev structural element at the same level
 containing structural element ("up").
 
 
+### Pseudo-structural elements
+
+A character is pseudo-structural if and only if:
+
+1. Not enclosed in quotes, AND
+2. Is a non-whitespace character, AND
+3. It's preceding chararacter is either:
+(a) a structural character, OR
+(b) whitespace.
+
+This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
+
+> { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null } 
 
 ## Remarks on the code
 
@@ -152,6 +174,6 @@ containing structural element ("up").
 - The ``clmul`` thing is tricky but nice. (Geoff's remark:  find the spaces between quotes, is actually a ponderous way of doing parallel prefix over XOR, which a mathematically adept person would have realized could be done with clmul by -1. Not me, I had to look it up: http://bitmath.blogspot.com.au/2016/11/parallel-prefixsuffix-operations.html.)
 - It is possible, though maybe unlikely, that parallelizing the bitset decoding could be useful (https://lemire.me/blog/2018/03/08/iterating-over-set-bits-quickly-simd-edition/), and there is VCOMPRESSB (AVX-512)
 
-## Future work 
+## Future work
 
  Long term we should keep in mind the idea that what would be cool is a method to extract something like this code from an abstract description of something closer to a grammar.

@@ -18,7 +18,7 @@ using namespace std;
 
 
 // a straightforward comparison of a mask against input. 5 uops; would be cheaper in AVX512.
-really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask) {
+static inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask) {
     m256 cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
     u64 res_0 = (u32)_mm256_movemask_epi8(cmp_res_0);
     m256 cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
@@ -26,7 +26,7 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask
     return res_0 | (res_1 << 32);
 }
 
-never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & pj) {
+static bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & pj) {
     // Useful constant masks
     const u64 even_bits = 0x5555555555555555ULL;
     const u64 odd_bits = ~even_bits;
@@ -81,12 +81,10 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         u64 quote_bits = cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
         quote_bits = quote_bits & ~odd_ends;
-        dumpbits(quote_bits, "quote_bits");
         u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(_mm_set_epi64x(0ULL, quote_bits),
                                                                 _mm_set1_epi8(0xFF), 0));
         quote_mask ^= prev_iter_inside_quote;
         prev_iter_inside_quote = (u64)((s64)quote_mask>>63);
-        dumpbits(quote_mask, "quote_mask");
 
         // How do we build up a user traversable data structure
         // first, do a 'shufti' to detect structural JSON characters
@@ -184,17 +182,31 @@ const u32 ROOT_NODE = 1;
 // just transform the bitmask to a big list of 32-bit integers for now
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
-never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
+static bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 base = NUM_RESERVED_NODES;
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
     for (size_t idx = 0; idx < len; idx+=64) {
         u64 s = *(u64 *)(pj.structurals + idx/8);
+        u32 cnt = __builtin_popcountll(s);
+        u32 next_base = base + cnt;
         while (s) {
-            u32 si = (u32)idx + __builtin_ctzll(s);
-            base_ptr[base++] = si;
-            s &= s - 1ULL;
+            // spoil the suspense
+            u64 s3 = _pdep_u64(~0x7ULL, s); // s3 will have bottom 3 1-bits unset
+            u64 s5 = _pdep_u64(~0x1fULL, s); // s5 will have bottom 5 1-bits unset
+
+            base_ptr[base+0] = (u32)idx + __builtin_ctzll(s);  u64 s1 = s  & (s  - 1ULL);
+            base_ptr[base+1] = (u32)idx + __builtin_ctzll(s1); u64 s2 = s1 & (s1 - 1ULL);
+            base_ptr[base+2] = (u32)idx + __builtin_ctzll(s2); //u64 s3 = s2 & (s2 - 1ULL);
+            base_ptr[base+3] = (u32)idx + __builtin_ctzll(s3); u64 s4 = s3 & (s3 - 1ULL);
+
+            base_ptr[base+4] = (u32)idx + __builtin_ctzll(s4); //u64 s5 = s4 & (s4 - 1ULL);
+            base_ptr[base+5] = (u32)idx + __builtin_ctzll(s5); u64 s6 = s5 & (s5 - 1ULL);
+            base_ptr[base+6] = (u32)idx + __builtin_ctzll(s6); u64 s7 = s6 & (s6 - 1ULL);
+            s = s7;
+            base += 7;
         }
+        base = next_base;
     }
     pj.n_structural_indexes = base;
     return true;
@@ -202,7 +214,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
 
 // Parse our json given a big array of 32-bit integers telling us where
 // the interesting stuff is
-bool avx_json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
+static bool json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
     u32 last; // index of previous structure at this level or 0 if none
     u32 up; // index of structure that contains this one
 
@@ -240,16 +252,13 @@ bool avx_json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
         nodes[n.prev].next = i;
     }
     dummy.next = DUMMY_NODE; // dummy.next is a sump for meaningless 'nexts', clear it
-#ifdef DEBUG
-    for (u32 i = 0; i < pj.n_structural_indexes; i++) {
-        u32 idx = pj.structural_indexes[i];
-        JsonNode & n = nodes[i];
-        cout << "i: " << i;
-        cout << " n.up: " << n.up;
-        cout << " n.next: " << n.next;
-        cout << " n.prev: " << n.prev;
-        cout << " idx: " << idx << " buf[idx] " << buf[idx] << "\n";
-    }
-#endif
     return true;
+}
+
+
+static bool avx_json_parse(const u8 * buf,  size_t len, ParsedJson & pj) {
+          find_structural_bits(buf, len, pj);
+          flatten_indexes(len, pj);
+          json_parse(buf, len, pj);
+          return true;
 }
