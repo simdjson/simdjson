@@ -15,7 +15,7 @@
  
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 inline void dump256(m256 d, string msg) {
@@ -64,9 +64,9 @@ ifstream is(filename, ios::binary);
 }
 
 struct JsonNode {
-    u32 up;
     u32 next;
-    u32 prev;
+    u32 next_type;
+    u64 payload; // a freeform 'payload' holding a parsed representation of *something*
 };
 
 struct ParsedJson {
@@ -311,58 +311,220 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     return true;
 }
 
-// Parse our json given a big array of 32-bit integers telling us where
-// the interesting stuff is
 
-never_inline bool json_parse(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
-    u32 last; // index of previous structure at this level or 0 if none
-    u32 up; // index of structure that contains this one
+const u32 MAX_DEPTH = 256;
 
-    JsonNode * nodes = pj.nodes;
+// the ape machine consists of two parts:
+//
+// 1) The "state machine", which is a multiple channel per-level state machine
+//    It is a conventional DFA except in that it 'changes track' on {}[] characters
+//
+// 2) The "tape machine": this records offsets of various structures as they go by
+//    These structures are either u32 offsets of other tapes or u32 offsets into our input
+//    or structures.
+//
+// The state machine doesn't record ouput. 
+// The tape machine doesn't validate.
+//
+// The output of the tape machine is meaningful only if the state machine is in non-error states.
 
-    JsonNode & dummy = nodes[DUMMY_NODE];
-    JsonNode & root = nodes[ROOT_NODE];
-    dummy.prev = dummy.up = DUMMY_NODE;
-    root.prev = DUMMY_NODE;
-    root.up = ROOT_NODE;
-    last = up = ROOT_NODE;
+// depth adjustment is strictly based on whether we are {[ or }]
 
+// depth adjustment is a pre-increment which, in effect, means that a {[ contained in an object
+// is in the level one deeper, while the corresponding }] is at the level
+
+
+// TAPE MACHINE DEFINITIONS
+
+const u32 DEPTH_PLUS_ONE = 0x2;
+const u32 DEPTH_ZERO = 0x1;
+const u32 DEPTH_MINUS_ONE = 0x0;
+const u32 TAKE_UPTAPE = 0x80000000;
+const u32 TAKE_INDEX = 0x0;
+const u32 WRITE_ZERO = 0x0;
+const u32 WRITE_FOUR = 0x4;
+const u32 WRITE_EIGHT = 0x8;
+
+const u32 CDEF = DEPTH_ZERO | TAKE_INDEX | WRITE_ZERO;
+const u32 C0I4 = DEPTH_ZERO | TAKE_INDEX | WRITE_FOUR;
+const u32 C0I8 = DEPTH_ZERO | TAKE_INDEX | WRITE_FOUR;
+const u32 CPI0 = DEPTH_PLUS_ONE | TAKE_INDEX | WRITE_ZERO;
+const u32 CMU8 = DEPTH_MINUS_ONE | TAKE_UPTAPE | WRITE_EIGHT;
+
+inline s8 get_depth_adjust(u32 control) { return (s8)(control&0x3) - 1; }
+inline bool is_uptape(u32 control) { return (control & TAKE_UPTAPE); }
+inline size_t get_write_size(u32 control) { return control & 12; }
+
+const u32 char_control[256] = {
+    // nothing interesting from 0x00-0x20
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+
+    // " is 0x22, - is 0x2d
+    CDEF,CDEF,C0I4,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,C0I8,CDEF,CDEF,
+
+    // numbers are 0x30-0x39
+    C0I8,C0I8,C0I8,C0I8, C0I8,C0I8,C0I8,C0I8, C0I8,C0I8,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+
+    // nothing interesting from 0x40-0x49
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+
+    // 0x5b/5d are []
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CPI0, CDEF,CMU8,CDEF,CDEF, 
+
+    // nothing interesting from 0x60-0x69
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+
+    // 0x7b/7d are {}
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CPI0, CDEF,CMU8,CDEF,CDEF, 
+
+    // nothing interesting from 0x80-0xff
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF
+};
+
+const size_t MAX_TAPE_ENTRIES = 1024*1024;
+const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
+u32 tape[MAX_TAPE]; 
+
+// STATE MACHINE DECLARATIONS
+
+const u32 MAX_STATES = 16;
+
+
+u32 trans[MAX_STATES][256];
+u32 disallow_exit[MAX_STATES][256];
+
+u32 states[MAX_DEPTH];
+const int START_STATE = 1;
+never_inline void init_state_machine() {
+    trans[ 1]['{'] = 2;
+    trans[ 2]['"'] = 3;
+    trans[ 3]['"'] = 4;
+    trans[ 4][':'] = 5;
+    trans[ 5]['"'] = 6;
+    trans[ 6]['"'] = 7;
+    // 5->7 on all unary values ftn0123456789-
+    trans[ 7][','] = 8;
+    trans[ 8]['"'] = 3;
+
+    trans[ 1]['['] = 9;
+    trans[ 9]['"'] = 10;
+    trans[10]['"'] = 11;
+    // 9->11 on all unary values ftn0123456789-
+    trans[11][','] = 12;
+    trans[12]['"'] = 10;
+    // 12->11 on all unary values ftn0123456789-
+
+    const char * UNARIES = "}]ftn0123456789-";
+    for (u32 i = 0; i < strlen(UNARIES); i++) {
+        trans[ 5][(u32)UNARIES[i]] = 7;
+        trans[ 9][(u32)UNARIES[i]] = 11;
+        trans[12][(u32)UNARIES[i]] = 11;
+    }
+    
+    // back transitions when new things are open
+    trans[2]['{'] = 2;
+    trans[7]['{'] = 2;
+    trans[9]['{'] = 2;
+    trans[11]['{'] = 2;
+    trans[2]['['] = 9;
+    trans[7]['['] = 9;
+    trans[9]['['] = 9;
+    trans[11]['['] = 9;
+    
+    // note - extra-linguistic stuff in the DFA
+    // when we are in 2/7 we are OK to see a } at the shallower depth
+    // when we are in 9/11 we are OK to see a ] at the shallower depth
+    // nothing else should be illegal through this mechanism
+    for (u32 i = 0; i < MAX_STATES; i++) {
+        if ((i != 2) && (i != 7))
+            disallow_exit[i]['}'] = 1;
+        if ((i != 9) && (i != 11))
+            disallow_exit[i][']'] = 1;
+    }
+}
+
+never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
+
+    // NOTE - our depth is used by both the tape machine and the state machine
+    // Further, in production we will set it to a largish value in a generous buffer as a rogue input
+    // could consist of many {[ characters or many }] characters. We aren't busily checking errors
+    // (and in fact, a aggressive sequence of [ characters is actually valid input!) so something that
+    // blows out maximum depth will need to be periodically checked for, as will something that tries
+    // to set depth very low. If we set our starting depth, say, to 256, we can tolerate 256 bogus close brace
+    // characters without aggressively going wrong and writing to bad memory
+    // Note that any specious depth can have a specious tape associated with and all these specious depths
+    // can share a region of the tape - it's harmless. Since tape is one-way, any movement in a specious tape
+    // is an error (so we can detect max_depth violations by making sure that specious tape locations haven't 
+    // moved from their starting values)
+
+    u32 depth = 1;
+    u32 tape_locs[MAX_DEPTH];
+
+    for (u32 i = 0; i < MAX_DEPTH; i++) {
+        tape_locs[i] = i*MAX_TAPE_ENTRIES;
+        states[i] = START_STATE;
+    }
+
+    u32 error_sump = 0;
+    u32 old_state = 0; // experimental
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
         u32 idx = pj.structural_indexes[i];
-        JsonNode & n = nodes[i];
         u8 c = buf[idx];
-        if (unlikely((c & 0xdf) == 0x5b)) { // meaning 7b or 5b, { or [
-            // open a scope
-            n.prev = last;
-            n.up = up;
-            up = i;
-            last = 0;
-        } else if (unlikely((c & 0xdf) == 0x5d)) { // meaning 7d or 5d, } or ]
-            // close a scope
-            n.prev = up;
-            n.up = pj.nodes[up].up;
-            up = pj.nodes[up].up;
-            last = i;
-        } else {
-            n.prev = last;
-            n.up = up;
-            last = i;
-        }
-        n.next = 0;
-        nodes[n.prev].next = i;
-    }
-    dummy.next = DUMMY_NODE; // dummy.next is a sump for meaningless 'nexts', clear it
 #ifdef DEBUG
-    for (u32 i = 0; i < pj.n_structural_indexes; i++) {
-        u32 idx = pj.structural_indexes[i];
-        JsonNode & n = nodes[i];
-        cout << "i: " << i;
-        cout << " n.up: " << n.up;
-        cout << " n.next: " << n.next;
-        cout << " n.prev: " << n.prev;
-        cout << " idx: " << idx << " buf[idx] " << buf[idx] << "\n";
+        cout << "i: " << i << " idx: " << idx << " c " << c << "\n";
+#endif
+        // TAPE MACHINE
+
+        u32 control = char_control[c];
+        s8 depth_adjust = get_depth_adjust(control);
+        bool take_uptape = is_uptape(control);
+        u8 write_size = get_write_size(control)/4;
+        depth += depth_adjust;
+#ifdef DEBUG
+        cout << "TAPE MACHINE: depth change " << (s32)depth_adjust << " take_uptape: " << (u32)take_uptape 
+             << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
+#endif
+        u32 uptape = tape_locs[depth+1];
+        tape[tape_locs[depth]] = take_uptape ? uptape : idx;
+        tape_locs[depth] += write_size;
+
+        // STATE MACHINE
+#ifdef DEBUG
+        cout << "STATE MACHINE: error_sump: " << error_sump << " old state " << old_state  << " disallowed_exit[old_state][c]: " << disallow_exit[old_state][c] << "\n";
+        cout << "STATE MACHINE: state[depth] pre " << states[depth] << " ";
+#endif
+        error_sump |= disallow_exit[old_state][c];
+        old_state  = states[depth] = trans[states[depth]][c];
+#ifdef DEBUG
+        cout << "post " << states[depth] << "\n";
+#endif
+    }
+
+#ifdef DEBUG
+    for (u32 i = 0; i < MAX_DEPTH; i++) {
+        u32 start_loc = i*MAX_TAPE_ENTRIES;
+        cout << " tape section i " << i << " from: " << start_loc 
+             << " to: " << tape_locs[i] << " "
+             << " size: " << (tape_locs[i]-start_loc) << "\n";
+        cout << " state: " << states[i] << "\n"; 
+/*
+        for (u32 j = start_loc; j < tape_locs[i]; j++) {
+            cout << "j: " << j << " tape[j]: " << tape[j] << "\n";
+        }
+*/
     }
 #endif
+    if (error_sump) {
+        return false;
+    }
     return true;
 }
 
@@ -377,6 +539,8 @@ int main(int argc, char * argv[]) {
     if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
         throw "Allocation failed";
     };
+
+    init_state_machine();
 
     pj.n_structural_indexes = 0;
     // we have potentially 1 structure per byte of input
@@ -396,10 +560,10 @@ int main(int argc, char * argv[]) {
     vector<double> res;
     res.resize(iterations);
     for (u32 i = 0; i < iterations; i++) {
-        auto start = std::chrono::steady_clock::now();
         find_structural_bits(p.first, p.second, pj);
         flatten_indexes(p.second, pj);
-        json_parse(p.first, p.second, pj);
+        auto start = std::chrono::steady_clock::now();
+        ape_machine(p.first, p.second, pj);
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
