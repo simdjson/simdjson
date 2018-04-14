@@ -15,8 +15,11 @@ The parser works in three stages:
 
 ## Todo (Priority)
 
-FIXME: The older stuff is now irrelevant.
-
+- The top level FSM is wrong and yields an error. Need to hand-hack the treatment of the first level.
+- The tape machine is not robust against invalid input. A large string of closing brace characters, for example, will crash the tape machine and we will not consult the state machine in time to know that this wasn't valid input. Furthermore there are valid inputs in terms of the state machine that will create undefined behavior if the JSON nesting depth exceeds what we have provisioned for. This is a straightforward fix.
+- The atoms need to be verified for validity. It would be nice to have a branch-free version for this. This stage can operate over our trees.
+- The tape machine's output is nearly unreadable both for debugging purposes and as a structure in itself. We don't know where each nested item starts, only where it ends - a linear traversal at depth N could track this information for entries to depth N+1, so I am leery of putting extra information on the tapes until we have a more full idea of what the final stages look like. 
+- The tape machine's output is also cryptic in that it's not clear whether records point into the input (offsets) or point to other items on our tapes. The simplest trick to fix this would be to use negative offsets for the tapes (growing them upward) so negative values point to our tapes and positive values point to our input. Obviously the current situation is not sustainable as we could actually wind up not knowing what our tape values really mean!
 
 ## Todo (Secondary)
 
@@ -24,7 +27,7 @@ FIXME: The older stuff is now irrelevant.
 - Write unit tests
 - Write bona fide, accurate benchmarks (with fair comparisons using good alternatives). See https://github.com/Geal/parser_benchmarks
 - Document better the code, make the code easier to use
-- Add some measure of error handling (maybe optional)
+- Add some measure of error handling. I no longer think error handling is optional; I think this could be a key differentiating feature over what I suspect Mison actually does. If Mison happily accepts broken JSON because of its much vaunted ability to skip input, is this a feature or a bug?
 
 
 
