@@ -84,6 +84,7 @@ APA
 
 ## References
 
+- [Parsing JSON is a Minefield 💣](http://seriot.ch/parsing_json.php)
 - https://tools.ietf.org/html/rfc7159
 - The only public Mison implementation (in rust)  https://github.com/pikkr/pikkr
 - http://rapidjson.org/md_doc_sax.html
