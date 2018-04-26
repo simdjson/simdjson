@@ -1,12 +1,52 @@
 #include "jsonstruct.h"
-
+#include "rapidjson/reader.h" // you have to check in the submodule
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 #include "scalarprocessing.h"
 #include "avxprocessing.h"
 #include "benchmark.h"
 #include "util.h"
+#include <string>       // std::string
+#include <iostream>     // std::cout
+#include <sstream>      // std::stringstream
 
 //colorfuldisplay(ParsedJson & pj, const u8 * buf)
 //BEST_TIME_NOCHECK(dividearray32(array, N), , repeat,  N, timings,true);
+
+
+using namespace rapidjson;
+using namespace std;
+
+size_t bogus1 = 0;
+size_t bogus2 = 0;
+size_t bogus3 = 0;
+
+struct MyHandler {
+    bool Null() { bogus1++; return true; }
+    bool Bool(bool b) { bogus2++; return true; }
+    bool Int(int i) { bogus3++; return true; }
+    bool Uint(unsigned u) { bogus2++; return true; }
+    bool Int64(int64_t i) { bogus2++; return true; }
+    bool Uint64(uint64_t u) { bogus2++; return true; }
+    bool Double(double d) { bogus2++; return true; }
+    bool RawNumber(const char* str, SizeType length, bool copy) {
+        bogus3++;
+        return true;
+    }
+    bool String(const char* str, SizeType length, bool copy) {
+        bogus2++;
+        return true;
+    }
+    bool StartObject() { bogus1++; return true; }
+    bool Key(const char* str, SizeType length, bool copy) {
+        bogus2++;
+        return true;
+    }
+    bool EndObject(SizeType memberCount) { bogus2++; return true; }
+    bool StartArray() { bogus2++; return true; }
+    bool EndArray(SizeType elementCount) { bogus1++; return true; }
+};
 
 
 int main(int argc, char * argv[]) {
@@ -26,7 +66,7 @@ int main(int argc, char * argv[]) {
       std::cout << p.second / (1024*1024) << " MB ";
     else if (p.second > 1024)
       std::cout << p.second / 1024 << " KB ";
-    else 
+    else
       std::cout << p.second << " B ";
     std::cout << std::endl;
 
@@ -53,9 +93,15 @@ int main(int argc, char * argv[]) {
       colorfuldisplay(pj, p.first);
       debugdisplay(pj,p.first);
     }
+
     int repeat = 10;
     int volume = p.second;
     BEST_TIME_NOCHECK(avx_json_parse(p.first,  p.second, pj), , repeat, volume, true);
     BEST_TIME_NOCHECK(scalar_json_parse(p.first,  p.second, pj), , repeat, volume, true);
 
+        rapidjson::Document d;
+        char buffer[p.second+1024];
+        memcpy(buffer, p.first, p.second);
+        buffer[p.second]='\0';
+    BEST_TIME(d.Parse((const char *)p.first).HasParseError(), false, memcpy(buffer, p.first, p.second) , repeat, volume, true);
 }

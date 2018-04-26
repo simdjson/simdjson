@@ -107,8 +107,6 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
     if (verbose)                                                               \
       printf(" %.3f %s per operation (best) ", cycle_per_op, unitname);        \
     if (verbose)                                                               \
-      printf("\t%.3f %s per operation (avg) ", avg_cycle_per_op, unitname);    \
-    if (verbose)                                                               \
       printf("\n");                                                            \
     if (!verbose)                                                              \
       printf(" %.3f ", cycle_per_op);                                          \
