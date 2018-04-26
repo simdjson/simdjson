@@ -635,6 +635,7 @@ int main(int argc, char * argv[]) {
          cy2, cl2, 100. *  cy2 / total, (double) cl2 / cy2);
     printf("stage 3 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
          cy3, cl3, 100. * cy3 / total, (double) cl3 / cy3);
+    printf(" %.1f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif
 //    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
