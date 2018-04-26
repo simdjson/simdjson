@@ -1,0 +1,3 @@
+[submodule "scalarvssimd/rapidjson"]
+	path = scalarvssimd/rapidjson
+	url = https://github.com/Tencent/rapidjson.git
