@@ -1,3 +1,4 @@
+#include "linux-perf-events.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -596,15 +597,45 @@ int main(int argc, char * argv[]) {
 #endif
     vector<double> res;
     res.resize(iterations);
+
+#ifdef __linux__
+    LinuxEvents<PERF_TYPE_HARDWARE> cycles(PERF_COUNT_HW_CPU_CYCLES);
+    LinuxEvents<PERF_TYPE_HARDWARE> instructions(PERF_COUNT_HW_INSTRUCTIONS);
+    unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
+    unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
+#endif
     for (u32 i = 0; i < iterations; i++) {
         auto start = std::chrono::steady_clock::now();
+#ifdef __linux__
+        cycles.start(); instructions.start();
+#endif
         find_structural_bits(p.first, p.second, pj);
+#ifdef __linux__
+        cy1 += cycles.end(); cl1 += instructions.end();
+        cycles.start(); instructions.start();
+#endif
         flatten_indexes(p.second, pj);
+#ifdef __linux__
+        cy2 += cycles.end(); cl2 += instructions.end();
+        cycles.start(); instructions.start();
+#endif
         ape_machine(p.first, p.second, pj);
+#ifdef __linux__
+        cy3 += cycles.end(); cl3 += instructions.end();
+#endif
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
     }
+#ifdef __linux__
+    unsigned long total = cy1 + cy2  + cy3 ;
+    printf("stage 1 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
+         cy1, cl1, 100. *  cy1 / total, (double) cl1 / cy1);
+    printf("stage 2 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
+         cy2, cl2, 100. *  cy2 / total, (double) cl2 / cy2);
+    printf("stage 3 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
+         cy3, cl3, 100. * cy3 / total, (double) cl3 / cy3);
+#endif
 //    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
 	cout << "Min:  " << min_result << " bytes read: " << p.second  << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0) << "\n";
