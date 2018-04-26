@@ -12,7 +12,7 @@
 #include <x86intrin.h>
 #include <assert.h>
 #include "common_defs.h"
-
+#include "jsonstruct.h"
 using namespace std;
 
 
