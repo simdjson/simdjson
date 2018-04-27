@@ -13,6 +13,15 @@
 using namespace rapidjson;
 using namespace std;
 
+std::string rapidstringme(char * json) {
+    Document d;
+    d.Parse(json);
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    d.Accept(writer);
+    return buffer.GetString();
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     cerr << "Usage: " << argv[0] << " <jsonfile>\n";
@@ -75,4 +84,8 @@ int main(int argc, char *argv[]) {
             memcpy(buffer, p.first, p.second), repeat, volume, true);
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
+  size_t strlength = rapidstringme((char*) p.first).size();
+  std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;  
+  BEST_TIME_NOCHECK(rapidstringme((char*) p.first), , repeat, volume,
+                    true);
 }
