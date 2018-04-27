@@ -3,8 +3,7 @@ bench: benchmarks/bench.cpp rapidjson/license.txt $(HEADERS)
 	$(CXX) -std=c++11 -O3 -o $@ benchmarks/bench.cpp -Irapidjson/include -Iinclude  -march=native -lm -Wall -Wextra
 
 rapidjson/license.txt:
-	git submodule foreach git pull origin master
-	
+	git submodule update --init --recursive
 
 clean:
 	rm -f bench
