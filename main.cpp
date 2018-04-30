@@ -463,7 +463,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     }
 
     u32 error_sump = 0;
-    u32 old_state = 0; // experimental
+    u32 old_state = 0; 
+
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
         u32 idx = pj.structural_indexes[i];
         u8 c = buf[idx];
@@ -478,7 +479,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         u8 write_size = get_write_size(control)/4;
         depth += depth_adjust;
 #ifdef DEBUG
-        cout << "TAPE MACHINE: depth change " << (s32)depth_adjust << " take_uptape: " << (u32)take_uptape 
+        cout << "TAPE MACHINE: depth change " << (s32)depth_adjust 
+             << " take_uptape: " << (u32)take_uptape 
              << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
 #endif
         u32 uptape = tape_locs[depth+1];
@@ -487,7 +489,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 
         // STATE MACHINE
 #ifdef DEBUG
-        cout << "STATE MACHINE: error_sump: " << error_sump << " old state " << old_state  << " disallowed_exit[old_state][c]: " << disallow_exit[old_state][c] << "\n";
+        cout << "STATE MACHINE: error_sump: " << error_sump << " old state " << old_state
+             << " disallowed_exit[old_state][c]: " << disallow_exit[old_state][c] << "\n";
         cout << "STATE MACHINE: state[depth] pre " << states[depth] << " ";
 #endif
         error_sump |= disallow_exit[old_state][c];
@@ -628,16 +631,20 @@ int main(int argc, char * argv[]) {
         res[i] = secs.count();
     }
 #ifdef __linux__
+    printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
+           (double) pj.n_structural_indexes / p.second);
     unsigned long total = cy1 + cy2  + cy3 ;
     printf("stage 1 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
          cy1, cl1, 100. *  cy1 / total, (double) cl1 / cy1);
     printf(" stage 1 runs at %.1f cycles per input byte.\n", (double) cy1 / (iterations * p.second));
     printf("stage 2 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
          cy2, cl2, 100. *  cy2 / total, (double) cl2 / cy2);
-    printf(" stage 2 runs at %.1f cycles per input byte.\n", (double) cy2 / (iterations * p.second));
+    printf(" stage 2 runs at %.1f cycles per input byte and ", (double) cy2 / (iterations * p.second));
+    printf("%.1f cycles per structural character.\n", (double) cy2 / (iterations * pj.n_structural_indexes));
     printf("stage 3 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
          cy3, cl3, 100. * cy3 / total, (double) cl3 / cy3);
-    printf(" stage 3 runs at %.1f cycles per input byte.\n", (double) cy3 / (iterations * p.second));
+    printf(" stage 3 runs at %.1f cycles per input byte and ", (double) cy3 / (iterations * p.second));
+    printf("%.1f cycles per structural character.\n", (double) cy3 / (iterations * pj.n_structural_indexes));
     printf(" all stages: %.1f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif
 //    colorfuldisplay(pj, p.first);
