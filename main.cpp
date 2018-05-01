@@ -325,57 +325,54 @@ const u32 MAX_DEPTH = 256;
 
 // TAPE MACHINE DEFINITIONS
 
-const u32 DEPTH_PLUS_ONE = 0x2;
-const u32 DEPTH_ZERO = 0x1;
-const u32 DEPTH_MINUS_ONE = 0x0;
-const u32 TAKE_UPTAPE = 0x80000000;
-const u32 TAKE_INDEX = 0x0;
+const u32 DEPTH_PLUS_ONE =  0x01000000;
+const u32 DEPTH_ZERO =      0x00000000;
+const u32 DEPTH_MINUS_ONE = 0xff000000;
 const u32 WRITE_ZERO = 0x0;
-const u32 WRITE_FOUR = 0x4;
-const u32 WRITE_EIGHT = 0x8;
+const u32 WRITE_FOUR = 0x1;
+const u32 WRITE_EIGHT = 0x2;
 
-const u32 CDEF = DEPTH_ZERO | TAKE_INDEX | WRITE_ZERO;
-const u32 C0I4 = DEPTH_ZERO | TAKE_INDEX | WRITE_FOUR;
-const u32 C0I8 = DEPTH_ZERO | TAKE_INDEX | WRITE_FOUR;
-const u32 CPI0 = DEPTH_PLUS_ONE | TAKE_INDEX | WRITE_ZERO;
-const u32 CMU8 = DEPTH_MINUS_ONE | TAKE_UPTAPE | WRITE_EIGHT;
+const u32 CDF = DEPTH_ZERO | WRITE_ZERO; // default 'control'
+const u32 C04 = DEPTH_ZERO | WRITE_FOUR;
+const u32 C08 = DEPTH_ZERO | WRITE_EIGHT;
+const u32 CP8 = DEPTH_PLUS_ONE | WRITE_EIGHT;
+const u32 CM8 = DEPTH_MINUS_ONE | WRITE_EIGHT;
 
-inline s8 get_depth_adjust(u32 control) { return (s8)(control&0x3) - 1; }
-inline bool is_uptape(u32 control) { return (control & TAKE_UPTAPE); }
-inline size_t get_write_size(u32 control) { return control & 12; }
+inline s8 get_depth_adjust(u32 control) { return (s8)(((s32)control) >> 24); }
+inline size_t get_write_size(u32 control) { return control & 3; }
 
 const u32 char_control[256] = {
     // nothing interesting from 0x00-0x20
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
 
     // " is 0x22, - is 0x2d
-    CDEF,CDEF,C0I4,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,C0I8,CDEF,CDEF,
+    CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,C08,CDF,CDF,
 
     // numbers are 0x30-0x39
-    C0I8,C0I8,C0I8,C0I8, C0I8,C0I8,C0I8,C0I8, C0I8,C0I8,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
+    C08,C08,C08,C08, C08,C08,C08,C08, C08,C08,CDF,CDF, CDF,CDF,CDF,CDF,
 
     // nothing interesting from 0x40-0x49
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
 
     // 0x5b/5d are []
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CPI0, CDEF,CMU8,CDEF,CDEF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
 
     // nothing interesting from 0x60-0x69
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
 
     // 0x7b/7d are {}
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CPI0, CDEF,CMU8,CDEF,CDEF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
 
     // nothing interesting from 0x80-0xff
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, 
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF,
-    CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF, CDEF,CDEF,CDEF,CDEF
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF
 };
 
 const size_t MAX_TAPE_ENTRIES = 1024*1024;
@@ -464,28 +461,25 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 
     u32 error_sump = 0;
     u32 old_state = 0; 
+    u32 old_tape_loc = 0;
 
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
         u32 idx = pj.structural_indexes[i];
         u8 c = buf[idx];
-#ifdef DEBUG
-        cout << "i: " << i << " idx: " << idx << " c " << c << "\n";
-#endif
-        // TAPE MACHINE
 
+        // TAPE MACHINE
         u32 control = char_control[c];
         s8 depth_adjust = get_depth_adjust(control);
-        bool take_uptape = is_uptape(control);
-        u8 write_size = get_write_size(control)/4;
+        bool take_uptape = (depth_adjust != 0);
+        u8 write_size = get_write_size(control);
         depth += depth_adjust;
 #ifdef DEBUG
+        cout << "i: " << i << " idx: " << idx << " c " << c << "\n";
         cout << "TAPE MACHINE: depth change " << (s32)depth_adjust 
-             << " take_uptape: " << (u32)take_uptape 
              << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
 #endif
-        u32 uptape = tape_locs[depth+1];
-        tape[tape_locs[depth]] = take_uptape ? uptape : idx;
-        tape_locs[depth] += write_size;
+        tape[tape_locs[depth]] = take_uptape ? old_tape_loc : idx;
+        old_tape_loc = tape_locs[depth] += write_size;
 
         // STATE MACHINE
 #ifdef DEBUG
@@ -500,6 +494,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 #endif
     }
 
+#define DUMP_TAPES
 #ifdef DEBUG
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
@@ -507,11 +502,11 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
              << " to: " << tape_locs[i] << " "
              << " size: " << (tape_locs[i]-start_loc) << "\n";
         cout << " state: " << states[i] << "\n"; 
-/*
+#ifdef DUMP_TAPES
         for (u32 j = start_loc; j < tape_locs[i]; j++) {
             cout << "j: " << j << " tape[j]: " << tape[j] << "\n";
         }
-*/
+#endif
     }
 #endif
     if (error_sump) {
