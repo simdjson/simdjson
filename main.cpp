@@ -53,7 +53,8 @@ ifstream is(filename, ios::binary);
         size_t length = buffer.str().size();
         char * aligned_buffer;
         if (posix_memalign( (void **)&aligned_buffer, 64, ROUNDUP_N(length, 64))) {
-            throw "Allocation failed";
+            cerr << "Could not allocate memory\n";
+            exit(1);
         };
         memset(aligned_buffer, 0x20, ROUNDUP_N(length, 64));
         memcpy(aligned_buffer, buffer.str().c_str(), length);
@@ -478,7 +479,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         cout << "TAPE MACHINE: depth change " << (s32)depth_adjust 
              << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
 #endif
-        tape[tape_locs[depth]] = take_uptape ? old_tape_loc : idx;
+        u32 write_val = take_uptape ? old_tape_loc : idx;
+        tape[tape_locs[depth]] = write_val | (c << 24); // hack. Assumes no more than 2^24 tape items and buffer size for now
         old_tape_loc = tape_locs[depth] += write_size;
 
         // STATE MACHINE
@@ -504,7 +506,10 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         cout << " state: " << states[i] << "\n"; 
 #ifdef DUMP_TAPES
         for (u32 j = start_loc; j < tape_locs[i]; j++) {
-            cout << "j: " << j << " tape[j]: " << tape[j] << "\n";
+            if (tape[j]) {
+                cout << "j: " << j << " tape[j] char " << (char)(tape[j]>>24) 
+                     << " tape[j][0..23]: " << (tape[j]&0xffffff) << "\n";
+            }
         }
 #endif
     }
@@ -573,9 +578,14 @@ int main(int argc, char * argv[]) {
     ParsedJson pj;
 
     if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
-        throw "Allocation failed";
+        cerr << "Could not allocate memory\n";
+        exit(1);
     };
 
+    if (p.second > 0xffffff) {
+        cerr << "Currently only support JSON files < 16MB\n";
+        exit(1);
+    }
     init_state_machine();
 
     pj.n_structural_indexes = 0;
