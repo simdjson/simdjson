@@ -298,6 +298,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
 #endif
     }
     pj.n_structural_indexes = base;
+    base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
     return true;
 }
 
@@ -340,7 +341,7 @@ const u32 CP8 = DEPTH_PLUS_ONE | WRITE_EIGHT;
 const u32 CM8 = DEPTH_MINUS_ONE | WRITE_EIGHT;
 
 inline s8 get_depth_adjust(u32 control) { return (s8)(((s32)control) >> 24); }
-inline size_t get_write_size(u32 control) { return control & 3; }
+inline size_t get_write_size(u32 control) { return control & 0xff; }
 
 const u32 char_control[256] = {
     // nothing interesting from 0x00-0x20
@@ -464,26 +465,35 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     u32 old_state = 0; 
     u32 old_tape_loc = 0;
 
-    for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
-        u32 idx = pj.structural_indexes[i];
-        u8 c = buf[idx];
+    u32 next_idx = pj.structural_indexes[0];
+    u8 next_c = buf[next_idx];
+    u32 next_control = char_control[next_c];
 
+    // To try: figure out idx, c, depth adjust, write size, write val and maybe even depth in One Giant Pass
+    // then do the remainder of the loop. The interesting question is whether this loop is best pull apart
+    // into different passes
+
+    for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
+        u32 idx = next_idx;
+        u8 c = next_c;
+        u32 control = next_control; 
+
+        next_idx = pj.structural_indexes[i+1];
+        next_c = buf[next_idx];
+        next_control = char_control[next_c];
+    
         // TAPE MACHINE
-        u32 control = char_control[c];
         s8 depth_adjust = get_depth_adjust(control);
-        bool take_uptape = (depth_adjust != 0);
         u8 write_size = get_write_size(control);
+        u32 write_val = (depth_adjust != 0) ? old_tape_loc : idx;
         depth += depth_adjust;
 #ifdef DEBUG
         cout << "i: " << i << " idx: " << idx << " c " << c << "\n";
         cout << "TAPE MACHINE: depth change " << (s32)depth_adjust 
              << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
 #endif
-        u32 write_val = take_uptape ? old_tape_loc : idx;
-        tape[tape_locs[depth]] = write_val | (c << 24); // hack. Assumes no more than 2^24 tape items and buffer size for now
-        old_tape_loc = tape_locs[depth] += write_size;
 
-        // STATE MACHINE
+        // STATE MACHINE - hoisted here to fill in during the tape machine's latencies
 #ifdef DEBUG
         cout << "STATE MACHINE: error_sump: " << error_sump << " old state " << old_state
              << " disallowed_exit[old_state][c]: " << disallow_exit[old_state][c] << "\n";
@@ -494,6 +504,10 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 #ifdef DEBUG
         cout << "post " << states[depth] << "\n";
 #endif
+
+        // TAPE MACHINE, again
+        tape[tape_locs[depth]] = write_val | (c << 24); // hack. Assumes no more than 2^24 tape items and buffer size for now
+        old_tape_loc = tape_locs[depth] += write_size;
     }
 
 #define DUMP_TAPES
@@ -619,17 +633,20 @@ int main(int argc, char * argv[]) {
 #endif
         find_structural_bits(p.first, p.second, pj);
 #ifdef __linux__
-        cy1 += cycles.end(); cl1 += instructions.end();
+        cl1 += instructions.end(); cy1 += cycles.end();
+        //cy1 += cycles.end(); cl1 += instructions.end();
         cycles.start(); instructions.start();
 #endif
         flatten_indexes(p.second, pj);
 #ifdef __linux__
-        cy2 += cycles.end(); cl2 += instructions.end();
+        cl2 += instructions.end(); cy2 += cycles.end();
+        //cy2 += cycles.end(); cl2 += instructions.end();
         cycles.start(); instructions.start();
 #endif
         ape_machine(p.first, p.second, pj);
 #ifdef __linux__
-        cy3 += cycles.end(); cl3 += instructions.end();
+        cl3 += instructions.end(); cy3 += cycles.end();
+        //cy3 += cycles.end(); cl3 += instructions.end();
 #endif
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
@@ -639,18 +656,18 @@ int main(int argc, char * argv[]) {
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
     unsigned long total = cy1 + cy2  + cy3 ;
-    printf("stage 1 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
-         cy1, cl1, 100. *  cy1 / total, (double) cl1 / cy1);
-    printf(" stage 1 runs at %.1f cycles per input byte.\n", (double) cy1 / (iterations * p.second));
-    printf("stage 2 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
-         cy2, cl2, 100. *  cy2 / total, (double) cl2 / cy2);
-    printf(" stage 2 runs at %.1f cycles per input byte and ", (double) cy2 / (iterations * p.second));
-    printf("%.1f cycles per structural character.\n", (double) cy2 / (iterations * pj.n_structural_indexes));
-    printf("stage 3 instructions: %10lu cycles: %10lu (%.1f %%) ins/cycles: %.2f \n", 
-         cy3, cl3, 100. * cy3 / total, (double) cl3 / cy3);
-    printf(" stage 3 runs at %.1f cycles per input byte and ", (double) cy3 / (iterations * p.second));
-    printf("%.1f cycles per structural character.\n", (double) cy3 / (iterations * pj.n_structural_indexes));
-    printf(" all stages: %.1f cycles per input byte.\n", (double) total / (iterations * p.second));
+    printf("stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
+         cl1, cy1, 100. *  cy1 / total, (double) cl1 / cy1);
+    printf(" stage 1 runs at %.2f cycles per input byte.\n", (double) cy1 / (iterations * p.second));
+    printf("stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
+         cl2, cy2, 100. *  cy2 / total, (double) cl2 / cy2);
+    printf(" stage 2 runs at %.2f cycles per input byte and ", (double) cy2 / (iterations * p.second));
+    printf("%.2f cycles per structural character.\n", (double) cy2 / (iterations * pj.n_structural_indexes));
+    printf("stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
+         cl3, cy3, 100. * cy3 / total, (double) cl3 / cy3);
+    printf(" stage 3 runs at %.2f cycles per input byte and ", (double) cy3 / (iterations * p.second));
+    printf("%.2f cycles per structural character.\n", (double) cy3 / (iterations * pj.n_structural_indexes));
+    printf(" all stages: %.2f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif
 //    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
