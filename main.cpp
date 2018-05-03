@@ -360,11 +360,11 @@ const u32 char_control[256] = {
     // 0x5b/5d are []
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
 
-    // nothing interesting from 0x60-0x69
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    // f is 0x66 n is 0x6e
+    CDF,CDF,CDF,CDF, CDF,CDF,C08,CDF, CDF,CDF,CDF,CDF, CDF,CDF,C08,CDF, 
 
-    // 0x7b/7d are {}
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
+    // 0x7b/7d are {}, 74 is t
+    CDF,CDF,CDF,CDF, C08,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
 
     // nothing interesting from 0x80-0xff
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
@@ -380,6 +380,7 @@ const u32 char_control[256] = {
 const size_t MAX_TAPE_ENTRIES = 1024*1024;
 const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 u32 tape[MAX_TAPE]; 
+u32 tape_locs[MAX_DEPTH];
 
 // STATE MACHINE DECLARATIONS
 
@@ -454,7 +455,6 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     // moved from their starting values)
 
     u32 depth = 1;
-    u32 tape_locs[MAX_DEPTH];
 
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         tape_locs[i] = i*MAX_TAPE_ENTRIES;
@@ -529,6 +529,121 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     }
 #endif
     if (error_sump) {
+        return false;
+    }
+    return true;
+}
+
+
+u32 count_tapes;
+u32 count_opens;
+u32 count_strings;
+u32 count_non_zeros;
+u32 count_leading_zeros;
+u32 count_minus;
+u32 count_true;
+u32 count_false;
+u32 count_null;
+
+        // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
+        // these go into the first 3 buckets of the comparison (1/2/4)
+
+        // we are also interested in the four whitespace characters
+        // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
+
+const u32 structural_or_whitespace_negated[256] = {
+    1,1,1,1, 1,1,1,1, 1,0,0,1, 1,0,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    0,1,1,1, 1,1,1,1, 1,1,1,1, 0,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,0,1, 1,1,1,1,
+
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,0, 1,0,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,0, 1,0,1,1,
+
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+    1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1
+};
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise 
+really_inline u32 is_not_structural_or_whitespace(u8 c) {
+    return structural_or_whitespace_negated[c];
+}
+
+never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj) {
+    // fixup the mess made by the ape_machine
+    // as such it does a bunch of miscellaneous things on the tapes
+    
+    u32 error_sump = 0;
+
+    // walk over each tape
+    for (u32 i = 0; i < MAX_DEPTH; i++) {
+        u32 start_loc = i*MAX_TAPE_ENTRIES;
+        for (u32 j = start_loc; j < tape_locs[i]; j+=2) {
+            count_tapes++;
+            switch (tape[j]>>24) {
+            case '{': case '[':
+                count_opens++;
+                // TODO: pivot our tapes
+                // point the enclosing structural char (}]) to the head marker ({[) and
+                // put the length of the sequence on the tape at the head marker
+                break;
+            case '"':
+                count_strings++;
+                // TODO: normalize strings
+                break;
+            case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+                count_non_zeros++;
+                // TODO: read in a number
+                break;
+            case '0':
+                count_leading_zeros++;
+                // TODO: read in a number. Must be float so we can skip some stuff.
+                break;
+            case '-': 
+                count_minus++;
+                // TODO: read in a number 
+                break;
+            case 't':  {
+                count_true++;
+                u32 offset = tape[j] & 0xffffff;    
+                const u8 * loc = buf + offset;
+                error_sump |= memcmp(loc, "true", 4);                
+                error_sump |= is_not_structural_or_whitespace(loc[4]);
+                break;
+            }
+            case 'f':  {
+                count_false++;
+                u32 offset = tape[j] & 0xffffff;    
+                const u8 * loc = buf + offset;
+                error_sump |= memcmp(loc, "false", 5);                
+                error_sump |= is_not_structural_or_whitespace(loc[5]);
+                break;
+            }
+            case 'n':  {
+                count_null++;
+                u32 offset = tape[j] & 0xffffff;    
+                const u8 * loc = buf + offset;
+                error_sump |= memcmp(loc, "null", 4);                
+                error_sump |= is_not_structural_or_whitespace(loc[4]);
+                break;
+            }
+            default:
+                break;
+            }
+        }
+    }
+    if (error_sump) {
+        cerr << "Ugh!\n";
         return false;
     }
     return true;
@@ -623,8 +738,8 @@ int main(int argc, char * argv[]) {
 #ifdef __linux__
     LinuxEvents<PERF_TYPE_HARDWARE> cycles(PERF_COUNT_HW_CPU_CYCLES);
     LinuxEvents<PERF_TYPE_HARDWARE> instructions(PERF_COUNT_HW_INSTRUCTIONS);
-    unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
-    unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
+    unsigned long cy1 = 0, cy2 = 0, cy3 = 0, cy4 = 0;
+    unsigned long cl1 = 0, cl2 = 0, cl3 = 0, cl4 = 0;
 #endif
     for (u32 i = 0; i < iterations; i++) {
         auto start = std::chrono::steady_clock::now();
@@ -647,6 +762,11 @@ int main(int argc, char * argv[]) {
 #ifdef __linux__
         cl3 += instructions.end(); cy3 += cycles.end();
         //cy3 += cycles.end(); cl3 += instructions.end();
+        cycles.start(); instructions.start();
+#endif
+        shovel_machine(p.first, p.second, pj);
+#ifdef __linux__
+        cl4 += instructions.end(); cy4 += cycles.end();
 #endif
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
@@ -655,18 +775,31 @@ int main(int argc, char * argv[]) {
 #ifdef __linux__
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
-    unsigned long total = cy1 + cy2  + cy3 ;
+    unsigned long total = cy1 + cy2  + cy3  + cy4;
+
     printf("stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
          cl1, cy1, 100. *  cy1 / total, (double) cl1 / cy1);
     printf(" stage 1 runs at %.2f cycles per input byte.\n", (double) cy1 / (iterations * p.second));
+
     printf("stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
          cl2, cy2, 100. *  cy2 / total, (double) cl2 / cy2);
     printf(" stage 2 runs at %.2f cycles per input byte and ", (double) cy2 / (iterations * p.second));
     printf("%.2f cycles per structural character.\n", (double) cy2 / (iterations * pj.n_structural_indexes));
+
     printf("stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
          cl3, cy3, 100. * cy3 / total, (double) cl3 / cy3);
     printf(" stage 3 runs at %.2f cycles per input byte and ", (double) cy3 / (iterations * p.second));
     printf("%.2f cycles per structural character.\n", (double) cy3 / (iterations * pj.n_structural_indexes));
+
+    printf("stage 4 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
+         cl4, cy4, 100. * cy4 / total, (double) cl4 / cy4);
+    printf(" stage 4 runs at %.2f cycles per input byte and ", (double) cy4 / (iterations * p.second));
+    printf("%.2f cycles per structural character.\n", (double) cy4 / (iterations * pj.n_structural_indexes));
+
+    printf("There were %d elements on our tapes.\n", count_tapes);
+    printf("Opens %d strings %d non_zeros %d leading_zeros %d minus %d, true %d false %d null %d\n", 
+        count_opens, count_strings, count_non_zeros, count_leading_zeros, count_minus, count_true, count_false, count_null);
+
     printf(" all stages: %.2f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif
 //    colorfuldisplay(pj, p.first);
