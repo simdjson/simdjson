@@ -1,6 +1,8 @@
 #include "avxprocessing.h"
 #include "benchmark.h"
 #include "jsonstruct.h"
+// #define RAPIDJSON_SSE2 // bad
+// #define RAPIDJSON_SSE42 // bad
 #include "rapidjson/document.h"
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
                     true);
 
   rapidjson::Document d;
-  char buffer[p.second + 1024];
+  char * buffer = (char *) malloc(p.second);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
   BEST_TIME(d.Parse((const char *)buffer).HasParseError(), false,
@@ -88,4 +90,5 @@ int main(int argc, char *argv[]) {
   std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;  
   BEST_TIME_NOCHECK(rapidstringme((char*) p.first), , repeat, volume,
                     true);
+  free(buffer);
 }
