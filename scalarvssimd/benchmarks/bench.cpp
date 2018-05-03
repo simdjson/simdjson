@@ -1,6 +1,8 @@
 #include "avxprocessing.h"
 #include "benchmark.h"
 #include "jsonstruct.h"
+// #define RAPIDJSON_SSE2 // bad
+// #define RAPIDJSON_SSE42 // bad
 #include "rapidjson/document.h"
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
