@@ -253,6 +253,10 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
         structurals |= pseudo_structurals;
         dumpbits(structurals, "final structurals and pseudo structurals");
 
+        // now, we've used our close quotes all we need to. So let's switch them off
+        // they will be off in the quote mask and on in quote bits.
+        structurals &= ~(quote_bits & ~quote_mask);
+        dumpbits(structurals, "final structurals and pseudo structurals after close quote removal");
         *(u64 *)(pj.structurals + idx/8) = structurals;
     }
     return true;
@@ -279,7 +283,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
         u32 cnt = __builtin_popcountll(s);
         u32 next_base = base + cnt;
         while (s) {
-            // spoil the suspense
+            // spoil the suspense by reducing dependency chains; actually a win even with cost of pdep
             u64 s3 = _pdep_u64(~0x7ULL, s); // s3 will have bottom 3 1-bits unset
             u64 s5 = _pdep_u64(~0x1fULL, s); // s5 will have bottom 5 1-bits unset
 
@@ -290,9 +294,8 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
 
             base_ptr[base+4] = (u32)idx + __builtin_ctzll(s4); //u64 s5 = s4 & (s4 - 1ULL);
             base_ptr[base+5] = (u32)idx + __builtin_ctzll(s5); u64 s6 = s5 & (s5 - 1ULL);
-            base_ptr[base+6] = (u32)idx + __builtin_ctzll(s6); u64 s7 = s6 & (s6 - 1ULL);
-            s = s7;
-            base += 7;
+            s = s6;
+            base += 6;
         }
         base = next_base;
 #endif
@@ -332,13 +335,11 @@ const u32 DEPTH_ZERO =      0x00000000;
 const u32 DEPTH_MINUS_ONE = 0xff000000;
 const u32 WRITE_ZERO = 0x0;
 const u32 WRITE_FOUR = 0x1;
-const u32 WRITE_EIGHT = 0x2;
 
 const u32 CDF = DEPTH_ZERO | WRITE_ZERO; // default 'control'
 const u32 C04 = DEPTH_ZERO | WRITE_FOUR;
-const u32 C08 = DEPTH_ZERO | WRITE_EIGHT;
-const u32 CP8 = DEPTH_PLUS_ONE | WRITE_EIGHT;
-const u32 CM8 = DEPTH_MINUS_ONE | WRITE_EIGHT;
+const u32 CP4 = DEPTH_PLUS_ONE | WRITE_FOUR;
+const u32 CM4 = DEPTH_MINUS_ONE | WRITE_FOUR;
 
 inline s8 get_depth_adjust(u32 control) { return (s8)(((s32)control) >> 24); }
 inline size_t get_write_size(u32 control) { return control & 0xff; }
@@ -349,22 +350,22 @@ const u32 char_control[256] = {
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
 
     // " is 0x22, - is 0x2d
-    CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,C08,CDF,CDF,
+    CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,C04,CDF,CDF,
 
     // numbers are 0x30-0x39
-    C08,C08,C08,C08, C08,C08,C08,C08, C08,C08,CDF,CDF, CDF,CDF,CDF,CDF,
+    C04,C04,C04,C04, C04,C04,C04,C04, C04,C04,CDF,CDF, CDF,CDF,CDF,CDF,
 
     // nothing interesting from 0x40-0x49
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
 
     // 0x5b/5d are []
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF, 
 
     // f is 0x66 n is 0x6e
-    CDF,CDF,CDF,CDF, CDF,CDF,C08,CDF, CDF,CDF,CDF,CDF, CDF,CDF,C08,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF, 
 
     // 0x7b/7d are {}, 74 is t
-    CDF,CDF,CDF,CDF, C08,CDF,CDF,CDF, CDF,CDF,CDF,CP8, CDF,CM8,CDF,CDF, 
+    CDF,CDF,CDF,CDF, C04,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF, 
 
     // nothing interesting from 0x80-0xff
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
@@ -393,25 +394,21 @@ u32 disallow_exit[MAX_STATES][256];
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
 never_inline void init_state_machine() {
+    // states 10 and 6 eliminated
+
     trans[ 1]['{'] = 2;
-    trans[ 2]['"'] = 3;
-    trans[ 3]['"'] = 4;
+    trans[ 2]['"'] = 4;
     trans[ 4][':'] = 5;
-    trans[ 5]['"'] = 6;
-    trans[ 6]['"'] = 7;
-    // 5->7 on all unary values ftn0123456789-
+    // 5->7 on all unary values ftn0123456789-"
     trans[ 7][','] = 8;
-    trans[ 8]['"'] = 3;
+    trans[ 8]['"'] = 4;
 
     trans[ 1]['['] = 9;
-    trans[ 9]['"'] = 10;
-    trans[10]['"'] = 11;
-    // 9->11 on all unary values ftn0123456789-
+    // 9->11 on all unary values ftn0123456789-"
     trans[11][','] = 12;
-    trans[12]['"'] = 10;
-    // 12->11 on all unary values ftn0123456789-
+    // 12->11 on all unary values ftn0123456789-"
 
-    const char * UNARIES = "}]ftn0123456789-";
+    const char * UNARIES = "}]ftn0123456789-\"";
     for (u32 i = 0; i < strlen(UNARIES); i++) {
         trans[ 5][(u32)UNARIES[i]] = 7;
         trans[ 9][(u32)UNARIES[i]] = 11;
@@ -588,7 +585,7 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
     // walk over each tape
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
-        for (u32 j = start_loc; j < tape_locs[i]; j+=2) {
+        for (u32 j = start_loc; j < tape_locs[i]; j++) {
             count_tapes++;
             switch (tape[j]>>24) {
             case '{': case '[':
@@ -749,19 +746,16 @@ int main(int argc, char * argv[]) {
         find_structural_bits(p.first, p.second, pj);
 #ifdef __linux__
         cl1 += instructions.end(); cy1 += cycles.end();
-        //cy1 += cycles.end(); cl1 += instructions.end();
         cycles.start(); instructions.start();
 #endif
         flatten_indexes(p.second, pj);
 #ifdef __linux__
         cl2 += instructions.end(); cy2 += cycles.end();
-        //cy2 += cycles.end(); cl2 += instructions.end();
         cycles.start(); instructions.start();
 #endif
         ape_machine(p.first, p.second, pj);
 #ifdef __linux__
         cl3 += instructions.end(); cy3 += cycles.end();
-        //cy3 += cycles.end(); cl3 += instructions.end();
         cycles.start(); instructions.start();
 #endif
         shovel_machine(p.first, p.second, pj);
