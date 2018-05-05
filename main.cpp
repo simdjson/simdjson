@@ -582,6 +582,13 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
     
     u32 error_sump = 0;
 
+    u64 tv = *(const u64 *)"true    ";
+    u64 nv = *(const u64 *)"null    ";
+    u64 fv = *(const u64 *)"false   ";
+
+    u64 mask4 = 0x00000000ffffffff;
+    u64 mask5 = 0x000000ffffffffff;
+
     // walk over each tape
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
@@ -614,7 +621,7 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
                 count_true++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
-                error_sump |= memcmp(loc, "true", 4);                
+                error_sump |= ((*(const u64 *)loc) & mask4) ^ tv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
                 break;
             }
@@ -622,7 +629,7 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
                 count_false++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
-                error_sump |= memcmp(loc, "false", 5);                
+                error_sump |= ((*(const u64 *)loc) & mask5) ^ fv;
                 error_sump |= is_not_structural_or_whitespace(loc[5]);
                 break;
             }
@@ -630,7 +637,7 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
                 count_null++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
-                error_sump |= memcmp(loc, "null", 4);                
+                error_sump |= ((*(const u64 *)loc) & mask4) ^ nv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
                 break;
             }
