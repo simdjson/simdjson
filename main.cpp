@@ -736,7 +736,11 @@ int main(int argc, char * argv[]) {
     vector<double> res;
     res.resize(iterations);
 
-#ifdef __linux__
+#if !defined(__linux__)
+#define SQUASH_COUNTERS
+#endif
+
+#ifndef SQUASH_COUNTERS
     LinuxEvents<PERF_TYPE_HARDWARE> cycles(PERF_COUNT_HW_CPU_CYCLES);
     LinuxEvents<PERF_TYPE_HARDWARE> instructions(PERF_COUNT_HW_INSTRUCTIONS);
     unsigned long cy1 = 0, cy2 = 0, cy3 = 0, cy4 = 0;
@@ -744,33 +748,33 @@ int main(int argc, char * argv[]) {
 #endif
     for (u32 i = 0; i < iterations; i++) {
         auto start = std::chrono::steady_clock::now();
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
         cycles.start(); instructions.start();
 #endif
         find_structural_bits(p.first, p.second, pj);
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
         cl1 += instructions.end(); cy1 += cycles.end();
         cycles.start(); instructions.start();
 #endif
         flatten_indexes(p.second, pj);
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
         cl2 += instructions.end(); cy2 += cycles.end();
         cycles.start(); instructions.start();
 #endif
         ape_machine(p.first, p.second, pj);
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
         cl3 += instructions.end(); cy3 += cycles.end();
         cycles.start(); instructions.start();
 #endif
         shovel_machine(p.first, p.second, pj);
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
         cl4 += instructions.end(); cy4 += cycles.end();
 #endif
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
     }
-#ifdef __linux__
+#ifndef SQUASH_COUNTERS
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
     unsigned long total = cy1 + cy2  + cy3  + cy4;
