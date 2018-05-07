@@ -101,6 +101,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
     u64 prev_iter_ends_pseudo_pred = 0ULL;
 
     for (size_t idx = 0; idx < len; idx+=64) {
+        __builtin_prefetch(buf + idx + 128);
 #ifdef DEBUG
         cout << "Idx is " << idx << "\n";
         for (u32 j = 0; j < 64; j++) {
@@ -389,7 +390,6 @@ const u32 MAX_STATES = 16;
 
 
 u32 trans[MAX_STATES][256];
-u32 disallow_exit[MAX_STATES][256];
 
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
@@ -424,17 +424,6 @@ never_inline void init_state_machine() {
     trans[7]['['] = 9;
     trans[9]['['] = 9;
     trans[11]['['] = 9;
-    
-    // note - extra-linguistic stuff in the DFA
-    // when we are in 2/7 we are OK to see a } at the shallower depth
-    // when we are in 9/11 we are OK to see a ] at the shallower depth
-    // nothing else should be illegal through this mechanism
-    for (u32 i = 0; i < MAX_STATES; i++) {
-        if ((i != 2) && (i != 7))
-            disallow_exit[i]['}'] = 1;
-        if ((i != 9) && (i != 11))
-            disallow_exit[i][']'] = 1;
-    }
 }
 
 never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
@@ -459,15 +448,14 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     }
 
     u32 error_sump = 0;
-    u32 old_state = 0; 
-    u32 old_tape_loc = 0;
+    u32 old_tape_loc = tape_locs[depth]; // need to initialize for first write
 
     u32 next_idx = pj.structural_indexes[0];
     u8 next_c = buf[next_idx];
     u32 next_control = char_control[next_c];
 
     // To try: figure out idx, c, depth adjust, write size, write val and maybe even depth in One Giant Pass
-    // then do the remainder of the loop. The interesting question is whether this loop is best pull apart
+    // then do the remainder of the loop. The interesting question is whether this loop is best pulled apart
     // into different passes
 
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
@@ -492,16 +480,12 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 
         // STATE MACHINE - hoisted here to fill in during the tape machine's latencies
 #ifdef DEBUG
-        cout << "STATE MACHINE: error_sump: " << error_sump << " old state " << old_state
-             << " disallowed_exit[old_state][c]: " << disallow_exit[old_state][c] << "\n";
         cout << "STATE MACHINE: state[depth] pre " << states[depth] << " ";
 #endif
-        error_sump |= disallow_exit[old_state][c];
-        old_state  = states[depth] = trans[states[depth]][c];
+        states[depth] = trans[states[depth]][c];
 #ifdef DEBUG
         cout << "post " << states[depth] << "\n";
 #endif
-
         // TAPE MACHINE, again
         tape[tape_locs[depth]] = write_val | (c << 24); // hack. Assumes no more than 2^24 tape items and buffer size for now
         old_tape_loc = tape_locs[depth] += write_size;
@@ -595,12 +579,24 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
         for (u32 j = start_loc; j < tape_locs[i]; j++) {
             count_tapes++;
             switch (tape[j]>>24) {
-            case '{': case '[':
+            case '{': case '[': {
                 count_opens++;
                 // TODO: pivot our tapes
                 // point the enclosing structural char (}]) to the head marker ({[) and
-                // put the length of the sequence on the tape at the head marker
+                // put the end of the sequence on the tape at the head marker
+                // we start with head marker pointing at the enclosing structural char
+                // and the enclosing structural char pointing at the end. Just swap them.
+                // also check the balanced-{} or [] property here
+                u8 head_marker_c = tape[j] >> 24;
+                u32 head_marker_loc = tape[j] & 0xffffff;    
+                u32 tape_enclosing = tape[head_marker_loc];
+                u8 enclosing_c = tape_enclosing >> 24;
+                tape[head_marker_loc] = tape[j]; 
+                tape[j] = tape_enclosing;
+                //cout << "head_marker_c: " << head_marker_c << " enclosing_c " << enclosing_c << "\n";
+                error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
                 break;
+            }
             case '"':
                 count_strings++;
                 // TODO: normalize strings
