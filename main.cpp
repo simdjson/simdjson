@@ -379,7 +379,7 @@ const u32 char_control[256] = {
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF
 };
 
-const size_t MAX_TAPE_ENTRIES = 1024*1024;
+const size_t MAX_TAPE_ENTRIES = 127*1024;
 const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 u32 tape[MAX_TAPE]; 
 u32 tape_locs[MAX_DEPTH];
@@ -576,7 +576,8 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
     // walk over each tape
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
-        for (u32 j = start_loc; j < tape_locs[i]; j++) {
+        u32 end_loc = tape_locs[i];
+        for (u32 j = start_loc; j < end_loc; j++) {
             count_tapes++;
             switch (tape[j]>>24) {
             case '{': case '[': {
