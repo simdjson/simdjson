@@ -39,9 +39,17 @@ void dumpbits(u64 v, string msg) {
     }
     cout << " " << msg << "\n";
 }
+
+void dumpbits32(u32 v, string msg) {
+	for (u32 i = 0; i < 32; i++) {
+        std::cout << (((v>>(u32)i) & 0x1ULL) ? "1" : "_");
+    }
+    cout << " " << msg << "\n";
+}
 #else
 #define dump256(a,b) ;
 #define dumpbits(a,b) ;
+#define dumpbits32(a,b) ;
 #endif
 
 // get a corpus; pad out to cache line so we can always use SIMD
@@ -381,8 +389,13 @@ const u32 char_control[256] = {
 
 const size_t MAX_TAPE_ENTRIES = 127*1024;
 const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
+
+// all of this stuff needs to get moved somewhere reasonable
+// like our ParsedJson structure
 u32 tape[MAX_TAPE]; 
 u32 tape_locs[MAX_DEPTH];
+u8 string_buf[512*1024];
+u8 * current_string_buf_loc;
 
 // STATE MACHINE DECLARATIONS
 
@@ -446,6 +459,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         tape_locs[i] = i*MAX_TAPE_ENTRIES;
         states[i] = START_STATE;
     }
+
+    current_string_buf_loc = string_buf;
 
     u32 error_sump = 0;
     u32 old_tape_loc = tape_locs[depth]; // need to initialize for first write
@@ -560,7 +575,107 @@ really_inline u32 is_not_structural_or_whitespace(u8 c) {
     return structural_or_whitespace_negated[c];
 }
 
-never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj) {
+// These chars yield themselves: " \ / 
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+const u8 escape_map[256] = {
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, //0x0.
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0x22,0, 0,0,0,0, 0,0,0,0, 0,0,0,0x2f,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, //0x4.
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0x5c,0,0,0, //0x5.
+    0,0,0x08,0, 0,0,0x12,0, 0,0,0,0, 0,0,0x0a,0, //0x6.
+    0,0,0x0d,0, 0x09,0,0,0, 0,0,0,0, 0,0,0,0, //0x7.
+
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+};
+
+// TODO - figure out how to bail out here
+really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc) {
+    u32 offset = tape[tape_loc] & 0xffffff;    
+    const u8 * src = &buf[offset+1]; // we know that buf at offset is a "
+    u8 * dst = current_string_buf_loc;
+#ifdef DEBUG
+    cout << "Entering parse string with offset " << offset << "\n";
+#endif
+    // basic non-sexy parsing code
+    while (1) {
+#ifdef DEBUG
+        for (u32 j = 0; j < 32; j++) {
+            char c = *(src+j);
+            if (isprint(c)) {
+                cout << c;
+            } else {
+                cout << '_';
+            }
+        }
+        cout << "|  ... string handling input\n";
+#endif
+        m256 v = _mm256_loadu_si256((const m256 *)(src));
+        u32 bs_bits = (u32)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')));
+        dumpbits32(bs_bits, "backslash bits 2");
+        u32 quote_bits = (u32)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
+        dumpbits32(quote_bits, "quote_bits");
+        u32 quote_dist = __builtin_ctz(quote_bits);
+        u32 bs_dist = __builtin_ctz(bs_bits);
+        // store to dest unconditionally - we can overwrite the bits we don't like later
+        _mm256_storeu_si256((m256 *)(dst), v);
+#ifdef DEBUG
+            cout << "quote dist: " << quote_dist << " bs dist: " << bs_dist << "\n";
+#endif
+
+        if (quote_dist < bs_dist) {
+#ifdef DEBUG
+            cout << "Found end, leaving!\n";
+#endif
+            // we encountered quotes first. Move dst to point to quotes and exit
+            dst[quote_dist] = 0; // null terminate and get out
+            current_string_buf_loc = dst + quote_dist + 1;
+            tape[tape_loc] = ((u32)'"') << 24 | (current_string_buf_loc - string_buf); // assume 2^24 will hold all strings for now
+            return true;
+        } else if (quote_dist > bs_dist) {
+            u8 escape_char = src[bs_dist+1];
+#ifdef DEBUG
+            cout << "Found escape char: " << escape_char << "\n";
+#endif
+            // we encountered backslash first. Handle backslash
+            if (escape_char == 'u') {
+                // TODO: handle Unicode codepoint
+                return false; // not yet working
+            } else {
+                // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+                // write bs_dist+1 characters to output
+                // note this may reach beyond the part of the buffer we've actually seen. 
+                // I think this is ok
+                u8 escape_result = escape_map[escape_char];
+                dst[bs_dist] = escape_result;
+                src += bs_dist+2;
+                dst += bs_dist+1;
+            }  
+        } else {
+            // they are the same. Since they can't co-occur, it means we encountered neither.
+            src+=32;
+            dst+=32;
+        }   
+        return true;
+    }
+    // later extensions - 
+    // if \\ we could detect whether it's a substantial run of \ or just eat 2 chars and write 1
+    // handle anything short of \u or \\\ (as a prefix) with clever PSHUFB stuff and don't leave SIMD
+    return true;
+}
+
+never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
     // fixup the mess made by the ape_machine
     // as such it does a bunch of miscellaneous things on the tapes
     
@@ -598,10 +713,11 @@ never_inline bool shovel_machine(UNUSED const u8 * buf, UNUSED size_t len, UNUSE
                 error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
                 break;
             }
-            case '"':
+            case '"': {
                 count_strings++;
-                // TODO: normalize strings
+                parse_string(buf, len, pj, j);
                 break;
+            }
             case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
                 count_non_zeros++;
                 // TODO: read in a number
