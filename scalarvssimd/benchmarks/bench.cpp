@@ -15,9 +15,27 @@
 using namespace rapidjson;
 using namespace std;
 
+std::string rapidstringmeInsitu(char * json) {
+    Document d;
+    d.ParseInsitu(json);
+    if(d.HasParseError()) {
+       std::cerr << "problem!" << std::endl;
+       return "";// should do something
+    }
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    d.Accept(writer);
+    return buffer.GetString();
+}
+
+
 std::string rapidstringme(char * json) {
     Document d;
     d.Parse(json);
+    if(d.HasParseError()) { 
+       std::cerr << "problem!" << std::endl;
+       return "";// should do something
+    }
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     d.Accept(writer);
@@ -91,6 +109,8 @@ int main(int argc, char *argv[]) {
   size_t strlength = rapidstringme((char*) p.first).size();
   std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;
   BEST_TIME_NOCHECK(rapidstringme((char*) p.first), , repeat, volume,
+                    true);
+  BEST_TIME_NOCHECK(rapidstringmeInsitu((char*) buffer), memcpy(buffer, p.first, p.second) , repeat, volume,
                     true);
   free(buffer);
 }
