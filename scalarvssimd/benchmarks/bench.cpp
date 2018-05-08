@@ -82,12 +82,14 @@ int main(int argc, char *argv[]) {
   char * buffer = (char *) malloc(p.second);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
+  BEST_TIME(d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(), false,
+          memcpy(buffer, p.first, p.second), repeat, volume, true);
   BEST_TIME(d.Parse((const char *)buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
   size_t strlength = rapidstringme((char*) p.first).size();
-  std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;  
+  std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;
   BEST_TIME_NOCHECK(rapidstringme((char*) p.first), , repeat, volume,
                     true);
   free(buffer);
