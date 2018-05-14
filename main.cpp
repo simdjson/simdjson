@@ -586,6 +586,85 @@ const u8 escape_map[256] = {
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
 };
 
+
+const u32 leading_zeros_to_utf_bytes[33] = {
+    1,
+    1, 1, 1, 1, 1, 1, 1, // 7 bits for first one 
+    2, 2, 2, 2, // 11 bits for next
+    3, 3, 3, 3, 3, // 16 bits for next
+    4, 4, 4, 4, 4, // 21 bits for next
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // error
+
+
+const u32 UTF_PDEP_MASK[5] = {
+    0x00, // error
+    0x7f,
+    0x1f3f,
+    0x0f3f3f,
+    0x073f3f3f
+};
+
+const u32 UTF_OR_MASK[5] = {
+    0x00, // error
+    0x00,
+    0xc080,
+    0xe08080,
+    0xf0808080
+};
+
+bool is_hex_digit(u8 v) {
+    if (v >= '0' && v <= '9')
+        return true;
+    v &= 0xdf;
+    if (v >= 'A' && v <= 'F')
+        return true;
+    return false;
+}
+
+u8 digit_to_val(u8 v) {
+    if (v >= '0' && v <= '9')
+        return v - '0';
+    v &= 0xdf;
+    return v - 'A' + 10;
+}
+
+bool hex_to_u32(const u8 * src, u32 * res) {
+    u8 v1 = src[0];
+    u8 v2 = src[1];
+    u8 v3 = src[2];
+    u8 v4 = src[3];
+    if (!is_hex_digit(v1) || !is_hex_digit(v2) || !is_hex_digit(v3) || !is_hex_digit(v4)) {
+        return false;
+    }
+    *res = digit_to_val(v1) << 24 | digit_to_val(v2) << 16 | digit_to_val(v3) << 8 | digit_to_val(v4);
+    return true;
+}
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will always advance 6 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) {
+    u32 code_point = 0; // read the hex, potentially reading another \u beyond if it's a // wacky one
+    if (!hex_to_u32(*src_ptr + 2, &code_point)) {
+        return false;
+    }
+    // TODO: check for the weirdo double-UTF-16 nonsense for things outside Basic Multilingual Plane.
+    // TODO: check to see whether the below code is nonsense (it's really only a sketch at this point)
+    *src_ptr += 6;
+    u32 lz = __builtin_clz(code_point);
+    u32 utf_bytes = leading_zeros_to_utf_bytes[lz];
+    u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes]; 
+    // swap and move to the other side of the register
+    tmp = __builtin_bswap32(tmp);
+    tmp >>= (4 - utf_bytes) * 8;
+    **(u32 **)dst_ptr = tmp;
+    *dst_ptr += utf_bytes;
+    return true;
+}
+
 really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc) {
     u32 offset = tape[tape_loc] & 0xffffff;    
     const u8 * src = &buf[offset+1]; // we know that buf at offset is a "
@@ -635,7 +714,13 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 #endif
             // we encountered backslash first. Handle backslash
             if (escape_char == 'u') {
-                // TODO: handle Unicode codepoint; currently we have no code for this
+                // move src/dst up to the start; they will be further adjusted
+                // within the unicode codepoint handling code.
+                src += bs_dist;
+                dst += bs_dist;
+                if (!handle_unicode_codepoint(&src, &dst)) {
+                    return false;
+                }
                 return true; 
             } else {
                 // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
@@ -643,6 +728,8 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
                 // note this may reach beyond the part of the buffer we've actually seen. 
                 // I think this is ok
                 u8 escape_result = escape_map[escape_char];
+                if (!escape_result)
+                    return false; // bogus escape value is an error
                 dst[bs_dist] = escape_result;
                 src += bs_dist+2;
                 dst += bs_dist+1;
