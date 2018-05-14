@@ -651,9 +651,24 @@ really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) 
     if (!hex_to_u32(*src_ptr + 2, &code_point)) {
         return false;
     }
-    // TODO: check for the weirdo double-UTF-16 nonsense for things outside Basic Multilingual Plane.
-    // TODO: check to see whether the below code is nonsense (it's really only a sketch at this point)
     *src_ptr += 6;
+    // check for the weirdo double-UTF-16 nonsense for things outside Basic Multilingual Plane.
+    if (code_point >= 0xd800 && code_point < 0xdc00) {
+        // TODO: sanity check and clean up; snippeted from RapidJSON and poorly understood at the moment
+        if (( (*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+            return false;
+        }
+        u32 code_point_2 = 0;
+        if (!hex_to_u32(*src_ptr + 2, &code_point_2)) {
+            return false;
+        }
+        if (code_point_2 < 0xdc00 || code_point_2 > 0xdfff) {
+            return false;
+        }
+        code_point = (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
+        *src_ptr += 6;
+    }
+    // TODO: check to see whether the below code is nonsense (it's really only a sketch at this point)
     u32 lz = __builtin_clz(code_point);
     u32 utf_bytes = leading_zeros_to_utf_bytes[lz];
     u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes]; 
