@@ -396,33 +396,29 @@ u32 tape[MAX_TAPE];
 u32 tape_locs[MAX_DEPTH];
 u8 string_buf[512*1024];
 u8 * current_string_buf_loc;
-
 u8 number_buf[512*1024]; // holds either doubles or longs, really
 u8 * current_number_buf_loc;
 
 // STATE MACHINE DECLARATIONS
-
 const u32 MAX_STATES = 16;
-
-
 u32 trans[MAX_STATES][256];
-
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
+
 never_inline void init_state_machine() {
     // states 10 and 6 eliminated
 
     trans[ 1]['{'] = 2;
     trans[ 2]['"'] = 4;
     trans[ 4][':'] = 5;
-    // 5->7 on all unary values ftn0123456789-"
+    // 5->7 on all values ftn0123456789-"
     trans[ 7][','] = 8;
     trans[ 8]['"'] = 4;
 
     trans[ 1]['['] = 9;
-    // 9->11 on all unary values ftn0123456789-"
+    // 9->11 on all values ftn0123456789-"
     trans[11][','] = 12;
-    // 12->11 on all unary values ftn0123456789-"
+    // 12->11 on all values ftn0123456789-"
 
     const char * UNARIES = "}]ftn0123456789-\"";
     for (u32 i = 0; i < strlen(UNARIES); i++) {
@@ -472,10 +468,6 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     u32 next_idx = pj.structural_indexes[0];
     u8 next_c = buf[next_idx];
     u32 next_control = char_control[next_c];
-
-    // To try: figure out idx, c, depth adjust, write size, write val and maybe even depth in One Giant Pass
-    // then do the remainder of the loop. The interesting question is whether this loop is best pulled apart
-    // into different passes
 
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
         u32 idx = next_idx;
@@ -535,21 +527,11 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 }
 
 
-u32 count_tapes;
-u32 count_opens;
-u32 count_strings;
-u32 count_non_zeros;
-u32 count_leading_zeros;
-u32 count_minus;
-u32 count_true;
-u32 count_false;
-u32 count_null;
+// they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
+// these go into the first 3 buckets of the comparison (1/2/4)
 
-        // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
-        // these go into the first 3 buckets of the comparison (1/2/4)
-
-        // we are also interested in the four whitespace characters
-        // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
+// we are also interested in the four whitespace characters
+// space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 
 const u32 structural_or_whitespace_negated[256] = {
     1,1,1,1, 1,1,1,1, 1,0,0,1, 1,0,1,1,
@@ -604,7 +586,6 @@ const u8 escape_map[256] = {
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
 };
 
-// TODO - figure out how to bail out here
 really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc) {
     u32 offset = tape[tape_loc] & 0xffffff;    
     const u8 * src = &buf[offset+1]; // we know that buf at offset is a "
@@ -654,8 +635,8 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 #endif
             // we encountered backslash first. Handle backslash
             if (escape_char == 'u') {
-                // TODO: handle Unicode codepoint
-                return false; // not yet working
+                // TODO: handle Unicode codepoint; currently we have no code for this
+                return true; 
             } else {
                 // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
                 // write bs_dist+1 characters to output
@@ -763,9 +744,6 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     number_characters &= number_mask;
     error_sump |= number_characters ^ number_mask; 
     dumpbits32(number_characters, "number characters");
-    // TODO: prune by mask 
-    // TODO: check that result of pruning by mask *is* the
-    //       same as the mask
     
     m256 d_mask = _mm256_set1_epi8(0x03);
     m256 tmp_d = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, d_mask),
@@ -806,12 +784,23 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     // check that we start with a digit
     error_sump |= ~digit_characters & 0x1;
 
+    // having done some checks, get lazy and fall back
+    // to strtoll or strtod
+    // TODO: handle the easy cases ourselves; these are
+    // expensive and we've done a lot of the prepwork.
+    // return errors if strto* fail, otherwise fill in a code on the tape
+    // 'd' for floating point and 'l' for long and put a pointer to the
+    // spot in the buffer.
     if (__builtin_popcount(digit_edges) == 1) {
         // try a strtoll
         char * end;
         u64 result = strtoll((const char *)src, &end, 10);
         if ((errno != 0) || (end == (const char *)src)) {
             error_sump |= 1;
+        }
+        error_sump |= is_not_structural_or_whitespace(*end);
+        if (found_minus) {
+            result = -result;
         }
 #ifdef DEBUG
         cout << "Found number " << result << "\n";
@@ -826,6 +815,10 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
         if ((errno != 0) || (end == (const char *)src)) {
             error_sump |= 1;
         }
+        error_sump |= is_not_structural_or_whitespace(*end);
+        if (found_minus) {
+            result = -result;
+        }
 #ifdef DEBUG
         cout << "Found number " << result << "\n";
 #endif
@@ -837,17 +830,17 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 
     // TODO: a whole bunch of checks
 
-    // <=1 decimal point, eE mark, +- construct
+    // TODO:  <=1 decimal point, eE mark, +- construct
 
-    // first and last character in mask region must be
+    // TODO: first and last character in mask region must be
     // digit
 
-    // if it exists,
+    // TODO: if it exists,
     // Decimal point is after the first cluster of numbers only
     // and before the second cluster of numbers only. It must
     // be digit_or_zero . digit_or_zero strictly
 
-    // eE mark and +- construct are adjacent with eE first
+    // TODO: eE mark and +- construct are adjacent with eE first
     // eE mark preceeds final cluster of numbers only
     // and immediately follows second-last cluster of numbers only (not 
     // necessarily second, as we may have 4e10).
@@ -855,22 +848,12 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     // by a digit of any kind and that it's followed locally by
     // a digit immediately or a +- construct then a digit.
  
-    // if we have both . and the eE mark then the . must
+    // TODO: if we have both . and the eE mark then the . must
     // precede the eE mark
 
-    // if first character is a zero (we know in advance except for -0)
+    // TODO: if first character is a zero (we know in advance except for -0)
     // second char must be . or eE.
 
-    // if we have 1 cluster we have probably an integer, so try to strtol it.
-        // optimization: if it's a single digit just handle it here
-
-    // otherwise we have a floating point value so strtod it.
-
-    // return errors if strto* fail, otherwise fill in a code on the tape
-    // 'd' for floating point and 'l' for long and put a pointer to the
-    // spot in the buffer.
-
-    // refer to this
     if (error_sump)
         return true;
     return true;
@@ -879,13 +862,10 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
     // fixup the mess made by the ape_machine
     // as such it does a bunch of miscellaneous things on the tapes
-    
     u32 error_sump = 0;
-
     u64 tv = *(const u64 *)"true    ";
     u64 nv = *(const u64 *)"null    ";
     u64 fv = *(const u64 *)"false   ";
-
     u64 mask4 = 0x00000000ffffffff;
     u64 mask5 = 0x000000ffffffffff;
 
@@ -894,10 +874,8 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
         u32 end_loc = tape_locs[i];
         for (u32 j = start_loc; j < end_loc; j++) {
-            count_tapes++;
             switch (tape[j]>>24) {
             case '{': case '[': {
-                count_opens++;
                 // pivot our tapes
                 // point the enclosing structural char (}]) to the head marker ({[) and
                 // put the end of the sequence on the tape at the head marker
@@ -910,29 +888,23 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 u8 enclosing_c = tape_enclosing >> 24;
                 tape[head_marker_loc] = tape[j]; 
                 tape[j] = tape_enclosing;
-                //cout << "head_marker_c: " << head_marker_c << " enclosing_c " << enclosing_c << "\n";
                 error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
                 break;
             }
             case '"': {
-                count_strings++;
                 error_sump |= !parse_string(buf, len, pj, j);
                 break;
             }
             case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                count_non_zeros++;
                 error_sump |= !parse_number(buf, len, pj, j, false, false);
                 break;
             case '0':
-                count_leading_zeros++;
                 error_sump |= !parse_number(buf, len, pj, j, true, false);
                 break;
             case '-': 
-                count_minus++;
                 error_sump |= !parse_number(buf, len, pj, j, false, true);
                 break;
             case 't':  {
-                count_true++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ tv;
@@ -940,7 +912,6 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 break;
             }
             case 'f':  {
-                count_false++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask5) ^ fv;
@@ -948,7 +919,6 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 break;
             }
             case 'n':  {
-                count_null++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ nv;
@@ -1094,7 +1064,7 @@ int main(int argc, char * argv[]) {
 #ifndef SQUASH_COUNTERS
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
-    unsigned long total = cy1 + cy2  + cy3  + cy4;
+    unsigned long total = cy1 + cy2 + cy3 + cy4;
 
     printf("stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
          cl1, cy1, 100. *  cy1 / total, (double) cl1 / cy1);
@@ -1114,10 +1084,6 @@ int main(int argc, char * argv[]) {
          cl4, cy4, 100. * cy4 / total, (double) cl4 / cy4);
     printf(" stage 4 runs at %.2f cycles per input byte and ", (double) cy4 / (iterations * p.second));
     printf("%.2f cycles per structural character.\n", (double) cy4 / (iterations * pj.n_structural_indexes));
-
-    printf("There were %d elements on our tapes.\n", count_tapes);
-    printf("Opens %d strings %d non_zeros %d leading_zeros %d minus %d, true %d false %d null %d\n", 
-        count_opens, count_strings, count_non_zeros, count_leading_zeros, count_minus, count_true, count_false, count_null);
 
     printf(" all stages: %.2f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif
