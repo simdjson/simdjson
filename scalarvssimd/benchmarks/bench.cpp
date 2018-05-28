@@ -124,7 +124,9 @@ int main(int argc, char *argv[]) {
   uint8_t * cbuffer = (uint8_t *)buffer;
   BEST_TIME(copy_without_useless_spaces(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
-  buffer[outlength] = '\0';
+
+  BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
+                    true);
 
   free(buffer);
   delete[] pj.structural_indexes;

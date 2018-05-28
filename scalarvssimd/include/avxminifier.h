@@ -57,8 +57,8 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
       uint64_t odd_starts = start_edges & ~even_start_mask;
       uint64_t even_carries = bs_bits + even_starts;
       uint64_t odd_carries;
-      bool iter_ends_odd_backslash =
-          __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+      bool iter_ends_odd_backslash = __builtin_uaddll_overflow(
+          bs_bits, odd_starts, (unsigned long long *)&odd_carries);
       odd_carries |= prev_iter_ends_odd_backslash;
       prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
       uint64_t even_carry_ends = even_carries & ~bs_bits;
@@ -102,11 +102,16 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
       uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
       uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
       whitespace &= ~quote_mask;
+      // surprisingly unhelpful:
+      // if(whitespace == 0) {
+      //    _mm256_storeu_si256((__m256i *)out, input_lo);
+      //    _mm256_storeu_si256((__m256i *)(out + 32), input_hi);
+      //    out += 64;
+      // } else {
       int mask1 = whitespace & 0xFFFF;
       int mask2 = (whitespace >> 16) & 0xFFFF;
       int mask3 = (whitespace >> 32) & 0xFFFF;
       int mask4 = (whitespace >> 48) & 0xFFFF;
-      //    dumpbits(whitespace,"whitespace");
       int pop1 = _popcnt64((~whitespace) & 0xFFFF);
       int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
       int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
@@ -123,6 +128,7 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
       _mm256_storeu2_m128i((__m128i *)(out + pop3), (__m128i *)(out + pop2),
                            result2);
       out += pop4;
+      //}
     }
   }
   // we finish off the job... copying and pasting the code is not ideal here,
@@ -141,8 +147,8 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
     uint64_t odd_starts = start_edges & ~even_start_mask;
     uint64_t even_carries = bs_bits + even_starts;
     uint64_t odd_carries;
-    bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+    bool iter_ends_odd_backslash = __builtin_uaddll_overflow(
+        bs_bits, odd_starts, (unsigned long long *)&odd_carries);
     odd_carries |= prev_iter_ends_odd_backslash;
     prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
     uint64_t even_carry_ends = even_carries & ~bs_bits;
@@ -206,10 +212,11 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
                                          (const __m128i *)mask128_epi8 + mask3);
     __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
     __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-    _mm256_storeu2_m128i((__m128i *)(buffer + pop1), (__m128i *)buffer, result1);
+    _mm256_storeu2_m128i((__m128i *)(buffer + pop1), (__m128i *)buffer,
+                         result1);
     _mm256_storeu2_m128i((__m128i *)(buffer + pop3), (__m128i *)(buffer + pop2),
                          result2);
-    memcpy(out,buffer,pop4);
+    memcpy(out, buffer, pop4);
     out += pop4;
   }
   return out - initout;
