@@ -396,30 +396,29 @@ u32 tape[MAX_TAPE];
 u32 tape_locs[MAX_DEPTH];
 u8 string_buf[512*1024];
 u8 * current_string_buf_loc;
+u8 number_buf[512*1024]; // holds either doubles or longs, really
+u8 * current_number_buf_loc;
 
 // STATE MACHINE DECLARATIONS
-
 const u32 MAX_STATES = 16;
-
-
 u32 trans[MAX_STATES][256];
-
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
+
 never_inline void init_state_machine() {
     // states 10 and 6 eliminated
 
     trans[ 1]['{'] = 2;
     trans[ 2]['"'] = 4;
     trans[ 4][':'] = 5;
-    // 5->7 on all unary values ftn0123456789-"
+    // 5->7 on all values ftn0123456789-"
     trans[ 7][','] = 8;
     trans[ 8]['"'] = 4;
 
     trans[ 1]['['] = 9;
-    // 9->11 on all unary values ftn0123456789-"
+    // 9->11 on all values ftn0123456789-"
     trans[11][','] = 12;
-    // 12->11 on all unary values ftn0123456789-"
+    // 12->11 on all values ftn0123456789-"
 
     const char * UNARIES = "}]ftn0123456789-\"";
     for (u32 i = 0; i < strlen(UNARIES); i++) {
@@ -461,6 +460,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     }
 
     current_string_buf_loc = string_buf;
+    current_number_buf_loc = number_buf;
 
     u32 error_sump = 0;
     u32 old_tape_loc = tape_locs[depth]; // need to initialize for first write
@@ -468,10 +468,6 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     u32 next_idx = pj.structural_indexes[0];
     u8 next_c = buf[next_idx];
     u32 next_control = char_control[next_c];
-
-    // To try: figure out idx, c, depth adjust, write size, write val and maybe even depth in One Giant Pass
-    // then do the remainder of the loop. The interesting question is whether this loop is best pulled apart
-    // into different passes
 
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
         u32 idx = next_idx;
@@ -531,21 +527,11 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 }
 
 
-u32 count_tapes;
-u32 count_opens;
-u32 count_strings;
-u32 count_non_zeros;
-u32 count_leading_zeros;
-u32 count_minus;
-u32 count_true;
-u32 count_false;
-u32 count_null;
+// they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
+// these go into the first 3 buckets of the comparison (1/2/4)
 
-        // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
-        // these go into the first 3 buckets of the comparison (1/2/4)
-
-        // we are also interested in the four whitespace characters
-        // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
+// we are also interested in the four whitespace characters
+// space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 
 const u32 structural_or_whitespace_negated[256] = {
     1,1,1,1, 1,1,1,1, 1,0,0,1, 1,0,1,1,
@@ -600,7 +586,100 @@ const u8 escape_map[256] = {
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
 };
 
-// TODO - figure out how to bail out here
+
+const u32 leading_zeros_to_utf_bytes[33] = {
+    1,
+    1, 1, 1, 1, 1, 1, 1, // 7 bits for first one 
+    2, 2, 2, 2, // 11 bits for next
+    3, 3, 3, 3, 3, // 16 bits for next
+    4, 4, 4, 4, 4, // 21 bits for next
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // error
+
+
+const u32 UTF_PDEP_MASK[5] = {
+    0x00, // error
+    0x7f,
+    0x1f3f,
+    0x0f3f3f,
+    0x073f3f3f
+};
+
+const u32 UTF_OR_MASK[5] = {
+    0x00, // error
+    0x00,
+    0xc080,
+    0xe08080,
+    0xf0808080
+};
+
+bool is_hex_digit(u8 v) {
+    if (v >= '0' && v <= '9')
+        return true;
+    v &= 0xdf;
+    if (v >= 'A' && v <= 'F')
+        return true;
+    return false;
+}
+
+u8 digit_to_val(u8 v) {
+    if (v >= '0' && v <= '9')
+        return v - '0';
+    v &= 0xdf;
+    return v - 'A' + 10;
+}
+
+bool hex_to_u32(const u8 * src, u32 * res) {
+    u8 v1 = src[0];
+    u8 v2 = src[1];
+    u8 v3 = src[2];
+    u8 v4 = src[3];
+    if (!is_hex_digit(v1) || !is_hex_digit(v2) || !is_hex_digit(v3) || !is_hex_digit(v4)) {
+        return false;
+    }
+    *res = digit_to_val(v1) << 24 | digit_to_val(v2) << 16 | digit_to_val(v3) << 8 | digit_to_val(v4);
+    return true;
+}
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will always advance 6 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) {
+    u32 code_point = 0; // read the hex, potentially reading another \u beyond if it's a // wacky one
+    if (!hex_to_u32(*src_ptr + 2, &code_point)) {
+        return false;
+    }
+    *src_ptr += 6;
+    // check for the weirdo double-UTF-16 nonsense for things outside Basic Multilingual Plane.
+    if (code_point >= 0xd800 && code_point < 0xdc00) {
+        // TODO: sanity check and clean up; snippeted from RapidJSON and poorly understood at the moment
+        if (( (*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+            return false;
+        }
+        u32 code_point_2 = 0;
+        if (!hex_to_u32(*src_ptr + 2, &code_point_2)) {
+            return false;
+        }
+        if (code_point_2 < 0xdc00 || code_point_2 > 0xdfff) {
+            return false;
+        }
+        code_point = (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
+        *src_ptr += 6;
+    }
+    // TODO: check to see whether the below code is nonsense (it's really only a sketch at this point)
+    u32 lz = __builtin_clz(code_point);
+    u32 utf_bytes = leading_zeros_to_utf_bytes[lz];
+    u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes]; 
+    // swap and move to the other side of the register
+    tmp = __builtin_bswap32(tmp);
+    tmp >>= (4 - utf_bytes) * 8;
+    **(u32 **)dst_ptr = tmp;
+    *dst_ptr += utf_bytes;
+    return true;
+}
+
 really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc) {
     u32 offset = tape[tape_loc] & 0xffffff;    
     const u8 * src = &buf[offset+1]; // we know that buf at offset is a "
@@ -650,14 +729,22 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 #endif
             // we encountered backslash first. Handle backslash
             if (escape_char == 'u') {
-                // TODO: handle Unicode codepoint
-                return false; // not yet working
+                // move src/dst up to the start; they will be further adjusted
+                // within the unicode codepoint handling code.
+                src += bs_dist;
+                dst += bs_dist;
+                if (!handle_unicode_codepoint(&src, &dst)) {
+                    return false;
+                }
+                return true; 
             } else {
                 // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
                 // write bs_dist+1 characters to output
                 // note this may reach beyond the part of the buffer we've actually seen. 
                 // I think this is ok
                 u8 escape_result = escape_map[escape_char];
+                if (!escape_result)
+                    return false; // bogus escape value is an error
                 dst[bs_dist] = escape_result;
                 src += bs_dist+2;
                 dst += bs_dist+1;
@@ -675,16 +762,212 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     return true;
 }
 
+// put a parsed version of number (either as a double or a signed long) into the number buffer,
+// put a 'tag' indicating which type and where it is back onto the tape at that location
+// return false if we can't parse the number which means either
+// (a) the number isn't valid, or (b) the number is followed by something that isn't whitespace, comma or a close }] character
+// which are the only things that should follow a number at this stage
+// bools to detect what we found in our initial character already here - we are already
+// switching on 0 vs 1-9 vs - so we may as well keep separate paths where that's useful
+
+// TODO: see if we really need a separate number_buf or whether we should just
+//       have a generic scratch - would need to align before using for this
+really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc, UNUSED bool found_zero, bool found_minus) {
+    u32 offset = tape[tape_loc] & 0xffffff;    
+    if (found_minus) {
+        offset++;
+    }
+    const u8 * src = &buf[offset]; 
+    m256 v = _mm256_loadu_si256((const m256 *)(src));
+    u64 error_sump = 0;
+#ifdef DEBUG
+        for (u32 j = 0; j < 32; j++) {
+            char c = *(src+j);
+            if (isprint(c)) {
+                cout << c;
+            } else {
+                cout << '_';
+            }
+        }
+        cout << "|  ... number handling input\n";
+#endif
+
+    // categories to extract
+    // Digits:
+        // 0 (0x30) - bucket 0
+        // 1-9 (never any distinction except if we didn't get the free kick at 0 due to the leading minus) (0x31-0x39) - bucket 1
+    // . (0x2e) - bucket 2
+    // E or e - no distinction (0x45/0x65) - bucket 3
+    // + (0x2b) - bucket 4
+    // - (0x2d) - bucket 4
+    // Terminators
+        // Whitespace: 0x20, 0x09, 0x0a, 0x0d - bucket 5+6
+        // Comma and the closes: 0x2c is comma, } is 0x5d, ] is 0x7d - bucket 5+7
+ 
+    // Another shufti - also a bit hand-hacked. Need to make a better construction
+    const m256 low_nibble_mask = _mm256_setr_epi8(
+    //  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+       33,  2,  2,  2,  2, 10,  2,  2,  2, 66, 64, 16, 32,208,  4,  0,
+       33,  2,  2,  2,  2, 10,  2,  2,  2, 66, 64, 16, 32,208,  4,  0
+    );
+    const m256 high_nibble_mask = _mm256_setr_epi8(
+    //  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+       64,  0, 52,  3,  8,128,  8,128,  0,  0,  0,  0,  0,  0,  0,  0,
+       64,  0, 52,  3,  8,128,  8,128,  0,  0,  0,  0,  0,  0,  0,  0
+    );
+
+    m256 tmp = _mm256_and_si256(
+                    _mm256_shuffle_epi8(low_nibble_mask, v),
+                    _mm256_shuffle_epi8(high_nibble_mask,
+                       _mm256_and_si256(_mm256_srli_epi32(v, 4), _mm256_set1_epi8(0x7f))));
+
+    m256 enders_mask = _mm256_set1_epi8(0xe0);
+    m256 tmp_enders = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, enders_mask),
+                                    _mm256_set1_epi8(0));
+    u32 enders = ~(u32)_mm256_movemask_epi8(tmp_enders);
+    dumpbits32(enders, "ender characters");
+
+    if (enders == 0) {
+        // TODO: scream for help if enders == 0 which means we have
+        // a heroically long number string or some garbage
+    }
+    // TODO: make a mask that indicates where our digits are
+    u32 number_mask = ~enders & (enders-1);
+    dumpbits32(number_mask, "number mask");
+    
+    m256 n_mask = _mm256_set1_epi8(0x1f);
+    m256 tmp_n = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, n_mask),
+                                    _mm256_set1_epi8(0));
+    u32 number_characters = ~(u32)_mm256_movemask_epi8(tmp_n);
+
+    // put something into our error sump if we have something
+    // before our ending characters that isn't a valid character
+    // for the inside of our JSON 
+    number_characters &= number_mask;
+    error_sump |= number_characters ^ number_mask; 
+    dumpbits32(number_characters, "number characters");
+    
+    m256 d_mask = _mm256_set1_epi8(0x03);
+    m256 tmp_d = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, d_mask),
+                                    _mm256_set1_epi8(0));
+    u32 digit_characters = ~(u32)_mm256_movemask_epi8(tmp_d);
+    digit_characters &= number_mask;
+    dumpbits32(digit_characters, "digit characters");
+
+    m256 p_mask = _mm256_set1_epi8(0x04);
+    m256 tmp_p = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, p_mask),
+                                    _mm256_set1_epi8(0));
+    u32 decimal_characters = ~(u32)_mm256_movemask_epi8(tmp_p);
+    decimal_characters &= number_mask;
+    dumpbits32(decimal_characters, "decimal characters");
+
+    m256 e_mask = _mm256_set1_epi8(0x08);
+    m256 tmp_e = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, e_mask),
+                                    _mm256_set1_epi8(0));
+    u32 exponent_characters = ~(u32)_mm256_movemask_epi8(tmp_e);
+    exponent_characters &= number_mask;
+    dumpbits32(exponent_characters, "exponent characters");
+
+    m256 s_mask = _mm256_set1_epi8(0x10);
+    m256 tmp_s = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, s_mask),
+                                    _mm256_set1_epi8(0));
+    u32 sign_characters = ~(u32)_mm256_movemask_epi8(tmp_s);
+    sign_characters &= number_mask;
+    dumpbits32(sign_characters, "sign characters");
+    
+    u32 digit_edges = ~(digit_characters << 1) & digit_characters;
+    dumpbits32(digit_edges, "digit_edges");
+    
+    // check that we have 1-3 'edges' only
+    u32 t = digit_edges;
+    t &= t-1; t &= t-1; t &= t-1;
+    error_sump |= t;
+
+    // check that we start with a digit
+    error_sump |= ~digit_characters & 0x1;
+
+    // having done some checks, get lazy and fall back
+    // to strtoll or strtod
+    // TODO: handle the easy cases ourselves; these are
+    // expensive and we've done a lot of the prepwork.
+    // return errors if strto* fail, otherwise fill in a code on the tape
+    // 'd' for floating point and 'l' for long and put a pointer to the
+    // spot in the buffer.
+    if (__builtin_popcount(digit_edges) == 1) {
+        // try a strtoll
+        char * end;
+        u64 result = strtoll((const char *)src, &end, 10);
+        if ((errno != 0) || (end == (const char *)src)) {
+            error_sump |= 1;
+        }
+        error_sump |= is_not_structural_or_whitespace(*end);
+        if (found_minus) {
+            result = -result;
+        }
+#ifdef DEBUG
+        cout << "Found number " << result << "\n";
+#endif
+        *((u64 *)current_number_buf_loc) = result;
+        tape[tape_loc] = ((u32)'l') << 24 | (current_number_buf_loc - number_buf); // assume 2^24 will hold all numbers for now
+        current_number_buf_loc += 8; 
+    } else {
+        // try a strtod
+        char * end;
+        double result = strtod((const char *)src, &end);
+        if ((errno != 0) || (end == (const char *)src)) {
+            error_sump |= 1;
+        }
+        error_sump |= is_not_structural_or_whitespace(*end);
+        if (found_minus) {
+            result = -result;
+        }
+#ifdef DEBUG
+        cout << "Found number " << result << "\n";
+#endif
+        *((double *)current_number_buf_loc) = result;
+        tape[tape_loc] = ((u32)'d') << 24 | (current_number_buf_loc - number_buf); // assume 2^24 will hold all numbers for now
+        current_number_buf_loc += 8; 
+    }
+    // TODO: check the MSB element is a digit
+
+    // TODO: a whole bunch of checks
+
+    // TODO:  <=1 decimal point, eE mark, +- construct
+
+    // TODO: first and last character in mask region must be
+    // digit
+
+    // TODO: if it exists,
+    // Decimal point is after the first cluster of numbers only
+    // and before the second cluster of numbers only. It must
+    // be digit_or_zero . digit_or_zero strictly
+
+    // TODO: eE mark and +- construct are adjacent with eE first
+    // eE mark preceeds final cluster of numbers only
+    // and immediately follows second-last cluster of numbers only (not 
+    // necessarily second, as we may have 4e10).
+    // it may suffice to insist that eE is preceeded immediately
+    // by a digit of any kind and that it's followed locally by
+    // a digit immediately or a +- construct then a digit.
+ 
+    // TODO: if we have both . and the eE mark then the . must
+    // precede the eE mark
+
+    // TODO: if first character is a zero (we know in advance except for -0)
+    // second char must be . or eE.
+
+    if (error_sump)
+        return true;
+    return true;
+}
+
 never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
     // fixup the mess made by the ape_machine
     // as such it does a bunch of miscellaneous things on the tapes
-    
     u32 error_sump = 0;
-
     u64 tv = *(const u64 *)"true    ";
     u64 nv = *(const u64 *)"null    ";
     u64 fv = *(const u64 *)"false   ";
-
     u64 mask4 = 0x00000000ffffffff;
     u64 mask5 = 0x000000ffffffffff;
 
@@ -693,11 +976,9 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
         u32 end_loc = tape_locs[i];
         for (u32 j = start_loc; j < end_loc; j++) {
-            count_tapes++;
             switch (tape[j]>>24) {
             case '{': case '[': {
-                count_opens++;
-                // TODO: pivot our tapes
+                // pivot our tapes
                 // point the enclosing structural char (}]) to the head marker ({[) and
                 // put the end of the sequence on the tape at the head marker
                 // we start with head marker pointing at the enclosing structural char
@@ -709,29 +990,23 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 u8 enclosing_c = tape_enclosing >> 24;
                 tape[head_marker_loc] = tape[j]; 
                 tape[j] = tape_enclosing;
-                //cout << "head_marker_c: " << head_marker_c << " enclosing_c " << enclosing_c << "\n";
                 error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
                 break;
             }
             case '"': {
-                count_strings++;
-                parse_string(buf, len, pj, j);
+                error_sump |= !parse_string(buf, len, pj, j);
                 break;
             }
             case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                count_non_zeros++;
-                // TODO: read in a number
+                error_sump |= !parse_number(buf, len, pj, j, false, false);
                 break;
             case '0':
-                count_leading_zeros++;
-                // TODO: read in a number. Must be float so we can skip some stuff.
+                error_sump |= !parse_number(buf, len, pj, j, true, false);
                 break;
             case '-': 
-                count_minus++;
-                // TODO: read in a number 
+                error_sump |= !parse_number(buf, len, pj, j, false, true);
                 break;
             case 't':  {
-                count_true++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ tv;
@@ -739,7 +1014,6 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 break;
             }
             case 'f':  {
-                count_false++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask5) ^ fv;
@@ -747,7 +1021,6 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 break;
             }
             case 'n':  {
-                count_null++;
                 u32 offset = tape[j] & 0xffffff;    
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ nv;
@@ -893,7 +1166,7 @@ int main(int argc, char * argv[]) {
 #ifndef SQUASH_COUNTERS
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
-    unsigned long total = cy1 + cy2  + cy3  + cy4;
+    unsigned long total = cy1 + cy2 + cy3 + cy4;
 
     printf("stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
          cl1, cy1, 100. *  cy1 / total, (double) cl1 / cy1);
@@ -913,10 +1186,6 @@ int main(int argc, char * argv[]) {
          cl4, cy4, 100. * cy4 / total, (double) cl4 / cy4);
     printf(" stage 4 runs at %.2f cycles per input byte and ", (double) cy4 / (iterations * p.second));
     printf("%.2f cycles per structural character.\n", (double) cy4 / (iterations * pj.n_structural_indexes));
-
-    printf("There were %d elements on our tapes.\n", count_tapes);
-    printf("Opens %d strings %d non_zeros %d leading_zeros %d minus %d, true %d false %d null %d\n", 
-        count_opens, count_strings, count_non_zeros, count_leading_zeros, count_minus, count_true, count_false, count_null);
 
     printf(" all stages: %.2f cycles per input byte.\n", (double) total / (iterations * p.second));
 #endif

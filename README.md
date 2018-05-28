@@ -100,6 +100,11 @@ Inspiring links:
 - https://gist.github.com/shijuvar/25ad7de9505232c87034b8359543404a
 - https://github.com/frankmcsherry/blog/blob/master/posts/2018-02-11.md
 
+
+Validating UTF-8 takes no more than 0.7 cycles per byte:
+- https://github.com/lemire/fastvalidate-utf-8 https://lemire.me/blog/2018/05/16/validating-utf-8-strings-using-as-little-as-0-7-cycles-per-byte/
+ 
+
 ## Remarks on JSON parsing
 
 - The JSON spec defines what a JSON parser is:
