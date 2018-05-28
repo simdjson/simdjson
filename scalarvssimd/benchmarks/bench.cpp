@@ -1,4 +1,6 @@
 #include "avxprocessing.h"
+
+#include "avxminifier.h"
 #include "benchmark.h"
 #include "jsonstruct.h"
 // #define RAPIDJSON_SSE2 // bad
@@ -79,9 +81,11 @@ int main(int argc, char *argv[]) {
                     true);
 
   rapidjson::Document d;
+
   char * buffer = (char *) malloc(p.second);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
+
   BEST_TIME(d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(), false,
           memcpy(buffer, p.first, p.second), repeat, volume, true);
   BEST_TIME(d.Parse((const char *)buffer).HasParseError(), false,
@@ -92,5 +96,15 @@ int main(int argc, char *argv[]) {
   std::cout << "input length is "<< p.second << " stringified length is " << strlength << std::endl;
   BEST_TIME_NOCHECK(rapidstringme((char*) p.first), , repeat, volume,
                     true);
+  memcpy(buffer, p.first, p.second);
+  size_t outlength = copy_without_useless_spaces((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
+  printf("these should match: %zu %zu \n", strlength, outlength);
+
+
+  uint8_t * cbuffer = (uint8_t *)buffer;
+  BEST_TIME(copy_without_useless_spaces(cbuffer, p.second,cbuffer), outlength,
+            memcpy(buffer, p.first, p.second), repeat, volume, true);
+  buffer[outlength] = '\0';
+
   free(buffer);
 }
