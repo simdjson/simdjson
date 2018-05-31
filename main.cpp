@@ -1262,5 +1262,10 @@ int main(int argc, char * argv[]) {
 //    colorfuldisplay(pj, p.first);
 	double min_result = *min_element(res.begin(), res.end());
 	cout << "Min:  " << min_result << " bytes read: " << p.second  << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0) << "\n";
+
+    free(pj.structurals);
+    free(p.first);
+    delete[] pj.structural_indexes;
+    delete[] pj.nodes;
     return 0;
 }
