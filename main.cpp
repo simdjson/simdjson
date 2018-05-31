@@ -16,7 +16,7 @@
 
 using namespace std;
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 inline void dump256(m256 d, string msg) {
@@ -392,7 +392,7 @@ const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
 // all of this stuff needs to get moved somewhere reasonable
 // like our ParsedJson structure
-u32 tape[MAX_TAPE]; 
+u64 tape[MAX_TAPE]; 
 u32 tape_locs[MAX_DEPTH];
 u8 string_buf[512*1024];
 u8 * current_string_buf_loc;
@@ -498,7 +498,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         cout << "post " << states[depth] << "\n";
 #endif
         // TAPE MACHINE, again
-        tape[tape_locs[depth]] = write_val | (c << 24); // hack. Assumes no more than 2^24 tape items and buffer size for now
+        tape[tape_locs[depth]] = write_val | (((u64)c) << 56); 
         old_tape_loc = tape_locs[depth] += write_size;
     }
 
@@ -513,8 +513,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 #ifdef DUMP_TAPES
         for (u32 j = start_loc; j < tape_locs[i]; j++) {
             if (tape[j]) {
-                cout << "j: " << j << " tape[j] char " << (char)(tape[j]>>24) 
-                     << " tape[j][0..23]: " << (tape[j]&0xffffff) << "\n";
+                cout << "j: " << j << " tape[j] char " << (char)(tape[j]>>56) 
+                     << " tape[j][0..55]: " << (tape[j]&0xffffffffffffffULL ) << "\n";
             }
         }
 #endif
@@ -976,7 +976,7 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
         u32 end_loc = tape_locs[i];
         for (u32 j = start_loc; j < end_loc; j++) {
-            switch (tape[j]>>24) {
+            switch (tape[j]>>56) {
             case '{': case '[': {
                 // pivot our tapes
                 // point the enclosing structural char (}]) to the head marker ({[) and
@@ -984,10 +984,10 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 // we start with head marker pointing at the enclosing structural char
                 // and the enclosing structural char pointing at the end. Just swap them.
                 // also check the balanced-{} or [] property here
-                u8 head_marker_c = tape[j] >> 24;
-                u32 head_marker_loc = tape[j] & 0xffffff;    
-                u32 tape_enclosing = tape[head_marker_loc];
-                u8 enclosing_c = tape_enclosing >> 24;
+                u8 head_marker_c = tape[j] >> 56;
+                u32 head_marker_loc = tape[j] & 0xffffffffffffffULL;
+                u64 tape_enclosing = tape[head_marker_loc];
+                u8 enclosing_c = tape_enclosing >> 56;
                 tape[head_marker_loc] = tape[j]; 
                 tape[j] = tape_enclosing;
                 error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
@@ -1007,21 +1007,21 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 error_sump |= !parse_number(buf, len, pj, j, false, true);
                 break;
             case 't':  {
-                u32 offset = tape[j] & 0xffffff;    
+                u32 offset = tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ tv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
                 break;
             }
             case 'f':  {
-                u32 offset = tape[j] & 0xffffff;    
+                u32 offset = tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask5) ^ fv;
                 error_sump |= is_not_structural_or_whitespace(loc[5]);
                 break;
             }
             case 'n':  {
-                u32 offset = tape[j] & 0xffffff;    
+                u32 offset = tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
                 error_sump |= ((*(const u64 *)loc) & mask4) ^ nv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
