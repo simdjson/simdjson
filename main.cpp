@@ -16,7 +16,7 @@
 
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 inline void dump256(m256 d, string msg) {
