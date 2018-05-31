@@ -1,6 +1,8 @@
 #include "avxprocessing.h"
 
 #include "avxminifier.h"
+#include "scalarminifier.h"
+
 #include "benchmark.h"
 #include "jsonstruct.h"
 // #define RAPIDJSON_SSE2 // bad
@@ -34,7 +36,7 @@ std::string rapidstringmeInsitu(char * json) {
 std::string rapidstringme(char * json) {
     Document d;
     d.Parse(json);
-    if(d.HasParseError()) { 
+    if(d.HasParseError()) {
        std::cerr << "problem!" << std::endl;
        return "";// should do something
     }
@@ -117,12 +119,16 @@ int main(int argc, char *argv[]) {
   BEST_TIME_NOCHECK(rapidstringmeInsitu((char*) buffer), memcpy(buffer, p.first, p.second) , repeat, volume,
                     true);
   memcpy(buffer, p.first, p.second);
+
   size_t outlength = copy_without_useless_spaces((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
   printf("these should match: %zu %zu \n", strlength, outlength);
-  
+
 
   uint8_t * cbuffer = (uint8_t *)buffer;
   BEST_TIME(copy_without_useless_spaces(cbuffer, p.second,cbuffer), outlength,
+            memcpy(buffer, p.first, p.second), repeat, volume, true);
+
+  BEST_TIME(despace(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
