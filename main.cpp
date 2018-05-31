@@ -316,6 +316,10 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
 
 
 const u32 MAX_DEPTH = 256;
+const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this with a modulo in our
+                                    // hot stage 3 loop 
+const u32 START_DEPTH = DEPTH_SAFETY_MARGIN;
+const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
 
 // the ape machine consists of two parts:
 //
@@ -405,6 +409,20 @@ u32 trans[MAX_STATES][256];
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
 
+// weird sub-machine for starting depth only
+// we start at 13 and go to 14 on a single UNARY
+// 14 doesn't have to have any transitions. Anything
+// else arrives after the single thing it's an error
+const int START_DEPTH_START_STATE = 13;
+
+// ANYTHING_IS_ERROR_STATE is useful both as a target
+// for a transition at the start depth and also as 
+// a good initial value for "red line" depths; that
+// is, depths that are maintained strictly to avoid
+// undefined behavior (e.g. depths below the starting
+// depth).
+const int ANYTHING_IS_ERROR_STATE = 14;
+
 never_inline void init_state_machine() {
     // states 10 and 6 eliminated
 
@@ -425,6 +443,7 @@ never_inline void init_state_machine() {
         trans[ 5][(u32)UNARIES[i]] = 7;
         trans[ 9][(u32)UNARIES[i]] = 11;
         trans[12][(u32)UNARIES[i]] = 11;
+        trans[13][(u32)UNARIES[i]] = 14;
     }
     
     // back transitions when new things are open
@@ -436,6 +455,7 @@ never_inline void init_state_machine() {
     trans[7]['['] = 9;
     trans[9]['['] = 9;
     trans[11]['['] = 9;
+
 }
 
 never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
@@ -452,11 +472,17 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     // is an error (so we can detect max_depth violations by making sure that specious tape locations haven't 
     // moved from their starting values)
 
-    u32 depth = 1;
+    u32 depth = START_DEPTH;
 
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         tape_locs[i] = i*MAX_TAPE_ENTRIES;
-        states[i] = START_STATE;
+        if (i == START_DEPTH) {
+            states[i] = START_DEPTH_START_STATE;
+        } else if ((i < START_DEPTH) || (i >= REDLINE_DEPTH)) {
+            states[i] = ANYTHING_IS_ERROR_STATE;
+        } else {
+            states[i] = START_STATE;
+        }
     }
 
     current_string_buf_loc = string_buf;
@@ -470,6 +496,18 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     u32 next_control = char_control[next_c];
 
     for (u32 i = NUM_RESERVED_NODES; i < pj.n_structural_indexes; i++) {
+
+        // very periodic safety checking. This does NOT guarantee that we
+        // haven't been in our dangerous zones above or below our normal
+        // depths. It ONLY checks to be sure that we don't manage to leave
+        // these zones and write completely off our tape.
+        if (!(i%DEPTH_SAFETY_MARGIN)) {
+            if (depth < START_DEPTH || depth >= REDLINE_DEPTH) {
+                error_sump |= 1;
+                break;
+            }
+        }
+
         u32 idx = next_idx;
         u8 c = next_c;
         u32 control = next_control; 
@@ -502,11 +540,26 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         old_tape_loc = tape_locs[depth] += write_size;
     }
 
+    for (u32 i = 0; i < MAX_DEPTH; i++) {
+        if (states[i] == 0) {
+            return false;
+        }
+    } 
+
 #define DUMP_TAPES
 #ifdef DEBUG
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
-        cout << " tape section i " << i << " from: " << start_loc 
+        cout << " tape section i " << i;
+        if (i == START_DEPTH) {
+            cout << "   (START) ";
+        } else if ((i < START_DEPTH) || (i >= REDLINE_DEPTH)) {
+            cout << " (REDLINE) ";
+        } else {
+            cout << "  (NORMAL) ";
+        }
+
+        cout << " from: " << start_loc 
              << " to: " << tape_locs[i] << " "
              << " size: " << (tape_locs[i]-start_loc) << "\n";
         cout << " state: " << states[i] << "\n"; 
@@ -961,6 +1014,12 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     return true;
 }
 
+bool tape_disturbed(u32 i) {
+    u32 start_loc = i*MAX_TAPE_ENTRIES;
+    u32 end_loc = tape_locs[i];
+    return start_loc != end_loc;
+}
+
 never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
     // fixup the mess made by the ape_machine
     // as such it does a bunch of miscellaneous things on the tapes
@@ -971,10 +1030,21 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
     u64 mask4 = 0x00000000ffffffff;
     u64 mask5 = 0x000000ffffffffff;
 
+    // if the tape has been touched at all at the depths outside the safe
+    // zone we need to quit. Note that our periodic checks to see that we're
+    // inside our safe zone in stage 3 don't guarantee that the system did
+    // not get into the danger area briefly.
+    if (tape_disturbed(START_DEPTH - 1) || tape_disturbed(REDLINE_DEPTH)) {
+        return false;
+    }
+
     // walk over each tape
-    for (u32 i = 0; i < MAX_DEPTH; i++) {
+    for (u32 i = START_DEPTH; i < MAX_DEPTH; i++) {
         u32 start_loc = i*MAX_TAPE_ENTRIES;
         u32 end_loc = tape_locs[i];
+        if (start_loc == end_loc) {
+            break;
+        }
         for (u32 j = start_loc; j < end_loc; j++) {
             switch (tape[j]>>56) {
             case '{': case '[': {
