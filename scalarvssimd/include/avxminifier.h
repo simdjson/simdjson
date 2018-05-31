@@ -163,6 +163,7 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
     prev_iter_inside_quote = (uint64_t)((s64)quote_mask >> 63);
+    /*
     const __m256i low_nibble_mask = _mm256_setr_epi8(
         //  0                           9  a   b  c  d
         16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0, 0,
@@ -191,6 +192,27 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
     uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
+    */
+    __m256i mask_20 = _mm256_set1_epi8(0x20); // c==32
+    __m256i mask_70 =
+        _mm256_set1_epi8(0x70); // adding 0x70 does not check low 4-bits
+    // but moves any value >= 16 above 128
+
+    __m256i lut_cntrl = _mm256_setr_epi8(
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00,
+        0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00);
+
+    __m256i tmp_ws_lo = _mm256_or_si256(
+        _mm256_cmpeq_epi8(mask_20, input_lo),
+        _mm256_shuffle_epi8(lut_cntrl, _mm256_adds_epu8(mask_70, input_lo)));
+    __m256i tmp_ws_hi = _mm256_or_si256(
+        _mm256_cmpeq_epi8(mask_20, input_hi),
+        _mm256_shuffle_epi8(lut_cntrl, _mm256_adds_epu8(mask_70, input_hi)));
+    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
+    uint64_t whitespace = (ws_res_0 | (ws_res_1 << 32));
+
     whitespace &= ~quote_mask;
 
     //
