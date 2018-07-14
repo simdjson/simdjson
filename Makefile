@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow 
+CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
 EXECUTABLES=parse
@@ -15,7 +15,7 @@ EXECUTABLES=parse
 
 all: $(EXECUTABLES)
 
-parse: main.cpp common_defs.h
+parse: main.cpp common_defs.h  vecdecode.c
 	$(CXX) $(CXXFLAGS) -o parse main.cpp
 
 

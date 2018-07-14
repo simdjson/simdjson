@@ -245,7 +245,7 @@ never_inline bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & 
 
         // Now, establish "pseudo-structural characters". These are non-whitespace characters
         // that are (a) outside quotes and (b) have a predecessor that's either whitespace or a structural
-        // character. This means that subsequent passes will get a chance to encounter the first character 
+        // character. This means that subsequent passes will get a chance to encounter the first character
         // of every string of non-whitespace and, if we're parsing an atom like true/false/null or a number
         // we can stop at the first whitespace or structural character following it.
 
@@ -275,6 +275,10 @@ const u32 NUM_RESERVED_NODES = 2;
 const u32 DUMMY_NODE = 0;
 const u32 ROOT_NODE = 1;
 
+#define VECDECODE
+#ifdef VECDECODE
+#include "vecdecode.c"
+#endif
 // just transform the bitmask to a big list of 32-bit integers for now
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
@@ -282,6 +286,13 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 base = NUM_RESERVED_NODES;
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
+#ifdef VECDECODE
+
+     u32 number = bitmap_decode_avx2(pj.structurals, len, base_ptr + NUM_RESERVED_NODES) + NUM_RESERVED_NODES;
+    pj.n_structural_indexes = number;
+    base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
+    return true;
+#else
     for (size_t idx = 0; idx < len; idx+=64) {
         u64 s = *(u64 *)(pj.structurals + idx/8);
 #ifdef SUPPRESS_CHEESY_FLATTEN
@@ -312,12 +323,13 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     pj.n_structural_indexes = base;
     base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
     return true;
+#endif
 }
 
 
 const u32 MAX_DEPTH = 256;
 const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this with a modulo in our
-                                    // hot stage 3 loop 
+                                    // hot stage 3 loop
 const u32 START_DEPTH = DEPTH_SAFETY_MARGIN;
 const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
 
@@ -330,7 +342,7 @@ const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
 //    These structures are either u32 offsets of other tapes or u32 offsets into our input
 //    or structures.
 //
-// The state machine doesn't record ouput. 
+// The state machine doesn't record ouput.
 // The tape machine doesn't validate.
 //
 // The output of the tape machine is meaningful only if the state machine is in non-error states.
@@ -360,7 +372,7 @@ inline size_t get_write_size(u32 control) { return control & 0xff; }
 const u32 char_control[256] = {
     // nothing interesting from 0x00-0x20
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
 
     // " is 0x22, - is 0x2d
     CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,C04,CDF,CDF,
@@ -369,24 +381,24 @@ const u32 char_control[256] = {
     C04,C04,C04,C04, C04,C04,C04,C04, C04,C04,CDF,CDF, CDF,CDF,CDF,CDF,
 
     // nothing interesting from 0x40-0x49
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
 
     // 0x5b/5d are []
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF,
 
     // f is 0x66 n is 0x6e
-    CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF, CDF,CDF,CDF,CDF, CDF,CDF,C04,CDF,
 
     // 0x7b/7d are {}, 74 is t
-    CDF,CDF,CDF,CDF, C04,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF, 
+    CDF,CDF,CDF,CDF, C04,CDF,CDF,CDF, CDF,CDF,CDF,CP4, CDF,CM4,CDF,CDF,
 
     // nothing interesting from 0x80-0xff
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
-    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, 
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
+    CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF,
     CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF, CDF,CDF,CDF,CDF
 };
@@ -396,7 +408,7 @@ const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
 // all of this stuff needs to get moved somewhere reasonable
 // like our ParsedJson structure
-u64 tape[MAX_TAPE]; 
+u64 tape[MAX_TAPE];
 u32 tape_locs[MAX_DEPTH];
 u8 string_buf[512*1024];
 u8 * current_string_buf_loc;
@@ -416,7 +428,7 @@ const int START_STATE = 1;
 const int START_DEPTH_START_STATE = 13;
 
 // ANYTHING_IS_ERROR_STATE is useful both as a target
-// for a transition at the start depth and also as 
+// for a transition at the start depth and also as
 // a good initial value for "red line" depths; that
 // is, depths that are maintained strictly to avoid
 // undefined behavior (e.g. depths below the starting
@@ -445,7 +457,7 @@ never_inline void init_state_machine() {
         trans[12][(u32)UNARIES[i]] = 11;
         trans[13][(u32)UNARIES[i]] = 14;
     }
-    
+
     // back transitions when new things are open
     trans[2]['{'] = 2;
     trans[7]['{'] = 2;
@@ -469,7 +481,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     // characters without aggressively going wrong and writing to bad memory
     // Note that any specious depth can have a specious tape associated with and all these specious depths
     // can share a region of the tape - it's harmless. Since tape is one-way, any movement in a specious tape
-    // is an error (so we can detect max_depth violations by making sure that specious tape locations haven't 
+    // is an error (so we can detect max_depth violations by making sure that specious tape locations haven't
     // moved from their starting values)
 
     u32 depth = START_DEPTH;
@@ -510,12 +522,12 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 
         u32 idx = next_idx;
         u8 c = next_c;
-        u32 control = next_control; 
+        u32 control = next_control;
 
         next_idx = pj.structural_indexes[i+1];
         next_c = buf[next_idx];
         next_control = char_control[next_c];
-    
+
         // TAPE MACHINE
         s8 depth_adjust = get_depth_adjust(control);
         u8 write_size = get_write_size(control);
@@ -523,8 +535,8 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         depth += depth_adjust;
 #ifdef DEBUG
         cout << "i: " << i << " idx: " << idx << " c " << c << "\n";
-        cout << "TAPE MACHINE: depth change " << (s32)depth_adjust 
-             << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";  
+        cout << "TAPE MACHINE: depth change " << (s32)depth_adjust
+             << " write_size " << (u32)write_size << " current_depth: " << depth << "\n";
 #endif
 
         // STATE MACHINE - hoisted here to fill in during the tape machine's latencies
@@ -536,7 +548,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         cout << "post " << states[depth] << "\n";
 #endif
         // TAPE MACHINE, again
-        tape[tape_locs[depth]] = write_val | (((u64)c) << 56); 
+        tape[tape_locs[depth]] = write_val | (((u64)c) << 56);
         old_tape_loc = tape_locs[depth] += write_size;
     }
 
@@ -544,7 +556,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         if (states[i] == 0) {
             return false;
         }
-    } 
+    }
 
 #define DUMP_TAPES
 #ifdef DEBUG
@@ -559,14 +571,14 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
             cout << "  (NORMAL) ";
         }
 
-        cout << " from: " << start_loc 
+        cout << " from: " << start_loc
              << " to: " << tape_locs[i] << " "
              << " size: " << (tape_locs[i]-start_loc) << "\n";
-        cout << " state: " << states[i] << "\n"; 
+        cout << " state: " << states[i] << "\n";
 #ifdef DUMP_TAPES
         for (u32 j = start_loc; j < tape_locs[i]; j++) {
             if (tape[j]) {
-                cout << "j: " << j << " tape[j] char " << (char)(tape[j]>>56) 
+                cout << "j: " << j << " tape[j] char " << (char)(tape[j]>>56)
                      << " tape[j][0..55]: " << (tape[j]&0xffffffffffffffULL ) << "\n";
             }
         }
@@ -609,12 +621,12 @@ const u32 structural_or_whitespace_negated[256] = {
 };
 
 // return non-zero if not a structural or whitespace char
-// zero otherwise 
+// zero otherwise
 really_inline u32 is_not_structural_or_whitespace(u8 c) {
     return structural_or_whitespace_negated[c];
 }
 
-// These chars yield themselves: " \ / 
+// These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
 // u not handled in this table as it's complex
 const u8 escape_map[256] = {
@@ -628,7 +640,7 @@ const u8 escape_map[256] = {
     0,0,0x08,0, 0,0,0x12,0, 0,0,0,0, 0,0,0x0a,0, //0x6.
     0,0,0x0d,0, 0x09,0,0,0, 0,0,0,0, 0,0,0,0, //0x7.
 
-    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 
+    0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
@@ -642,7 +654,7 @@ const u8 escape_map[256] = {
 
 const u32 leading_zeros_to_utf_bytes[33] = {
     1,
-    1, 1, 1, 1, 1, 1, 1, // 7 bits for first one 
+    1, 1, 1, 1, 1, 1, 1, // 7 bits for first one
     2, 2, 2, 2, // 11 bits for next
     3, 3, 3, 3, 3, // 16 bits for next
     4, 4, 4, 4, 4, // 21 bits for next
@@ -724,7 +736,7 @@ really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) 
     // TODO: check to see whether the below code is nonsense (it's really only a sketch at this point)
     u32 lz = __builtin_clz(code_point);
     u32 utf_bytes = leading_zeros_to_utf_bytes[lz];
-    u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes]; 
+    u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes];
     // swap and move to the other side of the register
     tmp = __builtin_bswap32(tmp);
     tmp >>= (4 - utf_bytes) * 8;
@@ -734,7 +746,7 @@ really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) 
 }
 
 really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc) {
-    u32 offset = tape[tape_loc] & 0xffffff;    
+    u32 offset = tape[tape_loc] & 0xffffff;
     const u8 * src = &buf[offset+1]; // we know that buf at offset is a "
     u8 * dst = current_string_buf_loc;
 #ifdef DEBUG
@@ -789,11 +801,11 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
                 if (!handle_unicode_codepoint(&src, &dst)) {
                     return false;
                 }
-                return true; 
+                return true;
             } else {
                 // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
                 // write bs_dist+1 characters to output
-                // note this may reach beyond the part of the buffer we've actually seen. 
+                // note this may reach beyond the part of the buffer we've actually seen.
                 // I think this is ok
                 u8 escape_result = escape_map[escape_char];
                 if (!escape_result)
@@ -801,15 +813,15 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
                 dst[bs_dist] = escape_result;
                 src += bs_dist+2;
                 dst += bs_dist+1;
-            }  
+            }
         } else {
             // they are the same. Since they can't co-occur, it means we encountered neither.
             src+=32;
             dst+=32;
-        }   
+        }
         return true;
     }
-    // later extensions - 
+    // later extensions -
     // if \\ we could detect whether it's a substantial run of \ or just eat 2 chars and write 1
     // handle anything short of \u or \\\ (as a prefix) with clever PSHUFB stuff and don't leave SIMD
     return true;
@@ -826,11 +838,11 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 // TODO: see if we really need a separate number_buf or whether we should just
 //       have a generic scratch - would need to align before using for this
 really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc, UNUSED bool found_zero, bool found_minus) {
-    u32 offset = tape[tape_loc] & 0xffffff;    
+    u32 offset = tape[tape_loc] & 0xffffff;
     if (found_minus) {
         offset++;
     }
-    const u8 * src = &buf[offset]; 
+    const u8 * src = &buf[offset];
     m256 v = _mm256_loadu_si256((const m256 *)(src));
     u64 error_sump = 0;
 #ifdef DEBUG
@@ -856,7 +868,7 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     // Terminators
         // Whitespace: 0x20, 0x09, 0x0a, 0x0d - bucket 5+6
         // Comma and the closes: 0x2c is comma, } is 0x5d, ] is 0x7d - bucket 5+7
- 
+
     // Another shufti - also a bit hand-hacked. Need to make a better construction
     const m256 low_nibble_mask = _mm256_setr_epi8(
     //  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
@@ -887,7 +899,7 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     // TODO: make a mask that indicates where our digits are
     u32 number_mask = ~enders & (enders-1);
     dumpbits32(number_mask, "number mask");
-    
+
     m256 n_mask = _mm256_set1_epi8(0x1f);
     m256 tmp_n = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, n_mask),
                                     _mm256_set1_epi8(0));
@@ -895,11 +907,11 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 
     // put something into our error sump if we have something
     // before our ending characters that isn't a valid character
-    // for the inside of our JSON 
+    // for the inside of our JSON
     number_characters &= number_mask;
-    error_sump |= number_characters ^ number_mask; 
+    error_sump |= number_characters ^ number_mask;
     dumpbits32(number_characters, "number characters");
-    
+
     m256 d_mask = _mm256_set1_epi8(0x03);
     m256 tmp_d = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, d_mask),
                                     _mm256_set1_epi8(0));
@@ -927,10 +939,10 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     u32 sign_characters = ~(u32)_mm256_movemask_epi8(tmp_s);
     sign_characters &= number_mask;
     dumpbits32(sign_characters, "sign characters");
-    
+
     u32 digit_edges = ~(digit_characters << 1) & digit_characters;
     dumpbits32(digit_edges, "digit_edges");
-    
+
     // check that we have 1-3 'edges' only
     u32 t = digit_edges;
     t &= t-1; t &= t-1; t &= t-1;
@@ -962,7 +974,7 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 #endif
         *((u64 *)current_number_buf_loc) = result;
         tape[tape_loc] = ((u32)'l') << 24 | (current_number_buf_loc - number_buf); // assume 2^24 will hold all numbers for now
-        current_number_buf_loc += 8; 
+        current_number_buf_loc += 8;
     } else {
         // try a strtod
         char * end;
@@ -979,7 +991,7 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 #endif
         *((double *)current_number_buf_loc) = result;
         tape[tape_loc] = ((u32)'d') << 24 | (current_number_buf_loc - number_buf); // assume 2^24 will hold all numbers for now
-        current_number_buf_loc += 8; 
+        current_number_buf_loc += 8;
     }
     // TODO: check the MSB element is a digit
 
@@ -997,12 +1009,12 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 
     // TODO: eE mark and +- construct are adjacent with eE first
     // eE mark preceeds final cluster of numbers only
-    // and immediately follows second-last cluster of numbers only (not 
+    // and immediately follows second-last cluster of numbers only (not
     // necessarily second, as we may have 4e10).
     // it may suffice to insist that eE is preceeded immediately
     // by a digit of any kind and that it's followed locally by
     // a digit immediately or a +- construct then a digit.
- 
+
     // TODO: if we have both . and the eE mark then the . must
     // precede the eE mark
 
@@ -1058,7 +1070,7 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
                 u32 head_marker_loc = tape[j] & 0xffffffffffffffULL;
                 u64 tape_enclosing = tape[head_marker_loc];
                 u8 enclosing_c = tape_enclosing >> 56;
-                tape[head_marker_loc] = tape[j]; 
+                tape[head_marker_loc] = tape[j];
                 tape[j] = tape_enclosing;
                 error_sump |= (enclosing_c - head_marker_c - 2); // [] and {} only differ by 2 chars
                 break;
@@ -1073,7 +1085,7 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
             case '0':
                 error_sump |= !parse_number(buf, len, pj, j, true, false);
                 break;
-            case '-': 
+            case '-':
                 error_sump |= !parse_number(buf, len, pj, j, false, true);
                 break;
             case 't':  {
@@ -1187,7 +1199,7 @@ int main(int argc, char * argv[]) {
     pj.structural_indexes = new u32[max_structures];
     pj.nodes = new JsonNode[max_structures];
 
-#if defined(DEBUG) 
+#if defined(DEBUG)
     const u32 iterations = 1;
 #else
     const u32 iterations = 1000;
