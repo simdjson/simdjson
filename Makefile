@@ -15,7 +15,7 @@ EXECUTABLES=parse
 
 all: $(EXECUTABLES)
 
-parse: main.cpp common_defs.h  vecdecode.c
+parse: main.cpp common_defs.h  vecdecode.h
 	$(CXX) $(CXXFLAGS) -o parse main.cpp
 
 
