@@ -283,7 +283,6 @@ const u32 ROOT_NODE = 1;
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
 never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
-    u32 base = NUM_RESERVED_NODES;
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
 #ifdef VECDECODE
@@ -292,6 +291,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
     return true;
 #else
+    u32 base = NUM_RESERVED_NODES;
     for (size_t idx = 0; idx < len; idx+=64) {
         u64 s = *(u64 *)(pj.structurals + idx/8);
 #ifdef SUPPRESS_CHEESY_FLATTEN
