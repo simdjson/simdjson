@@ -11,7 +11,6 @@
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "scalarprocessing.h"
 #include "util.h"
 
 // colorfuldisplay(ParsedJson & pj, const u8 * buf)
@@ -82,22 +81,11 @@ int main(int argc, char *argv[]) {
   u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
   pj.structural_indexes = new u32[max_structures];
   pj.nodes = new JsonNode[max_structures];
-  if (verbose) {
-    std::cout << "Parsing SIMD (once) " << std::endl;
-    avx_json_parse(p.first, p.second, pj);
-    colorfuldisplay(pj, p.first);
-    debugdisplay(pj, p.first);
-    std::cout << "Parsing scalar (once) " << std::endl;
-    scalar_json_parse(p.first, p.second, pj);
-    colorfuldisplay(pj, p.first);
-    debugdisplay(pj, p.first);
-  }
+
 
   int repeat = 10;
   int volume = p.second;
   BEST_TIME_NOCHECK(avx_json_parse(p.first, p.second, pj), , repeat, volume,
-                    true);
-  BEST_TIME_NOCHECK(scalar_json_parse(p.first, p.second, pj), , repeat, volume,
                     true);
 
   rapidjson::Document d;
