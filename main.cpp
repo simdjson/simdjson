@@ -553,6 +553,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
 
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         if (states[i] == 0) {
+            printf("states[%d] == 0\n", i);
             return false;
         }
     }
