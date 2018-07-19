@@ -432,7 +432,6 @@ never_inline void init_state_machine() {
 }
 
 never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj) {
-
     // NOTE - our depth is used by both the tape machine and the state machine
     // Further, in production we will set it to a largish value in a generous buffer as a rogue input
     // could consist of many {[ characters or many }] characters. We aren't busily checking errors
@@ -512,12 +511,13 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         tape[tape_locs[depth]] = write_val | (((u64)c) << 56);
         old_tape_loc = tape_locs[depth] += write_size;
     }
-
+/*
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         if (states[i] == 0) {
+          printf("duuh\n");
             return false;
         }
-    }
+    }*/
 
 #define DUMP_TAPES
 #ifdef DEBUG
@@ -547,6 +547,7 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     }
 #endif
     if (error_sump) {
+      printf("error_sump\n");
         return false;
     }
     return true;
@@ -1090,5 +1091,9 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
 static bool avx_json_parse(const u8 * buf,  size_t len, ParsedJson & pj) {
           find_structural_bits(buf, len, pj);
           flatten_indexes(len, pj);
-          return ape_machine(buf, len, pj) && shovel_machine(buf, len, pj);
+          bool apeok = ape_machine(buf, len, pj);
+          if(!apeok) {
+            return false;
+          }
+          return  shovel_machine(buf, len, pj);
 }

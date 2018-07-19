@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   int repeat = 10;
   int volume = p.second;
-  BEST_TIME_NOCHECK(avx_json_parse(p.first, p.second, pj), , repeat, volume,
+  BEST_TIME(avx_json_parse(p.first, p.second, pj), true , , repeat, volume,
                     true);
 
   rapidjson::Document d;
@@ -108,18 +108,18 @@ int main(int argc, char *argv[]) {
                     true);
   memcpy(buffer, p.first, p.second);
 
-  size_t outlength = copy_without_useless_spaces((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
+  size_t outlength = copy_without_useless_spaces_avx((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
   printf("these should match: %zu %zu \n", strlength, outlength);
 
 
   uint8_t * cbuffer = (uint8_t *)buffer;
-  BEST_TIME(copy_without_useless_spaces(cbuffer, p.second,cbuffer), outlength,
+  BEST_TIME(copy_without_useless_spaces_avx(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
-  BEST_TIME(despace(cbuffer, p.second,cbuffer), outlength,
+  BEST_TIME(scalar_despace(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
-
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
+  printf("parsing with RapidJSON after despacing:\n");
+  BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces_avx((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
                     true);
 
   free(buffer);
