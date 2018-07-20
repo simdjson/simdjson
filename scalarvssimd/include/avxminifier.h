@@ -117,11 +117,11 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
       int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = _popcnt64((~whitespace));
       __m256i vmask1 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask2,
-                              (const __m128i *)mask128_epi8 + mask1);
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFFF),
+                              (const __m128i *)mask128_epi8 + (mask1 & 0x7FFFF));
       __m256i vmask2 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask4,
-                              (const __m128i *)mask128_epi8 + mask3);
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFFF),
+                              (const __m128i *)mask128_epi8 + (mask3 & 0x7FFFF));
       __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
       __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
       _mm256_storeu2_m128i((__m128i *)(out + pop1), (__m128i *)out, result1);
@@ -199,10 +199,10 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
     int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = _popcnt64((~whitespace));
-    __m256i vmask1 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask2,
-                                         (const __m128i *)mask128_epi8 + mask1);
-    __m256i vmask2 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask4,
-                                         (const __m128i *)mask128_epi8 + mask3);
+    __m256i vmask1 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
+                                         (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
+    __m256i vmask2 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFF),
+                                         (const __m128i *)mask128_epi8 + (mask3 & 0x7FFF));
     __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
     __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
     _mm256_storeu2_m128i((__m128i *)(buffer + pop1), (__m128i *)buffer,
