@@ -34,7 +34,7 @@ static uint8_t jump_table[256 * 3] = {
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
 };
 
-static inline size_t despace(const unsigned char *bytes, size_t howmany,
+static inline size_t scalar_despace(const unsigned char *bytes, size_t howmany,
                              unsigned char *out) {
   size_t i = 0, pos = 0;
   uint8_t quote = 0;

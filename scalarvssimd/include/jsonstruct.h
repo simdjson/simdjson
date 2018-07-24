@@ -3,9 +3,9 @@
 #include "common_defs.h"
 
 struct JsonNode {
-    u32 up;
     u32 next;
-    u32 prev;
+    u32 next_type;
+    u64 payload; // a freeform 'payload' holding a parsed representation of *something*
 };
 
 struct ParsedJson {
@@ -67,16 +67,4 @@ void colorfuldisplay(ParsedJson & pj, const u8 * buf) {
         }
     }
     std::cout << std::endl;
-}
-
-void debugdisplay(ParsedJson & pj, const u8 * buf) {
-    for (u32 i = 0; i < pj.n_structural_indexes; i++) {
-        u32 idx = pj.structural_indexes[i];
-        JsonNode & n = pj.nodes[i];
-        std::cout << "i: " << i;
-        std::cout << " n.up: " << n.up;
-        std::cout << " n.next: " << n.next;
-        std::cout << " n.prev: " << n.prev;
-        std::cout << " idx: " << idx << " buf[idx] " << buf[idx] << std::endl;
-    }
 }

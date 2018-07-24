@@ -33,7 +33,7 @@ static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
 
 // take input from buf and remove useless whitespace, input and output can be
 // the same
-static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
+static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t len,
                                                  uint8_t *out) {
   // Useful constant masks
   const uint64_t even_bits = 0x5555555555555555ULL;
@@ -117,11 +117,11 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
       int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = _popcnt64((~whitespace));
       __m256i vmask1 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask2,
-                              (const __m128i *)mask128_epi8 + mask1);
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFFF),
+                              (const __m128i *)mask128_epi8 + (mask1 & 0x7FFFF));
       __m256i vmask2 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask4,
-                              (const __m128i *)mask128_epi8 + mask3);
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFFF),
+                              (const __m128i *)mask128_epi8 + (mask3 & 0x7FFFF));
       __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
       __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
       _mm256_storeu2_m128i((__m128i *)(out + pop1), (__m128i *)out, result1);
@@ -163,36 +163,7 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
     prev_iter_inside_quote = (uint64_t)((s64)quote_mask >> 63);
-    /*
-    const __m256i low_nibble_mask = _mm256_setr_epi8(
-        //  0                           9  a   b  c  d
-        16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0, 0,
-        0, 0, 8, 12, 1, 2, 9, 0, 0);
-    const __m256i high_nibble_mask = _mm256_setr_epi8(
-        //  0     2   3     5     7
-        8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 8, 0, 18, 4, 0, 1, 0,
-        1, 0, 0, 0, 3, 2, 1, 0, 0);
-    __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
-    __m256i v_lo = _mm256_and_si256(
-        _mm256_shuffle_epi8(low_nibble_mask, input_lo),
-        _mm256_shuffle_epi8(high_nibble_mask,
-                            _mm256_and_si256(_mm256_srli_epi32(input_lo, 4),
-                                             _mm256_set1_epi8(0x7f))));
 
-    __m256i v_hi = _mm256_and_si256(
-        _mm256_shuffle_epi8(low_nibble_mask, input_hi),
-        _mm256_shuffle_epi8(high_nibble_mask,
-                            _mm256_and_si256(_mm256_srli_epi32(input_hi, 4),
-                                             _mm256_set1_epi8(0x7f))));
-    __m256i tmp_ws_lo = _mm256_cmpeq_epi8(
-        _mm256_and_si256(v_lo, whitespace_shufti_mask), _mm256_set1_epi8(0));
-    __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
-        _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
-
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
-    uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
-    uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
-    */
     __m256i mask_20 = _mm256_set1_epi8(0x20); // c==32
     __m256i mask_70 =
         _mm256_set1_epi8(0x70); // adding 0x70 does not check low 4-bits
@@ -228,10 +199,10 @@ static inline size_t copy_without_useless_spaces(const uint8_t *buf, size_t len,
     int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = _popcnt64((~whitespace));
-    __m256i vmask1 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask2,
-                                         (const __m128i *)mask128_epi8 + mask1);
-    __m256i vmask2 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + mask4,
-                                         (const __m128i *)mask128_epi8 + mask3);
+    __m256i vmask1 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
+                                         (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
+    __m256i vmask2 = _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFF),
+                                         (const __m128i *)mask128_epi8 + (mask3 & 0x7FFF));
     __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
     __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
     _mm256_storeu2_m128i((__m128i *)(buffer + pop1), (__m128i *)buffer,

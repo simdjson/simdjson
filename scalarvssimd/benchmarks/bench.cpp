@@ -11,7 +11,6 @@
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "scalarprocessing.h"
 #include "util.h"
 
 // colorfuldisplay(ParsedJson & pj, const u8 * buf)
@@ -82,22 +81,11 @@ int main(int argc, char *argv[]) {
   u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
   pj.structural_indexes = new u32[max_structures];
   pj.nodes = new JsonNode[max_structures];
-  if (verbose) {
-    std::cout << "Parsing SIMD (once) " << std::endl;
-    avx_json_parse(p.first, p.second, pj);
-    colorfuldisplay(pj, p.first);
-    debugdisplay(pj, p.first);
-    std::cout << "Parsing scalar (once) " << std::endl;
-    scalar_json_parse(p.first, p.second, pj);
-    colorfuldisplay(pj, p.first);
-    debugdisplay(pj, p.first);
-  }
+
 
   int repeat = 10;
   int volume = p.second;
-  BEST_TIME_NOCHECK(avx_json_parse(p.first, p.second, pj), , repeat, volume,
-                    true);
-  BEST_TIME_NOCHECK(scalar_json_parse(p.first, p.second, pj), , repeat, volume,
+  BEST_TIME(avx_json_parse(p.first, p.second, pj), true , , repeat, volume,
                     true);
 
   rapidjson::Document d;
@@ -120,18 +108,18 @@ int main(int argc, char *argv[]) {
                     true);
   memcpy(buffer, p.first, p.second);
 
-  size_t outlength = copy_without_useless_spaces((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
+  size_t outlength = copy_without_useless_spaces_avx((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
   printf("these should match: %zu %zu \n", strlength, outlength);
 
 
   uint8_t * cbuffer = (uint8_t *)buffer;
-  BEST_TIME(copy_without_useless_spaces(cbuffer, p.second,cbuffer), outlength,
+  BEST_TIME(copy_without_useless_spaces_avx(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
-  BEST_TIME(despace(cbuffer, p.second,cbuffer), outlength,
+  BEST_TIME(scalar_despace(cbuffer, p.second,cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
-
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
+  printf("parsing with RapidJSON after despacing:\n");
+  BEST_TIME(d.ParseInsitu(buffer).HasParseError(),false, cbuffer[copy_without_useless_spaces_avx((const uint8_t *)p.first, p.second,cbuffer)]='\0' , repeat, volume,
                     true);
 
   free(buffer);
