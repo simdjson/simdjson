@@ -15,7 +15,7 @@ EXECUTABLES=parse
 
 all: $(EXECUTABLES)
 
-parse: main.cpp common_defs.h
+parse: main.cpp common_defs.h linux-perf-events.h
 	$(CXX) $(CXXFLAGS) -o parse main.cpp
 
 

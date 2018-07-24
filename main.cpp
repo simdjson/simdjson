@@ -1,4 +1,3 @@
-#include "linux-perf-events.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -13,6 +12,7 @@
 #include <x86intrin.h>
 #include <assert.h>
 #include "common_defs.h"
+#include "linux-perf-events.h"
 
 using namespace std;
 
@@ -1200,34 +1200,42 @@ int main(int argc, char * argv[]) {
 #endif
 
 #ifndef SQUASH_COUNTERS
-    LinuxEvents<PERF_TYPE_HARDWARE> cycles(PERF_COUNT_HW_CPU_CYCLES);
-    LinuxEvents<PERF_TYPE_HARDWARE> instructions(PERF_COUNT_HW_INSTRUCTIONS);
+    vector<int> evts;
+    evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
+    evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
+    LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
+    vector<u64> results;
+    results.resize(evts.size());
     unsigned long cy1 = 0, cy2 = 0, cy3 = 0, cy4 = 0;
     unsigned long cl1 = 0, cl2 = 0, cl3 = 0, cl4 = 0;
 #endif
     for (u32 i = 0; i < iterations; i++) {
         auto start = std::chrono::steady_clock::now();
 #ifndef SQUASH_COUNTERS
-        cycles.start(); instructions.start();
+        unified.start();
 #endif
         find_structural_bits(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
-        cl1 += instructions.end(); cy1 += cycles.end();
-        cycles.start(); instructions.start();
+        unified.end(results);
+        cy1 += results[0]; cl1 += results[1];
+        unified.start();
 #endif
         flatten_indexes(p.second, pj);
 #ifndef SQUASH_COUNTERS
-        cl2 += instructions.end(); cy2 += cycles.end();
-        cycles.start(); instructions.start();
+        unified.end(results);
+        cy2 += results[0]; cl2 += results[1];
+        unified.start();
 #endif
         ape_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
-        cl3 += instructions.end(); cy3 += cycles.end();
-        cycles.start(); instructions.start();
+        unified.end(results);
+        cy3 += results[0]; cl3 += results[1];
+        unified.start();
 #endif
         shovel_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
-        cl4 += instructions.end(); cy4 += cycles.end();
+        unified.end(results);
+        cy4 += results[0]; cl4 += results[1];
 #endif
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
