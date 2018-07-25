@@ -319,8 +319,9 @@ static size_t bitmap_decode_avx2(uint8_t *bitmapInPtr, size_t bitsin, uint32_t *
   if ((bitsin % 64) != 0) {
     // finish off the work the slow way.
     uint64_t bitset = 0;
-    memcpy(&bitset, bitmapInPtr, sizeof(bitset));
-    bitset = bitset & ((UINT64_C(1) << (bitsin % 64)) - 1);
+    size_t leftoverbits = bitsin - sizeinwords * 64;
+    size_t leftoverbytes = ( leftoverbits + 7 ) / 8;
+    memcpy(&bitset, bitmapInPtr + sizeinwords * 8, leftoverbytes);
     while (bitset != 0) {
       uint64_t t = bitset & -bitset;
       int r = __builtin_ctzll(bitset);
