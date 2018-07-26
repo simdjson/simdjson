@@ -1,3 +1,10 @@
+#include <dirent.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -1160,9 +1167,81 @@ void colorfuldisplay(ParsedJson & pj, const u8 * buf) {
     }
     std::cout << std::endl;
 }
+
+
+/**
+ * Does the file filename ends with the given extension.
+ */
+static bool hasExtension(const char *filename, const char *extension) {
+    const char *ext = strrchr(filename, '.');
+    return (ext && !strcmp(ext, extension));
+}
+
+bool startsWith(const char *pre, const char *str) {
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
+}
+
+void validate() {
+  init_state_machine();// to be safe
+  const char *dirname = "jsonchecker/"; // ugly, hardcoded, brittle
+  const char *extension = ".json";
+  size_t dirlen = strlen(dirname);
+  struct dirent **entry_list;
+  int c = scandir(dirname, &entry_list, 0, alphasort);
+  if (c < 0) {
+    printf("error accessing %s \n", dirname);
+    return;
+  }
+  if (c == 0) {
+    printf("nothing in dir %s \n", dirname);
+    return;
+  }
+  for (int i = 0; i < c; i++) {
+    const char *name = entry_list[i]->d_name;
+    if (hasExtension(name, extension)) {
+      size_t filelen = strlen(name);
+      char *fullpath = (char *)malloc(dirlen + filelen + 1);
+      strcpy(fullpath, dirname);
+      strcpy(fullpath + dirlen, name);
+      pair<u8 *, size_t> p = get_corpus(fullpath);
+      ParsedJson pj;
+      if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
+              cerr << "Could not allocate memory\n";
+              return;
+      };
+      pj.n_structural_indexes = 0;
+      u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
+      pj.structural_indexes = new u32[max_structures];
+      pj.nodes = new JsonNode[max_structures];
+      find_structural_bits(p.first, p.second, pj);
+      flatten_indexes(p.second, pj);
+      bool isok = ape_machine(p.first, p.second, pj);
+      if(isok)
+       isok = shovel_machine(p.first, p.second, pj);
+      if(startsWith("pass",name)) {
+        if(!isok) printf("warning: file %s should pass but it fails.\n",name);
+      }
+      if(startsWith("fail",name)) {
+        if(isok) printf("warning: file %s should fail but it passes.\n",name);
+      }
+      free(pj.structurals);
+      free(p.first);
+      delete[] pj.structural_indexes;
+      delete[] pj.nodes;
+      free(fullpath);
+    }
+  }
+  for (int i = 0; i < c; ++i) free(entry_list[i]);
+  free(entry_list);
+}
+
 int main(int argc, char * argv[]) {
     if (argc != 2) {
         cerr << "Usage: " << argv[0] << " <jsonfile>\n";
+        cout << "We are going to validate:\n" << std::endl;
+        validate();
         exit(1);
     }
     pair<u8 *, size_t> p = get_corpus(argv[1]);
