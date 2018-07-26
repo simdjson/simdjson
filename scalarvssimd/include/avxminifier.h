@@ -102,12 +102,6 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
       uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
       uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
       whitespace &= ~quote_mask;
-      // surprisingly unhelpful:
-      // if(whitespace == 0) {
-      //    _mm256_storeu_si256((__m256i *)out, input_lo);
-      //    _mm256_storeu_si256((__m256i *)(out + 32), input_hi);
-      //    out += 64;
-      // } else {
       int mask1 = whitespace & 0xFFFF;
       int mask2 = (whitespace >> 16) & 0xFFFF;
       int mask3 = (whitespace >> 32) & 0xFFFF;
@@ -117,18 +111,17 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
       int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = _popcnt64((~whitespace));
       __m256i vmask1 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFFF),
-                              (const __m128i *)mask128_epi8 + (mask1 & 0x7FFFF));
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
+                              (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
       __m256i vmask2 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFFF),
-                              (const __m128i *)mask128_epi8 + (mask3 & 0x7FFFF));
+          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFF),
+                              (const __m128i *)mask128_epi8 + (mask3 & 0x7FFF));
       __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
       __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
       _mm256_storeu2_m128i((__m128i *)(out + pop1), (__m128i *)out, result1);
       _mm256_storeu2_m128i((__m128i *)(out + pop3), (__m128i *)(out + pop2),
                            result2);
       out += pop4;
-      //}
     }
   }
   // we finish off the job... copying and pasting the code is not ideal here,
@@ -183,10 +176,8 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
     uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = (ws_res_0 | (ws_res_1 << 32));
-
     whitespace &= ~quote_mask;
 
-    //
     if (len - idx < 64) {
       whitespace |= UINT64_C(0xFFFFFFFFFFFFFFFF) << (len - idx);
     }
@@ -194,7 +185,6 @@ static inline size_t copy_without_useless_spaces_avx(const uint8_t *buf, size_t 
     int mask2 = (whitespace >> 16) & 0xFFFF;
     int mask3 = (whitespace >> 32) & 0xFFFF;
     int mask4 = (whitespace >> 48) & 0xFFFF;
-    //    dumpbits(whitespace,"whitespace");
     int pop1 = _popcnt64((~whitespace) & 0xFFFF);
     int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));

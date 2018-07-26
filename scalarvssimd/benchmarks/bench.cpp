@@ -109,8 +109,7 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.first, p.second);
 
   size_t outlength = copy_without_useless_spaces_avx((const uint8_t *)buffer, p.second,(uint8_t *) buffer);
-  printf("these should match: %zu %zu \n", strlength, outlength);
-
+  std::cout << "despaced length is " << outlength << std::endl;
 
   uint8_t * cbuffer = (uint8_t *)buffer;
   BEST_TIME(copy_without_useless_spaces_avx(cbuffer, p.second,cbuffer), outlength,
