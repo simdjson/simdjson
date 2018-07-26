@@ -296,6 +296,20 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
         while (s) {
             base_ptr[base++] = (u32)idx + __builtin_ctzll(s); s &= s - 1ULL;
         }
+#elif defined(NO_PDEP_PLEASE)
+#ifndef NO_PDEP_WIDTH
+#define NO_PDEP_WIDTH 6
+#endif
+        u32 cnt = __builtin_popcountll(s);
+        u32 next_base = base + cnt;
+        while (s) {
+          for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+            base_ptr[base+i] = (u32)idx + __builtin_ctzll(s);
+            s = s & (s - 1);
+          }
+          base += NO_PDEP_WIDTH;
+        }
+        base = next_base;
 #else
         u32 cnt = __builtin_popcountll(s);
         u32 next_base = base + cnt;
