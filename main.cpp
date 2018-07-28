@@ -282,11 +282,38 @@ const u32 NUM_RESERVED_NODES = 2;
 const u32 DUMMY_NODE = 0;
 const u32 ROOT_NODE = 1;
 
+#ifndef NO_PDEP_WIDTH
+#define NO_PDEP_WIDTH 8
+#endif
+
+#define SET_BIT(i) base_ptr[base+i] = (u32)idx + __builtin_ctzll(s);\
+s = s & (s - 1);
+
+#define SET_BIT1 SET_BIT(0)
+#define SET_BIT2 SET_BIT1 SET_BIT(1)
+#define SET_BIT3 SET_BIT2 SET_BIT(2)
+#define SET_BIT4 SET_BIT3 SET_BIT(3)
+#define SET_BIT5 SET_BIT4 SET_BIT(4)
+#define SET_BIT6 SET_BIT5 SET_BIT(5)
+#define SET_BIT7 SET_BIT6 SET_BIT(6)
+#define SET_BIT8 SET_BIT7 SET_BIT(7)
+#define SET_BIT9 SET_BIT8 SET_BIT(8)
+#define SET_BIT10 SET_BIT9 SET_BIT(9)
+#define SET_BIT11 SET_BIT10 SET_BIT(10)
+#define SET_BIT12 SET_BIT11 SET_BIT(11)
+#define SET_BIT13 SET_BIT12 SET_BIT(12)
+#define SET_BIT14 SET_BIT13 SET_BIT(13)
+#define SET_BIT15 SET_BIT14 SET_BIT(14)
+#define SET_BIT16 SET_BIT15 SET_BIT(15)
+
+#define CALL(macro, ...)  macro(__VA_ARGS__)
+
+#define SET_BITLOOPN(n) SET_BIT##n
+
 
 // just transform the bitmask to a big list of 32-bit integers for now
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
-__attribute__((optimize("unroll-loops"))) // this matters for the NO_PDEP_WIDTH
 never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
@@ -298,16 +325,14 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
             base_ptr[base++] = (u32)idx + __builtin_ctzll(s); s &= s - 1ULL;
         }
 #elif defined(NO_PDEP_PLEASE)
-#ifndef NO_PDEP_WIDTH
-#define NO_PDEP_WIDTH 8
-#endif
         u32 cnt = __builtin_popcountll(s);
         u32 next_base = base + cnt;
         while (s) {
-          for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+          CALL(SET_BITLOOPN,NO_PDEP_WIDTH)
+          /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
             base_ptr[base+i] = (u32)idx + __builtin_ctzll(s);
             s = s & (s - 1);
-          }
+          }*/
           base += NO_PDEP_WIDTH;
         }
         base = next_base;
