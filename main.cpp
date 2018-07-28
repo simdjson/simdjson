@@ -286,6 +286,7 @@ const u32 ROOT_NODE = 1;
 // just transform the bitmask to a big list of 32-bit integers for now
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward implementation
+__attribute__((optimize("unroll-loops"))) // this matters for the NO_PDEP_WIDTH
 never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
@@ -298,7 +299,7 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
         }
 #elif defined(NO_PDEP_PLEASE)
 #ifndef NO_PDEP_WIDTH
-#define NO_PDEP_WIDTH 6
+#define NO_PDEP_WIDTH 8
 #endif
         u32 cnt = __builtin_popcountll(s);
         u32 next_base = base + cnt;
