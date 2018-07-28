@@ -83,6 +83,7 @@ APA
 -  N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
 
 ## References
+- [Google double-conv](https://github.com/google/double-conversion/)
 - [How to implement atoi using SIMD?](https://stackoverflow.com/questions/35127060/how-to-implement-atoi-using-simd)
 - [Parsing JSON is a Minefield 💣](http://seriot.ch/parsing_json.php)
 - https://tools.ietf.org/html/rfc7159
