@@ -16,7 +16,7 @@ EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
 LIBS=dependencies/double-conversion/release/libdouble-conversion.a
 
-all: $(EXECUTABLES) $(LIBS)
+all: $(LIBS) $(EXECUTABLES) 
 	-./parse
 
 dependencies/double-conversion/release/libdouble-conversion.a : dependencies/double-conversion/README.md
