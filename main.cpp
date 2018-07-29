@@ -896,8 +896,8 @@ really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 ///
 #ifdef DOUBLECONV
     int processed_characters_count;
-    double result = converter.StringToDouble((const char*)( buf+offset), 10, &processed_characters_count);
-    printf("number is %f and used %d chars \n", result, processed_characters_count);
+    double result_double_conv = converter.StringToDouble((const char*)( buf+offset), 10, &processed_characters_count);
+    printf("number is %f and used %d chars \n", result_double_conv, processed_characters_count);
 #endif
 ////////////////
 // end of double conv temporary stuff.

@@ -6,7 +6,8 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release -ldouble-conversion
+CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release 
+LIBFLAGS = -ldouble-conversion
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
 EXECUTABLES=parse
@@ -24,7 +25,7 @@ $(LIDDOUBLE) : dependencies/double-conversion/README.md
 	cd dependencies/double-conversion/ && mkdir -p release && cd release && cmake .. && make
 
 parse: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parse main.cpp
+	$(CXX) $(CXXFLAGS) -o parse main.cpp $(LIBFLAGS)
 
 testflatten: parse parsenocheesy parsenodep8
 	for filename in jsonexamples/twitter.json jsonexamples/gsoc-2018.json jsonexamples/citm_catalog.json jsonexamples/canada.json ; do \
