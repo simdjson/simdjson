@@ -6,20 +6,21 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release/libdouble-conversion.a
+CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release -ldouble-conversion
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
 EXECUTABLES=parse
 
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
+LIDDOUBLE:=dependencies/double-conversion/release/libdouble-conversion.a
 
-LIBS=dependencies/double-conversion/release/libdouble-conversion.a
+LIBS=$(LIDDOUBLE)
 
-all: $(LIBS) $(EXECUTABLES) 
+all: $(LIBS) $(EXECUTABLES)
 	-./parse
 
-dependencies/double-conversion/release/libdouble-conversion.a : dependencies/double-conversion/README.md
+$(LIDDOUBLE) : dependencies/double-conversion/README.md
 	cd dependencies/double-conversion/ && mkdir -p release && cd release && cmake .. && make
 
 parse: main.cpp common_defs.h linux-perf-events.h

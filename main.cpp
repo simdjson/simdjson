@@ -22,6 +22,15 @@
 #include "common_defs.h"
 #include "linux-perf-events.h"
 
+/// Fixme: enable doube conv
+// #define DOUBLECONV
+#ifdef DOUBLECONV
+#include "double-conversion/double-conversion.h"
+#include "double-conversion/ieee.h"
+
+using namespace double_conversion;
+#endif
+
 using namespace std;
 
 //#define DEBUG
@@ -865,6 +874,11 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
     return true;
 }
 
+#ifdef DOUBLECONV
+static StringToDoubleConverter converter(StringToDoubleConverter::ALLOW_TRAILING_JUNK, 2000000.0, Double::NaN(), NULL, NULL);
+#endif
+
+
 // put a parsed version of number (either as a double or a signed long) into the number buffer,
 // put a 'tag' indicating which type and where it is back onto the tape at that location
 // return false if we can't parse the number which means either
@@ -877,6 +891,17 @@ really_inline bool parse_string(const u8 * buf, UNUSED size_t len, UNUSED Parsed
 //       have a generic scratch - would need to align before using for this
 really_inline bool parse_number(const u8 * buf, UNUSED size_t len, UNUSED ParsedJson & pj, u32 tape_loc, UNUSED bool found_zero, bool found_minus) {
     u32 offset = tape[tape_loc] & 0xffffff;
+////////////////
+// This is temporary... but it illustrates how one could use Google's double conv.
+///
+#ifdef DOUBLECONV
+    int processed_characters_count;
+    double result = converter.StringToDouble((const char*)( buf+offset), 10, &processed_characters_count);
+    printf("number is %f and used %d chars \n", result, processed_characters_count);
+#endif
+////////////////
+// end of double conv temporary stuff.
+////////////////
     if (found_minus) {
         offset++;
     }
