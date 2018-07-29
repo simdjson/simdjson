@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <x86intrin.h>
 #include <assert.h>
+#include "double-conversion/double-conversion.h"
 #include "common_defs.h"
 #include "linux-perf-events.h"
 

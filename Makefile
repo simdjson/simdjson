@@ -6,20 +6,26 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow
+CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release/libdouble-conversion.a
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
 EXECUTABLES=parse
 
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
-all: $(EXECUTABLES)
+
+LIBS=dependencies/double-conversion/release/libdouble-conversion.a
+
+all: $(EXECUTABLES) $(LIBS)
 	-./parse
+
+dependencies/double-conversion/release/libdouble-conversion.a : dependencies/double-conversion/README.md
+	cd dependencies/double-conversion/ && mkdir -p release && cd release && cmake .. && make
 
 parse: main.cpp common_defs.h linux-perf-events.h
 	$(CXX) $(CXXFLAGS) -o parse main.cpp
 
-testflatten: parse parsenocheesy parsenodep8 
+testflatten: parse parsenocheesy parsenodep8
 	for filename in jsonexamples/twitter.json jsonexamples/gsoc-2018.json jsonexamples/citm_catalog.json jsonexamples/canada.json ; do \
         	echo $$filename ; \
 		set -x; \
@@ -35,6 +41,8 @@ parsenocheesy: main.cpp common_defs.h linux-perf-events.h
 parsenodep8: main.cpp common_defs.h linux-perf-events.h
 	$(CXX) $(CXXFLAGS) -o parsenodep8 main.cpp -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=8
 
+dependencies/double-conversion/README.md:
+	git pull && git submodule init && git submodule update && git submodule status
 
 clean:
 	rm -f $(EXECUTABLES) $(EXTRA_EXECUTABLES)
