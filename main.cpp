@@ -328,6 +328,22 @@ never_inline bool flatten_indexes(size_t len, ParsedJson & pj) {
     u32 * base_ptr = pj.structural_indexes;
     base_ptr[DUMMY_NODE] = base_ptr[ROOT_NODE] = 0; // really shouldn't matter
     u32 base = NUM_RESERVED_NODES;
+#ifdef BUILDHISTOGRAM
+    uint32_t counters [65];
+    uint32_t total = 0;
+    for(int k = 0; k < 66; k++) counters[k] = 0;
+    for (size_t idx = 0; idx < len; idx+=64) {
+        u64 s = *(u64 *)(pj.structurals + idx/8);
+        u32 cnt = __builtin_popcountll(s);
+        total ++;
+        counters[cnt]++;
+    }
+    printf("\n histogram:\n");
+    for(int k = 0; k < 66; k++) {
+      if(counters[k]>0)printf("%10d %10.u %10.3f \n", k, counters[k], counters[k] * 1.0 / total);
+    }
+    printf("\n\n");
+#endif
     for (size_t idx = 0; idx < len; idx+=64) {
         u64 s = *(u64 *)(pj.structurals + idx/8);
 #ifdef SUPPRESS_CHEESY_FLATTEN
