@@ -614,9 +614,17 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
         old_tape_loc = tape_locs[depth] += write_size;
     }
 
+    if (depth != START_DEPTH) {
+        // We haven't returned to our start depth, so our braces can't possibly match
+        // Note this doesn't exclude the possibility that we have improperly matched { } or [] pairs
+        return false;
+    }
+
+    printf("Ending depth is %d\n", depth);
+
     for (u32 i = 0; i < MAX_DEPTH; i++) {
         if (states[i] == 0) {
-            printf("states[%d] == 0\n", i);
+//            printf("states[%d] == 0\n", i);
             return false;
         }
     }
@@ -1194,7 +1202,7 @@ never_inline bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
         }
     }
     if (error_sump) {
-        cerr << "Ugh!\n";
+//        cerr << "Ugh!\n";
         return false;
     }
     return true;
@@ -1283,6 +1291,7 @@ void validate() {
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (hasExtension(name, extension)) {
+      printf("validating: file %s \n",name);
       size_t filelen = strlen(name);
       char *fullpath = (char *)malloc(dirlen + filelen + 1);
       strcpy(fullpath, dirname);
