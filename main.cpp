@@ -483,6 +483,28 @@ u32 trans[MAX_STATES][256];
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;
 
+u32 valid_end_states[MAX_STATES] = {
+    0, // 0 state is by definition an error
+    1, // ok to still be in start state
+    1, // state 2: we've seen an { - if we left this level it's ok
+    0, // state 3 is abolished, we shouldn't be in it
+
+    0, // state 4 means we saw a string inside an object. We can't end like this!
+    0, // similarly state 5 means we saw a string followed by a colon.
+    0, // state 6 is abolished
+    1, // it's ok to finish on 7
+
+    0, // state 8 we've seen a comma inside an object - can't finish here
+    1, // state 9 is like state 2 only for arrays, so ok
+    0, // state 10 abolished
+    1, // state 11 is ok to finish on, we just saw a unary inside a array
+
+    0, // state 12 we've just seen a comma inside an array - can't finish
+    0, // state 13 is our weird start state. I think we shouldn't end on it as we need to see something
+    1, // state 14 is ok. Its an error to see something *more* here but not to be in this state
+    0, // we don't use state 15
+};
+
 // weird sub-machine for starting depth only
 // we start at 13 and go to 14 on a single UNARY
 // 14 doesn't have to have any transitions. Anything
@@ -517,9 +539,23 @@ never_inline void init_state_machine() {
         trans[ 5][(u32)UNARIES[i]] = 7;
         trans[ 9][(u32)UNARIES[i]] = 11;
         trans[12][(u32)UNARIES[i]] = 11;
+#ifdef PERMIT_RANDOM_UNARIES_AT_TOP_LEVEL
+        // NOTE: if we permit JSON documents that
+        // contain a single number or string, then we 
+        // allow all the unaries at the top level
         trans[13][(u32)UNARIES[i]] = 14;
+#endif
     }
-
+    
+#ifndef PERMIT_RANDOM_UNARIES_AT_TOP_LEVEL
+    // NOTE: if we don't permit JSON documents that
+    // that contain a single number or string, we must
+    // make sure we accept the top-level closing braces
+    // that are delivered to the start depth only
+    trans[13]['}'] = 14;
+    trans[13][']'] = 14;
+#endif
+    
     // back transitions when new things are open
     trans[2]['{'] = 2;
     trans[7]['{'] = 2;
@@ -623,8 +659,10 @@ never_inline bool ape_machine(const u8 * buf, UNUSED size_t len, ParsedJson & pj
     printf("Ending depth is %d\n", depth);
 
     for (u32 i = 0; i < MAX_DEPTH; i++) {
-        if (states[i] == 0) {
-//            printf("states[%d] == 0\n", i);
+        if (!valid_end_states[states[i]]) {
+#ifdef DEBUG
+            printf("Invalid ending state: states[%d] == %d\n", states[i]);
+#endif
             return false;
         }
     }
