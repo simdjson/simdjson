@@ -6,6 +6,7 @@
 
 .PHONY: clean cleandist
 
+#CXXFLAGS =  -g -std=c++11 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release
 CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/double-conversion -Ldependencies/double-conversion/release
 LIBFLAGS = -ldouble-conversion
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
@@ -24,8 +25,8 @@ all: $(LIBS) $(EXECUTABLES)
 $(LIDDOUBLE) : dependencies/double-conversion/README.md
 	cd dependencies/double-conversion/ && mkdir -p release && cd release && cmake .. && make
 
-parse: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parse main.cpp $(LIBFLAGS)
+parse: main.cpp stage1_find_marks.cpp common_defs.h linux-perf-events.h
+	$(CXX) $(CXXFLAGS) -o parse stage1_find_marks.cpp stage2_flatten.cpp stage3_ape_machine.cpp stage4_shovel_machine.cpp main.cpp $(LIBFLAGS)
 
 parsehisto: main.cpp common_defs.h linux-perf-events.h
 	$(CXX) $(CXXFLAGS) -o parsehisto main.cpp $(LIBFLAGS) -DBUILDHISTOGRAM
