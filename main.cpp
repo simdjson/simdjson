@@ -302,5 +302,6 @@ int main(int argc, char * argv[]) {
     free(pj.structurals);
     free(p.first);
     delete[] pj.structural_indexes;
+    delete pj_ptr; 
     return 0;
 }

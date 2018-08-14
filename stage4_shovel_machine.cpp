@@ -1,5 +1,6 @@
 #include <x86intrin.h>
 #include <assert.h>
+#include <cstring>
 
 #include "common_defs.h"
 #include "simdjson_internal.h"
@@ -151,8 +152,9 @@ really_inline bool handle_unicode_codepoint(const u8 ** src_ptr, u8 ** dst_ptr) 
     u32 tmp = _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes];
     // swap and move to the other side of the register
     tmp = __builtin_bswap32(tmp);
-    tmp >>= (4 - utf_bytes) * 8;
-    **(u32 **)dst_ptr = tmp;
+    tmp >>= ((4 - utf_bytes) * 8) & 31;// if utf_bytes, this could become a shift by 32, hence the mask with 31
+    // use memcpy to avoid undefined behavior:
+    std::memcpy(*(u32 **)dst_ptr,&tmp,sizeof(u32)); //**(u32 **)dst_ptr = tmp;
     *dst_ptr += utf_bytes;
     return true;
 }
@@ -519,21 +521,27 @@ bool shovel_machine(const u8 * buf, size_t len, ParsedJson & pj) {
             case 't':  {
                 u32 offset = pj.tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
-                error_sump |= ((*(const u64 *)loc) & mask4) ^ tv;
+                u64 locval;// we want to avoid unaligned 64-bit loads (undefined in C/C++)
+                std::memcpy(&locval,loc,sizeof(u64));
+                error_sump |= (locval & mask4) ^ tv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
                 break;
             }
             case 'f':  {
                 u32 offset = pj.tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
-                error_sump |= ((*(const u64 *)loc) & mask5) ^ fv;
+                u64 locval;// we want to avoid unaligned 64-bit loads (undefined in C/C++)
+                std::memcpy(&locval,loc,sizeof(u64));
+                error_sump |= (locval & mask5) ^ fv;
                 error_sump |= is_not_structural_or_whitespace(loc[5]);
                 break;
             }
             case 'n':  {
                 u32 offset = pj.tape[j] & 0xffffffffffffffULL;
                 const u8 * loc = buf + offset;
-                error_sump |= ((*(const u64 *)loc) & mask4) ^ nv;
+                u64 locval;// we want to avoid unaligned 64-bit loads (undefined in C/C++)
+                std::memcpy(&locval,loc,sizeof(u64));
+                error_sump |= (locval & mask4) ^ nv;
                 error_sump |= is_not_structural_or_whitespace(loc[4]);
                 break;
             }
