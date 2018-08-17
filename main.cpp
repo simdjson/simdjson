@@ -39,29 +39,10 @@ using namespace double_conversion;
 #include "stage2_flatten.h"
 #include "stage3_ape_machine.h"
 #include "stage4_shovel_machine.h"
-
+#include "jsonioutil.h"
 using namespace std;
 
-// get a corpus; pad out to cache line so we can always use SIMD
-pair<u8 *, size_t> get_corpus(string filename) {
-ifstream is(filename, ios::binary);
-    if (is) {
-        stringstream buffer;
-        buffer << is.rdbuf();
-        size_t length = buffer.str().size();
-        char * aligned_buffer;
-        if (posix_memalign( (void **)&aligned_buffer, 64, ROUNDUP_N(length, 64))) {
-            cerr << "Could not allocate memory\n";
-            exit(1);
-        };
-        memset(aligned_buffer, 0x20, ROUNDUP_N(length, 64));
-        memcpy(aligned_buffer, buffer.str().c_str(), length);
-        is.close();
-        return make_pair((u8 *)aligned_buffer, length);
-    }
-    throw "No corpus";
-    return make_pair((u8 *)0, (size_t)0);
-}
+
 
 
 // https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
@@ -115,80 +96,12 @@ void colorfuldisplay(ParsedJson & pj, const u8 * buf) {
 }
 
 
-/**
- * Does the file filename ends with the given extension.
- */
-static bool hasExtension(const char *filename, const char *extension) {
-    const char *ext = strrchr(filename, '.');
-    return (ext && !strcmp(ext, extension));
-}
 
-bool startsWith(const char *pre, const char *str) {
-    size_t lenpre = strlen(pre),
-           lenstr = strlen(str);
-    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
-}
 
-void validate() {
-  init_state_machine();// to be safe
-  const char *dirname = "jsonchecker/"; // ugly, hardcoded, brittle
-  const char *extension = ".json";
-  size_t dirlen = strlen(dirname);
-  struct dirent **entry_list;
-  int c = scandir(dirname, &entry_list, 0, alphasort);
-  if (c < 0) {
-    printf("error accessing %s \n", dirname);
-    return;
-  }
-  if (c == 0) {
-    printf("nothing in dir %s \n", dirname);
-    return;
-  }
-  for (int i = 0; i < c; i++) {
-    const char *name = entry_list[i]->d_name;
-    if (hasExtension(name, extension)) {
-      printf("validating: file %s \n",name);
-      size_t filelen = strlen(name);
-      char *fullpath = (char *)malloc(dirlen + filelen + 1);
-      strcpy(fullpath, dirname);
-      strcpy(fullpath + dirlen, name);
-      pair<u8 *, size_t> p = get_corpus(fullpath);
-        // terrible hack but just to get it working
-        ParsedJson * pj_ptr = new ParsedJson;
-        ParsedJson & pj(*pj_ptr);
-      if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
-              cerr << "Could not allocate memory\n";
-              return;
-      };
-      pj.n_structural_indexes = 0;
-      u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
-      pj.structural_indexes = new u32[max_structures];
-      find_structural_bits(p.first, p.second, pj);
-      flatten_indexes(p.second, pj);
-      bool isok = ape_machine(p.first, p.second, pj);
-      if(isok)
-       isok = shovel_machine(p.first, p.second, pj);
-      if(startsWith("pass",name)) {
-        if(!isok) printf("warning: file %s should pass but it fails.\n",name);
-      }
-      if(startsWith("fail",name)) {
-        if(isok) printf("warning: file %s should fail but it passes.\n",name);
-      }
-      free(pj.structurals);
-      free(p.first);
-      delete[] pj.structural_indexes;
-      free(fullpath);
-    }
-  }
-  for (int i = 0; i < c; ++i) free(entry_list[i]);
-  free(entry_list);
-}
 
 int main(int argc, char * argv[]) {
     if (argc != 2) {
-        cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-        cout << "We are going to validate:\n" << std::endl;
-        validate();
+        cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
         exit(1);
     }
     pair<u8 *, size_t> p = get_corpus(argv[1]);
@@ -196,7 +109,7 @@ int main(int argc, char * argv[]) {
     ParsedJson & pj(*pj_ptr);
 
     if (posix_memalign( (void **)&pj.structurals, 8, ROUNDUP_N(p.second, 64)/8)) {
-        cerr << "Could not allocate memory\n";
+        cerr << "Could not allocate memory" << endl;
         exit(1);
     };
 
@@ -237,38 +150,44 @@ int main(int argc, char * argv[]) {
     unsigned long cy1 = 0, cy2 = 0, cy3 = 0, cy4 = 0;
     unsigned long cl1 = 0, cl2 = 0, cl3 = 0, cl4 = 0;
 #endif
+    bool isok = true;
     for (u32 i = 0; i < iterations; i++) {
         auto start = std::chrono::steady_clock::now();
 #ifndef SQUASH_COUNTERS
         unified.start();
 #endif
-        find_structural_bits(p.first, p.second, pj);
+        isok = find_structural_bits(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
         unified.end(results);
         cy1 += results[0]; cl1 += results[1];
+        if(! isok ) break;
         unified.start();
 #endif
-        flatten_indexes(p.second, pj);
+        isok = flatten_indexes(p.second, pj);
 #ifndef SQUASH_COUNTERS
         unified.end(results);
         cy2 += results[0]; cl2 += results[1];
+        if(! isok ) break;
         unified.start();
 #endif
-        ape_machine(p.first, p.second, pj);
+        isok = ape_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
         unified.end(results);
         cy3 += results[0]; cl3 += results[1];
+        if(! isok ) break;
         unified.start();
 #endif
-        shovel_machine(p.first, p.second, pj);
+        isok = shovel_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
         unified.end(results);
         cy4 += results[0]; cl4 += results[1];
 #endif
+        if(! isok ) break;
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> secs = end - start;
         res[i] = secs.count();
     }
+
 #ifndef SQUASH_COUNTERS
     printf("number of bytes %ld number of structural chars %d ratio %.3f\n", p.second, pj.n_structural_indexes,
            (double) pj.n_structural_indexes / p.second);
@@ -302,6 +221,10 @@ int main(int argc, char * argv[]) {
     free(pj.structurals);
     free(p.first);
     delete[] pj.structural_indexes;
-    delete pj_ptr; 
-    return 0;
+    delete pj_ptr;
+    if(! isok ) {
+      printf(" Parsing failed. \n ");
+      return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }

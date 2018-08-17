@@ -16,6 +16,10 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi, m256 mask
 }
 
 /*never_inline*/ bool find_structural_bits(const u8 * buf, size_t len, ParsedJson & pj) {
+    if (len > 0xffffff) {
+        cerr << "Currently only support JSON files < 16MB\n";
+        return false;
+    }
     // Useful constant masks
     const u64 even_bits = 0x5555555555555555ULL;
     const u64 odd_bits = ~even_bits;

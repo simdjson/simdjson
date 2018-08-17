@@ -11,8 +11,9 @@ CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Idependencies/d
 LIBFLAGS = -ldouble-conversion
 #CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Wno-implicit-function-declaration
 
-EXECUTABLES=parse
-
+EXECUTABLES=parse jsoncheck
+HEADERS=common_defs.h jsonioutil.h linux-perf-events.h simdjson_internal.h stage1_find_marks.h stage2_flatten.h stage3_ape_machine.h stage4_shovel_machine.h
+LIBFILES=stage1_find_marks.cpp     stage2_flatten.cpp        stage3_ape_machine.cpp    stage4_shovel_machine.cpp
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
 LIDDOUBLE:=dependencies/double-conversion/release/libdouble-conversion.a
@@ -20,16 +21,22 @@ LIDDOUBLE:=dependencies/double-conversion/release/libdouble-conversion.a
 LIBS=$(LIDDOUBLE)
 
 all: $(LIBS) $(EXECUTABLES)
-	-./parse
+
+test: jsoncheck
+	./jsoncheck
 
 $(LIDDOUBLE) : dependencies/double-conversion/README.md
 	cd dependencies/double-conversion/ && mkdir -p release && cd release && cmake .. && make
 
-parse: main.cpp stage1_find_marks.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parse stage1_find_marks.cpp stage2_flatten.cpp stage3_ape_machine.cpp stage4_shovel_machine.cpp main.cpp $(LIBFLAGS)
+parse: main.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) main.cpp $(LIBFLAGS)
 
-parsehisto: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parsehisto main.cpp $(LIBFLAGS) -DBUILDHISTOGRAM
+jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
+
+
+parsehisto: main.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsehisto main.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM
 
 testflatten: parse parsenocheesy parsenodep8 parsenodep10 parsenodep12
 	for filename in jsonexamples/twitter.json jsonexamples/gsoc-2018.json jsonexamples/citm_catalog.json jsonexamples/canada.json ; do \
@@ -43,18 +50,18 @@ testflatten: parse parsenocheesy parsenodep8 parsenodep10 parsenodep12
 		set +x; \
 	done
 
-parsenocheesy: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parsenocheesy main.cpp -DSUPPRESS_CHEESY_FLATTEN
+parsenocheesy: main.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsenocheesy main.cpp $(LIBFILES) -DSUPPRESS_CHEESY_FLATTEN
 
-parsenodep8: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parsenodep8 main.cpp -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=8
+parsenodep8: main.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsenodep8 main.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=8
 
-parsenodep10: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parsenodep12 main.cpp -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=10
+parsenodep10: main.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsenodep12 main.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=10
 
 
-parsenodep12: main.cpp common_defs.h linux-perf-events.h
-	$(CXX) $(CXXFLAGS) -o parsenodep12 main.cpp -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=12
+parsenodep12: main.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsenodep12 main.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=12
 
 
 dependencies/double-conversion/README.md:
