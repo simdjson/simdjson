@@ -27,15 +27,16 @@ int main(int argc, char *argv[]) {
       verbose = true;
   }
   pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
-  std::cout << "Input has ";
-  if (p.second > 1024 * 1024)
-    std::cout << p.second / (1024 * 1024) << " MB ";
-  else if (p.second > 1024)
-    std::cout << p.second / 1024 << " KB ";
-  else
-    std::cout << p.second << " B ";
-  std::cout << std::endl;
-
+  if (verbose) {
+    std::cout << "Input has ";
+    if (p.second > 1024 * 1024)
+      std::cout << p.second / (1024 * 1024) << " MB ";
+    else if (p.second > 1024)
+      std::cout << p.second / 1024 << " KB ";
+    else
+      std::cout << p.second << " B ";
+    std::cout << std::endl;
+  }
   ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
   if (pj_ptr == NULL) {
     std::cerr << "can't allocate memory" << std::endl;

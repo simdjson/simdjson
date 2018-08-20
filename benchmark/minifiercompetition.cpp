@@ -61,16 +61,16 @@ int main(int argc, char *argv[]) {
       verbose = true;
   }
   pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
-
-  std::cout << "Input has ";
-  if (p.second > 1024 * 1024)
-    std::cout << p.second / (1024 * 1024) << " MB ";
-  else if (p.second > 1024)
-    std::cout << p.second / 1024 << " KB ";
-  else
-    std::cout << p.second << " B ";
-  std::cout << std::endl;
-
+  if (verbose) {
+    std::cout << "Input has ";
+    if (p.second > 1024 * 1024)
+      std::cout << p.second / (1024 * 1024) << " MB ";
+    else if (p.second > 1024)
+      std::cout << p.second / 1024 << " KB ";
+    else
+      std::cout << p.second << " B ";
+    std::cout << std::endl;
+  }
   char *buffer = (char *)malloc(p.second + 1);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
@@ -79,8 +79,9 @@ int main(int argc, char *argv[]) {
   int volume = p.second;
 
   size_t strlength = rapidstringme((char *)p.first).size();
-  std::cout << "input length is " << p.second << " stringified length is "
-            << strlength << std::endl;
+  if (verbose)
+    std::cout << "input length is " << p.second << " stringified length is "
+              << strlength << std::endl;
   BEST_TIME_NOCHECK(rapidstringme((char *)p.first), , repeat, volume, true);
   BEST_TIME_NOCHECK(rapidstringmeInsitu((char *)buffer),
                     memcpy(buffer, p.first, p.second), repeat, volume, true);
@@ -88,7 +89,8 @@ int main(int argc, char *argv[]) {
 
   size_t outlength =
       jsonminify((const uint8_t *)buffer, p.second, (uint8_t *)buffer);
-  std::cout << "jsonminify length is " << outlength << std::endl;
+  if (verbose)
+    std::cout << "jsonminify length is " << outlength << std::endl;
 
   uint8_t *cbuffer = (uint8_t *)buffer;
   BEST_TIME(jsonminify(cbuffer, p.second, cbuffer), outlength,

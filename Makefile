@@ -10,8 +10,11 @@ CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Iben
 LIBFLAGS = -ldouble-conversion
 
 EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition
-HEADERS=include/jsonparser.h include/common_defs.h include/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdprune_tables.h  include/simdjson_internal.h include/stage1_find_marks.h include/stage2_flatten.h include/stage3_ape_machine.h include/stage4_shovel_machine.h include/jsonminifier.h
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp src/jsonminifier.cpp
+HEADERS=include/jsonparser.h include/common_defs.h include/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson_internal.h include/stage1_find_marks.h include/stage2_flatten.h include/stage3_ape_machine.h include/stage4_shovel_machine.h 
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp
+MINIFIERHEADERS=include/jsonminifier.h include/simdprune_tables.h
+MINIFIERLIBFILES=src/jsonminifier.cpp
+
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
 LIBDOUBLE:=dependencies/double-conversion/release/libdouble-conversion.a
@@ -42,8 +45,8 @@ parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
 
-minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS)
+minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
+	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS)
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS)
