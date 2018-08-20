@@ -6,13 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "common_defs.h"
-#include "jsonioutil.h"
-#include "simdjson_internal.h"
-#include "stage1_find_marks.h"
-#include "stage2_flatten.h"
-#include "stage3_ape_machine.h"
-#include "stage4_shovel_machine.h"
+#include "jsonparser.h"
 
 /**
  * Does the file filename ends with the given extension.
@@ -29,7 +23,7 @@ bool startsWith(const char *pre, const char *str) {
 
 bool validate(const char *dirname) {
   bool everythingfine = true;
-  init_state_machine(); // to be safe
+  // init_state_machine(); // no longer necessary
   const char *extension = ".json";
   size_t dirlen = strlen(dirname);
   struct dirent **entry_list;
@@ -58,26 +52,13 @@ bool validate(const char *dirname) {
       }
       std::pair<u8 *, size_t> p = get_corpus(fullpath);
       // terrible hack but just to get it working
-      ParsedJson *pj_ptr = new ParsedJson;
-      ParsedJson &pj(*pj_ptr);
-      if (posix_memalign((void **)&pj.structurals, 8,
-                         ROUNDUP_N(p.second, 64) / 8)) {
-        std::cerr << "Could not allocate memory" << std::endl;
+      ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+      if(pj_ptr == NULL) {
+        std::cerr<< "can't allocate memory"<<std::endl;
         return false;
-      };
-      pj.n_structural_indexes = 0;
-      u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
-      pj.structural_indexes = new u32[max_structures];
-      bool isok = find_structural_bits(p.first, p.second, pj);
-      if (isok) {
-        isok = flatten_indexes(p.second, pj);
       }
-      if (isok) {
-        isok = ape_machine(p.first, p.second, pj);
-      }
-      if (isok) {
-        isok = shovel_machine(p.first, p.second, pj);
-      }
+      ParsedJson &pj(*pj_ptr);
+      bool isok = json_parse(p.first, p.second, pj);
       if (startsWith("pass", name)) {
         if (!isok) {
           printf("warning: file %s should pass but it fails.\n", name);
@@ -92,10 +73,9 @@ bool validate(const char *dirname) {
         printf("File %s %s.\n", name,
                isok ? " is valid JSON " : " is not valid JSON");
       }
-      free(pj.structurals);
       free(p.first);
-      delete[] pj.structural_indexes;
       free(fullpath);
+      deallocate_ParsedJson(pj_ptr);
     }
   }
   for (int i = 0; i < c; ++i)

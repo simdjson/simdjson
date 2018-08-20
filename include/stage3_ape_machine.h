@@ -4,4 +4,4 @@
 #include "simdjson_internal.h"
 
 void init_state_machine();
-bool ape_machine(const u8 * buf, size_t len, ParsedJson & pj);
+bool ape_machine(const u8 *buf, size_t len, ParsedJson &pj);

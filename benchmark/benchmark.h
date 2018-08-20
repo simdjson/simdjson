@@ -17,7 +17,7 @@ const char *unitname = "cycles";
                    :                                                           \
                    :                              /* no read only */           \
                    "%rax", "%rbx", "%rcx", "%rdx" /* clobbers */               \
-                   );                                                          \
+    );                                                                         \
     (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                           \
   } while (0)
 
@@ -31,7 +31,7 @@ const char *unitname = "cycles";
                    : "=r"(cyc_high), "=r"(cyc_low)                             \
                    : /* no read only registers */                              \
                    : "%rax", "%rbx", "%rcx", "%rdx" /* clobbers */             \
-                   );                                                          \
+    );                                                                         \
     (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                           \
   } while (0)
 
@@ -106,9 +106,9 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);        \
+      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);       \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);        \
+      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);    \
     if (verbose)                                                               \
       printf("\n");                                                            \
     if (!verbose)                                                              \
@@ -117,7 +117,7 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
   } while (0)
 
 // like BEST_TIME, but no check
-#define BEST_TIME_NOCHECK(test, pre, repeat, size,  verbose)           \
+#define BEST_TIME_NOCHECK(test, pre, repeat, size, verbose)                    \
   do {                                                                         \
     if (global_rdtsc_overhead == UINT64_MAX) {                                 \
       RDTSC_SET_OVERHEAD(rdtsc_overhead_func(1), repeat);                      \
@@ -143,10 +143,10 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);        \
+      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);       \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);        \
-     if (verbose)                                                               \
+      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);    \
+    if (verbose)                                                               \
       printf("\n");                                                            \
     if (!verbose)                                                              \
       printf(" %.3f ", cycle_per_op);                                          \
