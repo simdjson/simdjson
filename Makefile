@@ -10,9 +10,9 @@ CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Iben
 LIBFLAGS = -ldouble-conversion
 
 EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition
-HEADERS=include/jsonparser.h include/common_defs.h include/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson_internal.h include/stage1_find_marks.h include/stage2_flatten.h include/stage3_ape_machine.h include/stage4_shovel_machine.h 
+HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp
-MINIFIERHEADERS=include/jsonminifier.h include/simdprune_tables.h
+MINIFIERHEADERS=include/jsonparser/jsonminifier.h include/jsonparser/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8

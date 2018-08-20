@@ -67,7 +67,7 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 #include <x86intrin.h>
 #endif // _MSC_VER
 
-#include "simdprune_tables.h"
+#include "jsonparser/simdprune_tables.h"
 #include <cstring>
 #ifndef __clang__
 static inline __m256i _mm256_loadu2_m128i(__m128i const *__addr_hi,

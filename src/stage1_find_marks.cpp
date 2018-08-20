@@ -8,8 +8,8 @@
 
 #include <cassert>
 
-#include "common_defs.h"
-#include "simdjson_internal.h"
+#include "jsonparser/common_defs.h"
+#include "jsonparser/simdjson_internal.h"
 
 using namespace std;
 

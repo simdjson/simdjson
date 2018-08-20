@@ -1,24 +1,15 @@
-//#include "avxprocessing.h"
-
-//#include "avxminifier.h"
-//#include "scalarminifier.h"
 #include <iostream>
 
 #include "benchmark.h"
-#include "jsonioutil.h"
-#include "jsonminifier.h"
+#include "jsonparser/jsonioutil.h"
+#include "jsonparser/jsonminifier.h"
 
-#include "jsonminifier.h"
-//#include "jsonstruct.h"
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
 #include "rapidjson/document.h"
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-//#include "util.h"
-
-// colorfuldisplay(ParsedJson & pj, const u8 * buf)
 
 using namespace rapidjson;
 using namespace std;

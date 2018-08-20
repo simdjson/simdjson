@@ -1,4 +1,4 @@
-#include "common_defs.h"
+#include "jsonparser/common_defs.h"
 #include "double-conversion/double-conversion.h"
 #include "linux-perf-events.h"
 #include <algorithm>
@@ -33,12 +33,12 @@ using namespace double_conversion;
 
 //#define DEBUG
 
-#include "jsonioutil.h"
-#include "simdjson_internal.h"
-#include "stage1_find_marks.h"
-#include "stage2_flatten.h"
-#include "stage3_ape_machine.h"
-#include "stage4_shovel_machine.h"
+#include "jsonparser/jsonioutil.h"
+#include "jsonparser/simdjson_internal.h"
+#include "jsonparser/stage1_find_marks.h"
+#include "jsonparser/stage2_flatten.h"
+#include "jsonparser/stage3_ape_machine.h"
+#include "jsonparser/stage4_shovel_machine.h"
 using namespace std;
 
 // https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal

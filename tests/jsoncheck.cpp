@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "jsonparser.h"
+#include "jsonparser/jsonparser.h"
 
 /**
  * Does the file filename ends with the given extension.

@@ -9,8 +9,8 @@
 #include <cassert>
 #include <cstring>
 
-#include "common_defs.h"
-#include "simdjson_internal.h"
+#include "jsonparser/common_defs.h"
+#include "jsonparser/simdjson_internal.h"
 
 // the ape machine consists of two parts:
 //
@@ -111,7 +111,7 @@ const u32 MAX_STATES = 16;
  * Better to precompute the (small) result into a header file.
  */
 // u32 trans[MAX_STATES][256];
-#include "transitions.h"
+#include "jsonparser/transitions.h"
 
 u32 states[MAX_DEPTH];
 const int START_STATE = 1;

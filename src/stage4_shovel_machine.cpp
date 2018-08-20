@@ -9,8 +9,8 @@
 #include <cassert>
 #include <cstring>
 
-#include "common_defs.h"
-#include "simdjson_internal.h"
+#include "jsonparser/common_defs.h"
+#include "jsonparser/simdjson_internal.h"
 
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
 // these go into the first 3 buckets of the comparison (1/2/4)

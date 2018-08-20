@@ -1,8 +1,8 @@
 
-#include "jsonparser.h"
+#include "jsonparser/jsonparser.h"
 
 #include "benchmark.h"
-//#include "jsonstruct.h"
+
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
 #include "rapidjson/document.h"
@@ -10,7 +10,6 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-// colorfuldisplay(ParsedJson & pj, const u8 * buf)
 
 using namespace rapidjson;
 using namespace std;
