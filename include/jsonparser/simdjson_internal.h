@@ -9,6 +9,7 @@
 #endif
 
 #include <iostream>
+#define MAX_JSON_BYTES 0xFFFFFF
 
 const u32 MAX_DEPTH = 256;
 const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this
@@ -28,9 +29,9 @@ struct ParsedJson {
   // grossly overprovisioned
   u64 tape[MAX_TAPE];
   u32 tape_locs[MAX_DEPTH];
-  u8 string_buf[512 * 1024];
+  u8 string_buf[MAX_JSON_BYTES];
   u8 *current_string_buf_loc;
-  u8 number_buf[512 * 1024]; // holds either doubles or longs, really
+  u8 number_buf[MAX_JSON_BYTES * 4]; // holds either doubles or longs, really
   u8 *current_number_buf_loc;
 };
 

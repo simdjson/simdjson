@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -Idependencies/double-conversion -Idependencies/rapidjson/include -Ldependencies/double-conversion/release
+CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -Idependencies/double-conversion -Idependencies/rapidjson/include -Ldependencies/double-conversion/release
 LIBFLAGS = -ldouble-conversion
 
 EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition

@@ -6,8 +6,8 @@
 // This structure is meant to be reused from document to document, as needed.
 // you can use deallocate_ParsedJson to deallocate the memory.
 ParsedJson *allocate_ParsedJson(size_t len) {
-  if (len > 0xffffff) {
-    std::cerr << "Currently only support JSON files < 16MB, requested length: "
+  if (len > MAX_JSON_BYTES) {
+    std::cerr << "Currently only support JSON files having up to "<<MAX_JSON_BYTES<<" bytes, requested length: "
               << len << std::endl;
     return NULL;
   }
@@ -40,7 +40,7 @@ void deallocate_ParsedJson(ParsedJson *pj_ptr) {
   if (pj_ptr == NULL)
     return;
   delete[] pj_ptr->structural_indexes;
-  delete[] pj_ptr->structurals;
+  free(pj_ptr->structurals);
   delete pj_ptr;
 }
 
