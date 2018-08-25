@@ -249,6 +249,9 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
 }
 
 #ifdef DOUBLECONV
+#include "double-conversion/double-conversion.h"
+#include "double-conversion/ieee.h"
+using namespace double_conversion;
 static StringToDoubleConverter
     converter(StringToDoubleConverter::ALLOW_TRAILING_JUNK, 2000000.0,
               Double::NaN(), NULL, NULL);
@@ -277,8 +280,13 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   int processed_characters_count;
   double result_double_conv = converter.StringToDouble(
       (const char *)(buf + offset), 10, &processed_characters_count);
-  printf("number is %f and used %d chars \n", result_double_conv,
-         processed_characters_count);
+  *((double *)pj.current_number_buf_loc) = result_double_conv;
+  pj.tape[tape_loc] =
+        ((u32)'d') << 24 |
+        (pj.current_number_buf_loc -
+         pj.number_buf); // assume 2^24 will hold all numbers for now
+  pj.current_number_buf_loc += 8;
+  return result_double_conv == result_double_conv;
 #endif
   ////////////////
   // end of double conv temporary stuff.

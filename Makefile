@@ -8,8 +8,9 @@
 
 CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -Idependencies/double-conversion -Idependencies/rapidjson/include -Ldependencies/double-conversion/release
 LIBFLAGS = -ldouble-conversion
+EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition 
+DOUBLEEXECUTABLES=parsedouble jsoncheckdouble parsingcompetitiondouble
 
-EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition
 HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp
 MINIFIERHEADERS=include/jsonparser/jsonminifier.h include/jsonparser/simdprune_tables.h
@@ -22,7 +23,7 @@ RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 
 LIBS=$(RAPIDJSON_INCLUDE) $(LIBDOUBLE)
 
-all: $(LIBS) $(EXECUTABLES)
+all: $(LIBS) $(EXECUTABLES) $(DOUBLEEXECUTABLES)
 
 test: jsoncheck
 	./jsoncheck
@@ -50,6 +51,15 @@ minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEAD
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS)
+
+parsedouble: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsedouble $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS) -DDOUBLECONV
+
+jsoncheckdouble:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsoncheckdouble $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS) -DDOUBLECONV
+
+parsingcompetitiondouble: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parsingcompetitiondouble $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) -DDOUBLECONV
 
 
 parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
