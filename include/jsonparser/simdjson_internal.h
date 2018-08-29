@@ -79,3 +79,18 @@ void dumpbits32(u32 v, string msg) {
 #define dumpbits(a, b) ;
 #define dumpbits32(a, b) ;
 #endif
+
+// dump bits low to high
+inline void dumpbits_always(u64 v, std::string msg) {
+  for (u32 i = 0; i < 64; i++) {
+    std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
+  }
+  std::cout << " " << msg << "\n";
+}
+
+inline void dumpbits32_always(u32 v, std::string msg) {
+  for (u32 i = 0; i < 32; i++) {
+    std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
+  }
+  std::cout << " " << msg << "\n";
+}

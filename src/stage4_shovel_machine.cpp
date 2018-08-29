@@ -257,6 +257,19 @@ static StringToDoubleConverter
               Double::NaN(), NULL, NULL);
 #endif
 
+
+// does not validation whatsoever, assumes that all digit
+// this is CS 101
+u64 naivestrtoll(const char *p, const char *end) {
+    if(p == end) return 0; // should be an error?
+    // this code could get a whole lot smarter if we have many long ints:
+    u64 x = *p - '0';
+    p++;
+    for(;p < end;p++) {
+      x = (x*10) + (*p - '0');
+    }
+    return x;
+}
 // put a parsed version of number (either as a double or a signed long) into the
 // number buffer, put a 'tag' indicating which type and where it is back onto
 // the tape at that location return false if we can't parse the number which
@@ -352,15 +365,17 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
                                       _mm256_set1_epi8(0));
   u32 enders = ~(u32)_mm256_movemask_epi8(tmp_enders);
   dumpbits32(enders, "ender characters");
+//dumpbits32_always(enders, "ender characters");
 
   if (enders == 0) {
-    // TODO: scream for help if enders == 0 which means we have
+    error_sump = 1;
+    //  if enders == 0  we have
     // a heroically long number string or some garbage
   }
-  // TODO: make a mask that indicates where our digits are
+  // TODO: make a mask that indicates where our digits are // DANIEL: Isn't that digit_characters?
   u32 number_mask = ~enders & (enders - 1);
   dumpbits32(number_mask, "number mask");
-
+//dumpbits32_always(number_mask, "number mask");
   m256 n_mask = _mm256_set1_epi8(0x1f);
   m256 tmp_n =
       _mm256_cmpeq_epi8(_mm256_and_si256(tmp, n_mask), _mm256_set1_epi8(0));
@@ -379,6 +394,8 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   u32 digit_characters = ~(u32)_mm256_movemask_epi8(tmp_d);
   digit_characters &= number_mask;
   dumpbits32(digit_characters, "digit characters");
+  //  dumpbits32_always(digit_characters, "digit characters");
+
 
   m256 p_mask = _mm256_set1_epi8(0x04);
   m256 tmp_p =
@@ -434,7 +451,20 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   // return errors if strto* fail, otherwise fill in a code on the tape
   // 'd' for floating point and 'l' for long and put a pointer to the
   // spot in the buffer.
-  if (__builtin_popcount(digit_edges) == 1) {
+  if ( digit_edges == 1) {
+  //if (__builtin_popcount(digit_edges) == 1) { // DANIEL :  shouldn't we have digit_edges == 1
+#define NAIVEINTPARSING
+#ifdef NAIVEINTPARSING
+    // this is faster, maybe, because we use a naive strtoll
+    // should be all digits?
+    error_sump |= number_characters ^ digit_characters;
+    int stringlength = __builtin_ctz(~digit_characters);
+    const char *end = (const char *)src + stringlength;
+    u64 result = naivestrtoll((const char *)src,end);
+    if (found_minus) { // unfortunate that it is a branch?
+      result = -result;
+    }
+#else
     // try a strtoll
     char *end;
     u64 result = strtoll((const char *)src, &end, 10);
@@ -445,6 +475,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
     if (found_minus) {
       result = -result;
     }
+#endif
 #ifdef DEBUG
     cout << "Found number " << result << "\n";
 #endif
