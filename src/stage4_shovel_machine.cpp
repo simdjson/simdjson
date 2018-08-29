@@ -277,6 +277,8 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
 // conv.
 ///
 #ifdef DOUBLECONV
+  // Maybe surprisingly, StringToDouble does not parse according to the JSON
+  // spec (e.g., it will happily parse 012 as 12).
   int processed_characters_count;
   double result_double_conv = converter.StringToDouble(
       (const char *)(buf + offset), 10, &processed_characters_count);
@@ -337,7 +339,14 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
       _mm256_shuffle_epi8(
           high_nibble_mask,
           _mm256_and_si256(_mm256_srli_epi32(v, 4), _mm256_set1_epi8(0x7f))));
-
+#ifdef DEBUG
+  // let us print out the magic:
+  uint8_t buffer[32];
+  _mm256_storeu_si256((__m256i *)buffer,tmp);
+  for(int k = 0; k < 32; k++)
+  printf("%.2x ",buffer[k]);
+  printf("\n");
+#endif
   m256 enders_mask = _mm256_set1_epi8(0xe0);
   m256 tmp_enders = _mm256_cmpeq_epi8(_mm256_and_si256(tmp, enders_mask),
                                       _mm256_set1_epi8(0));
@@ -384,6 +393,19 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   u32 exponent_characters = ~(u32)_mm256_movemask_epi8(tmp_e);
   exponent_characters &= number_mask;
   dumpbits32(exponent_characters, "exponent characters");
+
+
+  m256 zero_mask = _mm256_set1_epi8(0x1);
+  m256 tmp_zero =
+      _mm256_cmpeq_epi8(tmp, zero_mask);
+  u32 zero_characters = (u32)_mm256_movemask_epi8(tmp_zero);
+  dumpbits32(zero_characters, "zero characters");
+
+  // if the  zero character is in first position, it
+  // needs to be followed by decimal or exponent or ender (note: we
+  // handle found_minus separately)
+  u32 expo_or_decimal_or_ender = exponent_characters | decimal_characters | enders;
+  error_sump |= zero_characters & 0x01 & (~(expo_or_decimal_or_ender >> 1));
 
   m256 s_mask = _mm256_set1_epi8(0x10);
   m256 tmp_s =
@@ -478,11 +500,8 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   // TODO: if we have both . and the eE mark then the . must
   // precede the eE mark
 
-  // TODO: if first character is a zero (we know in advance except for -0)
-  // second char must be . or eE.
-
   if (error_sump)
-    return true;
+    return false;
   return true;
 }
 
@@ -595,7 +614,6 @@ bool shovel_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     }
   }
   if (error_sump) {
-    //        cerr << "Ugh!\n";
     return false;
   }
   return true;
