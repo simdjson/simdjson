@@ -263,6 +263,7 @@ static StringToDoubleConverter
 u64 naivestrtoll(const char *p, const char *end) {
     if(p == end) return 0; // should be an error?
     // this code could get a whole lot smarter if we have many long ints:
+    // e.g., see http://0x80.pl/articles/simd-parsing-int-sequences.html
     u64 x = *p - '0';
     p++;
     for(;p < end;p++) {
@@ -453,7 +454,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   // spot in the buffer.
   if ( digit_edges == 1) {
   //if (__builtin_popcount(digit_edges) == 1) { // DANIEL :  shouldn't we have digit_edges == 1
-#define NAIVEINTPARSING
+#define NAIVEINTPARSING // naive means "faster" in this case
 #ifdef NAIVEINTPARSING
     // this is faster, maybe, because we use a naive strtoll
     // should be all digits?
@@ -465,7 +466,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
       result = -result;
     }
 #else
-    // try a strtoll
+    // try a strtoll (this is likely slower because it revalidates)
     char *end;
     u64 result = strtoll((const char *)src, &end, 10);
     if ((errno != 0) || (end == (const char *)src)) {
