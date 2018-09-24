@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     cy1 += results[0];
     cl1 += results[1];
     if (!isok) {
-      cout << "Here1\n";
+      cout << "Failed out during stage 1\n";
       break;
     }
     unified.start();
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     cy2 += results[0];
     cl2 += results[1];
     if (!isok) {
-      cout << "Here2\n";
+      cout << "Failed out during stage 2\n";
       break;
     }
     unified.start();
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     cy3 += results[0];
     cl3 += results[1];
     if (!isok) {
-      cout << "Here3\n";
+      cout << "Failed out during stage 3\n";
       break;
     }
     unified.start();
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     cl4 += results[1];
 #endif
     if (!isok) {
-      cout << "Here4\n";
+      cout << "Failed out during stage 4\n";
       break;
     }
 #else
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
     cy3 += results[0];
     cl3 += results[1];
     if (!isok) {
-      cout << "Here3\n";
+      cout << "Failed out during stage 34\n";
       break;
     }
 #endif

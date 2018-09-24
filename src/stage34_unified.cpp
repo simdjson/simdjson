@@ -680,7 +680,13 @@ object_begin:
 
     UPDATE_CHAR();
     switch (c) {
-        case '"': goto object_key_state;
+        case '"': {
+            write_tape(pj, depth, idx, c);
+            if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+                goto fail;
+            }
+            goto object_key_state;
+        }
         case '}': goto object_end;
         default: goto fail;
     }
