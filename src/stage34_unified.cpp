@@ -26,6 +26,7 @@
 #define DEBUG_PRINTF(format, ...) do { } while(0)
 #endif
 
+using namespace std;
 // structural chars here are
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
 // we are also interested in the four whitespace characters
@@ -604,8 +605,6 @@ really_inline void write_saved_loc(ParsedJson & pj, u32 saved_loc, u64 val, u8 c
     pj.tape[saved_loc] = val | (((u64)c) << 56);
 }
 
-using namespace std;
-
 bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     u32 i = 0;
     u32 idx;
@@ -790,6 +789,10 @@ object_continue:
             if (c != '"') {
                 goto fail;
             } else {
+                write_tape(pj, depth, idx, c);
+                if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+                    goto fail;
+                }
                 goto object_key_state;
             }
         case '}': goto object_end;
