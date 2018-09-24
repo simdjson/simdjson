@@ -644,8 +644,10 @@ bool shovel_machine(const u8 *buf, size_t len, ParsedJson &pj) {
       }
     }
   }
+  /*
   if (error_sump) {
     return false;
   }
+  */
   return true;
 }

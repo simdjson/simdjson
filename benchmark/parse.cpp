@@ -22,6 +22,8 @@
 #include <vector>
 #include <x86intrin.h>
 
+//#define TEST_UNIFIED
+
 /// Fixme: enable doube conv
 // #define DOUBLECONV
 #ifdef DOUBLECONV
@@ -39,6 +41,7 @@ using namespace double_conversion;
 #include "jsonparser/stage2_flatten.h"
 #include "jsonparser/stage3_ape_machine.h"
 #include "jsonparser/stage4_shovel_machine.h"
+#include "jsonparser/stage34_unified.h"
 using namespace std;
 
 // https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
@@ -170,8 +173,10 @@ int main(int argc, char *argv[]) {
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
-    if (!isok)
+    if (!isok) {
+      cout << "Here1\n";
       break;
+    }
     unified.start();
 #endif
     isok = flatten_indexes(p.second, pj);
@@ -179,17 +184,24 @@ int main(int argc, char *argv[]) {
     unified.end(results);
     cy2 += results[0];
     cl2 += results[1];
-    if (!isok)
+    if (!isok) {
+      cout << "Here2\n";
       break;
+    }
     unified.start();
 #endif
+
+#ifndef TEST_UNIFIED
+
     isok = ape_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy3 += results[0];
     cl3 += results[1];
-    if (!isok)
+    if (!isok) {
+      cout << "Here3\n";
       break;
+    }
     unified.start();
 #endif
     isok = shovel_machine(p.first, p.second, pj);
@@ -198,8 +210,24 @@ int main(int argc, char *argv[]) {
     cy4 += results[0];
     cl4 += results[1];
 #endif
-    if (!isok)
+    if (!isok) {
+      cout << "Here4\n";
       break;
+    }
+#else
+
+    isok = unified_machine(p.first, p.second, pj);
+#ifndef SQUASH_COUNTERS
+    unified.end(results);
+    cy3 += results[0];
+    cl3 += results[1];
+    if (!isok) {
+      cout << "Here3\n";
+      break;
+    }
+#endif
+
+#endif
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();

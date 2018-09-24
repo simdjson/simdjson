@@ -11,8 +11,8 @@ LIBFLAGS = -ldouble-conversion
 EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition 
 DOUBLEEXECUTABLES=parsedouble jsoncheckdouble parsingcompetitiondouble
 
-HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp
+HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h include/jsonparser/stage34_unified.h
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp src/stage34_unified.cpp
 MINIFIERHEADERS=include/jsonparser/jsonminifier.h include/jsonparser/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
