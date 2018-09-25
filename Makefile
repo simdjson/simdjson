@@ -8,7 +8,7 @@
 
 CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -Idependencies/double-conversion -Idependencies/rapidjson/include -Ldependencies/double-conversion/release
 LIBFLAGS = -ldouble-conversion
-EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition 
+EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition parseunified 
 DOUBLEEXECUTABLES=parsedouble jsoncheckdouble parsingcompetitiondouble
 
 HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h include/jsonparser/stage34_unified.h
@@ -39,6 +39,8 @@ bench: benchmarks/bench.cpp $(RAPIDJSON_INCLUDE) $(HEADERS)
 	$(CXX) -std=c++11 -O3 -o $@ benchmarks/bench.cpp -I$(RAPIDJSON_INCLUDE) -Iinclude  -march=native -lm -Wall -Wextra -Wno-narrowing
 
 
+parseunified: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parseunified $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS) -DTEST_UNIFIED
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
