@@ -175,14 +175,13 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
 }
 
 really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
-                                ParsedJson &pj, u32 tape_loc) {
-  u32 offset = pj.tape[tape_loc] & 0xffffff;
+                                ParsedJson &pj, u32 depth, u32 offset) {
+
   const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
   u8 *dst = pj.current_string_buf_loc;
 #ifdef DEBUG
   cout << "Entering parse string with offset " << offset << "\n";
 #endif
-  // basic non-sexy parsing code
   while (1) {
 #ifdef DEBUG
     for (u32 j = 0; j < 32; j++) {
@@ -217,11 +216,11 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
 #endif
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
+
+      pj.write_tape(depth, pj.current_string_buf_loc - pj.string_buf, '"');
+
       pj.current_string_buf_loc = dst + quote_dist + 1;
-      pj.tape[tape_loc] =
-          ((u32)'"') << 24 |
-          (pj.current_string_buf_loc -
-           pj.string_buf); // assume 2^24 will hold all strings for now
+
       return true;
     } else if (quote_dist > bs_dist) {
       u8 escape_char = src[bs_dist + 1];
@@ -258,10 +257,7 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
     }
     return true;
   }
-  // later extensions -
-  // if \\ we could detect whether it's a substantial run of \ or just eat 2
-  // chars and write 1 handle anything short of \u or \\\ (as a prefix) with
-  // clever PSHUFB stuff and don't leave SIMD
+  // can't be reached
   return true;
 }
 
@@ -299,9 +295,9 @@ inline u64 naivestrtoll(const char *p, const char *end) {
 // TODO: see if we really need a separate number_buf or whether we should just
 //       have a generic scratch - would need to align before using for this
 really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
-                                UNUSED ParsedJson &pj, u32 tape_loc,
+                                ParsedJson &pj,
+                                u32 depth, u32 offset,
                                 UNUSED bool found_zero, bool found_minus) {
-  u32 offset = pj.tape[tape_loc] & 0xffffff;
 ////////////////
 // This is temporary... but it illustrates how one could use Google's double
 // conv.
@@ -312,12 +308,8 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
   int processed_characters_count;
   double result_double_conv = converter.StringToDouble(
       (const char *)(buf + offset), 10, &processed_characters_count);
-  *((double *)pj.current_number_buf_loc) = result_double_conv;
-  pj.tape[tape_loc] =
-        ((u32)'d') << 24 |
-        (pj.current_number_buf_loc -
-         pj.number_buf); // assume 2^24 will hold all numbers for now
-  pj.current_number_buf_loc += 8;
+  pj.write_tape_double(depth, result_double_conv);
+
   return result_double_conv == result_double_conv;
 #endif
   ////////////////
@@ -484,7 +476,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
 #else
     // try a strtoll
     char *end;
-    u64 result = strtoll((const char *)src, &end, 10);
+    s64 result = strtoll((const char *)src, &end, 10);
     if ((errno != 0) || (end == (const char *)src)) {
       error_sump |= 1;
     }
@@ -496,12 +488,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
 #ifdef DEBUG
     cout << "Found number " << result << "\n";
 #endif
-    *((u64 *)pj.current_number_buf_loc) = result;
-    pj.tape[tape_loc] =
-        ((u32)'l') << 24 |
-        (pj.current_number_buf_loc -
-         pj.number_buf); // assume 2^24 will hold all numbers for now
-    pj.current_number_buf_loc += 8;
+    pj.write_tape_s64(depth, result);
   } else {
     // try a strtod
     char *end;
@@ -516,12 +503,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
 #ifdef DEBUG
     cout << "Found number " << result << "\n";
 #endif
-    *((double *)pj.current_number_buf_loc) = result;
-    pj.tape[tape_loc] =
-        ((u32)'d') << 24 |
-        (pj.current_number_buf_loc -
-         pj.number_buf); // assume 2^24 will hold all numbers for now
-    pj.current_number_buf_loc += 8;
+    pj.write_tape_double(depth, result);
   }
   // TODO: check the MSB element is a digit
 
@@ -592,19 +574,6 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
 #define MAX_DEPTHS 128
 #define START_DEPTH 32
 
-really_inline void write_tape(ParsedJson & pj, u32 depth, u64 val, u8 c) {
-    pj.tape[pj.tape_locs[depth]] = val | (((u64)c) << 56);
-    pj.tape_locs[depth]++;
-}
-
-really_inline u32 save_loc(ParsedJson & pj, u32 depth) {
-    return pj.tape_locs[depth];
-}
-
-really_inline void write_saved_loc(ParsedJson & pj, u32 saved_loc, u64 val, u8 c) {
-    pj.tape[saved_loc] = val | (((u64)c) << 56);
-}
-
 bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     u32 i = 0;
     u32 idx;
@@ -633,6 +602,7 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
 
 
     // TODO: add a sentinel to the end to avoid premature exit
+    // need to be able to find the \0 at the 'padded length' end of the buffer
 
 ////////////////////////////// START STATE /////////////////////////////
 
@@ -641,11 +611,11 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     // do these two speculatively as we will always do
     // them except on fail, in which case it doesn't matter
     ret_address[depth] = &&start_continue;
-    containing_scope_offset[depth] = save_loc(pj, depth);
-    write_tape(pj, depth, 0, c); // dummy entries
+    containing_scope_offset[depth] = pj.save_loc(depth);
+    pj.write_tape(depth, 0, c); // dummy entries
 
-    last_loc = save_loc(pj, depth);
-    write_tape(pj, depth, 0, c); // dummy entries
+    last_loc = pj.save_loc(depth);
+    pj.write_tape(depth, 0, c); // dummy entries
     depth++;
 
     switch (c) {
@@ -673,15 +643,14 @@ object_begin:
     //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
 
     DEBUG_PRINTF("in object_begin\n");
-    write_tape(pj, depth, last_loc, '_');
-    containing_scope_offset[depth] = save_loc(pj, depth);
-    write_tape(pj, depth, 0, '_');
+    pj.write_tape(depth, last_loc, '_');
+    containing_scope_offset[depth] = pj.save_loc(depth);
+    pj.write_tape(depth, 0, '_');
 
     UPDATE_CHAR();
     switch (c) {
         case '"': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+            if (!parse_string(buf, len, pj, depth, idx)) {
                 goto fail;
             }
             goto object_key_state;
@@ -699,8 +668,7 @@ object_key_state:
     UPDATE_CHAR();
     switch (c) {
         case '"': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+            if (!parse_string(buf, len, pj, depth, idx)) {
                 goto fail;
             }
             break;
@@ -708,51 +676,48 @@ object_key_state:
         case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         case '0': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
+            if (!parse_number(buf, len, pj, depth, idx, true, false)) {
                 goto fail;
             }
             break;
         }
         case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':  {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
+            if (!parse_number(buf, len, pj, depth, idx, false, false)) {
                 goto fail;
             }
             break;
         }
         case '-': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, true)) {
+            if (!parse_number(buf, len, pj, depth, idx, false, true)) {
                 goto fail;
             }
             break;
         }
         case '{': {
-            write_tape(pj, depth, containing_scope_offset[depth], c);
-            last_loc = save_loc(pj, depth);
-            write_tape(pj, depth, 0, c);
+            pj.write_tape(depth, containing_scope_offset[depth], c);
+            last_loc = pj.save_loc(depth);
+            pj.write_tape(depth, 0, c);
             ret_address[depth] = &&object_continue;
             depth++;
             goto object_begin;
         }
         case '[': {
-            write_tape(pj, depth, containing_scope_offset[depth], c);
-            last_loc = save_loc(pj, depth);
-            write_tape(pj, depth, 0, c);
+            pj.write_tape(depth, containing_scope_offset[depth], c);
+            last_loc = pj.save_loc(depth);
+            pj.write_tape(depth, 0, c);
             ret_address[depth] = &&object_continue;
             depth++;
             goto array_begin;
@@ -769,8 +734,7 @@ object_continue:
             if (c != '"') {
                 goto fail;
             } else {
-                write_tape(pj, depth, idx, c);
-                if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+                if (!parse_string(buf, len, pj, depth, idx)) {
                     goto fail;
                 }
                 goto object_key_state;
@@ -781,7 +745,7 @@ object_continue:
 
 object_end: 
     // write our tape location to the header scope
-    write_saved_loc(pj, containing_scope_offset[depth], save_loc(pj, depth), '_');
+    pj.write_saved_loc(containing_scope_offset[depth], pj.save_loc(depth), '_');
     depth--;
     // goto saved_state whatever that is (returns us to start_object_close, object_object_close or array_object_close)
     goto *ret_address[depth];
@@ -791,9 +755,9 @@ object_end:
 
 array_begin:
     DEBUG_PRINTF("in array_begin\n");
-    write_tape(pj, depth, last_loc, '_');
-    containing_scope_offset[depth] = save_loc(pj, depth);
-    write_tape(pj, depth, 0, '_');
+    pj.write_tape(depth, last_loc, '_');
+    containing_scope_offset[depth] = pj.save_loc(depth);
+    pj.write_tape(depth, 0, '_');
     // fall through
 
     UPDATE_CHAR();
@@ -806,8 +770,7 @@ main_array_switch:
     // on paths that can accept a close square brace (post-, and at start)
     switch (c) {
         case '"': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
+            if (!parse_string(buf, len, pj, depth, idx)) {
                 goto fail;
             }
             goto array_continue;
@@ -815,52 +778,49 @@ main_array_switch:
         case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
-                  write_tape(pj, depth, 0, c);
+                  pj.write_tape(depth, 0, c);
                   break;
         
         case '0': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
+            if (!parse_number(buf, len, pj, depth, idx, true, false)) {
                 goto fail;
             }
             break;
         }
         case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':  {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
+            if (!parse_number(buf, len, pj, depth, idx, false, false)) {
                 goto fail;
             }
             break;
         }
         case '-': {
-            write_tape(pj, depth, idx, c);
-            if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, true)) {
+            if (!parse_number(buf, len, pj, depth, idx, false, true)) {
                 goto fail;
             }
             break;
         }
         case '{': {
-            write_tape(pj, depth, containing_scope_offset[depth], c);
-            last_loc = save_loc(pj, depth);
-            write_tape(pj, depth, 0, c);
+            pj.write_tape(depth, containing_scope_offset[depth], c);
+            last_loc = pj.save_loc(depth);
+            pj.write_tape(depth, 0, c);
             ret_address[depth] = &&array_continue;
             depth++;
             goto object_begin;
         }
         case '[': {
-            write_tape(pj, depth, containing_scope_offset[depth], c);
-            last_loc = save_loc(pj, depth);
-            write_tape(pj, depth, 0, c);
+            pj.write_tape(depth, containing_scope_offset[depth], c);
+            last_loc = pj.save_loc(depth);
+            pj.write_tape(depth, 0, c);
             ret_address[depth] = &&array_continue;
             depth++;
             goto array_begin;
@@ -879,7 +839,7 @@ array_continue:
 
 array_end:
     // write our tape location to the header scope
-    write_saved_loc(pj, containing_scope_offset[depth], save_loc(pj, depth), '_');
+    pj.write_saved_loc(containing_scope_offset[depth], pj.save_loc(depth), '_');
     depth--;
     // goto saved_state whatever that is 
     goto *ret_address[depth];

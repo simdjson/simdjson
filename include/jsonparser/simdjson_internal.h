@@ -19,7 +19,9 @@ const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
 const size_t MAX_TAPE_ENTRIES = 127 * 1024;
 const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
+// TODO: move this to be more like a real class
 struct ParsedJson {
+public:
   size_t bytecapacity; // indicates how many bits are meant to be supported by
                        // structurals
   u8 *structurals;
@@ -33,18 +35,37 @@ struct ParsedJson {
   u8 *current_string_buf_loc;
   u8 number_buf[MAX_JSON_BYTES * 4]; // holds either doubles or longs, really
   u8 *current_number_buf_loc;
+    
+    // TODO: will need a way of saving strings that's a bit more encapsulated
+
+    void write_tape(u32 depth, u64 val, u8 c) {
+        tape[tape_locs[depth]] = val | (((u64)c) << 56);
+        tape_locs[depth]++;
+    }
+
+    void write_tape_s64(u32 depth, s64 i) {
+        *((s64 *)current_number_buf_loc) = i;
+        current_number_buf_loc += 8;
+        write_tape(depth, current_number_buf_loc - number_buf, 'l');
+    }
+
+    void write_tape_double(u32 depth, double d) {
+        *((double *)current_number_buf_loc) = d;
+        current_number_buf_loc += 8;
+        write_tape(depth, current_number_buf_loc - number_buf, 'd');
+    }
+
+    u32 save_loc(u32 depth) {
+        return tape_locs[depth];
+    }
+
+    void write_saved_loc(u32 saved_loc, u64 val, u8 c) {
+        tape[saved_loc] = val | (((u64)c) << 56);
+    }
+
+
 };
 
-// all of this stuff needs to get moved somewhere reasonable
-// like our ParsedJson structure
-/*
-extern u64 tape[MAX_TAPE];
-extern u32 tape_locs[MAX_DEPTH];
-extern u8 string_buf[512*1024];
-extern u8 * current_string_buf_loc;
-extern u8 number_buf[512*1024]; // holds either doubles or longs, really
-extern u8 * current_number_buf_loc;
-*/
 
 #ifdef DEBUG
 inline void dump256(m256 d, string msg) {
