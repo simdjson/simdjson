@@ -641,12 +641,12 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     // do these two speculatively as we will always do
     // them except on fail, in which case it doesn't matter
     ret_address[depth] = &&start_continue;
-    depth++;
     containing_scope_offset[depth] = save_loc(pj, depth);
     write_tape(pj, depth, 0, c); // dummy entries
 
     last_loc = save_loc(pj, depth);
     write_tape(pj, depth, 0, c); // dummy entries
+    depth++;
 
     switch (c) {
         case '{': goto object_begin;
@@ -690,13 +690,6 @@ object_begin:
         default: goto fail;
     }
 
-object_end: 
-    // write our tape location to the header scope
-    write_saved_loc(pj, containing_scope_offset[depth], save_loc(pj, depth), '_');
-    depth--;
-    // goto saved_state whatever that is (returns us to start_object_close, object_object_close or array_object_close)
-    goto *ret_address[depth];
-
 object_key_state:
     DEBUG_PRINTF("in object_key_state\n");
     UPDATE_CHAR();
@@ -704,62 +697,49 @@ object_key_state:
         goto fail;
     }
     UPDATE_CHAR();
-    // we then have a multiway branch (one of the few ones where we might have a large # of out edges
-    // where we might have t/"/f/n/numbers/[/{
     switch (c) {
         case '"': {
             write_tape(pj, depth, idx, c);
             if (!parse_string(buf, len, pj, pj.tape_locs[depth] - 1)) {
                 goto fail;
             }
-            goto object_continue;
+            break;
         }
-        case 't': if (is_valid_true_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto object_continue;
-                  } else {
+        case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-        case 'f': if (is_valid_false_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto object_continue;
-                  } else {
+                  write_tape(pj, depth, 0, c);
+                  break;
+        case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-        case 'n': if (is_valid_null_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto object_continue;
-                  } else {
+                  write_tape(pj, depth, 0, c);
+                  break;
+        case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
+                  write_tape(pj, depth, 0, c);
+                  break;
         case '0': {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
                 goto fail;
             }
-            goto object_continue;
+            break;
         }
-        case '1': 
-        case '2': 
-        case '3': 
-        case '4': 
-        case '5': 
-        case '6': 
-        case '7': 
-        case '8': 
-        case '9':  {
+        case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':  {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
                 goto fail;
             }
-            goto object_continue;
+            break;
         }
         case '-': {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, true)) {
                 goto fail;
             }
-            goto object_continue;
+            break;
         }
         case '{': {
             write_tape(pj, depth, containing_scope_offset[depth], c);
@@ -798,6 +778,14 @@ object_continue:
         case '}': goto object_end;
         default: goto fail;
     }
+
+object_end: 
+    // write our tape location to the header scope
+    write_saved_loc(pj, containing_scope_offset[depth], save_loc(pj, depth), '_');
+    depth--;
+    // goto saved_state whatever that is (returns us to start_object_close, object_object_close or array_object_close)
+    goto *ret_address[depth];
+
     
 ////////////////////////////// ARRAY STATES /////////////////////////////
 
@@ -808,8 +796,14 @@ array_begin:
     write_tape(pj, depth, 0, '_');
     // fall through
 
-main_array_switch:
     UPDATE_CHAR();
+    if (c == ']') {
+        goto array_end;
+    }
+
+main_array_switch:
+    // we call update char on all paths in, so we can peek at c on the
+    // on paths that can accept a close square brace (post-, and at start)
     switch (c) {
         case '"': {
             write_tape(pj, depth, idx, c);
@@ -818,52 +812,42 @@ main_array_switch:
             }
             goto array_continue;
         }
-        case 't': if (is_valid_true_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto array_continue;
-                  } else {
+        case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-        case 'f': if (is_valid_false_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto array_continue;
-                  } else {
+                  write_tape(pj, depth, 0, c);
+                  break;
+        case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-        case 'n': if (is_valid_null_atom(buf + idx)) {
-                    write_tape(pj, depth, 0, c);
-                    goto array_continue;
-                  } else {
+                  write_tape(pj, depth, 0, c);
+                  break;
+        case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
+                  write_tape(pj, depth, 0, c);
+                  break;
+        
         case '0': {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
                 goto fail;
             }
-            goto array_continue;
+            break;
         }
-        case '1': 
-        case '2': 
-        case '3': 
-        case '4': 
-        case '5': 
-        case '6': 
-        case '7': 
-        case '8': 
-        case '9':  {
+        case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':  {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, false)) {
                 goto fail;
             }
-            goto array_continue;
+            break;
         }
         case '-': {
             write_tape(pj, depth, idx, c);
             if (!parse_number(buf, len, pj, pj.tape_locs[depth] - 1, false, true)) {
                 goto fail;
             }
-            goto array_continue;
+            break;
         }
         case '{': {
             write_tape(pj, depth, containing_scope_offset[depth], c);
@@ -881,7 +865,6 @@ main_array_switch:
             depth++;
             goto array_begin;
         }
-        case ']': goto array_end;
         default: goto fail;
     }
 
@@ -889,7 +872,7 @@ array_continue:
     DEBUG_PRINTF("in array_continue\n");
     UPDATE_CHAR();
     switch (c) {
-        case ',': goto main_array_switch;
+        case ',': UPDATE_CHAR(); goto main_array_switch;
         case ']': goto array_end;
         default: goto fail;
     }
