@@ -13,7 +13,7 @@
 #include "jsonparser/simdjson_internal.h"
 
 #include <iostream>
-//#define DEBUG
+#define DEBUG
 #define PATH_SEP '/'
 
 #if defined(DEBUG) && !defined(DEBUG_PRINTF)
@@ -592,6 +592,14 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
 
     pj.init();
 
+    // add a sentinel to the end to avoid premature exit
+    // need to be able to find the \0 at the 'padded length' end of the buffer
+    // FIXME: TERRIFYING!
+    size_t j;
+    for (j = len; buf[j] != 0; j++)
+        ;
+    pj.structural_indexes[pj.n_structural_indexes++] = j;
+
 #define UPDATE_CHAR() { idx = pj.structural_indexes[i++]; c = buf[idx]; DEBUG_PRINTF("Got %c at %d (%d offset)\n", c, idx, i-1);}
 
 #define OPEN_SCOPE() { \
@@ -610,8 +618,6 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     goto SITE_LABEL; \
     } 
 
-    // TODO: add a sentinel to the end to avoid premature exit
-    // need to be able to find the \0 at the 'padded length' end of the buffer
 
 ////////////////////////////// START STATE /////////////////////////////
 
@@ -827,12 +833,11 @@ array_continue:
 
 succeed:
     DEBUG_PRINTF("in succeed\n");
-//    pj.dump_tapes();
+    pj.dump_tapes();
     return true;
     
 fail:
     DEBUG_PRINTF("in fail\n");
-//    pj.dump_tapes();
-    return true; // just to see performance
-    //return false;    
+    pj.dump_tapes();
+    return false;    
 }
