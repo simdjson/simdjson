@@ -319,6 +319,7 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
     offset++;
   }
   const u8 *src = &buf[offset];
+  // this can read past the string content, so we need to have overallocated
   m256 v = _mm256_loadu_si256((const m256 *)(src));
   u64 error_sump = 0;
 #ifdef DEBUG
