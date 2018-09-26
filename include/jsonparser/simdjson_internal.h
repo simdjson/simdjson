@@ -36,6 +36,37 @@ public:
   u8 number_buf[MAX_JSON_BYTES * 4]; // holds either doubles or longs, really
   u8 *current_number_buf_loc;
     
+    void init() {
+        current_string_buf_loc = string_buf;
+        current_number_buf_loc = number_buf;
+
+        for (u32 i = 0; i < MAX_DEPTH; i++) {
+            tape_locs[i] = i * MAX_TAPE_ENTRIES;
+        }
+    }
+
+    void dump_tapes() {
+        for (u32 i = 0; i < MAX_DEPTH; i++) {
+            u32 start_loc = i * MAX_TAPE_ENTRIES;
+            std::cout << " tape section i " << i;
+            if (i == START_DEPTH) {
+                std::cout << "   (START) ";
+            } else if ((i < START_DEPTH) || (i >= REDLINE_DEPTH)) {
+                std::cout << " (REDLINE) ";
+            } else {
+                std::cout << "  (NORMAL) ";
+            }
+
+            std::cout << " from: " << start_loc << " to: " << tape_locs[i] << " "
+                 << " size: " << (tape_locs[i] - start_loc) << "\n";
+            for (u32 j = start_loc; j < tape_locs[i]; j++) {
+                if (tape[j]) {
+                    std::cout << "j: " << j << " tape[j] char " << (char)(tape[j] >> 56)
+                              << " tape[j][0..55]: " << (tape[j] & 0xffffffffffffffULL) << "\n";
+                }
+            }
+        }
+    }
     // TODO: will need a way of saving strings that's a bit more encapsulated
 
     void write_tape(u32 depth, u64 val, u8 c) {

@@ -504,6 +504,8 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
     cout << "Found number " << result << "\n";
 #endif
     pj.write_tape_double(depth, result);
+    // HACK: return true regardless
+    return true; // FIXME: we have a spurious error here
   }
   // TODO: check the MSB element is a digit
 
@@ -571,15 +573,12 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
     return error == 0;
 }
 
-#define MAX_DEPTHS 128
-#define START_DEPTH 32
-
 bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     u32 i = 0;
     u32 idx;
     u8 c;
     u32 depth = START_DEPTH; // an arbitrary starting depth
-    void * ret_address[MAX_DEPTHS];
+    void * ret_address[MAX_DEPTH];
 
     u32 last_loc = 0; // this is the location of the previous call site; only need one
     // We should also track the tape address of our containing
@@ -589,17 +588,27 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     // we can put the current offset into a record for the 
     // scope so we know where it is
 
-    u32 containing_scope_offset[MAX_DEPTHS];
+    u32 containing_scope_offset[MAX_DEPTH];
 
-    pj.current_string_buf_loc = pj.string_buf;
-    pj.current_number_buf_loc = pj.number_buf;
-
-    for (u32 j = 0; j < MAX_DEPTH; j++) {
-        pj.tape_locs[j] = j * MAX_TAPE_ENTRIES;
-    }
+    pj.init();
 
 #define UPDATE_CHAR() { idx = pj.structural_indexes[i++]; c = buf[idx]; DEBUG_PRINTF("Got %c at %d (%d offset)\n", c, idx, i-1);}
 
+#define OPEN_SCOPE() { \
+    pj.write_saved_loc(last_loc, pj.save_loc(depth), '_'); \
+    pj.write_tape(depth, last_loc, '_'); \
+    containing_scope_offset[depth] = pj.save_loc(depth); \
+    pj.write_tape(depth, 0, '_'); \
+    }
+
+#define ESTABLISH_CALLSITE(RETURN_LABEL, SITE_LABEL) { \
+    pj.write_tape(depth, containing_scope_offset[depth], c); \
+    last_loc = pj.save_loc(depth); \
+    pj.write_tape(depth, 0, c); \
+    ret_address[depth] = RETURN_LABEL; \
+    depth++; \
+    goto SITE_LABEL; \
+    } 
 
     // TODO: add a sentinel to the end to avoid premature exit
     // need to be able to find the \0 at the 'padded length' end of the buffer
@@ -643,10 +652,7 @@ object_begin:
     //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
 
     DEBUG_PRINTF("in object_begin\n");
-    pj.write_tape(depth, last_loc, '_');
-    containing_scope_offset[depth] = pj.save_loc(depth);
-    pj.write_tape(depth, 0, '_');
-
+    OPEN_SCOPE();
     UPDATE_CHAR();
     switch (c) {
         case '"': {
@@ -655,7 +661,7 @@ object_begin:
             }
             goto object_key_state;
         }
-        case '}': goto object_end;
+        case '}': goto scope_end;
         default: goto fail;
     }
 
@@ -707,20 +713,10 @@ object_key_state:
             break;
         }
         case '{': {
-            pj.write_tape(depth, containing_scope_offset[depth], c);
-            last_loc = pj.save_loc(depth);
-            pj.write_tape(depth, 0, c);
-            ret_address[depth] = &&object_continue;
-            depth++;
-            goto object_begin;
+            ESTABLISH_CALLSITE(&&object_continue, object_begin);
         }
         case '[': {
-            pj.write_tape(depth, containing_scope_offset[depth], c);
-            last_loc = pj.save_loc(depth);
-            pj.write_tape(depth, 0, c);
-            ret_address[depth] = &&object_continue;
-            depth++;
-            goto array_begin;
+            ESTABLISH_CALLSITE(&&object_continue, array_begin);
         }
         default: goto fail;
     }
@@ -739,15 +735,17 @@ object_continue:
                 }
                 goto object_key_state;
             }
-        case '}': goto object_end;
+        case '}': goto scope_end;
         default: goto fail;
     }
 
-object_end: 
+////////////////////////////// COMMON STATE /////////////////////////////
+
+scope_end: 
     // write our tape location to the header scope
     pj.write_saved_loc(containing_scope_offset[depth], pj.save_loc(depth), '_');
     depth--;
-    // goto saved_state whatever that is (returns us to start_object_close, object_object_close or array_object_close)
+    // goto saved_state
     goto *ret_address[depth];
 
     
@@ -755,14 +753,12 @@ object_end:
 
 array_begin:
     DEBUG_PRINTF("in array_begin\n");
-    pj.write_tape(depth, last_loc, '_');
-    containing_scope_offset[depth] = pj.save_loc(depth);
-    pj.write_tape(depth, 0, '_');
+    OPEN_SCOPE();
     // fall through
 
     UPDATE_CHAR();
     if (c == ']') {
-        goto array_end;
+        goto scope_end;
     }
 
 main_array_switch:
@@ -810,20 +806,10 @@ main_array_switch:
             break;
         }
         case '{': {
-            pj.write_tape(depth, containing_scope_offset[depth], c);
-            last_loc = pj.save_loc(depth);
-            pj.write_tape(depth, 0, c);
-            ret_address[depth] = &&array_continue;
-            depth++;
-            goto object_begin;
+            ESTABLISH_CALLSITE(&&array_continue, object_begin);
         }
         case '[': {
-            pj.write_tape(depth, containing_scope_offset[depth], c);
-            last_loc = pj.save_loc(depth);
-            pj.write_tape(depth, 0, c);
-            ret_address[depth] = &&array_continue;
-            depth++;
-            goto array_begin;
+            ESTABLISH_CALLSITE(&&array_continue, array_begin);
         }
         default: goto fail;
     }
@@ -833,25 +819,20 @@ array_continue:
     UPDATE_CHAR();
     switch (c) {
         case ',': UPDATE_CHAR(); goto main_array_switch;
-        case ']': goto array_end;
+        case ']': goto scope_end;
         default: goto fail;
     }
-
-array_end:
-    // write our tape location to the header scope
-    pj.write_saved_loc(containing_scope_offset[depth], pj.save_loc(depth), '_');
-    depth--;
-    // goto saved_state whatever that is 
-    goto *ret_address[depth];
 
 ////////////////////////////// FINAL STATES /////////////////////////////
 
 succeed:
     DEBUG_PRINTF("in succeed\n");
+//    pj.dump_tapes();
     return true;
     
 fail:
     DEBUG_PRINTF("in fail\n");
+//    pj.dump_tapes();
     return true; // just to see performance
     //return false;    
 }
