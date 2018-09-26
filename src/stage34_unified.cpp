@@ -13,7 +13,7 @@
 #include "jsonparser/simdjson_internal.h"
 
 #include <iostream>
-#define DEBUG
+//#define DEBUG
 #define PATH_SEP '/'
 
 #if defined(DEBUG) && !defined(DEBUG_PRINTF)
