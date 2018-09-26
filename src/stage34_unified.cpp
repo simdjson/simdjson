@@ -573,7 +573,7 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
     return error == 0;
 }
 
-bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
+bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     u32 i = 0;
     u32 idx;
     u8 c;
@@ -601,6 +601,9 @@ bool unified_machine(const u8 *buf, UNUSED size_t len, ParsedJson &pj) {
     pj.structural_indexes[pj.n_structural_indexes++] = j;
 
 #define UPDATE_CHAR() { idx = pj.structural_indexes[i++]; c = buf[idx]; DEBUG_PRINTF("Got %c at %d (%d offset)\n", c, idx, i-1);}
+
+    // format: call site has 2 entries: 56-bit + '{' or '[' entries pointing first to header then to this location
+    //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
 
 #define OPEN_SCOPE() { \
     pj.write_saved_loc(last_loc, pj.save_loc(depth), '_'); \
@@ -651,12 +654,6 @@ start_continue:
 ////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:
-    // need to handle any linking required once we're doing that
-    // can reach into our header as needed; this will be the previously written
-    // item(s) at the depth above us
-    // format: call site has 2 entries: 56-bit + '{' or '[' entries pointing first to header then to this location
-    //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
-
     DEBUG_PRINTF("in object_begin\n");
     OPEN_SCOPE();
     UPDATE_CHAR();
