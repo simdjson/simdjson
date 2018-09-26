@@ -21,3 +21,6 @@ void deallocate_ParsedJson(ParsedJson *pj_ptr);
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure.
 bool json_parse(const u8 *buf, size_t len, ParsedJson &pj);
+
+// like json_parse but users 4 stages, slower.
+bool json_parse_4stages(const u8 *buf, size_t len, ParsedJson &pj);

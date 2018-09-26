@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
   int repeat = 10;
   int volume = p.second;
   BEST_TIME(json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  BEST_TIME(json_parse_4stages(p.first, p.second, pj), true, , repeat, volume, true);
 
   rapidjson::Document d;
 

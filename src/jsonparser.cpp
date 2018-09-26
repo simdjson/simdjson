@@ -44,8 +44,9 @@ void deallocate_ParsedJson(ParsedJson *pj_ptr) {
   delete pj_ptr;
 }
 
-// parse a document found in buf, need to preallocate ParsedJson.
-bool json_parse(const u8 *buf, size_t len, ParsedJson &pj) {
+// parse a document found in buf, need to preallocate ParsedJson. 
+// this can probably be considered a legacy function at this point.
+bool json_parse_4stages(const u8 *buf, size_t len, ParsedJson &pj) {
   if (pj.bytecapacity < len) {
     std::cerr << "Your ParsedJson cannot support documents that big: " << len
               << std::endl;
@@ -63,3 +64,21 @@ bool json_parse(const u8 *buf, size_t len, ParsedJson &pj) {
   }
   return isok;
 }
+
+// parse a document found in buf, need to preallocate ParsedJson.
+bool json_parse(const u8 *buf, size_t len, ParsedJson &pj) {
+  if (pj.bytecapacity < len) {
+    std::cerr << "Your ParsedJson cannot support documents that big: " << len
+              << std::endl;
+    return false;
+  }
+  bool isok = find_structural_bits(buf, len, pj);
+  if (isok) {
+    isok = flatten_indexes(len, pj);
+  }
+  if (isok) {
+    isok = unified_machine(buf, len, pj);
+  }
+  return isok;
+}
+
