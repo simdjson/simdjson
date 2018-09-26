@@ -8,11 +8,11 @@
 
 CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -Idependencies/double-conversion -Idependencies/rapidjson/include -Ldependencies/double-conversion/release
 LIBFLAGS = -ldouble-conversion
-EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition parseunified 
+EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition
 DOUBLEEXECUTABLES=parsedouble jsoncheckdouble parsingcompetitiondouble
 
-HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage3_ape_machine.h include/jsonparser/stage4_shovel_machine.h include/jsonparser/stage34_unified.h
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage3_ape_machine.cpp    src/stage4_shovel_machine.cpp src/stage34_unified.cpp
+HEADERS=include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
 MINIFIERHEADERS=include/jsonparser/jsonminifier.h include/jsonparser/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
@@ -38,9 +38,6 @@ $(LIBDOUBLE) : dependencies/double-conversion/README.md
 bench: benchmarks/bench.cpp $(RAPIDJSON_INCLUDE) $(HEADERS)
 	$(CXX) -std=c++11 -O3 -o $@ benchmarks/bench.cpp -I$(RAPIDJSON_INCLUDE) -Iinclude  -march=native -lm -Wall -Wextra -Wno-narrowing
 
-
-parseunified: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parseunified $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS) -DTEST_UNIFIED
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)

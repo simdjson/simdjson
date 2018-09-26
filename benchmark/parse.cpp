@@ -22,8 +22,6 @@
 #include <vector>
 #include <x86intrin.h>
 
-//#define TEST_UNIFIED
-
 /// Fixme: enable doube conv
 // #define DOUBLECONV
 #ifdef DOUBLECONV
@@ -39,8 +37,6 @@ using namespace double_conversion;
 #include "jsonparser/simdjson_internal.h"
 #include "jsonparser/stage1_find_marks.h"
 #include "jsonparser/stage2_flatten.h"
-#include "jsonparser/stage3_ape_machine.h"
-#include "jsonparser/stage4_shovel_machine.h"
 #include "jsonparser/stage34_unified.h"
 using namespace std;
 
@@ -129,7 +125,6 @@ int main(int argc, char *argv[]) {
     cerr << "Currently only support JSON files < 16MB\n";
     exit(1);
   }
-  init_state_machine();
 
   pj.n_structural_indexes = 0;
   // we have potentially 1 structure per byte of input
@@ -159,8 +154,8 @@ int main(int argc, char *argv[]) {
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   vector<u64> results;
   results.resize(evts.size());
-  unsigned long cy1 = 0, cy2 = 0, cy3 = 0, cy4 = 0;
-  unsigned long cl1 = 0, cl2 = 0, cl3 = 0, cl4 = 0;
+  unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
+  unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
 #endif
   bool isok = true;
   for (u32 i = 0; i < iterations; i++) {
@@ -191,31 +186,6 @@ int main(int argc, char *argv[]) {
     unified.start();
 #endif
 
-#ifndef TEST_UNIFIED
-
-    isok = ape_machine(p.first, p.second, pj);
-#ifndef SQUASH_COUNTERS
-    unified.end(results);
-    cy3 += results[0];
-    cl3 += results[1];
-    if (!isok) {
-      cout << "Failed out during stage 3\n";
-      break;
-    }
-    unified.start();
-#endif
-    isok = shovel_machine(p.first, p.second, pj);
-#ifndef SQUASH_COUNTERS
-    unified.end(results);
-    cy4 += results[0];
-    cl4 += results[1];
-#endif
-    if (!isok) {
-      cout << "Failed out during stage 4\n";
-      break;
-    }
-#else
-
     isok = unified_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
@@ -227,7 +197,6 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-#endif
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
@@ -237,7 +206,7 @@ int main(int argc, char *argv[]) {
   printf("number of bytes %ld number of structural chars %d ratio %.3f\n",
          p.second, pj.n_structural_indexes,
          (double)pj.n_structural_indexes / p.second);
-  unsigned long total = cy1 + cy2 + cy3 + cy4;
+  unsigned long total = cy1 + cy2 + cy3;
 
   printf(
       "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
@@ -260,14 +229,6 @@ int main(int argc, char *argv[]) {
          (double)cy3 / (iterations * p.second));
   printf("%.2f cycles per structural character.\n",
          (double)cy3 / (iterations * pj.n_structural_indexes));
-
-  printf(
-      "stage 4 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
-      cl4, cy4, 100. * cy4 / total, (double)cl4 / cy4);
-  printf(" stage 4 runs at %.2f cycles per input byte and ",
-         (double)cy4 / (iterations * p.second));
-  printf("%.2f cycles per structural character.\n",
-         (double)cy4 / (iterations * pj.n_structural_indexes));
 
   printf(" all stages: %.2f cycles per input byte.\n",
          (double)total / (iterations * p.second));

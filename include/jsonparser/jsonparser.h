@@ -5,8 +5,6 @@
 #include "simdjson_internal.h"
 #include "stage1_find_marks.h"
 #include "stage2_flatten.h"
-#include "stage3_ape_machine.h"
-#include "stage4_shovel_machine.h"
 #include "stage34_unified.h"
 
 // Allocate a ParsedJson structure that can support document
@@ -22,6 +20,3 @@ void deallocate_ParsedJson(ParsedJson *pj_ptr);
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure.
 bool json_parse(const u8 *buf, size_t len, ParsedJson &pj);
-
-// like json_parse but users 4 stages, slower.
-bool json_parse_4stages(const u8 *buf, size_t len, ParsedJson &pj);
