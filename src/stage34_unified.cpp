@@ -13,7 +13,7 @@
 #include "jsonparser/simdjson_internal.h"
 
 #include <iostream>
-//#define DEBUG
+#define DEBUG
 #define PATH_SEP '/'
 
 #if defined(DEBUG) && !defined(DEBUG_PRINTF)
@@ -833,11 +833,15 @@ array_continue:
 
 succeed:
     DEBUG_PRINTF("in succeed\n");
-    //pj.dump_tapes();
+#ifdef DEBUG
+    pj.dump_tapes();
+#endif
     return true;
     
 fail:
     DEBUG_PRINTF("in fail\n");
-    //pj.dump_tapes();
+#ifdef DEBUG
+    pj.dump_tapes();
+#endif
     return false;    
 }
