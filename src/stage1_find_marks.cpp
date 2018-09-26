@@ -41,7 +41,10 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
   // persistent state across loop
   u64 prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
   u64 prev_iter_inside_quote = 0ULL;       // either all zeros or all ones
-  u64 prev_iter_ends_pseudo_pred = 0ULL;
+
+  // effectively the very first char is considered to follow "whitespace" for the
+  // purposes of psuedo-structural character detection
+  u64 prev_iter_ends_pseudo_pred = 1ULL;
 
   for (size_t idx = 0; idx < len; idx += 64) {
     __builtin_prefetch(buf + idx + 128);
