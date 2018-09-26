@@ -7,6 +7,7 @@
 #include "stage2_flatten.h"
 #include "stage3_ape_machine.h"
 #include "stage4_shovel_machine.h"
+#include "stage34_unified.h"
 
 // Allocate a ParsedJson structure that can support document
 // up to len bytes.
