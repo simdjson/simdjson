@@ -1,6 +1,3 @@
 [submodule "scalarvssimd/rapidjson"]
 	path = dependencies/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
-[submodule "dependencies/double-conversion"]
-	path = dependencies/double-conversion
-	url = https://github.com/google/double-conversion.git

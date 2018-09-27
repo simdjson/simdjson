@@ -1,5 +1,4 @@
 #include "jsonparser/common_defs.h"
-#include "double-conversion/double-conversion.h"
 #include "linux-perf-events.h"
 #include <algorithm>
 #include <assert.h>
@@ -22,14 +21,6 @@
 #include <vector>
 #include <x86intrin.h>
 
-/// Fixme: enable doube conv
-// #define DOUBLECONV
-#ifdef DOUBLECONV
-#include "double-conversion/double-conversion.h"
-#include "double-conversion/ieee.h"
-
-using namespace double_conversion;
-#endif
 
 //#define DEBUG
 
