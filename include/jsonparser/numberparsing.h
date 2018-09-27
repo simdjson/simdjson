@@ -1,4 +1,21 @@
+#pragma once
 
+#include "common_defs.h"
+#include "jsonparser/simdjson_internal.h"
+#include "jsonparser/jsoncharutils.h"
+
+// does not validation whatsoever, assumes that all digit
+// this is CS 101
+inline u64 naivestrtoll(const char *p, const char *end) {
+    if(p == end) return 0; // should be an error?
+    // this code could get a whole lot smarter if we have many long ints:
+    u64 x = *p - '0';
+    p++;
+    for(;p < end;p++) {
+      x = (x*10) + (*p - '0');
+    }
+    return x;
+}
 
 static const double power_of_ten[] = {
     1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,
@@ -71,14 +88,19 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
-                                ParsedJson &pj, u32 depth, u32 offset,
+
+
+// parse the number at buf + offset
+// define JSON_TEST_NUMBERS for unit testing
+static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
+                                ParsedJson &pj, const u32 depth, const u32 offset,
                                 bool found_zero, bool found_minus) {
+  const u8 *src = &buf[offset];
   if (found_minus) {
-    offset++;
+    src++;
     found_zero = (buf[offset] == '0');
   }
-  const u8 *src = &buf[offset];
+
   // this can read past the string content, so we need to have overallocated
   m256 v = _mm256_loadu_si256((const m256 *)(src));
   u64 error_sump = 0;
@@ -123,11 +145,17 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
     double result = strtod((const char *)src, &end);
     if ((errno != 0) || (end == (const char *)src) ||
         is_not_structural_or_whitespace(*end)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
       return false;
     }
     if (found_minus) {
       result = -result;
     }
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    foundFloat(result, buf + offset);
+#endif
     pj.write_tape_double(depth, result);
     return true;
   }
@@ -152,10 +180,21 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
     if (found_minus) {
       result = -result;
     }
+    // it is valid as long as it does not start with zero!
+    // or just 0, whether -0 is allowed is debatable?
+    bool isvalid = ! ((found_zero)  && (stringlength > 1));
+
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    if(isvalid) {
+      foundInteger(result, buf + offset);
+    } else {
+      foundInvalidNumber(buf + offset);
+    }
+#endif
     pj.write_tape_s64(depth, result);
     // it is valid as long as it does not start with zero!
     // or just 0, whether -0 is allowed is debatable?
-    return ! ((found_zero)  && (stringlength > 1));
+    return isvalid;
   }
 
   m256 n_mask = _mm256_set1_epi8(0x1f);
@@ -220,6 +259,9 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
 
 
   if(error_sump != 0) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
       return false;
   }
   // so we have a nice float-point at this time
@@ -265,6 +307,9 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
       exppart = (exppart * 10) + (*p - '0');
     }
     if (exppart > 308) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
       return false;
     }
     // betting that these branches are highly predictible
@@ -275,6 +320,9 @@ really_inline bool parse_number(const u8 *buf, UNUSED size_t len,
       result = result * power_of_ten[308 - exppart];
     }
   }
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    foundFloat(result, buf + offset);
+#endif
   pj.write_tape_double(depth, result);
   return true;
 }

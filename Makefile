@@ -7,7 +7,7 @@
 .PHONY: clean cleandist
 
 CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include 
-EXECUTABLES=parse jsoncheck minifiercompetition parsingcompetition
+EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition
 
 HEADERS= include/jsonparser/numberparsing.h include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -22,8 +22,9 @@ LIBS=$(RAPIDJSON_INCLUDE)
 
 all: $(LIBS) $(EXECUTABLES) 
 
-test: jsoncheck
+test: jsoncheck numberparsingcheck
 	./jsoncheck
+	./numberparsingcheck
 
 $(RAPIDJSON_INCLUDE):
 	git submodule update --init --recursive
@@ -38,6 +39,9 @@ parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
+
+numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp  -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS)
