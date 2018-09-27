@@ -9,6 +9,7 @@
 #endif
 
 #include <iostream>
+#include <iomanip>
 #define MAX_JSON_BYTES 0xFFFFFF
 
 const u32 MAX_DEPTH = 256;
@@ -99,9 +100,9 @@ public:
 
 
 #ifdef DEBUG
-inline void dump256(m256 d, string msg) {
+inline void dump256(m256 d, std::string msg) {
   for (u32 i = 0; i < 32; i++) {
-    std::cout << setw(3) << (int)*(((u8 *)(&d)) + i);
+    std::cout << std::setw(3) << (int)*(((u8 *)(&d)) + i);
     if (!((i + 1) % 8))
       std::cout << "|";
     else if (!((i + 1) % 4))
@@ -113,14 +114,14 @@ inline void dump256(m256 d, string msg) {
 }
 
 // dump bits low to high
-void dumpbits(u64 v, string msg) {
+inline void dumpbits(u64 v, std::string msg) {
   for (u32 i = 0; i < 64; i++) {
     std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-void dumpbits32(u32 v, string msg) {
+inline void dumpbits32(u32 v, std::string msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
   }
