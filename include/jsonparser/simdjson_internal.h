@@ -95,7 +95,39 @@ public:
         tape[saved_loc] = val | (((u64)c) << 56);
     }
 
+    // public interface
+#if 1
+    
+    struct ParsedJsonHandle {
+        ParsedJson & pj;
+        u32 depth;
+        u32 scope_header; // the start of our current scope that contains our current location
+        u32 location;     // our current location on a tape
 
+        ParsedJsonHandle(ParsedJson & pj_) : pj(pj_), depth(0), scope_header(0), location(0) {}
+        
+        // some placeholder navigation. Will convert over to a more native C++-ish way of doing
+        // things once it's working (i.e. ++ and -- operators and get start/end iterators)
+        bool next();                      // valid if we're not at the end of a scope
+        bool prev();                      // valid if we're not at the start of a scope
+        bool up();                        // valid if we are at depth != 0
+        bool down();                      // valid if we're at a [ or { call site
+        bool to_start_scope();            // move us to the start of our current scope 
+        bool to_end_scope();              // move us to the start of our current scope 
+
+        // these navigation elements move us across scope if need be, so allow us to iterate over
+        // everything at a given depth
+        bool next_flat();                 // valid if we're not at the end of a tape
+        bool prev_flat();                 // valid if we're not at the start of a tape
+
+        void print(std::ostream & os);    // print the thing we're currently pointing at
+        u8 get_type();                    // retrieve the character code of what we're looking at: [{"sltfn are the possibilities
+        s64 get_s64();                    // get the s64 value at this node; valid only if we're at "s" 
+        double get_double();              // get the double value at this node; valid only if we're at "d" 
+        char * get_string();              // get the string value at this node; valid only if we're at " 
+    };
+
+#endif
 };
 
 
