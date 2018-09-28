@@ -75,8 +75,14 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-static inline bool is_integer(char c) { return (c >= '0' && c <= '9'); }
+static inline bool is_integer(char c) {
+  return (c >= '0' && c <= '9');
+  // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
+}
 
+// We need to check that the character following a zero is valid. This is
+// probably frequent and it is hard than it looks. We are building all of this
+// just to differentiate between 0x1 (invalid), 0,1 (valid) 0e1 (valid)...
 const bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
@@ -90,12 +96,44 @@ const bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
-// return non-zero if not a structural or whitespace char
-// zero otherwise
 really_inline bool
 is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];
 }
+
+#define SWAR_NUMBER_PARSING
+
+#ifdef SWAR_NUMBER_PARSING
+
+// check quickly whether the next 8 chars are made of digits
+// at a glance, it looks better than Mula's
+// http://0x80.pl/articles/swar-digits-validate.html
+static inline bool is_made_of_eight_digits_fast(const char *chars) {
+  uint64_t val;
+  memcpy(&val, chars, 8);
+  return (((val & 0xF0F0F0F0F0F0F0F0) |
+           (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
+          0x3333333333333333);
+}
+
+static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
+  // this actually computes *16* values so we are being wasteful.
+  const __m128i ascii0 = _mm_set1_epi8('0');
+  const __m128i mul_1_10 =
+      _mm_setr_epi8(10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
+  const __m128i mul_1_100 = _mm_setr_epi16(100, 1, 100, 1, 100, 1, 100, 1);
+  const __m128i mul_1_10000 =
+      _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
+  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((__m128i *)chars), ascii0);
+  const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
+  const __m128i t2 = _mm_madd_epi16(t1, mul_1_100);
+  const __m128i t3 = _mm_packus_epi32(t2, t2);
+  const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
+  return _mm_cvtsi128_si32(
+      t4); // only captures the sum of the first 8 digits, drop the rest
+}
+
+#endif
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
@@ -104,48 +142,59 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
                                        const u32 offset, UNUSED bool found_zero,
                                        bool found_minus) {
   const char *p = (const char *)(buf + offset);
-  // printf("parsing %.32s\n",p);
   bool negative = false;
   if (found_minus) {
     ++p;
     negative = true;
     if (!is_integer(*p)) { // a negative sign must be followed by an integer
 #ifdef JSON_TEST_NUMBERS   // for unit testing
-      printf("bailing 1 on %.32s \n", buf + offset);
       foundInvalidNumber(buf + offset);
 #endif
       return false;
     }
   }
-  int64_t i = 0;
+  int64_t i;
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      printf("bailing 2 on %.32s \n", buf + offset);
       foundInvalidNumber(buf + offset);
 #endif
       return false;
     }
+    i = 0;
   } else {
     if (!(is_integer(*p))) { // must start with an integer
 #ifdef JSON_TEST_NUMBERS     // for unit testing
-      printf("bailing 3 on %.32s \n", buf + offset);
       foundInvalidNumber(buf + offset);
 #endif
       return false;
     }
-    do {
-      unsigned char digit = *p - '0';
+    unsigned char digit = *p - '0';
+    i = digit;
+    p++;
+    // the is_made_of_eight_digits_fast routine is unlikely to help here because
+    // we rarely see large integer parts like 123456789
+    while (is_integer(*p)) {
+      digit = *p - '0';
       i = 10 * i + digit;
       ++p;
-    } while (is_integer(*p));
+    }
   }
 
   int64_t exponent = 0;
 
   if ('.' == *p) {
     ++p;
+#ifdef SWAR_NUMBER_PARSING
+    // this helps if we have lots of decimals!
+    // this turns out to be frequent enough.
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      exponent -= 8;
+    }
+#endif
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
@@ -165,7 +214,6 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     }
     if (!is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      printf("bailing 4 on %.32s \n", buf + offset);
       foundInvalidNumber(buf + offset);
 #endif
       return false;
@@ -192,7 +240,6 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       if ((exponent > 308) || (exponent < -308)) {
         // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        printf("bailing 5 on %.32s \n", buf + offset);
         foundInvalidNumber(buf + offset);
 #endif
         return false;
@@ -212,5 +259,3 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
   }
   return true;
 }
-
-
