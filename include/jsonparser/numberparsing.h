@@ -1,20 +1,21 @@
 #pragma once
 
 #include "common_defs.h"
-#include "jsonparser/simdjson_internal.h"
 #include "jsonparser/jsoncharutils.h"
+#include "jsonparser/simdjson_internal.h"
 
 // does not validation whatsoever, assumes that all digit
 // this is CS 101
 inline u64 naivestrtoll(const char *p, const char *end) {
-    if(p == end) return 0; // should be an error?
-    // this code could get a whole lot smarter if we have many long ints:
-    u64 x = *p - '0';
-    p++;
-    for(;p < end;p++) {
-      x = (x*10) + (*p - '0');
-    }
-    return x;
+  if (p == end)
+    return 0; // should be an error?
+  // this code could get a whole lot smarter if we have many long ints:
+  u64 x = *p - '0';
+  p++;
+  for (; p < end; p++) {
+    x = (x * 10) + (*p - '0');
+  }
+  return x;
 }
 
 static const double power_of_ten[] = {
@@ -88,13 +89,153 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
+//#define SIMPLENUMBERPARSING
 
+#ifdef SIMPLENUMBERPARSING
 
+static inline bool is_integer(char c) { return (c >= '0' && c <= '9'); }
+
+const bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
+    1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+really_inline bool
+is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
+  return structural_or_whitespace_or_exponent_or_decimal_negated[c];
+}
+
+static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
+                                       ParsedJson &pj, const u32 depth,
+                                       const u32 offset, UNUSED bool found_zero,
+                                       bool found_minus) {
+  const char *p = (const char *)(buf + offset);
+  // printf("parsing %.32s\n",p);
+  bool negative = false;
+  if (found_minus) {
+    ++p;
+    negative = true;
+    if (!is_integer(*p)) { // a negative sign must be followed by an integer
+#ifdef JSON_TEST_NUMBERS   // for unit testing
+      printf("bailing 1 on %.32s \n", buf + offset);
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
+  }
+  int64_t i = 0;
+  if (*p == '0') { // 0 cannot be followed by an integer
+    ++p;
+    if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      printf("bailing 2 on %.32s \n", buf + offset);
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
+  } else {
+    if (!(is_integer(*p))) { // must start with an integer
+#ifdef JSON_TEST_NUMBERS     // for unit testing
+      printf("bailing 3 on %.32s \n", buf + offset);
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
+    do {
+      unsigned char digit = *p - '0';
+      i = 10 * i + digit;
+      ++p;
+    } while (is_integer(*p));
+  }
+
+  int64_t exponent = 0;
+
+  if ('.' == *p) {
+    ++p;
+    while (is_integer(*p)) {
+      unsigned char digit = *p - '0';
+      ++p;
+      i = i * 10 + digit;
+      --exponent;
+    }
+  }
+  int64_t expnumber = 0; // exponential part
+  if (('e' == *p) || ('E' == *p)) {
+    ++p;
+    bool negexp = false;
+    if ('-' == *p) {
+      negexp = true;
+      ++p;
+    } else if ('+' == *p) {
+      ++p;
+    }
+    if (!is_integer(*p)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      printf("bailing 4 on %.32s \n", buf + offset);
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
+    unsigned char digit = *p - '0';
+    expnumber = digit;
+    p++;
+    while (is_integer(*p)) {
+      digit = *p - '0';
+      expnumber = 10 * expnumber + digit;
+      ++p;
+    }
+    exponent += (negexp ? -expnumber : expnumber);
+  }
+  i = negative ? -i : i;
+  // printf("exponent = %d exp = %d \n", exponent, expnumber);
+  if ((exponent != 0) || (expnumber != 0)) {
+    ///////////
+    // We want 0.1e1 to be a float.
+    //////////
+    if (i == 0) {
+      pj.write_tape_double(depth, 0.0);
+    } else {
+      if ((exponent > 308) || (exponent < -308)) {
+        // we refuse to parse this
+#ifdef JSON_TEST_NUMBERS // for unit testing
+        printf("bailing 5 on %.32s \n", buf + offset);
+        foundInvalidNumber(buf + offset);
+#endif
+        return false;
+      }
+      double d = i;
+      d *= power_of_ten[308 + exponent];
+      pj.write_tape_double(depth, d);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundFloat(d, buf + offset);
+#endif
+    }
+  } else {
+    pj.write_tape_s64(depth, i);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    foundInteger(i, buf + offset);
+#endif
+  }
+  return true;
+}
+
+#else
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
-                                ParsedJson &pj, const u32 depth, const u32 offset,
-                                bool found_zero, bool found_minus) {
+static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
+                                       ParsedJson &pj, const u32 depth,
+                                       const u32 offset, bool found_zero,
+                                       bool found_minus) {
   const u8 *src = &buf[offset];
   if (found_minus) {
     src++;
@@ -182,10 +323,10 @@ static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
     }
     // it is valid as long as it does not start with zero!
     // or just 0, whether -0 is allowed is debatable?
-    bool isvalid = ! ((found_zero)  && (stringlength > 1));
+    bool isvalid = !((found_zero) && (stringlength > 1));
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    if(isvalid) {
+    if (isvalid) {
       foundInteger(result, buf + offset);
     } else {
       foundInvalidNumber(buf + offset);
@@ -257,12 +398,11 @@ static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
   error_sump |=
       (~((digit_characters | sign_characters) >> 1)) & exponent_characters;
 
-
-  if(error_sump != 0) {
+  if (error_sump != 0) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+    foundInvalidNumber(buf + offset);
 #endif
-      return false;
+    return false;
   }
   // so we have a nice float-point at this time
 
@@ -324,8 +464,9 @@ static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
     result = -result;
   }
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    foundFloat(result, buf + offset);
+  foundFloat(result, buf + offset);
 #endif
   pj.write_tape_double(depth, result);
   return true;
 }
+#endif
