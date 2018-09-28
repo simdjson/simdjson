@@ -3,6 +3,7 @@
 #include "benchmark.h"
 #include "jsonparser/jsonioutil.h"
 #include "jsonparser/jsonminifier.h"
+#include "jsonparser/jsonparser.h"
 
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
@@ -10,6 +11,7 @@
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "sajson.h"
 
 using namespace rapidjson;
 using namespace std;
@@ -91,17 +93,49 @@ int main(int argc, char *argv[]) {
    * Is it worth it to minify before parsing?
    ***/
   rapidjson::Document d;
-
+  printf("\n");
   printf("parsing with RapidJSON before despacing:\n");
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   printf("parsing with RapidJSON after despacing:\n");
-
+  char *minibuffer = (char *)malloc(p.second + 1);
+  size_t minisize = jsonminify((const uint8_t *)p.first, p.second, (uint8_t*) minibuffer);
+  minibuffer[minisize] = '\0';
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
-            cbuffer[jsonminify((const uint8_t *)p.first, p.second, cbuffer)] =
-                '\0',
+            memcpy(buffer, minibuffer, p.second),
             repeat, volume, true);
+
+  printf("\n");
+  size_t astbuffersize = p.second * 2;
+  size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
+
+  printf("parsing with sajson before despacing:\n");
+  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+
+
+
+
+  printf("parsing with sajson after despacing:\n");
+  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.second), repeat, volume, true);
+
+  printf("parsing before despacing:\n");
+  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+  ParsedJson &pj(*pj_ptr);
+  BEST_TIME(json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  
+  printf("parsing after despacing:\n");
+  ParsedJson *pj_ptr2 = allocate_ParsedJson(minisize);
+  ParsedJson &pj2(*pj_ptr2);
+
+  BEST_TIME(json_parse((const u8*)minibuffer, minisize, pj2), true, , repeat, volume, true);
+
   free(buffer);
   free(p.first);
+  free(ast_buffer);
+  free(minibuffer);
+  deallocate_ParsedJson(pj_ptr);
+  deallocate_ParsedJson(pj_ptr2);
+
+
 }

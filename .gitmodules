@@ -1,3 +1,6 @@
 [submodule "scalarvssimd/rapidjson"]
 	path = dependencies/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "dependencies/sajson"]
+	path = dependencies/sajson
+	url = https://github.com/chadaustin/sajson.git

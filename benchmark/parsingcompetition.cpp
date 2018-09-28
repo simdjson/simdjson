@@ -10,6 +10,10 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
+#include "sajson.h"
+
+
+
 
 using namespace rapidjson;
 using namespace std;
@@ -61,7 +65,15 @@ int main(int argc, char *argv[]) {
   BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
+  BEST_TIME(sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+
+  size_t astbuffersize = p.second;
+  size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
+
+  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+
   free(buffer);
   free(p.first);
+  free(ast_buffer);
   deallocate_ParsedJson(pj_ptr);
 }

@@ -6,8 +6,8 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include 
-EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition
+CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include
+EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition minify
 
 HEADERS= include/jsonparser/numberparsing.h include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -17,14 +17,19 @@ MINIFIERLIBFILES=src/jsonminifier.cpp
 EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
+SAJSON_INCLUDE:=dependencies/sajson/include
 
-LIBS=$(RAPIDJSON_INCLUDE) 
 
-all: $(LIBS) $(EXECUTABLES) 
+LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE)
+
+all: $(LIBS) $(EXECUTABLES)
 
 test: jsoncheck numberparsingcheck
 	-./numberparsingcheck
 	./jsoncheck
+
+$(SAJSON_INCLUDE):
+	git submodule update --init --recursive
 
 $(RAPIDJSON_INCLUDE):
 	git submodule update --init --recursive
@@ -45,6 +50,9 @@ numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS)
+
+minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
+	$(CXX) $(CXXFLAGS) -o minify $(MINIFIERLIBFILES) $(LIBFILES) tools/minify.cpp -I. 
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS)
