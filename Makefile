@@ -23,8 +23,8 @@ LIBS=$(RAPIDJSON_INCLUDE)
 all: $(LIBS) $(EXECUTABLES) 
 
 test: jsoncheck numberparsingcheck
+	-./numberparsingcheck
 	./jsoncheck
-	./numberparsingcheck
 
 $(RAPIDJSON_INCLUDE):
 	git submodule update --init --recursive

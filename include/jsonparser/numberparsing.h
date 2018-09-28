@@ -320,6 +320,9 @@ static really_inline bool parse_number(const u8 *const  buf, UNUSED size_t len,
       result = result * power_of_ten[308 - exppart];
     }
   }
+  if (found_minus) {
+    result = -result;
+  }
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(result, buf + offset);
 #endif

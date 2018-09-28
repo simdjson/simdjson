@@ -40,7 +40,7 @@ bool validate(const char *dirname) {
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (hasExtension(name, extension)) {
-      printf("validating: file %s \n", name);
+      //printf("validating: file %s \n", name);
       size_t filelen = strlen(name);
       char *fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
