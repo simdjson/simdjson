@@ -105,15 +105,17 @@ public:
         u32 location;     // our current location on a tape
 
         ParsedJsonHandle(ParsedJson & pj_) : pj(pj_), depth(0), scope_header(0), location(0) {}
-        
+        // OK with default copy constructor as the way to clone the POD structure
+
         // some placeholder navigation. Will convert over to a more native C++-ish way of doing
         // things once it's working (i.e. ++ and -- operators and get start/end iterators)
+        // return true if we can do the navigation, false otherwise
         bool next();                      // valid if we're not at the end of a scope
         bool prev();                      // valid if we're not at the start of a scope
         bool up();                        // valid if we are at depth != 0
-        bool down();                      // valid if we're at a [ or { call site
-        bool to_start_scope();            // move us to the start of our current scope 
-        bool to_end_scope();              // move us to the start of our current scope 
+        bool down();                      // valid if we're at a [ or { call site; moves us to header of that scope
+        void to_start_scope();            // move us to the start of our current scope; always succeeds
+        void to_end_scope();              // move us to the start of our current scope; always succeeds
 
         // these navigation elements move us across scope if need be, so allow us to iterate over
         // everything at a given depth
