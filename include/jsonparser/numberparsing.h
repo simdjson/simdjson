@@ -111,10 +111,15 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 static inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   memcpy(&val, chars, 8);
+  // a branchy method might be faster:
+  //return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
+  //  && (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030); 
   return (((val & 0xF0F0F0F0F0F0F0F0) |
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
 }
+
+
 
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
