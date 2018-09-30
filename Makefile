@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -g2 -O2 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include
+CXXFLAGS =  -std=c++11 -g2 -O3 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include
 EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition minify
 
 HEADERS= include/jsonparser/stringparsing.h include/jsonparser/numberparsing.h include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h
