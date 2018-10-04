@@ -201,13 +201,13 @@ int main(int argc, char *argv[]) {
 
   printf(
       "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
-      cl1, cy1, 100. * cy1 / total, (double)cl1 / cy1);
+      cl1 / iterations, cy1 / iterations, 100. * cy1 / total, (double)cl1 / cy1);
   printf(" stage 1 runs at %.2f cycles per input byte.\n",
          (double)cy1 / (iterations * p.second));
 
   printf(
       "stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
-      cl2, cy2, 100. * cy2 / total, (double)cl2 / cy2);
+      cl2 / iterations, cy2 / iterations, 100. * cy2 / total, (double)cl2 / cy2);
   printf(" stage 2 runs at %.2f cycles per input byte and ",
          (double)cy2 / (iterations * p.second));
   printf("%.2f cycles per structural character.\n",
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
 
   printf(
       "stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f \n",
-      cl3, cy3, 100. * cy3 / total, (double)cl3 / cy3);
+      cl3 / iterations, cy3 /iterations, 100. * cy3 / total, (double)cl3 / cy3);
   printf(" stage 3 runs at %.2f cycles per input byte and ",
          (double)cy3 / (iterations * p.second));
   printf("%.2f cycles per structural character.\n",
