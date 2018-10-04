@@ -11,6 +11,11 @@
 #include "jsonparser/common_defs.h"
 #include "jsonparser/simdjson_internal.h"
 
+#ifndef NO_PDEP_PLEASE
+#define NO_PDEP_PLEASE // though this is not always a win, it seems to 
+// be more often a win than not. And it will be faster on AMD.
+#endif
+
 #ifndef NO_PDEP_WIDTH
 #define NO_PDEP_WIDTH 8
 #endif
