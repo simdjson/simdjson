@@ -112,14 +112,13 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
-  //return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
-  //  && (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030); 
+  // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
+  //  && (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) ==
+  //  0x3030303030303030);
   return (((val & 0xF0F0F0F0F0F0F0F0) |
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
 }
-
-
 
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
@@ -143,14 +142,15 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // called by parse_number when we know that the output is a float,
 // but where there might be some integer overflow. The trick here is to
 // parse using floats from the start.
-// Do not call this function directly as it skips some of the checks from parse_number
+// Do not call this function directly as it skips some of the checks from
+// parse_number
 //
 // This function will almost never be called!!!
 //
-static bool parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
-                                       ParsedJson &pj, const u32 depth,
-                                       const u32 offset, UNUSED bool found_zero,
-                                       bool found_minus) {
+static never_inline bool
+parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
+                          ParsedJson &pj, const u32 depth, const u32 offset,
+                          UNUSED bool found_zero, bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
   bool negative = false;
@@ -158,7 +158,7 @@ static bool parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     ++p;
     negative = true;
   }
-  double i;
+  long double i;
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     i = 0;
@@ -228,30 +228,30 @@ static bool parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
       ++p;
     }
     if (is_integer(*p)) {
-        // we refuse to parse this 
+// we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+      foundInvalidNumber(buf + offset);
 #endif
-        return false;
+      return false;
     }
     exponent += (negexp ? -expnumber : expnumber);
   }
   if (i == 0) {
-      pj.write_tape_double(depth, 0.0);
+    pj.write_tape_double(depth, 0.0);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(0.0, buf + offset);
+    foundFloat(0.0, buf + offset);
 #endif
   } else {
-      if ((exponent > 308) || (exponent < -308)) {
-        // we refuse to parse this
+    if ((exponent > 308) || (exponent < -308)) {
+// we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+      foundInvalidNumber(buf + offset);
 #endif
-        return false;
+      return false;
     }
     double d = i;
     d *= power_of_ten[308 + exponent];
-    d = negative ? -d : d; 
+    d = negative ? -d : d;
     pj.write_tape_double(depth, d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(d, buf + offset);
@@ -260,18 +260,19 @@ static bool parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
   return true;
 }
 
-
 // called by parse_number when we know that the output is an integer,
 // but where there might be some integer overflow.
 // we want to catch overflows!
-// Do not call this function directly as it skips some of the checks from parse_number
+// Do not call this function directly as it skips some of the checks from
+// parse_number
 //
 // This function will almost never be called!!!
 //
-static  bool parse_large_integer(const u8 *const buf, UNUSED size_t len,
-                                       ParsedJson &pj, const u32 depth,
-                                       const u32 offset, UNUSED bool found_zero,
-                                       bool found_minus) {
+static never_inline bool parse_large_integer(const u8 *const buf,
+                                             UNUSED size_t len, ParsedJson &pj,
+                                             const u32 depth, const u32 offset,
+                                             UNUSED bool found_zero,
+                                             bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
   bool negative = false;
@@ -291,14 +292,14 @@ static  bool parse_large_integer(const u8 *const buf, UNUSED size_t len,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = *p - '0';
-      if( __builtin_umulll_overflow(i,10,&i)) {
-#ifdef JSON_TEST_NUMBERS   // for unit testing
+      if (__builtin_umulll_overflow(i, 10, (unsigned long long *)&i)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
         foundInvalidNumber(buf + offset);
 #endif
         return false; // overflow
       }
-      if( __builtin_uaddll_overflow(i,digit,&i)) {
-#ifdef JSON_TEST_NUMBERS   // for unit testing
+      if (__builtin_uaddll_overflow(i, digit, (unsigned long long *)&i)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
         foundInvalidNumber(buf + offset);
 #endif
         return false; // overflow
@@ -306,25 +307,24 @@ static  bool parse_large_integer(const u8 *const buf, UNUSED size_t len,
       ++p;
     }
   }
-  if(negative) {
-    if(i > 0x8000000000000000 ) {
-      // overflows!
-#ifdef JSON_TEST_NUMBERS   // for unit testing
+  if (negative) {
+    if (i > 0x8000000000000000) {
+// overflows!
+#ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
 #endif
       return false; // overflow
     }
   } else {
-    if(i >= 0x8000000000000000 ) {
-      // overflows!
-#ifdef JSON_TEST_NUMBERS   // for unit testing
+    if (i >= 0x8000000000000000) {
+// overflows!
+#ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
 #endif
       return false; // overflow
     }
   }
-  int64_t signed_answer = negative ? -i : i; 
-  printf("(long) writting to tape %lld \n", signed_answer);
+  int64_t signed_answer = negative ? -i : i;
   pj.write_tape_s64(depth, signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
@@ -333,11 +333,11 @@ static  bool parse_large_integer(const u8 *const buf, UNUSED size_t len,
 }
 
 #ifndef likely
-#define likely(x)      __builtin_expect(!!(x), 1) 
+#define likely(x) __builtin_expect(!!(x), 1)
 #endif
 
 #ifndef unlikely
-#define unlikely(x)    __builtin_expect(!!(x), 0) 
+#define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
 // parse the number at buf + offset
@@ -384,7 +384,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = *p - '0';
-      i = 10 * i + digit;// might overflow
+      i = 10 * i + digit; // might overflow
       ++p;
     }
   }
@@ -401,17 +401,17 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     if (is_made_of_eight_digits_fast(p)) {
       i = i * 100000000 + parse_eight_digits_unrolled(p);
       p += 8;
-      //exponent -= 8;
+      // exponent -= 8;
     }
 #endif
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
       i = i * 10 + digit;
-      //exponent --;
+      // exponent --;
     }
     exponent = firstafterperiod - p;
-  } 
+  }
   int digitcount = p - startdigits - 1;
 
   int64_t expnumber = 0; // exponential part
@@ -433,7 +433,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     unsigned char digit = *p - '0';
     expnumber = digit;
     p++;
-    if (is_integer(*p)) {
+    while (is_integer(*p)) {
       digit = *p - '0';
       expnumber = 10 * expnumber + digit;
       ++p;
@@ -449,20 +449,28 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       ++p;
     }
     if (is_integer(*p)) {
-        // we refuse to parse this 
+// we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+      foundInvalidNumber(buf + offset);
 #endif
-        return false;
+      return false;
     }
+    /* if(unlikely(p - startofexp > 3)) {
+               // we refuse to parse this
+ #ifdef JSON_TEST_NUMBERS // for unit testing
+         foundInvalidNumber(buf + offset);
+ #endif
+         return false;
+     }*/
     exponent += (negexp ? -expnumber : expnumber);
   }
   i = negative ? -i : i;
   if ((exponent != 0) || (expnumber != 0)) {
-    if(unlikely(digitcount >= 19)) { // this is uncommon!!!
+    if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      //return parse_highprecision_float(buf, len, pj, depth, offset, found_zero, found_minus);
+      return parse_highprecision_float(buf, len, pj, depth, offset, found_zero,
+                                       found_minus);
     }
     ///////////
     // We want 0.1e1 to be a float.
@@ -474,7 +482,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
 #endif
     } else {
       if ((exponent > 308) || (exponent < -308)) {
-        // we refuse to parse this
+// we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
         foundInvalidNumber(buf + offset);
 #endif
@@ -482,15 +490,16 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       }
       double d = i;
       d *= power_of_ten[308 + exponent];
-      //d = negative ? -d : d; 
+      // d = negative ? -d : d;
       pj.write_tape_double(depth, d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
     }
   } else {
-    if(unlikely(digitcount >= 19)) { // this is uncommon!!!
-    //  return parse_large_integer(buf, len, pj, depth, offset, found_zero, found_minus);       
+    if (unlikely(digitcount >= 19)) { // this is uncommon!!!
+      return parse_large_integer(buf, len, pj, depth, offset, found_zero,
+                                 found_minus);
     }
     pj.write_tape_s64(depth, i);
 #ifdef JSON_TEST_NUMBERS // for unit testing

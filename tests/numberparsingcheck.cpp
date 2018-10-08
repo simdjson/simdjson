@@ -55,7 +55,9 @@ inline void foundFloat(double result, const u8 * buf) {
   }
   // we want to get some reasonable relative accuracy
   if(fabs(expected - result)/fmax(fabs(expected),fabs(result)) > 0.000000000000001) {
-    printf("parsed %f from %.32s whereas strtod gives %f,", result, buf, expected);
+    printf("parsed %.32f from \n", result);
+    printf("       %.32s whereas strtod gives\n", buf);
+    printf("       %.32f,",  expected);
     printf(" while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
