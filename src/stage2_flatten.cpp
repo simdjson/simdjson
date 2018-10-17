@@ -49,6 +49,7 @@
 // that's all; the type of character the offset points to will
 // tell us exactly what we need to know. Naive but straightforward
 // implementation
+WARN_UNUSED
 bool flatten_indexes(size_t len, ParsedJson &pj) {
   u32 *base_ptr = pj.structural_indexes;
   u32 base = 0;

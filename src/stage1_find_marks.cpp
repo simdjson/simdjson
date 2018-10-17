@@ -11,6 +11,14 @@
 #include "jsonparser/common_defs.h"
 #include "jsonparser/simdjson_internal.h"
 
+#define UTF8VALIDATE
+// It seems that many parsers do UTF-8 validation.
+// RapidJSON does not do it by default, but a flag
+// allows it. It appears that sajson might do utf-8
+// validation
+#ifdef UTF8VALIDATE
+#include "jsonparser/simdutf8check.h"
+#endif
 using namespace std;
 
 // a straightforward comparison of a mask against input. 5 uops; would be
@@ -24,12 +32,25 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
   return res_0 | (res_1 << 32);
 }
 
+WARN_UNUSED
 /*never_inline*/ bool find_structural_bits(const u8 *buf, size_t len,
                                            ParsedJson &pj) {
   if (len > 0xffffff) {
     cerr << "Currently only support JSON files < 16MB\n";
     return false;
   }
+#ifdef UTF8VALIDATE
+#define TRYASCIIFIRST // we try parsing it as ASCII and fall over to UTF-8 only as needed.
+#ifdef TRYASCIIFIRST
+  bool isasciisofar = true;
+#endif
+  __m256i has_error = _mm256_setzero_si256();
+  struct avx_processed_utf_bytes previous = {
+      .rawbytes = _mm256_setzero_si256(),
+      .high_nibbles = _mm256_setzero_si256(),
+      .carried_continuations = _mm256_setzero_si256()};
+ #endif
+
   // Useful constant masks
   const u64 even_bits = 0x5555555555555555ULL;
   const u64 odd_bits = ~even_bits;
@@ -62,7 +83,23 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
 #endif
     m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
     m256 input_hi = _mm256_load_si256((const m256 *)(buf + idx + 32));
-
+#ifdef UTF8VALIDATE
+#ifdef TRYASCIIFIRST
+    if(isasciisofar) {
+      m256 highbit = _mm256_set1_epi8(0x80);
+      if((_mm256_testz_si256(input_lo,highbit) & _mm256_testz_si256(input_hi,highbit)) != 1) {
+        isasciisofar = false;
+        previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
+        previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
+      }
+    } else {
+#endif // TRYASCIIFIRST
+    previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
+    previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
+#ifdef TRYASCIIFIRST
+   }
+#endif // TRYASCIIFIRST
+#endif
     ////////////////////////////////////////////////////////////////////////////////////////////
     //     Step 1: detect odd sequences of backslashes
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,5 +255,13 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
         "final structurals and pseudo structurals after close quote removal");
     *(u64 *)(pj.structurals + idx / 8) = structurals;
   }
+#ifdef UTF8VALIDATE
+#ifdef TRYASCIIFIRST
+  return isasciisofar || ((!isasciisofar) && (_mm256_testz_si256(has_error, has_error)));
+#else
+  return _mm256_testz_si256(has_error, has_error);
+#endif
+#else
   return true;
+#endif
 }

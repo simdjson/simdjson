@@ -31,6 +31,7 @@
 
 using namespace std;
 
+WARN_UNUSED
 really_inline bool is_valid_true_atom(const u8 * loc) {
     u64 tv = *(const u64 *)"true    ";
     u64 mask4 = 0x00000000ffffffff;
@@ -42,6 +43,7 @@ really_inline bool is_valid_true_atom(const u8 * loc) {
     return error == 0;
 }
 
+WARN_UNUSED
 really_inline bool is_valid_false_atom(const u8 * loc) {
     u64 fv = *(const u64 *)"false   ";
     u64 mask5 = 0x000000ffffffffff;
@@ -53,6 +55,7 @@ really_inline bool is_valid_false_atom(const u8 * loc) {
     return error == 0;
 }
 
+WARN_UNUSED
 really_inline bool is_valid_null_atom(const u8 * loc) {
     u64 nv = *(const u64 *)"null    ";
     u64 mask4 = 0x00000000ffffffff;
@@ -64,6 +67,7 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
     return error == 0;
 }
 
+WARN_UNUSED
 bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     u32 i = 0;
     u32 idx;
