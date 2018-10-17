@@ -45,7 +45,6 @@ static const u32 UTF_OR_MASK[5] = {0x00, // error
                             0x00, 0xc080, 0xe08080, 0xf0808080};
 
 
-
 // handle a unicode codepoint
 // write appropriate values into dest
 // src will always advance 6 bytes
@@ -121,6 +120,16 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
     u32 quote_bits =
         (u32)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
     dumpbits32(quote_bits, "quote_bits");
+#define CHECKUNESCAPED
+    // All Unicode characters may be placed within the
+    // quotation marks, except for the characters that MUST be escaped:
+    // quotation mark, reverse solidus, and the control characters (U+0000
+    //through U+001F).
+    // https://tools.ietf.org/html/rfc8259
+#ifdef CHECKUNESCAPED
+    m256 unitsep = _mm256_set1_epi8(0x1F);
+    m256 unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
+#endif // CHECKUNESCAPED
     u32 quote_dist = __builtin_ctz(quote_bits);
     u32 bs_dist = __builtin_ctz(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
@@ -140,13 +149,25 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
       pj.write_tape(depth, pj.current_string_buf_loc - pj.string_buf, '"');
 
       pj.current_string_buf_loc = dst + quote_dist + 1;
-
+#ifdef CHECKUNESCAPED
+      // check that there is no unescaped char before the quote
+      u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
+      return ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
+#else  //CHECKUNESCAPED
       return true;
+#endif //CHECKUNESCAPED
     } else if (quote_dist > bs_dist) {
       u8 escape_char = src[bs_dist + 1];
 #ifdef DEBUG
       cout << "Found escape char: " << escape_char << "\n";
 #endif
+#ifdef CHECKUNESCAPED
+      // we are going to need the unescaped_bits to check for unescaped chars
+      u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
+      if(((bs_bits - 1) & (~ bs_bits) & unescaped_bits) != 0) {
+        return false;
+      }
+#endif //CHECKUNESCAPED
       // we encountered backslash first. Handle backslash
       if (escape_char == 'u') {
         // move src/dst up to the start; they will be further adjusted
@@ -174,8 +195,15 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
       // neither.
       src += 32;
       dst += 32;
+#ifdef CHECKUNESCAPED
+      // check for unescaped chars
+      if(_mm256_testz_si256(unescaped_vec,unescaped_vec) != 1) {
+        return false;
+      }
+#endif // CHECKUNESCAPED
     }
-    return true;
+
+     // return true; // we would return true if we wanted to stop after 32 characters
   }
   // can't be reached
   return true;
