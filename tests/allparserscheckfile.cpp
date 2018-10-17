@@ -1,7 +1,6 @@
 
 #include "jsonparser/jsonparser.h"
 
-#include "benchmark.h"
 
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
@@ -47,35 +46,23 @@ int main(int argc, char *argv[]) {
   }
   ParsedJson &pj(*pj_ptr);
 
-  int repeat = 10;
-  int volume = p.second;
-  BEST_TIME(json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  bool ours_correct = json_parse(p.first, p.second, pj);
 
   rapidjson::Document d;
 
   char *buffer = (char *)malloc(p.second + 1);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
-
-  BEST_TIME(
-      d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
-      false, memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.Parse((const char *)buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
-
-  BEST_TIME(sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
-
-  size_t astbuffersize = p.second;
-  size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
-
-  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
-
+  bool rapid_correct = (d.Parse((const char *)buffer).HasParseError() == false);
+  bool rapid_correct_checkencoding = (d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError() == false);
+  bool sajson_correct = sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid();
+  printf("our parser                 : %s \n", ours_correct ?   "correct":"invalid");
+  printf("rapid                      : %s \n", rapid_correct ?  "correct":"invalid");
+  printf("rapid (check encoding)     : %s \n", rapid_correct_checkencoding ?  "correct":"invalid");
+  printf("sajson                     : %s \n", sajson_correct ? "correct":"invalid");
+   
   free(buffer);
   free(p.first);
-  free(ast_buffer);
   deallocate_ParsedJson(pj_ptr);
+  return EXIT_SUCCESS;
 }

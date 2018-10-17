@@ -7,7 +7,7 @@
 .PHONY: clean cleandist
 
 CXXFLAGS =  -std=c++11 -g2 -O3 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include
-EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition minify
+EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
 
 HEADERS= include/jsonparser/stringparsing.h include/jsonparser/numberparsing.h include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -57,7 +57,8 @@ minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIB
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS)
 
-
+allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp -I. $(LIBFLAGS)
 
 parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsehisto benchmark/parse.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM
