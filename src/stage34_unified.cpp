@@ -129,6 +129,57 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     switch (c) {
         case '{': goto object_begin;
         case '[': goto array_begin;
+#define SIMDJSON_ALLOWANYTHINGINROOT
+   // A JSON text is a serialized value.  Note that certain previous
+   // specifications of JSON constrained a JSON text to be an object or an
+   // array.  Implementations that generate only objects or arrays where a
+   // JSON text is called for will be interoperable in the sense that all
+   // implementations will accept these as conforming JSON texts.
+   // https://tools.ietf.org/html/rfc8259
+#ifdef SIMDJSON_ALLOWANYTHINGINROOT
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            goto start_continue;
+        }
+        case 't': 
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(depth, 0, c);
+            goto start_continue;
+        case 'f': 
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(depth, 0, c);
+            goto start_continue;
+        case 'n': 
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(depth, 0, c);
+            goto start_continue;
+        case '0': {
+            if (!parse_number(buf, len, pj, depth, idx, true, false)) {
+                goto fail;
+            }
+            goto start_continue;
+        }
+        case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':  {
+            if (!parse_number(buf, len, pj, depth, idx, false, false)) {
+                goto fail;
+            }
+            goto start_continue;
+        }
+        case '-': {
+            if (!parse_number(buf, len, pj, depth, idx, false, true)) {
+                goto fail;
+            }
+            goto start_continue;
+        }
+#endif // ALLOWANYTHINGINROOT
         default: goto fail;
     }
 
