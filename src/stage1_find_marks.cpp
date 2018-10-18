@@ -94,8 +94,11 @@ WARN_UNUSED
       }
     } else {
 #endif // TRYASCIIFIRST
-    previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
-    previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
+    previous = avxcheckUTF8Bytes_asciipath(input_lo, &previous, &has_error);
+    previous = avxcheckUTF8Bytes_asciipath(input_hi, &previous, &has_error);
+   //previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
+   //previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
+
 #ifdef TRYASCIIFIRST
    }
 #endif // TRYASCIIFIRST
