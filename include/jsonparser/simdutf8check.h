@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <x86intrin.h>
+#include <string.h>
 /*
  * legal utf-8 byte sequence
  * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
@@ -396,7 +397,6 @@ avxcheckUTF8Bytes_asciipath(__m256i current_bytes,
                                            9, 9, 9, 9, 9, 9, 9, 1)),*has_error);
     return *previous;
   }
-
   struct avx_processed_utf_bytes pb;
   avx_count_nibbles(current_bytes, &pb);
 

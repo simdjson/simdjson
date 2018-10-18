@@ -40,10 +40,6 @@ WARN_UNUSED
     return false;
   }
 #ifdef UTF8VALIDATE
-#define TRYASCIIFIRST // we try parsing it as ASCII and fall over to UTF-8 only as needed.
-#ifdef TRYASCIIFIRST
-  bool isasciisofar = true;
-#endif
   __m256i has_error = _mm256_setzero_si256();
   struct avx_processed_utf_bytes previous = {
       .rawbytes = _mm256_setzero_si256(),
@@ -84,24 +80,20 @@ WARN_UNUSED
     m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
     m256 input_hi = _mm256_load_si256((const m256 *)(buf + idx + 32));
 #ifdef UTF8VALIDATE
-#ifdef TRYASCIIFIRST
-    if(isasciisofar) {
-      m256 highbit = _mm256_set1_epi8(0x80);
-      if((_mm256_testz_si256(input_lo,highbit) & _mm256_testz_si256(input_hi,highbit)) != 1) {
-        isasciisofar = false;
+    m256 highbit = _mm256_set1_epi8(0x80);
+    if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
+        // it is ascii, we just check continuation
+        has_error = _mm256_or_si256(
+          _mm256_cmpgt_epi8(previous.carried_continuations,
+                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                           9, 9, 9, 9, 9, 9, 9, 1)),has_error);
+ 
+    } else {
+        // it is not ascii so we have to do heavy work
         previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
         previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
-      }
-    } else {
-#endif // TRYASCIIFIRST
-    previous = avxcheckUTF8Bytes_asciipath(input_lo, &previous, &has_error);
-    previous = avxcheckUTF8Bytes_asciipath(input_hi, &previous, &has_error);
-   //previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
-   //previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
-
-#ifdef TRYASCIIFIRST
-   }
-#endif // TRYASCIIFIRST
+    }
 #endif
     ////////////////////////////////////////////////////////////////////////////////////////////
     //     Step 1: detect odd sequences of backslashes
@@ -259,11 +251,7 @@ WARN_UNUSED
     *(u64 *)(pj.structurals + idx / 8) = structurals;
   }
 #ifdef UTF8VALIDATE
-#ifdef TRYASCIIFIRST
-  return isasciisofar || ((!isasciisofar) && (_mm256_testz_si256(has_error, has_error)));
-#else
   return _mm256_testz_si256(has_error, has_error);
-#endif
 #else
   return true;
 #endif
