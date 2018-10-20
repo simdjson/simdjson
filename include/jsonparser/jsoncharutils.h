@@ -59,7 +59,41 @@ inline bool hex_to_u32(const u8 *src, u32 *res) {
       !is_hex_digit(v4)) {
     return false;
   }
-  *res = digit_to_val(v1) << 24 | digit_to_val(v2) << 16 |
-         digit_to_val(v3) << 8 | digit_to_val(v4);
+  *res = digit_to_val(v1) << 12 | digit_to_val(v2) << 8 |
+         digit_to_val(v3) << 4 | digit_to_val(v4);
   return true;
+}
+
+// given a code point cp, writes to c
+// the utf-8 code, outputting the length in
+// bytes, if the length is zero, the code point
+// is invalid
+//
+// This can possibly be made faster using pdep
+// and clz and table lookups, but JSON documents
+// have few escaped code points, and the following
+// function looks cheap.
+inline size_t codepoint_to_utf8(uint32_t cp, u8  *c) {
+  if (cp <= 0x7F) {
+    c[0] = cp;
+    return 1; // ascii
+  } else if (cp <= 0x7FF) {
+    c[0] = (cp >> 6) + 192;
+    c[1] = (cp & 63) + 128;
+    return 2; // universal plane
+  } else if (0xd800 <= cp && cp <= 0xdfff) {
+    return 0; // surrogates // could put assert here
+  } else if (cp <= 0xFFFF) {
+    c[0] = (cp >> 12) + 224;
+    c[1] = ((cp >> 6) & 63) + 128;
+    c[2] = (cp & 63) + 128;
+    return 3;
+  } else if (cp <= 0x10FFFF) {
+    c[0] = (cp >> 18) + 240;
+    c[1] = ((cp >> 12) & 63) + 128;
+    c[2] = ((cp >> 6) & 63) + 128;
+    c[3] = (cp & 63) + 128;
+    return 4;
+  }
+  return 0; // bad // could put assert her
 }

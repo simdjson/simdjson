@@ -31,19 +31,6 @@ static const u8 escape_map[256] = {
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
 };
 
-static const u32 leading_zeros_to_utf_bytes[33] = {
-    1, 1, 1, 1, 1, 1, 1, 1,           // 7 bits for first one
-    2, 2, 2, 2,                       // 11 bits for next
-    3, 3, 3, 3, 3,                    // 16 bits for next
-    4, 4, 4, 4, 4,                    // 21 bits for next
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // error
-
-static const u32 UTF_PDEP_MASK[5] = {0x00, // error
-                              0x7f, 0x1f3f, 0x0f3f3f, 0x073f3f3f};
-
-static const u32 UTF_OR_MASK[5] = {0x00, // error
-                            0x00, 0xc080, 0xe08080, 0xf0808080};
-
 
 // handle a unicode codepoint
 // write appropriate values into dest
@@ -52,17 +39,14 @@ static const u32 UTF_OR_MASK[5] = {0x00, // error
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
 really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
-  u32 code_point = 0; // read the hex, potentially reading another \u beyond if
-                      // it's a // wacky one
+  u32 code_point = 0; // read the hex, potentially reading another \u beyond if it is a surrogate pair
   if (!hex_to_u32(*src_ptr + 2, &code_point)) {
     return false;
   }
   *src_ptr += 6;
-  // check for the weirdo double-UTF-16 nonsense for things outside Basic
+  // check for low surrogate for characters outside the Basic
   // Multilingual Plane.
   if (code_point >= 0xd800 && code_point < 0xdc00) {
-    // TODO: sanity check and clean up; snippeted from RapidJSON and poorly
-    // understood at the moment
     if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
       return false;
     }
@@ -77,19 +61,9 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
         (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
     *src_ptr += 6;
   }
-  // TODO: check to see whether the below code is nonsense (it's really only a
-  // sketch at this point)
-  u32 lz = __builtin_clz(code_point);
-  u32 utf_bytes = leading_zeros_to_utf_bytes[lz];
-  u32 tmp =
-      _pdep_u32(code_point, UTF_PDEP_MASK[utf_bytes]) | UTF_OR_MASK[utf_bytes];
-  // swap and move to the other side of the register
-  tmp = __builtin_bswap32(tmp);
-  tmp >>= ((4 - utf_bytes) * 8) & 31; // if utf_bytes, this could become a shift
-                                      // by 32, hence the mask with 31
-  // use memcpy to avoid undefined behavior:
-  std::memcpy(*(u32 **)dst_ptr, &tmp, sizeof(u32)); //**(u32 **)dst_ptr = tmp;
-  *dst_ptr += utf_bytes;
+  size_t offset = codepoint_to_utf8(code_point, *dst_ptr); 
+  // assert(offset > 0);
+  *dst_ptr += offset;
   return true;
 }
 
@@ -177,7 +151,6 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
         if (!handle_unicode_codepoint(&src, &dst)) {
           return false;
         }
-        return true;
       } else {
         // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
         // write bs_dist+1 characters to output
@@ -202,8 +175,6 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
       }
 #endif // CHECKUNESCAPED
     }
-
-     // return true; // we would return true if we wanted to stop after 32 characters
   }
   // can't be reached
   return true;
