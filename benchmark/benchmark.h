@@ -77,13 +77,13 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
  * test, repeat is the number of times we should repeat and size is the
  * number of operations represented by test.
  */
-#define BEST_TIME(test, expected, pre, repeat, size, verbose)                  \
+#define BEST_TIME(name, test, expected, pre, repeat, size, verbose)                  \
   do {                                                                         \
     if (global_rdtsc_overhead == UINT64_MAX) {                                 \
       RDTSC_SET_OVERHEAD(rdtsc_overhead_func(1), repeat);                      \
     }                                                                          \
     if (verbose)                                                               \
-      printf("%-40s\t: ", #test);                                              \
+      printf("%-40s\t: ", name);                                              \
     fflush(NULL);                                                              \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = (uint64_t)-1;                                          \
@@ -117,13 +117,13 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
   } while (0)
 
 // like BEST_TIME, but no check
-#define BEST_TIME_NOCHECK(test, pre, repeat, size, verbose)                    \
+#define BEST_TIME_NOCHECK(name, test, pre, repeat, size, verbose)                    \
   do {                                                                         \
     if (global_rdtsc_overhead == UINT64_MAX) {                                 \
       RDTSC_SET_OVERHEAD(rdtsc_overhead_func(1), repeat);                      \
     }                                                                          \
     if (verbose)                                                               \
-      printf("%-40s\t: ", #test);                                              \
+      printf("%-40s\t: ", name);                                              \
     fflush(NULL);                                                              \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = (uint64_t)-1;                                          \
@@ -160,7 +160,7 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
       RDTSC_SET_OVERHEAD(rdtsc_overhead_func(1), repeat);                      \
     }                                                                          \
     if (verbose)                                                               \
-      printf("%-60s\t: ", #test);                                              \
+      printf("%-60s\t:\n", #test);                                              \
     fflush(NULL);                                                              \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = (uint64_t)-1;                                          \
