@@ -21,6 +21,11 @@ bool startsWith(const char *pre, const char *str) {
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
 
+bool contains(const char *pre, const char *str) {
+  return (strstr(str, pre) != NULL);
+}
+
+
 bool validate(const char *dirname) {
   bool everythingfine = true;
   // init_state_machine(); // no longer necessary
@@ -36,6 +41,7 @@ bool validate(const char *dirname) {
     printf("nothing in dir %s \n", dirname);
     return false;
   }
+  size_t howmany = 0;
   bool needsep = (strlen(dirname) > 1) && (dirname[strlen(dirname) - 1] != '/');
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
@@ -51,15 +57,18 @@ bool validate(const char *dirname) {
         strcpy(fullpath + dirlen, name);
       }
       std::pair<u8 *, size_t> p = get_corpus(fullpath);
-      // terrible hack but just to get it working
       ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
       if(pj_ptr == NULL) {
         std::cerr<< "can't allocate memory"<<std::endl;
         return false;
       }
+      ++howmany;
       ParsedJson &pj(*pj_ptr);
       bool isok = json_parse(p.first, p.second, pj);
-      if (startsWith("pass", name)) {
+      if(contains("EXCLUDE",name)) {
+        // skipping
+        howmany--;
+      } else if (startsWith("pass", name)) {
         if (!isok) {
           printf("warning: file %s should pass but it fails.\n", name);
           everythingfine = false;
@@ -81,6 +90,8 @@ bool validate(const char *dirname) {
   for (int i = 0; i < c; ++i)
     free(entry_list[i]);
   free(entry_list);
+  printf("%zu files checked.\n", howmany);
+  if(everythingfine) printf("All ok!\n");
   return everythingfine;
 }
 

@@ -7,7 +7,7 @@
 .PHONY: clean cleandist
 
 CXXFLAGS =  -std=c++11 -g2 -O3 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include
-EXECUTABLES=parse jsoncheck numberparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
+EXECUTABLES=parse jsoncheck numberparsingcheck stringparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
 
 HEADERS= include/jsonparser/simdutf8check.h include/jsonparser/stringparsing.h include/jsonparser/numberparsing.h include/jsonparser/jsonparser.h include/jsonparser/common_defs.h include/jsonparser/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/jsonparser/simdjson_internal.h include/jsonparser/stage1_find_marks.h include/jsonparser/stage2_flatten.h include/jsonparser/stage34_unified.h include/jsonparser/jsoncharutils.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -24,9 +24,15 @@ LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE)
 
 all: $(LIBS) $(EXECUTABLES)
 
-test: jsoncheck numberparsingcheck
-	-./numberparsingcheck
+test: jsoncheck numberparsingcheck stringparsingcheck
+	./numberparsingcheck
+	./stringparsingcheck
 	./jsoncheck
+	@echo 
+	@tput setaf 2
+	@echo "It looks like the code is good!"
+	@tput sgr0
+
 
 $(SAJSON_INCLUDE):
 	git submodule update --init --recursive
@@ -47,6 +53,11 @@ jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp  -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
+
+
+stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp  -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
+
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS)

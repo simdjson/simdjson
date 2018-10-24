@@ -17,7 +17,7 @@ static const u8 escape_map[256] = {
 
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x12, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
     0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
 
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
@@ -72,6 +72,9 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
   using namespace std;
   const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
   u8 *dst = pj.current_string_buf_loc;
+#ifdef JSON_TEST_STRINGS // for unit testing
+  u8 *const start_of_string = dst;
+#endif
 #ifdef DEBUG
   cout << "Entering parse string with offset " << offset << "\n";
 #endif
@@ -104,6 +107,7 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
     m256 unitsep = _mm256_set1_epi8(0x1F);
     m256 unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
 #endif // CHECKUNESCAPED
+
     u32 quote_dist = __builtin_ctz(quote_bits);
     u32 bs_dist = __builtin_ctz(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
@@ -122,12 +126,20 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
 
       pj.write_tape(depth, pj.current_string_buf_loc - pj.string_buf, '"');
 
-      pj.current_string_buf_loc = dst + quote_dist + 1;
+      pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
       u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
-      return ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
+      bool is_ok = ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
+#ifdef JSON_TEST_STRINGS // for unit testing
+       if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1); 
+       else  foundBadString(buf + offset);
+#endif // JSON_TEST_STRINGS
+      return is_ok;
 #else  //CHECKUNESCAPED
+#ifdef JSON_TEST_STRINGS // for unit testing
+       foundString(buf + offset,start_of_string,pj.current_string_buf_loc);
+#endif // JSON_TEST_STRINGS
       return true;
 #endif //CHECKUNESCAPED
     } else if (quote_dist > bs_dist) {
@@ -139,6 +151,9 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
       // we are going to need the unescaped_bits to check for unescaped chars
       u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
       if(((bs_bits - 1) & (~ bs_bits) & unescaped_bits) != 0) {
+#ifdef JSON_TEST_STRINGS // for unit testing
+        foundBadString(buf + offset);
+#endif // JSON_TEST_STRINGS
         return false;
       }
 #endif //CHECKUNESCAPED
@@ -149,6 +164,9 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
         src += bs_dist;
         dst += bs_dist;
         if (!handle_unicode_codepoint(&src, &dst)) {
+#ifdef JSON_TEST_STRINGS // for unit testing
+          foundBadString(buf + offset);
+#endif // JSON_TEST_STRINGS
           return false;
         }
       } else {
@@ -157,8 +175,12 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
         // note this may reach beyond the part of the buffer we've actually
         // seen. I think this is ok
         u8 escape_result = escape_map[escape_char];
-        if (!escape_result)
+        if (!escape_result) {
+#ifdef JSON_TEST_STRINGS // for unit testing
+          foundBadString(buf + offset);
+#endif // JSON_TEST_STRINGS
           return false; // bogus escape value is an error
+        }
         dst[bs_dist] = escape_result;
         src += bs_dist + 2;
         dst += bs_dist + 1;
@@ -171,6 +193,9 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
 #ifdef CHECKUNESCAPED
       // check for unescaped chars
       if(_mm256_testz_si256(unescaped_vec,unescaped_vec) != 1) {
+#ifdef JSON_TEST_STRINGS // for unit testing
+          foundBadString(buf + offset);
+#endif // JSON_TEST_STRINGS
         return false;
       }
 #endif // CHECKUNESCAPED
