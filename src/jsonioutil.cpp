@@ -3,12 +3,7 @@
 
 #define AVXOVERALLOCATE
 
-std::pair<u8 *, size_t> get_corpus(std::string filename) {
-  std::ifstream is(filename, std::ios::binary);
-  if (is) {
-    std::stringstream buffer;
-    buffer << is.rdbuf();
-    size_t length = buffer.str().size(); // +1 for null
+char * allocate_aligned_buffer(size_t length) {
     char *aligned_buffer;
     size_t paddedlength = ROUNDUP_N(length, 64);
 #ifdef AVXOVERALLOCATE
@@ -22,10 +17,19 @@ std::pair<u8 *, size_t> get_corpus(std::string filename) {
       throw std::runtime_error("Could not allocate sufficient memory");
     };
 #endif
-    //memset(aligned_buffer, 0x20, ROUNDUP_N(length + 1, 64));
-    memcpy(aligned_buffer, buffer.str().c_str(), length);
-    memset(aligned_buffer + length, 0x20, paddedlength - length);
     aligned_buffer[paddedlength] = '\0';
+    memset(aligned_buffer + length, 0x20, paddedlength - length);
+    return aligned_buffer;
+}
+
+std::pair<u8 *, size_t> get_corpus(std::string filename) {
+  std::ifstream is(filename, std::ios::binary);
+  if (is) {
+    std::stringstream buffer;
+    buffer << is.rdbuf();
+    size_t length = buffer.str().size(); // +1 for null
+    u8* aligned_buffer = (u8 *)allocate_aligned_buffer(length);
+    memcpy(aligned_buffer, buffer.str().c_str(), length);
     is.close();
     return std::make_pair((u8 *)aligned_buffer, length);
   }

@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.second << " B ";
     std::cout << std::endl;
   }
-  char *buffer = (char *)malloc(p.second + 1);
+  char *buffer = allocate_aligned_buffer(p.second + 1);
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
 
@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
   if (verbose)
     std::cout << "input length is " << p.second << " stringified length is "
               << strlength << std::endl;
-  BEST_TIME_NOCHECK(rapidstringme((char *)p.first), , repeat, volume, true);
-  BEST_TIME_NOCHECK(rapidstringmeInsitu((char *)buffer),
+  BEST_TIME_NOCHECK("despacing with RapidJSON", rapidstringme((char *)p.first), , repeat, volume, true);
+  BEST_TIME_NOCHECK("despacing with RapidJSON Insitu", rapidstringmeInsitu((char *)buffer),
                     memcpy(buffer, p.first, p.second), repeat, volume, true);
   memcpy(buffer, p.first, p.second);
 
@@ -86,49 +86,42 @@ int main(int argc, char *argv[]) {
     std::cout << "jsonminify length is " << outlength << std::endl;
 
   uint8_t *cbuffer = (uint8_t *)buffer;
-  BEST_TIME(jsonminify(cbuffer, p.second, cbuffer), outlength,
+  BEST_TIME("jsonminify", jsonminify(cbuffer, p.second, cbuffer), outlength,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
+  printf("minisize = %zu, original size = %zu  (minified down to %.2f percent of original) \n", outlength, p.second, outlength * 100.0 / p.second);
 
   /***
    * Is it worth it to minify before parsing?
    ***/
   rapidjson::Document d;
-  printf("\n");
-  printf("parsing with RapidJSON before despacing:\n");
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
+  BEST_TIME("RapidJSON Insitu orig", d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
-  printf("parsing with RapidJSON after despacing:\n");
-  char *minibuffer = (char *)malloc(p.second + 1);
+  char *minibuffer = allocate_aligned_buffer(p.second + 1);
   size_t minisize = jsonminify((const uint8_t *)p.first, p.second, (uint8_t*) minibuffer);
   minibuffer[minisize] = '\0';
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
+
+  BEST_TIME("RapidJSON Insitu despaced", d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, minibuffer, p.second),
             repeat, volume, true);
 
-  printf("\n");
   size_t astbuffersize = p.second * 2;
   size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
 
-  printf("parsing with sajson before despacing:\n");
-  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("sajson orig", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
 
+  BEST_TIME("sajson despaced", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.second), repeat, volume, true);
 
-
-  printf("parsing with sajson after despacing:\n");
-  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.second), repeat, volume, true);
-
-  printf("parsing before despacing:\n");
   ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
   ParsedJson &pj(*pj_ptr);
-  BEST_TIME(json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  BEST_TIME("json_parse orig", json_parse((const u8*)buffer, p.second, pj), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
   
-  printf("parsing after despacing:\n");
-  ParsedJson *pj_ptr2 = allocate_ParsedJson(minisize);
+  ParsedJson *pj_ptr2 = allocate_ParsedJson(p.second);
   ParsedJson &pj2(*pj_ptr2);
 
-  BEST_TIME(json_parse((const u8*)minibuffer, minisize, pj2), true, , repeat, volume, true);
+
+  BEST_TIME("json_parse despaced", json_parse((const u8*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.second), repeat, volume, true);
 
   free(buffer);
   free(p.first);

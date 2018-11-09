@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   int repeat = 10;
   int volume = p.second;
-  BEST_TIME(json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  BEST_TIME("json_parse", json_parse(p.first, p.second, pj), true, , repeat, volume, true);
 
   rapidjson::Document d;
 
@@ -57,22 +57,18 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.first, p.second);
   buffer[p.second] = '\0';
 
-  BEST_TIME(
+  BEST_TIME("RapidJSON", 
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
       false, memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.Parse((const char *)buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME(d.ParseInsitu(buffer).HasParseError(), false,
+  BEST_TIME("RapidJSON Insitu", d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
             memcpy(buffer, p.first, p.second), repeat, volume, true);
 
-  BEST_TIME(sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("sajson (dynamic mem)", sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   size_t astbuffersize = p.second;
   size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
 
-  BEST_TIME(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   free(buffer);
   free(p.first);
