@@ -77,6 +77,9 @@ WARN_UNUSED
     }
     cout << "|  ... input\n";
 #endif
+if(idx+64 > len) {
+    printf("we are going to read %zu extra bytes \n", 64 + idx - len);
+} 
     m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
     m256 input_hi = _mm256_load_si256((const m256 *)(buf + idx + 32));
 #ifdef UTF8VALIDATE

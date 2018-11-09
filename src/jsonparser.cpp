@@ -6,11 +6,11 @@
 // This structure is meant to be reused from document to document, as needed.
 // you can use deallocate_ParsedJson to deallocate the memory.
 ParsedJson *allocate_ParsedJson(size_t len) {
-  if (len > MAX_JSON_BYTES) {
+  /*if (len > MAX_JSON_BYTES) {
     std::cerr << "Currently only support JSON files having up to "<<MAX_JSON_BYTES<<" bytes, requested length: "
               << len << std::endl;
     return NULL;
-  }
+  }*/
   ParsedJson *pj_ptr = new ParsedJson;
   if (pj_ptr == NULL) {
     std::cerr << "Could not allocate memory for core struct." << std::endl;
@@ -26,6 +26,7 @@ ParsedJson *allocate_ParsedJson(size_t len) {
   pj.n_structural_indexes = 0;
   u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
   pj.structural_indexes = new u32[max_structures];
+
   if (pj.structural_indexes == NULL) {
     std::cerr << "Could not allocate memory for structural_indexes"
               << std::endl;
@@ -33,12 +34,34 @@ ParsedJson *allocate_ParsedJson(size_t len) {
     delete pj_ptr;
     return NULL;
   }
+  pj.string_buf = new u8[len];
+  if (pj.string_buf == NULL) {
+    std::cerr << "Could not allocate memory for string_buf"
+              << std::endl;
+    delete[] pj.structural_indexes;
+    delete[] pj.structurals;
+    delete pj_ptr;
+    return NULL;
+  }
+  pj.number_buf = new u8[4 * len];
+  if (pj.string_buf == NULL) {
+    std::cerr << "Could not allocate memory for number_buf"
+              << std::endl;
+    delete[] pj.string_buf;
+    delete[] pj.structural_indexes;
+    delete[] pj.structurals;
+    delete pj_ptr;
+    return NULL;
+  }
+
   return pj_ptr;
 }
 
 void deallocate_ParsedJson(ParsedJson *pj_ptr) {
   if (pj_ptr == NULL)
     return;
+  delete[] pj_ptr->number_buf;
+  delete[] pj_ptr->string_buf;
   delete[] pj_ptr->structural_indexes;
   free(pj_ptr->structurals);
   delete pj_ptr;

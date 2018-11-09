@@ -13,10 +13,10 @@ std::pair<u8 *, size_t> get_corpus(std::string filename) {
     size_t paddedlength = ROUNDUP_N(length, 64);
 #ifdef AVXOVERALLOCATE
     // allocate an extra sizeof(__m256i) just so we can always use AVX safely
-    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1 + sizeof(__m256i))) {
+    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1 + 2 * sizeof(__m256i))) {
       throw std::runtime_error("Could not allocate sufficient memory");
     };
-    for(size_t i = 0; i < sizeof(__m256i); i++) aligned_buffer[paddedlength + i] = '\0';
+    for(size_t i = 0; i < 2 * sizeof(__m256i); i++) aligned_buffer[paddedlength + i] = '\0';
 #else
     if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1)) {
       throw std::runtime_error("Could not allocate sufficient memory");

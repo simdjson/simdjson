@@ -108,8 +108,8 @@ really_inline bool parse_string(const u8 *buf, UNUSED size_t len,
     m256 unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
 #endif // CHECKUNESCAPED
 
-    u32 quote_dist = __builtin_ctz(quote_bits);
-    u32 bs_dist = __builtin_ctz(bs_bits);
+    u32 quote_dist = _mm_tzcnt_64(quote_bits);
+    u32 bs_dist = _mm_tzcnt_64(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256((m256 *)(dst), v);
