@@ -109,7 +109,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
 #endif // CHECKUNESCAPED
 
     u32 quote_dist = _mm_tzcnt_64(quote_bits);
-    u32 bs_dist = _mm_tzcnt_64(bs_bits);
+    u32 bs_dist = __tzcnt_u64(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256((m256 *)(dst), v);

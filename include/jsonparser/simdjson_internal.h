@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
-//#define MAX_JSON_BYTES 0xFFFFFF
+
 
 const u32 MAX_DEPTH = 256;
 const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this
@@ -20,7 +20,13 @@ const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
 const size_t MAX_TAPE_ENTRIES = 127 * 1024;
 const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
+/////////////
 // TODO: move this to be more like a real class
+// currently, you need to create it like so...
+// ParsedJson *pj_ptr = allocate_ParsedJson(numberofbytes); // allocate memory for parsing up to numberofbytes
+// and we clear it like so deallocate_ParsedJson(pj_ptr); 
+// That's obviously not very C++-ish. It should be trivial to add a constructor and a destructor.
+////////////
 struct ParsedJson {
 public:
   size_t bytecapacity; // indicates how many bits are meant to be supported by

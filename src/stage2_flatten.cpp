@@ -21,7 +21,7 @@
 #endif
 
 #define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (u32)idx + _mm_tzcnt_64(s);                          \
+  base_ptr[base + i] = (u32)idx + __tzcnt_u64(s);                          \
   s = s & (s - 1);
 
 #define SET_BIT1 SET_BIT(0)
