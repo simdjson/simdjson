@@ -407,8 +407,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      i = i * 10 + digit;
-      // exponent --;
+      i = i * 10 + digit; // in rare cases, this will overflow, but that's ok because we have parse_highprecision_float later.
     }
     exponent = firstafterperiod - p;
   }

@@ -20,10 +20,10 @@
 #include <unistd.h>
 #include <vector>
 #include <x86intrin.h>
-
+#include <ctype.h>
 
 //#define DEBUG
-
+#include "jsonparser/jsonparser.h"
 #include "jsonparser/jsonioutil.h"
 #include "jsonparser/simdjson_internal.h"
 #include "jsonparser/stage1_find_marks.h"
@@ -98,38 +98,37 @@ void colorfuldisplay(ParsedJson &pj, const u8 *buf) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  bool verbose = false;
+  int c;
+
+  while ((c = getopt (argc, argv, "v")) != -1)
+    switch (c)
+      {
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        abort ();
+      }
+  if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
     exit(1);
   }
-  pair<u8 *, size_t> p = get_corpus(argv[1]);
-  ParsedJson *pj_ptr = new ParsedJson;
-  ParsedJson &pj(*pj_ptr);
-
-  if (posix_memalign((void **)&pj.structurals, 8,
-                     ROUNDUP_N(p.second, 64) / 8)) {
-    cerr << "Could not allocate memory" << endl;
-    exit(1);
-  };
-
-  if (p.second > 0xffffff) {
-    cerr << "Currently only support JSON files < 16MB\n";
-    exit(1);
+  const char * filename = argv[optind];
+  if(optind + 1 < argc) {
+    cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
-
-  pj.n_structural_indexes = 0;
-  // we have potentially 1 structure per byte of input
-  // as well as a dummy structure and a root structure
-  // we also potentially write up to 7 iterations beyond
-  // in our 'cheesy flatten', so make some worst-case
-  // space for that too
-  u32 max_structures = ROUNDUP_N(p.second, 64) + 2 + 7;
-  pj.structural_indexes = new u32[max_structures];
+  if(verbose) cout << "[verbose] loading " << filename << endl;
+  pair<u8 *, size_t> p = get_corpus(filename);
+  if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.second << " bytes)" << endl;
+  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+  ParsedJson &pj(*pj_ptr);
+  if(verbose) cout << "[verbose] allocated memory for parsed JSON " << endl;
 
 #if defined(DEBUG)
   const u32 iterations = 1;
 #else
-  const u32 iterations = 1000;
+  const u32 iterations = p.second < 1 * 1000 * 1000? 1000 : 10;
 #endif
   vector<double> res;
   res.resize(iterations);
@@ -151,7 +150,9 @@ int main(int argc, char *argv[]) {
   unsigned long mis1 = 0, mis2 = 0, mis3 = 0;
 #endif
   bool isok = true;
+
   for (u32 i = 0; i < iterations; i++) {
+    if(verbose) cout << "[verbose] iteration # " << i << endl;
     auto start = std::chrono::steady_clock::now();
 #ifndef SQUASH_COUNTERS
     unified.start();
@@ -235,10 +236,8 @@ int main(int argc, char *argv[]) {
        << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0)
        << "\n";
 
-  free(pj.structurals);
   free(p.first);
-  delete[] pj.structural_indexes;
-  delete pj_ptr;
+  deallocate_ParsedJson(pj_ptr);
   if (!isok) {
     printf(" Parsing failed. \n ");
     return EXIT_FAILURE;

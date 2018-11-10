@@ -35,8 +35,8 @@ really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
 WARN_UNUSED
 /*never_inline*/ bool find_structural_bits(const u8 *buf, size_t len,
                                            ParsedJson &pj) {
-  if (len > 0xffffff) {
-    cerr << "Currently only support JSON files < 16MB\n";
+  if (len > pj.bytecapacity) {
+    cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
     return false;
   }
 #ifdef UTF8VALIDATE
@@ -77,9 +77,6 @@ WARN_UNUSED
     }
     cout << "|  ... input\n";
 #endif
-if(idx+64 > len) {
-    printf("we are going to read %zu extra bytes \n", 64 + idx - len);
-} 
     m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
     m256 input_hi = _mm256_load_si256((const m256 *)(buf + idx + 32));
 #ifdef UTF8VALIDATE

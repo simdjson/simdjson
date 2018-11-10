@@ -1,0 +1,16 @@
+{
+  "name": "generatelargejson",
+  "version": "1.0.0",
+  "description": "",
+  "main": "generatelargejson.js",
+  "dependencies": {
+    "faker": "^4.1.0",
+    "fs": "0.0.1-security"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

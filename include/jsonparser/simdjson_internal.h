@@ -32,9 +32,9 @@ public:
   // grossly overprovisioned
   u64 tape[MAX_TAPE];
   u32 tape_locs[MAX_DEPTH];
-  u8 * string_buf;//[MAX_JSON_BYTES];
+  u8 * string_buf;// should be at least bytecapacity
   u8 *current_string_buf_loc;
-  u8 * number_buf;//[MAX_JSON_BYTES * 4]; // holds either doubles or longs, really
+  u8 * number_buf;// holds either doubles or longs, really // should be at least 4 * bytecapacity
   u8 *current_number_buf_loc;
     
     void init() {

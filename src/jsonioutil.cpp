@@ -1,22 +1,15 @@
 #include "jsonparser/jsonioutil.h"
 #include <cstring>
 
-#define AVXOVERALLOCATE
 
 char * allocate_aligned_buffer(size_t length) {
     char *aligned_buffer;
     size_t paddedlength = ROUNDUP_N(length, 64);
-#ifdef AVXOVERALLOCATE
     // allocate an extra sizeof(__m256i) just so we can always use AVX safely
-    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1 + 2 * sizeof(__m256i))) {
+    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1 + sizeof(__m256i))) {
       throw std::runtime_error("Could not allocate sufficient memory");
     };
-    for(size_t i = 0; i < 2 * sizeof(__m256i); i++) aligned_buffer[paddedlength + i] = '\0';
-#else
-    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1)) {
-      throw std::runtime_error("Could not allocate sufficient memory");
-    };
-#endif
+    for(size_t i = 0; i < sizeof(__m256i); i++) aligned_buffer[paddedlength + i] = '\0';
     aligned_buffer[paddedlength] = '\0';
     memset(aligned_buffer + length, 0x20, paddedlength - length);
     return aligned_buffer;
