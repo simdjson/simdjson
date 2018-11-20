@@ -55,6 +55,12 @@ To simplify the engineering, we make some assumptions.
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult.
 - We expect the input memory pointer to 256-bit aligned and to be padded (e.g., with spaces) so that it can be read entirely in blocks of 256 bits. In practice, this means that users should allocate the memory where the JSON bytes are located using the `allocate_aligned_buffer` function or the equivalent.
 
+
+## Features
+
+- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers.
+- We do full UTF-8 validation as part of the parsing.
+
 ## Architecture
 
 The parser works in three stages:
