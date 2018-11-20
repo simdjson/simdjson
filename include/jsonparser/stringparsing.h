@@ -34,7 +34,7 @@ static const u8 escape_map[256] = {
 
 // handle a unicode codepoint
 // write appropriate values into dest
-// src will always advance 6 bytes
+// src will advance 6 bytes or 12 bytes
 // dest will advance a variable amount (return via pointer)
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
