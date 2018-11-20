@@ -9,7 +9,7 @@
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-
+#include "json11.cpp"
 #include "sajson.h"
 
 
@@ -69,6 +69,8 @@ int main(int argc, char *argv[]) {
   size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
 
   BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  std::string json11err;
+  BEST_TIME("dropbox (json11)     ", json11::Json::parse(buffer,json11err).is_null(), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   free(buffer);
   free(p.first);

@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include 
+CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 
 
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
@@ -24,7 +24,7 @@ MINIFIERLIBFILES=src/jsonminifier.cpp
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
-
+JSON11_INCLUDE:=dependencies/json11/json11.hpp
 
 LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE)
 
@@ -44,6 +44,9 @@ $(SAJSON_INCLUDE):
 	git submodule update --init --recursive
 
 $(RAPIDJSON_INCLUDE):
+	git submodule update --init --recursive
+
+$(JSON11_INCLUDE):
 	git submodule update --init --recursive
 
 
