@@ -7,3 +7,6 @@
 [submodule "dependencies/json11"]
 	path = dependencies/json11
 	url = https://github.com/dropbox/json11.git
+[submodule "dependencies/fastjson"]
+	path = dependencies/fastjson
+	url = https://github.com/mikeando/fastjson.git

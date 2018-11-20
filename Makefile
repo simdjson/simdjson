@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 
+CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include 
 
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
@@ -25,6 +25,7 @@ MINIFIERLIBFILES=src/jsonminifier.cpp
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
 JSON11_INCLUDE:=dependencies/json11/json11.hpp
+FASTJSON_INCLUDE:=dependencies/include/fastjson/fastjson.h
 
 LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE)
 
@@ -49,6 +50,8 @@ $(RAPIDJSON_INCLUDE):
 $(JSON11_INCLUDE):
 	git submodule update --init --recursive
 
+$(FASTJSON_INCLUDE):
+	git submodule update --init --recursive
 
 bench: benchmarks/bench.cpp $(RAPIDJSON_INCLUDE) $(HEADERS)
 	$(CXX) -std=c++11 -O3 -o $@ benchmarks/bench.cpp -I$(RAPIDJSON_INCLUDE) -Iinclude  -march=native -lm -Wall -Wextra -Wno-narrowing
