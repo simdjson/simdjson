@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.first, p.second), repeat, volume, true);
   void *state;
   BEST_TIME("ultrajson         ", (UJDecode(buffer, p.second, NULL, &state) == NULL), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("memcpy            ", (memcpy(buffer, p.first, p.second) == buffer), true, , repeat, volume, true);
   free(p.first);
   free(ast_buffer);
   deallocate_ParsedJson(pj_ptr);
