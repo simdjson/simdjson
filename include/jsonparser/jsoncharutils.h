@@ -79,6 +79,9 @@ uint32_t hex_to_u32_nocheck(const u8 *src) {
 // and clz and table lookups, but JSON documents
 // have few escaped code points, and the following
 // function looks cheap.
+// 
+// Note: we assume that surrogates are treated separately
+//
 inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
   if (cp <= 0x7F) {
     c[0] = cp;
@@ -87,8 +90,9 @@ inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
     c[0] = (cp >> 6) + 192;
     c[1] = (cp & 63) + 128;
     return 2; // universal plane
-  } else if (0xd800 <= cp && cp <= 0xdfff) {
-    return 0; // surrogates // could put assert here
+  //  Surrogates are treated elsewhere...
+  //} //else if (0xd800 <= cp && cp <= 0xdfff) {
+  //  return 0; // surrogates // could put assert here
   } else if (cp <= 0xFFFF) {
     c[0] = (cp >> 12) + 224;
     c[1] = ((cp >> 6) & 63) + 128;
@@ -101,6 +105,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
     c[3] = (cp & 63) + 128;
     return 4;
   }
-  return 0; // bad // could put assert her
+  // will return 0 when the code point was too large.
+  return 0; // bad r
 }
 
