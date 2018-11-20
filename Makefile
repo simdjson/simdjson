@@ -6,10 +6,12 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11 -g2 -O3 -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include 
+CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include 
 
 ifeq ($(SANITIZE),1)
-	CXXFLAGS += -g2 -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+else
+	CXXFLAGS += -O3
 endif
 
 EXECUTABLES=parse jsoncheck numberparsingcheck stringparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
@@ -19,7 +21,6 @@ LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src
 MINIFIERHEADERS=include/jsonparser/jsonminifier.h include/jsonparser/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
-EXTRA_EXECUTABLES=parsenocheesy parsenodep8
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
@@ -78,30 +79,6 @@ allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES)
 
 parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsehisto benchmark/parse.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM
-
-testflatten: parse parsenocheesy parsenodep8 parsenodep10 parsenodep12
-	for filename in jsonexamples/twitter.json jsonexamples/gsoc-2018.json jsonexamples/citm_catalog.json jsonexamples/canada.json ; do \
-        	echo $$filename ; \
-		set -x; \
-		./parsenocheesy $$filename ; \
-		./parse $$filename ; \
-		./parsenodep8 $$filename ; \
-		./parsenodep10 $$filename ; \
-		./parsenodep12 $$filename ; \
-		set +x; \
-	done
-
-parsenocheesy: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsenocheesy benchmark/parse.cpp $(LIBFILES) -DSUPPRESS_CHEESY_FLATTEN
-
-parsenodep8: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsenodep8 benchmark/parse.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=8
-
-parsenodep10: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsenodep12 benchmark/parse.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=10
-
-parsenodep12: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsenodep12 benchmark/parse.cpp $(LIBFILES) -DNO_PDEP_PLEASE -DNO_PDEP_WIDTH=12
 
 clean:
 	rm -f $(EXECUTABLES) $(EXTRA_EXECUTABLES)

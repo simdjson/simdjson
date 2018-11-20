@@ -49,6 +49,7 @@ const char digittoval[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
+// return true if we have a valid hex between 0000 and FFFF
 inline bool hex_to_u32(const u8 *src, u32 *res) {
   u8 v1 = src[0];
   u8 v2 = src[1];
@@ -57,6 +58,16 @@ inline bool hex_to_u32(const u8 *src, u32 *res) {
   *res = digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
          digittoval[v4];
   return (int32_t)(*res) >= 0;
+}
+
+// returns a value with the highest bit set if it is not valud
+uint32_t hex_to_u32_nocheck(const u8 *src) {
+  u8 v1 = src[0];
+  u8 v2 = src[1];
+  u8 v3 = src[2];
+  u8 v4 = src[3];
+  return digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
+         digittoval[v4];
 }
 
 // given a code point cp, writes to c
@@ -83,7 +94,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
     c[1] = ((cp >> 6) & 63) + 128;
     c[2] = (cp & 63) + 128;
     return 3;
-  } else if (cp <= 0x10FFFF) {
+  } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this is not needed
     c[0] = (cp >> 18) + 240;
     c[1] = ((cp >> 12) & 63) + 128;
     c[2] = ((cp >> 6) & 63) + 128;

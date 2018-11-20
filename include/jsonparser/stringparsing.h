@@ -39,10 +39,7 @@ static const u8 escape_map[256] = {
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
 really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
-  u32 code_point = 0; // read the hex, potentially reading another \u beyond if it is a surrogate pair
-  if (!hex_to_u32(*src_ptr + 2, &code_point)) {
-    return false;
-  }
+  u32 code_point = hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
   // check for low surrogate for characters outside the Basic
   // Multilingual Plane.
@@ -50,21 +47,14 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
     if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
       return false;
     }
-    u32 code_point_2 = 0;
-    if (!hex_to_u32(*src_ptr + 2, &code_point_2)) {
-      return false;
-    }
-    if (code_point_2 < 0xdc00 || code_point_2 > 0xdfff) {
-      return false;
-    }
+    u32 code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
     code_point =
         (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
     *src_ptr += 6;
   }
   size_t offset = codepoint_to_utf8(code_point, *dst_ptr); 
-  // assert(offset > 0);
   *dst_ptr += offset;
-  return true;
+  return offset > 0;
 }
 
 really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
