@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "jsonparser/common_defs.h"
 #include "jsonparser/simdjson_internal.h"
 
@@ -34,34 +33,30 @@ really_inline u32 is_not_structural_or_whitespace(u8 c) {
   return structural_or_whitespace_negated[c];
 }
 
-inline bool is_hex_digit(u8 v) {
-  if (v >= '0' && v <= '9')
-    return true;
-  v &= 0xdf;
-  if (v >= 'A' && v <= 'F')
-    return true;
-  return false;
-}
-
-inline u8 digit_to_val(u8 v) {
-  if (v >= '0' && v <= '9')
-    return v - '0';
-  v &= 0xdf;
-  return v - 'A' + 10;
-}
+const char digittoval[256] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,
+    9,  -1, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 inline bool hex_to_u32(const u8 *src, u32 *res) {
   u8 v1 = src[0];
   u8 v2 = src[1];
   u8 v3 = src[2];
   u8 v4 = src[3];
-  if (!is_hex_digit(v1) || !is_hex_digit(v2) || !is_hex_digit(v3) ||
-      !is_hex_digit(v4)) {
-    return false;
-  }
-  *res = digit_to_val(v1) << 12 | digit_to_val(v2) << 8 |
-         digit_to_val(v3) << 4 | digit_to_val(v4);
-  return true;
+  *res = digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
+         digittoval[v4];
+  return (int32_t)(*res) >= 0;
 }
 
 // given a code point cp, writes to c
@@ -73,7 +68,7 @@ inline bool hex_to_u32(const u8 *src, u32 *res) {
 // and clz and table lookups, but JSON documents
 // have few escaped code points, and the following
 // function looks cheap.
-inline size_t codepoint_to_utf8(uint32_t cp, u8  *c) {
+inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
   if (cp <= 0x7F) {
     c[0] = cp;
     return 1; // ascii
@@ -97,3 +92,4 @@ inline size_t codepoint_to_utf8(uint32_t cp, u8  *c) {
   }
   return 0; // bad // could put assert her
 }
+
