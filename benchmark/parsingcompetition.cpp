@@ -13,8 +13,13 @@
 #include "sajson.h"
 #include "fastjson.cpp"
 #include "fastjson_dom.cpp"
+#include "gason.cpp"
+extern "C"
+{
+#include "ultrajsondec.c"
+#include "ujdecode.h"
 
-
+}
 using namespace rapidjson;
 using namespace std;
 
@@ -29,6 +34,7 @@ bool fastjson_parse(const char *input) {
   std::string error_message;
   return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
 }
+// end of fastjson stuff
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -85,6 +91,12 @@ int main(int argc, char *argv[]) {
   BEST_TIME("dropbox (json11)     ", json11::Json::parse(buffer,json11err).is_null(), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
   BEST_TIME("fastjson             ", fastjson_parse(buffer), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  JsonValue value;
+  JsonAllocator allocator;
+  char *endptr;
+  BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  void *state;
+  BEST_TIME("ultrajson         ", (UJDecode(buffer, p.second, NULL, &state) == NULL), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
   free(p.first);
   free(ast_buffer);
   deallocate_ParsedJson(pj_ptr);

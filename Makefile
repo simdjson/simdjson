@@ -6,12 +6,15 @@
 
 .PHONY: clean cleandist
 
-CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include 
-
+DEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
+CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  $(DEPSINCLUDE) 
+CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 else
 	CXXFLAGS += -O3
+	CFLAGS += -O3
 endif
 
 EXECUTABLES=parse jsoncheck numberparsingcheck stringparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
@@ -26,9 +29,11 @@ RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
 JSON11_INCLUDE:=dependencies/json11/json11.hpp
 FASTJSON_INCLUDE:=dependencies/include/fastjson/fastjson.h
+GASON_INCLUDE:=dependencies/gason/src/gason.h
+UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
 
-LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE)
-
+LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE)
+OBJECTS=ujdecode.o
 all: $(LIBS) $(EXECUTABLES)
 
 test: jsoncheck numberparsingcheck stringparsingcheck
@@ -51,6 +56,12 @@ $(JSON11_INCLUDE):
 	git submodule update --init --recursive
 
 $(FASTJSON_INCLUDE):
+	git submodule update --init --recursive
+
+$(GASON_INCLUDE):
+	git submodule update --init --recursive
+
+$(UJSON4C_INCLUDE):
 	git submodule update --init --recursive
 
 bench: benchmarks/bench.cpp $(RAPIDJSON_INCLUDE) $(HEADERS)
@@ -77,8 +88,11 @@ minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEAD
 minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minify $(MINIFIERLIBFILES) $(LIBFILES) tools/minify.cpp -I. 
 
-parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS)
+ujdecode.o: $(UJSON4C_INCLUDE)
+	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 
+
+parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(OBJECTS)
+	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp ujdecode.o -I. $(LIBFLAGS)
 
 allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp -I. $(LIBFLAGS)
@@ -87,7 +101,7 @@ parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsehisto benchmark/parse.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM
 
 clean:
-	rm -f $(EXECUTABLES) $(EXTRA_EXECUTABLES)
+	rm -f $(OBJECTS) $(EXECUTABLES) $(EXTRA_EXECUTABLES)
 
 cleandist:
-	rm -f $(EXECUTABLES) $(EXTRA_EXECUTABLES)
+	rm -f $(OBJECTS) $(EXECUTABLES) $(EXTRA_EXECUTABLES)

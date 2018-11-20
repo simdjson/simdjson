@@ -10,3 +10,9 @@
 [submodule "dependencies/fastjson"]
 	path = dependencies/fastjson
 	url = https://github.com/mikeando/fastjson.git
+[submodule "dependencies/gason"]
+	path = dependencies/gason
+	url = https://github.com/vivkin/gason.git
+[submodule "dependencies/ujson4c"]
+	path = dependencies/ujson4c
+	url = https://github.com/esnme/ujson4c.git
