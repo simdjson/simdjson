@@ -92,10 +92,10 @@ ujdecode.o: $(UJSON4C_INCLUDE)
 	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(OBJECTS)
-	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp ujdecode.o -I. $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp $(OBJECTS) -I. $(LIBFLAGS)
 
-allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp -I. $(LIBFLAGS)
+allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(OBJECTS) -I. $(LIBFLAGS)
 
 parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parsehisto benchmark/parse.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM

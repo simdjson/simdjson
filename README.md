@@ -59,7 +59,9 @@ To simplify the engineering, we make some assumptions.
 ## Features
 
 - We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers.
-- We do full UTF-8 validation as part of the parsing.
+- We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
+- We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
+- We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
 
 ## Architecture
 

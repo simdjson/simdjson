@@ -8,9 +8,32 @@
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-
+#include "json11.cpp"
 #include "sajson.h"
+#include "fastjson.cpp"
+#include "fastjson_dom.cpp"
+#include "gason.cpp"
+extern "C"
+{
+#include "ultrajsondec.c"
+#include "ujdecode.h"
 
+}
+using namespace rapidjson;
+using namespace std;
+
+
+// fastjson has a tricky interface
+void on_json_error( void *, const fastjson::ErrorContext& ec) {
+  //std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
+}
+bool fastjson_parse(const char *input) {
+  fastjson::Token token;
+  fastjson::dom::Chunk chunk;
+  std::string error_message;
+  return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
+}
+// end of fastjson stuff
 
 
 
@@ -56,11 +79,24 @@ int main(int argc, char *argv[]) {
   bool rapid_correct = (d.Parse((const char *)buffer).HasParseError() == false);
   bool rapid_correct_checkencoding = (d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError() == false);
   bool sajson_correct = sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid();
+  std::string json11err;
+  bool dropbox_correct = (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )) == false;
+  bool fastjson_correct =  fastjson_parse(buffer);
+  JsonValue value;
+  JsonAllocator allocator;
+  char *endptr;
+  bool gason_correct = (jsonParse(buffer, &endptr, &value, allocator) == JSON_OK);
+  void *state;
+  bool ultrajson_correct = ((UJDecode(buffer, p.second, NULL, &state) == NULL) == false);
   printf("our parser                 : %s \n", ours_correct ?   "correct":"invalid");
   printf("rapid                      : %s \n", rapid_correct ?  "correct":"invalid");
   printf("rapid (check encoding)     : %s \n", rapid_correct_checkencoding ?  "correct":"invalid");
   printf("sajson                     : %s \n", sajson_correct ? "correct":"invalid");
-   
+  printf("dropbox                    : %s \n", dropbox_correct ? "correct":"invalid");
+  printf("fastjson                   : %s \n", fastjson_correct ? "correct":"invalid");
+  printf("gason                      : %s \n", gason_correct ? "correct":"invalid");
+  printf("ultrajson                  : %s \n", ultrajson_correct ? "correct":"invalid");
+       
   free(buffer);
   free(p.first);
   deallocate_ParsedJson(pj_ptr);

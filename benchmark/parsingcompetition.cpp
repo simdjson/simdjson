@@ -1,4 +1,4 @@
-
+#include <unistd.h>
 #include "jsonparser/jsonparser.h"
 
 #include "benchmark.h"
@@ -26,7 +26,7 @@ using namespace std;
 
 // fastjson has a tricky interface
 void on_json_error( void *, const fastjson::ErrorContext& ec) {
-  std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
+  //std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
 }
 bool fastjson_parse(const char *input) {
   fastjson::Token token;
@@ -37,17 +37,32 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  bool verbose = false;
+  bool all = false; 
+  int c;
+  while ((c = getopt (argc, argv, "va")) != -1)
+    switch (c)
+      {
+      case 'v':
+        verbose = true;
+        break;
+      case 'a':
+        all = true;
+        break;
+      default:
+        abort ();
+      }
+  if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    cerr << "To enable parsers that are not standard compliant, use the -a flag\n";
     exit(1);
   }
-  bool verbose = false;
-  if (argc > 2) {
-    if (strcmp(argv[1], "-v"))
-      verbose = true;
+  const char * filename = argv[optind];
+  if(optind + 1 < argc) {
+    cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
-  pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
+  pair<u8 *, size_t> p = get_corpus(filename);
   if (verbose) {
     std::cout << "Input has ";
     if (p.second > 1024 * 1024)
@@ -88,15 +103,15 @@ int main(int argc, char *argv[]) {
 
   BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
   std::string json11err;
-  BEST_TIME("dropbox (json11)     ", json11::Json::parse(buffer,json11err).is_null(), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("dropbox (json11)     ",  (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
 
-  BEST_TIME("fastjson             ", fastjson_parse(buffer), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("fastjson             ", fastjson_parse(buffer), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
   JsonValue value;
   JsonAllocator allocator;
   char *endptr;
-  BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.first, p.second), repeat, volume, true);
   void *state;
-  BEST_TIME("ultrajson         ", (UJDecode(buffer, p.second, NULL, &state) == NULL), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("ultrajson         ", (UJDecode(buffer, p.second, NULL, &state) == NULL), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
   BEST_TIME("memcpy            ", (memcpy(buffer, p.first, p.second) == buffer), true, , repeat, volume, true);
   free(p.first);
   free(ast_buffer);
