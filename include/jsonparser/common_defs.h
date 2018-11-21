@@ -15,7 +15,6 @@ typedef signed long long s64;
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 

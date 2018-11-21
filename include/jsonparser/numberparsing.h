@@ -454,13 +454,6 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
 #endif
       return false;
     }
-    /* if(unlikely(p - startofexp > 3)) {
-               // we refuse to parse this
- #ifdef JSON_TEST_NUMBERS // for unit testing
-         foundInvalidNumber(buf + offset);
- #endif
-         return false;
-     }*/
     exponent += (negexp ? -expnumber : expnumber);
   }
   i = negative ? -i : i;
