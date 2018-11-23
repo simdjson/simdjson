@@ -41,9 +41,14 @@ To run benchmarks:
 
 ```
 make parse
-./parse myjsonfile
+./parse jsonexamples/twitter.json
 ```
 
+To run comparative benchmarks (with other parsers):
+```
+make parse
+./parsingcompetition jsonexamples/twitter.json
+```
 
 
 ## Limitations
@@ -53,7 +58,7 @@ To simplify the engineering, we make some assumptions.
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16).
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included.
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult.
-- We expect the input memory pointer to 256-bit aligned and to be padded (e.g., with spaces) so that it can be read entirely in blocks of 256 bits. In practice, this means that users should allocate the memory where the JSON bytes are located using the `allocate_aligned_buffer` function or the equivalent.
+- We expect the input memory pointer to be padded (e.g., with spaces) so that it can be read entirely in blocks of 512 bits (a cache line). In practice, this means that users should allocate the memory where the JSON bytes are located using the `allocate_aligned_buffer` function or the equivalent. Of course, the data you may want to processed could be on a buffer that does have this padding. However, copying the data is relatively cheap (much cheaper than parsing JSON), and we can eventually remove this constraint.
 
 
 ## Features
