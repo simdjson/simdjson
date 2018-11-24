@@ -99,13 +99,18 @@ void colorfuldisplay(ParsedJson &pj, const u8 *buf) {
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
+  bool dump = false;
+
   int c;
 
-  while ((c = getopt (argc, argv, "v")) != -1)
+  while ((c = getopt (argc, argv, "vd")) != -1)
     switch (c)
       {
       case 'v':
         verbose = true;
+        break;
+      case 'd':
+        dump = true;
         break;
       default:
         abort ();
@@ -235,7 +240,7 @@ int main(int argc, char *argv[]) {
   cout << "Min:  " << min_result << " bytes read: " << p.second
        << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0)
        << "\n";
-
+  if(dump) pj_ptr->dump_tapes();
   free(p.first);
   deallocate_ParsedJson(pj_ptr);
   if (!isok) {

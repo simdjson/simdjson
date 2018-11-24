@@ -67,15 +67,22 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
     return error == 0;
 }
 
+// Implemented using Labels as Values which works in GCC and CLANG,
+// but won't work in MSVC. This would need to be reimplemented differently
+// if one wants to be standard compliant.
 WARN_UNUSED
 bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
-    u32 i = 0;
-    u32 idx;
-    u8 c;
+    u32 i = 0; // index of the structural character (0,1,2,3...)
+    u32 idx; // location of the structural character in the input (buf)
+    u8 c; // used to track the (structural) character we are looking at, updated by UPDATE_CHAR macro
     u32 depth = START_DEPTH; // an arbitrary starting depth
-    void * ret_address[MAX_DEPTH];
+    void * ret_address[MAX_DEPTH]; // used to store "labels as value" (non-standard compiler extension)
 
-    u32 last_loc = 0; // this is the location of the previous call site; only need one
+    // a call site is the start of either an object or an array ('[' or '{')
+    u32 last_loc = 0; // this is the location of the previous call site 
+    // (in the tape, at the given depth); 
+    // we only need one.
+
     // We should also track the tape address of our containing
     // scope for two reasons. First, we will need to put an 
     // up pointer there at each call site so we can navigate
