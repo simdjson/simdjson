@@ -12,13 +12,13 @@
 #include <iomanip>
 
 
-const u32 MAX_DEPTH = 256;
-const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this
+//const u32 MAX_DEPTH = 2048;
+//const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this
                                     // with a modulo in our hot stage 3 loop
-const u32 START_DEPTH = DEPTH_SAFETY_MARGIN;
-const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
-const size_t MAX_TAPE_ENTRIES = 127 * 1024;
-const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
+//const u32 START_DEPTH = DEPTH_SAFETY_MARGIN;
+//const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
+//const size_t MAX_TAPE_ENTRIES = 127 * 1024;
+//const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
 /////////////
 // TODO: move this to be more like a real class
@@ -31,13 +31,13 @@ struct ParsedJson {
 public:
   size_t bytecapacity; // indicates how many bits are meant to be supported by
                        // structurals
+  size_t depthcapacity; // how deep we can go
   u8 *structurals;
   u32 n_structural_indexes;
   u32 *structural_indexes;
 
-  // grossly overprovisioned
-  u64 tape[MAX_TAPE];
-  u32 tape_locs[MAX_DEPTH];
+  u64 * tape;//[MAX_TAPE];
+  u32 * tape_locs;
   u8 * string_buf;// should be at least bytecapacity
   u8 *current_string_buf_loc;
   u8 * number_buf;// holds either doubles or longs, really // should be at least 4 * bytecapacity
@@ -47,13 +47,14 @@ public:
         current_string_buf_loc = string_buf;
         current_number_buf_loc = number_buf;
 
-        for (u32 i = 0; i < MAX_DEPTH; i++) {
-            tape_locs[i] = i * MAX_TAPE_ENTRIES;
-        }
+        //for (u32 i = 0; i < MAX_DEPTH; i++) {
+        //    tape_locs[i] = i * MAX_TAPE_ENTRIES;
+        //}
+        //tap_locs will be unitialized by design
     }
 
     void dump_tapes() {
-        for (u32 i = 0; i < MAX_DEPTH; i++) {
+        /*for (u32 i = 0; i < MAX_DEPTH; i++) {
             u32 start_loc = i * MAX_TAPE_ENTRIES;
             std::cout << " tape section i " << i;
             if (i == START_DEPTH) {
@@ -72,7 +73,7 @@ public:
                               << " tape[j][0..55]: " << (tape[j] & 0xffffffffffffffULL) << "\n";
                 }
             }
-        }
+        }*/
     }
     // TODO: will need a way of saving strings that's a bit more encapsulated
 

@@ -67,7 +67,7 @@ really_inline bool is_valid_null_atom(const u8 * loc) {
     return error == 0;
 }
 
-// Implemented using Labels as Values which works in GCC and CLANG,
+// Implemented using Labels as Values which works in GCC and CLANG (and maybe also in Intel's compiler),
 // but won't work in MSVC. This would need to be reimplemented differently
 // if one wants to be standard compliant.
 WARN_UNUSED
@@ -75,11 +75,11 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     u32 i = 0; // index of the structural character (0,1,2,3...)
     u32 idx; // location of the structural character in the input (buf)
     u8 c; // used to track the (structural) character we are looking at, updated by UPDATE_CHAR macro
-    u32 depth = START_DEPTH; // an arbitrary starting depth
-    void * ret_address[MAX_DEPTH]; // used to store "labels as value" (non-standard compiler extension)
+    //u32 depth = START_DEPTH; // an arbitrary starting depth
+    //void * ret_address[MAX_DEPTH]; // used to store "labels as value" (non-standard compiler extension)
 
     // a call site is the start of either an object or an array ('[' or '{')
-    u32 last_loc = 0; // this is the location of the previous call site 
+    //u32 last_loc = 0; // this is the location of the previous call site 
     // (in the tape, at the given depth); 
     // we only need one.
 
@@ -90,22 +90,25 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     // we can put the current offset into a record for the 
     // scope so we know where it is
 
-    u32 containing_scope_offset[MAX_DEPTH];
+    //u32 containing_scope_offset[MAX_DEPTH];
 
     pj.init();
 
     // add a sentinel to the end to avoid premature exit
     // need to be able to find the \0 at the 'padded length' end of the buffer
     // FIXME: TERRIFYING!
-    size_t j;
-    for (j = len; buf[j] != 0; j++)
-        ;
-    pj.structural_indexes[pj.n_structural_indexes++] = j;
+    //size_t j;
+    //for (j = len; buf[j] != 0; j++)
+    //    ;
+    //pj.structural_indexes[pj.n_structural_indexes++] = j;
 
+// this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR() { idx = pj.structural_indexes[i++]; c = buf[idx]; DEBUG_PRINTF("Got %c at %d (%d offset)\n", c, idx, i-1);}
 
     // format: call site has 2 entries: 56-bit + '{' or '[' entries pointing first to header then to this location
     //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
+
+
 
 #define OPEN_SCOPE() { \
     pj.write_saved_loc(last_loc, pj.save_loc(depth), '_'); \
@@ -114,6 +117,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     pj.write_tape(depth, 0, '_'); \
     }
 
+// we are going to increase the depth, we write on the tape the 'c' which is going to be either { or [
 #define ESTABLISH_CALLSITE(RETURN_LABEL, SITE_LABEL) { \
     pj.write_tape(depth, containing_scope_offset[depth], c); \
     last_loc = pj.save_loc(depth); \

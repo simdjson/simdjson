@@ -250,6 +250,12 @@ WARN_UNUSED
         "final structurals and pseudo structurals after close quote removal");
     *(u64 *)(pj.structurals + idx / 8) = structurals;
   }
+  if(buf[len] != '\0') {
+      std::cerr << "Your string should NULL terminated." << std::endl;
+      return false;
+
+  }
+  pj.structural_indexes[pj.n_structural_indexes++] = len; // the final NULL is used as a pseudo-structural character
 #ifdef UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);
 #else

@@ -30,31 +30,34 @@ ParsedJson *allocate_ParsedJson(size_t len) {
     return NULL;
   }
   pj.string_buf = new u8[ROUNDUP_N(len, 64)];
-  if (pj.string_buf == NULL) {
-    std::cerr << "Could not allocate memory for string_buf"
-              << std::endl;
-    delete[] pj.structural_indexes;
-    delete[] pj.structurals;
-    delete pj_ptr;
-    return NULL;
-  }
   pj.number_buf = new u8[4 * ROUNDUP_N(len, 64)];
-  if (pj.string_buf == NULL) {
-    std::cerr << "Could not allocate memory for number_buf"
+  pj.tape = new u64[ROUNDUP_N(len, 64)];
+  size_t depthcapacity = ROUNDUP_N(len, 64);
+  pj.tape_locs = new u32[depthcapacity];
+
+  if ((pj.string_buf == NULL) || (pj.number_buf == NULL) || (pj.tape == NULL) || (pj.tape_locs == NULL))  {
+    std::cerr << "Could not allocate memory"
               << std::endl;
+    delete[] pj.tape_locs;
+    delete[] pj.tape;
+    delete[] pj.number_buf;
     delete[] pj.string_buf;
     delete[] pj.structural_indexes;
     delete[] pj.structurals;
     delete pj_ptr;
     return NULL;
   }
+
   pj.bytecapacity = len;
+  pj.depthcapacity =  depthcapacity;
   return pj_ptr;
 }
 
 void deallocate_ParsedJson(ParsedJson *pj_ptr) {
   if (pj_ptr == NULL)
     return;
+  delete[] pj_ptr->tape_locs;
+  delete[] pj_ptr->tape;
   delete[] pj_ptr->number_buf;
   delete[] pj_ptr->string_buf;
   delete[] pj_ptr->structural_indexes;

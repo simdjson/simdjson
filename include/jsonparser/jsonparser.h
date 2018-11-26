@@ -19,4 +19,5 @@ void deallocate_ParsedJson(ParsedJson *pj_ptr);
 
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure.
+// The string should be NULL terminated.
 bool json_parse(const u8 *buf, size_t len, ParsedJson &pj);
