@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 
 #include "benchmark.h"
@@ -12,6 +13,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "sajson.h"
+
 
 using namespace rapidjson;
 using namespace std;
@@ -43,17 +45,29 @@ std::string rapidstringme(char *json) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+  int c;
+  bool verbose = false;
+  while ((c = getopt (argc, argv, "v")) != -1)
+    switch (c)
+      {
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        abort ();
+      }
+  if (optind >= argc) {
+    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
     exit(1);
   }
-  bool verbose = false;
-  if (argc > 2) {
-    if (strcmp(argv[1], "-v"))
-      verbose = true;
+  const char * filename = argv[optind];
+  pair<u8 *, size_t> p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
   }
-  pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
   if (verbose) {
     std::cout << "Input has ";
     if (p.second > 1024 * 1024)

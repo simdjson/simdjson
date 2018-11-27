@@ -241,7 +241,7 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     // we have a zero-length string
     if (parsed_begin != parsed_end) {
       printf("WARNING: We have a zero-length but gap is %zu \n",
-             parsed_end - parsed_begin);
+             (size_t)(parsed_end - parsed_begin));
       probable_bug = true;
     }
     empty_string++;
@@ -252,12 +252,12 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     printf("WARNING: lengths on parsed strings disagree %zu %zu \n", thislen,
            len);
     printf("\nour parsed string  : '%*s'\n\n", (int)thislen,
-           (char *)parsed_begin);
-    print_hex((char *)parsed_begin, thislen);
+           (const char *)parsed_begin);
+    print_hex((const char *)parsed_begin, thislen);
     printf("\n");
 
     printf("reference parsing   :'%*s'\n\n", (int)len, bigbuffer);
-    print_hex((char *)bigbuffer, len);
+    print_hex((const char *)bigbuffer, len);
     printf("\n");
 
     probable_bug = true;
@@ -267,15 +267,15 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     printf("Lengths %zu %zu  \n", thislen, len);
 
     printf("\nour parsed string  : '%*s'\n", (int)thislen,
-           (char *)parsed_begin);
-    print_hex((char *)parsed_begin, thislen);
+           (const char *)parsed_begin);
+    print_hex((const char *)parsed_begin, thislen);
     printf("\n");
 
     printf("reference parsing   :'%*s'\n", (int)len, bigbuffer);
-    print_hex((char *)bigbuffer, len);
+    print_hex((const char *)bigbuffer, len);
     printf("\n");
 
-    print_cmp_hex((char *)parsed_begin, bigbuffer, thislen);
+    print_cmp_hex((const char *)parsed_begin, bigbuffer, thislen);
 
     probable_bug = true;
   }
@@ -325,8 +325,13 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p = get_corpus(fullpath);
-      // terrible hack but just to get it working
+      std::pair<u8 *, size_t> p;
+      try {
+        p = get_corpus(fullpath);
+      } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << fullpath << std::endl;
+        return EXIT_FAILURE;
+      }      
       ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
       if (pj_ptr == NULL) {
         std::cerr << "can't allocate memory" << std::endl;

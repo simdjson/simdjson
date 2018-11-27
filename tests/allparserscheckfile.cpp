@@ -1,3 +1,4 @@
+#include <unistd.h>
 
 #include "jsonparser/jsonparser.h"
 
@@ -30,7 +31,6 @@ void on_json_error( void *, const fastjson::ErrorContext& ec) {
 bool fastjson_parse(const char *input) {
   fastjson::Token token;
   fastjson::dom::Chunk chunk;
-  std::string error_message;
   return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
 }
 // end of fastjson stuff
@@ -41,17 +41,30 @@ using namespace rapidjson;
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  bool verbose = false;
+    int c;
+  while ((c = getopt (argc, argv, "v")) != -1)
+    switch (c)
+      {
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        abort ();
+      }
+  if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     cerr << "Or " << argv[0] << " -v <jsonfile>\n";
     exit(1);
   }
-  bool verbose = false;
-  if (argc > 2) {
-    if (strcmp(argv[1], "-v"))
-      verbose = true;
+  const char * filename = argv[optind];
+  std::pair<u8 *, size_t> p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
   }
-  pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
   if (verbose) {
     std::cout << "Input has ";
     if (p.second > 1024 * 1024)

@@ -128,7 +128,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   const __m128i mul_1_100 = _mm_setr_epi16(100, 1, 100, 1, 100, 1, 100, 1);
   const __m128i mul_1_10000 =
       _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
-  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((__m128i *)chars), ascii0);
+  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((const __m128i *)chars), ascii0);
   const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
   const __m128i t2 = _mm_madd_epi16(t1, mul_1_100);
   const __m128i t3 = _mm_packus_epi32(t2, t2);
@@ -149,7 +149,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 static never_inline bool
 parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
-                          ParsedJson &pj, const u32 depth, const u32 offset,
+                          ParsedJson &pj, UNUSED const u32 depth, const u32 offset,
                           UNUSED bool found_zero, bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
@@ -193,7 +193,6 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     }
     exponent = firstafterperiod - p;
   }
-  int64_t expnumber = 0; // exponential part
   if (('e' == *p) || ('E' == *p)) {
     ++p;
     bool negexp = false;
@@ -210,7 +209,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
       return false;
     }
     unsigned char digit = *p - '0';
-    expnumber = digit;
+    int64_t expnumber = digit; // exponential part
     p++;
     if (is_integer(*p)) {
       digit = *p - '0';
@@ -270,7 +269,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
 //
 static never_inline bool parse_large_integer(const u8 *const buf,
                                              UNUSED size_t len, ParsedJson &pj,
-                                             const u32 depth, const u32 offset,
+                                             UNUSED const u32 depth, const u32 offset,
                                              UNUSED bool found_zero,
                                              bool found_minus) {
   const char *p = (const char *)(buf + offset);
@@ -340,10 +339,12 @@ static never_inline bool parse_large_integer(const u8 *const buf,
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
+
+
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
 static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
-                                       ParsedJson &pj, const u32 depth,
+                                       ParsedJson &pj, UNUSED const u32 depth,
                                        const u32 offset, UNUSED bool found_zero,
                                        bool found_minus) {
   const char *p = (const char *)(buf + offset);

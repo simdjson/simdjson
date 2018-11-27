@@ -20,6 +20,13 @@ char * allocate_aligned_buffer(size_t length);
 // first element of the pair is a string (null terminated)
 // whereas the second element is the length.
 // caller is responsible to free (free std::pair<u8 *, size_t>.first)
+// 
+// throws an exception if the file cannot be opened, use try/catch
+//      try {
+//        p = get_corpus(filename);
+//      } catch (const std::exception& e) { 
+//        std::cout << "Could not load the file " << filename << std::endl;
+//      }
 std::pair<u8 *, size_t> get_corpus(std::string filename);
 
 #endif

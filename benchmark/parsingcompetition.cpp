@@ -31,7 +31,6 @@ void on_json_error( void *, const fastjson::ErrorContext& ec) {
 bool fastjson_parse(const char *input) {
   fastjson::Token token;
   fastjson::dom::Chunk chunk;
-  std::string error_message;
   return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
 }
 // end of fastjson stuff
@@ -62,7 +61,14 @@ int main(int argc, char *argv[]) {
   if(optind + 1 < argc) {
     cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
-  pair<u8 *, size_t> p = get_corpus(filename);
+  pair<u8 *, size_t> p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
+  }
+  
   if (verbose) {
     std::cout << "Input has ";
     if (p.second > 1024 * 1024)

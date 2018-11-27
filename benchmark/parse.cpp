@@ -31,79 +31,14 @@
 #include "jsonparser/stage34_unified.h"
 using namespace std;
 
-// https://stackoverflow.com/questions/2616906/how-do-i-output-coloured-text-to-a-linux-terminal
-namespace Color {
-enum Code {
-  FG_DEFAULT = 39,
-  FG_BLACK = 30,
-  FG_RED = 31,
-  FG_GREEN = 32,
-  FG_YELLOW = 33,
-  FG_BLUE = 34,
-  FG_MAGENTA = 35,
-  FG_CYAN = 36,
-  FG_LIGHT_GRAY = 37,
-  FG_DARK_GRAY = 90,
-  FG_LIGHT_RED = 91,
-  FG_LIGHT_GREEN = 92,
-  FG_LIGHT_YELLOW = 93,
-  FG_LIGHT_BLUE = 94,
-  FG_LIGHT_MAGENTA = 95,
-  FG_LIGHT_CYAN = 96,
-  FG_WHITE = 97,
-  BG_RED = 41,
-  BG_GREEN = 42,
-  BG_BLUE = 44,
-  BG_DEFAULT = 49
-};
-class Modifier {
-  Code code;
-
-public:
-  Modifier(Code pCode) : code(pCode) {}
-  friend std::ostream &operator<<(std::ostream &os, const Modifier &mod) {
-    return os << "\033[" << mod.code << "m";
-  }
-};
-} // namespace Color
-
-void colorfuldisplay(ParsedJson &pj, const u8 *buf) {
-  Color::Modifier greenfg(Color::FG_GREEN);
-  Color::Modifier yellowfg(Color::FG_YELLOW);
-  Color::Modifier deffg(Color::FG_DEFAULT);
-  size_t i = 0;
-  // skip initial fluff
-  while ((i + 1 < pj.n_structural_indexes) &&
-         (pj.structural_indexes[i] == pj.structural_indexes[i + 1])) {
-    i++;
-  }
-  for (; i < pj.n_structural_indexes; i++) {
-    u32 idx = pj.structural_indexes[i];
-    u8 c = buf[idx];
-    if (((c & 0xdf) == 0x5b)) { // meaning 7b or 5b, { or [
-      std::cout << greenfg << buf[idx] << deffg;
-    } else if (((c & 0xdf) == 0x5d)) { // meaning 7d or 5d, } or ]
-      std::cout << greenfg << buf[idx] << deffg;
-    } else {
-      std::cout << yellowfg << buf[idx] << deffg;
-    }
-    if (i + 1 < pj.n_structural_indexes) {
-      u32 nextidx = pj.structural_indexes[i + 1];
-      for (u32 pos = idx + 1; pos < nextidx; pos++) {
-        std::cout << buf[pos];
-      }
-    }
-  }
-  std::cout << std::endl;
-}
-
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool dump = false;
+  bool forceoneiteration = false;
 
   int c;
 
-  while ((c = getopt (argc, argv, "vd")) != -1)
+  while ((c = getopt (argc, argv, "1vd")) != -1)
     switch (c)
       {
       case 'v':
@@ -111,6 +46,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'd':
         dump = true;
+        break;
+      case '1':
+        forceoneiteration = true;
         break;
       default:
         abort ();
@@ -124,7 +62,13 @@ int main(int argc, char *argv[]) {
     cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
   if(verbose) cout << "[verbose] loading " << filename << endl;
-  pair<u8 *, size_t> p = get_corpus(filename);
+  pair<u8 *, size_t> p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
+  }
   if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.second << " bytes)" << endl;
   ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
   ParsedJson &pj(*pj_ptr);
@@ -133,7 +77,7 @@ int main(int argc, char *argv[]) {
 #if defined(DEBUG)
   const u32 iterations = 1;
 #else
-  const u32 iterations = p.second < 1 * 1000 * 1000? 1000 : 10;
+  const u32 iterations = forceoneiteration ? 1 : ( p.second < 1 * 1000 * 1000? 1000 : 10);
 #endif
   vector<double> res;
   res.resize(iterations);
@@ -174,7 +118,7 @@ int main(int argc, char *argv[]) {
     }
     unified.start();
 #endif
-    isok = flatten_indexes(p.second, pj);
+    isok = isok && flatten_indexes(p.second, pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy2 += results[0];
@@ -187,7 +131,7 @@ int main(int argc, char *argv[]) {
     unified.start();
 #endif
 
-    isok = unified_machine(p.first, p.second, pj);
+    isok = isok && unified_machine(p.first, p.second, pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy3 += results[0];

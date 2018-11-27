@@ -7,7 +7,7 @@
 .PHONY: clean cleandist
 
 DEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
-CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  $(DEPSINCLUDE) 
+CXXFLAGS =  -std=c++11  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux  $(DEPSINCLUDE)    
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined

@@ -105,14 +105,14 @@ public:
 
 
     void write_tape_s64(s64 i) {
-        *((s64 *)current_number_buf_loc) = i;
-        current_number_buf_loc += 8;
+        *((s64 *)current_number_buf_loc) = i;// safe because array will be 8-byte aligned, could use memcpy
+        current_number_buf_loc += sizeof(s64);
         write_tape(current_number_buf_loc - number_buf, 'l');
     }
 
     void write_tape_double(double d) {
-        *((double *)current_number_buf_loc) = d;
-        current_number_buf_loc += 8;
+        *((double *)current_number_buf_loc) = d;// safe because array will be 8-byte aligned, could use memcpy
+        current_number_buf_loc += sizeof(double);
         write_tape(current_number_buf_loc - number_buf, 'd');
     }
 
@@ -137,7 +137,7 @@ public:
         u32 scope_header; // the start of our current scope that contains our current location
         u32 location;     // our current location on a tape
 
-        ParsedJsonHandle(ParsedJson & pj_) : pj(pj_), depth(0), scope_header(0), location(0) {}
+        explicit ParsedJsonHandle(ParsedJson & pj_) : pj(pj_), depth(0), scope_header(0), location(0) {}
         // OK with default copy constructor as the way to clone the POD structure
 
         // some placeholder navigation. Will convert over to a more native C++-ish way of doing
@@ -167,7 +167,7 @@ public:
 
 
 #ifdef DEBUG
-inline void dump256(m256 d, std::string msg) {
+inline void dump256(m256 d, const std::string msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << std::setw(3) << (int)*(((u8 *)(&d)) + i);
     if (!((i + 1) % 8))
@@ -181,14 +181,14 @@ inline void dump256(m256 d, std::string msg) {
 }
 
 // dump bits low to high
-inline void dumpbits(u64 v, std::string msg) {
+inline void dumpbits(u64 v, const std::string msg) {
   for (u32 i = 0; i < 64; i++) {
     std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32(u32 v, std::string msg) {
+inline void dumpbits32(u32 v, const std::string msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
   }
@@ -201,14 +201,14 @@ inline void dumpbits32(u32 v, std::string msg) {
 #endif
 
 // dump bits low to high
-inline void dumpbits_always(u64 v, std::string msg) {
+inline void dumpbits_always(u64 v, const std::string msg) {
   for (u32 i = 0; i < 64; i++) {
     std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32_always(u32 v, std::string msg) {
+inline void dumpbits32_always(u32 v, const std::string msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
   }

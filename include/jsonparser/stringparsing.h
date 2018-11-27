@@ -58,7 +58,7 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
 }
 
 really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
-                                ParsedJson &pj, u32 depth, u32 offset) {
+                                ParsedJson &pj, UNUSED const u32 depth, u32 offset) {
   using namespace std;
   const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
   u8 *dst = pj.current_string_buf_loc;

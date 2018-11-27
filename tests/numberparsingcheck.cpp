@@ -28,7 +28,7 @@ bool startsWith(const char *pre, const char *str) {
   size_t lenpre = strlen(pre), lenstr = strlen(str);
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
-bool is_in_bad_list(char *buf) {
+bool is_in_bad_list(const char *buf) {
   for (size_t i = 0; i < sizeof(really_bad) / sizeof(really_bad[0]); i++)
     if (startsWith(really_bad[i], buf))
       return true;
@@ -38,9 +38,9 @@ bool is_in_bad_list(char *buf) {
 inline void foundInvalidNumber(const u8 *buf) {
   invalid_count++;
   char *endptr;
-  double expected = strtod((char *)buf, &endptr);
-  if (endptr != (char *)buf) {
-    if (!is_in_bad_list((char *)buf)) {
+  double expected = strtod((const char *)buf, &endptr);
+  if (endptr != (const char *)buf) {
+    if (!is_in_bad_list((const char *)buf)) {
       printf(
           "Warning: foundInvalidNumber %.32s whereas strtod parses it to %f, ",
           buf, expected);
@@ -53,8 +53,8 @@ inline void foundInvalidNumber(const u8 *buf) {
 inline void foundInteger(int64_t result, const u8 *buf) {
   int_count++;
   char *endptr;
-  long long expected = strtoll((char *)buf, &endptr, 10);
-  if ((endptr == (char *)buf) || (expected != result)) {
+  long long expected = strtoll((const char *)buf, &endptr, 10);
+  if ((endptr == (const char *)buf) || (expected != result)) {
     printf("Error: parsed %" PRId64 " out of %.32s, ", result, buf);
     printf(" while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
@@ -64,8 +64,8 @@ inline void foundInteger(int64_t result, const u8 *buf) {
 inline void foundFloat(double result, const u8 *buf) {
   char *endptr;
   float_count++;
-  double expected = strtod((char *)buf, &endptr);
-  if (endptr == (char *)buf) {
+  double expected = strtod((const char *)buf, &endptr);
+  if (endptr == (const char *)buf) {
     printf("parsed %f from %.32s whereas strtod refuses to parse a float, ",
            result, buf);
     printf(" while parsing %s \n", fullpath);
@@ -123,7 +123,13 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p = get_corpus(fullpath);
+      std::pair<u8 *, size_t> p;
+      try {
+        p = get_corpus(fullpath);
+      } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << fullpath << std::endl;
+        return EXIT_FAILURE;
+      }
       // terrible hack but just to get it working
       ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
       if (pj_ptr == NULL) {
