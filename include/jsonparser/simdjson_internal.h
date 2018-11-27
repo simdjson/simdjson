@@ -97,30 +97,32 @@ public:
     // 
 
     // this should be considered a private function
-    void write_tape(u64 val, u8 c) {
+    inline void write_tape(u64 val, u8 c) {
         tape[current_loc++] =  val | (((u64)c) << 56);
         //tape[tape_locs[depth]] = val | (((u64)c) << 56);
         //tape_locs[depth]++;
     }
 
 
-    void write_tape_s64(s64 i) {
-        *((s64 *)current_number_buf_loc) = i;// safe because array will be 8-byte aligned, could use memcpy
+    inline void write_tape_s64(s64 i) {
+        memcpy(current_number_buf_loc, &i, sizeof(s64));
+        //*((s64 *)current_number_buf_loc) = i;// safe because array will be 8-byte aligned, could use memcpy
         current_number_buf_loc += sizeof(s64);
         write_tape(current_number_buf_loc - number_buf, 'l');
     }
 
-    void write_tape_double(double d) {
-        *((double *)current_number_buf_loc) = d;// safe because array will be 8-byte aligned, could use memcpy
+    inline void write_tape_double(double d) {
+        memcpy(current_number_buf_loc, &d, sizeof(double));
+        //*((double *)current_number_buf_loc) = d;// safe because array will be 8-byte aligned, could use memcpy
         current_number_buf_loc += sizeof(double);
         write_tape(current_number_buf_loc - number_buf, 'd');
     }
 
-    u32 get_current_loc() {
+    inline u32 get_current_loc() {
         return current_loc;
     }
 
-    void annotate_previousloc(u32 saved_loc,u64 val) {
+    inline void annotate_previousloc(u32 saved_loc,u64 val) {
         tape[saved_loc] |= val;
     }
 
@@ -167,7 +169,7 @@ public:
 
 
 #ifdef DEBUG
-inline void dump256(m256 d, const std::string msg) {
+inline void dump256(m256 d, const std::string& msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << std::setw(3) << (int)*(((u8 *)(&d)) + i);
     if (!((i + 1) % 8))
@@ -181,14 +183,14 @@ inline void dump256(m256 d, const std::string msg) {
 }
 
 // dump bits low to high
-inline void dumpbits(u64 v, const std::string msg) {
+inline void dumpbits(u64 v, const std::string& msg) {
   for (u32 i = 0; i < 64; i++) {
     std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32(u32 v, const std::string msg) {
+inline void dumpbits32(u32 v, const std::string& msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
   }
@@ -201,14 +203,14 @@ inline void dumpbits32(u32 v, const std::string msg) {
 #endif
 
 // dump bits low to high
-inline void dumpbits_always(u64 v, const std::string msg) {
+inline void dumpbits_always(u64 v, const std::string& msg) {
   for (u32 i = 0; i < 64; i++) {
     std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32_always(u32 v, const std::string msg) {
+inline void dumpbits32_always(u32 v, const std::string& msg) {
   for (u32 i = 0; i < 32; i++) {
     std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
   }

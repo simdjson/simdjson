@@ -54,7 +54,7 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
   u32 *base_ptr = pj.structural_indexes;
   u32 base = 0;
 #ifdef BUILDHISTOGRAM
-  uint32_t counters[65];
+  uint32_t counters[66];
   uint32_t total = 0;
   for (int k = 0; k < 66; k++)
     counters[k] = 0;

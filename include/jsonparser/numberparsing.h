@@ -147,6 +147,8 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 // This function will almost never be called!!!
 //
+// Note: a redesign could avoid this function entirely.
+//
 static never_inline bool
 parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
                           ParsedJson &pj, UNUSED const u32 depth, const u32 offset,

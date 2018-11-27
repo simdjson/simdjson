@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   }
 
 #ifndef SQUASH_COUNTERS
-  printf("number of bytes %ld number of structural chars %d ratio %.3f\n",
+  printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
          p.second, pj.n_structural_indexes,
          (double)pj.n_structural_indexes / p.second);
   unsigned long total = cy1 + cy2 + cy3;
