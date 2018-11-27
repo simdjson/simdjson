@@ -97,38 +97,33 @@ public:
     // 
 
     // this should be considered a private function
-    inline void write_tape(u64 val, u8 c) {
+    really_inline void write_tape(u64 val, u8 c) {
         tape[current_loc++] =  val | (((u64)c) << 56);
         //tape[tape_locs[depth]] = val | (((u64)c) << 56);
         //tape_locs[depth]++;
     }
 
 
-    inline void write_tape_s64(s64 i) {
-        memcpy(current_number_buf_loc, &i, sizeof(s64));
-        //*((s64 *)current_number_buf_loc) = i;// safe because array will be 8-byte aligned, could use memcpy
-        current_number_buf_loc += sizeof(s64);
+    really_inline void write_tape_s64(s64 i) {
         write_tape(current_number_buf_loc - number_buf, 'l');
+        memcpy(current_number_buf_loc, &i, sizeof(s64));
+        current_number_buf_loc += sizeof(s64);
     }
 
-    inline void write_tape_double(double d) {
-        memcpy(current_number_buf_loc, &d, sizeof(double));
-        //*((double *)current_number_buf_loc) = d;// safe because array will be 8-byte aligned, could use memcpy
-        current_number_buf_loc += sizeof(double);
+    really_inline void write_tape_double(double d) {
         write_tape(current_number_buf_loc - number_buf, 'd');
+        memcpy(current_number_buf_loc, &d, sizeof(double));
+        current_number_buf_loc += sizeof(double);
     }
 
-    inline u32 get_current_loc() {
+    really_inline u32 get_current_loc() {
         return current_loc;
     }
 
-    inline void annotate_previousloc(u32 saved_loc,u64 val) {
+    really_inline void annotate_previousloc(u32 saved_loc,u64 val) {
         tape[saved_loc] |= val;
     }
 
-    /*void write_saved_loc(u32 saved_loc, u64 val, u8 c) {
-        tape[saved_loc] = val | (((u64)c) << 56);
-    }*/
 
     // public interface
 #if 1
