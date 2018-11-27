@@ -114,7 +114,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
 
-      pj.write_tape(depth, pj.current_string_buf_loc - pj.string_buf, '"');
+      pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
 
       pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED

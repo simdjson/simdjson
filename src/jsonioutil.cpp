@@ -23,6 +23,7 @@ std::pair<u8 *, size_t> get_corpus(std::string filename) {
     size_t length = buffer.str().size(); // +1 for null
     u8* aligned_buffer = (u8 *)allocate_aligned_buffer(length);
     memcpy(aligned_buffer, buffer.str().c_str(), length);
+    aligned_buffer[length] = '\0';
     is.close();
     return std::make_pair((u8 *)aligned_buffer, length);
   }

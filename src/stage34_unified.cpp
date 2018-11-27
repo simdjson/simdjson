@@ -75,11 +75,11 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     u32 i = 0; // index of the structural character (0,1,2,3...)
     u32 idx; // location of the structural character in the input (buf)
     u8 c; // used to track the (structural) character we are looking at, updated by UPDATE_CHAR macro
-    //u32 depth = START_DEPTH; // an arbitrary starting depth
+    u32 depth = 0;//START_DEPTH; // an arbitrary starting depth
     //void * ret_address[MAX_DEPTH]; // used to store "labels as value" (non-standard compiler extension)
 
     // a call site is the start of either an object or an array ('[' or '{')
-    //u32 last_loc = 0; // this is the location of the previous call site 
+    // this is the location of the previous call site 
     // (in the tape, at the given depth); 
     // we only need one.
 
@@ -105,42 +105,23 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR() { idx = pj.structural_indexes[i++]; c = buf[idx]; DEBUG_PRINTF("Got %c at %d (%d offset)\n", c, idx, i-1);}
 
-    // format: call site has 2 entries: 56-bit + '{' or '[' entries pointing first to header then to this location
-    //         scope has 2 entries: 56 + '_' entries pointing first to call site then to the last entry in this scope
 
 
 
-#define OPEN_SCOPE() { \
-    pj.write_saved_loc(last_loc, pj.save_loc(depth), '_'); \
-    pj.write_tape(depth, last_loc, '_'); \
-    containing_scope_offset[depth] = pj.save_loc(depth); \
-    pj.write_tape(depth, 0, '_'); \
-    }
 
-// we are going to increase the depth, we write on the tape the 'c' which is going to be either { or [
-#define ESTABLISH_CALLSITE(RETURN_LABEL, SITE_LABEL) { \
-    pj.write_tape(depth, containing_scope_offset[depth], c); \
-    last_loc = pj.save_loc(depth); \
-    pj.write_tape(depth, 0, c); \
-    ret_address[depth] = RETURN_LABEL; \
-    depth++; \
-    goto SITE_LABEL; \
-    } 
 
 ////////////////////////////// START STATE /////////////////////////////
-
+printf("at start\n");
     DEBUG_PRINTF("at start\n");
+    pj.ret_address[depth] = &&start_continue; 
+    pj.containing_scope_offset[depth] = pj.get_current_loc(); 
+    pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
+    depth++;// everything starts at depth = 1, depth = 0 is just for the root
+    if(depth > pj.depthcapacity) {
+        goto fail;
+    }
+    printf("got char %c \n",c);
     UPDATE_CHAR();
-    // do these two speculatively as we will always do
-    // them except on fail, in which case it doesn't matter
-    ret_address[depth] = &&start_continue;
-    containing_scope_offset[depth] = pj.save_loc(depth);
-    pj.write_tape(depth, 0, c); // dummy entries
-
-    last_loc = pj.save_loc(depth);
-    pj.write_tape(depth, 0, c); // dummy entries
-    depth++;
-
     switch (c) {
         case '{': goto object_begin;
         case '[': goto array_begin;
@@ -162,19 +143,19 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
             if (!is_valid_true_atom(buf + idx)) {
                 goto fail;
             }
-            pj.write_tape(depth, 0, c);
+            pj.write_tape(0, c);
             goto start_continue;
         case 'f': 
             if (!is_valid_false_atom(buf + idx)) {
                 goto fail;
             }
-            pj.write_tape(depth, 0, c);
+            pj.write_tape(0, c);
             goto start_continue;
         case 'n': 
             if (!is_valid_null_atom(buf + idx)) {
                 goto fail;
             }
-            pj.write_tape(depth, 0, c);
+            pj.write_tape(0, c);
             goto start_continue;
         case '0': {
             if (!parse_number(buf, len, pj, depth, idx, true, false)) {
@@ -199,7 +180,6 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     }
 
 start_continue:
-    // land here after popping our outer object if an object
     DEBUG_PRINTF("in start_object_close\n");
     UPDATE_CHAR();
     switch (c) {
@@ -210,8 +190,14 @@ start_continue:
 ////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:
+    printf("in object_begin %c \n",c);
     DEBUG_PRINTF("in object_begin\n");
-    OPEN_SCOPE();
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); 
+    depth ++;
+    if(depth > pj.depthcapacity) {
+        goto fail;
+    }
     UPDATE_CHAR();
     switch (c) {
         case '"': {
@@ -225,6 +211,8 @@ object_begin:
     }
 
 object_key_state:
+    printf("in object_key_state %c \n",c);
+
     DEBUG_PRINTF("in object_key_state\n");
     UPDATE_CHAR();
     if (c != ':') {
@@ -241,17 +229,17 @@ object_key_state:
         case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         case '0': {
             if (!parse_number(buf, len, pj, depth, idx, true, false)) {
@@ -272,15 +260,19 @@ object_key_state:
             break;
         }
         case '{': {
-            ESTABLISH_CALLSITE(&&object_continue, object_begin);
+            pj.ret_address[depth] = &&object_continue; 
+            goto object_begin;
         }
         case '[': {
-            ESTABLISH_CALLSITE(&&object_continue, array_begin);
+            pj.ret_address[depth] = &&object_continue; 
+            goto array_begin;
         }
         default: goto fail;
     }
 
 object_continue:
+    printf("in object_continue %c \n",c);
+
     DEBUG_PRINTF("in object_continue\n");
     UPDATE_CHAR();
     switch (c) {
@@ -302,19 +294,25 @@ object_continue:
 
 scope_end: 
     // write our tape location to the header scope
-    pj.write_saved_loc(containing_scope_offset[depth], pj.save_loc(depth), '_');
     depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previousloc(pj.containing_scope_offset[depth], pj.get_current_loc());
     // goto saved_state
-    goto *ret_address[depth];
+    goto *pj.ret_address[depth];
 
     
 ////////////////////////////// ARRAY STATES /////////////////////////////
 
 array_begin:
-    DEBUG_PRINTF("in array_begin\n");
-    OPEN_SCOPE();
-    // fall through
+    printf("in array_begin %c \n",c);
 
+    DEBUG_PRINTF("in array_begin\n");
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); 
+    depth ++;
+    if(depth > pj.depthcapacity) {
+        goto fail;
+    }
     UPDATE_CHAR();
     if (c == ']') {
         goto scope_end;
@@ -333,17 +331,17 @@ main_array_switch:
         case 't': if (!is_valid_true_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         case 'f': if (!is_valid_false_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         case 'n': if (!is_valid_null_atom(buf + idx)) {
                     goto fail;
                   }
-                  pj.write_tape(depth, 0, c);
+                  pj.write_tape(0, c);
                   break;
         
         case '0': {
@@ -365,15 +363,19 @@ main_array_switch:
             break;
         }
         case '{': {
-            ESTABLISH_CALLSITE(&&array_continue, object_begin);
+            pj.ret_address[depth] = &&array_continue; 
+            goto object_begin;
         }
         case '[': {
-            ESTABLISH_CALLSITE(&&array_continue, array_begin);
+            pj.ret_address[depth] = &&array_continue; 
+            goto array_begin;
         }
         default: goto fail;
     }
 
 array_continue:
+    printf("in array_begin %c \n",c);
+
     DEBUG_PRINTF("in array_continue\n");
     UPDATE_CHAR();
     switch (c) {
@@ -386,6 +388,13 @@ array_continue:
 
 succeed:
     DEBUG_PRINTF("in succeed\n");
+    // we annotate the root node
+    depth--;
+    // next line allows us to go back to the start
+    pj.write_tape(pj.containing_scope_offset[depth], 'r');// r is root
+    // next line tells the root node how to go to the end
+    pj.annotate_previousloc(pj.containing_scope_offset[depth], pj.get_current_loc());
+
 #ifdef DEBUG
     pj.dump_tapes();
 #endif

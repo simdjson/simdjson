@@ -12,7 +12,7 @@
 // Return NULL if memory cannot be allocated.
 // This structure is meant to be reused from document to document, as needed.
 // you can use deallocate_ParsedJson to deallocate the memory.
-ParsedJson *allocate_ParsedJson(size_t len);
+ParsedJson *allocate_ParsedJson(size_t len, size_t maxdepth);
 
 // deallocate a ParsedJson struct (see allocate_ParsedJson)
 void deallocate_ParsedJson(ParsedJson *pj_ptr);

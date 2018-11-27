@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.second << " B ";
     std::cout << std::endl;
   }
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+  ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
   if (pj_ptr == NULL) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;

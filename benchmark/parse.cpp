@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   if(verbose) cout << "[verbose] loading " << filename << endl;
   pair<u8 *, size_t> p = get_corpus(filename);
   if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.second << " bytes)" << endl;
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+  ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
   ParsedJson &pj(*pj_ptr);
   if(verbose) cout << "[verbose] allocated memory for parsed JSON " << endl;
 

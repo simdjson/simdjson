@@ -113,11 +113,11 @@ int main(int argc, char *argv[]) {
 
   BEST_TIME("sajson despaced", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.second), repeat, volume, true);
 
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+  ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
   ParsedJson &pj(*pj_ptr);
   BEST_TIME("json_parse orig", json_parse((const u8*)buffer, p.second, pj), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
   
-  ParsedJson *pj_ptr2 = allocate_ParsedJson(p.second);
+  ParsedJson *pj_ptr2 = allocate_ParsedJson(p.second, 1024);
   ParsedJson &pj2(*pj_ptr2);
 
 

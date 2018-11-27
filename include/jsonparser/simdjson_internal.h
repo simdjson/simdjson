@@ -32,13 +32,18 @@ public:
   size_t bytecapacity; // indicates how many bits are meant to be supported by
                        // structurals
   size_t depthcapacity; // how deep we can go
+
+  u32 current_loc;
   u8 *structurals;
   u32 n_structural_indexes;
   u32 *structural_indexes;
 
   u64 * tape;//[MAX_TAPE];
-  u32 * tape_locs;
+  u32 * containing_scope_offset;
+  void * * ret_address;
+
   u8 * string_buf;// should be at least bytecapacity
+
   u8 *current_string_buf_loc;
   u8 * number_buf;// holds either doubles or longs, really // should be at least 4 * bytecapacity
   u8 *current_number_buf_loc;
@@ -46,6 +51,7 @@ public:
     void init() {
         current_string_buf_loc = string_buf;
         current_number_buf_loc = number_buf;
+        current_loc = 0;
 
         //for (u32 i = 0; i < MAX_DEPTH; i++) {
         //    tape_locs[i] = i * MAX_TAPE_ENTRIES;
@@ -75,32 +81,52 @@ public:
             }
         }*/
     }
-    // TODO: will need a way of saving strings that's a bit more encapsulated
 
-    void write_tape(u32 depth, u64 val, u8 c) {
-        tape[tape_locs[depth]] = val | (((u64)c) << 56);
-        tape_locs[depth]++;
+    // all elements are stored on the tape using a 64-bit word.
+    //
+    // strings, double and ints are stored as 
+    //  a 64-bit word with a pointer to the actual value
+    // 
+    //
+    // 
+    // for objects or arrays, store [ or {  at the beginning and } and ] at the end.
+    // For the openings ([ or {), we annotate them with a reference to the location on the tape of
+    // the end, and for then closings (} and ]), we annotate them with a reference to the 
+    // location of the opening
+    //
+    // 
+
+    // this should be considered a private function
+    void write_tape(u64 val, u8 c) {
+        tape[current_loc++] =  val | (((u64)c) << 56);
+        //tape[tape_locs[depth]] = val | (((u64)c) << 56);
+        //tape_locs[depth]++;
     }
 
-    void write_tape_s64(u32 depth, s64 i) {
+
+    void write_tape_s64(s64 i) {
         *((s64 *)current_number_buf_loc) = i;
         current_number_buf_loc += 8;
-        write_tape(depth, current_number_buf_loc - number_buf, 'l');
+        write_tape(current_number_buf_loc - number_buf, 'l');
     }
 
-    void write_tape_double(u32 depth, double d) {
+    void write_tape_double(double d) {
         *((double *)current_number_buf_loc) = d;
         current_number_buf_loc += 8;
-        write_tape(depth, current_number_buf_loc - number_buf, 'd');
+        write_tape(current_number_buf_loc - number_buf, 'd');
     }
 
-    u32 save_loc(u32 depth) {
-        return tape_locs[depth];
+    u32 get_current_loc() {
+        return current_loc;
     }
 
-    void write_saved_loc(u32 saved_loc, u64 val, u8 c) {
+    void annotate_previousloc(u32 saved_loc,u64 val) {
+        tape[saved_loc] |= val;
+    }
+
+    /*void write_saved_loc(u32 saved_loc, u64 val, u8 c) {
         tape[saved_loc] = val | (((u64)c) << 56);
-    }
+    }*/
 
     // public interface
 #if 1
@@ -121,13 +147,13 @@ public:
         bool prev();                      // valid if we're not at the start of a scope
         bool up();                        // valid if we are at depth != 0
         bool down();                      // valid if we're at a [ or { call site; moves us to header of that scope
-        void to_start_scope();            // move us to the start of our current scope; always succeeds
-        void to_end_scope();              // move us to the start of our current scope; always succeeds
+        //void to_start_scope();            // move us to the start of our current scope; always succeeds
+        //void to_end_scope();              // move us to the start of our current scope; always succeeds
 
         // these navigation elements move us across scope if need be, so allow us to iterate over
         // everything at a given depth
-        bool next_flat();                 // valid if we're not at the end of a tape
-        bool prev_flat();                 // valid if we're not at the start of a tape
+        //bool next_flat();                 // valid if we're not at the end of a tape
+        //bool prev_flat();                 // valid if we're not at the start of a tape
 
         void print(std::ostream & os);    // print the thing we're currently pointing at
         u8 get_type();                    // retrieve the character code of what we're looking at: [{"sltfn are the possibilities

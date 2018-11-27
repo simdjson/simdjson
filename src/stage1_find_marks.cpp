@@ -251,7 +251,7 @@ WARN_UNUSED
     *(u64 *)(pj.structurals + idx / 8) = structurals;
   }
   if(buf[len] != '\0') {
-      std::cerr << "Your string should NULL terminated." << std::endl;
+      std::cerr << "Your string should be NULL terminated." << std::endl;
       return false;
 
   }

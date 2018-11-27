@@ -237,7 +237,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     exponent += (negexp ? -expnumber : expnumber);
   }
   if (i == 0) {
-    pj.write_tape_double(depth, 0.0);
+    pj.write_tape_double(0.0);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(0.0, buf + offset);
 #endif
@@ -252,7 +252,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     double d = i;
     d *= power_of_ten[308 + exponent];
     d = negative ? -d : d;
-    pj.write_tape_double(depth, d);
+    pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(d, buf + offset);
 #endif
@@ -325,7 +325,7 @@ static never_inline bool parse_large_integer(const u8 *const buf,
     }
   }
   int64_t signed_answer = negative ? -i : i;
-  pj.write_tape_s64(depth, signed_answer);
+  pj.write_tape_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
 #endif
@@ -468,7 +468,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     // We want 0.1e1 to be a float.
     //////////
     if (i == 0) {
-      pj.write_tape_double(depth, 0.0);
+      pj.write_tape_double(0.0);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(0.0, buf + offset);
 #endif
@@ -483,7 +483,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       double d = i;
       d *= power_of_ten[308 + exponent];
       // d = negative ? -d : d;
-      pj.write_tape_double(depth, d);
+      pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
@@ -493,7 +493,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       return parse_large_integer(buf, len, pj, depth, offset, found_zero,
                                  found_minus);
     }
-    pj.write_tape_s64(depth, i);
+    pj.write_tape_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundInteger(i, buf + offset);
 #endif

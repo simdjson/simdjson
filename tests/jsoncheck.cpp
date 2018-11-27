@@ -57,7 +57,7 @@ bool validate(const char *dirname) {
         strcpy(fullpath + dirlen, name);
       }
       std::pair<u8 *, size_t> p = get_corpus(fullpath);
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
+      ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
       if(pj_ptr == NULL) {
         std::cerr<< "can't allocate memory"<<std::endl;
         return false;
