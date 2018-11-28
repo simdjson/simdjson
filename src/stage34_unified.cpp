@@ -140,13 +140,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     }
     pj.write_tape(0, c);
     break;
-  case '0': {
-    if (!parse_number(buf, len, pj, depth, idx, true, false)) {
-      goto fail;
-    }
-
-    break;
-  }
+  case '0': 
   case '1':
   case '2':
   case '3':
@@ -156,13 +150,13 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '7':
   case '8':
   case '9': {
-    if (!parse_number(buf, len, pj, depth, idx, false, false)) {
+    if (!parse_number(buf, pj, idx, false)) {
       goto fail;
     }
     break;
   }
   case '-': {
-    if (!parse_number(buf, len, pj, depth, idx, false, true)) {
+    if (!parse_number(buf, pj, idx, true)) {
       goto fail;
     }
     break;
@@ -238,12 +232,7 @@ object_key_state:
     }
     pj.write_tape(0, c);
     break;
-  case '0': {
-    if (!parse_number(buf, len, pj, depth, idx, true, false)) {
-      goto fail;
-    }
-    break;
-  }
+  case '0': 
   case '1':
   case '2':
   case '3':
@@ -253,13 +242,13 @@ object_key_state:
   case '7':
   case '8':
   case '9': {
-    if (!parse_number(buf, len, pj, depth, idx, false, false)) {
+    if (!parse_number(buf, pj, idx, false)) {
       goto fail;
     }
     break;
   }
   case '-': {
-    if (!parse_number(buf, len, pj, depth, idx, false, true)) {
+    if (!parse_number(buf, pj, idx, true)) {
       goto fail;
     }
     break;
@@ -360,12 +349,7 @@ main_array_switch:
     pj.write_tape(0, c);
     break; // goto array_continue;
 
-  case '0': {
-    if (!parse_number(buf, len, pj, depth, idx, true, false)) {
-      goto fail;
-    }
-    break; // goto array_continue;
-  }
+  case '0': 
   case '1':
   case '2':
   case '3':
@@ -375,13 +359,13 @@ main_array_switch:
   case '7':
   case '8':
   case '9': {
-    if (!parse_number(buf, len, pj, depth, idx, false, false)) {
+    if (!parse_number(buf, pj, idx, false)) {
       goto fail;
     }
     break; // goto array_continue;
   }
   case '-': {
-    if (!parse_number(buf, len, pj, depth, idx, false, true)) {
+    if (!parse_number(buf, pj, idx, true)) {
       goto fail;
     }
     break; // goto array_continue;

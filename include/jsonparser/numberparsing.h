@@ -150,9 +150,9 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // Note: a redesign could avoid this function entirely.
 //
 static never_inline bool
-parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
-                          ParsedJson &pj, UNUSED const u32 depth, const u32 offset,
-                          UNUSED bool found_zero, bool found_minus) {
+parse_highprecision_float(const u8 *const buf, 
+                          ParsedJson &pj, const u32 offset,
+                          bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
   bool negative = false;
@@ -270,9 +270,8 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
 // This function will almost never be called!!!
 //
 static never_inline bool parse_large_integer(const u8 *const buf,
-                                             UNUSED size_t len, ParsedJson &pj,
-                                             UNUSED const u32 depth, const u32 offset,
-                                             UNUSED bool found_zero,
+                                             ParsedJson &pj,
+                                             const u32 offset,
                                              bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
@@ -345,9 +344,9 @@ static never_inline bool parse_large_integer(const u8 *const buf,
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
-                                       ParsedJson &pj, UNUSED const u32 depth,
-                                       const u32 offset, UNUSED bool found_zero,
+static really_inline bool parse_number(const u8 *const buf, 
+                                       ParsedJson &pj, 
+                                       const u32 offset, 
                                        bool found_minus) {
   const char *p = (const char *)(buf + offset);
   bool negative = false;
@@ -464,7 +463,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_highprecision_float(buf, len, pj, depth, offset, found_zero,
+      return parse_highprecision_float(buf, pj, offset, 
                                        found_minus);
     }
     ///////////
@@ -493,7 +492,7 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     }
   } else {
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
-      return parse_large_integer(buf, len, pj, depth, offset, found_zero,
+      return parse_large_integer(buf, pj, offset, 
                                  found_minus);
     }
     pj.write_tape_s64(i);
