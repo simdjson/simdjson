@@ -1,7 +1,7 @@
 #pragma once
 
 #include <inttypes.h>
-
+#include <string.h>
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
