@@ -95,15 +95,18 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   pj.ret_address[depth] = &&start_continue;
   pj.containing_scope_offset[depth] = pj.get_current_loc();
   pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
-  depth++; // everything starts at depth = 1, depth = 0 is just for the root
+  // the root is used, if nothing else, to capture the size of the tape
+  depth++; // everything starts at depth = 1, depth = 0 is just for the root, the root may contain an object, an array or something else.
   if (depth > pj.depthcapacity) {
     goto fail;
   }
   UPDATE_CHAR();
   switch (c) {
   case '{':
+    pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     goto object_begin;
   case '[':
+    pj.write_tape(0, c);
     goto array_begin;
 #define SIMDJSON_ALLOWANYTHINGINROOT
     // A JSON text is a serialized value.  Note that certain previous
@@ -187,7 +190,7 @@ start_continue:
 object_begin:
   DEBUG_PRINTF("in object_begin\n");
   pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, c);
+  //pj.write_tape(0, c); // this is a bad spot to do this performance-wise
 
   UPDATE_CHAR();
   switch (c) {
@@ -262,6 +265,7 @@ object_key_state:
     break;
   }
   case '{': {
+    pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     // we have not yet encountered } so we need to come back for it
     pj.ret_address[depth] = &&object_continue;
     // we found an object inside an object, so we need to increment the depth
@@ -273,6 +277,7 @@ object_key_state:
     goto object_begin;
   }
   case '[': {
+    pj.write_tape(0, c);  // strangely, moving this to array_begin slows things down
     // we have not yet encountered } so we need to come back for it
     pj.ret_address[depth] = &&object_continue;
     // we found an array inside an object, so we need to increment the depth
@@ -321,7 +326,6 @@ scope_end:
 array_begin:
   DEBUG_PRINTF("in array_begin\n");
   pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, c);
   UPDATE_CHAR();
   if (c == ']') {
     goto scope_end; // could also go to array_continue
@@ -384,8 +388,8 @@ main_array_switch:
   }
   case '{': {
     // we have not yet encountered ] so we need to come back for it
+    pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     pj.ret_address[depth] = &&array_continue;
-
     // we found an object inside an array, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
@@ -396,14 +400,13 @@ main_array_switch:
   }
   case '[': {
     // we have not yet encountered ] so we need to come back for it
+    pj.write_tape(0, c); // strangely, moving this to array_begin slows things down
     pj.ret_address[depth] = &&array_continue;
-
     // we found an array inside an array, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
       goto fail;
     }
-
     goto array_begin;
   }
   default:
