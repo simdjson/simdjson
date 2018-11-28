@@ -429,11 +429,20 @@ succeed:
   DEBUG_PRINTF("in succeed, depth = %d \n", depth);
   // we annotate the root node
   // depth--;
-  // next line allows us to go back to the start
-  pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
   // next line tells the root node how to go to the end
   pj.annotate_previousloc(pj.containing_scope_offset[depth],
                           pj.get_current_loc());
+  // next line allows us to go back to the start
+  if(depth != 0) {
+    printf("internal bug\n");
+    abort();
+  }
+  if(pj.containing_scope_offset[depth] != 0) {
+    printf("internal bug\n");
+    abort();
+  }
+  pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
+
 
 #ifdef DEBUG
   pj.dump_tapes();

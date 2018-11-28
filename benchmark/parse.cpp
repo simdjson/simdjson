@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   cout << "Min:  " << min_result << " bytes read: " << p.second
        << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0)
        << "\n";
-  if(dump) pj_ptr->dump_tapes();
+  if(dump) pj_ptr->printjson();
   free(p.first);
   deallocate_ParsedJson(pj_ptr);
   if (!isok) {
