@@ -147,12 +147,16 @@ int main(int argc, char *argv[]) {
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
+  evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
+  evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   vector<u64> results;
   results.resize(evts.size());
   unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
   unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
   unsigned long mis1 = 0, mis2 = 0, mis3 = 0;
+  unsigned long cref1 = 0, cref2 = 0, cref3 = 0;
+  unsigned long cmis1 = 0, cmis2 = 0, cmis3 = 0;
 #endif
   bool isok = true;
 
@@ -168,6 +172,8 @@ int main(int argc, char *argv[]) {
     cy1 += results[0];
     cl1 += results[1];
     mis1 += results[2];
+    cref1 += results[3];
+    cmis1 += results[4];
     if (!isok) {
       cout << "Failed out during stage 1\n";
       break;
@@ -180,6 +186,8 @@ int main(int argc, char *argv[]) {
     cy2 += results[0];
     cl2 += results[1];
     mis2 += results[2];
+    cref2 += results[3];
+    cmis2 += results[4];
     if (!isok) {
       cout << "Failed out during stage 2\n";
       break;
@@ -193,6 +201,8 @@ int main(int argc, char *argv[]) {
     cy3 += results[0];
     cl3 += results[1];
     mis3 += results[2];
+    cref3 += results[3];
+    cmis3 += results[4];
     if (!isok) {
       cout << "Failed out during stage 34\n";
       break;
@@ -211,22 +221,22 @@ int main(int argc, char *argv[]) {
   unsigned long total = cy1 + cy2 + cy3;
 
   printf(
-      "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu (cycles/mis.branch %.2f) \n",
-      cl1 / iterations, cy1 / iterations, 100. * cy1 / total, (double)cl1 / cy1, mis1/iterations, (double)cy1/mis1);
+      "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu (cycles/mis.branch %.2f)  cache accesses: %10lu (failure %10lu)\n",
+      cl1 / iterations, cy1 / iterations, 100. * cy1 / total, (double)cl1 / cy1, mis1/iterations, (double)cy1/mis1, cref1 / iterations, cmis1 / iterations);
   printf(" stage 1 runs at %.2f cycles per input byte.\n",
          (double)cy1 / (iterations * p.second));
 
   printf(
-      "stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f) \n",
-      cl2 / iterations, cy2 / iterations, 100. * cy2 / total, (double)cl2 / cy2, mis2/iterations, (double)cy2/mis2);
+      "stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache accesses: %10lu (failure %10lu)\n",
+      cl2 / iterations, cy2 / iterations, 100. * cy2 / total, (double)cl2 / cy2, mis2/iterations, (double)cy2/mis2, cref2 / iterations, cmis2 / iterations);
   printf(" stage 2 runs at %.2f cycles per input byte and ",
          (double)cy2 / (iterations * p.second));
   printf("%.2f cycles per structural character.\n",
          (double)cy2 / (iterations * pj.n_structural_indexes));
 
   printf(
-      "stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f)\n",
-      cl3 / iterations, cy3 /iterations, 100. * cy3 / total, (double)cl3 / cy3, mis3/iterations, (double)cy3/mis3);
+      "stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache accesses: %10lu (failure %10lu)\n",
+      cl3 / iterations, cy3 /iterations, 100. * cy3 / total, (double)cl3 / cy3, mis3/iterations, (double)cy3/mis3, cref3 / iterations, cmis3 / iterations);
   printf(" stage 3 runs at %.2f cycles per input byte and ",
          (double)cy3 / (iterations * p.second));
   printf("%.2f cycles per structural character.\n",
