@@ -183,9 +183,6 @@ start_continue:
 
 object_begin:
   DEBUG_PRINTF("in object_begin\n");
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
-  //pj.write_tape(0, c); // this is a bad spot to do this performance-wise
-
   UPDATE_CHAR();
   switch (c) {
   case '"': {
@@ -254,7 +251,8 @@ object_key_state:
     break;
   }
   case '{': {
-    pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); // here the compilers knows what c is so this gets optimized
     // we have not yet encountered } so we need to come back for it
     pj.ret_address[depth] = &&object_continue;
     // we found an object inside an object, so we need to increment the depth
@@ -266,7 +264,8 @@ object_key_state:
     goto object_begin;
   }
   case '[': {
-    pj.write_tape(0, c);  // strangely, moving this to array_begin slows things down
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c);  // here the compilers knows what c is so this gets optimized
     // we have not yet encountered } so we need to come back for it
     pj.ret_address[depth] = &&object_continue;
     // we found an array inside an object, so we need to increment the depth
@@ -314,7 +313,7 @@ scope_end:
   ////////////////////////////// ARRAY STATES /////////////////////////////
 array_begin:
   DEBUG_PRINTF("in array_begin\n");
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
+  //pj.containing_scope_offset[depth] = pj.get_current_loc();
   UPDATE_CHAR();
   if (c == ']') {
     goto scope_end; // could also go to array_continue
@@ -372,7 +371,8 @@ main_array_switch:
   }
   case '{': {
     // we have not yet encountered ] so we need to come back for it
-    pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); //  here the compilers knows what c is so this gets optimized
     pj.ret_address[depth] = &&array_continue;
     // we found an object inside an array, so we need to increment the depth
     depth++;
@@ -384,7 +384,8 @@ main_array_switch:
   }
   case '[': {
     // we have not yet encountered ] so we need to come back for it
-    pj.write_tape(0, c); // strangely, moving this to array_begin slows things down
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); // here the compilers knows what c is so this gets optimized
     pj.ret_address[depth] = &&array_continue;
     // we found an array inside an array, so we need to increment the depth
     depth++;
@@ -414,12 +415,6 @@ array_continue:
 
 succeed:
   DEBUG_PRINTF("in succeed, depth = %d \n", depth);
-  // we annotate the root node
-  // depth--;
-  // next line tells the root node how to go to the end
-  pj.annotate_previousloc(pj.containing_scope_offset[depth],
-                          pj.get_current_loc());
-  // next line allows us to go back to the start
   if(depth != 0) {
     printf("internal bug\n");
     abort();

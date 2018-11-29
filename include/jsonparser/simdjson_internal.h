@@ -108,7 +108,6 @@ public:
     int64_t intval;
     double doubleval;
     for (; tapeidx < howmany; tapeidx++) {
-      // printf("\ncounter: %d\n", tapeidx);
       tape_val = tape[tapeidx];
       u64 payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
