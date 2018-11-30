@@ -121,5 +121,6 @@ int main(int argc, char *argv[]) {
   BEST_TIME("memcpy            ", (memcpy(buffer, p.first, p.second) == buffer), true, , repeat, volume, true);
   free(p.first);
   free(ast_buffer);
+  free(buffer);
   deallocate_ParsedJson(pj_ptr);
 }

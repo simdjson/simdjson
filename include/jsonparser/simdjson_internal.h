@@ -64,7 +64,8 @@ public:
   size_t bytecapacity;  // indicates how many bits are meant to be supported by
                         // structurals
   size_t depthcapacity; // how deep we can go
-
+  size_t tapecapacity;
+  size_t stringcapacity; 
   u32 current_loc;
   u8 *structurals;
   u32 n_structural_indexes;
@@ -77,19 +78,15 @@ public:
   u8 *string_buf; // should be at least bytecapacity
   u8 *current_string_buf_loc;
 
-  u8 *number_buf; // holds either doubles or longs, really // should be at least
-                  // 4 * bytecapacity
-  u8 *current_number_buf_loc;
-
   // this should be called when parsing (right before writing the tapes)
   void init() {
     current_string_buf_loc = string_buf;
-    current_number_buf_loc = number_buf;
     current_loc = 0;
   }
 
   // print the json to stdout (should be valid)
-  void printjson() {
+  // return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
+  bool printjson() {
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx];
     u8 type = (tape_val >> 56);
@@ -98,15 +95,17 @@ public:
       howmany = tape_val & JSONVALUEMASK;
     } else {
       printf("Error: no starting root node?");
-      abort();
+      return false;
+    }
+    if(howmany > tapecapacity)  {
+      printf("We may be exceeding the tape capacity. Is this a valid document?\n");
+      return false;
     }
     tapeidx++;
     bool *inobject = new bool[depthcapacity];
     size_t *inobjectidx = new size_t[depthcapacity];
     int depth = 1; // only root at level 0
     inobjectidx[depth] = 0;
-    int64_t intval;
-    double doubleval;
     for (; tapeidx < howmany; tapeidx++) {
       tape_val = tape[tapeidx];
       u64 payload = tape_val & JSONVALUEMASK;
@@ -130,12 +129,12 @@ public:
         putchar('"');
         break;
       case 'l': // we have a long int
-        memcpy(&intval, number_buf + payload, sizeof(intval));
-        printf("%" PRId64, intval);
+        if(tapeidx + 1 >= howmany) return false;
+        printf("%" PRId64, (int64_t) tape[tapeidx++]);
         break;
       case 'd': // we have a double
-        memcpy(&doubleval, number_buf + payload, sizeof(doubleval));
-        printf("%f", doubleval);
+        if(tapeidx + 1 >= howmany) return false;
+        printf("%f", *((double * )& tape[tapeidx++]));
         break;
       case 'n': // we have a null
         printf("null");
@@ -170,11 +169,13 @@ public:
         break;
       case 'r': // we start and end with the root node
         printf("should we be hitting the root node?\n");
+        return false;
       default:
         printf("bug %c\n", type);
-        abort();
+        return false;
       }
     }
+    return true;
   }
 
   // all elements are stored on the tape using a 64-bit word.
@@ -197,15 +198,13 @@ public:
   }
 
   really_inline void write_tape_s64(s64 i) {
-    write_tape(current_number_buf_loc - number_buf, 'l');
-    memcpy(current_number_buf_loc, &i, sizeof(s64));
-    current_number_buf_loc += sizeof(s64);
+    write_tape(0, 'l');
+    tape[current_loc++] =*( (u64*) &i);
   }
 
   really_inline void write_tape_double(double d) {
-    write_tape(current_number_buf_loc - number_buf, 'd');
-    memcpy(current_number_buf_loc, &d, sizeof(double));
-    current_number_buf_loc += sizeof(double);
+    write_tape(0, 'd');
+    tape[current_loc++] =*( (u64*) &d);
   }
 
   really_inline u32 get_current_loc() { return current_loc; }
