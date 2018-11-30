@@ -4,7 +4,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#ifdef _MSC_VER
+/* Microsoft C/C++-compatible compiler */
+#include <intrin.h>
+#else
 #include <x86intrin.h>
+#endif
 #include <string.h>
 /*
  * legal utf-8 byte sequence

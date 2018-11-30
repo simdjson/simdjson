@@ -11,7 +11,7 @@
 #define JSON_TEST_NUMBERS
 #endif
 
-#include "jsonparser/common_defs.h"
+#include "simdjson/common_defs.h"
 
 int parse_error;
 char *fullpath;
@@ -82,7 +82,7 @@ inline void foundFloat(double result, const u8 *buf) {
   }
 }
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 #include "src/stage34_unified.cpp"
 
 /**

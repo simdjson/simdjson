@@ -2,14 +2,13 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 
 #include <cassert>
 
-#include "jsonparser/common_defs.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
 
 #ifndef NO_PDEP_PLEASE
 #define NO_PDEP_PLEASE // though this is not always a win, it seems to 

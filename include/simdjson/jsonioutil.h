@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include "common_defs.h"
+#include "simdjson/common_defs.h"
 
 // if you must provide a pointer to some data, create it with this function:
 // length is the max. size in bytes of the string

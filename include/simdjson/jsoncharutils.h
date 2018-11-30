@@ -1,7 +1,7 @@
 #pragma once
 
-#include "jsonparser/common_defs.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
 
 // structural chars here are
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
@@ -108,5 +108,4 @@ inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
   // will return 0 when the code point was too large.
   return 0; // bad r
 }
-
 

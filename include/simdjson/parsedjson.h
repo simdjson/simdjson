@@ -6,50 +6,15 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 
 #include <iomanip>
 #include <iostream>
+
+#include "simdjson/jsonformatutils.h"
+
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF;
-
-static inline void print_with_escapes(const unsigned char *src) {
-  while (*src) {
-    switch (*src) {
-    case '\n':
-      putchar('\\');
-      putchar('n');
-      break;
-    case '\"':
-      putchar('\\');
-      putchar('"');
-      break;
-    case '\t':
-      putchar('\\');
-      putchar('t');
-      break;
-    case '\\':
-      putchar('\\');
-      putchar('\\');
-      break;
-    default:
-      if (*src <= 0x1F) {
-        printf("\\u%x", *src);
-      } else
-        putchar(*src);
-    }
-    src++;
-  }
-}
-
-// const u32 MAX_DEPTH = 2048;
-// const u32 DEPTH_SAFETY_MARGIN = 32; // should be power-of-2 as we check this
-// with a modulo in our hot stage 3 loop
-// const u32 START_DEPTH = DEPTH_SAFETY_MARGIN;
-// const u32 REDLINE_DEPTH = MAX_DEPTH - DEPTH_SAFETY_MARGIN;
-// const size_t MAX_TAPE_ENTRIES = 127 * 1024;
-// const size_t MAX_TAPE = MAX_DEPTH * MAX_TAPE_ENTRIES;
 
 /////////////
 // TODO: move this to be more like a real class
@@ -114,7 +79,7 @@ public:
         if ((inobjectidx[depth] > 0) && (type != ']'))
           printf(",  ");
         inobjectidx[depth]++;
-      } else if (inobject) {
+      } else { //if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
             (type != '}'))
           printf(",  ");
@@ -204,6 +169,8 @@ public:
 
   really_inline void write_tape_double(double d) {
     write_tape(0, 'd');
+    static_assert(sizeof(d) == sizeof(tape[current_loc]),
+                  "mismatch size");
     tape[current_loc++] =*( (u64*) &d);
   }
 

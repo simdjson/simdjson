@@ -1,14 +1,15 @@
 #include <unistd.h>
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 #include "benchmark.h"
 
-// #define RAPIDJSON_SSE2 // bad
-// #define RAPIDJSON_SSE42 // bad
+// #define RAPIDJSON_SSE2 // bad for performance
+// #define RAPIDJSON_SSE42 // bad for performance
 #include "rapidjson/document.h"
-#include "rapidjson/reader.h" // you have to check in the submodule
+#include "rapidjson/reader.h" 
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+
 #include "json11.cpp"
 #include "sajson.h"
 #include "fastjson.cpp"
@@ -18,7 +19,6 @@ extern "C"
 {
 #include "ultrajsondec.c"
 #include "ujdecode.h"
-
 }
 using namespace rapidjson;
 using namespace std;

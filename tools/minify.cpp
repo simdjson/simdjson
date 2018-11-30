@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "jsonparser/jsonioutil.h"
-#include "jsonparser/jsonminifier.h"
+#include "simdjson/jsonioutil.h"
+#include "simdjson/jsonminifier.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {

@@ -7,7 +7,7 @@ Goal: Speed up the parsing of JSON per se.
 ## Code example
 
 ```C
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 /...
 

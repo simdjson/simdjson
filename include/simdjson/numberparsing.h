@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common_defs.h"
-#include "jsonparser/jsoncharutils.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/jsoncharutils.h"
+#include "simdjson/parsedjson.h"
 
 static const double power_of_ten[] = {
     1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,

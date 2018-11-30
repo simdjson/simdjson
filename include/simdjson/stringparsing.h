@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common_defs.h"
-#include "jsonparser/simdjson_internal.h"
-#include "jsonparser/jsoncharutils.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
+#include "simdjson/jsoncharutils.h"
 
 
 // begin copypasta

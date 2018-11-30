@@ -2,14 +2,13 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 
 #include <cassert>
 
-#include "jsonparser/common_defs.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
 
 #define UTF8VALIDATE
 // It seems that many parsers do UTF-8 validation.
@@ -17,7 +16,7 @@
 // allows it. It appears that sajson might do utf-8
 // validation
 #ifdef UTF8VALIDATE
-#include "jsonparser/simdutf8check.h"
+#include "simdjson/simdutf8check.h"
 #endif
 using namespace std;
 
@@ -156,7 +155,7 @@ WARN_UNUSED
     u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63);
+    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
     dumpbits(quote_mask, "quote_mask");
 
     // How do we build up a user traversable data structure

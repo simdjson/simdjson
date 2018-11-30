@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common_defs.h"
-#include "simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
 
 void init_state_machine();
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "common_defs.h"
-#include "jsonioutil.h"
-#include "simdjson_internal.h"
-#include "stage1_find_marks.h"
-#include "stage2_flatten.h"
-#include "stage34_unified.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/jsonioutil.h"
+#include "simdjson/parsedjson.h"
+#include "simdjson/stage1_find_marks.h"
+#include "simdjson/stage2_flatten.h"
+#include "simdjson/stage34_unified.h"
 
 // Allocate a ParsedJson structure that can support document
 // up to len bytes.

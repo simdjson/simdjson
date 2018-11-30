@@ -2,18 +2,17 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 
 #include <cassert>
 #include <cstring>
 
-#include "jsonparser/common_defs.h"
-#include "jsonparser/jsoncharutils.h"
-#include "jsonparser/numberparsing.h"
-#include "jsonparser/simdjson_internal.h"
-#include "jsonparser/stringparsing.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/jsoncharutils.h"
+#include "simdjson/numberparsing.h"
+#include "simdjson/parsedjson.h"
+#include "simdjson/stringparsing.h"
 
 #include <iostream>
 //#define DEBUG

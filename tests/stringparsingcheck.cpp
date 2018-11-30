@@ -11,7 +11,7 @@
 #define JSON_TEST_STRINGS
 #endif
 
-#include "jsonparser/common_defs.h"
+#include "simdjson/common_defs.h"
 
 char *fullpath;
 
@@ -281,7 +281,7 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
   }
 }
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 #include "src/stage34_unified.cpp"
 
 /**

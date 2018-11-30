@@ -2,9 +2,9 @@
 #include <iostream>
 
 #include "benchmark.h"
-#include "jsonparser/jsonioutil.h"
-#include "jsonparser/jsonminifier.h"
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonioutil.h"
+#include "simdjson/jsonminifier.h"
+#include "simdjson/jsonparser.h"
 
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
