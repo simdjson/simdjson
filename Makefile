@@ -17,7 +17,9 @@ else
 	CFLAGS += -O3
 endif
 
-EXECUTABLES=parse jsoncheck numberparsingcheck stringparsingcheck minifiercompetition parsingcompetition minify allparserscheckfile
+MAINEXECUTABLES=parse minify
+TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
+COMPARISONEXECUTABLES=minifiercompetition parsingcompetition  allparserscheckfile
 
 HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_flatten.h include/simdjson/stage34_unified.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -34,7 +36,7 @@ UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
 
 LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE)
 OBJECTS=ujdecode.o
-all: $(LIBS) $(EXECUTABLES)
+all:  $(MAINEXECUTABLES)
 
 test: jsoncheck numberparsingcheck stringparsingcheck
 	./numberparsingcheck
@@ -105,7 +107,7 @@ cppcheck:
 
 
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLES) $(EXTRA_EXECUTABLES)
+	rm -f $(OBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES)
 
 cleandist:
-	rm -f $(OBJECTS) $(EXECUTABLES) $(EXTRA_EXECUTABLES)
+	rm -f $(OBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES)

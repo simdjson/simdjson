@@ -2,6 +2,7 @@
 
 
 // parse a document found in buf, need to preallocate ParsedJson.
+WARN_UNUSED
 bool json_parse(const u8 *buf, size_t len, ParsedJson &pj) {
   if (pj.bytecapacity < len) {
     std::cerr << "Your ParsedJson cannot support documents that big: " << len

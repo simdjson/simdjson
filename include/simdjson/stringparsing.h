@@ -38,6 +38,7 @@ static const u8 escape_map[256] = {
 // dest will advance a variable amount (return via pointer)
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
+WARN_UNUSED
 really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
   u32 code_point = hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
@@ -57,6 +58,7 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
   return offset > 0;
 }
 
+WARN_UNUSED
 really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const u32 depth, u32 offset) {
   using namespace std;

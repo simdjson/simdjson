@@ -296,14 +296,14 @@ WARN_UNUSED
     // must record the carry-out of our odd-carries out of bit 63; this
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
-    bool iter_ends_odd_backslash =
+    //bool iter_ends_odd_backslash =
         __builtin_uaddll_overflow(bs_bits, odd_starts, &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
                                       // if we had an odd-numbered run at the
                                       // end of the previous iteration
-    prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
+    //prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
     u64 even_carry_ends = even_carries & ~bs_bits;
     u64 odd_carry_ends = odd_carries & ~bs_bits;
     u64 even_start_odd_end = even_carry_ends & odd_bits;
@@ -320,7 +320,7 @@ WARN_UNUSED
     u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
+    //prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
 
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
@@ -393,7 +393,7 @@ WARN_UNUSED
     // psuedo-structural character
     u64 pseudo_pred = structurals | whitespace;
     u64 shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
-    prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
+    //prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
     u64 pseudo_structurals =
         shifted_pseudo_pred & (~whitespace) & (~quote_mask);
     structurals |= pseudo_structurals;

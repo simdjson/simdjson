@@ -16,106 +16,103 @@
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF;
 
-
 struct ParsedJson {
 public:
   size_t bytecapacity;  // indicates how many bits are meant to be supported by
                         // structurals
   size_t depthcapacity; // how deep we can go
   size_t tapecapacity;
-  size_t stringcapacity; 
+  size_t stringcapacity;
   u32 current_loc;
   u8 *structurals;
   u32 n_structural_indexes;
   u32 *structural_indexes;
 
-  u64 *tape; 
+  u64 *tape;
   u32 *containing_scope_offset;
   void **ret_address;
 
   u8 *string_buf; // should be at least bytecapacity
   u8 *current_string_buf_loc;
 
-  // create a ParsedJson container with zero capacity, call allocateCapacity to 
+  // create a ParsedJson container with zero capacity, call allocateCapacity to
   // allocate memory
-  ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0), 
-    current_loc(0), structurals(NULL), n_structural_indexes(0), structural_indexes(NULL),
-    tape(NULL), containing_scope_offset(NULL), ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL)  {
-  }
+  ParsedJson()
+      : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
+        current_loc(0), structurals(NULL), n_structural_indexes(0),
+        structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
+        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL) {}
 
-  // if needed, allocate memory so that the object is able to process JSON documents having up to len butes and maxdepth "depth"
+  // if needed, allocate memory so that the object is able to process JSON
+  // documents having up to len butes and maxdepth "depth"
+  WARN_UNUSED
   inline bool allocateCapacity(size_t len, size_t maxdepth) {
-    if((maxdepth == 0) || (len == 0)) {
+    if ((maxdepth == 0) || (len == 0)) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if(len > 0) {
-      if((len <= bytecapacity) && (depthcapacity<maxdepth)) return true;
+    if (len > 0) {
+      if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+        return true;
       deallocate();
     }
-  bytecapacity = 0; // will only set it to len after allocations are a success
-  if (posix_memalign((void **)&structurals, 8, ROUNDUP_N(len, 64) / 8)) {
-    std::cerr << "Could not allocate memory for structurals" << std::endl;
-    return false;
-  };
-  n_structural_indexes = 0;
-  u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes = new u32[max_structures];
+    bytecapacity = 0; // will only set it to len after allocations are a success
+    if (posix_memalign((void **)&structurals, 8, ROUNDUP_N(len, 64) / 8)) {
+      std::cerr << "Could not allocate memory for structurals" << std::endl;
+      return false;
+    };
+    n_structural_indexes = 0;
+    u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
+    structural_indexes = new u32[max_structures];
 
-  if (structural_indexes == NULL) {
-    std::cerr << "Could not allocate memory for structural_indexes"
-              << std::endl;
-    delete[] structurals;
-    return false;
+    if (structural_indexes == NULL) {
+      std::cerr << "Could not allocate memory for structural_indexes"
+                << std::endl;
+      delete[] structurals;
+      return false;
+    }
+    size_t localtapecapacity = ROUNDUP_N(len, 64);
+    size_t localstringcapacity = ROUNDUP_N(len, 64);
+    string_buf = new u8[localstringcapacity];
+    tape = new u64[localtapecapacity];
+    containing_scope_offset = new u32[maxdepth];
+    ret_address = new void *[maxdepth];
+
+    if ((string_buf == NULL) || (tape == NULL) ||
+        (containing_scope_offset == NULL) || (ret_address == NULL)) {
+      std::cerr << "Could not allocate memory" << std::endl;
+      delete[] ret_address;
+      delete[] containing_scope_offset;
+      delete[] tape;
+      delete[] string_buf;
+      delete[] structural_indexes;
+      delete[] structurals;
+      return false;
+    }
+
+    bytecapacity = len;
+    depthcapacity = maxdepth;
+    tapecapacity = localtapecapacity;
+    stringcapacity = localstringcapacity;
+    return true;
   }
-  size_t localtapecapacity = ROUNDUP_N(len, 64); 
-  size_t localstringcapacity = ROUNDUP_N(len, 64);
-  string_buf = new u8[localstringcapacity];
-  tape = new u64[localtapecapacity];
-  containing_scope_offset = new u32[maxdepth];
-  ret_address = new void*[maxdepth];
 
-  if ((string_buf == NULL) || (tape == NULL) 
-    || (containing_scope_offset == NULL) || (ret_address == NULL) )  {
-    std::cerr << "Could not allocate memory"
-              << std::endl;
+  // deallocate memory and set capacity to zero, called automatically by the
+  // destructor
+  void deallocate() {
+    bytecapacity = 0;
+    depthcapacity = 0;
+    tapecapacity = 0;
+    stringcapacity = 0;
     delete[] ret_address;
     delete[] containing_scope_offset;
     delete[] tape;
     delete[] string_buf;
     delete[] structural_indexes;
-    delete[] structurals;
-    return false;
+    free(structurals);
   }
 
-  bytecapacity = len;
-  depthcapacity =  maxdepth;
-  tapecapacity = localtapecapacity;
-  stringcapacity = localstringcapacity;
-  return true;
-
-  }
-
-
-
-// deallocate memory and set capacity to zero, called automatically by the destructor
-void deallocate() {
-  bytecapacity = 0;
-  depthcapacity =  0;
-  tapecapacity = 0;
-  stringcapacity = 0;
-  delete[] ret_address;
-  delete[] containing_scope_offset;
-  delete[] tape;
-  delete[] string_buf;
-  delete[] structural_indexes;
-  free(structurals);
-}
-
-~ParsedJson() {
-  deallocate() ;
-}
-
+  ~ParsedJson() { deallocate(); }
 
   // this should be called when parsing (right before writing the tapes)
   void init() {
@@ -124,7 +121,8 @@ void deallocate() {
   }
 
   // print the json to stdout (should be valid)
-  // return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
+  // return false if the tape is likely wrong (e.g., you did not parse a valid
+  // JSON).
   bool printjson() {
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx];
@@ -136,8 +134,9 @@ void deallocate() {
       printf("Error: no starting root node?");
       return false;
     }
-    if(howmany > tapecapacity)  {
-      printf("We may be exceeding the tape capacity. Is this a valid document?\n");
+    if (howmany > tapecapacity) {
+      printf(
+          "We may be exceeding the tape capacity. Is this a valid document?\n");
       return false;
     }
     tapeidx++;
@@ -153,7 +152,7 @@ void deallocate() {
         if ((inobjectidx[depth] > 0) && (type != ']'))
           printf(",  ");
         inobjectidx[depth]++;
-      } else { //if (inobject) {
+      } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
             (type != '}'))
           printf(",  ");
@@ -168,12 +167,14 @@ void deallocate() {
         putchar('"');
         break;
       case 'l': // we have a long int
-        if(tapeidx + 1 >= howmany) return false;
-        printf("%" PRId64, (int64_t) tape[tapeidx++]);
+        if (tapeidx + 1 >= howmany)
+          return false;
+        printf("%" PRId64, (int64_t)tape[tapeidx++]);
         break;
       case 'd': // we have a double
-        if(tapeidx + 1 >= howmany) return false;
-        printf("%f", *((double * )& tape[tapeidx++]));
+        if (tapeidx + 1 >= howmany)
+          return false;
+        printf("%f", *((double *)&tape[tapeidx++]));
         break;
       case 'n': // we have a null
         printf("null");
@@ -208,12 +209,18 @@ void deallocate() {
         break;
       case 'r': // we start and end with the root node
         printf("should we be hitting the root node?\n");
+        free(inobject);
+        free(inobjectidx);
         return false;
       default:
         printf("bug %c\n", type);
+        free(inobject);
+        free(inobjectidx);
         return false;
       }
     }
+    free(inobject);
+    free(inobjectidx);
     return true;
   }
 
@@ -238,14 +245,13 @@ void deallocate() {
 
   really_inline void write_tape_s64(s64 i) {
     write_tape(0, 'l');
-    tape[current_loc++] =*( (u64*) &i);
+    tape[current_loc++] = *((u64 *)&i);
   }
 
   really_inline void write_tape_double(double d) {
     write_tape(0, 'd');
-    static_assert(sizeof(d) == sizeof(tape[current_loc]),
-                  "mismatch size");
-    tape[current_loc++] =*( (u64*) &d);
+    static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
+    tape[current_loc++] = *((u64 *)&d);
   }
 
   really_inline u32 get_current_loc() { return current_loc; }
@@ -278,8 +284,8 @@ void deallocate() {
     bool down(); // valid if we're at a [ or { call site; moves us to header of
                  // that scope
     // void to_start_scope();            // move us to the start of our current
-    // scope; always succeeds void to_end_scope();              // move us to the
-    // start of our current scope; always succeeds
+    // scope; always succeeds void to_end_scope();              // move us to
+    // the start of our current scope; always succeeds
 
     // these navigation elements move us across scope if need be, so allow us to
     // iterate over everything at a given depth

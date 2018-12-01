@@ -128,12 +128,19 @@ int main(int argc, char *argv[]) {
   BEST_TIME("sajson despaced", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, true);
 
   ParsedJson pj;
-  pj.allocateCapacity(p.size(), 1024);
+  bool isallocok = pj.allocateCapacity(p.size(), 1024);
+  if(!isallocok) {
+    printf("failed to allocate memory\n");
+    return EXIT_FAILURE;
+  } 
   BEST_TIME("json_parse orig", json_parse((const u8*)buffer, p.size(), pj), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   
   ParsedJson pj2;
-  pj2.allocateCapacity(p.size(), 1024);
-
+  bool isallocok2 = pj2.allocateCapacity(p.size(), 1024);
+  if(!isallocok2) {
+    printf("failed to allocate memory\n");
+    return EXIT_FAILURE;
+  } 
 
   BEST_TIME("json_parse despaced", json_parse((const u8*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, true);
 
