@@ -79,6 +79,10 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
         // by UPDATE_CHAR macro
   u32 depth = 0; // could have an arbitrary starting depth
   pj.init();
+  if(pj.bytecapacity < len) {
+      printf("insufficient capacity\n");
+      return false;
+  }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
   {                                                                            \

@@ -59,21 +59,21 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p;
+      std::string_view p;
       try {
         p = get_corpus(fullpath);
       } catch (const std::exception& e) { 
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
-      if(pj_ptr == NULL) {
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if(!allocok) {
         std::cerr<< "can't allocate memory"<<std::endl;
         return false;
       }
       ++howmany;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
@@ -93,9 +93,7 @@ bool validate(const char *dirname) {
         printf("File %s %s.\n", name,
                isok ? " is valid JSON " : " is not valid JSON");
       }
-      free(p.first);
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
     }
   }
   printf("%zu files checked.\n", howmany);

@@ -8,10 +8,14 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     exit(1);
   }
-  std::pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
-  size_t outlength =
-      jsonminify(p.first, p.second, p.first);
-  p.first[outlength] = '\0';
-  printf("%s",p.first);
-  free(p.first);
+  simdjsonstring p;
+  std::string filename = argv[argc - 1];
+  try{
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << filename << std::endl;
+        return EXIT_FAILURE;
+  }
+  jsonminify(p,  &p[0]);
+  printf("%s",p.data());
 }

@@ -16,14 +16,7 @@
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF;
 
-/////////////
-// TODO: move this to be more like a real class
-// currently, you need to create it like so...
-// ParsedJson *pj_ptr = allocate_ParsedJson(numberofbytes); // allocate memory
-// for parsing up to numberofbytes and we clear it like so
-// deallocate_ParsedJson(pj_ptr); That's obviously not very C++-ish. It should
-// be trivial to add a constructor and a destructor.
-////////////
+
 struct ParsedJson {
 public:
   size_t bytecapacity;  // indicates how many bits are meant to be supported by
@@ -42,6 +35,87 @@ public:
 
   u8 *string_buf; // should be at least bytecapacity
   u8 *current_string_buf_loc;
+
+  // create a ParsedJson container with zero capacity, call allocateCapacity to 
+  // allocate memory
+  ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0), 
+    current_loc(0), structurals(NULL), n_structural_indexes(0), structural_indexes(NULL),
+    tape(NULL), containing_scope_offset(NULL), ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL)  {
+  }
+
+  // if needed, allocate memory so that the object is able to process JSON documents having up to len butes and maxdepth "depth"
+  inline bool allocateCapacity(size_t len, size_t maxdepth) {
+    if((maxdepth == 0) || (len == 0)) {
+      std::cerr << "capacities must be non-zero " << std::endl;
+      return false;
+    }
+    if(len > 0) {
+      if((len <= bytecapacity) && (depthcapacity<maxdepth)) return true;
+      deallocate();
+    }
+  bytecapacity = 0; // will only set it to len after allocations are a success
+  if (posix_memalign((void **)&structurals, 8, ROUNDUP_N(len, 64) / 8)) {
+    std::cerr << "Could not allocate memory for structurals" << std::endl;
+    return false;
+  };
+  n_structural_indexes = 0;
+  u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
+  structural_indexes = new u32[max_structures];
+
+  if (structural_indexes == NULL) {
+    std::cerr << "Could not allocate memory for structural_indexes"
+              << std::endl;
+    delete[] structurals;
+    return false;
+  }
+  size_t localtapecapacity = ROUNDUP_N(len, 64); 
+  size_t localstringcapacity = ROUNDUP_N(len, 64);
+  string_buf = new u8[localstringcapacity];
+  tape = new u64[localtapecapacity];
+  containing_scope_offset = new u32[maxdepth];
+  ret_address = new void*[maxdepth];
+
+  if ((string_buf == NULL) || (tape == NULL) 
+    || (containing_scope_offset == NULL) || (ret_address == NULL) )  {
+    std::cerr << "Could not allocate memory"
+              << std::endl;
+    delete[] ret_address;
+    delete[] containing_scope_offset;
+    delete[] tape;
+    delete[] string_buf;
+    delete[] structural_indexes;
+    delete[] structurals;
+    return false;
+  }
+
+  bytecapacity = len;
+  depthcapacity =  maxdepth;
+  tapecapacity = localtapecapacity;
+  stringcapacity = localstringcapacity;
+  return true;
+
+  }
+
+
+
+// deallocate memory and set capacity to zero, called automatically by the destructor
+void deallocate() {
+  bytecapacity = 0;
+  depthcapacity =  0;
+  tapecapacity = 0;
+  stringcapacity = 0;
+  delete[] ret_address;
+  delete[] containing_scope_offset;
+  delete[] tape;
+  delete[] string_buf;
+  delete[] structural_indexes;
+  free(structurals);
+}
+
+~ParsedJson() {
+  deallocate() ;
+}
+
 
   // this should be called when parsing (right before writing the tapes)
   void init() {

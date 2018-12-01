@@ -123,7 +123,7 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p;
+      std::string_view p;
       try {
         p = get_corpus(fullpath);
       } catch (const std::exception& e) { 
@@ -131,8 +131,9 @@ bool validate(const char *dirname) {
         return EXIT_FAILURE;
       }
       // terrible hack but just to get it working
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
-      if (pj_ptr == NULL) {
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -140,8 +141,7 @@ bool validate(const char *dirname) {
       int_count = 0;
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "
                "total numbers: %10zu \n",
@@ -149,9 +149,7 @@ bool validate(const char *dirname) {
                float_count, invalid_count,
                int_count + float_count + invalid_count);
       }
-      free(p.first);
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
     }
   }
   if ((parse_error & PARSE_ERROR) != 0) {

@@ -76,8 +76,8 @@ WARN_UNUSED
     }
     cout << "|  ... input\n";
 #endif
-    m256 input_lo = _mm256_load_si256((const m256 *)(buf + idx + 0));
-    m256 input_hi = _mm256_load_si256((const m256 *)(buf + idx + 32));
+    m256 input_lo = _mm256_loadu_si256((const m256 *)(buf + idx + 0));
+    m256 input_hi = _mm256_loadu_si256((const m256 *)(buf + idx + 32));
 #ifdef UTF8VALIDATE
     m256 highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
@@ -252,9 +252,16 @@ WARN_UNUSED
   if(buf[len] != '\0') {
       std::cerr << "Your string should be NULL terminated." << std::endl;
       return false;
-
   }
-  pj.structural_indexes[pj.n_structural_indexes++] = len; // the final NULL is used as a pseudo-structural character
+  // we are going to zero out everything after len:
+  /*size_t count_last_64bits = len % 64;
+  if(count_last_64bits != 0) { // we have a "final" word where only count_last_64bits matter
+      u64 lastword = *(u64 *)(pj.structurals + len / 8);
+      lastword &= ( UINT64_C(1) << count_last_64bits) - 1;
+      *(u64 *)(pj.structurals + len / 8) = lastword;
+  }*/
+
+  //pj.structural_indexes[pj.n_structural_indexes++] = len; // the final NULL is used as a pseudo-structural character
 #ifdef UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);
 #else

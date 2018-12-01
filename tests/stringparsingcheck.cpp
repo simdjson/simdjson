@@ -325,15 +325,16 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p;
+      std::string_view p;
       try {
         p = get_corpus(fullpath);
       } catch (const std::exception& e) { 
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }      
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
-      if (pj_ptr == NULL) {
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -341,8 +342,7 @@ bool validate(const char *dirname) {
       good_string = 0;
       total_string_length = 0;
       empty_string = 0;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "
@@ -355,9 +355,7 @@ bool validate(const char *dirname) {
                isok ? " is valid     " : " is not valid ", bad_string);
       }
       total_strings += bad_string + good_string;
-      free(p.first);
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
     }
   }
   printf("%zu strings checked.\n", total_strings);

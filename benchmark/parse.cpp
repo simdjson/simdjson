@@ -65,22 +65,27 @@ int main(int argc, char *argv[]) {
     cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
   if(verbose) cout << "[verbose] loading " << filename << endl;
-  pair<u8 *, size_t> p;
+  simdjsonstring p;
   try {
     p = get_corpus(filename);
   } catch (const std::exception& e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.second << " bytes)" << endl;
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second, 1024);
-  ParsedJson &pj(*pj_ptr);
+  if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.size() << " bytes)" << endl;
+  ParsedJson pj;
+  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  if(!allocok) {
+    std::cerr << "failed to allocate memory" << std::endl;
+    return EXIT_FAILURE;
+  }
+
   if(verbose) cout << "[verbose] allocated memory for parsed JSON " << endl;
 
 #if defined(DEBUG)
   const u32 iterations = 1;
 #else
-  const u32 iterations = forceoneiteration ? 1 : ( p.second < 1 * 1000 * 1000? 1000 : 10);
+  const u32 iterations = forceoneiteration ? 1 : ( p.size() < 1 * 1000 * 1000? 1000 : 10);
 #endif
   vector<double> res;
   res.resize(iterations);
@@ -113,7 +118,7 @@ int main(int argc, char *argv[]) {
 #ifndef SQUASH_COUNTERS
     unified.start();
 #endif
-    isok = find_structural_bits(p.first, p.second, pj);
+    isok = find_structural_bits(p.c_str(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy1 += results[0];
@@ -127,7 +132,7 @@ int main(int argc, char *argv[]) {
     }
     unified.start();
 #endif
-    isok = isok && flatten_indexes(p.second, pj);
+    isok = isok && flatten_indexes(p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy2 += results[0];
@@ -142,7 +147,7 @@ int main(int argc, char *argv[]) {
     unified.start();
 #endif
 
-    isok = isok && unified_machine(p.first, p.second, pj);
+    isok = isok && unified_machine(p.c_str(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy3 += results[0];
@@ -163,21 +168,21 @@ int main(int argc, char *argv[]) {
 
 #ifndef SQUASH_COUNTERS
   printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
-         p.second, pj.n_structural_indexes,
-         (double)pj.n_structural_indexes / p.second);
+         p.size(), pj.n_structural_indexes,
+         (double)pj.n_structural_indexes / p.size());
   unsigned long total = cy1 + cy2 + cy3;
 
   printf(
       "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu (cycles/mis.branch %.2f) cache accesses: %10lu (failure %10lu)\n",
       cl1 / iterations, cy1 / iterations, 100. * cy1 / total, (double)cl1 / cy1, mis1/iterations, (double)cy1/mis1, cref1 / iterations, cmis1 / iterations);
   printf(" stage 1 runs at %.2f cycles per input byte.\n",
-         (double)cy1 / (iterations * p.second));
+         (double)cy1 / (iterations * p.size()));
 
   printf(
       "stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache accesses: %10lu (failure %10lu)\n",
       cl2 / iterations, cy2 / iterations, 100. * cy2 / total, (double)cl2 / cy2, mis2/iterations, (double)cy2/mis2, cref2 /iterations, cmis2 / iterations);
   printf(" stage 2 runs at %.2f cycles per input byte and ",
-         (double)cy2 / (iterations * p.second));
+         (double)cy2 / (iterations * p.size()));
   printf("%.2f cycles per structural character.\n",
          (double)cy2 / (iterations * pj.n_structural_indexes));
 
@@ -185,21 +190,18 @@ int main(int argc, char *argv[]) {
       "stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache accesses: %10lu (failure %10lu)\n",
       cl3 / iterations, cy3 /iterations, 100. * cy3 / total, (double)cl3 / cy3, mis3/iterations, (double)cy3/mis3, cref3 / iterations, cmis3 / iterations);
   printf(" stage 3 runs at %.2f cycles per input byte and ",
-         (double)cy3 / (iterations * p.second));
+         (double)cy3 / (iterations * p.size()));
   printf("%.2f cycles per structural character.\n",
          (double)cy3 / (iterations * pj.n_structural_indexes));
 
   printf(" all stages: %.2f cycles per input byte.\n",
-         (double)total / (iterations * p.second));
+         (double)total / (iterations * p.size()));
 #endif
-  //    colorfuldisplay(pj, p.first);
   double min_result = *min_element(res.begin(), res.end());
-  cout << "Min:  " << min_result << " bytes read: " << p.second
-       << " Gigabytes/second: " << (p.second) / (min_result * 1000000000.0)
+  cout << "Min:  " << min_result << " bytes read: " << p.size()
+       << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
        << "\n";
-  if(dump) pj_ptr->printjson();
-  free(p.first);
-  deallocate_ParsedJson(pj_ptr);
+  if(dump) pj.printjson();
   if (!isok) {
     printf(" Parsing failed. \n ");
     return EXIT_FAILURE;

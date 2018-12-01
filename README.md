@@ -12,15 +12,13 @@ Goal: Speed up the parsing of JSON per se.
 /...
 
 const char * filename = ... //
-pair<u8 *, size_t> p = get_corpus(filename);
-ParsedJson *pj_ptr = allocate_ParsedJson(p.second); // allocate memory for parsing up to p.second bytes
-bool is_ok = json_parse(p.first, p.second, *pj_ptr); // do the parsing, return false on error
+simdjsonstring p = get_corpus(filename);
+ParsedJson pj;
+size_t maxdepth = 1024; // support documents have nesting "depth" up to 1024
+pj.allocateCapacity(p.size(), maxdepth); // allocate memory for parsing up to p.size() bytes
+bool is_ok = json_parse(p.first, p.second, pj); // do the parsing, return false on error
 // parsing is done!
-
-free(p.first); // free JSON bytes, can be done right after parsing
-
-
-deallocate_ParsedJson(pj_ptr); // once you are done with pj_ptr, free JSON document; hint: you can reuse pj_ptr
+// js can be reused with other json_parse calls.
 ```
 
 

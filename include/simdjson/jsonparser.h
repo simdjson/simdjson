@@ -7,17 +7,16 @@
 #include "simdjson/stage2_flatten.h"
 #include "simdjson/stage34_unified.h"
 
-// Allocate a ParsedJson structure that can support document
-// up to len bytes.
-// Return NULL if memory cannot be allocated.
-// This structure is meant to be reused from document to document, as needed.
-// you can use deallocate_ParsedJson to deallocate the memory.
-ParsedJson *allocate_ParsedJson(size_t len, size_t maxdepth);
-
-// deallocate a ParsedJson struct (see allocate_ParsedJson)
-void deallocate_ParsedJson(ParsedJson *pj_ptr);
-
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure.
 // The string should be NULL terminated.
 bool json_parse(const u8 *buf, size_t len, ParsedJson &pj);
+
+static inline bool json_parse(const char * buf, size_t len, ParsedJson &pj) {
+  return json_parse((const u8 *) buf, len, pj);
+}
+
+// convenience function
+static inline bool json_parse(const std::string_view &s, ParsedJson &pj) {
+  return json_parse(s.data(), s.size(), pj);
+}

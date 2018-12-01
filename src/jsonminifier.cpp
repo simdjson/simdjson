@@ -98,7 +98,7 @@ static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
 }
 
 // take input from buf and remove useless whitespace, input and output can be
-// the same
+// the same, result is null terminated, return the string length (minus the null termination)
 size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
   // Useful constant masks
   const uint64_t even_bits = 0x5555555555555555ULL;
@@ -269,6 +269,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     memcpy(out, buffer, pop4);
     out += pop4;
   }
+  *out = '\0';// NULL termination
   return out - initout;
 }
 
