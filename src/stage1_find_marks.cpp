@@ -254,12 +254,14 @@ WARN_UNUSED
       return false;
   }
   // we are going to zero out everything after len:
-  /*size_t count_last_64bits = len % 64;
+  size_t count_last_64bits = len % 64;
   if(count_last_64bits != 0) { // we have a "final" word where only count_last_64bits matter
       u64 lastword = *(u64 *)(pj.structurals + len / 8);
+      printf("last word %zu \n", lastword);
+      printf("count_last_64bits%zu \n", count_last_64bits);
       lastword &= ( UINT64_C(1) << count_last_64bits) - 1;
       *(u64 *)(pj.structurals + len / 8) = lastword;
-  }*/
+  }
 
   //pj.structural_indexes[pj.n_structural_indexes++] = len; // the final NULL is used as a pseudo-structural character
 #ifdef UTF8VALIDATE
