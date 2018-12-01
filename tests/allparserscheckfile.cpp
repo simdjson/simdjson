@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   const char * filename = argv[optind];
-  simdjsonstring p;
+  std::string_view p;
   try {
     p = get_corpus(filename);
   } catch (const std::exception& e) { // caught by reference to base
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   rapidjson::Document d;
 
   char *buffer = (char *)malloc(p.size() + 1);
-  memcpy(buffer, p.c_str(), p.size());
+  memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   bool rapid_correct = (d.Parse((const char *)buffer).HasParseError() == false);
   bool rapid_correct_checkencoding = (d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError() == false);

@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     exit(1);
   }
-  simdjsonstring p;
+  std::string_view p;
   std::string filename = argv[argc - 1];
   try{
     p = get_corpus(filename);
@@ -16,6 +16,6 @@ int main(int argc, char *argv[]) {
         std::cout << "Could not load the file " << filename << std::endl;
         return EXIT_FAILURE;
   }
-  jsonminify(p,  &p[0]);
+  jsonminify(p, (char *)p.data());
   printf("%s",p.data());
 }

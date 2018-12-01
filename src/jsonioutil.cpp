@@ -10,10 +10,6 @@ char * allocate_aligned_buffer(size_t length) {
     if (posix_memalign((void **)&aligned_buffer, 64, totalpaddedlength)) {
       throw std::runtime_error("Could not allocate sufficient memory");
     };
-    aligned_buffer[length] = '\0';
-    for(size_t i = length + 1; i < totalpaddedlength; i++) aligned_buffer[i] = 0x20;
-    //aligned_buffer[paddedlength] = '\0';
-    //memset(aligned_buffer + length, 0x20, paddedlength - length);
     return aligned_buffer;
 }
 
@@ -29,6 +25,7 @@ std::string_view get_corpus(std::string filename) {
     }
     std::rewind(fp);
     std::fread(buf, 1, len, fp);
+    buf[len] = '\0';
     std::fclose(fp);
     return std::string_view(buf,len);
   }

@@ -12,11 +12,11 @@ Goal: Speed up the parsing of JSON per se.
 /...
 
 const char * filename = ... //
-simdjsonstring p = get_corpus(filename);
+std::string_view p = get_corpus(filename);
 ParsedJson pj;
 size_t maxdepth = 1024; // support documents have nesting "depth" up to 1024
 pj.allocateCapacity(p.size(), maxdepth); // allocate memory for parsing up to p.size() bytes
-bool is_ok = json_parse(p.first, p.second, pj); // do the parsing, return false on error
+bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 // parsing is done!
 // js can be reused with other json_parse calls.
 ```

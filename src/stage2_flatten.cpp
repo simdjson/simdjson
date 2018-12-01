@@ -119,7 +119,7 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
   }
   pj.n_structural_indexes = base;
   if(len != base_ptr[pj.n_structural_indexes-1]) {
-    printf("last structural should be pointing at the end of the string\n");
+    // can happen with malformed JSON such as unclosed quotes (["this is an unclosed string ])
     return false;
   }
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array

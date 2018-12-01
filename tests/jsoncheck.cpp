@@ -49,7 +49,8 @@ bool validate(const char *dirname) {
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (hasExtension(name, extension)) {
-      //printf("validating: file %s \n", name);
+      printf("validating: file %s ", name);
+      fflush(NULL);
       size_t filelen = strlen(name);
       char *fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
@@ -74,6 +75,7 @@ bool validate(const char *dirname) {
       }
       ++howmany;
       bool isok = json_parse(p, pj);
+      printf("%s\n", isok ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
@@ -89,10 +91,7 @@ bool validate(const char *dirname) {
           printf("warning: file %s should fail but it passes.\n", name);
           everythingfine = false;
         }
-      } else {
-        printf("File %s %s.\n", name,
-               isok ? " is valid JSON " : " is not valid JSON");
-      }
+      } 
       free(fullpath);
     }
   }

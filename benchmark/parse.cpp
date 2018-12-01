@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
   if(verbose) cout << "[verbose] loading " << filename << endl;
-  simdjsonstring p;
+  std::string_view p;
   try {
     p = get_corpus(filename);
   } catch (const std::exception& e) { // caught by reference to base
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 #ifndef SQUASH_COUNTERS
     unified.start();
 #endif
-    isok = find_structural_bits(p.c_str(), p.size(), pj);
+    isok = find_structural_bits(p.data(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy1 += results[0];
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     unified.start();
 #endif
 
-    isok = isok && unified_machine(p.c_str(), p.size(), pj);
+    isok = isok && unified_machine(p.data(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy3 += results[0];

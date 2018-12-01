@@ -14,6 +14,6 @@ static inline size_t jsonminify(const char *buf, size_t len, char *out) {
 }
 
 
-static inline size_t jsonminify(const simdjsonstring & p, char *out) {
-    return jsonminify(p.c_str(), p.size(), out);
+static inline size_t jsonminify(const std::string_view & p, char *out) {
+    return jsonminify(p.data(), p.size(), out);
 }
