@@ -169,12 +169,12 @@ public:
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("%" PRId64, (int64_t)tape[tapeidx++]);
+        printf("%" PRId64, (int64_t)tape[++tapeidx]);
         break;
       case 'd': // we have a double
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("%f", *((double *)&tape[tapeidx++]));
+        printf("%f", *((double *)&tape[++tapeidx]));
         break;
       case 'n': // we have a null
         printf("null");
