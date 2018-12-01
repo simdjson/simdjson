@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common_defs.h"
-#include "jsonparser/simdjson_internal.h"
-#include "jsonparser/jsoncharutils.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
+#include "simdjson/jsoncharutils.h"
 
 
 // begin copypasta
@@ -38,6 +38,7 @@ static const u8 escape_map[256] = {
 // dest will advance a variable amount (return via pointer)
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
+WARN_UNUSED
 really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
   u32 code_point = hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
@@ -57,8 +58,9 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
   return offset > 0;
 }
 
+WARN_UNUSED
 really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
-                                ParsedJson &pj, u32 depth, u32 offset) {
+                                ParsedJson &pj, UNUSED const u32 depth, u32 offset) {
   using namespace std;
   const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
   u8 *dst = pj.current_string_buf_loc;
@@ -114,7 +116,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
 
-      pj.write_tape(depth, pj.current_string_buf_loc - pj.string_buf, '"');
+      pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
 
       pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED

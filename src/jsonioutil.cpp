@@ -1,4 +1,4 @@
-#include "jsonparser/jsonioutil.h"
+#include "simdjson/jsonioutil.h"
 #include <cstring>
 
 
@@ -6,26 +6,28 @@ char * allocate_aligned_buffer(size_t length) {
     char *aligned_buffer;
     size_t paddedlength = ROUNDUP_N(length, 64);
     // allocate an extra sizeof(__m256i) just so we can always use AVX safely
-    if (posix_memalign((void **)&aligned_buffer, 64, paddedlength + 1 + sizeof(__m256i))) {
+    size_t totalpaddedlength = paddedlength + 1 + sizeof(__m256i);
+    if (posix_memalign((void **)&aligned_buffer, 64, totalpaddedlength)) {
       throw std::runtime_error("Could not allocate sufficient memory");
     };
-    for(size_t i = 0; i < sizeof(__m256i); i++) aligned_buffer[paddedlength + i] = '\0';
-    aligned_buffer[paddedlength] = '\0';
-    memset(aligned_buffer + length, 0x20, paddedlength - length);
     return aligned_buffer;
 }
 
-std::pair<u8 *, size_t> get_corpus(std::string filename) {
-  std::ifstream is(filename, std::ios::binary);
-  if (is) {
-    std::stringstream buffer;
-    buffer << is.rdbuf();
-    size_t length = buffer.str().size(); // +1 for null
-    u8* aligned_buffer = (u8 *)allocate_aligned_buffer(length);
-    memcpy(aligned_buffer, buffer.str().c_str(), length);
-    is.close();
-    return std::make_pair((u8 *)aligned_buffer, length);
+std::string_view get_corpus(std::string filename) {
+  std::FILE *fp = std::fopen(filename.c_str(), "rb");
+  if (fp) {
+    std::fseek(fp, 0, SEEK_END);
+    size_t len = std::ftell(fp);
+    char * buf = allocate_aligned_buffer(len);
+    if(buf == NULL) {
+      std::fclose(fp);
+      throw  std::runtime_error("could not allocate memory");
+    }
+    std::rewind(fp);
+    std::fread(buf, 1, len, fp);
+    buf[len] = '\0';
+    std::fclose(fp);
+    return std::string_view(buf,len);
   }
-  throw std::runtime_error("could not load corpus");
-  return std::make_pair((u8 *)0, (size_t)0);
+  throw  std::runtime_error("could not load corpus");
 }

@@ -1,14 +1,15 @@
 #include <unistd.h>
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 #include "benchmark.h"
 
-// #define RAPIDJSON_SSE2 // bad
-// #define RAPIDJSON_SSE42 // bad
+// #define RAPIDJSON_SSE2 // bad for performance
+// #define RAPIDJSON_SSE42 // bad for performance
 #include "rapidjson/document.h"
-#include "rapidjson/reader.h" // you have to check in the submodule
+#include "rapidjson/reader.h" 
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+
 #include "json11.cpp"
 #include "sajson.h"
 #include "fastjson.cpp"
@@ -18,7 +19,6 @@ extern "C"
 {
 #include "ultrajsondec.c"
 #include "ujdecode.h"
-
 }
 using namespace rapidjson;
 using namespace std;
@@ -31,7 +31,6 @@ void on_json_error( void *, const fastjson::ErrorContext& ec) {
 bool fastjson_parse(const char *input) {
   fastjson::Token token;
   fastjson::dom::Chunk chunk;
-  std::string error_message;
   return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
 }
 // end of fastjson stuff
@@ -62,58 +61,64 @@ int main(int argc, char *argv[]) {
   if(optind + 1 < argc) {
     cerr << "warning: ignoring everything after " << argv[optind  + 1] << endl;
   }
-  pair<u8 *, size_t> p = get_corpus(filename);
+  std::string_view p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
+  }
+  
   if (verbose) {
     std::cout << "Input has ";
-    if (p.second > 1024 * 1024)
-      std::cout << p.second / (1024 * 1024) << " MB ";
-    else if (p.second > 1024)
-      std::cout << p.second / 1024 << " KB ";
+    if (p.size() > 1024 * 1024)
+      std::cout << p.size() / (1024 * 1024) << " MB ";
+    else if (p.size() > 1024)
+      std::cout << p.size() / 1024 << " KB ";
     else
-      std::cout << p.second << " B ";
+      std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
-  if (pj_ptr == NULL) {
+  ParsedJson pj;
+  bool allocok = pj.allocateCapacity(p.size(), 1024);
+
+  if (!allocok) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  ParsedJson &pj(*pj_ptr);
-
   int repeat = 10;
-  int volume = p.second;
-  BEST_TIME("simdjson", json_parse(p.first, p.second, pj), true, , repeat, volume, true);
+  int volume = p.size();
+  BEST_TIME("simdjson", json_parse(p, pj), true, , repeat, volume, true);
 
   rapidjson::Document d;
 
-  char *buffer = (char *)malloc(p.second + 1);
-  memcpy(buffer, p.first, p.second);
-  buffer[p.second] = '\0';
+  char *buffer = (char *)malloc(p.size() + 1);
+  memcpy(buffer, p.data(), p.size());
+  buffer[p.size()] = '\0';
 
   BEST_TIME("RapidJSON", 
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
-      false, memcpy(buffer, p.first, p.second), repeat, volume, true);
+      false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   BEST_TIME("RapidJSON Insitu", d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
-            memcpy(buffer, p.first, p.second), repeat, volume, true);
+            memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
-  BEST_TIME("sajson (dynamic mem)", sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("sajson (dynamic mem)", sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
-  size_t astbuffersize = p.second;
+  size_t astbuffersize = p.size();
   size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
 
-  BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.second, buffer)).is_valid(), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   std::string json11err;
-  if(all) BEST_TIME("dropbox (json11)     ",  (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("dropbox (json11)     ",  (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )), false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
-  if(all) BEST_TIME("fastjson             ", fastjson_parse(buffer), true, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("fastjson             ", fastjson_parse(buffer), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   JsonValue value;
   JsonAllocator allocator;
   char *endptr;
-  if(all) BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.first, p.second), repeat, volume, true);
+  if(all) BEST_TIME("gason             ", jsonParse(buffer, &endptr, &value, allocator), JSON_OK, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   void *state;
-  if(all) BEST_TIME("ultrajson         ", (UJDecode(buffer, p.second, NULL, &state) == NULL), false, memcpy(buffer, p.first, p.second), repeat, volume, true);
-  BEST_TIME("memcpy            ", (memcpy(buffer, p.first, p.second) == buffer), true, , repeat, volume, true);
-  free(p.first);
+  if(all) BEST_TIME("ultrajson         ", (UJDecode(buffer, p.size(), NULL, &state) == NULL), false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+  BEST_TIME("memcpy            ", (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat, volume, true);
   free(ast_buffer);
-  deallocate_ParsedJson(pj_ptr);
+  free(buffer);
 }

@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 /**
  * Does the file filename ends with the given extension.
@@ -41,12 +42,15 @@ bool validate(const char *dirname) {
     printf("nothing in dir %s \n", dirname);
     return false;
   }
+  bool * isfileasexpected = new bool[c];
+  for(int i = 0; i < c; i++) isfileasexpected[i] = true;
   size_t howmany = 0;
   bool needsep = (strlen(dirname) > 1) && (dirname[strlen(dirname) - 1] != '/');
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (hasExtension(name, extension)) {
-      //printf("validating: file %s \n", name);
+      printf("validating: file %s ", name);
+      fflush(NULL);
       size_t filelen = strlen(name);
       char *fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
@@ -56,42 +60,55 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p = get_corpus(fullpath);
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
-      if(pj_ptr == NULL) {
+      std::string_view p;
+      try {
+        p = get_corpus(fullpath);
+      } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << fullpath << std::endl;
+        return EXIT_FAILURE;
+      }
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if(!allocok) {
         std::cerr<< "can't allocate memory"<<std::endl;
         return false;
       }
       ++howmany;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
+      printf("%s\n", isok ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
       } else if (startsWith("pass", name)) {
         if (!isok) {
+          isfileasexpected[i] = false;
           printf("warning: file %s should pass but it fails.\n", name);
           everythingfine = false;
         }
       } else if (startsWith("fail", name)) {
         if (isok) {
+          isfileasexpected[i] = false;
           printf("warning: file %s should fail but it passes.\n", name);
           everythingfine = false;
         }
-      } else {
-        printf("File %s %s.\n", name,
-               isok ? " is valid JSON " : " is not valid JSON");
-      }
-      free(p.first);
+      } 
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
+    }
+  }
+  printf("%zu files checked.\n", howmany);
+  if(everythingfine) {
+    printf("All ok!\n");
+  } else {
+    printf("There were problems! Consider reviewing the following files:\n");
+    for(int i = 0; i < c; i++) {
+      if(!isfileasexpected[i]) printf("%s \n", entry_list[i]->d_name);
     }
   }
   for (int i = 0; i < c; ++i)
     free(entry_list[i]);
   free(entry_list);
-  printf("%zu files checked.\n", howmany);
-  if(everythingfine) printf("All ok!\n");
+  delete[] isfileasexpected;
+
   return everythingfine;
 }
 

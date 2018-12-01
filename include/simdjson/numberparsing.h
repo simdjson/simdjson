@@ -1,8 +1,8 @@
 #pragma once
 
-#include "common_defs.h"
-#include "jsonparser/jsoncharutils.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/jsoncharutils.h"
+#include "simdjson/parsedjson.h"
 
 static const double power_of_ten[] = {
     1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,
@@ -128,7 +128,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   const __m128i mul_1_100 = _mm_setr_epi16(100, 1, 100, 1, 100, 1, 100, 1);
   const __m128i mul_1_10000 =
       _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
-  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((__m128i *)chars), ascii0);
+  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((const __m128i *)chars), ascii0);
   const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
   const __m128i t2 = _mm_madd_epi16(t1, mul_1_100);
   const __m128i t3 = _mm_packus_epi32(t2, t2);
@@ -147,10 +147,12 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 // This function will almost never be called!!!
 //
+// Note: a redesign could avoid this function entirely.
+//
 static never_inline bool
-parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
-                          ParsedJson &pj, const u32 depth, const u32 offset,
-                          UNUSED bool found_zero, bool found_minus) {
+parse_highprecision_float(const u8 *const buf, 
+                          ParsedJson &pj, const u32 offset,
+                          bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
   bool negative = false;
@@ -193,7 +195,6 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     }
     exponent = firstafterperiod - p;
   }
-  int64_t expnumber = 0; // exponential part
   if (('e' == *p) || ('E' == *p)) {
     ++p;
     bool negexp = false;
@@ -210,7 +211,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
       return false;
     }
     unsigned char digit = *p - '0';
-    expnumber = digit;
+    int64_t expnumber = digit; // exponential part
     p++;
     if (is_integer(*p)) {
       digit = *p - '0';
@@ -237,7 +238,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     exponent += (negexp ? -expnumber : expnumber);
   }
   if (i == 0) {
-    pj.write_tape_double(depth, 0.0);
+    pj.write_tape_double(0.0);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(0.0, buf + offset);
 #endif
@@ -252,7 +253,7 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
     double d = i;
     d *= power_of_ten[308 + exponent];
     d = negative ? -d : d;
-    pj.write_tape_double(depth, d);
+    pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundFloat(d, buf + offset);
 #endif
@@ -269,9 +270,8 @@ parse_highprecision_float(const u8 *const buf, UNUSED size_t len,
 // This function will almost never be called!!!
 //
 static never_inline bool parse_large_integer(const u8 *const buf,
-                                             UNUSED size_t len, ParsedJson &pj,
-                                             const u32 depth, const u32 offset,
-                                             UNUSED bool found_zero,
+                                             ParsedJson &pj,
+                                             const u32 offset,
                                              bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
@@ -325,7 +325,7 @@ static never_inline bool parse_large_integer(const u8 *const buf,
     }
   }
   int64_t signed_answer = negative ? -i : i;
-  pj.write_tape_s64(depth, signed_answer);
+  pj.write_tape_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
 #endif
@@ -340,11 +340,13 @@ static never_inline bool parse_large_integer(const u8 *const buf,
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
+
+
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
-                                       ParsedJson &pj, const u32 depth,
-                                       const u32 offset, UNUSED bool found_zero,
+static really_inline bool parse_number(const u8 *const buf, 
+                                       ParsedJson &pj, 
+                                       const u32 offset, 
                                        bool found_minus) {
   const char *p = (const char *)(buf + offset);
   bool negative = false;
@@ -461,14 +463,14 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_highprecision_float(buf, len, pj, depth, offset, found_zero,
+      return parse_highprecision_float(buf, pj, offset, 
                                        found_minus);
     }
     ///////////
     // We want 0.1e1 to be a float.
     //////////
     if (i == 0) {
-      pj.write_tape_double(depth, 0.0);
+      pj.write_tape_double(0.0);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(0.0, buf + offset);
 #endif
@@ -483,17 +485,17 @@ static really_inline bool parse_number(const u8 *const buf, UNUSED size_t len,
       double d = i;
       d *= power_of_ten[308 + exponent];
       // d = negative ? -d : d;
-      pj.write_tape_double(depth, d);
+      pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
     }
   } else {
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
-      return parse_large_integer(buf, len, pj, depth, offset, found_zero,
+      return parse_large_integer(buf, pj, offset, 
                                  found_minus);
     }
-    pj.write_tape_s64(depth, i);
+    pj.write_tape_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     foundInteger(i, buf + offset);
 #endif

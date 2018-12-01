@@ -7,20 +7,18 @@ Goal: Speed up the parsing of JSON per se.
 ## Code example
 
 ```C
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 /...
 
 const char * filename = ... //
-pair<u8 *, size_t> p = get_corpus(filename);
-ParsedJson *pj_ptr = allocate_ParsedJson(p.second); // allocate memory for parsing up to p.second bytes
-bool is_ok = json_parse(p.first, p.second, *pj_ptr); // do the parsing, return false on error
+std::string_view p = get_corpus(filename);
+ParsedJson pj;
+size_t maxdepth = 1024; // support documents have nesting "depth" up to 1024
+pj.allocateCapacity(p.size(), maxdepth); // allocate memory for parsing up to p.size() bytes
+bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 // parsing is done!
-
-free(p.first); // free JSON bytes, can be done right after parsing
-
-
-deallocate_ParsedJson(pj_ptr); // once you are done with pj_ptr, free JSON document; hint: you can reuse pj_ptr
+// js can be reused with other json_parse calls.
 ```
 
 
@@ -59,7 +57,7 @@ To simplify the engineering, we make some assumptions.
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included.
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult.
 - We expect the input memory pointer to be padded (e.g., with spaces) so that it can be read entirely in blocks of 512 bits (a cache line). In practice, this means that users should allocate the memory where the JSON bytes are located using the `allocate_aligned_buffer` function or the equivalent. Of course, the data you may want to processed could be on a buffer that does have this padding. However, copying the data is relatively cheap (much cheaper than parsing JSON), and we can eventually remove this constraint.
-
+- The input string should be NULL terminated.
 
 ## Features
 

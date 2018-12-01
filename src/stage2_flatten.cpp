@@ -2,14 +2,13 @@
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #else
-#include <immintrin.h>
 #include <x86intrin.h>
 #endif
 
 #include <cassert>
 
-#include "jsonparser/common_defs.h"
-#include "jsonparser/simdjson_internal.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/parsedjson.h"
 
 #ifndef NO_PDEP_PLEASE
 #define NO_PDEP_PLEASE // though this is not always a win, it seems to 
@@ -54,7 +53,7 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
   u32 *base_ptr = pj.structural_indexes;
   u32 base = 0;
 #ifdef BUILDHISTOGRAM
-  uint32_t counters[65];
+  uint32_t counters[66];
   uint32_t total = 0;
   for (int k = 0; k < 66; k++)
     counters[k] = 0;
@@ -119,7 +118,10 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
 #endif
   }
   pj.n_structural_indexes = base;
-  base_ptr[pj.n_structural_indexes] =
-      0; // make it safe to dereference one beyond this array
+  if(len != base_ptr[pj.n_structural_indexes-1]) {
+    // can happen with malformed JSON such as unclosed quotes (["this is an unclosed string ])
+    return false;
+  }
+  base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
   return true;
 }

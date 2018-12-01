@@ -1,5 +1,6 @@
+#include <unistd.h>
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 
 
 // #define RAPIDJSON_SSE2 // bad
@@ -30,7 +31,6 @@ void on_json_error( void *, const fastjson::ErrorContext& ec) {
 bool fastjson_parse(const char *input) {
   fastjson::Token token;
   fastjson::dom::Chunk chunk;
-  std::string error_message;
   return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
 }
 // end of fastjson stuff
@@ -41,44 +41,56 @@ using namespace rapidjson;
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  bool verbose = false;
+    int c;
+  while ((c = getopt (argc, argv, "v")) != -1)
+    switch (c)
+      {
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        abort ();
+      }
+  if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     cerr << "Or " << argv[0] << " -v <jsonfile>\n";
     exit(1);
   }
-  bool verbose = false;
-  if (argc > 2) {
-    if (strcmp(argv[1], "-v"))
-      verbose = true;
+  const char * filename = argv[optind];
+  std::string_view p;
+  try {
+    p = get_corpus(filename);
+  } catch (const std::exception& e) { // caught by reference to base
+    std::cout << "Could not load the file " << filename << std::endl;
+    return EXIT_FAILURE;
   }
-  pair<u8 *, size_t> p = get_corpus(argv[argc - 1]);
   if (verbose) {
     std::cout << "Input has ";
-    if (p.second > 1024 * 1024)
-      std::cout << p.second / (1024 * 1024) << " MB ";
-    else if (p.second > 1024)
-      std::cout << p.second / 1024 << " KB ";
+    if (p.size() > 1024 * 1024)
+      std::cout << p.size() / (1024 * 1024) << " MB ";
+    else if (p.size() > 1024)
+      std::cout << p.size() / 1024 << " KB ";
     else
-      std::cout << p.second << " B ";
+      std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
-  if (pj_ptr == NULL) {
+  ParsedJson pj;
+  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  if (!allocok) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  ParsedJson &pj(*pj_ptr);
-
-  bool ours_correct = json_parse(p.first, p.second, pj);
+  bool ours_correct = json_parse(p, pj);
 
   rapidjson::Document d;
 
-  char *buffer = (char *)malloc(p.second + 1);
-  memcpy(buffer, p.first, p.second);
-  buffer[p.second] = '\0';
+  char *buffer = (char *)malloc(p.size() + 1);
+  memcpy(buffer, p.data(), p.size());
+  buffer[p.size()] = '\0';
   bool rapid_correct = (d.Parse((const char *)buffer).HasParseError() == false);
   bool rapid_correct_checkencoding = (d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError() == false);
-  bool sajson_correct = sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.second, buffer)).is_valid();
+  bool sajson_correct = sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.size(), buffer)).is_valid();
   std::string json11err;
   bool dropbox_correct = (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )) == false;
   bool fastjson_correct =  fastjson_parse(buffer);
@@ -87,7 +99,7 @@ int main(int argc, char *argv[]) {
   char *endptr;
   bool gason_correct = (jsonParse(buffer, &endptr, &value, allocator) == JSON_OK);
   void *state;
-  bool ultrajson_correct = ((UJDecode(buffer, p.second, NULL, &state) == NULL) == false);
+  bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
   printf("our parser                 : %s \n", ours_correct ?   "correct":"invalid");
   printf("rapid                      : %s \n", rapid_correct ?  "correct":"invalid");
   printf("rapid (check encoding)     : %s \n", rapid_correct_checkencoding ?  "correct":"invalid");
@@ -98,7 +110,5 @@ int main(int argc, char *argv[]) {
   printf("ultrajson                  : %s \n", ultrajson_correct ? "correct":"invalid");
        
   free(buffer);
-  free(p.first);
-  deallocate_ParsedJson(pj_ptr);
   return EXIT_SUCCESS;
 }

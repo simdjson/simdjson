@@ -11,7 +11,7 @@
 #define JSON_TEST_STRINGS
 #endif
 
-#include "jsonparser/common_defs.h"
+#include "simdjson/common_defs.h"
 
 char *fullpath;
 
@@ -241,7 +241,7 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     // we have a zero-length string
     if (parsed_begin != parsed_end) {
       printf("WARNING: We have a zero-length but gap is %zu \n",
-             parsed_end - parsed_begin);
+             (size_t)(parsed_end - parsed_begin));
       probable_bug = true;
     }
     empty_string++;
@@ -252,12 +252,12 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     printf("WARNING: lengths on parsed strings disagree %zu %zu \n", thislen,
            len);
     printf("\nour parsed string  : '%*s'\n\n", (int)thislen,
-           (char *)parsed_begin);
-    print_hex((char *)parsed_begin, thislen);
+           (const char *)parsed_begin);
+    print_hex((const char *)parsed_begin, thislen);
     printf("\n");
 
     printf("reference parsing   :'%*s'\n\n", (int)len, bigbuffer);
-    print_hex((char *)bigbuffer, len);
+    print_hex((const char *)bigbuffer, len);
     printf("\n");
 
     probable_bug = true;
@@ -267,21 +267,21 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
     printf("Lengths %zu %zu  \n", thislen, len);
 
     printf("\nour parsed string  : '%*s'\n", (int)thislen,
-           (char *)parsed_begin);
-    print_hex((char *)parsed_begin, thislen);
+           (const char *)parsed_begin);
+    print_hex((const char *)parsed_begin, thislen);
     printf("\n");
 
     printf("reference parsing   :'%*s'\n", (int)len, bigbuffer);
-    print_hex((char *)bigbuffer, len);
+    print_hex((const char *)bigbuffer, len);
     printf("\n");
 
-    print_cmp_hex((char *)parsed_begin, bigbuffer, thislen);
+    print_cmp_hex((const char *)parsed_begin, bigbuffer, thislen);
 
     probable_bug = true;
   }
 }
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 #include "src/stage34_unified.cpp"
 
 /**
@@ -325,10 +325,16 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p = get_corpus(fullpath);
-      // terrible hack but just to get it working
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
-      if (pj_ptr == NULL) {
+      std::string_view p;
+      try {
+        p = get_corpus(fullpath);
+      } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << fullpath << std::endl;
+        return EXIT_FAILURE;
+      }      
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -336,8 +342,7 @@ bool validate(const char *dirname) {
       good_string = 0;
       total_string_length = 0;
       empty_string = 0;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "
@@ -350,9 +355,7 @@ bool validate(const char *dirname) {
                isok ? " is valid     " : " is not valid ", bad_string);
       }
       total_strings += bad_string + good_string;
-      free(p.first);
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
     }
   }
   printf("%zu strings checked.\n", total_strings);

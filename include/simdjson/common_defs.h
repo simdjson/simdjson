@@ -40,7 +40,7 @@ typedef __m256i m256;
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
-static inline u32 ctz64(u64 x) {
+/*static inline u32 ctz64(u64 x) {
   assert(x); // behaviour not defined for x == 0
 #if defined(_WIN64)
   unsigned long r;
@@ -56,4 +56,4 @@ static inline u32 ctz64(u64 x) {
 #else
   return (u32)__builtin_ctzll(x);
 #endif
-}
+}*/

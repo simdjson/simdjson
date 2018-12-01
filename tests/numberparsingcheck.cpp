@@ -11,7 +11,7 @@
 #define JSON_TEST_NUMBERS
 #endif
 
-#include "jsonparser/common_defs.h"
+#include "simdjson/common_defs.h"
 
 int parse_error;
 char *fullpath;
@@ -28,7 +28,7 @@ bool startsWith(const char *pre, const char *str) {
   size_t lenpre = strlen(pre), lenstr = strlen(str);
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
-bool is_in_bad_list(char *buf) {
+bool is_in_bad_list(const char *buf) {
   for (size_t i = 0; i < sizeof(really_bad) / sizeof(really_bad[0]); i++)
     if (startsWith(really_bad[i], buf))
       return true;
@@ -38,9 +38,9 @@ bool is_in_bad_list(char *buf) {
 inline void foundInvalidNumber(const u8 *buf) {
   invalid_count++;
   char *endptr;
-  double expected = strtod((char *)buf, &endptr);
-  if (endptr != (char *)buf) {
-    if (!is_in_bad_list((char *)buf)) {
+  double expected = strtod((const char *)buf, &endptr);
+  if (endptr != (const char *)buf) {
+    if (!is_in_bad_list((const char *)buf)) {
       printf(
           "Warning: foundInvalidNumber %.32s whereas strtod parses it to %f, ",
           buf, expected);
@@ -53,8 +53,8 @@ inline void foundInvalidNumber(const u8 *buf) {
 inline void foundInteger(int64_t result, const u8 *buf) {
   int_count++;
   char *endptr;
-  long long expected = strtoll((char *)buf, &endptr, 10);
-  if ((endptr == (char *)buf) || (expected != result)) {
+  long long expected = strtoll((const char *)buf, &endptr, 10);
+  if ((endptr == (const char *)buf) || (expected != result)) {
     printf("Error: parsed %" PRId64 " out of %.32s, ", result, buf);
     printf(" while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
@@ -64,8 +64,8 @@ inline void foundInteger(int64_t result, const u8 *buf) {
 inline void foundFloat(double result, const u8 *buf) {
   char *endptr;
   float_count++;
-  double expected = strtod((char *)buf, &endptr);
-  if (endptr == (char *)buf) {
+  double expected = strtod((const char *)buf, &endptr);
+  if (endptr == (const char *)buf) {
     printf("parsed %f from %.32s whereas strtod refuses to parse a float, ",
            result, buf);
     printf(" while parsing %s \n", fullpath);
@@ -82,7 +82,7 @@ inline void foundFloat(double result, const u8 *buf) {
   }
 }
 
-#include "jsonparser/jsonparser.h"
+#include "simdjson/jsonparser.h"
 #include "src/stage34_unified.cpp"
 
 /**
@@ -123,10 +123,17 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::pair<u8 *, size_t> p = get_corpus(fullpath);
+      std::string_view p;
+      try {
+        p = get_corpus(fullpath);
+      } catch (const std::exception& e) { 
+        std::cout << "Could not load the file " << fullpath << std::endl;
+        return EXIT_FAILURE;
+      }
       // terrible hack but just to get it working
-      ParsedJson *pj_ptr = allocate_ParsedJson(p.second);
-      if (pj_ptr == NULL) {
+      ParsedJson pj;
+      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -134,8 +141,7 @@ bool validate(const char *dirname) {
       int_count = 0;
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
-      ParsedJson &pj(*pj_ptr);
-      bool isok = json_parse(p.first, p.second, pj);
+      bool isok = json_parse(p, pj);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "
                "total numbers: %10zu \n",
@@ -143,9 +149,7 @@ bool validate(const char *dirname) {
                float_count, invalid_count,
                int_count + float_count + invalid_count);
       }
-      free(p.first);
       free(fullpath);
-      deallocate_ParsedJson(pj_ptr);
     }
   }
   if ((parse_error & PARSE_ERROR) != 0) {
