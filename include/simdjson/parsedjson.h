@@ -225,6 +225,7 @@ public:
     return true;
   }
 
+  WARN_UNUSED
   bool dump_raw_tape() {
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx++];

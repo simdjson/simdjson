@@ -37,6 +37,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool dump = false;
+  bool jsonoutput = false;
   bool forceoneiteration = false;
 
   int c;
@@ -49,6 +50,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'd':
         dump = true;
+        break;
+      case 'j':
+        jsonoutput = true;
         break;
       case '1':
         forceoneiteration = true;
@@ -201,7 +205,12 @@ int main(int argc, char *argv[]) {
   cout << "Min:  " << min_result << " bytes read: " << p.size()
        << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
        << "\n";
-  if(dump) pj.printjson();
+  if(jsonoutput) {
+    isok = isok && pj.printjson();
+  }
+  if(dump) {
+    isok = isok && pj.dump_raw_tape();
+  }
   if (!isok) {
     printf(" Parsing failed. \n ");
     return EXIT_FAILURE;
