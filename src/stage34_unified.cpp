@@ -170,6 +170,8 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   }
 #ifdef SIMDJSON_ALLOWANYTHINGINROOT
   depth--; // for fall-through cases (e.g., documents containing just a string)
+  pj.annotate_previousloc(pj.containing_scope_offset[depth],
+                          pj.get_current_loc());
 #endif     // ALLOWANYTHINGINROOT
 
 start_continue:

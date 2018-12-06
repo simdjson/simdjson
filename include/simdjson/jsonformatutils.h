@@ -9,6 +9,10 @@ static inline void print_with_escapes(const unsigned char *src) {
       putchar('\\');
       putchar('n');
       break;
+    case '\r':
+      putchar('\\');
+      putchar('r');
+      break;
     case '\"':
       putchar('\\');
       putchar('"');
@@ -23,7 +27,7 @@ static inline void print_with_escapes(const unsigned char *src) {
       break;
     default:
       if (*src <= 0x1F) {
-        printf("\\u%x", *src);
+        printf("\\u%04x", *src);
       } else
         putchar(*src);
     }

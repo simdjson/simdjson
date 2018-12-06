@@ -17,7 +17,7 @@ else
 	CFLAGS += -O3
 endif
 
-MAINEXECUTABLES=parse minify
+MAINEXECUTABLES=parse minify json2json
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition  allparserscheckfile
 
@@ -42,6 +42,7 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
+	./scripts/testjson2json.sh
 	@echo 
 	@tput setaf 2
 	@echo "It looks like the code is good!"
@@ -89,6 +90,10 @@ minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(MINIFIERHEAD
 
 minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minify $(MINIFIERLIBFILES) $(LIBFILES) tools/minify.cpp -I. 
+
+json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I. 
+
 
 ujdecode.o: $(UJSON4C_INCLUDE)
 	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 

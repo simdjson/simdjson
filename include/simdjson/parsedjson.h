@@ -123,6 +123,7 @@ public:
   // print the json to stdout (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
+  WARN_UNUSED
   bool printjson() {
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx];
@@ -223,6 +224,73 @@ public:
     free(inobjectidx);
     return true;
   }
+
+  bool dump_raw_tape() {
+    size_t tapeidx = 0;
+    u64 tape_val = tape[tapeidx++];
+    u8 type = (tape_val >> 56);
+    size_t howmany = 0;
+    if (type == 'r') {
+      howmany = tape_val & JSONVALUEMASK;
+    } else {
+      printf("Error: no starting root node?");
+      return false;
+    }
+    for (; tapeidx < howmany; tapeidx++) {
+      tape_val = tape[tapeidx];
+      u64 payload = tape_val & JSONVALUEMASK;
+      type = (tape_val >> 56);
+      switch (type) {
+      case '"': // we have a string
+        printf("string: ");
+        putchar('"');
+        print_with_escapes((const unsigned char *)(string_buf + payload));
+        putchar('"');
+        printf("\n");
+        break;
+      case 'l': // we have a long int
+        if (tapeidx + 1 >= howmany)
+          return false;
+        printf("integer: ");
+        printf("%" PRId64, (int64_t)tape[++tapeidx]);
+        break;
+      case 'd': // we have a double
+        printf("float: ");
+        if (tapeidx + 1 >= howmany)
+          return false;
+        printf("%f", *((double *)&tape[++tapeidx]));
+        break;
+      case 'n': // we have a null
+        printf("null");
+        break;
+      case 't': // we have a true
+        printf("true");
+        break;
+      case 'f': // we have a false
+        printf("false");
+        break;
+      case '{': // we have an object
+        printf("{");
+        break;
+      case '}': // we end an object
+        printf("}");
+        break;
+      case '[': // we start an array
+        printf("[");
+        break;
+      case ']': // we end an array
+        printf("]");
+        break;
+      case 'r': // we start and end with the root node
+        printf("end of root");
+        return false;
+      default:
+        return false;
+      }
+    }
+    return true;
+  }
+
 
   // all elements are stored on the tape using a 64-bit word.
   //
