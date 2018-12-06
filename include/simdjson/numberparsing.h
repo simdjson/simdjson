@@ -108,7 +108,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-static inline bool is_made_of_eight_digits_fast(const char *chars) {
+/*static inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
@@ -118,6 +118,15 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
   return (((val & 0xF0F0F0F0F0F0F0F0) |
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
+}*/
+
+// this is more efficient apparently than the scalar code above (fewer instructions)
+static inline bool is_made_of_eight_digits_fast(const char *chars) {
+  __m64 val;
+  memcpy(&val, chars, 8);
+  __m64 base = _mm_sub_pi8(val,_mm_set1_pi8('0'));
+  __m64 basecmp = _mm_subs_pu8(base,_mm_set1_pi8(9));
+  return _mm_cvtm64_si64(basecmp) == 0;
 }
 
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
