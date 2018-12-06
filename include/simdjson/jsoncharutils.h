@@ -60,7 +60,7 @@ const char digittoval[256] = {
   return (int32_t)(*res) >= 0;
 }*/
 
-// returns a value with the highest bit set if it is not valud
+// returns a value with the highest bit set if it is not valid
 uint32_t hex_to_u32_nocheck(const u8 *src) {
   u8 v1 = src[0];
   u8 v2 = src[1];
