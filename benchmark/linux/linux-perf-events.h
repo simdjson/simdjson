@@ -13,6 +13,7 @@
 
 #include <vector>
 
+
 template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   int fd;
   perf_event_attr attribs;
@@ -37,7 +38,7 @@ public:
 
     int group = -1; // no group
     num_events = config_vec.size();
-    u32 i = 0;
+    uint32_t i = 0;
     for (auto config : config_vec) {
       attribs.config = config;
       fd = syscall(__NR_perf_event_open, &attribs, pid, cpu, group, flags);
@@ -55,7 +56,7 @@ public:
 
   ~LinuxEvents() { close(fd); }
 
-  really_inline void start() {
+  inline void start() {
     if (ioctl(fd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) == -1) {
       report_error("ioctl(PERF_EVENT_IOC_RESET)");
     }
@@ -65,7 +66,7 @@ public:
     }
   }
 
-  really_inline void end(std::vector<unsigned long long> &results) {
+  inline void end(std::vector<unsigned long long> &results) {
     if (ioctl(fd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP) == -1) {
       report_error("ioctl(PERF_EVENT_IOC_DISABLE)");
     }
@@ -75,7 +76,7 @@ public:
     }
     // our actual results are in slots 1,3,5, ... of this structure
     // we really should be checking our ids obtained earlier to be safe
-    for (u32 i = 1; i < temp_result_vec.size(); i += 2) {
+    for (uint32_t i = 1; i < temp_result_vec.size(); i += 2) {
       results[i / 2] = temp_result_vec[i];
     }
   }

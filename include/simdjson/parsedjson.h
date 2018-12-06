@@ -251,7 +251,8 @@ public:
   really_inline void write_tape_double(double d) {
     write_tape(0, 'd');
     static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
-    tape[current_loc++] = *((u64 *)&d);
+    memcpy(& tape[current_loc++], &d, sizeof(double));
+    //tape[current_loc++] = *((u64 *)&d);
   }
 
   really_inline u32 get_current_loc() { return current_loc; }

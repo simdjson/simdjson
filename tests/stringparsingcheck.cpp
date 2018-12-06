@@ -230,7 +230,7 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
   size_t thislen = parsed_end - parsed_begin;
   total_string_length += thislen;
   good_string++;
-  char *end;
+  char *end = NULL;
   char bigbuffer[4096]; // if some strings exceeds 4k, this will fail!
   if (!parse_string((const char *)buf, bigbuffer, &end)) {
     printf("WARNING: reference parser seems to think that the string is NOT "
