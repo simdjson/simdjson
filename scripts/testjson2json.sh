@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TMPDIR1=$(mktemp -d -t simdjson1)
-TMPDIR2=$(mktemp -d -t simdjson2)
+TMPDIR1=$(mktemp -d -t simdjsonXXXXXXXX)
+TMPDIR2=$(mktemp -d -t simdjsonXXXXXXXX)
 
 trap "exit 1"         HUP INT PIPE QUIT TERM
 trap "rm -rf $TMPDIR1 $TMPDIR2" EXIT
