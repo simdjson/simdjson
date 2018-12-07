@@ -51,14 +51,7 @@ public:
     n_structural_indexes = 0;
     u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new u32[max_structures];
-
-    if (structural_indexes == NULL) {
-      std::cerr << "Could not allocate memory for structural_indexes"
-                << std::endl;
-      delete[] structurals;
-      return false;
-    }
-    size_t localtapecapacity = ROUNDUP_N(len, 64);
+    size_t localtapecapacity = ROUNDUP_N(len / 2, 64);
     size_t localstringcapacity = ROUNDUP_N(len, 64);
     string_buf = new u8[localstringcapacity];
     tape = new u64[localtapecapacity];
@@ -66,14 +59,14 @@ public:
     ret_address = new void *[maxdepth];
 
     if ((string_buf == NULL) || (tape == NULL) ||
-        (containing_scope_offset == NULL) || (ret_address == NULL)) {
+        (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
       std::cerr << "Could not allocate memory" << std::endl;
       delete[] ret_address;
       delete[] containing_scope_offset;
       delete[] tape;
       delete[] string_buf;
       delete[] structural_indexes;
-      delete[] structurals;
+      free(structurals);
       return false;
     }
 

@@ -21,7 +21,7 @@ bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 ```
 
 It is also possible to use a simply API if you do not mind having the overhead
-of memory allocation:
+of memory allocation with each new JSON document:
 
 ```C
 #include "simdjson/jsonparser.h"
@@ -35,8 +35,6 @@ if( ! pj.isValid() ) {
     // something went wrong
 }
 ```
-
-ParsedJson build_parsed_json(const std::string_view &s)
 
 
 ## Usage
@@ -60,7 +58,7 @@ make parse
 
 To run comparative benchmarks (with other parsers):
 ```
-make parse
+make parsingcompetition
 ./parsingcompetition jsonexamples/twitter.json
 ```
 

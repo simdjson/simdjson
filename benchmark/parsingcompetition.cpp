@@ -88,8 +88,9 @@ int main(int argc, char *argv[]) {
   }
   int repeat = 10;
   int volume = p.size();
-  BEST_TIME("simdjson", json_parse(p, pj), true, , repeat, volume, true);
-  BEST_TIME("simdjson (with dyn alloc) ", build_parsed_json(p).isValid(), true, , repeat, volume, true);
+  BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, , repeat, volume, true);
+
+  BEST_TIME("simdjson (static alloc) ", json_parse(p, pj), true, , repeat, volume, true);
 
   rapidjson::Document d;
 
@@ -123,3 +124,4 @@ int main(int argc, char *argv[]) {
   free(ast_buffer);
   free(buffer);
 }
+
