@@ -77,15 +77,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.size() << " bytes)" << endl;
-  ParsedJson pj;
-  bool allocok = pj.allocateCapacity(p.size());
-  if(!allocok) {
-    std::cerr << "failed to allocate memory" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  if(verbose) cout << "[verbose] allocated memory for parsed JSON " << endl;
-
 #if defined(DEBUG)
   const u32 iterations = 1;
 #else
@@ -108,16 +99,35 @@ int main(int argc, char *argv[]) {
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   vector<u64> results;
   results.resize(evts.size());
-  unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
-  unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
-  unsigned long mis1 = 0, mis2 = 0, mis3 = 0;
-  unsigned long cref1 = 0, cref2 = 0, cref3 = 0;
-  unsigned long cmis1 = 0, cmis2 = 0, cmis3 = 0;
+  unsigned long cy0 = 0, cy1 = 0, cy2 = 0, cy3 = 0;
+  unsigned long cl0 = 0, cl1 = 0, cl2 = 0, cl3 = 0;
+  unsigned long mis0 = 0, mis1 = 0, mis2 = 0, mis3 = 0;
+  unsigned long cref0 = 0, cref1 = 0, cref2 = 0, cref3 = 0;
+  unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0, cmis3 = 0;
 #endif
   bool isok = true;
 
   for (u32 i = 0; i < iterations; i++) {
     if(verbose) cout << "[verbose] iteration # " << i << endl;
+#ifndef SQUASH_COUNTERS
+    unified.start();
+#endif
+    ParsedJson pj;
+    bool allocok = pj.allocateCapacity(p.size());
+    if(!allocok) {
+      std::cerr << "failed to allocate memory" << std::endl;
+      return EXIT_FAILURE;
+    }
+#ifndef SQUASH_COUNTERS
+    unified.end(results);
+    cy0 += results[0];
+    cl0 += results[1];
+    mis0 += results[2];
+    cref0 += results[3];
+    cmis0 += results[4];
+#endif
+    if(verbose) cout << "[verbose] allocated memory for parsed JSON " << endl;
+
     auto start = std::chrono::steady_clock::now();
 #ifndef SQUASH_COUNTERS
     unified.start();
@@ -169,13 +179,21 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
   }
-
+  ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
+  if( ! pj.isValid() ) {
+    std::cerr << "could not parse again? " << std::endl;
+    return EXIT_FAILURE;
+  }
 #ifndef SQUASH_COUNTERS
   printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
          p.size(), pj.n_structural_indexes,
          (double)pj.n_structural_indexes / p.size());
-  unsigned long total = cy1 + cy2 + cy3;
-
+  unsigned long total = cy0 + cy1 + cy2 + cy3;
+  printf(
+      "mem alloc instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu (cycles/mis.branch %.2f) cache accesses: %10lu (failure %10lu)\n",
+      cl0 / iterations, cy0 / iterations, 100. * cy0 / total, (double)cl0 / cy0, mis0/iterations, (double)cy0/mis0, cref1 / iterations, cmis0 / iterations);
+  printf(" mem alloc runs at %.2f cycles per input byte.\n",
+         (double)cy0 / (iterations * p.size()));
   printf(
       "stage 1 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: %.2f mis. branches: %10lu (cycles/mis.branch %.2f) cache accesses: %10lu (failure %10lu)\n",
       cl1 / iterations, cy1 / iterations, 100. * cy1 / total, (double)cl1 / cy1, mis1/iterations, (double)cy1/mis1, cref1 / iterations, cmis1 / iterations);
