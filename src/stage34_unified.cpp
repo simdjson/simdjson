@@ -432,8 +432,9 @@ succeed:
 
 
 #ifdef DEBUG
-  pj.dump_tapes();
+  pj.dump_raw_tape();
 #endif
+  pj.isvalid  = true;
   return true;
 
 fail:

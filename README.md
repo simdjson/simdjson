@@ -14,13 +14,29 @@ Goal: Speed up the parsing of JSON per se.
 const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
-size_t maxdepth = 1024; // support documents have nesting "depth" up to 1024
-pj.allocateCapacity(p.size(), maxdepth); // allocate memory for parsing up to p.size() bytes
+pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
 bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 // parsing is done!
 // js can be reused with other json_parse calls.
 ```
 
+It is also possible to use a simply API if you do not mind having the overhead
+of memory allocation:
+
+```C
+#include "simdjson/jsonparser.h"
+
+/...
+
+const char * filename = ... //
+std::string_view p = get_corpus(filename);
+ParsedJson pj = build_parsed_json(p); // do the parsing
+if( ! pj.isValid() ) {
+    // something went wrong
+}
+```
+
+ParsedJson build_parsed_json(const std::string_view &s)
 
 
 ## Usage

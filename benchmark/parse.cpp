@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   }
   if(verbose) cout << "[verbose] loaded " << filename << " ("<< p.size() << " bytes)" << endl;
   ParsedJson pj;
-  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  bool allocok = pj.allocateCapacity(p.size());
   if(!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;

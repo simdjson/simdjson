@@ -14,26 +14,12 @@
 
 #include "simdjson/jsonformatutils.h"
 
-#define JSONVALUEMASK 0xFFFFFFFFFFFFFF;
+#define JSONVALUEMASK 0xFFFFFFFFFFFFFF
+
+#define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
 struct ParsedJson {
 public:
-  size_t bytecapacity;  // indicates how many bits are meant to be supported by
-                        // structurals
-  size_t depthcapacity; // how deep we can go
-  size_t tapecapacity;
-  size_t stringcapacity;
-  u32 current_loc;
-  u8 *structurals;
-  u32 n_structural_indexes;
-  u32 *structural_indexes;
-
-  u64 *tape;
-  u32 *containing_scope_offset;
-  void **ret_address;
-
-  u8 *string_buf; // should be at least bytecapacity
-  u8 *current_string_buf_loc;
 
   // create a ParsedJson container with zero capacity, call allocateCapacity to
   // allocate memory
@@ -41,12 +27,12 @@ public:
       : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
         current_loc(0), structurals(NULL), n_structural_indexes(0),
         structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
-        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL) {}
+        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len butes and maxdepth "depth"
   WARN_UNUSED
-  inline bool allocateCapacity(size_t len, size_t maxdepth) {
+  inline bool allocateCapacity(size_t len, size_t maxdepth = DEFAULTMAXDEPTH) {
     if ((maxdepth == 0) || (len == 0)) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
@@ -56,6 +42,7 @@ public:
         return true;
       deallocate();
     }
+    isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
     if (posix_memalign((void **)&structurals, 8, ROUNDUP_N(len, 64) / 8)) {
       std::cerr << "Could not allocate memory for structurals" << std::endl;
@@ -97,6 +84,10 @@ public:
     return true;
   }
 
+  bool isValid() const {
+    return isvalid;
+  }
+
   // deallocate memory and set capacity to zero, called automatically by the
   // destructor
   void deallocate() {
@@ -110,6 +101,7 @@ public:
     delete[] string_buf;
     delete[] structural_indexes;
     free(structurals);
+    isvalid = false;
   }
 
   ~ParsedJson() { deallocate(); }
@@ -118,6 +110,7 @@ public:
   void init() {
     current_string_buf_loc = string_buf;
     current_loc = 0;
+    isvalid = false;
   }
 
   // print the json to stdout (should be valid)
@@ -125,6 +118,7 @@ public:
   // JSON).
   WARN_UNUSED
   bool printjson() {
+    if(!isvalid) return false;
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx];
     u8 type = (tape_val >> 56);
@@ -227,6 +221,7 @@ public:
 
   WARN_UNUSED
   bool dump_raw_tape() {
+    if(!isvalid) return false;
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx++];
     u8 type = (tape_val >> 56);
@@ -374,6 +369,32 @@ public:
   };
 
 #endif
+
+  size_t bytecapacity;  // indicates how many bits are meant to be supported by
+                        // structurals
+
+  size_t depthcapacity; // how deep we can go
+  size_t tapecapacity;
+  size_t stringcapacity;
+  u32 current_loc;
+  u8 *structurals;
+  u32 n_structural_indexes;
+
+  u32 *structural_indexes;
+
+  u64 *tape;
+  u32 *containing_scope_offset;
+  void **ret_address;
+
+  u8 *string_buf; // should be at least bytecapacity
+  u8 *current_string_buf_loc;
+  bool isvalid;
+   ParsedJson(const ParsedJson && p); // we don't want the default constructor to be called
+
+private :
+ ParsedJson(const ParsedJson & p); // we don't want the default constructor to be called
+
+
 };
 
 #ifdef DEBUG
