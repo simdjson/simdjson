@@ -51,7 +51,7 @@ public:
     n_structural_indexes = 0;
     u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new u32[max_structures];
-    size_t localtapecapacity = ROUNDUP_N(len / 2, 64);
+    size_t localtapecapacity = ROUNDUP_N(len, 64);
     size_t localstringcapacity = ROUNDUP_N(len, 64);
     string_buf = new u8[localstringcapacity];
     tape = new u64[localtapecapacity];
