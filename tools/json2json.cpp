@@ -5,15 +5,61 @@
 
 using namespace std;
 
+void compute_dump(ParsedJson::iterator & pjh) {
+    bool inobject = (pjh.get_type() == '{');
+    bool inarray = (pjh.get_type() == '{');
+printf("got this: \n");
+pjh.print(std::cout); 
+printf(" \n");
+    if((!inobject) && (!inarray)) {
+      pjh.print(std::cout);// just print the lone value 
+      pjh.up() && pjh.next();
+      return; // we are done
+    }
+    printf("going to object/array\n");
+
+    // we have either an array or an object
+    pjh.down();
+    if(inobject) {
+          std::cout <<"{";
+          pjh.print(std::cout); // must be a string
+          std::cout <<":";
+          pjh.next();
+          compute_dump(pjh);// let us recurse
+          while (pjh.next()) {
+              std::cout <<",";
+              pjh.print(std::cout);
+              std::cout <<":";
+              pjh.next();
+              compute_dump(pjh);// let us recurse
+          }
+          std::cout <<"}";
+    } else {
+          std::cout <<"[";
+          compute_dump(pjh);// let us recurse
+          while(pjh.next()) { 
+              std::cout <<",";
+              compute_dump(pjh);// let us recurse
+          }
+          std::cout <<"]";
+    }
+    pjh.up() && pjh.next();
+}
+ 
+
 int main(int argc, char *argv[]) {
   int c;
   bool rawdump = false;
+  bool apidump = false;
 
-  while ((c = getopt (argc, argv, "d")) != -1)
+  while ((c = getopt (argc, argv, "da")) != -1)
     switch (c)
       {
       case 'd':
         rawdump = true;
+        break;
+      case 'a':
+        apidump = true;
         break;
       default:
         abort ();
@@ -45,10 +91,19 @@ int main(int argc, char *argv[]) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;
   }
-  is_ok = rawdump ? pj.dump_raw_tape() : pj.printjson();
-  if(!is_ok) {
-    std::cerr << " Could not print out parsed result. " << std::endl;
-    return EXIT_FAILURE;      
+  if(apidump) {
+      ParsedJson::iterator pjh(pj);
+      if(!pjh.isOk()) {
+        std::cerr << " Could not iterate parsed result. " << std::endl;
+        return EXIT_FAILURE;      
+      }
+      compute_dump(pjh);
+  } else {
+    is_ok = rawdump ? pj.dump_raw_tape() : pj.printjson();
+    if(!is_ok) {
+      std::cerr << " Could not print out parsed result. " << std::endl;
+      return EXIT_FAILURE;      
+    }
   }
   return EXIT_SUCCESS;
 }

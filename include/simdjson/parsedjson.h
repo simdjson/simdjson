@@ -322,9 +322,11 @@ public:
     tape[saved_loc] |= val;
   }
 
-  struct ParsedJsonHandle {
 
-    explicit ParsedJsonHandle(ParsedJson &pj_)
+
+  struct iterator {
+
+    explicit iterator(ParsedJson &pj_)
         : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
         if(pj.isValid()) {
             depthindex = new size_t[pj.depthcapacity];
@@ -344,11 +346,11 @@ public:
             }
         }
     }
-    ~ParsedJsonHandle() {
+    ~iterator() {
       delete[] depthindex;
     }
 
-    ParsedJsonHandle(const ParsedJsonHandle &o): 
+    iterator(const iterator &o): 
       pj(o.pj), depth(o.depth), location(o.location), 
       tape_length(o.tape_length), current_type(o.current_type), 
       current_val(o.current_val), depthindex(NULL) {
@@ -360,11 +362,15 @@ public:
         }
     }
 
-    ParsedJsonHandle(ParsedJsonHandle &&o): 
+    iterator(iterator &&o): 
       pj(o.pj), depth(o.depth), location(o.location), 
       tape_length(o.tape_length), current_type(o.current_type), 
       current_val(o.current_val), depthindex(o.depthindex) {
         o.depthindex = NULL;// we take ownship
+    }
+
+    bool isOk() const {
+      return location < tape_length;
     }
 
 
@@ -374,8 +380,6 @@ public:
 
     // valid if we're not at the end of a scope
     really_inline bool next() { 
-      size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
-      if(location + increment >= tape_length) return false;
       if ((current_type == '[') || (current_type == '{')){
         // we need to jump
         size_t npos = ( current_val & JSONVALUEMASK) + 1; // +1 to skip of end
@@ -392,6 +396,8 @@ public:
         current_type = nexttype;
         return true;
       } else {
+        size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
+        if(location + increment >= tape_length) return false;
         u64 nextval = pj.tape[location + increment];
         u8 nexttype = (nextval >> 56);
         if((nexttype == ']') || (nexttype == '}')) {
@@ -429,12 +435,15 @@ public:
       if(depth == 1) {
         return false; // don't allow moving back to root
       }
+      to_start_scope();
+      // next we just move to the previous value
       depth--;
-      location = depthindex[depth];
+      location -= 1;
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
       return true;
     }
+ 
     
     // valid if we're at a [ or { call site; moves us to start of
     // that scope
@@ -462,10 +471,11 @@ public:
     // the start of our current scope; always succeeds
 
     // print the thing we're currently pointing at
-    void print(std::ostream &os) {
+    bool print(std::ostream &os) const {
+      if(!isOk()) return false;
       switch (current_type) {
       case '"': // we have a string
-        os << get_string();
+        os << '"' << get_string() << '"';
         break;
       case 'l': // we have a long int
         os << get_integer();
@@ -486,9 +496,11 @@ public:
       case '[': // we start an array
       case ']': // we end an array
         os << (char) current_type;
+        break;
       default:
-        throw new std::runtime_error("can't print this character.");
+        return false;
       }
+      return true;
     }
 
     // retrieve the character code of what we're looking at:
@@ -521,7 +533,7 @@ public:
 
 private:
 
-    ParsedJsonHandle& operator=(const ParsedJsonHandle& other) ;
+    iterator& operator=(const iterator& other) ;
 
     ParsedJson &pj;
     size_t depth;
