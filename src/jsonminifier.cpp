@@ -137,7 +137,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
           _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
       quote_mask ^= prev_iter_inside_quote;
-      prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63);// might be undefined behavior
+      prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63);// might be undefined behavior, should be fully defined in C++20, ok according to John Regher from Utah University
       const __m256i low_nibble_mask = _mm256_setr_epi8(
           //  0                           9  a   b  c  d
           16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0,

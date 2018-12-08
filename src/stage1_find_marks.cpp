@@ -156,7 +156,7 @@ WARN_UNUSED
     u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
+    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
     dumpbits(quote_mask, "quote_mask");
 
     // How do we build up a user traversable data structure

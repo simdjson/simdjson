@@ -1,5 +1,5 @@
 #pragma once
-
+ #include <math.h> 
 #include <inttypes.h>
 #include <string.h>
 #ifdef _MSC_VER
@@ -162,7 +162,9 @@ public:
       case 'd': // we have a double
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("%f", *((double *)&tape[++tapeidx]));
+        double answer;
+        memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+        printf("%f", answer);
         break;
       case 'n': // we have a null
         printf("null");
@@ -197,18 +199,18 @@ public:
         break;
       case 'r': // we start and end with the root node
         printf("should we be hitting the root node?\n");
-        free(inobject);
-        free(inobjectidx);
+        delete[] inobject;
+        delete[] inobjectidx;
         return false;
       default:
         printf("bug %c\n", type);
-        free(inobject);
-        free(inobjectidx);
+        delete[] inobject;
+        delete[] inobjectidx;
         return false;
       }
     }
-    free(inobject);
-    free(inobjectidx);
+    delete[] inobject;
+    delete[] inobjectidx;
     return true;
   }
 
@@ -247,7 +249,9 @@ public:
         printf("float: ");
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("%f", *((double *)&tape[++tapeidx]));
+        double answer;
+        memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+        printf("%f", answer);
         break;
       case 'n': // we have a null
         printf("null");
@@ -318,50 +322,217 @@ public:
     tape[saved_loc] |= val;
   }
 
-  // public interface
-#if 1
-
   struct ParsedJsonHandle {
-    ParsedJson &pj;
-    u32 depth;
-    u32 scope_header; // the start of our current scope that contains our
-                      // current location
-    u32 location;     // our current location on a tape
 
     explicit ParsedJsonHandle(ParsedJson &pj_)
-        : pj(pj_), depth(0), scope_header(0), location(0) {}
-    // OK with default copy constructor as the way to clone the POD structure
+        : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
+        if(pj.isValid()) {
+            depthindex = new size_t[pj.depthcapacity];
+            if(depthindex == NULL) return;
+            depthindex[0] = 0;
+            current_val = pj.tape[location++];
+            current_type = (current_val >> 56);
+            if (current_type == 'r') {
+              tape_length = current_val & JSONVALUEMASK;
+              if(location + 1 < tape_length) {
+                current_val = pj.tape[location];
+                current_type = (current_val >> 56);
+                depth++;
+                depthindex[depth] = location;
+                location++;
+              }
+            }
+        }
+    }
+    ~ParsedJsonHandle() {
+      delete[] depthindex;
+    }
 
-    // some placeholder navigation. Will convert over to a more native C++-ish
-    // way of doing things once it's working (i.e. ++ and -- operators and get
-    // start/end iterators) return true if we can do the navigation, false
+    ParsedJsonHandle(const ParsedJsonHandle &o): 
+      pj(o.pj), depth(o.depth), location(o.location), 
+      tape_length(o.tape_length), current_type(o.current_type), 
+      current_val(o.current_val), depthindex(NULL) {
+        depthindex = new size_t[pj.depthcapacity];
+        if(depthindex != NULL) {
+          memcpy(o.depthindex, depthindex, pj.depthcapacity * sizeof(depthindex[0]));
+        } else {
+          tape_length = 0;
+        }
+    }
+
+    ParsedJsonHandle(ParsedJsonHandle &&o): 
+      pj(o.pj), depth(o.depth), location(o.location), 
+      tape_length(o.tape_length), current_type(o.current_type), 
+      current_val(o.current_val), depthindex(o.depthindex) {
+        o.depthindex = NULL;// we take ownship
+    }
+
+
+
+    // return true if we can do the navigation, false
     // otherwise
-    bool next(); // valid if we're not at the end of a scope
-    bool prev(); // valid if we're not at the start of a scope
-    bool up();   // valid if we are at depth != 0
-    bool down(); // valid if we're at a [ or { call site; moves us to header of
-                 // that scope
-    // void to_start_scope();            // move us to the start of our current
-    // scope; always succeeds void to_end_scope();              // move us to
+
+    // valid if we're not at the end of a scope
+    really_inline bool next() { 
+      size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
+      if(location + increment >= tape_length) return false;
+      if ((current_type == '[') || (current_type == '{')){
+        // we need to jump
+        size_t npos = ( current_val & JSONVALUEMASK) + 1; // +1 to skip of end
+        if(npos >= tape_length) {
+          return false; // shoud never happen unless at the root
+        }
+        u64 nextval = pj.tape[npos];
+        u8 nexttype = (nextval >> 56);
+        if((nexttype == ']') || (nexttype == '}')) {
+          return false; // we reached the end of the scope
+        }
+        location = npos;
+        current_val = nextval;
+        current_type = nexttype;
+        return true;
+      } else {
+        u64 nextval = pj.tape[location + increment];
+        u8 nexttype = (nextval >> 56);
+        if((nexttype == ']') || (nexttype == '}')) {
+          return false; // we reached the end of the scope
+        }
+        location = location + increment;
+        current_val = nextval;
+        current_type = nexttype;
+        return true;
+      }
+    }
+
+    // valid if we're not at the start of a scope
+    really_inline bool prev() {
+      if(location - 1 < depthindex[depth]) return false;
+      location -= 1;
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+      if ((current_type == ']') || (current_type == '}')){
+        // we need to jump
+        size_t new_location = ( current_val & JSONVALUEMASK); 
+        if(new_location < depthindex[depth]) {
+          return false; // shoud never happen 
+        }
+        location = new_location;
+        current_val = pj.tape[location];
+        current_type = (current_val >> 56);
+      }
+      return true;
+    }
+
+
+    // valid unless we are at the first level of the document
+    really_inline bool up() {
+      if(depth == 1) {
+        return false; // don't allow moving back to root
+      }
+      depth--;
+      location = depthindex[depth];
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+      return true;
+    }
+    
+    // valid if we're at a [ or { call site; moves us to start of
+    // that scope
+    really_inline bool down() {
+      if(location + 1 >= tape_length) return false;
+      if ((current_type == '[') || (current_type == '{')) {
+        depth++;
+        location = location + 1;
+        depthindex[depth] = location;
+        current_val = pj.tape[location];
+        current_type = (current_val >> 56);
+        return true;
+      } 
+      return false;
+    }
+
+    // move us to the start of our current scope
+    void to_start_scope()  {             
+      location = depthindex[depth];
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+    }
+
+    // void to_end_scope();              // move us to
     // the start of our current scope; always succeeds
 
-    // these navigation elements move us across scope if need be, so allow us to
-    // iterate over everything at a given depth
-    // bool next_flat();                 // valid if we're not at the end of a
-    // tape bool prev_flat();                 // valid if we're not at the start
-    // of a tape
+    // print the thing we're currently pointing at
+    void print(std::ostream &os) {
+      switch (current_type) {
+      case '"': // we have a string
+        os << get_string();
+        break;
+      case 'l': // we have a long int
+        os << get_integer();
+        break;
+      case 'd': 
+        os << get_double(); 
+      case 'n': // we have a null
+        os << "null";
+        break;
+      case 't': // we have a true
+        os << "true";
+        break;
+      case 'f': // we have a false
+        os << "false";
+        break;
+      case '{': // we have an object
+      case '}': // we end an object
+      case '[': // we start an array
+      case ']': // we end an array
+        os << (char) current_type;
+      default:
+        throw new std::runtime_error("can't print this character.");
+      }
+    }
 
-    void print(std::ostream &os); // print the thing we're currently pointing at
-    u8 get_type(); // retrieve the character code of what we're looking at:
-                   // [{"sltfn are the possibilities
-    s64 get_s64(); // get the s64 value at this node; valid only if we're at "s"
-    double get_double(); // get the double value at this node; valid only if
-                         // we're at "d"
-    char *
-    get_string(); // get the string value at this node; valid only if we're at "
+    // retrieve the character code of what we're looking at:
+    // [{"sltfn are the possibilities
+    really_inline u8 get_type()  const {
+      return current_type;
+    }
+
+    // get the s64 value at this node; valid only if we're at "l"
+    really_inline s64 get_integer()  const {
+       if(location + 1 >= tape_length) return 0;// default value in case of error
+       return (s64) pj.tape[location + 1];
+    }
+
+    // get the double value at this node; valid only if
+    // we're at "d"
+    really_inline double get_double()  const {
+       if(location + 1 >= tape_length) return NAN;// default value in case of error
+       double answer;
+       memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
+       return answer;
+    } 
+
+    // get the string value at this node (NULL ended); valid only if we're at "
+    // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
+    // return value is valid UTF-8
+    really_inline const char * get_string() const {
+      return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+    }
+
+private:
+
+    ParsedJsonHandle& operator=(const ParsedJsonHandle& other) ;
+
+    ParsedJson &pj;
+    size_t depth;
+    size_t location;     // our current location on a tape
+    size_t tape_length; 
+    u8 current_type;
+    u64 current_val;
+    size_t *depthindex;
+
   };
 
-#endif
 
   size_t bytecapacity;  // indicates how many bits are meant to be supported by
                         // structurals
