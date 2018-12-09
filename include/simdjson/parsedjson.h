@@ -228,6 +228,7 @@ public:
       return false;
     }
     for (; tapeidx < howmany; tapeidx++) {
+      printf("%zu : ", tapeidx);
       tape_val = tape[tapeidx];
       u64 payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
@@ -243,7 +244,7 @@ public:
         if (tapeidx + 1 >= howmany)
           return false;
         printf("integer: ");
-        printf("%" PRId64, (int64_t)tape[++tapeidx]);
+        printf("%" PRId64"\n", (int64_t)tape[++tapeidx]);
         break;
       case 'd': // we have a double
         printf("float: ");
@@ -251,31 +252,31 @@ public:
           return false;
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
-        printf("%f", answer);
+        printf("%f\n", answer);
         break;
       case 'n': // we have a null
-        printf("null");
+        printf("null\n");
         break;
       case 't': // we have a true
-        printf("true");
+        printf("true\n");
         break;
       case 'f': // we have a false
-        printf("false");
+        printf("false\n");
         break;
       case '{': // we have an object
-        printf("{");
+        printf("{\n");
         break;
       case '}': // we end an object
-        printf("}");
+        printf("}\n");
         break;
       case '[': // we start an array
-        printf("[");
+        printf("[\n");
         break;
       case ']': // we end an array
-        printf("]");
+        printf("]\n");
         break;
       case 'r': // we start and end with the root node
-        printf("end of root");
+        printf("end of root\n");
         return false;
       default:
         return false;
@@ -336,12 +337,11 @@ public:
             current_type = (current_val >> 56);
             if (current_type == 'r') {
               tape_length = current_val & JSONVALUEMASK;
-              if(location + 1 < tape_length) {
+              if(location < tape_length) {
                 current_val = pj.tape[location];
                 current_type = (current_val >> 56);
                 depth++;
                 depthindex[depth] = location;
-                location++;
               }
             }
         }
@@ -373,7 +373,13 @@ public:
       return location < tape_length;
     }
 
+    size_t get_tape_location() const {
+      return location;
+    }
 
+    size_t get_tape_lenght() const {
+      return tape_length;
+    }
 
     // return true if we can do the navigation, false
     // otherwise
@@ -382,7 +388,7 @@ public:
     really_inline bool next() { 
       if ((current_type == '[') || (current_type == '{')){
         // we need to jump
-        size_t npos = ( current_val & JSONVALUEMASK) + 1; // +1 to skip of end
+        size_t npos = ( current_val & JSONVALUEMASK); 
         if(npos >= tape_length) {
           return false; // shoud never happen unless at the root
         }
