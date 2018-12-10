@@ -13,8 +13,7 @@
 #define UTF8VALIDATE
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
-// allows it. It appears that sajson might do utf-8
-// validation
+// allows it. 
 #ifdef UTF8VALIDATE
 #include "simdjson/simdutf8check.h"
 #endif
@@ -61,7 +60,7 @@ WARN_UNUSED
   // effectively the very first char is considered to follow "whitespace" for the
   // purposes of psuedo-structural character detection
   u64 prev_iter_ends_pseudo_pred = 1ULL;
-  size_t lenminus64 = len + 1 < 64 ? 0 : len + 1  - 64; // len + 1 because of the NULL termination
+  size_t lenminus64 = len < 64 ? 0 : len - 64; 
   size_t idx = 0;
   for (; idx < lenminus64; idx += 64) {
     __builtin_prefetch(buf + idx + 128);
@@ -256,10 +255,10 @@ WARN_UNUSED
   /// but otherwise the string needs to be properly padded or else we
   /// risk invalidating the UTF-8 checks.
   ////////////
-  if (idx < len + 1) { // +1 due to NULL termination
+  if (idx < len) { 
     u8 tmpbuf[64];
     memset(tmpbuf,0x20,64);
-    memcpy(tmpbuf,buf+idx,len - idx + 1);// +1 due to NULL termination
+    memcpy(tmpbuf,buf+idx,len - idx);
     m256 input_lo = _mm256_loadu_si256((const m256 *)(tmpbuf + 0));
     m256 input_hi = _mm256_loadu_si256((const m256 *)(tmpbuf + 32));
 #ifdef UTF8VALIDATE
@@ -402,10 +401,6 @@ WARN_UNUSED
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
     *(u64 *)(pj.structurals + idx / 8) = structurals;
-  }
-  if(buf[len] != '\0') {
-      std::cerr << "Your string should be NULL terminated." << std::endl;
-      return false;
   }
 #ifdef UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);

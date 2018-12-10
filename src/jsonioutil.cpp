@@ -25,7 +25,7 @@ std::string_view get_corpus(std::string filename) {
     }
     std::rewind(fp);
     std::fread(buf, 1, len, fp);
-    buf[len] = '\0';
+    //buf[len] = '\0';
     std::fclose(fp);
     return std::string_view(buf,len);
   }

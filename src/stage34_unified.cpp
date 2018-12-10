@@ -153,15 +153,31 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '7':
   case '8':
   case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
+    // we need to make a copy to make sure that the string is NULL terminated.
+    // this is done only for JSON documents made of a sole number
+    char * copy = (char *) malloc(len + 1);
+    memcpy(copy, buf, len);
+    copy[len] = '\0';
+    if(copy == NULL) goto fail;
+    if (!parse_number((const u8 *)copy, pj, idx, false)) {
+      free(copy);
       goto fail;
     }
+    free(copy);
     break;
   }
   case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
+    // we need to make a copy to make sure that the string is NULL terminated.
+    // this is done only for JSON documents made of a sole number
+    char * copy = (char *) malloc(len + 1);
+    memcpy(copy, buf, len);
+    copy[len] = '\0';
+    if(copy == NULL) goto fail;
+    if (!parse_number((const u8 *)copy, pj, idx, true)) {
+      free(copy);
       goto fail;
     }
+    free(copy);
     break;
   }
 #endif // ALLOWANYTHINGINROOT

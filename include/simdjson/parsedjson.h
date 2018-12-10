@@ -132,20 +132,21 @@ public:
     size_t *inobjectidx = new size_t[depthcapacity];
     int depth = 1; // only root at level 0
     inobjectidx[depth] = 0;
+    inobject[depth] = false;
     for (; tapeidx < howmany; tapeidx++) {
       tape_val = tape[tapeidx];
       u64 payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       if (!inobject[depth]) {
         if ((inobjectidx[depth] > 0) && (type != ']'))
-          os << ",  ";
+          os << ",";
         inobjectidx[depth]++;
       } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
             (type != '}'))
-          os << ",  ";
+          os << ",";
         if (((inobjectidx[depth] & 1) == 1))
-          os << " : ";
+          os << ":";
         inobjectidx[depth]++;
       }
       switch (type) {
@@ -176,7 +177,6 @@ public:
         os << "false";
         break;
       case '{': // we have an object
-        os << '\n';
         os << '{';
         depth++;
         inobject[depth] = true;
@@ -187,7 +187,6 @@ public:
         os << '}';
         break;
       case '[': // we start an array
-        os << '\n';
         os << '['; 
         depth++;
         inobject[depth] = false;
@@ -237,6 +236,7 @@ public:
         os << "string \""; 
         print_with_escapes((const unsigned char *)(string_buf + payload));
         os << '"';
+        os << '\n';
         break;
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany)

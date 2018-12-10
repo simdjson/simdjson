@@ -101,15 +101,15 @@ int main(int argc, char *argv[]) {
   BEST_TIME("RapidJSON", 
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
       false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
-  BEST_TIME("RapidJSON Insitu", d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
+  BEST_TIME("RapidJSON (insitu)", d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(), false,
             memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
-  BEST_TIME("sajson (dynamic mem)", sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+  BEST_TIME("sajson (dynamic mem, insitu)", sajson::parse(sajson::dynamic_allocation(), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
   size_t astbuffersize = p.size();
   size_t * ast_buffer = (size_t *) malloc(astbuffersize * sizeof(size_t));
 
-  BEST_TIME("sajson (static alloc)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+  BEST_TIME("sajson (static alloc, insitu)", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(p.size(), buffer)).is_valid(), true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   std::string json11err;
   if(all) BEST_TIME("dropbox (json11)     ",  (( json11::Json::parse(buffer,json11err).is_null() ) || ( ! json11err.empty() )), false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 

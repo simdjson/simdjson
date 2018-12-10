@@ -7,6 +7,14 @@
 static inline void print_with_escapes(const unsigned char *src) {
   while (*src) {
     switch (*src) {
+    case '\b':
+      putchar('\\');
+      putchar('b');
+      break;
+    case '\f':
+      putchar('\\');
+      putchar('f');
+      break;
     case '\n':
       putchar('\\');
       putchar('n');
@@ -40,6 +48,14 @@ static inline void print_with_escapes(const unsigned char *src) {
 static inline void print_with_escapes(const unsigned char *src, std::ostream &os) {
   while (*src) {
     switch (*src) {
+    case '\b':
+      os << '\\';
+      os << 'b';
+      break;
+    case '\f':
+      os << '\\';
+      os << 'f';
+      break;
     case '\n':
       os << '\\';
       os << 'n';
