@@ -14,7 +14,14 @@ void compute_dump(ParsedJson::iterator &pjh) {
     return; // we are done
   }
   // we have either an array or an object
-  pjh.down();
+  bool goingdown = pjh.down();
+  if(!goingdown) {
+      // we have an empty scope
+      if(inobject) std::cout<<"{}";
+      else std::cout<<"[]";
+      return;
+  }
+  // we have a non-empty scope and we are at the beginning of it
   if (inobject) {
     std::cout << "{";
     assert(pjh.get_type() == '"');
@@ -40,7 +47,7 @@ void compute_dump(ParsedJson::iterator &pjh) {
     }
     std::cout << "]";
   }
-  pjh.up(); 
+  assert(pjh.up()); 
 }
 
 int main(int argc, char *argv[]) {

@@ -264,16 +264,16 @@ public:
         printf("false\n");
         break;
       case '{': // we have an object
-        printf("{\n");
+        printf("{\t// pointing to next tape location %llu \n", payload);
         break;
       case '}': // we end an object
-        printf("}\n");
+        printf("}\t// pointing to previous tape location %llu \n", payload);
         break;
       case '[': // we start an array
-        printf("[\n");
+        printf("[\t// pointing to next tape location %llu \n", payload);
         break;
       case ']': // we end an array
-        printf("]\n");
+        printf("]\t// pointing to previous tape location %llu \n", payload);
         break;
       case 'r': // we start and end with the root node
         printf("end of root\n");
@@ -368,7 +368,7 @@ public:
       current_val(o.current_val), depthindex(o.depthindex) {
         o.depthindex = NULL;// we take ownship
     }
-
+    WARN_UNUSED
     bool isOk() const {
       return location < tape_length;
     }
@@ -384,7 +384,9 @@ public:
     // return true if we can do the navigation, false
     // otherwise
 
-    // valid if we're not at the end of a scope
+    // withing a give scope, we move forward
+    // valid if we're not at the end of a scope (returns true)
+    WARN_UNUSED
     really_inline bool next() { 
       if ((current_type == '[') || (current_type == '{')){
         // we need to jump
@@ -417,6 +419,7 @@ public:
     }
 
     // valid if we're not at the start of a scope
+    WARN_UNUSED
     really_inline bool prev() {
       if(location - 1 < depthindex[depth]) return false;
       location -= 1;
@@ -437,6 +440,7 @@ public:
 
 
     // valid unless we are at the first level of the document
+    WARN_UNUSED
     really_inline bool up() {
       if(depth == 1) {
         return false; // don't allow moving back to root
@@ -451,11 +455,16 @@ public:
     }
  
     
-    // valid if we're at a [ or { call site; moves us to start of
-    // that scope
+    // valid if we're at a [ or { and it starts a non-empty scope; moves us to start of
+    // that deeper scope if it not empty
+    WARN_UNUSED
     really_inline bool down() {
       if(location + 1 >= tape_length) return false;
       if ((current_type == '[') || (current_type == '{')) {
+        size_t npos = (current_val & JSONVALUEMASK); 
+        if(npos == location + 2) {
+          return false; // we have an empty scope
+        }
         depth++;
         location = location + 1;
         depthindex[depth] = location;
@@ -477,17 +486,24 @@ public:
     // the start of our current scope; always succeeds
 
     // print the thing we're currently pointing at
-    bool print(std::ostream &os) const {
+    bool print(std::ostream &os, bool escape_strings = true) const {
       if(!isOk()) return false;
       switch (current_type) {
       case '"': // we have a string
-        os << '"' << get_string() << '"';
+        os << '"';
+        if(escape_strings) {
+          print_with_escapes(get_string(), os);
+        } else {
+          os << get_string();
+        }
+        os << '"';
         break;
       case 'l': // we have a long int
         os << get_integer();
         break;
       case 'd': 
-        os << get_double(); 
+        os << get_double();
+        break;
       case 'n': // we have a null
         os << "null";
         break;
