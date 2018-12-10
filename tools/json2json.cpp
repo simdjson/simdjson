@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     }
     compute_dump(pjh);
   } else {
-    is_ok = rawdump ? pj.dump_raw_tape() : pj.printjson();
+    is_ok = rawdump ? pj.dump_raw_tape(std::cout) : pj.printjson(std::cout);
     if (!is_ok) {
       std::cerr << " Could not print out parsed result. " << std::endl;
       return EXIT_FAILURE;

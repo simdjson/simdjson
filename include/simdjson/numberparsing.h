@@ -242,6 +242,9 @@ parse_float(const u8 *const buf,
     }
     i *= power_of_ten[308 + exponent];
   }
+  if(is_not_structural_or_whitespace(*p)) {
+    return false;
+  }
   double d = negative ? -i : i;
   pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
@@ -446,6 +449,9 @@ static really_inline bool parse_number(const u8 *const buf,
       return false;
     }
     exponent += (negexp ? -expnumber : expnumber);
+  }
+  if(is_not_structural_or_whitespace(*p)) {
+    return false;
   }
   i = negative ? -i : i;
   if ((exponent != 0) || (expnumber != 0)) {

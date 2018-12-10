@@ -224,10 +224,10 @@ int main(int argc, char *argv[]) {
        << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
        << "\n";
   if(jsonoutput) {
-    isok = isok && pj.printjson();
+    isok = isok && pj.printjson(std::cout);
   }
   if(dump) {
-    isok = isok && pj.dump_raw_tape();
+    isok = isok && pj.dump_raw_tape(std::cout);
   }
   if (!isok) {
     printf(" Parsing failed. \n ");

@@ -110,7 +110,7 @@ public:
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
   WARN_UNUSED
-  bool printjson() {
+  bool printjson(std::ostream &os) {
     if(!isvalid) return false;
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx];
@@ -138,64 +138,64 @@ public:
       type = (tape_val >> 56);
       if (!inobject[depth]) {
         if ((inobjectidx[depth] > 0) && (type != ']'))
-          printf(",  ");
+          os << ",  ";
         inobjectidx[depth]++;
       } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
             (type != '}'))
-          printf(",  ");
+          os << ",  ";
         if (((inobjectidx[depth] & 1) == 1))
-          printf(" : ");
+          os << " : ";
         inobjectidx[depth]++;
       }
       switch (type) {
       case '"': // we have a string
-        putchar('"');
+        os << '"';
         print_with_escapes((const unsigned char *)(string_buf + payload));
-        putchar('"');
+        os << '"';
         break;
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("%" PRId64, (int64_t)tape[++tapeidx]);
+        os <<  (int64_t)tape[++tapeidx];
         break;
       case 'd': // we have a double
         if (tapeidx + 1 >= howmany)
           return false;
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
-        printf("%f", answer);
+        os << answer;
         break;
       case 'n': // we have a null
-        printf("null");
+        os << "null";
         break;
       case 't': // we have a true
-        printf("true");
+        os << "true";
         break;
       case 'f': // we have a false
-        printf("false");
+        os << "false";
         break;
       case '{': // we have an object
-        printf("\n");
-        printf("%*s\n%*s", depth, "{", depth + 1, "");
+        os << '\n';
+        os << '{';
         depth++;
         inobject[depth] = true;
         inobjectidx[depth] = 0;
         break;
       case '}': // we end an object
         depth--;
-        printf("\n%*s}\n%*s", depth - 1, "", depth, "");
+        os << '}';
         break;
       case '[': // we start an array
-        printf("\n");
-        printf("%*s\n%*s", depth, "[", depth + 1, "");
+        os << '\n';
+        os << '['; 
         depth++;
         inobject[depth] = false;
         inobjectidx[depth] = 0;
         break;
       case ']': // we end an array
         depth--;
-        printf("\n%*s]\n%*s", depth - 1, "", depth, "");
+        os << ']'; 
         break;
       case 'r': // we start and end with the root node
         printf("should we be hitting the root node?\n");
@@ -215,7 +215,7 @@ public:
   }
 
   WARN_UNUSED
-  bool dump_raw_tape() {
+  bool dump_raw_tape(std::ostream &os) {
     if(!isvalid) return false;
     size_t tapeidx = 0;
     u64 tape_val = tape[tapeidx++];
@@ -228,52 +228,49 @@ public:
       return false;
     }
     for (; tapeidx < howmany; tapeidx++) {
-      printf("%zu : ", tapeidx);
+      os << tapeidx << " : "; 
       tape_val = tape[tapeidx];
       u64 payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       switch (type) {
       case '"': // we have a string
-        printf("string: ");
-        putchar('"');
+        os << "string \""; 
         print_with_escapes((const unsigned char *)(string_buf + payload));
-        putchar('"');
-        printf("\n");
+        os << '"';
         break;
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany)
           return false;
-        printf("integer: ");
-        printf("%" PRId64"\n", (int64_t)tape[++tapeidx]);
+        os << "integer " << (int64_t)tape[++tapeidx] << "\n";
         break;
       case 'd': // we have a double
-        printf("float: ");
+        os << "float ";
         if (tapeidx + 1 >= howmany)
           return false;
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
-        printf("%f\n", answer);
+        os << answer << '\n';
         break;
       case 'n': // we have a null
-        printf("null\n");
+        os << "null\n";
         break;
       case 't': // we have a true
-        printf("true\n");
+        os << "true\n";
         break;
       case 'f': // we have a false
-        printf("false\n");
+        os << "false\n";
         break;
       case '{': // we have an object
-        printf("{\t// pointing to next tape location %llu \n", payload);
+        os << "{\t// pointing to next tape location " << payload << "\n";
         break;
       case '}': // we end an object
-        printf("}\t// pointing to previous tape location %llu \n", payload);
+        os << "}\t// pointing to previous tape location " << payload << "\n";
         break;
       case '[': // we start an array
-        printf("[\t// pointing to next tape location %llu \n", payload);
+        os << "[\t// pointing to next tape location " << payload << "\n";
         break;
       case ']': // we end an array
-        printf("]\t// pointing to previous tape location %llu \n", payload);
+        os << "]\t// pointing to previous tape location " << payload << "\n";
         break;
       case 'r': // we start and end with the root node
         printf("end of root\n");
