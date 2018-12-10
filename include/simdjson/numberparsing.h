@@ -159,17 +159,16 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // Note: a redesign could avoid this function entirely.
 //
 static never_inline bool
-parse_highprecision_float(const u8 *const buf, 
+parse_float(const u8 *const buf, 
                           ParsedJson &pj, const u32 offset,
                           bool found_minus) {
   const char *p = (const char *)(buf + offset);
-
   bool negative = false;
   if (found_minus) {
     ++p;
     negative = true;
   }
-  long double i;
+  double i;
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     i = 0;
@@ -183,26 +182,15 @@ parse_highprecision_float(const u8 *const buf,
       ++p;
     }
   }
-
-  int64_t exponent = 0;
-
   if ('.' == *p) {
     ++p;
-    const char *const firstafterperiod = p;
-#ifdef SWAR_NUMBER_PARSING
-    // this helps if we have lots of decimals!
-    // this turns out to be frequent enough.
-    if (is_made_of_eight_digits_fast(p)) {
-      i = i * 100000000 + parse_eight_digits_unrolled(p);
-      p += 8;
-    }
-#endif
+    double fractionalweight = 1;
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      i = i * 10 + digit;
+      fractionalweight *= 0.1;
+      i = i + digit * fractionalweight;
     }
-    exponent = firstafterperiod - p;
   }
   if (('e' == *p) || ('E' == *p)) {
     ++p;
@@ -244,14 +232,7 @@ parse_highprecision_float(const u8 *const buf,
 #endif
       return false;
     }
-    exponent += (negexp ? -expnumber : expnumber);
-  }
-  if (i == 0) {
-    pj.write_tape_double(0.0);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-    foundFloat(0.0, buf + offset);
-#endif
-  } else {
+    int exponent = (negexp ? -expnumber : expnumber);
     if ((exponent > 308) || (exponent < -308)) {
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
@@ -259,14 +240,13 @@ parse_highprecision_float(const u8 *const buf,
 #endif
       return false;
     }
-    double d = i;
-    d *= power_of_ten[308 + exponent];
-    d = negative ? -d : d;
-    pj.write_tape_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-    foundFloat(d, buf + offset);
-#endif
+    i *= power_of_ten[308 + exponent];
   }
+  double d = negative ? -i : i;
+  pj.write_tape_double(d);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+  foundFloat(d, buf + offset);
+#endif
   return true;
 }
 
@@ -472,7 +452,7 @@ static really_inline bool parse_number(const u8 *const buf,
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_highprecision_float(buf, pj, offset, 
+      return parse_float(buf, pj, offset, 
                                        found_minus);
     }
     ///////////

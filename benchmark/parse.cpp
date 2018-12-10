@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   }
   ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if( ! pj.isValid() ) {
-    std::cerr << "could not parse again? " << std::endl;
+    std::cerr << "Could not parse. " << std::endl;
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS

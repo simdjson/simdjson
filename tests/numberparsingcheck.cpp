@@ -71,12 +71,17 @@ inline void foundFloat(double result, const u8 *buf) {
     printf(" while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
+  if( fpclassify(expected) != fpclassify(result) ) {
+    printf("floats not in the same category expected: %f observed: %f \n", expected, result);
+    printf("%.128s\n", buf);
+    parse_error |= PARSE_ERROR;
+  }
   // we want to get some reasonable relative accuracy
-  if (fabs(expected - result) / fmin(fabs(expected), fabs(result)) >
-      0.000000000000001) {
-    printf("parsed %.32f from \n", result);
-    printf("       %.32s whereas strtod gives\n", buf);
-    printf("       %.32f,", expected);
+  else if (fabs(expected - result) / fmin(fabs(expected), fabs(result)) >
+      1e-14) {
+    printf("parsed %.128e from \n", result);
+    printf("       %.200s whereas strtod gives\n", buf);
+    printf("       %.128e,", expected);
     printf(" while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
@@ -96,8 +101,6 @@ static bool hasExtension(const char *filename, const char *extension) {
 bool validate(const char *dirname) {
   parse_error = 0;
   size_t total_count = 0;
-
-  // init_state_machine(); // no longer necessary
   const char *extension = ".json";
   size_t dirlen = strlen(dirname);
   struct dirent **entry_list;
