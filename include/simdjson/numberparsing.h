@@ -250,7 +250,7 @@ parse_float(const u8 *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundFloat(d, buf + offset);
 #endif
-  return true;
+  return is_structural_or_whitespace(*p);
 }
 
 // called by parse_number when we know that the output is an integer,
@@ -321,7 +321,7 @@ static never_inline bool parse_large_integer(const u8 *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
 #endif
-  return true;
+  return is_structural_or_whitespace(*p);
 }
 
 #ifndef likely
@@ -450,9 +450,6 @@ static really_inline bool parse_number(const u8 *const buf,
     }
     exponent += (negexp ? -expnumber : expnumber);
   }
-  if(is_not_structural_or_whitespace(*p)) {
-    return false;
-  }
   i = negative ? -i : i;
   if ((exponent != 0) || (expnumber != 0)) {
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
@@ -495,5 +492,5 @@ static really_inline bool parse_number(const u8 *const buf,
     foundInteger(i, buf + offset);
 #endif
   }
-  return true;
+  return  is_structural_or_whitespace(*p);
 }
