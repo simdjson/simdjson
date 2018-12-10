@@ -10,11 +10,12 @@
 #include "simdjson/common_defs.h"
 
 
-// low-level function
+// low-level function to allocate memory with padding so we can read passed the "length" bytes
+// safely.
 // if you must provide a pointer to some data, create it with this function:
 // length is the max. size in bytes of the string
 // caller is responsible to free the memory (free(...))
-char * allocate_aligned_buffer(size_t length);
+char * allocate_padded_buffer(size_t length);
 
 
 

@@ -25,10 +25,12 @@ size_t invalid_count;
 const char *really_bad[] = {"013}", "0x14", "0e]", "0e+]", "0e+-1]"};
 
 bool startsWith(const char *pre, const char *str) {
-  size_t lenpre = strlen(pre), lenstr = strlen(str);
-  return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
+  size_t lenpre = strlen(pre);
+  return strncmp(pre, str, lenpre) == 0;
 }
+
 bool is_in_bad_list(const char *buf) {
+  if(buf[0] != '0') return false;
   for (size_t i = 0; i < sizeof(really_bad) / sizeof(really_bad[0]); i++)
     if (startsWith(really_bad[i], buf))
       return true;

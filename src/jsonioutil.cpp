@@ -2,7 +2,7 @@
 #include <cstring>
 
 
-char * allocate_aligned_buffer(size_t length) {
+char * allocate_padded_buffer(size_t length) {
     char *aligned_buffer;
     size_t paddedlength = ROUNDUP_N(length, 64);
     // allocate an extra sizeof(__m256i) just so we can always use AVX safely
@@ -18,14 +18,14 @@ std::string_view get_corpus(std::string filename) {
   if (fp) {
     std::fseek(fp, 0, SEEK_END);
     size_t len = std::ftell(fp);
-    char * buf = allocate_aligned_buffer(len);
+    char * buf = allocate_padded_buffer(len);
     if(buf == NULL) {
       std::fclose(fp);
       throw  std::runtime_error("could not allocate memory");
     }
     std::rewind(fp);
     std::fread(buf, 1, len, fp);
-    //buf[len] = '\0';
+    //buf[len] = '\0';// no need
     std::fclose(fp);
     return std::string_view(buf,len);
   }

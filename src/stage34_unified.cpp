@@ -155,10 +155,11 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '9': {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
-    char * copy = (char *) malloc(len + 1);
+    char * copy = (char *) malloc(len + 1 + 64);
+    if(copy == NULL) goto fail;
+    //memset(copy, 0, len + 1 + 64);
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if(copy == NULL) goto fail;
     if (!parse_number((const u8 *)copy, pj, idx, false)) {
       free(copy);
       goto fail;
@@ -169,10 +170,11 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '-': {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
-    char * copy = (char *) malloc(len + 1);
+    char * copy = (char *) malloc(len + 1 + 64);
+    if(copy == NULL) goto fail;
+    //memset(copy, 0, len + 1 + 64);
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if(copy == NULL) goto fail;
     if (!parse_number((const u8 *)copy, pj, idx, true)) {
       free(copy);
       goto fail;
@@ -189,17 +191,14 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   pj.annotate_previousloc(pj.containing_scope_offset[depth],
                           pj.get_current_loc());
 #endif     // ALLOWANYTHINGINROOT
-
 start_continue:
   DEBUG_PRINTF("in start_object_close\n");
-  UPDATE_CHAR();
-  switch (c) {
-  case 0:
+  // the string might not be NULL terminated.
+  if(i + 1 == pj.n_structural_indexes) {
     goto succeed;
-  default:
+  } else {
     goto fail;
   }
-
   ////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:

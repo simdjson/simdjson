@@ -118,7 +118,12 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
 #endif
   }
   pj.n_structural_indexes = base;
+  if(base_ptr[pj.n_structural_indexes-1] > len) {
+    printf("Internal bug\n");
+    return false;
+  }
   if(len != base_ptr[pj.n_structural_indexes-1]) {
+    // the string might not be NULL terminated, but we add a virtual NULL ending character. 
     base_ptr[pj.n_structural_indexes++] = len;
   }
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
