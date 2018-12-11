@@ -200,11 +200,11 @@ static bool parse_string(const char *p, char *output, char **end) {
   }
 }
 // end of borrowed code
+char * bigbuffer; // global variable
 
 inline void foundBadString(const u8 *buf) {
   bad_string++;
   char *end;
-  char bigbuffer[4096]; // if some strings exceeds 4k, this will fail!
   if (parse_string((const char *)buf, bigbuffer, &end)) {
     printf("WARNING: Sajson-like parser seems to think that the string is "
            "valid %32s \n",
@@ -231,7 +231,6 @@ inline void foundString(const u8 *buf, const u8 *parsed_begin,
   total_string_length += thislen;
   good_string++;
   char *end = NULL;
-  char bigbuffer[4096]; // if some strings exceeds 4k, this will fail!
   if (!parse_string((const char *)buf, bigbuffer, &end)) {
     printf("WARNING: reference parser seems to think that the string is NOT "
            "valid %32s \n",
@@ -338,11 +337,18 @@ bool validate(const char *dirname) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
+      bigbuffer = (char *) malloc(p.size());
+      if(bigbuffer == NULL) {
+        std::cerr << "can't allocate memory" << std::endl;
+        free((void*)p.data());
+        return false;
+      }
       bad_string = 0;
       good_string = 0;
       total_string_length = 0;
       empty_string = 0;
       bool isok = json_parse(p, pj);
+      free(bigbuffer);
       free((void*)p.data());
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
