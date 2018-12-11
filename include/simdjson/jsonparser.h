@@ -12,46 +12,71 @@
 
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure. You can also check validity 
-// by calling pj.isValid(). The same ParsedJson can be reused.
-// the input buf should be readable up to buf + len + SIMDJSON_PADDING 
-// all bytes at and after buf + len  are ignored (can be garbage)
+// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+//
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+// The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
+// all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-bool json_parse(const u8 *buf, size_t len, ParsedJson &pj);
+bool json_parse(const u8 *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
 
-// the input buf should be readable up to buf + len + SIMDJSON_PADDING 
-// all bytes at and after buf + len  are ignored (can be garbage)
+// Parse a document found in buf, need to preallocate ParsedJson.
+// Return false in case of a failure. You can also check validity 
+// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+//
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+// The input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
+// all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-static inline bool json_parse(const char * buf, size_t len, ParsedJson &pj) {
-  return json_parse((const u8 *) buf, len, pj);
+static inline bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
+  return json_parse((const u8 *) buf, len, pj, reallocifneeded);
 }
 
-// convenience function
-// the input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING 
-// all bytes at and after s.data()+s.size() are ignored (can be garbage)
+// Parse a document found in buf, need to preallocate ParsedJson.
+// Return false in case of a failure. You can also check validity 
+// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+//
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+// the input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
+// all bytes at and after s.data()+s.size() are ignored (can be garbage).
 WARN_UNUSED
-static inline bool json_parse(const std::string_view &s, ParsedJson &pj) {
-  return json_parse(s.data(), s.size(), pj);
+static inline bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
+  return json_parse(s.data(), s.size(), pj, reallocifneeded);
 }
 
 
 // Build a ParsedJson object. You can check validity 
-// by calling pj.isValid(). This does memory allocation.
-// the input buf should be readable up to buf + len + SIMDJSON_PADDING 
-// all bytes at and after buf + len  are ignored (can be garbage)
+// by calling pj.isValid(). This does the memory allocation needed for ParsedJson.
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+//
+// the input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
+// all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-ParsedJson build_parsed_json(const u8 *buf, size_t len);
+ParsedJson build_parsed_json(const u8 *buf, size_t len, bool reallocifneeded = true);
 
 WARN_UNUSED
-// the input buf should be readable up to buf + len + SIMDJSON_PADDING 
-// all bytes at and after buf + len  are ignored (can be garbage)
-static inline ParsedJson build_parsed_json(const char * buf, size_t len) {
-  return build_parsed_json((const u8 *) buf, len);
+// Build a ParsedJson object. You can check validity 
+// by calling pj.isValid(). This does the memory allocation needed for ParsedJson.
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+// The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
+// all bytes at and after buf + len  are ignored (can be garbage).
+static inline ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded = true) {
+  return build_parsed_json((const u8 *) buf, len, reallocifneeded);
 }
 
 // convenience function
 WARN_UNUSED
-// the input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING 
-// all bytes at and after s.data()+s.size() are ignored (can be garbage)
-static inline ParsedJson build_parsed_json(const std::string_view &s) {
-  return build_parsed_json(s.data(), s.size());
+// Build a ParsedJson object. You can check validity 
+// by calling pj.isValid(). This does the memory allocation needed for ParsedJson.
+// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
+// (a copy of the input string is made).
+// The input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
+// all bytes at and after s.data()+s.size() are ignored (can be garbage).
+static inline ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded = true) {
+  return build_parsed_json(s.data(), s.size(), reallocifneeded);
 }

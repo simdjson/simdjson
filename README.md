@@ -68,18 +68,17 @@ make parsingcompetition
 To simplify the engineering, we make some assumptions.
 
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe that this is a genuine limitation in the sense that we do not think that there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
-- We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done.
-- We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult.
-- We expect the input memory to be readable up to 32 bytes beyond the end of the JSON document (to support fast vector loads). All bytes beyond the end of the JSON document are ignored (can be garbage) and the JSON document does not need to be NULL terminated. You can allocate a properly overallocated memory region with the provided `allocate_padded_buffer` function or simply by allocating your memory with extra capacity (`malloc(length + SIMDJSON_PADDING)`). (We expect that this limitation can be lifted without performance penalty, but at the cost of a bit of some code complexity.)
+- We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
+- We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
 
 ## Features
 
+- The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
 - We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
-- The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
 
 ## Architecture
 
