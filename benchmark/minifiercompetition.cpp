@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  char *buffer = allocate_aligned_buffer(p.size() + 1);
+  char *buffer = allocate_padded_buffer(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME("RapidJSON Insitu orig", d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.data(), p.size()), repeat, volume, true);
 
-  char *minibuffer = allocate_aligned_buffer(p.size() + 1);
+  char *minibuffer = allocate_padded_buffer(p.size() + 1);
   size_t minisize = jsonminify((const uint8_t *)p.data(), p.size(), (uint8_t*) minibuffer);
   minibuffer[minisize] = '\0';
 

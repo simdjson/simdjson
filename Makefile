@@ -13,8 +13,13 @@ ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 else
+ifeq ($(DEBUG),1)
+        CXXFLAGS += -g3 -O0
+        CFLAGS += -g3 -O0
+else
 	CXXFLAGS += -O3
 	CFLAGS += -O3
+endif
 endif
 
 MAINEXECUTABLES=parse minify json2json

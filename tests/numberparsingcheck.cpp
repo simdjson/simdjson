@@ -154,7 +154,7 @@ bool validate(const char *dirname) {
                float_count, invalid_count,
                int_count + float_count + invalid_count);
       }
-      free(p.data());
+      free((void*)p.data());
       free(fullpath);
     }
   }
