@@ -14,9 +14,10 @@ bool json_parse(const u8 *buf, size_t len, ParsedJson &pj) {
     isok = flatten_indexes(len, pj);
   } else {
     return false;
-  }
+  }//printf("ok\n");
   if (isok) {
     isok = unified_machine(buf, len, pj);
+    //printf("ok %d \n",isok);
   } else {
     return false;
   }

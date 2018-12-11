@@ -3,14 +3,15 @@
 
 
 char * allocate_padded_buffer(size_t length) {
-    char *aligned_buffer;
-    size_t paddedlength = ROUNDUP_N(length, 64);
-    // allocate an extra sizeof(__m256i) just so we can always use AVX safely
-    size_t totalpaddedlength = paddedlength + 1 + sizeof(__m256i);
-    if (posix_memalign((void **)&aligned_buffer, 64, totalpaddedlength)) {
-      throw std::runtime_error("Could not allocate sufficient memory");
+    // we could do a simple malloc
+    //return (char *) malloc(length + SIMDJSON_PADDING);
+    // However, we might as well align to cache lines...
+    char *padded_buffer;
+    size_t totalpaddedlength = length + SIMDJSON_PADDING;
+    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength)) {
+      return NULL;
     };
-    return aligned_buffer;
+    return padded_buffer;
 }
 
 std::string_view get_corpus(std::string filename) {

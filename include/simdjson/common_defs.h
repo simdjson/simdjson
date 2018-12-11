@@ -2,6 +2,10 @@
 
 #include <cassert>
 
+// the input buf should be readable up to buf + SIMDJSON_PADDING
+#define SIMDJSON_PADDING  sizeof(__m256i) 
+
+
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;

@@ -125,24 +125,54 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     }
     break;
   }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
+  case 't': {
+    // we need to make a copy to make sure that the string is NULL terminated.
+    // this only applies to the JSON document made solely of the true value.
+    // this will almost never be called in practice
+    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    if(copy == NULL) goto fail;
+    memcpy(copy, buf, len);
+    copy[len] = '\0';
+    if (!is_valid_true_atom((const u8 *)copy + idx)) {
+      free(copy);
       goto fail;
     }
+    free(copy);
     pj.write_tape(0, c);
     break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
+  }
+  case 'f': {
+    // we need to make a copy to make sure that the string is NULL terminated.
+    // this only applies to the JSON document made solely of the false value.
+    // this will almost never be called in practice
+    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    if(copy == NULL) goto fail;
+    memcpy(copy, buf, len);
+    copy[len] = '\0';
+    if (!is_valid_false_atom((const u8 *)copy + idx)) {
+      free(copy);
       goto fail;
     }
+    free(copy);
     pj.write_tape(0, c);
     break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
+  }
+  case 'n': {
+    // we need to make a copy to make sure that the string is NULL terminated.
+    // this only applies to the JSON document made solely of the null value.
+    // this will almost never be called in practice
+    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    if(copy == NULL) goto fail;
+    memcpy(copy, buf, len);
+    copy[len] = '\0';
+    if (!is_valid_null_atom((const u8 *)copy + idx)) {
+      free(copy);
       goto fail;
     }
+    free(copy);
     pj.write_tape(0, c);
     break;
+  }
   case '0': 
   case '1':
   case '2':
@@ -155,7 +185,8 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '9': {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
-    char * copy = (char *) malloc(len + 1 + 64);
+    // this will almost never be called in practice
+    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
@@ -169,7 +200,8 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   case '-': {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
-    char * copy = (char *) malloc(len + 1 + 64);
+    // this will almost never be called in practice
+    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';

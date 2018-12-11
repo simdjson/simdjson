@@ -70,7 +70,7 @@ To simplify the engineering, we make some assumptions.
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16).
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included.
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult.
-- We expect the input memory pointer to be padded (e.g., with spaces) so that it can be read entirely in blocks of 512 bits (a cache line). In practice, this means that users may allocate the memory where the JSON bytes are located using the `allocate_padded_buffer` function or the equivalent. Of course, the data you may want to process could be on a buffer that does have this padding. However, copying the data is relatively cheap (much cheaper than parsing JSON), and we can eventually remove this constraint.
+- We expect the input memory to be readable up to 32 bytes beyond the end of the JSON document (to support fast vector loads). All bytes beyond the end of the JSON document are ignored (can be garbage) and the JSON document does not need to be NULL terminated. You can allocate a properly overallocated memory region with the provided `allocate_padded_buffer` function or simply by allocating your memory with extra capacity (`malloc(length + SIMDJSON_PADDING)`).
 
 ## Features
 
@@ -78,7 +78,7 @@ To simplify the engineering, we make some assumptions.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
-- The input string is unmodified.
+- The input string is unmodified. (Parsers like sajson and RapidJSON overwrite the input string.)
 
 ## Architecture
 
