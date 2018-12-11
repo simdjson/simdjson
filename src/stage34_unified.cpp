@@ -157,7 +157,6 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     char * copy = (char *) malloc(len + 1 + 64);
     if(copy == NULL) goto fail;
-    //memset(copy, 0, len + 1 + 64);
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number((const u8 *)copy, pj, idx, false)) {
@@ -172,7 +171,6 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     char * copy = (char *) malloc(len + 1 + 64);
     if(copy == NULL) goto fail;
-    //memset(copy, 0, len + 1 + 64);
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number((const u8 *)copy, pj, idx, true)) {
