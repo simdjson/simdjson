@@ -12,15 +12,20 @@ Goal: Speed up the parsing of JSON per se.
 /...
 
 const char * filename = ... //
-std::string_view p = get_corpus(filename);
+
+// use whatever means you want to get a string of you JSON document
+std::string_view p = get_corpus(filename); 
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
 bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 // parsing is done!
+// You can safely delete the string content
+free((void*)p.data()); 
+// the ParsedJson document can be used here
 // js can be reused with other json_parse calls.
 ```
 
-It is also possible to use a simply API if you do not mind having the overhead
+It is also possible to use a simplier API if you do not mind having the overhead
 of memory allocation with each new JSON document:
 
 ```C
@@ -31,6 +36,7 @@ of memory allocation with each new JSON document:
 const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
+// you no longer need p at this point, can do free((void*)p.data())
 if( ! pj.isValid() ) {
     // something went wrong
 }
