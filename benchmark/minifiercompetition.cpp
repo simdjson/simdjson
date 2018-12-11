@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   } 
 
   BEST_TIME("json_parse despaced", json_parse((const u8*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, true);
-
+  free((void*)p.data());
   free(buffer);
   free(ast_buffer);
   free(minibuffer);

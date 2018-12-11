@@ -75,6 +75,7 @@ bool validate(const char *dirname) {
       }
       ++howmany;
       bool isok = json_parse(p, pj);
+      free((void*)p.data());
       printf("%s\n", isok ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping

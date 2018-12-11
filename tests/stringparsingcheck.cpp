@@ -343,6 +343,7 @@ bool validate(const char *dirname) {
       total_string_length = 0;
       empty_string = 0;
       bool isok = json_parse(p, pj);
+      free((void*)p.data());
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "

@@ -229,6 +229,7 @@ int main(int argc, char *argv[]) {
   if(dump) {
     isok = isok && pj.dump_raw_tape(std::cout);
   }
+  free((void*)p.data());
   if (!isok) {
     printf(" Parsing failed. \n ");
     return EXIT_FAILURE;

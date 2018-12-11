@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   printf("fastjson                   : %s \n", fastjson_correct ? "correct":"invalid");
   printf("gason                      : %s \n", gason_correct ? "correct":"invalid");
   printf("ultrajson                  : %s \n", ultrajson_correct ? "correct":"invalid");
-       
+  free((void*)p.data());       
   free(buffer);
   return EXIT_SUCCESS;
 }

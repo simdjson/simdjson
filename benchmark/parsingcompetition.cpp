@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
   void *state;
   if(all) BEST_TIME("ultrajson         ", (UJDecode(buffer, p.size(), NULL, &state) == NULL), false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
   BEST_TIME("memcpy            ", (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat, volume, true);
+  free((void*)p.data());
   free(ast_buffer);
   free(buffer);
 }
