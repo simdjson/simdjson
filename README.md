@@ -56,11 +56,11 @@ make test
 
 
 To run benchmarks:
-
 ```
 make parse
 ./parse jsonexamples/twitter.json
 ```
+Under Linux, the `parse` command gives a detailed analysis of the performance counters.
 
 To run comparative benchmarks (with other parsers):
 ```
@@ -68,6 +68,7 @@ make parsingcompetition
 ./parsingcompetition jsonexamples/twitter.json
 ```
 
+There is also a useful bash script to run `parsingcompetition` on several files at once: invoke `./scripts/parser.sh`.
 
 ## Scope
 
@@ -81,7 +82,7 @@ To simplify the engineering, we make some assumptions.
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
 
-*We do not aim to provide a general-purpose JSON library.*
+*We do not aim to provide a general-purpose JSON library.* A library like RapidJSON offers much more than just parsing, it helps you generate JSON and offers various other convenient functions. We merely parse the document.
 
 
 ## Features
