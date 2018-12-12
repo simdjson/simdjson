@@ -10,43 +10,112 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
-#include "json11.cpp"
 #include "sajson.h"
-#include "fastjson.cpp"
-#include "fastjson_dom.cpp"
-#include "gason.cpp"
-extern "C"
-{
-#include "ultrajsondec.c"
-#include "ujdecode.h"
-}
+
 using namespace rapidjson;
 using namespace std;
 
+struct stat_s {
+  size_t number_count;
+  size_t object_count;
+  size_t array_count;
+  size_t null_count;
+  size_t true_count;
+  size_t false_count;
+  bool valid;
+};
 
-// fastjson has a tricky interface
-void on_json_error( void *, const fastjson::ErrorContext& ec) {
-  //std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
+typedef struct stat_s stat_t;
+
+stat_t simdjson_computestats(const std::string_view & p) {
+  stat_t answer;
+  ParsedJson pj = build_parsed_json(p);
+  answer.valid = pj.isValid();
+  if(!answer.valid) {
+    return answer;
+  }
+  answer.number_count = 0;
+  answer.object_count = 0;
+  answer.array_count = 0;
+  answer.null_count = 0;
+  answer.true_count = 0;
+  answer.false_count = 0;
+  size_t tapeidx = 0;
+  u64 tape_val = pj.tape[tapeidx++];
+  u8 type = (tape_val >> 56);
+  size_t howmany = 0;
+  assert (type == 'r');
+  howmany = tape_val & JSONVALUEMASK;
+  tapeidx++;
+  for (; tapeidx < howmany; tapeidx++) {
+      tape_val = pj.tape[tapeidx];
+      u64 payload = tape_val & JSONVALUEMASK;
+      type = (tape_val >> 56);
+      switch (type) {
+      case 'l': // we have a long int
+        answer.number_count++;
+        tapeidx++; // skipping the integer
+        break;
+      case 'd': // we have a double
+        answer.number_count++;
+        tapeidx++; // skipping the double
+        break;
+      case 'n': // we have a null
+        answer.null_count++;
+        break;
+      case 't': // we have a true
+        answer.true_count++;
+        break;
+      case 'f': // we have a false
+        answer.false_count ++;
+        break;
+      case '{': // we have an object
+        answer.object_count ++;
+        break;
+      case '}': // we end an object
+        break;
+      case '[': // we start an array
+        answer.array_count ++;
+        break;
+      case ']': // we end an array
+        break;
+      default:
+        answer.valid = false;
+        return answer;
+      }
+    }
+    return answer;
 }
-bool fastjson_parse(const char *input) {
-  fastjson::Token token;
-  fastjson::dom::Chunk chunk;
-  return fastjson::dom::parse_string(input, &token, &chunk, 0, &on_json_error, NULL);
+
+stat_t rapid_computestats(const std::string_view & p) {
+  stat_t answer;
+  rapidjson::Document d;
+  d.ParseInsitu<kParseValidateEncodingFlag>(p.data());
+  answer.valid = ! d.HasParseError();
+  if(d.HasParseError()) {
+
+  }
+  if(!answer.valid) {
+    return answer;
+  }
+  answer.number_count = 0;
+  answer.object_count = 0;
+  answer.array_count = 0;
+  answer.null_count = 0;
+  answer.true_count = 0;
+  answer.false_count = 0;
 }
-// end of fastjson stuff
+
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool all = false; 
   int c;
-  while ((c = getopt (argc, argv, "va")) != -1)
+  while ((c = getopt (argc, argv, "v")) != -1)
     switch (c)
       {
       case 'v':
         verbose = true;
-        break;
-      case 'a':
-        all = true;
         break;
       default:
         abort ();
@@ -54,7 +123,6 @@ int main(int argc, char *argv[]) {
   if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     cerr << "Or " << argv[0] << " -v <jsonfile>\n";
-    cerr << "To enable parsers that are not standard compliant, use the -a flag\n";
     exit(1);
   }
   const char * filename = argv[optind];
@@ -97,8 +165,7 @@ int main(int argc, char *argv[]) {
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
-  //
-  // Todo: It is possible to preallocate a block of memory with RapidJSON using a MemoryAllocator.
+
   BEST_TIME("RapidJSON", 
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
       false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);

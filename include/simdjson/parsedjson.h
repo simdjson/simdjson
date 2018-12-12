@@ -283,7 +283,7 @@ public:
   }
 
 
-  // all elements are stored on the tape using a 64-bit word.
+  // all nodes are stored on the tape using a 64-bit word.
   //
   // strings, double and ints are stored as
   //  a 64-bit word with a pointer to the actual value
@@ -327,18 +327,20 @@ public:
     explicit iterator(ParsedJson &pj_)
         : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
         if(pj.isValid()) {
-            depthindex = new size_t[pj.depthcapacity];
+            depthindex = new scopeindex_t[pj.depthcapacity];
             if(depthindex == NULL) return;
-            depthindex[0] = 0;
+            depthindex[0].start_of_scope = location;
             current_val = pj.tape[location++];
             current_type = (current_val >> 56);
+            depthindex[0].scope_type = current_type;
             if (current_type == 'r') {
               tape_length = current_val & JSONVALUEMASK;
               if(location < tape_length) {
                 current_val = pj.tape[location];
                 current_type = (current_val >> 56);
                 depth++;
-                depthindex[depth] = location;
+                depthindex[depth].start_of_scope = location;
+                depthindex[depth].scope_type = current_type;
               }
             }
         }
@@ -351,7 +353,7 @@ public:
       pj(o.pj), depth(o.depth), location(o.location), 
       tape_length(o.tape_length), current_type(o.current_type), 
       current_val(o.current_val), depthindex(NULL) {
-        depthindex = new size_t[pj.depthcapacity];
+        depthindex = new scopeindex_t[pj.depthcapacity];
         if(depthindex != NULL) {
           memcpy(o.depthindex, depthindex, pj.depthcapacity * sizeof(depthindex[0]));
         } else {
@@ -365,24 +367,104 @@ public:
       current_val(o.current_val), depthindex(o.depthindex) {
         o.depthindex = NULL;// we take ownship
     }
+
     WARN_UNUSED
     bool isOk() const {
       return location < tape_length;
     }
-
+    
+    // useful for debuging purposes
     size_t get_tape_location() const {
       return location;
     }
 
-    size_t get_tape_lenght() const {
+    // useful for debuging purposes
+    size_t get_tape_length() const {
       return tape_length;
     }
 
-    // return true if we can do the navigation, false
+    // returns the current depth (start at 1 with 0 reserved for the fictitious root node)
+    size_t get_depth() const {
+      return depth;
+    }
+
+    // A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
+    // The root node has type 'r'.
+    u8 get_scope_type() const {
+      return depthindex[depth].scope_type;
+    }
+
+    // move forward in document order
+    WARN_UNUSED
+    bool move_forward() {
+      if(location + 1 >= tape_length) {
+        return false; // we are at the end!
+      }
+      // we are entering a new scope
+      if ((current_type == '[') || (current_type == '{')){
+        depth++;
+        depthindex[depth].start_of_scope = location;
+        depthindex[depth].scope_type = current_type;
+      } 
+      location = location + 1;
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+      // if we encounter a scope closure, we need to move up
+      while ((current_type == ']') || (current_type == '}')) {
+        if(location + 1 >= tape_length) {
+          return false; // we are at the end!
+        }
+        depth--;
+        if(depth == 0) {
+          return false; // should not be necessary
+        }
+        location = location + 1;
+        current_val = pj.tape[location];
+        current_type = (current_val >> 56);
+      }
+      return true;
+    }
+
+    // retrieve the character code of what we're looking at:
+    // [{"sltfn are the possibilities
+    WARN_UNUSED
+    really_inline u8 get_type()  const {
+      return current_type;
+    }
+
+    // get the s64 value at this node; valid only if we're at "l"
+    WARN_UNUSED
+    really_inline s64 get_integer()  const {
+       if(location + 1 >= tape_length) return 0;// default value in case of error
+       return (s64) pj.tape[location + 1];
+    }
+
+    // get the double value at this node; valid only if
+    // we're at "d"
+    WARN_UNUSED
+    really_inline double get_double()  const {
+       if(location + 1 >= tape_length) return NAN;// default value in case of error
+       double answer;
+       memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
+       return answer;
+    } 
+
+    // get the string value at this node (NULL ended); valid only if we're at "
+    // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
+    // return value is valid UTF-8
+    WARN_UNUSED
+    really_inline const char * get_string() const {
+      return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+    }
+     
+    // throughout return true if we can do the navigation, false
     // otherwise
 
-    // withing a give scope, we move forward
-    // valid if we're not at the end of a scope (returns true)
+    // Withing a given scope (series of nodes at the same depth within either an
+    // array or an object), we move forward.
+    // Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [.
+    // At the object ({) or at the array ([), you can issue a "down" to visit their content.
+    // valid if we're not at the end of a scope (returns true).
     WARN_UNUSED
     really_inline bool next() { 
       if ((current_type == '[') || (current_type == '{')){
@@ -415,17 +497,22 @@ public:
       }
     }
 
-    // valid if we're not at the start of a scope
+
+    // Withing a given scope (series of nodes at the same depth within either an
+    // array or an object), we move backward.
+    // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true when starting at the end
+    // of the scope.
+    // At the object ({) or at the array ([), you can issue a "down" to visit their content.    
     WARN_UNUSED
     really_inline bool prev() {
-      if(location - 1 < depthindex[depth]) return false;
+      if(location - 1 < depthindex[depth].start_of_scope) return false;
       location -= 1;
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
       if ((current_type == ']') || (current_type == '}')){
         // we need to jump
         size_t new_location = ( current_val & JSONVALUEMASK); 
-        if(new_location < depthindex[depth]) {
+        if(new_location < depthindex[depth].start_of_scope) {
           return false; // shoud never happen 
         }
         location = new_location;
@@ -435,8 +522,10 @@ public:
       return true;
     }
 
-
-    // valid unless we are at the first level of the document
+    // Moves back to either the containing array or object (type { or [) from 
+    // within a contained scope.
+    // Valid unless we are at the first level of the document
+    //
     WARN_UNUSED
     really_inline bool up() {
       if(depth == 1) {
@@ -452,8 +541,10 @@ public:
     }
  
     
-    // valid if we're at a [ or { and it starts a non-empty scope; moves us to start of
-    // that deeper scope if it not empty
+    // Valid if we're at a [ or { and it starts a non-empty scope; moves us to start of
+    // that deeper scope if it not empty.
+    // Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the
+    // "a" node.
     WARN_UNUSED
     really_inline bool down() {
       if(location + 1 >= tape_length) return false;
@@ -464,7 +555,8 @@ public:
         }
         depth++;
         location = location + 1;
-        depthindex[depth] = location;
+        depthindex[depth].start_of_scope = location;
+        depthindex[depth].scope_type = current_type;
         current_val = pj.tape[location];
         current_type = (current_val >> 56);
         return true;
@@ -472,9 +564,10 @@ public:
       return false;
     }
 
-    // move us to the start of our current scope
+    // move us to the start of our current scope,
+    // a scope is a series of nodes at the same level
     void to_start_scope()  {             
-      location = depthindex[depth];
+      location = depthindex[depth].start_of_scope;
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
     }
@@ -522,33 +615,7 @@ public:
       return true;
     }
 
-    // retrieve the character code of what we're looking at:
-    // [{"sltfn are the possibilities
-    really_inline u8 get_type()  const {
-      return current_type;
-    }
-
-    // get the s64 value at this node; valid only if we're at "l"
-    really_inline s64 get_integer()  const {
-       if(location + 1 >= tape_length) return 0;// default value in case of error
-       return (s64) pj.tape[location + 1];
-    }
-
-    // get the double value at this node; valid only if
-    // we're at "d"
-    really_inline double get_double()  const {
-       if(location + 1 >= tape_length) return NAN;// default value in case of error
-       double answer;
-       memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
-       return answer;
-    } 
-
-    // get the string value at this node (NULL ended); valid only if we're at "
-    // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
-    // return value is valid UTF-8
-    really_inline const char * get_string() const {
-      return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
-    }
+    typedef struct {size_t start_of_scope; u8 scope_type;} scopeindex_t;
 
 private:
 
@@ -560,7 +627,7 @@ private:
     size_t tape_length; 
     u8 current_type;
     u64 current_val;
-    size_t *depthindex;
+    scopeindex_t *depthindex;
 
   };
 

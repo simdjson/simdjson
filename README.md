@@ -69,7 +69,10 @@ make parsingcompetition
 ```
 
 
-## Limitations
+## Scope
+
+We provide a fast parser. It fully validates the input according to the various specifications.
+The parser builds a useful immutable (read-only) DOM (document-object model) which can be later accessed.
 
 To simplify the engineering, we make some assumptions.
 
@@ -77,6 +80,9 @@ To simplify the engineering, we make some assumptions.
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
+
+*We do not aim to provide a general-purpose JSON library.*
+
 
 ## Features
 

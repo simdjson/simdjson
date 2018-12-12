@@ -23,6 +23,7 @@ void compute_dump(ParsedJson::iterator &pjh) {
   }
   // we have a non-empty scope and we are at the beginning of it
   if (inobject) {
+    assert(pjh.get_scope_type() == '{');
     std::cout << "{";
     assert(pjh.get_type() == '"');
     pjh.print(std::cout); // must be a string
@@ -39,6 +40,7 @@ void compute_dump(ParsedJson::iterator &pjh) {
     }
     std::cout << "}";
   } else {
+    assert(pjh.get_scope_type() == '[');
     std::cout << "[";
     compute_dump(pjh); // let us recurse
     while (pjh.next()) {

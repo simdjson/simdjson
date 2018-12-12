@@ -24,7 +24,7 @@ endif
 
 MAINEXECUTABLES=parse minify json2json
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
-COMPARISONEXECUTABLES=minifiercompetition parsingcompetition  allparserscheckfile
+COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition  allparserscheckfile
 
 HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_flatten.h include/simdjson/stage34_unified.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -102,6 +102,10 @@ json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
 
 ujdecode.o: $(UJSON4C_INCLUDE)
 	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 
+
+parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBFILES) $(OBJECTS)
+	$(CXX) $(CXXFLAGS)  -o parseandstatcompetition $(LIBFILES) benchmark/parseandstatcompetition.cpp $(OBJECTS) -I. $(LIBFLAGS)
+
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(OBJECTS)
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp $(OBJECTS) -I. $(LIBFLAGS)
