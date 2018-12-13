@@ -70,6 +70,15 @@ make parsingcompetition
 
 There is also a useful bash script to run `parsingcompetition` on several files at once: invoke `./scripts/parser.sh`.
 
+
+You can also benchmark the parsing and computation of content statistics over different JSON files using `parseandstatcompetition` as well as the script `./scripts/parseandstat.sh`.
+
+## Tools
+
+- `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output. 
+- `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. 
+- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters. 
+
 ## Scope
 
 We provide a fast parser. It fully validates the input according to the various specifications.

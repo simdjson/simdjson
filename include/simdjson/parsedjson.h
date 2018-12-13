@@ -651,10 +651,14 @@ private:
   u8 *string_buf; // should be at least bytecapacity
   u8 *current_string_buf_loc;
   bool isvalid;
-   ParsedJson(const ParsedJson && p); // we don't want the default constructor to be called
+  ParsedJson(const ParsedJson && p);
 
 private :
+
+ // we don't want the default constructor to be called
  ParsedJson(const ParsedJson & p); // we don't want the default constructor to be called
+ // we don't want the assignment to be called
+ ParsedJson & operator=(const ParsedJson&o);
 
 
 };

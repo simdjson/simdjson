@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
   if (optind >= argc) {
     cerr << "Reads json in, out the result of the parsing. " << endl;
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
+    cerr << "The -d flag dumps the raw content of the tape." << endl;
+
     exit(1);
   }
   const char *filename = argv[optind];
