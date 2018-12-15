@@ -4,21 +4,6 @@
 #include <vector>
 
 #include "benchmark.h"
-
-/*************
- // Sinew: A SQL System for Multi-Structured Data
- * 1 SELECT DISTINCT “user.id” FROM tweets;
-2 SELECT SUM(retweet count) FROM tweets
-GROUP BY “user.id”;
-3 SELECT “user.id” FROM tweets t1, deletes d1, deletes d2
-WHERE t1.id str = d1.“delete.status.id str” AND d1.“delete.status.user id” =
-d2.“delete.status.user id” AND t1.“user.lang” = ‘msa’; 4 SELECT t1.“user.screen
-name”, t2.“user.screen name” FROM tweets t1, tweets t2, tweets t3
-WHEREt1.“user.screen name”=t3.“user.screen name”AND t1.“user.screen name” =
-t2.in reply to screen name AND t2.“user.screen name” = t3.in reply to screen
-name;
-*********************/
-
 // #define RAPIDJSON_SSE2 // bad for performance
 // #define RAPIDJSON_SSE42 // bad for performance
 #include "rapidjson/document.h"
@@ -286,4 +271,5 @@ int main(int argc, char *argv[]) {
             true);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
             true);
+  free((void*)p.data());
 }
