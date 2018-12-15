@@ -4,6 +4,12 @@ A C++  library to see how fast we can parse JSON with complete validation.
 
 Goal: Speed up the parsing of JSON per se. 
 
+## Requirements
+
+- Linux or macOS (currently)
+- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG)
+- Bash (for benchmark scripts)
+
 ## Code example
 
 ```C
@@ -63,15 +69,11 @@ make parse
 Under Linux, the `parse` command gives a detailed analysis of the performance counters.
 
 To run comparative benchmarks (with other parsers):
+
 ```
-make parsingcompetition
-./parsingcompetition jsonexamples/twitter.json
+make benchmark
 ```
 
-There is also a useful bash script to run `parsingcompetition` on several files at once: invoke `./scripts/parser.sh`.
-
-
-You can also benchmark the parsing and computation of content statistics over different JSON files using `parseandstatcompetition` as well as the script `./scripts/parseandstat.sh`.
 
 ## Tools
 

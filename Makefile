@@ -45,6 +45,12 @@ all:  $(MAINEXECUTABLES)
 
 competition:  $(COMPARISONEXECUTABLES)
 
+.PHONY: benchmark test
+
+benchmark: 
+	bash ./scripts/parser.sh
+	bash ./scripts/parseandstat.sh
+
 test: jsoncheck numberparsingcheck stringparsingcheck
 	./numberparsingcheck
 	./stringparsingcheck
@@ -74,8 +80,6 @@ $(GASON_INCLUDE):
 $(UJSON4C_INCLUDE):
 	git submodule update --init --recursive
 
-bench: benchmarks/bench.cpp $(RAPIDJSON_INCLUDE) $(HEADERS)
-	$(CXX) -std=c++11 -O3 -o $@ benchmarks/bench.cpp -I$(RAPIDJSON_INCLUDE) -Iinclude  -march=native -lm -Wall -Wextra -Wno-narrowing
 
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
