@@ -26,16 +26,6 @@ name;
 
 #include "sajson.h"
 
-#include "fastjson.cpp"
-#include "fastjson_dom.cpp"
-#include "gason.cpp"
-#include "json11.cpp"
-#include "sajson.h"
-extern "C" {
-#include "ujdecode.h"
-#include "ultrajsondec.c"
-}
-
 using namespace rapidjson;
 using namespace std;
 

@@ -1,5 +1,7 @@
 #include "simdjson/jsonparser.h"
+#include <algorithm>
 #include <unistd.h>
+#include <vector>
 
 #include "benchmark.h"
 
@@ -26,108 +28,112 @@ name;
 
 #include "sajson.h"
 
-#include "fastjson.cpp"
-#include "fastjson_dom.cpp"
-#include "gason.cpp"
-#include "json11.cpp"
-#include "sajson.h"
-extern "C" {
-#include "ujdecode.h"
-#include "ultrajsondec.c"
-}
-
 using namespace rapidjson;
 using namespace std;
 
+bool equals(const char *s1, const char *s2) { return strcmp(s1, s2) == 0; }
 
+void remove_duplicates(vector<int64_t> &v) {
+  std::sort(v.begin(), v.end());
+  auto last = std::unique(v.begin(), v.end());
+  v.erase(last, v.end());
+}
 
+void print_vec(vector<int64_t> &v) {
+  for (auto i : v) {
+    std::cout << i << " ";
+  }
+  std::cout << std::endl;
+}
 
+void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
+  switch (i.get_type()) {
+  case '{':
+    if (i.down()) {
+      do {
+        bool founduser = equals(i.get_string(), "user");
+        i.next(); // move to value
+        if (i.is_object()) {
+          if (founduser && i.move_to_key("id")) {
+            if (i.is_integer()) {
+              answer.push_back(i.get_integer());
+            }
+            i.up();
+          }
+          simdjson_traverse(answer, i);
+        } else if (i.is_array()) {
+          simdjson_traverse(answer, i);
+        }
+      } while (i.next());
+      i.up();
+    }
+    break;
+  case '[':
+    if (i.down()) {
+      do {
+        if (i.is_object_or_array()) {
+          simdjson_traverse(answer, i);
+        }
+      } while (i.next());
+      i.up();
+    }
+    break;
+  case 'l':
+  case 'd':
+  case 'n':
+  case 't':
+  case 'f':
+  default:
+    break;
+  }
+}
 
 std::vector<int64_t> simdjson_computestats(const std::string_view &p) {
   std::vector<int64_t> answer;
   ParsedJson pj = build_parsed_json(p);
-  answer.valid = pj.isValid();
-  if (!answer.valid) {
+  if (!pj.isValid()) {
     return answer;
   }
-  answer.number_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
-  size_t tapeidx = 0;
-  u64 tape_val = pj.tape[tapeidx++];
-  u8 type = (tape_val >> 56);
-  size_t howmany = 0;
-  assert(type == 'r');
-  howmany = tape_val & JSONVALUEMASK;
-  for (; tapeidx < howmany; tapeidx++) {
-    tape_val = pj.tape[tapeidx];
-    // u64 payload = tape_val & JSONVALUEMASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case 'l': // we have a long int
-      answer.number_count++;
-      tapeidx++; // skipping the integer
-      break;
-    case 'd': // we have a double
-      answer.number_count++;
-      tapeidx++; // skipping the double
-      break;
-    case 'n': // we have a null
-      answer.null_count++;
-      break;
-    case 't': // we have a true
-      answer.true_count++;
-      break;
-    case 'f': // we have a false
-      answer.false_count++;
-      break;
-    case '{': // we have an object
-      answer.object_count++;
-      break;
-    case '}': // we end an object
-      break;
-    case '[': // we start an array
-      answer.array_count++;
-      break;
-    case ']': // we end an array
-      break;
-    default:
-      break; // ignore
-    }
-  }
+  ParsedJson::iterator i(pj);
+
+  simdjson_traverse(answer, i);
+  remove_duplicates(answer);
   return answer;
 }
 
-
-void sajson_traverse(stat_t &stats, const sajson::value &node) {
+void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   using namespace sajson;
   switch (node.get_type()) {
   case TYPE_ARRAY: {
-    stats.array_count++;
     auto length = node.get_length();
     for (size_t i = 0; i < length; ++i) {
-      sajson_traverse(stats, node.get_array_element(i));
+      sajson_traverse(answer, node.get_array_element(i));
     }
     break;
   }
   case TYPE_OBJECT: {
-    stats.object_count++;
     auto length = node.get_length();
     for (auto i = 0u; i < length; ++i) {
-      if(strcmp(node.get_object_key(i), "user") == 0) {
-          auto child = node.get_object_value(i);
-          if(child.get_type() == TYPE_OBJECT) {
-              for (auto j = 0u; j < length; ++j) {
-                  if(strcmp(node.get_object_key(i), "user") == 0) {
-                  }
-
+      if (equals(node.get_object_key(i).data(), "user")) { // found a user!!!
+        auto uservalue = node.get_object_value(i);         // get the value
+        if (uservalue.get_type() ==
+            TYPE_OBJECT) { // the value should be an object
+          auto uservaluelength = uservalue.get_length();
+          for (auto j = 0u; j < uservaluelength;
+               ++j) { // go through the children
+            if (equals(uservalue.get_object_key(j).data(),
+                       "id")) { // ah ah found id
+              auto v = uservalue.get_object_value(j);
+              if (v.get_type() == TYPE_INTEGER) { // check that it is an integer
+                answer.push_back(v.get_integer_value()); // record it!
+              } else if (v.get_type() == TYPE_DOUBLE) {
+                answer.push_back((int64_t)v.get_double_value()); // record it!
               }
+            }
           }
+        }
       }
-      sajson_traverse(stats, node.get_object_value(i));
+      sajson_traverse(answer, node.get_object_value(i));
     }
     break;
   }
@@ -143,82 +149,72 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
-stat_t sasjon_computestats(const std::string_view &p) {
-  stat_t answer;
+std::vector<int64_t> sasjon_computestats(const std::string_view &p) {
+  std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
   auto d = sajson::parse(sajson::dynamic_allocation(),
                          sajson::mutable_string_view(p.size(), buffer));
-  answer.valid = d.is_valid();
-  if (!answer.valid) {
+  if (!d.is_valid()) {
     return answer;
   }
-  answer.number_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
   sajson_traverse(answer, d.get_root());
   free(buffer);
+  remove_duplicates(answer);
   return answer;
 }
 
-void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
+void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
   switch (v.GetType()) {
-  case kNullType:
-    stats.null_count++;
-    break;
-  case kFalseType:
-    stats.false_count++;
-    break;
-  case kTrueType:
-    stats.true_count++;
-    break;
-
   case kObjectType:
     for (Value::ConstMemberIterator m = v.MemberBegin(); m != v.MemberEnd();
          ++m) {
-      rapid_traverse(stats, m->value);
+      if (equals(m->name.GetString(), "user")) {
+        const rapidjson::Value &child = m->value;
+        if (child.GetType() == kObjectType) {
+          for (Value::ConstMemberIterator k = child.MemberBegin();
+               k != child.MemberEnd(); ++k) {
+            if (equals(k->name.GetString(), "id")) {
+              const rapidjson::Value &val = k->value;
+              if (val.GetType() == kNumberType) {
+                answer.push_back(val.GetInt64());
+              }
+            }
+          }
+        }
+      }
+      rapid_traverse(answer, m->value);
     }
-    stats.object_count++;
     break;
   case kArrayType:
     for (Value::ConstValueIterator i = v.Begin(); i != v.End();
          ++i) { // v.Size();
-      rapid_traverse(stats, *i);
+      rapid_traverse(answer, *i);
     }
-    stats.array_count++;
     break;
-
+  case kNullType:
+  case kFalseType:
+  case kTrueType:
   case kStringType:
-    break;
-
   case kNumberType:
-    stats.number_count++;
+  default:
     break;
   }
 }
 
-stat_t rapid_computestats(const std::string_view &p) {
-  stat_t answer;
+std::vector<int64_t> rapid_computestats(const std::string_view &p) {
+  std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   rapidjson::Document d;
   d.ParseInsitu<kParseValidateEncodingFlag>(buffer);
-  answer.valid = !d.HasParseError();
-  if (!answer.valid) {
+  if (d.HasParseError()) {
     return answer;
   }
-  answer.number_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
   rapid_traverse(answer, d);
   free(buffer);
+  remove_duplicates(answer);
   return answer;
 }
 
@@ -262,29 +258,32 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  stat_t s1 = simdjson_computestats(p);
+  std::vector<int64_t> s1 = simdjson_computestats(p);
   if (verbose) {
     printf("simdjson: ");
-    print_stat(s1);
+    print_vec(s1);
   }
-  stat_t s2 = rapid_computestats(p);
+  std::vector<int64_t> s2 = rapid_computestats(p);
   if (verbose) {
     printf("rapid:    ");
-    print_stat(s2);
+    print_vec(s2);
   }
-  stat_t s3 = sasjon_computestats(p);
+  std::vector<int64_t> s3 = sasjon_computestats(p);
   if (verbose) {
     printf("sasjon:   ");
-    print_stat(s3);
+    print_vec(s3);
   }
-  assert(stat_equal(s1, s2));
-  assert(stat_equal(s1, s3));
+  assert(s1 == s2);
+  assert(s1 == s3);
+  size_t size = s1.size();
+
   int repeat = 10;
   int volume = p.size();
-  BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,
+  BEST_TIME("simdjson  ", simdjson_computestats(p).size(), size, , repeat,
             volume, true);
-  BEST_TIME("rapid  ", rapid_computestats(p).valid, true, , repeat, volume,
+
+  BEST_TIME("rapid  ", rapid_computestats(p).size(), size, , repeat, volume,
             true);
-  BEST_TIME("sasjon  ", sasjon_computestats(p).valid, true, , repeat, volume,
+  BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
             true);
 }

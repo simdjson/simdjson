@@ -7,49 +7,37 @@
 using namespace std;
 
 void compute_dump(ParsedJson::iterator &pjh) {
-  bool inobject = (pjh.get_type() == '{');
-  bool inarray = (pjh.get_type() == '[');
-  if ((!inobject) && (!inarray)) {
-    pjh.print(std::cout); // just print the lone value
-    return; // we are done
-  }
-  // we have either an array or an object
-  bool goingdown = pjh.down();
-  if(!goingdown) {
-      // we have an empty scope
-      if(inobject) std::cout<<"{}";
-      else std::cout<<"[]";
-      return;
-  }
-  // we have a non-empty scope and we are at the beginning of it
-  if (inobject) {
-    assert(pjh.get_scope_type() == '{');
+  if (pjh.is_object()) {
     std::cout << "{";
-    assert(pjh.get_type() == '"');
-    pjh.print(std::cout); // must be a string
-    std::cout << ":";
-    assert(pjh.next());
-    compute_dump(pjh); // let us recurse
-    while (pjh.next()) {
-      std::cout << ",";
-      assert(pjh.get_type() == '"');
-      pjh.print(std::cout);
+    if (pjh.down()) {
+      pjh.print(std::cout); // must be a string
       std::cout << ":";
-      assert(pjh.next());
+      pjh.next();
       compute_dump(pjh); // let us recurse
+      while (pjh.next()) {
+        std::cout << ",";
+        pjh.print(std::cout);
+        std::cout << ":";
+        pjh.next();
+        compute_dump(pjh); // let us recurse
+      }
+      pjh.up();
     }
     std::cout << "}";
-  } else {
-    assert(pjh.get_scope_type() == '[');
+  } else if (pjh.is_array()) {
     std::cout << "[";
-    compute_dump(pjh); // let us recurse
-    while (pjh.next()) {
-      std::cout << ",";
+    if (pjh.down()) {
       compute_dump(pjh); // let us recurse
+      while (pjh.next()) {
+        std::cout << ",";
+        compute_dump(pjh); // let us recurse
+      }
+      pjh.up();
     }
     std::cout << "]";
+  } else {
+    pjh.print(std::cout); // just print the lone value
   }
-  assert(pjh.up()); 
 }
 
 int main(int argc, char *argv[]) {
@@ -93,7 +81,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   bool is_ok = json_parse(p, pj); // do the parsing, return false on error
-  free((void*)p.data());
+  free((void *)p.data());
   if (!is_ok) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;

@@ -90,6 +90,7 @@ To simplify the engineering, we make some assumptions.
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
 - We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
+- As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
 
 *We do not aim to provide a general-purpose JSON library.* A library like RapidJSON offers much more than just parsing, it helps you generate JSON and offers various other convenient functions. We merely parse the document.
 
@@ -97,7 +98,7 @@ To simplify the engineering, we make some assumptions.
 ## Features
 
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
-- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers.
+- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808). Among the parsers  that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson stores integers larger than 2147483648 as floating-point numbers.)
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
@@ -109,6 +110,102 @@ The parser works in three stages:
 - Stage 1. Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. Involves the "flattening" of the data from stage 1, that is, convert bitsets into arrays of indexes.
 - Stage 3. (Structure building) Involves constructing a "tree" of sort to navigate through the data. Strings and numbers are parsed at this stage.
+
+
+## Navigating the parsed document
+
+Here is a code sample to dump back the parsed JSON to a string:
+
+```c
+    ParsedJson::iterator pjh(pj);
+    if (!pjh.isOk()) {
+      std::cerr << " Could not iterate parsed result. " << std::endl;
+      return EXIT_FAILURE;
+    }
+    compute_dump(pj);
+    //
+    // where compute_dump is :
+
+void compute_dump(ParsedJson::iterator &pjh) {
+  if (pjh.is_object()) {
+    std::cout << "{";
+    if (pjh.down()) {
+      pjh.print(std::cout); // must be a string
+      std::cout << ":";
+      pjh.next();
+      compute_dump(pjh); // let us recurse
+      while (pjh.next()) {
+        std::cout << ",";
+        pjh.print(std::cout);
+        std::cout << ":";
+        pjh.next();
+        compute_dump(pjh); // let us recurse
+      }
+      pjh.up();
+    }
+    std::cout << "}";
+  } else if (pjh.is_array()) {
+    std::cout << "[";
+    if (pjh.down()) {
+      compute_dump(pjh); // let us recurse
+      while (pjh.next()) {
+        std::cout << ",";
+        compute_dump(pjh); // let us recurse
+      }
+      pjh.up();
+    }
+    std::cout << "]";
+  } else {
+    pjh.print(std::cout); // just print the lone value
+  }
+}
+```
+
+The following function will find all user.id integers:
+
+```C
+void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
+  switch (i.get_type()) {
+  case '{':
+    if (i.down()) {
+      do {
+        bool founduser = equals(i.get_string(), "user");
+        i.next(); // move to value
+        if (i.is_object()) {
+          if (founduser && i.move_to_key("id")) {
+            if (i.is_integer()) {
+              answer.push_back(i.get_integer());
+            }
+            i.up();
+          }
+          simdjson_traverse(answer, i);
+        } else if (i.is_array()) {
+          simdjson_traverse(answer, i);
+        }
+      } while (i.next());
+      i.up();
+    }
+    break;
+  case '[':
+    if (i.down()) {
+      do {
+        if (i.is_object_or_array()) {
+          simdjson_traverse(answer, i);
+        }
+      } while (i.next());
+      i.up();
+    }
+    break;
+  case 'l':
+  case 'd':
+  case 'n':
+  case 't':
+  case 'f':
+  default:
+    break;
+  }
+}
+```
 
 
 ## Various References

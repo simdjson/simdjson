@@ -395,7 +395,6 @@ public:
     }
 
     // move forward in document order
-    WARN_UNUSED
     bool move_forward() {
       if(location + 1 >= tape_length) {
         return false; // we are at the end!
@@ -427,13 +426,11 @@ public:
 
     // retrieve the character code of what we're looking at:
     // [{"sltfn are the possibilities
-    WARN_UNUSED
     really_inline u8 get_type()  const {
       return current_type;
     }
 
     // get the s64 value at this node; valid only if we're at "l"
-    WARN_UNUSED
     really_inline s64 get_integer()  const {
        if(location + 1 >= tape_length) return 0;// default value in case of error
        return (s64) pj.tape[location + 1];
@@ -441,7 +438,6 @@ public:
 
     // get the double value at this node; valid only if
     // we're at "d"
-    WARN_UNUSED
     really_inline double get_double()  const {
        if(location + 1 >= tape_length) return NAN;// default value in case of error
        double answer;
@@ -449,10 +445,54 @@ public:
        return answer;
     } 
 
+    bool is_object_or_array() const {
+      return is_object_or_array(get_type());
+    }
+
+    bool is_object() const {
+      return get_type() == '{';
+    }
+
+    bool is_array() const {
+      return get_type() == '[';
+    }
+
+    bool is_string() const {
+      return get_type() == '"';
+    }
+    
+    bool is_integer() const {
+      return get_type() == 'l';
+    }
+    
+    bool is_double() const {
+      return get_type() == 'd';
+    }
+    
+    static bool is_object_or_array(u8 type) {
+      return (type == '[' || (type == '{'));
+    }
+
+    // when at {, go one level deep, looking for a given key
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing at the object ({)
+    // (in case of repeated keys, this only finds the first one)
+    bool move_to_key(const char * key) {
+      if(down()) {
+        do {
+          assert(is_string());
+          bool rightkey = (strcmp(get_string(),key)==0);
+          next();
+          if(rightkey) return true;
+        } while(next());
+        assert(up());// not found
+      }
+      return false;
+    }
+
     // get the string value at this node (NULL ended); valid only if we're at "
     // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
     // return value is valid UTF-8
-    WARN_UNUSED
     really_inline const char * get_string() const {
       return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
     }
@@ -465,7 +505,6 @@ public:
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [.
     // At the object ({) or at the array ([), you can issue a "down" to visit their content.
     // valid if we're not at the end of a scope (returns true).
-    WARN_UNUSED
     really_inline bool next() { 
       if ((current_type == '[') || (current_type == '{')){
         // we need to jump
@@ -496,6 +535,7 @@ public:
         return true;
       }
     }
+   
 
 
     // Withing a given scope (series of nodes at the same depth within either an
@@ -503,7 +543,6 @@ public:
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true when starting at the end
     // of the scope.
     // At the object ({) or at the array ([), you can issue a "down" to visit their content.    
-    WARN_UNUSED
     really_inline bool prev() {
       if(location - 1 < depthindex[depth].start_of_scope) return false;
       location -= 1;
@@ -526,7 +565,6 @@ public:
     // within a contained scope.
     // Valid unless we are at the first level of the document
     //
-    WARN_UNUSED
     really_inline bool up() {
       if(depth == 1) {
         return false; // don't allow moving back to root
@@ -545,7 +583,6 @@ public:
     // that deeper scope if it not empty.
     // Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the
     // "a" node.
-    WARN_UNUSED
     really_inline bool down() {
       if(location + 1 >= tape_length) return false;
       if ((current_type == '[') || (current_type == '{')) {
