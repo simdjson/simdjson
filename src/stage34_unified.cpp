@@ -68,6 +68,11 @@ really_inline bool is_valid_null_atom(const u8 *loc) {
   return error == 0;
 }
 
+
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
 // Implemented using Labels as Values which works in GCC and CLANG (and maybe
 // also in Intel's compiler), but won't work in MSVC. This would need to be
 // reimplemented differently if one wants to be standard compliant.

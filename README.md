@@ -78,7 +78,7 @@ make benchmark
 ## Tools
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output. 
-- `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. 
+- `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file tape.md.
 - `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters. 
 
 ## Scope
@@ -100,7 +100,7 @@ To simplify the engineering, we make some assumptions.
 ## Features
 
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
-- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers  that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
+- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers  that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
