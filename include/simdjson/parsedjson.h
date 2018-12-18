@@ -217,8 +217,10 @@ public:
   bool dump_raw_tape(std::ostream &os) {
     if(!isvalid) return false;
     size_t tapeidx = 0;
-    u64 tape_val = tape[tapeidx++];
+    u64 tape_val = tape[tapeidx];
     u8 type = (tape_val >> 56);
+    os << tapeidx << " : " << type; 
+    tapeidx++;
     size_t howmany = 0;
     if (type == 'r') {
       howmany = tape_val & JSONVALUEMASK;
@@ -226,10 +228,12 @@ public:
       printf("Error: no starting root node?");
       return false;
     }
+    os << "\t// pointing to " << howmany <<" (right after last node)\n";
+    u64 payload;
     for (; tapeidx < howmany; tapeidx++) {
       os << tapeidx << " : "; 
       tape_val = tape[tapeidx];
-      u64 payload = tape_val & JSONVALUEMASK;
+      payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       switch (type) {
       case '"': // we have a string
@@ -261,16 +265,16 @@ public:
         os << "false\n";
         break;
       case '{': // we have an object
-        os << "{\t// pointing to next tape location " << payload << "\n";
+        os << "{\t// pointing to next tape location " << payload << " (first node after the scope) \n";
         break;
       case '}': // we end an object
-        os << "}\t// pointing to previous tape location " << payload << "\n";
+        os << "}\t// pointing to previous tape location " << payload << " (start of the scope) \n";
         break;
       case '[': // we start an array
-        os << "[\t// pointing to next tape location " << payload << "\n";
+        os << "[\t// pointing to next tape location " << payload << " (first node after the scope) \n";
         break;
       case ']': // we end an array
-        os << "]\t// pointing to previous tape location " << payload << "\n";
+        os << "]\t// pointing to previous tape location " << payload << " (start of the scope) \n";
         break;
       case 'r': // we start and end with the root node
         printf("end of root\n");
@@ -279,6 +283,10 @@ public:
         return false;
       }
     }
+    tape_val = tape[tapeidx];
+    payload = tape_val & JSONVALUEMASK;
+    type = (tape_val >> 56);
+    os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
   }
 

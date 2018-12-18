@@ -483,7 +483,7 @@ static really_inline bool parse_number(const u8 *const buf,
 #endif
     }
   } else {
-    if (unlikely(digitcount >= 19)) { // this is uncommon!!!
+    if (unlikely(digitcount >= 18)) { // this is uncommon!!!
       return parse_large_integer(buf, pj, offset, 
                                  found_minus);
     }

@@ -103,12 +103,25 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   if (depth > pj.depthcapacity) {
     goto fail;
   }
+
   UPDATE_CHAR();
   switch (c) {
   case '{':
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.ret_address[depth] = &&start_continue;
+    depth++;
+    if (depth > pj.depthcapacity) {
+      goto fail;
+    }
     pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     goto object_begin;
   case '[':
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.ret_address[depth] = &&start_continue;
+    depth++;
+    if (depth > pj.depthcapacity) {
+      goto fail;
+    }
     pj.write_tape(0, c);
     goto array_begin;
 #define SIMDJSON_ALLOWANYTHINGINROOT
@@ -216,11 +229,6 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
   default:
     goto fail;
   }
-#ifdef SIMDJSON_ALLOWANYTHINGINROOT
-  depth--; // for fall-through cases (e.g., documents containing just a string)
-  pj.annotate_previousloc(pj.containing_scope_offset[depth],
-                          pj.get_current_loc());
-#endif     // ALLOWANYTHINGINROOT
 start_continue:
   DEBUG_PRINTF("in start_object_close\n");
   // the string might not be NULL terminated.
@@ -465,6 +473,7 @@ array_continue:
 
 succeed:
   DEBUG_PRINTF("in succeed, depth = %d \n", depth);
+  depth --;
   if(depth != 0) {
     printf("internal bug\n");
     abort();
@@ -473,6 +482,8 @@ succeed:
     printf("internal bug\n");
     abort();
   }
+  pj.annotate_previousloc(pj.containing_scope_offset[depth],
+                          pj.get_current_loc());
   pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
 
 
