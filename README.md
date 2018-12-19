@@ -14,7 +14,9 @@ Insight: Use commonly available SIMD instructions as much as possible.
 
 ## Some performance results
 
-We present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded.
+We present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded. 
+
+*Lower results are better.*
 
 
 
