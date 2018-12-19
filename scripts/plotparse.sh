@@ -14,16 +14,15 @@ if [ "$os" = "Linux" ]; then
   echo "We are going to just parse using simdjson, and collect perf stats."
 
   make parse
+  myfile=$plotdirectory"/parselinuxtable.txt"
+  echo $myfile
+  echo "" > $myfile
   for i in $SCRIPTPATH/../jsonexamples/*.json; do
     [ -f "$i" ] || break
     echo $i
-    shortname=$(basename $SCRIPTPATH/$i"justparse.table")
-    corename=$(basename ${shortname%.*})".pdf"
-    $SCRIPTPATH/../parse -t $i > $plotdirectory/$shortname
-    gnuplot -e "filename='$plotdirectory/$shortname';name='$plotdirectory/$corename'" $SCRIPTPATH/bar.gnuplot
-    rm $plotdirectory/$shortname
-    echo
+    $SCRIPTPATH/../parse -t "$i" >> "$myfile"
   done
+  echo $myfile
 fi
 
 make parsingcompetition
