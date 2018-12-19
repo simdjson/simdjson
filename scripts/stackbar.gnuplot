@@ -1,4 +1,4 @@
-set term pdfcairo fontscale 0.5
+set term pdfcairo fontscale 0.5 noenhanced
 set output name
 set boxwidth 0.8
 set style fill solid 
@@ -20,8 +20,10 @@ set xtics nomirror
 set ytics nomirror
 
 set yrange [0:]
-set format y "%0.1f";
 
-set style line 1 lt rgb "#A0A0A0" lw 1 pt 1 ps 1
+set key right
+set style data histograms
+set style histogram rowstacked
+set xtic rotate by 300 scale 1
 
-plot filename using 0:2:xtic(1) with boxes notitle ls 1, '' using 0:(1):(sprintf("%.1f", $2)) with labels notitle
+plot filename using 2 t "allocation", '' using 3 t "stage 1", '' using 4 t "stage 2", '' using 5:xtic(1) t "stage 3"

@@ -22,7 +22,7 @@ if [ "$os" = "Linux" ]; then
     echo $i
     $SCRIPTPATH/../parse -t "$i" >> "$myfile"
   done
-  echo $myfile
+  gnuplot -e "filename='$myfile';name='$plotdirectory/stackedperf.pdf'" $SCRIPTPATH/stackbar.gnuplot
 fi
 
 make parsingcompetition
