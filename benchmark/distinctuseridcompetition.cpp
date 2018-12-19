@@ -205,9 +205,14 @@ std::vector<int64_t> rapid_computestats(const std::string_view &p) {
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
+  bool justdata = false;
+
   int c;
-  while ((c = getopt(argc, argv, "v")) != -1)
+  while ((c = getopt(argc, argv, "vt")) != -1)
     switch (c) {
+    case 't':
+      justdata = true;
+      break;
     case 'v':
       verbose = true;
       break;
@@ -265,11 +270,11 @@ int main(int argc, char *argv[]) {
   int repeat = 10;
   int volume = p.size();
   BEST_TIME("simdjson  ", simdjson_computestats(p).size(), size, , repeat,
-            volume, true);
+            volume, !justdata);
 
   BEST_TIME("rapid  ", rapid_computestats(p).size(), size, , repeat, volume,
-            true);
+            !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
-            true);
+            !justdata);
   free((void*)p.data());
 }

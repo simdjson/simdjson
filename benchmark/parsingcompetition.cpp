@@ -36,10 +36,14 @@ bool fastjson_parse(const char *input) {
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
+  bool justdata = false;
   bool all = false;
   int c;
-  while ((c = getopt(argc, argv, "va")) != -1)
+  while ((c = getopt(argc, argv, "vat")) != -1)
     switch (c) {
+    case 't':
+      justdata = true;
+      break;
     case 'v':
       verbose = true;
       break;
@@ -87,11 +91,11 @@ int main(int argc, char *argv[]) {
   }
   int repeat = 10;
   int volume = p.size();
-  BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
-            repeat, volume, true);
-
-  BEST_TIME("simdjson (static alloc) ", json_parse(p, pj), true, , repeat,
-            volume, true);
+  if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
+            repeat, volume, !justdata);
+  // (static alloc) 
+  BEST_TIME("simdjson ", json_parse(p, pj), true, , repeat,
+            volume, !justdata);
 
   rapidjson::Document d;
 
@@ -99,13 +103,13 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 
-  BEST_TIME(
+  if(!justdata) BEST_TIME(
       "RapidJSON",
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
-      false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
-  BEST_TIME("RapidJSON (insitu)",
+      false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+  if(!justdata) BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
-            false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+            false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   typedef rapidjson::GenericDocument<UTF8<>, rapidjson::MemoryPoolAllocator<>,
                                      rapidjson::MemoryPoolAllocator<>>
       RapidDocumentType;
@@ -121,60 +125,60 @@ int main(int argc, char *argv[]) {
     RapidDocumentType preallocedd(&valueAllocator, rapidvaallocsize,
                                   &parseAllocator);
 
-    BEST_TIME(
+    if(!justdata) BEST_TIME(
         "RapidJSON (static alloc)",
         preallocedd.Parse<kParseValidateEncodingFlag>((const char *)buffer)
             .HasParseError(),
-        false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
-    BEST_TIME("RapidJSON (static alloc, insitu)",
+        false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+    //  (static alloc, insitu)
+    BEST_TIME("RapidJSON",
               preallocedd.ParseInsitu<kParseValidateEncodingFlag>(buffer)
                   .HasParseError(),
-              false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+              false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
     assert(valueAllocator.Size() <= rapidvaallocsize);
     assert(parseAllocator.Size() <= rapidallocsize);
   }
   free(rapidvalueBuffer);
   free(rapidparseBuffer);
-
-  BEST_TIME("sajson (dynamic mem, insitu)",
+  if(!justdata) BEST_TIME("sajson (dynamic mem, insitu)",
             sajson::parse(sajson::dynamic_allocation(),
                           sajson::mutable_string_view(p.size(), buffer))
                 .is_valid(),
-            true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+            true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 
   size_t astbuffersize = p.size();
   size_t *ast_buffer = (size_t *)malloc(astbuffersize * sizeof(size_t));
-
-  BEST_TIME("sajson (static alloc, insitu)",
+  //  (static alloc, insitu)
+  BEST_TIME("sajson",
             sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize),
                           sajson::mutable_string_view(p.size(), buffer))
                 .is_valid(),
-            true, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+            true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   std::string json11err;
   if (all)
     BEST_TIME("dropbox (json11)     ",
               ((json11::Json::parse(buffer, json11err).is_null()) ||
                (!json11err.empty())),
-              false, memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+              false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 
   if (all)
     BEST_TIME("fastjson             ", fastjson_parse(buffer), true,
-              memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+              memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   JsonValue value;
   JsonAllocator allocator;
   char *endptr;
   if (all)
     BEST_TIME("gason             ",
               jsonParse(buffer, &endptr, &value, allocator), JSON_OK,
-              memcpy(buffer, p.data(), p.size()), repeat, volume, true);
+              memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   void *state;
   if (all)
     BEST_TIME("ultrajson         ",
               (UJDecode(buffer, p.size(), NULL, &state) == NULL), false,
-              memcpy(buffer, p.data(), p.size()), repeat, volume, true);
-  BEST_TIME("memcpy            ",
+              memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+  if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
-            volume, true);
+            volume, !justdata);
   free((void *)p.data());
   free(ast_buffer);
   free(buffer);

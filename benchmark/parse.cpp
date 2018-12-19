@@ -23,7 +23,9 @@
 
 
 #include "linux-perf-events.h"
-
+#ifdef __linux__
+#include <libgen.h>
+#endif
 //#define DEBUG
 #include "simdjson/common_defs.h"
 #include "simdjson/jsonparser.h"
@@ -39,12 +41,16 @@ int main(int argc, char *argv[]) {
   bool dump = false;
   bool jsonoutput = false;
   bool forceoneiteration = false;
+  bool justdata = false;
 
   int c;
 
-  while ((c = getopt (argc, argv, "1vd")) != -1)
+  while ((c = getopt (argc, argv, "1vdt")) != -1)
     switch (c)
       {
+      case 't':
+        justdata = true;
+        break;
       case 'v':
         verbose = true;
         break;
@@ -87,6 +93,9 @@ int main(int argc, char *argv[]) {
 
 #if !defined(__linux__)
 #define SQUASH_COUNTERS
+  if(justdata) {
+    printf("justdata (-t) flag only works under linux.\n");
+  }
 #endif
 
 #ifndef SQUASH_COUNTERS
@@ -185,6 +194,14 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS
+  if(justdata) {
+    float cpb0 =  (double)cy0 / (iterations * p.size());
+    float cpb1 =  (double)cy1 / (iterations * p.size());
+    float cpb2 =  (double)cy2 / (iterations * p.size());
+    float cpb3 =  (double)cy3 / (iterations * p.size());
+    float cpbtotal = (double)total / (iterations * p.size());
+    printf("\"%s\"\t%f\t%f\t%f\t%f\t%f\n", basename(filename), cpb0,cpb1,cpb2,cpb3,cpbtotal);
+  } else {
   printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
          p.size(), pj.n_structural_indexes,
          (double)pj.n_structural_indexes / p.size());
@@ -218,9 +235,10 @@ int main(int argc, char *argv[]) {
 
   printf(" all stages: %.2f cycles per input byte.\n",
          (double)total / (iterations * p.size()));
+  }
 #endif
   double min_result = *min_element(res.begin(), res.end());
-  cout << "Min:  " << min_result << " bytes read: " << p.size()
+  if(!justdata) cout << "Min:  " << min_result << " bytes read: " << p.size()
        << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
        << "\n";
   if(jsonoutput) {
