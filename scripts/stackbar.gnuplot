@@ -26,4 +26,9 @@ set style data histograms
 set style histogram rowstacked
 set xtic rotate by 300 scale 1
 
-plot filename using 2 t "allocation", '' using 3 t "stage 1", '' using 4 t "stage 2", '' using 5:xtic(1) t "stage 3"
+set style line 1 lt rgb "#A00000" lw 1 pt 1 ps 1
+set style line 2 lt rgb "#00A000" lw 1 pt 1 ps 1
+set style line 3 lt rgb "#5060D0" lw 1 pt 1 ps 1
+set style line 4 lt rgb "#FF1493" lw 1 pt 1 ps 1
+
+plot filename using 3 t "stage 1" ls 2, '' using 4 t "stage 2" ls 3, '' using 5:xtic(1) t "stage 3" ls 1
