@@ -4,6 +4,8 @@ A C++  library to see how fast we can parse JSON with complete validation.
 
 Goal: Speed up the parsing of JSON per se.
 
+Insight: Use commonly available SIMD instructions as much as possible.
+
 ## Requirements
 
 - Linux or macOS (currently)
