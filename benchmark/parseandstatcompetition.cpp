@@ -44,6 +44,7 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
+__attribute__ ((noinline))
 stat_t simdjson_computestats(const std::string_view &p) {
   stat_t answer;
   ParsedJson pj = build_parsed_json(p);
@@ -145,6 +146,7 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
+__attribute__ ((noinline))
 stat_t sasjon_computestats(const std::string_view &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
@@ -202,6 +204,7 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
   }
 }
 
+__attribute__ ((noinline))
 stat_t rapid_computestats(const std::string_view &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
@@ -286,7 +289,7 @@ int main(int argc, char *argv[]) {
   }
   assert(stat_equal(s1, s2));
   assert(stat_equal(s1, s3));
-  int repeat = 10;
+  int repeat = 50;
   int volume = p.size();
   BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,
             volume, !justdata);

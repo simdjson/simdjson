@@ -24,4 +24,4 @@ set format y "%0.1f";
 
 set style line 1 lt rgb "#A0A0A0" lw 1 pt 1 ps 1
 
-plot filename using 0:2:xtic(1) with boxes notitle ls 1, '' using 0:(1):(sprintf("%.1f", $2)) with labels notitle
+plot filename using 0:2:xtic(1) with boxes notitle ls 1, '' using 0:(1):(sprintf("%.2g", $2)) with labels notitle

@@ -78,7 +78,7 @@ make benchmark
 ## Tools
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output. 
-- `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file tape.md.
+- `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
 - `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters. 
 
 ## Scope
