@@ -122,11 +122,11 @@ Performance consideration: We can skip the content of an array entirely by acces
 JSON objects are represented using two 64-bit tape elements.
 
 - The first  64-bit tape element contains the value `('{' << 56) + x` where  the payload  `x` is 1 + the index of the second 64-bit tape element on the tape.
-- The second 64-bit tape element contains the value `('{' << 56) + x` where   the payload `x` contains the index of the first 64-bit tape element on the tape.
+- The second 64-bit tape element contains the value `('}' << 56) + x` where   the payload `x` contains the index of the first 64-bit tape element on the tape.
 
 In-between these two tape elements, we alternate between key (which must strings) and values. A value could be an object or an array.
 
-All the content of the array is located between these two tape elements, including arrays and objects. 
+All the content of the object is located between these two tape elements, including arrays and objects. 
 
 Performance consideration: We can skip the content of an object entirely by accessing the first 64-bit tape element, reading the payload and moving to the corresponding index on the tape.
  
