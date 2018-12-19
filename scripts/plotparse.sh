@@ -1,4 +1,5 @@
 #!/bin/bash
+[[ "$(command -v gnuplot)" ]] || { echo "gnuplot is not installed" 1>&2 ; exit 1; }
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 cd $SCRIPTPATH/..
@@ -6,6 +7,7 @@ plotdirectory=$SCRIPTPATH/plots/$(uname -n)
 mkdir -p $plotdirectory
 
 os=$(uname)
+
 
 if [ "$os" = "Linux" ]; then
   echo "You are using linux."
