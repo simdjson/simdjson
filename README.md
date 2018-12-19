@@ -2,13 +2,30 @@
 
 A C++  library to see how fast we can parse JSON with complete validation.
 
-Goal: Speed up the parsing of JSON per se. 
+Goal: Speed up the parsing of JSON per se.
 
 ## Requirements
 
 - Linux or macOS (currently)
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG)
 - Bash (for benchmark scripts)
+
+## Some performance results
+
+We present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded.
+
+apache_builds.json:
+![](doc/apache_builds.jsonparseandstat.png)
+
+github_events.json:
+![](doc/github_events.jsonparseandstat.png)
+
+twitter.json:
+![](doc/twitter.jsonparseandstat.png)
+
+update-center.json:
+![](doc/update-center.jsonparseandstat.png)
+
 
 ## Code example
 
@@ -20,13 +37,13 @@ Goal: Speed up the parsing of JSON per se.
 const char * filename = ... //
 
 // use whatever means you want to get a string of you JSON document
-std::string_view p = get_corpus(filename); 
+std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
 bool is_ok = json_parse(p, pj); // do the parsing, return false on error
 // parsing is done!
 // You can safely delete the string content
-free((void*)p.data()); 
+free((void*)p.data());
 // the ParsedJson document can be used here
 // js can be reused with other json_parse calls.
 ```
@@ -77,9 +94,9 @@ make benchmark
 
 ## Tools
 
-- `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output. 
+- `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
-- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters. 
+- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters.
 
 ## Scope
 
@@ -233,7 +250,7 @@ Inspiring links:
 
 Validating UTF-8 takes no more than 0.7 cycles per byte:
 - https://github.com/lemire/fastvalidate-utf-8 https://lemire.me/blog/2018/05/16/validating-utf-8-strings-using-as-little-as-0-7-cycles-per-byte/
- 
+
 
 ## Remarks on JSON parsing
 
@@ -267,7 +284,7 @@ A character is pseudo-structural if and only if:
 
 This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
 
-> { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null } 
+> { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null }
 
 
 ## Academic References
