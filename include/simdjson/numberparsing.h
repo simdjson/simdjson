@@ -340,6 +340,10 @@ static really_inline bool parse_number(const u8 *const buf,
                                        ParsedJson &pj, 
                                        const u32 offset, 
                                        bool found_minus) {
+#ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes useful to skip parsing
+  pj.write_tape_s64(0); // always write zero
+  return true; // always succeeds
+#else
   const char *p = (const char *)(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -493,4 +497,5 @@ static really_inline bool parse_number(const u8 *const buf,
 #endif
   }
   return  is_structural_or_whitespace(*p);
+#endif // SIMDJSON_SKIPNUMBERPARSING
 }

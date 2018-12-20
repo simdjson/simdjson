@@ -61,7 +61,10 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
 WARN_UNUSED
 really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const u32 depth, u32 offset) {
-  using namespace std;
+#ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
+  pj.write_tape(0, '"');// don't bother with the string parsing at all
+  return true; // always succeeds
+#else
   const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
   u8 *dst = pj.current_string_buf_loc;
 #ifdef JSON_TEST_STRINGS // for unit testing
@@ -195,6 +198,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
   }
   // can't be reached
   return true;
+#endif // SIMDJSON_SKIPSTRINGPARSING
 }
 
 

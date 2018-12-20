@@ -10,11 +10,14 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 
-#define UTF8VALIDATE
+#ifndef SIMDJSON_SKIPUTF8VALIDATION
+#define SIMDJSON_UTF8VALIDATE
+#endif
+
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it. 
-#ifdef UTF8VALIDATE
+#ifdef SIMDJSON_UTF8VALIDATE
 #include "simdjson/simdutf8check.h"
 #endif
 using namespace std;
@@ -37,7 +40,7 @@ WARN_UNUSED
     cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
     return false;
   }
-#ifdef UTF8VALIDATE
+#ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
   struct avx_processed_utf_bytes previous = {
       .rawbytes = _mm256_setzero_si256(),
@@ -78,7 +81,7 @@ WARN_UNUSED
 #endif
     m256 input_lo = _mm256_loadu_si256((const m256 *)(buf + idx + 0));
     m256 input_hi = _mm256_loadu_si256((const m256 *)(buf + idx + 32));
-#ifdef UTF8VALIDATE
+#ifdef SIMDJSON_UTF8VALIDATE
     m256 highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
         // it is ascii, we just check continuation
@@ -261,7 +264,7 @@ WARN_UNUSED
     memcpy(tmpbuf,buf+idx,len - idx);
     m256 input_lo = _mm256_loadu_si256((const m256 *)(tmpbuf + 0));
     m256 input_hi = _mm256_loadu_si256((const m256 *)(tmpbuf + 32));
-#ifdef UTF8VALIDATE
+#ifdef SIMDJSON_UTF8VALIDATE
     m256 highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
         // it is ascii, we just check continuation
@@ -402,7 +405,7 @@ WARN_UNUSED
     structurals &= ~(quote_bits & ~quote_mask);
     *(u64 *)(pj.structurals + idx / 8) = structurals;
   }
-#ifdef UTF8VALIDATE
+#ifdef SIMDJSON_UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);
 #else
   return true;

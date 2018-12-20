@@ -13,15 +13,35 @@ if [ "$os" = "Linux" ]; then
   echo "You are using linux."
   echo "We are going to just parse using simdjson, and collect perf stats."
 
-  make parse
+  make parse parse_noutf8validation parse_nonumberparsing parse_nostringparsing
   myfile=$plotdirectory"/parselinuxtable.txt"
   echo $myfile
   echo "" > $myfile
+
+  myfile_noutf8validation=$plotdirectory"/parselinuxtable_noutf8validation.txt"
+  echo $myfile_noutf8validation
+  echo "" > $myfile_noutf8validation
+
+  myfile=$plotdirectory"/parselinuxtable_nonumberparsing.txt"
+  echo $myfile_nonumberparsing
+  echo "" > $myfile_nonumberparsing
+
+  myfile=$plotdirectory"/parselinuxtable_nostringparsing.txt"
+  echo $myfile_nostringparsing
+  echo "" > $myfile_nostringparsing
+
+
   for i in $SCRIPTPATH/../jsonexamples/*.json; do
     [ -f "$i" ] || break
     echo $i
     $SCRIPTPATH/../parse -t "$i" >> "$myfile"
+    $SCRIPTPATH/../parse_noutf8validation -t "$i" >> "$myfile_noutf8validation"
+    $SCRIPTPATH/../parse_nonumberparsing -t "$i" >> "$myfile_nonumberparsing"
+    $SCRIPTPATH/../parse_nostringparsing -t "$i" >> "$myfile_nostringparsing"
   done
+  paste $myfile $myfile_noutf8validation $myfile_nonumberparsing $myfile_nostringparsing > $myfile.tmp
+  mv $myfile.tmp $myfile
+  rm  $myfile_noutf8validation $myfile_nonumberparsing $myfile_nostringparsing
   gnuplot -e "filename='$myfile';name='$plotdirectory/stackedperf.pdf'" $SCRIPTPATH/stackbar.gnuplot
 fi
 

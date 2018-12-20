@@ -25,6 +25,7 @@ endif
 MAINEXECUTABLES=parse minify json2json
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile
+SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_flatten.h include/simdjson/stage34_unified.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp
@@ -85,6 +86,16 @@ $(UJSON4C_INCLUDE):
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
 
+parse_noutf8validation: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_noutf8validation -DSIMDJSON_SKIPUTF8VALIDATION $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+parse_nonumberparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_nonumberparsing  -DSIMDJSON_SKIPNUMBERPARSING $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_nostringparsing  -DSIMDJSON_SKIPSTRINGPARSING $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
 
@@ -115,11 +126,9 @@ parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBF
 distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES) 
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-
-parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) #$(EXTRAOBJECTS) 
+parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE) 
-#$(EXTRADEPSINCLUDE)
-#$(EXTRAOBJECTS) 
+
 
 allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) 
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)
@@ -132,7 +141,7 @@ cppcheck:
 
 
 clean:
-	rm -f $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES)
+	rm -f $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)
 
 cleandist:
-	rm -f $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES)
+	rm -f $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)
