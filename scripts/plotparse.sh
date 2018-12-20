@@ -18,30 +18,30 @@ if [ "$os" = "Linux" ]; then
   echo $myfile
   echo "" > $myfile
 
-  myfile_noutf8validation=$plotdirectory"/parselinuxtable_noutf8validation.txt"
-  echo $myfile_noutf8validation
-  echo "" > $myfile_noutf8validation
+  myfilenoutf8validation=$plotdirectory"/parselinuxtable_noutf8validation.txt"
+  echo $myfilenoutf8validation
+  echo "" > $myfilenoutf8validation
 
-  myfile=$plotdirectory"/parselinuxtable_nonumberparsing.txt"
-  echo $myfile_nonumberparsing
-  echo "" > $myfile_nonumberparsing
+  myfilenonumberparsing=$plotdirectory"/parselinuxtable_nonumberparsing.txt"
+  echo $myfilenonumberparsing
+  echo "" > $myfilenonumberparsing
 
-  myfile=$plotdirectory"/parselinuxtable_nostringparsing.txt"
-  echo $myfile_nostringparsing
-  echo "" > $myfile_nostringparsing
+  myfilenostringparsing=$plotdirectory"/parselinuxtable_nostringparsing.txt"
+  echo $myfilenostringparsing
+  echo "" > $myfilenostringparsing
 
 
   for i in $SCRIPTPATH/../jsonexamples/*.json; do
     [ -f "$i" ] || break
     echo $i
     $SCRIPTPATH/../parse -t "$i" >> "$myfile"
-    $SCRIPTPATH/../parse_noutf8validation -t "$i" >> "$myfile_noutf8validation"
-    $SCRIPTPATH/../parse_nonumberparsing -t "$i" >> "$myfile_nonumberparsing"
-    $SCRIPTPATH/../parse_nostringparsing -t "$i" >> "$myfile_nostringparsing"
+    $SCRIPTPATH/../parse_noutf8validation -t "$i" >> "$myfilenoutf8validation"
+    $SCRIPTPATH/../parse_nonumberparsing -t "$i" >> "$myfilenonumberparsing"
+    $SCRIPTPATH/../parse_nostringparsing -t "$i" >> "$myfilenostringparsing"
   done
-  paste $myfile $myfile_noutf8validation $myfile_nonumberparsing $myfile_nostringparsing > $myfile.tmp
-  mv $myfile.tmp $myfile
-  rm  $myfile_noutf8validation $myfile_nonumberparsing $myfile_nostringparsing
+  paste $myfile $myfilenoutf8validation $myfilenonumberparsing $myfilenostringparsing > "$myfile.tmp"
+  mv "$myfile.tmp" $myfile
+  rm  $myfilenoutf8validation $myfilenonumberparsing $myfilenostringparsing
   gnuplot -e "filename='$myfile';name='$plotdirectory/stackedperf.pdf'" $SCRIPTPATH/stackbar.gnuplot
 fi
 
