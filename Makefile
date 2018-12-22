@@ -22,7 +22,7 @@ else
 endif
 endif
 
-MAINEXECUTABLES=parse minify json2json
+MAINEXECUTABLES=parse minify json2json jsonstats
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
@@ -116,6 +116,8 @@ minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIB
 json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I. 
 
+jsonstats: tools/jsonstats.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsonstats $ tools/jsonstats.cpp $(LIBFILES) -I. 
 
 ujdecode.o: $(UJSON4C_INCLUDE)
 	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 
