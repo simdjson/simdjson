@@ -1,0 +1,43 @@
+
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/apache_builds.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+2 0 5289 26 0 884 3 0 2 1 127275 12365 67218.521000 214925.026000 37678.094000 151192.015000 37678.094000 151192.015000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/canada.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+46 111080 12 0 0 4 56045 0 0 0 2251051 334374 1242717.440000 3798798.700000 1013841.980000 3466084.860000 1013841.980000 3466084.860000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/citm_catalog.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+14392 0 26604 2 348 10937 10451 1263 0 0 1727204 135991 917682.380000 2921604.240000 439142.480000 1770490.780000 439142.480000 1770490.780000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/github_events.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+149 0 1891 155 4 180 19 24 57 7 65132 4657 34996.010000 110213.012000 16087.113000 64558.003000 16087.113000 64558.003000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/gsoc-2018.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+0 0 34128 15023 0 3793 0 0 0 0 3327831 75842 1798688.620000 5615899.420000 530081.580000 1504373.480000 530081.580000 1504373.480000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/instruments.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+4935 0 6889 0 0 1012 194 431 17 109 220346 27174 115401.382000 371961.033000 70488.566000 278262.047000 70488.566000 278262.047000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/marine_ik.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+130225 114950 38268 0 0 9680 28377 0 6 0 2983466 643013 1646730.700000 5034753.280000 1610609.980000 5828431.560000 1610609.980000 5828431.560000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/mesh.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+40613 32400 11 0 0 3 3610 0 0 0 723597 153275 440815.747000 1221269.144000 332891.193000 1273361.248000 332891.193000 1273361.248000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/mesh.pretty.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+40613 32400 11 0 0 3 3610 0 0 0 1577353 153275 828264.140000 2661988.200000 452715.060000 1832423.840000 452715.060000 1832423.840000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/numbers.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+0 10001 0 0 0 0 1 0 0 0 150124 20004 79981.016000 253483.026000 50739.950000 192677.034000 50739.950000 192677.034000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/random.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+5002 0 33005 0 103482 4001 1001 0 495 505 510476 88018 403335.329000 1263015.129000 235189.923000 848831.092000 235189.923000 848831.092000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/twitterescaped.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+2108 1 18099 33048 0 1264 1050 1946 345 2446 562408 55264 293932.126000 949217.094000 190434.493000 599844.111000 190434.493000 599844.111000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/twitter.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+2108 1 18099 1230 95406 1264 1050 1946 345 2446 631514 55264 406768.082000 1244007.135000 196604.187000 664447.110000 196604.187000 664447.110000
+#/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/update-center.json
+# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count   stage1_cycle_count stage1_instruction_count  stage2_cycle_count  stage2_instruction_count  stage3_cycle_count stage3_instruction_count  
+0 0 27229 284 49 1896 1937 0 134 252 533178 63420 284021.503000 901345.083000 229439.362000 662743.137000 229439.362000 662743.137000
