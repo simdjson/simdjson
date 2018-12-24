@@ -4,5 +4,7 @@
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 gnuplot -e "filename='plots/skylake/parselinuxtable.txt';name='plots/skylake/stackedperf.pdf'" $SCRIPTPATH/stackbar.gnuplot
+gnuplot -e "filename='plots/nuc/parselinuxtable.txt';name='plots/nuc/stackedperf.pdf'" $SCRIPTPATH/stackbar.gnuplot
 
 echo "plots/skylake/stackedperf.pdf"
+echo "plots/nuc/stackedperf.pdf"
