@@ -166,13 +166,15 @@ int main(int argc, char *argv[]) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  const u32 iterations = p.size() < 1 * 1000 * 1000 ? 1000;
+  const u32 iterations = p.size() < 1 * 1000 * 1000 ? 1000 : 50;
   vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
   unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
+  vector<u64> results;
+  results.resize(evts.size());
   for (u32 i = 0; i < iterations; i++) {
     unified.start();
     bool isok = find_structural_bits(p.data(), p.size(), pj);
@@ -188,7 +190,7 @@ int main(int argc, char *argv[]) {
     unified.end(results);
     cy3 += results[0];
     cl3 += results[1];
-    if(!ok) {
+    if(!isok) {
       std::cerr << "failure?" << std::endl;
     }
   }
