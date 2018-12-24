@@ -44,18 +44,14 @@ bool fastjson_parse(const char *input) {
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool justdata = false;
-  bool all = false;
   int c;
-  while ((c = getopt(argc, argv, "vat")) != -1)
+  while ((c = getopt(argc, argv, "vt")) != -1)
     switch (c) {
     case 't':
       justdata = true;
       break;
     case 'v':
       verbose = true;
-      break;
-    case 'a':
-      all = true;
       break;
     default:
       abort();
