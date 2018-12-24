@@ -22,7 +22,7 @@ else
 endif
 endif
 
-MAINEXECUTABLES=parse minify json2json jsonstats
+MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
@@ -85,6 +85,10 @@ $(UJSON4C_INCLUDE):
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+statisticalmodel: benchmark/statisticalmodel.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o statisticalmodel $(LIBFILES) benchmark/statisticalmodel.cpp $(LIBFLAGS)
+
 
 parse_noutf8validation: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse_noutf8validation -DSIMDJSON_SKIPUTF8VALIDATION $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
