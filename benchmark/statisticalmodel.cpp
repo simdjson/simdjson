@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   printf("(you are not under linux, so perf counters are disaabled)");
 #endif
   printf("\n");
-  printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu", s.integer_count,
+  printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu ", s.integer_count,
          s.float_count, s.string_count, s.backslash_count, s.nonasciibyte_count,
          s.object_count, s.array_count, s.null_count, s.true_count,
          s.false_count, s.byte_count, s.structural_indexes_count);
