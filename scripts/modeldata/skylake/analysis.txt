@@ -2,27 +2,23 @@ loading modeltable.txt
 chosenpredictors= ['integer_count', 'float_count', 'string_count', 'backslash_count', 'nonasciibyte_count', 'object_count', 'array_count', 'null_count', 'true_count', 'false_count', 'byte_count', 'structural_indexes_count']
 
 target =  stage1_cycle_count
-	0.98 cycles per nonasciibyte_count 
-	0.46 cycles per byte_count 
-R2 =  0.9987704927515433
+	0.49 cycles per byte_count 
+R2 =  0.9927537176836411
 
 target =  stage2_cycle_count
 	2 cycles per structural_indexes_count 
 	0.11 cycles per byte_count 
-R2 =  0.9940031972098434
+R2 =  0.9944225230951305
 
 target =  stage3_cycle_count
-	2.6 cycles per float_count 
-	2.4 cycles per string_count 
-	1.4 cycles per structural_indexes_count 
-	0.094 cycles per byte_count 
-R2 =  0.9981627163839895
+	18 cycles per float_count 
+	9 cycles per structural_indexes_count 
+	0.36 cycles per byte_count 
+R2 =  0.9861501257004178
 
 target =  total_cycles
-	7 cycles per string_count 
-	6.2 cycles per float_count 
-	2.6 cycles per structural_indexes_count 
-	0.77 cycles per nonasciibyte_count 
-	0.63 cycles per byte_count 
-R2 =  0.999372564385096
+	18 cycles per float_count 
+	11 cycles per structural_indexes_count 
+	0.95 cycles per byte_count 
+R2 =  0.9922642870761073
 

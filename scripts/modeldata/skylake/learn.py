@@ -36,13 +36,13 @@ print()
 chosentargets=["stage1_cycle_count", "stage2_cycle_count", "stage3_cycle_count","total_cycles"]
 for t in chosentargets:
     print("target = ", t)
-    howmany = 2 # we want at most two predictors
+    howmany = 1 # we want at most one predictors
     if(t.startswith("stage2")):
         howmany = 2 # we allow for less
     if(t.startswith("stage3")):
-        howmany = 4 # we allow for more
+        howmany = 3 # we allow for more
     if(t.startswith("total")):
-        howmany = 5 # we allow for more
+        howmany = 3 # we allow for more
     A=10000000.0
     while(True):
       regressor = Lasso(max_iter=100000, alpha=A, positive = True, normalize=False,  fit_intercept=False) #LinearRegression(normalize=False,  fit_intercept=False)
