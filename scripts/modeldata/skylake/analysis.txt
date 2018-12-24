@@ -4,25 +4,25 @@ chosenpredictors= ['integer_count', 'float_count', 'string_count', 'backslash_co
 target =  stage1_cycle_count
 	0.98 cycles per nonasciibyte_count 
 	0.46 cycles per byte_count 
-R2 =  0.9987789976254756
+R2 =  0.9987704927515433
 
 target =  stage2_cycle_count
 	2 cycles per structural_indexes_count 
 	0.11 cycles per byte_count 
-R2 =  0.9944144115615688
+R2 =  0.9940031972098434
 
 target =  stage3_cycle_count
-	2.5 cycles per float_count 
-	2.2 cycles per string_count 
+	2.6 cycles per float_count 
+	2.4 cycles per string_count 
 	1.4 cycles per structural_indexes_count 
-	0.095 cycles per byte_count 
-R2 =  0.9983269621964512
+	0.094 cycles per byte_count 
+R2 =  0.9981627163839895
 
 target =  total_cycles
-	6.6 cycles per string_count 
-	6 cycles per float_count 
+	7 cycles per string_count 
+	6.2 cycles per float_count 
 	2.6 cycles per structural_indexes_count 
-	0.82 cycles per nonasciibyte_count 
-	0.64 cycles per byte_count 
-R2 =  0.9994265124423222
+	0.77 cycles per nonasciibyte_count 
+	0.63 cycles per byte_count 
+R2 =  0.999372564385096
 

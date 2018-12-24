@@ -179,17 +179,24 @@ int main(int argc, char *argv[]) {
     unified.start();
     bool isok = find_structural_bits(p.data(), p.size(), pj);
     unified.end(results);
+    
     cy1 += results[0];
     cl1 += results[1];
+    
     unified.start();
     isok = isok && flatten_indexes(p.size(), pj);
     unified.end(results);
+    
     cy2 += results[0];
     cl2 += results[1];
+
+    unified.start();
     isok = isok && unified_machine(p.data(), p.size(), pj);
     unified.end(results);
+    
     cy3 += results[0];
     cl3 += results[1];
+    
     if(!isok) {
       std::cerr << "failure?" << std::endl;
     }
