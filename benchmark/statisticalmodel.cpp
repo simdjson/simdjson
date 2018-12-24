@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
          "false_count byte_count structural_indexes_count ");
 #ifdef __linux__
   printf(
-      " stage1_instruction_count stage1_cycle_count stage2_instruction_count "
-      "stage2_cycle_count  stage3_instruction_count stage3_cycle_count ");
+      "  stage1_cycle_count stage1_instruction_count  stage2_cycle_count "
+      " stage2_instruction_count  stage3_cycle_count stage3_instruction_count  ");
 #else
   printf("(you are not under linux, so perf counters are disaabled)");
 #endif
