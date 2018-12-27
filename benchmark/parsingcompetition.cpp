@@ -94,6 +94,9 @@ int main(int argc, char *argv[]) {
   }
   int repeat = 50;
   int volume = p.size();
+  if(justdata) {
+    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+  }
   if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
             repeat, volume, !justdata);
   // (static alloc) 

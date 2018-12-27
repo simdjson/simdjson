@@ -267,8 +267,11 @@ int main(int argc, char *argv[]) {
   assert(s1 == s3);
   size_t size = s1.size();
 
-  int repeat = 10;
+  int repeat = 50;
   int volume = p.size();
+  if(justdata) {
+    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+  }
   BEST_TIME("simdjson  ", simdjson_computestats(p).size(), size, , repeat,
             volume, !justdata);
 

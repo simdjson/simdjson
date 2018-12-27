@@ -291,6 +291,9 @@ int main(int argc, char *argv[]) {
   assert(stat_equal(s1, s3));
   int repeat = 50;
   int volume = p.size();
+  if(justdata) {
+    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+  }
   BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,
             volume, !justdata);
   BEST_TIME("RapidJSON  ", rapid_computestats(p).valid, true, , repeat, volume,

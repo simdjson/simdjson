@@ -87,9 +87,11 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 
-  int repeat = 10;
+  int repeat = 50;
   int volume = p.size();
-
+  if(justdata) {
+    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+  }
   size_t strlength = rapidstringme((char *)p.data()).size();
   if (verbose)
     std::cout << "input length is " << p.size() << " stringified length is "

@@ -88,27 +88,36 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
     fflush(NULL);                                                              \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = (uint64_t)-1;                                          \
+    uint64_t min_sumclockdiff = (uint64_t)-1;                              \
     uint64_t sum_diff = 0;                                                     \
+    uint64_t sumclockdiff = 0;                                                 \
     for (int i = 0; i < repeat; i++) {                                         \
       pre;                                                                     \
       __asm volatile("" ::: /* pretend to clobber */ "memory");                \
+      uint64_t bef = clock();                                                  \
       RDTSC_START(cycles_start);                                               \
       if (test != expected) {                                                  \
         printf("not expected (%d , %d )", (int)test, (int)expected);           \
         break;                                                                 \
       }                                                                        \
       RDTSC_STOP(cycles_final);                                                \
+      uint64_t aft = clock();                                                  \
+      sumclockdiff += (aft - bef) ;  \
+      if (sumclockdiff < min_sumclockdiff)                                              \
+        min_sumclockdiff = sumclockdiff;                                                \
       cycles_diff = (cycles_final - cycles_start - global_rdtsc_overhead);     \
       if (cycles_diff < min_diff)                                              \
         min_diff = cycles_diff;                                                \
-      sum_diff += cycles_diff;                                                 \
+      sum_diff += cycles_diff;   \
     }                                                                          \
     uint64_t S = size;                                                         \
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
+    float avg_gb_per_s = (CLOCKS_PER_SEC * (double)S * repeat) / ((sumclockdiff) * 1000.0 *  1000.0 *  1000.0);                \
+    float max_gb_per_s = (CLOCKS_PER_SEC * (double)S) / ((min_sumclockdiff)  * 1000.0 *  1000.0 *  1000.0);                \
     if (verbose)  printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);       \
     if (verbose)  printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);    \
-    if (!verbose) printf(" %.3f ", cycle_per_op);                                          \
+    if (!verbose) printf(" %.3f %.3f %.3f %.3f ", cycle_per_op, avg_cycle_per_op-cycle_per_op ,max_gb_per_s,avg_gb_per_s-max_gb_per_s); \
     printf("\n");                                                            \
     fflush(NULL);                                                              \
   } while (0)
