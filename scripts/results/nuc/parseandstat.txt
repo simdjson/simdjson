@@ -1,0 +1,81 @@
+g++ -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux       -O3  -o parseandstatcompetition src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp benchmark/parseandstatcompetition.cpp -I.  -Idependencies/rapidjson/include -Idependencies/sajson/include 
+parsing and collecting basic stats on json documents as quickly as possible
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/apache_builds.json
+simdjson                                	:  1.434 cycles per input byte (best)  1.528 cycles per input byte (avg) 
+RapidJSON                               	:  3.589 cycles per input byte (best)  3.901 cycles per input byte (avg) 
+sasjon                                  	:  2.429 cycles per input byte (best)  2.537 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/canada.json
+simdjson                                	:  2.778 cycles per input byte (best)  2.810 cycles per input byte (avg) 
+RapidJSON                               	:  5.016 cycles per input byte (best)  5.146 cycles per input byte (avg) 
+sasjon                                  	:  4.484 cycles per input byte (best)  4.576 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/citm_catalog.json
+simdjson                                	:  1.278 cycles per input byte (best)  1.306 cycles per input byte (avg) 
+RapidJSON                               	:  3.172 cycles per input byte (best)  3.210 cycles per input byte (avg) 
+sasjon                                  	:  2.622 cycles per input byte (best)  2.696 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/github_events.json
+simdjson                                	:  1.240 cycles per input byte (best)  1.370 cycles per input byte (avg) 
+RapidJSON                               	:  3.452 cycles per input byte (best)  3.639 cycles per input byte (avg) 
+sasjon                                  	:  2.505 cycles per input byte (best)  2.721 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/gsoc-2018.json
+simdjson                                	:  0.912 cycles per input byte (best)  0.935 cycles per input byte (avg) 
+RapidJSON                               	:  2.975 cycles per input byte (best)  3.059 cycles per input byte (avg) 
+sasjon                                  	:  2.228 cycles per input byte (best)  2.258 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/instruments.json
+simdjson                                	:  1.538 cycles per input byte (best)  1.658 cycles per input byte (avg) 
+RapidJSON                               	:  3.465 cycles per input byte (best)  3.543 cycles per input byte (avg) 
+sasjon                                  	:  2.825 cycles per input byte (best)  2.872 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/marine_ik.json
+simdjson                                	:  3.318 cycles per input byte (best)  3.351 cycles per input byte (avg) 
+RapidJSON                               	:  5.830 cycles per input byte (best)  5.910 cycles per input byte (avg) 
+sasjon                                  	:  5.187 cycles per input byte (best)  5.238 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/mesh.json
+simdjson                                	:  3.165 cycles per input byte (best)  3.230 cycles per input byte (avg) 
+RapidJSON                               	:  5.462 cycles per input byte (best)  5.527 cycles per input byte (avg) 
+sasjon                                  	:  5.479 cycles per input byte (best)  5.568 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/mesh.pretty.json
+simdjson                                	:  2.069 cycles per input byte (best)  2.104 cycles per input byte (avg) 
+RapidJSON                               	:  3.746 cycles per input byte (best)  3.790 cycles per input byte (avg) 
+sasjon                                  	:  3.582 cycles per input byte (best)  3.622 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/numbers.json
+simdjson                                	:  2.607 cycles per input byte (best)  2.761 cycles per input byte (avg) 
+RapidJSON                               	:  4.453 cycles per input byte (best)  4.586 cycles per input byte (avg) 
+sasjon                                  	:  3.710 cycles per input byte (best)  3.732 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/random.json
+simdjson                                	:  2.226 cycles per input byte (best)  2.307 cycles per input byte (avg) 
+RapidJSON                               	:  4.854 cycles per input byte (best)  4.880 cycles per input byte (avg) 
+sasjon                                  	:  3.917 cycles per input byte (best)  3.977 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/twitterescaped.json
+simdjson                                	:  2.590 cycles per input byte (best)  2.673 cycles per input byte (avg) 
+RapidJSON                               	:  4.180 cycles per input byte (best)  4.221 cycles per input byte (avg) 
+sasjon                                  	:  3.343 cycles per input byte (best)  3.388 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/twitter.json
+simdjson                                	:  1.422 cycles per input byte (best)  1.500 cycles per input byte (avg) 
+RapidJSON                               	:  3.634 cycles per input byte (best)  3.674 cycles per input byte (avg) 
+sasjon                                  	:  2.846 cycles per input byte (best)  2.892 cycles per input byte (avg) 
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/update-center.json
+simdjson                                	:  1.753 cycles per input byte (best)  1.837 cycles per input byte (avg) 
+RapidJSON                               	:  4.506 cycles per input byte (best)  4.535 cycles per input byte (avg) 
+sasjon                                  	:  3.438 cycles per input byte (best)  3.495 cycles per input byte (avg) 
+
+g++ -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux       -O3  -o distinctuseridcompetition src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp     src/stage2_flatten.cpp        src/stage34_unified.cpp benchmark/distinctuseridcompetition.cpp  -I.  -Idependencies/rapidjson/include -Idependencies/sajson/include 
+parsing and finding all user.id
+
+/home/dlemire/CVS/github/simdjson/scripts/../jsonexamples/twitter.json
+simdjson                                	:  2.591 cycles per input byte (best)  2.798 cycles per input byte (avg) 
+rapid                                   	:  5.144 cycles per input byte (best)  5.232 cycles per input byte (avg) 
+sasjon                                  	:  4.564 cycles per input byte (best)  4.637 cycles per input byte (avg) 
+
