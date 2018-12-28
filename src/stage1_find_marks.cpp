@@ -104,7 +104,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, &odd_carries);
+        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
@@ -255,7 +255,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     //bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, &odd_carries);
+        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end

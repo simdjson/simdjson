@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-  vector<uint64_t> results;
+  vector<unsigned long long> results;
   results.resize(evts.size());
   unsigned long cy0 = 0, cy1 = 0, cy2 = 0, cy3 = 0;
   unsigned long cl0 = 0, cl1 = 0, cl2 = 0, cl3 = 0;

@@ -87,7 +87,7 @@ if( ! pj.isValid() ) {
 ```
 
 
-## Usage
+## Usage (old-school Makefile)
 
 Requirements:  clang or gcc and make. A system like Linux or macOS is expected.
 
@@ -112,6 +112,16 @@ To run comparative benchmarks (with other parsers):
 make benchmark
 ```
 
+## Usage (CMake)
+
+While in the project repository, do the following:
+
+```
+mkdir build
+cd build
+cmake ..
+make test
+```
 
 ## Tools
 
