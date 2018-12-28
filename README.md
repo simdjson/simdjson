@@ -44,6 +44,10 @@ twitter.json:
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG), we assume C++17
 - Bash (for benchmark scripts) and other common utilities (optional)
 
+## License
+
+This code is made available under the Apache License 2.0. 
+
 ## Code example
 
 ```C
