@@ -713,39 +713,6 @@ private :
 
 };
 
-#ifdef DEBUG
-inline void dump256(m256 d, const std::string &msg) {
-  for (uint32_t i = 0; i < 32; i++) {
-    std::cout << std::setw(3) << (int)*(((uint8_t *)(&d)) + i);
-    if (!((i + 1) % 8))
-      std::cout << "|";
-    else if (!((i + 1) % 4))
-      std::cout << ":";
-    else
-      std::cout << " ";
-  }
-  std::cout << " " << msg << "\n";
-}
-
-// dump bits low to high
-inline void dumpbits(uint64_t v, const std::string &msg) {
-  for (uint32_t i = 0; i < 64; i++) {
-    std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
-  }
-  std::cout << " " << msg << "\n";
-}
-
-inline void dumpbits32(uint32_t v, const std::string &msg) {
-  for (uint32_t i = 0; i < 32; i++) {
-    std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
-  }
-  std::cout << " " << msg << "\n";
-}
-#else
-#define dump256(a, b) ;
-#define dumpbits(a, b) ;
-#define dumpbits32(a, b) ;
-#endif
 
 // dump bits low to high
 inline void dumpbits_always(uint64_t v, const std::string &msg) {

@@ -70,28 +70,12 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 #ifdef JSON_TEST_STRINGS // for unit testing
   uint8_t *const start_of_string = dst;
 #endif
-#ifdef DEBUG
-  cout << "Entering parse string with offset " << offset << "\n";
-#endif
   while (1) {
-#ifdef DEBUG
-    for (uint32_t j = 0; j < 32; j++) {
-      char c = *(src + j);
-      if (isprint(c)) {
-        cout << c;
-      } else {
-        cout << '_';
-      }
-    }
-    cout << "|  ... string handling input\n";
-#endif
     __m256i v = _mm256_loadu_si256((const __m256i *)(src));
     uint32_t bs_bits =
         (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')));
-    dumpbits32(bs_bits, "backslash bits 2");
     uint32_t quote_bits =
         (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
-    dumpbits32(quote_bits, "quote_bits");
 #define CHECKUNESCAPED
     // All Unicode characters may be placed within the
     // quotation marks, except for the characters that MUST be escaped:
@@ -108,14 +92,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256((__m256i *)(dst), v);
-#ifdef DEBUG
-    cout << "quote dist: " << quote_dist << " bs dist: " << bs_dist << "\n";
-#endif
-
     if (quote_dist < bs_dist) {
-#ifdef DEBUG
-      cout << "Found end, leaving!\n";
-#endif
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
 
@@ -139,9 +116,6 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 #endif //CHECKUNESCAPED
     } else if (quote_dist > bs_dist) {
       uint8_t escape_char = src[bs_dist + 1];
-#ifdef DEBUG
-      cout << "Found escape char: " << escape_char << "\n";
-#endif
 #ifdef CHECKUNESCAPED
       // we are going to need the unescaped_bits to check for unescaped chars
       uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);

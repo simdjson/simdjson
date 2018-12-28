@@ -15,20 +15,8 @@
 #include "simdjson/stringparsing.h"
 
 #include <iostream>
-//#define DEBUG
 #define PATH_SEP '/'
 
-#if defined(DEBUG) && !defined(DEBUG_PRINTF)
-#include <stdio.h>
-#include <string.h>
-#define DEBUG_PRINTF(format, ...)                                              \
-  printf("%s:%s:%d:" format, strrchr(__FILE__, PATH_SEP) + 1, __func__,        \
-         __LINE__, ##__VA_ARGS__)
-#elif !defined(DEBUG_PRINTF)
-#define DEBUG_PRINTF(format, ...)                                              \
-  do {                                                                         \
-  } while (0)
-#endif
 
 using namespace std;
 
@@ -93,13 +81,10 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   {                                                                            \
     idx = pj.structural_indexes[i++];                                          \
     c = buf[idx];                                                              \
-    DEBUG_PRINTF("Got %c at %d (%d offset) (depth %d)\n", c, idx, i - 1,       \
-                 depth);                                                       \
   }
 
 
   ////////////////////////////// START STATE /////////////////////////////
-  DEBUG_PRINTF("at start\n");
   pj.ret_address[depth] = &&start_continue;
   pj.containing_scope_offset[depth] = pj.get_current_loc();
   pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
@@ -235,7 +220,6 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     goto fail;
   }
 start_continue:
-  DEBUG_PRINTF("in start_object_close\n");
   // the string might not be NULL terminated.
   if(i + 1 == pj.n_structural_indexes) {
     goto succeed;
@@ -245,7 +229,6 @@ start_continue:
   ////////////////////////////// OBJECT STATES /////////////////////////////
 
 object_begin:
-  DEBUG_PRINTF("in object_begin\n");
   UPDATE_CHAR();
   switch (c) {
   case '"': {
@@ -261,7 +244,6 @@ object_begin:
   }
 
 object_key_state:
-  DEBUG_PRINTF("in object_key_state\n");
   UPDATE_CHAR();
   if (c != ':') {
     goto fail;
@@ -343,7 +325,6 @@ object_key_state:
   }
 
 object_continue:
-  DEBUG_PRINTF("in object_continue\n");
   UPDATE_CHAR();
   switch (c) {
   case ',':
@@ -375,8 +356,6 @@ scope_end:
 
   ////////////////////////////// ARRAY STATES /////////////////////////////
 array_begin:
-  DEBUG_PRINTF("in array_begin\n");
-  //pj.containing_scope_offset[depth] = pj.get_current_loc();
   UPDATE_CHAR();
   if (c == ']') {
     goto scope_end; // could also go to array_continue
@@ -462,7 +441,6 @@ main_array_switch:
   }
 
 array_continue:
-  DEBUG_PRINTF("in array_continue\n");
   UPDATE_CHAR();
   switch (c) {
   case ',':
@@ -477,7 +455,6 @@ array_continue:
   ////////////////////////////// FINAL STATES /////////////////////////////
 
 succeed:
-  DEBUG_PRINTF("in succeed, depth = %d \n", depth);
   depth --;
   if(depth != 0) {
     printf("internal bug\n");
@@ -492,16 +469,10 @@ succeed:
   pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
 
 
-#ifdef DEBUG
-  pj.dump_raw_tape();
-#endif
+
   pj.isvalid  = true;
   return true;
 
 fail:
-  DEBUG_PRINTF("in fail\n");
-#ifdef DEBUG
-  pj.dump_tapes();
-#endif
   return false;
 }
