@@ -8,11 +8,6 @@ Insight: Use commonly available SIMD instructions as much as possible.
 
 Constraint: Do full validation (including character encoding).
 
-## Requirements
-
-- Linux or macOS (currently)
-- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG)
-- Bash (for benchmark scripts)
 
 ## Some performance results
 
@@ -42,6 +37,12 @@ twitter.json:
 
 
 
+## Requirements
+
+- Linux or macOS (currently)
+- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Rizen)
+- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG), we assume C++17
+- Bash (for benchmark scripts) and other common utilities (optional)
 
 ## Code example
 
