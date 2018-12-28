@@ -11,7 +11,7 @@ answer = []
 for file in os.listdir(ourdir):
     if file.endswith(".table"):
         fullpath = os.path.join(ourdir, file)
-        answer.append([file[:-6]]+getdata(fullpath))
+        answer.append([file[:-11]]+getdata(fullpath))
 print("#simdjson RapidJSON sajson")
 answer.sort()
 for l in answer:
