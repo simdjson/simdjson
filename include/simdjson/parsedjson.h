@@ -18,6 +18,20 @@
 
 #define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
+// portable version of  posix_memalign
+static inline void *aligned_malloc(size_t alignment, size_t size) {
+	void *p;
+#ifdef _MSC_VER
+	p = _aligned_malloc(size, alignment);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+	p = __mingw_aligned_malloc(size, alignment);
+#else
+	// somehow, if this is used before including "x86intrin.h", it creates an
+	// implicit defined warning.
+	if (posix_memalign(&p, alignment, size) != 0) return NULL;
+#endif
+	return p;
+}
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
@@ -49,7 +63,8 @@ public:
     }
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
-    if (posix_memalign((void **)&structurals, 8, ROUNDUP_N(len, 64) / 8)) {
+	structurals = (uint8_t *)aligned_malloc(8, ROUNDUP_N(len, 64) / 8);
+    if (structurals == NULL) {
       std::cerr << "Could not allocate memory for structurals" << std::endl;
       return false;
     };
@@ -719,12 +734,12 @@ inline void dumpbits_always(uint64_t v, const std::string &msg) {
   for (uint32_t i = 0; i < 64; i++) {
     std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
   }
-  std::cout << " " << msg << "\n";
+  std::cout << " " << msg.c_str() << "\n";
 }
 
 inline void dumpbits32_always(uint32_t v, const std::string &msg) {
   for (uint32_t i = 0; i < 32; i++) {
     std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
   }
-  std::cout << " " << msg << "\n";
+  std::cout << " " << msg.c_str() << "\n";
 }

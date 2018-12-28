@@ -22,6 +22,24 @@
 
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
+#ifdef _MSC_VER
+
+
+#define really_inline inline 
+#define never_inline inline 
+
+#define UNUSED 
+#define WARN_UNUSED 
+
+#ifndef likely
+#define likely(x) 
+#endif
+#ifndef unlikely
+#define unlikely(x) 
+#endif
+
+#else
+
 #define really_inline inline __attribute__((always_inline, unused))
 #define never_inline inline __attribute__((noinline, unused))
 
@@ -35,3 +53,4 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
+#endif

@@ -42,10 +42,10 @@ WARN_UNUSED
   }
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous = {
-      .rawbytes = _mm256_setzero_si256(),
-      .high_nibbles = _mm256_setzero_si256(),
-      .carried_continuations = _mm256_setzero_si256()};
+  struct avx_processed_utf_bytes previous;
+	  previous.rawbytes = _mm256_setzero_si256();
+	  previous.high_nibbles = _mm256_setzero_si256();
+      previous.carried_continuations = _mm256_setzero_si256();
  #endif
 
   // Useful constant masks
@@ -66,8 +66,10 @@ WARN_UNUSED
   size_t lenminus64 = len < 64 ? 0 : len - 64; 
   size_t idx = 0;
   for (; idx < lenminus64; idx += 64) {
+#ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
+#endif
+	__m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
     __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
@@ -104,7 +106,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+        addcarry_u64(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
