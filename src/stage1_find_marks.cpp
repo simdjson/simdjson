@@ -24,17 +24,17 @@ using namespace std;
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
-really_inline u64 cmp_mask_against_input(m256 input_lo, m256 input_hi,
-                                         m256 mask) {
-  m256 cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
-  u64 res_0 = (u32)_mm256_movemask_epi8(cmp_res_0);
-  m256 cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
-  u64 res_1 = _mm256_movemask_epi8(cmp_res_1);
+really_inline uint64_t cmp_mask_against_input(__m256i input_lo, __m256i input_hi,
+                                         __m256i mask) {
+  __m256i cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
+  uint64_t res_0 = (uint32_t)_mm256_movemask_epi8(cmp_res_0);
+  __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
+  uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
 
 WARN_UNUSED
-/*never_inline*/ bool find_structural_bits(const u8 *buf, size_t len,
+/*never_inline*/ bool find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
   if (len > pj.bytecapacity) {
     cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
@@ -49,27 +49,27 @@ WARN_UNUSED
  #endif
 
   // Useful constant masks
-  const u64 even_bits = 0x5555555555555555ULL;
-  const u64 odd_bits = ~even_bits;
+  const uint64_t even_bits = 0x5555555555555555ULL;
+  const uint64_t odd_bits = ~even_bits;
 
   // for now, just work in 64-byte chunks
   // we have padded the input out to 64 byte multiple with the remainder being
   // zeros
 
   // persistent state across loop
-  u64 prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
-  u64 prev_iter_inside_quote = 0ULL;       // either all zeros or all ones
+  uint64_t prev_iter_ends_odd_backslash = 0ULL; // either 0 or 1, but a 64-bit value
+  uint64_t prev_iter_inside_quote = 0ULL;       // either all zeros or all ones
 
   // effectively the very first char is considered to follow "whitespace" for the
   // purposes of psuedo-structural character detection
-  u64 prev_iter_ends_pseudo_pred = 1ULL;
+  uint64_t prev_iter_ends_pseudo_pred = 1ULL;
   size_t lenminus64 = len < 64 ? 0 : len - 64; 
   size_t idx = 0;
   for (; idx < lenminus64; idx += 64) {
     __builtin_prefetch(buf + idx + 128);
 #ifdef DEBUG
     cout << "Idx is " << idx << "\n";
-    for (u32 j = 0; j < 64; j++) {
+    for (uint32_t j = 0; j < 64; j++) {
       char c = *(buf + idx + j);
       if (isprint(c)) {
         cout << c;
@@ -79,10 +79,10 @@ WARN_UNUSED
     }
     cout << "|  ... input\n";
 #endif
-    m256 input_lo = _mm256_loadu_si256((const m256 *)(buf + idx + 0));
-    m256 input_hi = _mm256_loadu_si256((const m256 *)(buf + idx + 32));
+    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
+    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
-    m256 highbit = _mm256_set1_epi8(0x80);
+    __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
         // it is ascii, we just check continuation
         has_error = _mm256_or_si256(
@@ -101,24 +101,24 @@ WARN_UNUSED
     //     Step 1: detect odd sequences of backslashes
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    u64 bs_bits =
+    uint64_t bs_bits =
         cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('\\'));
     dumpbits(bs_bits, "backslash bits");
-    u64 start_edges = bs_bits & ~(bs_bits << 1);
+    uint64_t start_edges = bs_bits & ~(bs_bits << 1);
     dumpbits(start_edges, "start_edges");
 
     // flip lowest if we have an odd-length run at the end of the prior
     // iteration
-    u64 even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-    u64 even_starts = start_edges & even_start_mask;
-    u64 odd_starts = start_edges & ~even_start_mask;
+    uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
+    uint64_t even_starts = start_edges & even_start_mask;
+    uint64_t odd_starts = start_edges & ~even_start_mask;
 
     dumpbits(even_starts, "even_starts");
     dumpbits(odd_starts, "odd_starts");
 
-    u64 even_carries = bs_bits + even_starts;
+    uint64_t even_carries = bs_bits + even_starts;
 
-    u64 odd_carries;
+    uint64_t odd_carries;
     // must record the carry-out of our odd-carries out of bit 63; this
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
@@ -134,31 +134,31 @@ WARN_UNUSED
     dumpbits(even_carries, "even_carries");
     dumpbits(odd_carries, "odd_carries");
 
-    u64 even_carry_ends = even_carries & ~bs_bits;
-    u64 odd_carry_ends = odd_carries & ~bs_bits;
+    uint64_t even_carry_ends = even_carries & ~bs_bits;
+    uint64_t odd_carry_ends = odd_carries & ~bs_bits;
     dumpbits(even_carry_ends, "even_carry_ends");
     dumpbits(odd_carry_ends, "odd_carry_ends");
 
-    u64 even_start_odd_end = even_carry_ends & odd_bits;
-    u64 odd_start_even_end = odd_carry_ends & even_bits;
+    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
     dumpbits(even_start_odd_end, "esoe");
     dumpbits(odd_start_even_end, "osee");
 
-    u64 odd_ends = even_start_odd_end | odd_start_even_end;
+    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
     dumpbits(odd_ends, "odd_ends");
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     //     Step 2: detect insides of quote pairs
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    u64 quote_bits =
+    uint64_t quote_bits =
         cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
     quote_bits = quote_bits & ~odd_ends;
     dumpbits(quote_bits, "quote_bits");
-    u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+    uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
+    prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
     dumpbits(quote_mask, "quote_mask");
 
     // How do we build up a user traversable data structure
@@ -169,48 +169,48 @@ WARN_UNUSED
     // we are also interested in the four whitespace characters
     // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
     // these go into the next 2 buckets of the comparison (8/16)
-    const m256 low_nibble_mask = _mm256_setr_epi8(
+    const __m256i low_nibble_mask = _mm256_setr_epi8(
         //  0                           9  a   b  c  d
         16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0, 0,
         0, 0, 8, 12, 1, 2, 9, 0, 0);
-    const m256 high_nibble_mask = _mm256_setr_epi8(
+    const __m256i high_nibble_mask = _mm256_setr_epi8(
         //  0     2   3     5     7
         8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 8, 0, 18, 4, 0, 1, 0,
         1, 0, 0, 0, 3, 2, 1, 0, 0);
 
-    m256 structural_shufti_mask = _mm256_set1_epi8(0x7);
-    m256 whitespace_shufti_mask = _mm256_set1_epi8(0x18);
+    __m256i structural_shufti_mask = _mm256_set1_epi8(0x7);
+    __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
 
-    m256 v_lo = _mm256_and_si256(
+    __m256i v_lo = _mm256_and_si256(
         _mm256_shuffle_epi8(low_nibble_mask, input_lo),
         _mm256_shuffle_epi8(high_nibble_mask,
                             _mm256_and_si256(_mm256_srli_epi32(input_lo, 4),
                                              _mm256_set1_epi8(0x7f))));
 
-    m256 v_hi = _mm256_and_si256(
+    __m256i v_hi = _mm256_and_si256(
         _mm256_shuffle_epi8(low_nibble_mask, input_hi),
         _mm256_shuffle_epi8(high_nibble_mask,
                             _mm256_and_si256(_mm256_srli_epi32(input_hi, 4),
                                              _mm256_set1_epi8(0x7f))));
-    m256 tmp_lo = _mm256_cmpeq_epi8(
+    __m256i tmp_lo = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_lo, structural_shufti_mask), _mm256_set1_epi8(0));
-    m256 tmp_hi = _mm256_cmpeq_epi8(
+    __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    u64 structural_res_0 = (u32)_mm256_movemask_epi8(tmp_lo);
-    u64 structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    u64 structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
+    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
-    m256 tmp_ws_lo = _mm256_cmpeq_epi8(
+    __m256i tmp_ws_lo = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_lo, whitespace_shufti_mask), _mm256_set1_epi8(0));
-    m256 tmp_ws_hi = _mm256_cmpeq_epi8(
+    __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    u64 ws_res_0 = (u32)_mm256_movemask_epi8(tmp_ws_lo);
-    u64 ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
-    u64 whitespace = ~(ws_res_0 | (ws_res_1 << 32));
+    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
+    uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
 
     dumpbits(structurals, "structurals");
     dumpbits(whitespace, "whitespace");
@@ -232,12 +232,12 @@ WARN_UNUSED
 
     // a qualified predecessor is something that can happen 1 position before an
     // psuedo-structural character
-    u64 pseudo_pred = structurals | whitespace;
+    uint64_t pseudo_pred = structurals | whitespace;
     dumpbits(pseudo_pred, "pseudo_pred");
-    u64 shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+    uint64_t shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
     dumpbits(shifted_pseudo_pred, "shifted_pseudo_pred");
     prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
-    u64 pseudo_structurals =
+    uint64_t pseudo_structurals =
         shifted_pseudo_pred & (~whitespace) & (~quote_mask);
     dumpbits(pseudo_structurals, "pseudo_structurals");
     dumpbits(structurals, "final structurals without pseudos");
@@ -250,7 +250,7 @@ WARN_UNUSED
     dumpbits(
         structurals,
         "final structurals and pseudo structurals after close quote removal");
-    *(u64 *)(pj.structurals + idx / 8) = structurals;
+    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
   }
 
   ////////////////
@@ -259,13 +259,13 @@ WARN_UNUSED
   /// risk invalidating the UTF-8 checks.
   ////////////
   if (idx < len) { 
-    u8 tmpbuf[64];
+    uint8_t tmpbuf[64];
     memset(tmpbuf,0x20,64);
     memcpy(tmpbuf,buf+idx,len - idx);
-    m256 input_lo = _mm256_loadu_si256((const m256 *)(tmpbuf + 0));
-    m256 input_hi = _mm256_loadu_si256((const m256 *)(tmpbuf + 32));
+    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(tmpbuf + 0));
+    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(tmpbuf + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
-    m256 highbit = _mm256_set1_epi8(0x80);
+    __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
         // it is ascii, we just check continuation
         has_error = _mm256_or_si256(
@@ -284,17 +284,17 @@ WARN_UNUSED
     //     Step 1: detect odd sequences of backslashes
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    u64 bs_bits =
+    uint64_t bs_bits =
         cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('\\'));
-    u64 start_edges = bs_bits & ~(bs_bits << 1);
+    uint64_t start_edges = bs_bits & ~(bs_bits << 1);
     // flip lowest if we have an odd-length run at the end of the prior
     // iteration
-    u64 even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-    u64 even_starts = start_edges & even_start_mask;
-    u64 odd_starts = start_edges & ~even_start_mask;
-    u64 even_carries = bs_bits + even_starts;
+    uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
+    uint64_t even_starts = start_edges & even_start_mask;
+    uint64_t odd_starts = start_edges & ~even_start_mask;
+    uint64_t even_carries = bs_bits + even_starts;
 
-    u64 odd_carries;
+    uint64_t odd_carries;
     // must record the carry-out of our odd-carries out of bit 63; this
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
@@ -306,23 +306,23 @@ WARN_UNUSED
                                       // if we had an odd-numbered run at the
                                       // end of the previous iteration
     //prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-    u64 even_carry_ends = even_carries & ~bs_bits;
-    u64 odd_carry_ends = odd_carries & ~bs_bits;
-    u64 even_start_odd_end = even_carry_ends & odd_bits;
-    u64 odd_start_even_end = odd_carry_ends & even_bits;
-    u64 odd_ends = even_start_odd_end | odd_start_even_end;
+    uint64_t even_carry_ends = even_carries & ~bs_bits;
+    uint64_t odd_carry_ends = odd_carries & ~bs_bits;
+    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     //     Step 2: detect insides of quote pairs
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    u64 quote_bits =
+    uint64_t quote_bits =
         cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
     quote_bits = quote_bits & ~odd_ends;
-    u64 quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+    uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
     quote_mask ^= prev_iter_inside_quote;
-    //prev_iter_inside_quote = (u64)((s64)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
+    //prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
 
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
@@ -332,48 +332,48 @@ WARN_UNUSED
     // we are also interested in the four whitespace characters
     // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
     // these go into the next 2 buckets of the comparison (8/16)
-    const m256 low_nibble_mask = _mm256_setr_epi8(
+    const __m256i low_nibble_mask = _mm256_setr_epi8(
         //  0                           9  a   b  c  d
         16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0, 0,
         0, 0, 8, 12, 1, 2, 9, 0, 0);
-    const m256 high_nibble_mask = _mm256_setr_epi8(
+    const __m256i high_nibble_mask = _mm256_setr_epi8(
         //  0     2   3     5     7
         8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 8, 0, 18, 4, 0, 1, 0,
         1, 0, 0, 0, 3, 2, 1, 0, 0);
 
-    m256 structural_shufti_mask = _mm256_set1_epi8(0x7);
-    m256 whitespace_shufti_mask = _mm256_set1_epi8(0x18);
+    __m256i structural_shufti_mask = _mm256_set1_epi8(0x7);
+    __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
 
-    m256 v_lo = _mm256_and_si256(
+    __m256i v_lo = _mm256_and_si256(
         _mm256_shuffle_epi8(low_nibble_mask, input_lo),
         _mm256_shuffle_epi8(high_nibble_mask,
                             _mm256_and_si256(_mm256_srli_epi32(input_lo, 4),
                                              _mm256_set1_epi8(0x7f))));
 
-    m256 v_hi = _mm256_and_si256(
+    __m256i v_hi = _mm256_and_si256(
         _mm256_shuffle_epi8(low_nibble_mask, input_hi),
         _mm256_shuffle_epi8(high_nibble_mask,
                             _mm256_and_si256(_mm256_srli_epi32(input_hi, 4),
                                              _mm256_set1_epi8(0x7f))));
-    m256 tmp_lo = _mm256_cmpeq_epi8(
+    __m256i tmp_lo = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_lo, structural_shufti_mask), _mm256_set1_epi8(0));
-    m256 tmp_hi = _mm256_cmpeq_epi8(
+    __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    u64 structural_res_0 = (u32)_mm256_movemask_epi8(tmp_lo);
-    u64 structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    u64 structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
+    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
-    m256 tmp_ws_lo = _mm256_cmpeq_epi8(
+    __m256i tmp_ws_lo = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_lo, whitespace_shufti_mask), _mm256_set1_epi8(0));
-    m256 tmp_ws_hi = _mm256_cmpeq_epi8(
+    __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    u64 ws_res_0 = (u32)_mm256_movemask_epi8(tmp_ws_lo);
-    u64 ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
-    u64 whitespace = ~(ws_res_0 | (ws_res_1 << 32));
+    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
+    uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
 
 
     // mask off anything inside quotes
@@ -393,17 +393,17 @@ WARN_UNUSED
 
     // a qualified predecessor is something that can happen 1 position before an
     // psuedo-structural character
-    u64 pseudo_pred = structurals | whitespace;
-    u64 shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+    uint64_t pseudo_pred = structurals | whitespace;
+    uint64_t shifted_pseudo_pred = (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
     //prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
-    u64 pseudo_structurals =
+    uint64_t pseudo_structurals =
         shifted_pseudo_pred & (~whitespace) & (~quote_mask);
     structurals |= pseudo_structurals;
 
     // now, we've used our close quotes all we need to. So let's switch them off
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
-    *(u64 *)(pj.structurals + idx / 8) = structurals;
+    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);

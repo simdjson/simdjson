@@ -33,36 +33,36 @@
 using namespace std;
 
 WARN_UNUSED
-really_inline bool is_valid_true_atom(const u8 *loc) {
-  u64 tv = *(const u64 *)"true    ";
-  u64 mask4 = 0x00000000ffffffff;
-  u32 error = 0;
-  u64 locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  std::memcpy(&locval, loc, sizeof(u64));
+really_inline bool is_valid_true_atom(const uint8_t *loc) {
+  uint64_t tv = *(const uint64_t *)"true    ";
+  uint64_t mask4 = 0x00000000ffffffff;
+  uint32_t error = 0;
+  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  std::memcpy(&locval, loc, sizeof(uint64_t));
   error = (locval & mask4) ^ tv;
   error |= is_not_structural_or_whitespace(loc[4]);
   return error == 0;
 }
 
 WARN_UNUSED
-really_inline bool is_valid_false_atom(const u8 *loc) {
-  u64 fv = *(const u64 *)"false   ";
-  u64 mask5 = 0x000000ffffffffff;
-  u32 error = 0;
-  u64 locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  std::memcpy(&locval, loc, sizeof(u64));
+really_inline bool is_valid_false_atom(const uint8_t *loc) {
+  uint64_t fv = *(const uint64_t *)"false   ";
+  uint64_t mask5 = 0x000000ffffffffff;
+  uint32_t error = 0;
+  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  std::memcpy(&locval, loc, sizeof(uint64_t));
   error = (locval & mask5) ^ fv;
   error |= is_not_structural_or_whitespace(loc[5]);
   return error == 0;
 }
 
 WARN_UNUSED
-really_inline bool is_valid_null_atom(const u8 *loc) {
-  u64 nv = *(const u64 *)"null    ";
-  u64 mask4 = 0x00000000ffffffff;
-  u32 error = 0;
-  u64 locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  std::memcpy(&locval, loc, sizeof(u64));
+really_inline bool is_valid_null_atom(const uint8_t *loc) {
+  uint64_t nv = *(const uint64_t *)"null    ";
+  uint64_t mask4 = 0x00000000ffffffff;
+  uint32_t error = 0;
+  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  std::memcpy(&locval, loc, sizeof(uint64_t));
   error = (locval & mask4) ^ nv;
   error |= is_not_structural_or_whitespace(loc[4]);
   return error == 0;
@@ -77,12 +77,12 @@ really_inline bool is_valid_null_atom(const u8 *loc) {
 // also in Intel's compiler), but won't work in MSVC. This would need to be
 // reimplemented differently if one wants to be standard compliant.
 WARN_UNUSED
-bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
-  u32 i = 0; // index of the structural character (0,1,2,3...)
-  u32 idx;   // location of the structural character in the input (buf)
-  u8 c; // used to track the (structural) character we are looking at, updated
+bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  uint32_t i = 0; // index of the structural character (0,1,2,3...)
+  uint32_t idx;   // location of the structural character in the input (buf)
+  uint8_t c; // used to track the (structural) character we are looking at, updated
         // by UPDATE_CHAR macro
-  u32 depth = 0; // could have an arbitrary starting depth
+  uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
       printf("insufficient capacity\n");
@@ -151,7 +151,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_true_atom((const u8 *)copy + idx)) {
+    if (!is_valid_true_atom((const uint8_t *)copy + idx)) {
       free(copy);
       goto fail;
     }
@@ -167,7 +167,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_false_atom((const u8 *)copy + idx)) {
+    if (!is_valid_false_atom((const uint8_t *)copy + idx)) {
       free(copy);
       goto fail;
     }
@@ -183,7 +183,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_null_atom((const u8 *)copy + idx)) {
+    if (!is_valid_null_atom((const uint8_t *)copy + idx)) {
       free(copy);
       goto fail;
     }
@@ -208,7 +208,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const u8 *)copy, pj, idx, false)) {
+    if (!parse_number((const uint8_t *)copy, pj, idx, false)) {
       free(copy);
       goto fail;
     }
@@ -223,7 +223,7 @@ bool unified_machine(const u8 *buf, size_t len, ParsedJson &pj) {
     if(copy == NULL) goto fail;
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const u8 *)copy, pj, idx, true)) {
+    if (!parse_number((const uint8_t *)copy, pj, idx, true)) {
       free(copy);
       goto fail;
     }

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-size_t count_nonasciibytes(const u8* input, size_t length) {
+size_t count_nonasciibytes(const uint8_t* input, size_t length) {
   size_t count = 0;
   for(size_t i = 0; i < length; i++) {
     count += input[i] >> 7;
@@ -15,7 +15,7 @@ size_t count_nonasciibytes(const u8* input, size_t length) {
 } 
 
 
-size_t count_backslash(const u8* input, size_t length) {
+size_t count_backslash(const uint8_t* input, size_t length) {
   size_t count = 0;
   for(size_t i = 0; i < length; i++) {
     count += (input[i] == '\\')  ? 1 : 0;
@@ -51,8 +51,8 @@ stat_t simdjson_computestats(const std::string_view &p) {
   if (!answer.valid) {
     return answer;
   }
-  answer.backslash_count = count_backslash((const u8*)p.data(), p.size());
-  answer.nonasciibyte_count = count_nonasciibytes((const u8*)p.data(), p.size());
+  answer.backslash_count = count_backslash((const uint8_t*)p.data(), p.size());
+  answer.nonasciibyte_count = count_nonasciibytes((const uint8_t*)p.data(), p.size());
   answer.byte_count = p.size();
   answer.integer_count = 0;
   answer.float_count = 0;
@@ -64,14 +64,14 @@ stat_t simdjson_computestats(const std::string_view &p) {
   answer.string_count = 0;
   answer.structural_indexes_count = pj.n_structural_indexes;
   size_t tapeidx = 0;
-  u64 tape_val = pj.tape[tapeidx++];
-  u8 type = (tape_val >> 56);
+  uint64_t tape_val = pj.tape[tapeidx++];
+  uint8_t type = (tape_val >> 56);
   size_t howmany = 0;
   assert(type == 'r');
   howmany = tape_val & JSONVALUEMASK;
   for (; tapeidx < howmany; tapeidx++) {
     tape_val = pj.tape[tapeidx];
-    // u64 payload = tape_val & JSONVALUEMASK;
+    // uint64_t payload = tape_val & JSONVALUEMASK;
     type = (tape_val >> 56);
     switch (type) {
     case 'l': // we have a long int

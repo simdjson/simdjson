@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     printf("failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
-  BEST_TIME("simdjson orig", json_parse((const u8*)buffer, p.size(), pj), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+  BEST_TIME("simdjson orig", json_parse((const uint8_t*)buffer, p.size(), pj), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   
   ParsedJson pj2;
   bool isallocok2 = pj2.allocateCapacity(p.size(), 1024);
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   } 
 
-  BEST_TIME("simdjson despaced", json_parse((const u8*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
+  BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
   free((void*)p.data());
   free(buffer);
   free(ast_buffer);

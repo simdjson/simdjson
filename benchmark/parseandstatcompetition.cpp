@@ -59,14 +59,14 @@ stat_t simdjson_computestats(const std::string_view &p) {
   answer.true_count = 0;
   answer.false_count = 0;
   size_t tapeidx = 0;
-  u64 tape_val = pj.tape[tapeidx++];
-  u8 type = (tape_val >> 56);
+  uint64_t tape_val = pj.tape[tapeidx++];
+  uint8_t type = (tape_val >> 56);
   size_t howmany = 0;
   assert(type == 'r');
   howmany = tape_val & JSONVALUEMASK;
   for (; tapeidx < howmany; tapeidx++) {
     tape_val = pj.tape[tapeidx];
-    // u64 payload = tape_val & JSONVALUEMASK;
+    // uint64_t payload = tape_val & JSONVALUEMASK;
     type = (tape_val >> 56);
     switch (type) {
     case 'l': // we have a long int

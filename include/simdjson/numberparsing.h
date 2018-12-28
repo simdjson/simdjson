@@ -159,8 +159,8 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // Note: a redesign could avoid this function entirely.
 //
 static never_inline bool
-parse_float(const u8 *const buf, 
-                          ParsedJson &pj, const u32 offset,
+parse_float(const uint8_t *const buf, 
+                          ParsedJson &pj, const uint32_t offset,
                           bool found_minus) {
   const char *p = (const char *)(buf + offset);
   bool negative = false;
@@ -261,9 +261,9 @@ parse_float(const u8 *const buf,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const u8 *const buf,
+static never_inline bool parse_large_integer(const uint8_t *const buf,
                                              ParsedJson &pj,
-                                             const u32 offset,
+                                             const uint32_t offset,
                                              bool found_minus) {
   const char *p = (const char *)(buf + offset);
 
@@ -336,9 +336,9 @@ static never_inline bool parse_large_integer(const u8 *const buf,
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const u8 *const buf, 
+static really_inline bool parse_number(const uint8_t *const buf, 
                                        ParsedJson &pj, 
-                                       const u32 offset, 
+                                       const uint32_t offset, 
                                        bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape_s64(0); // always write zero

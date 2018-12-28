@@ -10,7 +10,7 @@
 
 // these are the chars that can follow a true/false/null or number atom
 // and nothing else
-const u32 structural_or_whitespace_negated[256] = {
+const uint32_t structural_or_whitespace_negated[256] = {
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -29,11 +29,11 @@ const u32 structural_or_whitespace_negated[256] = {
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-really_inline u32 is_not_structural_or_whitespace(u8 c) {
+really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
 }
 
-const u32 structural_or_whitespace[256] = {
+const uint32_t structural_or_whitespace[256] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -46,7 +46,7 @@ const u32 structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-really_inline u32 is_structural_or_whitespace(u8 c) {
+really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
@@ -67,22 +67,22 @@ const char digittoval[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 // return true if we have a valid hex between 0000 and FFFF
-/*inline bool hex_to_u32(const u8 *src, u32 *res) {
-  u8 v1 = src[0];
-  u8 v2 = src[1];
-  u8 v3 = src[2];
-  u8 v4 = src[3];
+/*inline bool hex_to_u32(const uint8_t *src, uint32_t *res) {
+  uint8_t v1 = src[0];
+  uint8_t v2 = src[1];
+  uint8_t v3 = src[2];
+  uint8_t v4 = src[3];
   *res = digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
          digittoval[v4];
   return (int32_t)(*res) >= 0;
 }*/
 
 // returns a value with the highest bit set if it is not valid
-uint32_t hex_to_u32_nocheck(const u8 *src) {
-  u8 v1 = src[0];
-  u8 v2 = src[1];
-  u8 v3 = src[2];
-  u8 v4 = src[3];
+uint32_t hex_to_u32_nocheck(const uint8_t *src) {
+  uint8_t v1 = src[0];
+  uint8_t v2 = src[1];
+  uint8_t v3 = src[2];
+  uint8_t v4 = src[3];
   return digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
          digittoval[v4];
 }
@@ -99,7 +99,7 @@ uint32_t hex_to_u32_nocheck(const u8 *src) {
 // 
 // Note: we assume that surrogates are treated separately
 //
-inline size_t codepoint_to_utf8(uint32_t cp, u8 *c) {
+inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
     c[0] = cp;
     return 1; // ascii

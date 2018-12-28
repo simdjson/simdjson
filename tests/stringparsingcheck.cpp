@@ -202,7 +202,7 @@ static bool parse_string(const char *p, char *output, char **end) {
 // end of borrowed code
 char * bigbuffer; // global variable
 
-inline void foundBadString(const u8 *buf) {
+inline void foundBadString(const uint8_t *buf) {
   bad_string++;
   char *end;
   if (parse_string((const char *)buf, bigbuffer, &end)) {
@@ -225,8 +225,8 @@ void print_cmp_hex(const char *s1, const char *s2, size_t len) {
   }
 }
 
-inline void foundString(const u8 *buf, const u8 *parsed_begin,
-                        const u8 *parsed_end) {
+inline void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
+                        const uint8_t *parsed_end) {
   size_t thislen = parsed_end - parsed_begin;
   total_string_length += thislen;
   good_string++;

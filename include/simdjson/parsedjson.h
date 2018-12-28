@@ -54,13 +54,13 @@ public:
       return false;
     };
     n_structural_indexes = 0;
-    u32 max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-    structural_indexes = new u32[max_structures];
+    uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
+    structural_indexes = new uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
     size_t localstringcapacity = ROUNDUP_N(len, 64);
-    string_buf = new u8[localstringcapacity];
-    tape = new u64[localtapecapacity];
-    containing_scope_offset = new u32[maxdepth];
+    string_buf = new uint8_t[localstringcapacity];
+    tape = new uint64_t[localtapecapacity];
+    containing_scope_offset = new uint32_t[maxdepth];
     ret_address = new void *[maxdepth];
 
     if ((string_buf == NULL) || (tape == NULL) ||
@@ -118,8 +118,8 @@ public:
   bool printjson(std::ostream &os) {
     if(!isvalid) return false;
     size_t tapeidx = 0;
-    u64 tape_val = tape[tapeidx];
-    u8 type = (tape_val >> 56);
+    uint64_t tape_val = tape[tapeidx];
+    uint8_t type = (tape_val >> 56);
     size_t howmany = 0;
     if (type == 'r') {
       howmany = tape_val & JSONVALUEMASK;
@@ -140,7 +140,7 @@ public:
     inobject[depth] = false;
     for (; tapeidx < howmany; tapeidx++) {
       tape_val = tape[tapeidx];
-      u64 payload = tape_val & JSONVALUEMASK;
+      uint64_t payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       if (!inobject[depth]) {
         if ((inobjectidx[depth] > 0) && (type != ']'))
@@ -222,8 +222,8 @@ public:
   bool dump_raw_tape(std::ostream &os) {
     if(!isvalid) return false;
     size_t tapeidx = 0;
-    u64 tape_val = tape[tapeidx];
-    u8 type = (tape_val >> 56);
+    uint64_t tape_val = tape[tapeidx];
+    uint8_t type = (tape_val >> 56);
     os << tapeidx << " : " << type; 
     tapeidx++;
     size_t howmany = 0;
@@ -234,7 +234,7 @@ public:
       return false;
     }
     os << "\t// pointing to " << howmany <<" (right after last node)\n";
-    u64 payload;
+    uint64_t payload;
     for (; tapeidx < howmany; tapeidx++) {
       os << tapeidx << " : "; 
       tape_val = tape[tapeidx];
@@ -311,25 +311,25 @@ public:
   //
 
   // this should be considered a private function
-  really_inline void write_tape(u64 val, u8 c) {
-    tape[current_loc++] = val | (((u64)c) << 56);
+  really_inline void write_tape(uint64_t val, uint8_t c) {
+    tape[current_loc++] = val | (((uint64_t)c) << 56);
   }
 
-  really_inline void write_tape_s64(s64 i) {
+  really_inline void write_tape_s64(int64_t i) {
     write_tape(0, 'l');
-    tape[current_loc++] = *((u64 *)&i);
+    tape[current_loc++] = *((uint64_t *)&i);
   }
 
   really_inline void write_tape_double(double d) {
     write_tape(0, 'd');
     static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
     memcpy(& tape[current_loc++], &d, sizeof(double));
-    //tape[current_loc++] = *((u64 *)&d);
+    //tape[current_loc++] = *((uint64_t *)&d);
   }
 
-  really_inline u32 get_current_loc() { return current_loc; }
+  really_inline uint32_t get_current_loc() { return current_loc; }
 
-  really_inline void annotate_previousloc(u32 saved_loc, u64 val) {
+  really_inline void annotate_previousloc(uint32_t saved_loc, uint64_t val) {
     tape[saved_loc] |= val;
   }
 
@@ -403,7 +403,7 @@ public:
 
     // A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
     // The root node has type 'r'.
-    u8 get_scope_type() const {
+    uint8_t get_scope_type() const {
       return depthindex[depth].scope_type;
     }
 
@@ -439,14 +439,14 @@ public:
 
     // retrieve the character code of what we're looking at:
     // [{"sltfn are the possibilities
-    really_inline u8 get_type()  const {
+    really_inline uint8_t get_type()  const {
       return current_type;
     }
 
-    // get the s64 value at this node; valid only if we're at "l"
-    really_inline s64 get_integer()  const {
+    // get the int64_t value at this node; valid only if we're at "l"
+    really_inline int64_t get_integer()  const {
        if(location + 1 >= tape_length) return 0;// default value in case of error
-       return (s64) pj.tape[location + 1];
+       return (int64_t) pj.tape[location + 1];
     }
 
     // get the double value at this node; valid only if
@@ -482,7 +482,7 @@ public:
       return get_type() == 'd';
     }
     
-    static bool is_object_or_array(u8 type) {
+    static bool is_object_or_array(uint8_t type) {
       return (type == '[' || (type == '{'));
     }
 
@@ -525,8 +525,8 @@ public:
         if(npos >= tape_length) {
           return false; // shoud never happen unless at the root
         }
-        u64 nextval = pj.tape[npos];
-        u8 nexttype = (nextval >> 56);
+        uint64_t nextval = pj.tape[npos];
+        uint8_t nexttype = (nextval >> 56);
         if((nexttype == ']') || (nexttype == '}')) {
           return false; // we reached the end of the scope
         }
@@ -537,8 +537,8 @@ public:
       } else {
         size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
         if(location + increment >= tape_length) return false;
-        u64 nextval = pj.tape[location + increment];
-        u8 nexttype = (nextval >> 56);
+        uint64_t nextval = pj.tape[location + increment];
+        uint8_t nexttype = (nextval >> 56);
         if((nexttype == ']') || (nexttype == '}')) {
           return false; // we reached the end of the scope
         }
@@ -665,7 +665,7 @@ public:
       return true;
     }
 
-    typedef struct {size_t start_of_scope; u8 scope_type;} scopeindex_t;
+    typedef struct {size_t start_of_scope; uint8_t scope_type;} scopeindex_t;
 
 private:
 
@@ -675,8 +675,8 @@ private:
     size_t depth;
     size_t location;     // our current location on a tape
     size_t tape_length; 
-    u8 current_type;
-    u64 current_val;
+    uint8_t current_type;
+    uint64_t current_val;
     scopeindex_t *depthindex;
 
   };
@@ -688,18 +688,18 @@ private:
   size_t depthcapacity; // how deep we can go
   size_t tapecapacity;
   size_t stringcapacity;
-  u32 current_loc;
-  u8 *structurals;
-  u32 n_structural_indexes;
+  uint32_t current_loc;
+  uint8_t *structurals;
+  uint32_t n_structural_indexes;
 
-  u32 *structural_indexes;
+  uint32_t *structural_indexes;
 
-  u64 *tape;
-  u32 *containing_scope_offset;
+  uint64_t *tape;
+  uint32_t *containing_scope_offset;
   void **ret_address;
 
-  u8 *string_buf; // should be at least bytecapacity
-  u8 *current_string_buf_loc;
+  uint8_t *string_buf; // should be at least bytecapacity
+  uint8_t *current_string_buf_loc;
   bool isvalid;
   ParsedJson(const ParsedJson && p);
 
@@ -715,8 +715,8 @@ private :
 
 #ifdef DEBUG
 inline void dump256(m256 d, const std::string &msg) {
-  for (u32 i = 0; i < 32; i++) {
-    std::cout << std::setw(3) << (int)*(((u8 *)(&d)) + i);
+  for (uint32_t i = 0; i < 32; i++) {
+    std::cout << std::setw(3) << (int)*(((uint8_t *)(&d)) + i);
     if (!((i + 1) % 8))
       std::cout << "|";
     else if (!((i + 1) % 4))
@@ -728,16 +728,16 @@ inline void dump256(m256 d, const std::string &msg) {
 }
 
 // dump bits low to high
-inline void dumpbits(u64 v, const std::string &msg) {
-  for (u32 i = 0; i < 64; i++) {
-    std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
+inline void dumpbits(uint64_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 64; i++) {
+    std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32(u32 v, const std::string &msg) {
-  for (u32 i = 0; i < 32; i++) {
-    std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
+inline void dumpbits32(uint32_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 32; i++) {
+    std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
@@ -748,16 +748,16 @@ inline void dumpbits32(u32 v, const std::string &msg) {
 #endif
 
 // dump bits low to high
-inline void dumpbits_always(u64 v, const std::string &msg) {
-  for (u32 i = 0; i < 64; i++) {
-    std::cout << (((v >> (u64)i) & 0x1ULL) ? "1" : "_");
+inline void dumpbits_always(uint64_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 64; i++) {
+    std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }
 
-inline void dumpbits32_always(u32 v, const std::string &msg) {
-  for (u32 i = 0; i < 32; i++) {
-    std::cout << (((v >> (u32)i) & 0x1ULL) ? "1" : "_");
+inline void dumpbits32_always(uint32_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 32; i++) {
+    std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
   }
   std::cout << " " << msg << "\n";
 }

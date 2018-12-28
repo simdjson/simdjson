@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) {
     cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)"
          << endl;
 #if defined(DEBUG)
-  const u32 iterations = 1;
+  const uint32_t iterations = 1;
 #else
-  const u32 iterations =
+  const uint32_t iterations =
       forceoneiteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
 #endif
   vector<double> res;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-  vector<u64> results;
+  vector<uint64_t> results;
   results.resize(evts.size());
   unsigned long cy0 = 0, cy1 = 0, cy2 = 0, cy3 = 0;
   unsigned long cl0 = 0, cl1 = 0, cl2 = 0, cl3 = 0;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 #endif
   bool isok = true;
 
-  for (u32 i = 0; i < iterations; i++) {
+  for (uint32_t i = 0; i < iterations; i++) {
     if (verbose)
       cout << "[verbose] iteration # " << i << endl;
 #ifndef SQUASH_COUNTERS

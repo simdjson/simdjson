@@ -20,7 +20,7 @@
 #endif
 
 #define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (u32)idx + __tzcnt_u64(s);                          \
+  base_ptr[base + i] = (uint32_t)idx + __tzcnt_u64(s);                          \
   s = s & (s - 1);
 
 #define SET_BIT1 SET_BIT(0)
@@ -50,16 +50,16 @@
 // implementation
 WARN_UNUSED
 bool flatten_indexes(size_t len, ParsedJson &pj) {
-  u32 *base_ptr = pj.structural_indexes;
-  u32 base = 0;
+  uint32_t *base_ptr = pj.structural_indexes;
+  uint32_t base = 0;
 #ifdef BUILDHISTOGRAM
   uint32_t counters[66];
   uint32_t total = 0;
   for (int k = 0; k < 66; k++)
     counters[k] = 0;
   for (size_t idx = 0; idx < len; idx += 64) {
-    u64 s = *(u64 *)(pj.structurals + idx / 8);
-    u32 cnt = __builtin_popcountll(s);
+    uint64_t s = *(uint64_t *)(pj.structurals + idx / 8);
+    uint32_t cnt = __builtin_popcountll(s);
     total++;
     counters[cnt]++;
   }
@@ -71,46 +71,46 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
   printf("\n\n");
 #endif
   for (size_t idx = 0; idx < len; idx += 64) {
-    u64 s = *(u64 *)(pj.structurals + idx / 8);
+    uint64_t s = *(uint64_t *)(pj.structurals + idx / 8);
 #ifdef SUPPRESS_CHEESY_FLATTEN
     while (s) {
-      base_ptr[base++] = (u32)idx + __builtin_ctzll(s);
+      base_ptr[base++] = (uint32_t)idx + __builtin_ctzll(s);
       s &= s - 1ULL;
     }
 #elif defined(NO_PDEP_PLEASE)
-    u32 cnt = __builtin_popcountll(s);
-    u32 next_base = base + cnt;
+    uint32_t cnt = __builtin_popcountll(s);
+    uint32_t next_base = base + cnt;
     while (s) {
       CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
       /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (u32)idx + __builtin_ctzll(s);
+        base_ptr[base+i] = (uint32_t)idx + __builtin_ctzll(s);
         s = s & (s - 1);
       }*/
       base += NO_PDEP_WIDTH;
     }
     base = next_base;
 #else
-    u32 cnt = __builtin_popcountll(s);
-    u32 next_base = base + cnt;
+    uint32_t cnt = __builtin_popcountll(s);
+    uint32_t next_base = base + cnt;
     while (s) {
       // spoil the suspense by reducing dependency chains; actually a win even
       // with cost of pdep
-      u64 s3 = _pdep_u64(~0x7ULL, s);  // s3 will have bottom 3 1-bits unset
-      u64 s5 = _pdep_u64(~0x1fULL, s); // s5 will have bottom 5 1-bits unset
+      uint64_t s3 = _pdep_u64(~0x7ULL, s);  // s3 will have bottom 3 1-bits unset
+      uint64_t s5 = _pdep_u64(~0x1fULL, s); // s5 will have bottom 5 1-bits unset
 
-      base_ptr[base + 0] = (u32)idx + __builtin_ctzll(s);
-      u64 s1 = s & (s - 1ULL);
-      base_ptr[base + 1] = (u32)idx + __builtin_ctzll(s1);
-      u64 s2 = s1 & (s1 - 1ULL);
+      base_ptr[base + 0] = (uint32_t)idx + __builtin_ctzll(s);
+      uint64_t s1 = s & (s - 1ULL);
+      base_ptr[base + 1] = (uint32_t)idx + __builtin_ctzll(s1);
+      uint64_t s2 = s1 & (s1 - 1ULL);
       base_ptr[base + 2] =
-          (u32)idx + __builtin_ctzll(s2); // u64 s3 = s2 & (s2 - 1ULL);
-      base_ptr[base + 3] = (u32)idx + __builtin_ctzll(s3);
-      u64 s4 = s3 & (s3 - 1ULL);
+          (uint32_t)idx + __builtin_ctzll(s2); // uint64_t s3 = s2 & (s2 - 1ULL);
+      base_ptr[base + 3] = (uint32_t)idx + __builtin_ctzll(s3);
+      uint64_t s4 = s3 & (s3 - 1ULL);
 
       base_ptr[base + 4] =
-          (u32)idx + __builtin_ctzll(s4); // u64 s5 = s4 & (s4 - 1ULL);
-      base_ptr[base + 5] = (u32)idx + __builtin_ctzll(s5);
-      u64 s6 = s5 & (s5 - 1ULL);
+          (uint32_t)idx + __builtin_ctzll(s4); // uint64_t s5 = s4 & (s4 - 1ULL);
+      base_ptr[base + 5] = (uint32_t)idx + __builtin_ctzll(s5);
+      uint64_t s6 = s5 & (s5 - 1ULL);
       s = s6;
       base += 6;
     }

@@ -9,7 +9,7 @@
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
 // u not handled in this table as it's complex
-static const u8 escape_map[256] = {
+static const uint8_t escape_map[256] = {
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
     0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
@@ -39,8 +39,8 @@ static const u8 escape_map[256] = {
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
 WARN_UNUSED
-really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
-  u32 code_point = hex_to_u32_nocheck(*src_ptr + 2);
+really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **dst_ptr) {
+  uint32_t code_point = hex_to_u32_nocheck(*src_ptr + 2);
   *src_ptr += 6;
   // check for low surrogate for characters outside the Basic
   // Multilingual Plane.
@@ -48,7 +48,7 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
     if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
       return false;
     }
-    u32 code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
+    uint32_t code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
     code_point =
         (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
     *src_ptr += 6;
@@ -59,23 +59,23 @@ really_inline bool handle_unicode_codepoint(const u8 **src_ptr, u8 **dst_ptr) {
 }
 
 WARN_UNUSED
-really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
-                                ParsedJson &pj, UNUSED const u32 depth, u32 offset) {
+really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, uint32_t offset) {
 #ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape(0, '"');// don't bother with the string parsing at all
   return true; // always succeeds
 #else
-  const u8 *src = &buf[offset + 1]; // we know that buf at offset is a "
-  u8 *dst = pj.current_string_buf_loc;
+  const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
+  uint8_t *dst = pj.current_string_buf_loc;
 #ifdef JSON_TEST_STRINGS // for unit testing
-  u8 *const start_of_string = dst;
+  uint8_t *const start_of_string = dst;
 #endif
 #ifdef DEBUG
   cout << "Entering parse string with offset " << offset << "\n";
 #endif
   while (1) {
 #ifdef DEBUG
-    for (u32 j = 0; j < 32; j++) {
+    for (uint32_t j = 0; j < 32; j++) {
       char c = *(src + j);
       if (isprint(c)) {
         cout << c;
@@ -85,12 +85,12 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
     }
     cout << "|  ... string handling input\n";
 #endif
-    m256 v = _mm256_loadu_si256((const m256 *)(src));
-    u32 bs_bits =
-        (u32)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')));
+    __m256i v = _mm256_loadu_si256((const __m256i *)(src));
+    uint32_t bs_bits =
+        (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')));
     dumpbits32(bs_bits, "backslash bits 2");
-    u32 quote_bits =
-        (u32)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
+    uint32_t quote_bits =
+        (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
     dumpbits32(quote_bits, "quote_bits");
 #define CHECKUNESCAPED
     // All Unicode characters may be placed within the
@@ -99,15 +99,15 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
     //through U+001F).
     // https://tools.ietf.org/html/rfc8259
 #ifdef CHECKUNESCAPED
-    m256 unitsep = _mm256_set1_epi8(0x1F);
-    m256 unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
+    __m256i unitsep = _mm256_set1_epi8(0x1F);
+    __m256i unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
 #endif // CHECKUNESCAPED
 
-    u32 quote_dist = __tzcnt_u64(quote_bits);
-    u32 bs_dist = __tzcnt_u64(bs_bits);
+    uint32_t quote_dist = __tzcnt_u64(quote_bits);
+    uint32_t bs_dist = __tzcnt_u64(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
-    _mm256_storeu_si256((m256 *)(dst), v);
+    _mm256_storeu_si256((__m256i *)(dst), v);
 #ifdef DEBUG
     cout << "quote dist: " << quote_dist << " bs dist: " << bs_dist << "\n";
 #endif
@@ -124,7 +124,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
       pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
-      u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
+      uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);
       bool is_ok = ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
 #ifdef JSON_TEST_STRINGS // for unit testing
        if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1); 
@@ -138,13 +138,13 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
       return true;
 #endif //CHECKUNESCAPED
     } else if (quote_dist > bs_dist) {
-      u8 escape_char = src[bs_dist + 1];
+      uint8_t escape_char = src[bs_dist + 1];
 #ifdef DEBUG
       cout << "Found escape char: " << escape_char << "\n";
 #endif
 #ifdef CHECKUNESCAPED
       // we are going to need the unescaped_bits to check for unescaped chars
-      u32 unescaped_bits = (u32)_mm256_movemask_epi8(unescaped_vec);
+      uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);
       if(((bs_bits - 1) & (~ bs_bits) & unescaped_bits) != 0) {
 #ifdef JSON_TEST_STRINGS // for unit testing
         foundBadString(buf + offset);
@@ -169,7 +169,7 @@ really_inline  bool parse_string(const u8 *buf, UNUSED size_t len,
         // write bs_dist+1 characters to output
         // note this may reach beyond the part of the buffer we've actually
         // seen. I think this is ok
-        u8 escape_result = escape_map[escape_char];
+        uint8_t escape_result = escape_map[escape_char];
         if (!escape_result) {
 #ifdef JSON_TEST_STRINGS // for unit testing
           foundBadString(buf + offset);
