@@ -120,6 +120,19 @@ While in the project repository, do the following:
 mkdir build
 cd build
 cmake ..
+make
+make test
+```
+
+CMake will build a library. By default, it builds a shared library (e.g., libsimdjson.so on Linux).
+
+You can build a static library:
+
+```
+mkdir buildstatic
+cd buildstatic
+cmake -DSIMDJSON_BUILD_STATIC=ON ..
+make 
 make test
 ```
 
