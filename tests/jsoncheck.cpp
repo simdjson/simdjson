@@ -29,7 +29,6 @@ bool contains(const char *pre, const char *str) {
 
 bool validate(const char *dirname) {
   bool everythingfine = true;
-  // init_state_machine(); // no longer necessary
   const char *extension = ".json";
   size_t dirlen = strlen(dirname);
   struct dirent **entry_list;
@@ -117,10 +116,17 @@ int main(int argc, char *argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
               << std::endl;
+#ifndef SIMDJSON_TEST_DATA_DIR
     std::cout
         << "We are going to assume you mean to use the 'jsonchecker' directory."
         << std::endl;
     return validate("jsonchecker/") ? EXIT_SUCCESS : EXIT_FAILURE;
+#else
+    std::cout
+        << "We are going to assume you mean to use the '"<< SIMDJSON_TEST_DATA_DIR <<"' directory."
+        << std::endl;
+    return validate(SIMDJSON_TEST_DATA_DIR) ? EXIT_SUCCESS : EXIT_FAILURE;
+#endif
   }
   return validate(argv[1]) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
