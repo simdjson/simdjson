@@ -1,6 +1,6 @@
 # simdjson : Parsing gigabytes of JSON per second
 
-# A C++  library to see how fast we can parse JSON with complete validation.
+## A C++  library to see how fast we can parse JSON with complete validation.
 
 Goal: Speed up the parsing of JSON per se.
 
