@@ -1,11 +1,16 @@
 #include <assert.h>
 #include <cstring>
+#ifndef _MSC_VER
 #include <dirent.h>
+#include <unistd.h>
+#else
+// Microsoft can't be bothered to provide standard utils.
+#include <simdjson/dirent_portable.h>
+#endif
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "simdjson/jsonparser.h"
 

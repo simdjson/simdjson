@@ -3,7 +3,7 @@
 #include <cassert>
 
 // the input buf should be readable up to buf + SIMDJSON_PADDING
-#define SIMDJSON_PADDING  sizeof(__m256i) 
+#define SIMDJSON_PADDING  sizeof(__m256i)
 
 
 
@@ -25,17 +25,17 @@
 #ifdef _MSC_VER
 
 
-#define really_inline inline 
-#define never_inline inline 
+#define really_inline inline
+#define never_inline inline
 
-#define UNUSED 
-#define WARN_UNUSED 
+#define UNUSED
+#define WARN_UNUSED
 
 #ifndef likely
-#define likely(x) 
+#define likely(x) x
 #endif
 #ifndef unlikely
-#define unlikely(x) 
+#define unlikely(x) x
 #endif
 
 #else

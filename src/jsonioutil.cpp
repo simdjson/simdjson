@@ -9,7 +9,7 @@ char * allocate_padded_buffer(size_t length) {
     char *padded_buffer;
     size_t totalpaddedlength = length + SIMDJSON_PADDING;
 #ifdef _MSC_VER
-	padded_buffer = (uint8_t*) _aligned_malloc(totalpaddedlength, 64);
+	padded_buffer = (char*) _aligned_malloc(totalpaddedlength, 64);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
 #else

@@ -1,13 +1,17 @@
 #include <assert.h>
 #include <ctype.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#include <x86intrin.h>
 #include <dirent.h>
+#else
+#include <intrin.h>
+#endif
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <x86intrin.h>
 
 #include <algorithm>
 #include <chrono>
@@ -41,7 +45,7 @@ int main(int argc, char *argv[]) {
   bool jsonoutput = false;
   bool forceoneiteration = false;
   bool justdata = false;
-
+#ifndef _MSC_VER
   int c;
 
   while ((c = getopt(argc, argv, "1vdt")) != -1)
@@ -64,6 +68,9 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
+#else
+  int optind = 1;
+#endif
   if (optind >= argc) {
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
     exit(1);

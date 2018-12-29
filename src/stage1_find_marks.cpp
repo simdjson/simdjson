@@ -1,9 +1,16 @@
+#include <cstdint>
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
+static inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
+	return _addcarry_u64(0, value1, value2, reinterpret_cast<unsigned __int64 *>(result));
+}
 #else
 #include <x86intrin.h>
-#endif
+static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
+	return __builtin_uaddl_overflow(value1, value2, result);
+}
+#endif // _MSC_VER
 
 #include <cassert>
 
@@ -106,7 +113,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     bool iter_ends_odd_backslash =
-        addcarry_u64(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+		add_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
@@ -257,7 +264,8 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     //bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+    //    __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+	add_overflow(bs_bits, odd_starts, &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
