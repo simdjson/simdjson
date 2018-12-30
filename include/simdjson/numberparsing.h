@@ -1,31 +1,7 @@
-#pragma once
+#ifndef SIMDJSON_NUMBERPARSING_H
+#define SIMDJSON_NUMBERPARSING_H
 
-
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-static inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-	return _addcarry_u64(0, value1, value2, reinterpret_cast<unsigned __int64 *>(result));
-}
-#  pragma intrinsic(_umul128)
-static inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-	uint64_t high;
-	*result = _umul128(value1, value2, &high);
-	return high;
-}
-
-#else
-#include <x86intrin.h>
-static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_uaddl_overflow(value1, value2, result);
-}
-static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_umulll_overflow(value1, value2, result);
-}
-
-#endif // _MSC_VER
-
-
+#include "simdjson/portability.h"
 #include "simdjson/common_defs.h"
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
@@ -187,7 +163,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // Note: a redesign could avoid this function entirely.
 //
 static never_inline bool
-parse_float(const uint8_t *const buf, 
+parse_float(const uint8_t *const buf,
                           ParsedJson &pj, const uint32_t offset,
                           bool found_minus) {
   const char *p = (const char *)(buf + offset);
@@ -352,21 +328,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
   return is_structural_or_whitespace(*p);
 }
 
-#ifndef likely
-#define likely(x) __builtin_expect(!!(x), 1)
-#endif
-
-#ifndef unlikely
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#endif
 
 
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const uint8_t *const buf, 
-                                       ParsedJson &pj, 
-                                       const uint32_t offset, 
+static really_inline bool parse_number(const uint8_t *const buf,
+                                       ParsedJson &pj,
+                                       const uint32_t offset,
                                        bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape_s64(0); // always write zero
@@ -487,7 +456,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, 
+      return parse_float(buf, pj, offset,
                                        found_minus);
     }
     ///////////
@@ -516,7 +485,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
-      return parse_large_integer(buf, pj, offset, 
+      return parse_large_integer(buf, pj, offset,
                                  found_minus);
     }
     pj.write_tape_s64(i);
@@ -527,3 +496,5 @@ static really_inline bool parse_number(const uint8_t *const buf,
   return  is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
+
+#endif

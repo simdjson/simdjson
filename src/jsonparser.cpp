@@ -5,6 +5,14 @@
 #else
 #include <unistd.h>
 #endif
+
+
+extern bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded);
+extern bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded);
+extern ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded);
+extern ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded);
+
+
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
 bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {

@@ -1,5 +1,5 @@
 #include <cstdint>
-
+#include "simdjson/portability.h"
 #ifndef __AVX2__
 
 
@@ -59,41 +59,8 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 
 #else
 
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-static inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-	return _addcarry_u64(0, value1, value2, reinterpret_cast<unsigned __int64 *>(result));
-}
-#else
-#include <x86intrin.h>
-static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_uaddl_overflow(value1, value2, (unsigned long long *)result);
-}
-#endif // _MSC_VER
-
 #include "simdjson/simdprune_tables.h"
 #include <cstring>
-#ifndef __clang__
-#ifndef _MSC_VER
-static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
-                                          __m128i const *__addr_lo) {
-  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
-  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
-}
-
-static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
-                                        __m256i __a) {
-  __m128i __v128;
-
-  __v128 = _mm256_castsi256_si128(__a);
-  _mm_storeu_si128(__addr_lo, __v128);
-  __v128 = _mm256_extractf128_si256(__a, 1);
-  _mm_storeu_si128(__addr_hi, __v128);
-}
-#endif
-
-#endif
 
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #else
 // Microsoft can't be bothered to provide standard utils.
-#include <simdjson/dirent_portable.h>
+#include <dirent_portable.h>
 #endif
 #include <inttypes.h>
 #include <stdbool.h>
@@ -39,7 +39,7 @@ bool validate(const char *dirname) {
   struct dirent **entry_list;
   int c = scandir(dirname, &entry_list, 0, alphasort);
   if (c < 0) {
-    printf("error accessing %s \n", dirname);
+    fprintf(stderr, "error accessing %s \n", dirname);
     return false;
   }
   if (c == 0) {
@@ -67,19 +67,19 @@ bool validate(const char *dirname) {
       std::string_view p;
       try {
         p = get_corpus(fullpath);
-      } catch (const std::exception& e) { 
-        std::cout << "Could not load the file " << fullpath << std::endl;
+      } catch (const std::exception& e) {
+        std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
       ParsedJson pj;
       bool allocok = pj.allocateCapacity(p.size(), 1024);
       if(!allocok) {
-        std::cerr<< "can't allocate memory"<<std::endl;
+        std::cerr << "can't allocate memory"<<std::endl;
         return false;
       }
       ++howmany;
       bool isok = json_parse(p, pj);
-      free((void*)p.data());
+      aligned_free((void*)p.data());
       printf("%s\n", isok ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
@@ -96,7 +96,7 @@ bool validate(const char *dirname) {
           printf("warning: file %s should fail but it passes.\n", name);
           everythingfine = false;
         }
-      } 
+      }
       free(fullpath);
     }
   }
@@ -104,16 +104,15 @@ bool validate(const char *dirname) {
   if(everythingfine) {
     printf("All ok!\n");
   } else {
-    printf("There were problems! Consider reviewing the following files:\n");
+    fprintf(stderr, "There were problems! Consider reviewing the following files:\n");
     for(int i = 0; i < c; i++) {
-      if(!isfileasexpected[i]) printf("%s \n", entry_list[i]->d_name);
+      if(!isfileasexpected[i]) fprintf(stderr, "%s \n", entry_list[i]->d_name);
     }
   }
   for (int i = 0; i < c; ++i)
     free(entry_list[i]);
   free(entry_list);
   delete[] isfileasexpected;
-
   return everythingfine;
 }
 

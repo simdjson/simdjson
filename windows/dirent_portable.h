@@ -1,4 +1,4 @@
-// only use under Visual Studio
+// only use under Visual Studio and only for jsoncheck.cpp
 /*
  * This file was originally: "dirent for Visual C++" from: http://softagalleria.net/dirent.php (version 1.20.1)
  * However I've modified it to <dirent_portable.h> by adding:
@@ -1041,5 +1041,3 @@ inline static int alphasort (const struct dirent **e1,const struct dirent **e2) 
 #endif /*DIRENT_H*/
 
 #endif //#if (!defined(_WIN32) && !defined(_WIN64))
-
-

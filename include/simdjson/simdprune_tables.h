@@ -1,18 +1,8 @@
-/**
- * (c) Daniel Lemire
- * License: Apache License 2.0
- */
+#ifndef SIMDJSON_SIMDPRUNE_TABLES_H
+#define SIMDJSON_SIMDPRUNE_TABLES_H
 
-#ifndef SIMDPRUNE_TABLES_H
-#define SIMDPRUNE_TABLES_H
+#include "simdjson/portability.h"
 
-#if defined(_MSC_VER)
-#include <intrin.h>
-#include <iso646.h>
-#else
-#include <x86intrin.h>
-#endif
-#include <cstdint>
 #ifdef __AVX__
 
 static const unsigned char mask128_epi8[] = {

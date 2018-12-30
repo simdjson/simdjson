@@ -1,37 +1,19 @@
-#pragma once
- #include <math.h> 
+#ifndef SIMDJSON_PARSEDJSON_H
+#define SIMDJSON_PARSEDJSON_H
+
+#include <math.h>
 #include <inttypes.h>
 #include <string.h>
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-
 #include <iomanip>
 #include <iostream>
 
+#include "simdjson/portability.h"
 #include "simdjson/jsonformatutils.h"
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF
 
 #define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
-// portable version of  posix_memalign
-static inline void *aligned_malloc(size_t alignment, size_t size) {
-	void *p;
-#ifdef _MSC_VER
-	p = _aligned_malloc(size, alignment);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-	p = __mingw_aligned_malloc(size, alignment);
-#else
-	// somehow, if this is used before including "x86intrin.h", it creates an
-	// implicit defined warning.
-	if (posix_memalign(&p, alignment, size) != 0) return NULL;
-#endif
-	return p;
-}
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
@@ -76,17 +58,20 @@ public:
     string_buf = new uint8_t[localstringcapacity];
     tape = new uint64_t[localtapecapacity];
     containing_scope_offset = new uint32_t[maxdepth];
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
     ret_address = new void *[maxdepth];
-
+#else
+    ret_address = new char[maxdepth];
+#endif
     if ((string_buf == NULL) || (tape == NULL) ||
         (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
       std::cerr << "Could not allocate memory" << std::endl;
-      delete[] ret_address;
-      delete[] containing_scope_offset;
-      delete[] tape;
-      delete[] string_buf;
-      delete[] structural_indexes;
-      free(structurals);
+      if(ret_address != NULL) delete[] ret_address;
+      if(containing_scope_offset != NULL) delete[] containing_scope_offset;
+      if(tape != NULL) delete[] tape;
+      if(string_buf != NULL) delete[] string_buf;
+      if(structural_indexes != NULL) delete[] structural_indexes;
+      aligned_free(structurals);
       return false;
     }
 
@@ -108,12 +93,12 @@ public:
     depthcapacity = 0;
     tapecapacity = 0;
     stringcapacity = 0;
-    delete[] ret_address;
-    delete[] containing_scope_offset;
-    delete[] tape;
-    delete[] string_buf;
-    delete[] structural_indexes;
-    free(structurals);
+    if(ret_address != NULL) delete[] ret_address;
+    if(containing_scope_offset != NULL) delete[] containing_scope_offset;
+    if(tape != NULL) delete[] tape;
+    if(string_buf != NULL) delete[] string_buf;
+    if(structural_indexes != NULL) delete[] structural_indexes;
+    aligned_free(structurals);
     isvalid = false;
   }
 
@@ -139,11 +124,11 @@ public:
     if (type == 'r') {
       howmany = tape_val & JSONVALUEMASK;
     } else {
-      printf("Error: no starting root node?");
+      fprintf(stderr, "Error: no starting root node?");
       return false;
     }
     if (howmany > tapecapacity) {
-      printf(
+      fprintf(stderr, 
           "We may be exceeding the tape capacity. Is this a valid document?\n");
       return false;
     }
@@ -207,22 +192,22 @@ public:
         os << '}';
         break;
       case '[': // we start an array
-        os << '['; 
+        os << '[';
         depth++;
         inobject[depth] = false;
         inobjectidx[depth] = 0;
         break;
       case ']': // we end an array
         depth--;
-        os << ']'; 
+        os << ']';
         break;
       case 'r': // we start and end with the root node
-        printf("should we be hitting the root node?\n");
+        fprintf(stderr, "should we be hitting the root node?\n");
         delete[] inobject;
         delete[] inobjectidx;
         return false;
       default:
-        printf("bug %c\n", type);
+        fprintf(stderr, "bug %c\n", type);
         delete[] inobject;
         delete[] inobjectidx;
         return false;
@@ -239,25 +224,25 @@ public:
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
-    os << tapeidx << " : " << type; 
+    os << tapeidx << " : " << type;
     tapeidx++;
     size_t howmany = 0;
     if (type == 'r') {
       howmany = tape_val & JSONVALUEMASK;
     } else {
-      printf("Error: no starting root node?");
+      fprintf(stderr, "Error: no starting root node?");
       return false;
     }
     os << "\t// pointing to " << howmany <<" (right after last node)\n";
     uint64_t payload;
     for (; tapeidx < howmany; tapeidx++) {
-      os << tapeidx << " : "; 
+      os << tapeidx << " : ";
       tape_val = tape[tapeidx];
       payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       switch (type) {
       case '"': // we have a string
-        os << "string \""; 
+        os << "string \"";
         print_with_escapes((const unsigned char *)(string_buf + payload));
         os << '"';
         os << '\n';
@@ -377,9 +362,9 @@ public:
       delete[] depthindex;
     }
 
-    iterator(const iterator &o): 
-      pj(o.pj), depth(o.depth), location(o.location), 
-      tape_length(o.tape_length), current_type(o.current_type), 
+    iterator(const iterator &o):
+      pj(o.pj), depth(o.depth), location(o.location),
+      tape_length(o.tape_length), current_type(o.current_type),
       current_val(o.current_val), depthindex(NULL) {
         depthindex = new scopeindex_t[pj.depthcapacity];
         if(depthindex != NULL) {
@@ -389,10 +374,10 @@ public:
         }
     }
 
-    iterator(iterator &&o): 
-      pj(o.pj), depth(o.depth), location(o.location), 
-      tape_length(o.tape_length), current_type(o.current_type), 
-      current_val(o.current_val), depthindex(o.depthindex) {
+    iterator(iterator &&o):
+      pj(std::move(o.pj)), depth(std::move(o.depth)), location(std::move(o.location)),
+      tape_length(std::move(o.tape_length)), current_type(std::move(o.current_type)),
+      current_val(std::move(o.current_val)), depthindex(std::move(o.depthindex)) {
         o.depthindex = NULL;// we take ownship
     }
 
@@ -400,7 +385,7 @@ public:
     bool isOk() const {
       return location < tape_length;
     }
-    
+
     // useful for debuging purposes
     size_t get_tape_location() const {
       return location;
@@ -432,7 +417,7 @@ public:
         depth++;
         depthindex[depth].start_of_scope = location;
         depthindex[depth].scope_type = current_type;
-      } 
+      }
       location = location + 1;
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
@@ -471,7 +456,7 @@ public:
        double answer;
        memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
        return answer;
-    } 
+    }
 
     bool is_object_or_array() const {
       return is_object_or_array(get_type());
@@ -488,15 +473,15 @@ public:
     bool is_string() const {
       return get_type() == '"';
     }
-    
+
     bool is_integer() const {
       return get_type() == 'l';
     }
-    
+
     bool is_double() const {
       return get_type() == 'd';
     }
-    
+
     static bool is_object_or_array(uint8_t type) {
       return (type == '[' || (type == '{'));
     }
@@ -524,7 +509,7 @@ public:
     really_inline const char * get_string() const {
       return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
     }
-     
+
     // throughout return true if we can do the navigation, false
     // otherwise
 
@@ -533,10 +518,10 @@ public:
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [.
     // At the object ({) or at the array ([), you can issue a "down" to visit their content.
     // valid if we're not at the end of a scope (returns true).
-    really_inline bool next() { 
+    really_inline bool next() {
       if ((current_type == '[') || (current_type == '{')){
         // we need to jump
-        size_t npos = ( current_val & JSONVALUEMASK); 
+        size_t npos = ( current_val & JSONVALUEMASK);
         if(npos >= tape_length) {
           return false; // shoud never happen unless at the root
         }
@@ -563,14 +548,14 @@ public:
         return true;
       }
     }
-   
+
 
 
     // Withing a given scope (series of nodes at the same depth within either an
     // array or an object), we move backward.
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true when starting at the end
     // of the scope.
-    // At the object ({) or at the array ([), you can issue a "down" to visit their content.    
+    // At the object ({) or at the array ([), you can issue a "down" to visit their content.
     really_inline bool prev() {
       if(location - 1 < depthindex[depth].start_of_scope) return false;
       location -= 1;
@@ -578,9 +563,9 @@ public:
       current_type = (current_val >> 56);
       if ((current_type == ']') || (current_type == '}')){
         // we need to jump
-        size_t new_location = ( current_val & JSONVALUEMASK); 
+        size_t new_location = ( current_val & JSONVALUEMASK);
         if(new_location < depthindex[depth].start_of_scope) {
-          return false; // shoud never happen 
+          return false; // shoud never happen
         }
         location = new_location;
         current_val = pj.tape[location];
@@ -589,7 +574,7 @@ public:
       return true;
     }
 
-    // Moves back to either the containing array or object (type { or [) from 
+    // Moves back to either the containing array or object (type { or [) from
     // within a contained scope.
     // Valid unless we are at the first level of the document
     //
@@ -605,8 +590,8 @@ public:
       current_type = (current_val >> 56);
       return true;
     }
- 
-    
+
+
     // Valid if we're at a [ or { and it starts a non-empty scope; moves us to start of
     // that deeper scope if it not empty.
     // Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the
@@ -614,7 +599,7 @@ public:
     really_inline bool down() {
       if(location + 1 >= tape_length) return false;
       if ((current_type == '[') || (current_type == '{')) {
-        size_t npos = (current_val & JSONVALUEMASK); 
+        size_t npos = (current_val & JSONVALUEMASK);
         if(npos == location + 2) {
           return false; // we have an empty scope
         }
@@ -625,13 +610,13 @@ public:
         current_val = pj.tape[location];
         current_type = (current_val >> 56);
         return true;
-      } 
+      }
       return false;
     }
 
     // move us to the start of our current scope,
     // a scope is a series of nodes at the same level
-    void to_start_scope()  {             
+    void to_start_scope()  {
       location = depthindex[depth].start_of_scope;
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
@@ -656,7 +641,7 @@ public:
       case 'l': // we have a long int
         os << get_integer();
         break;
-      case 'd': 
+      case 'd':
         os << get_double();
         break;
       case 'n': // we have a null
@@ -689,7 +674,7 @@ private:
     ParsedJson &pj;
     size_t depth;
     size_t location;     // our current location on a tape
-    size_t tape_length; 
+    size_t tape_length;
     uint8_t current_type;
     uint64_t current_val;
     scopeindex_t *depthindex;
@@ -711,12 +696,40 @@ private:
 
   uint64_t *tape;
   uint32_t *containing_scope_offset;
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
   void **ret_address;
+#else 
+  char *ret_address;
+#endif
 
   uint8_t *string_buf; // should be at least bytecapacity
   uint8_t *current_string_buf_loc;
   bool isvalid;
-  ParsedJson(const ParsedJson && p);
+
+  ParsedJson(ParsedJson && p)
+      : bytecapacity(std::move(p.bytecapacity)), 
+        depthcapacity(std::move(p.depthcapacity)), 
+        tapecapacity(std::move(p.tapecapacity)), 
+        stringcapacity(std::move(p.stringcapacity)),
+        current_loc(std::move(p.current_loc)), 
+        structurals(std::move(p.structurals)), 
+        n_structural_indexes(std::move(p.n_structural_indexes)),
+        structural_indexes(std::move(p.structural_indexes)), 
+        tape(std::move(p.tape)), 
+        containing_scope_offset(std::move(p.containing_scope_offset)),
+        ret_address(std::move(p.ret_address)), 
+        string_buf(std::move(p.string_buf)), 
+        current_string_buf_loc(std::move(p.current_string_buf_loc)), 
+        isvalid(std::move(p.isvalid)) {
+          p.structurals=NULL;
+          p.structural_indexes=NULL;
+          p.tape=NULL;
+          p.containing_scope_offset=NULL;
+          p.ret_address=NULL;
+          p.string_buf=NULL;
+          p.current_string_buf_loc=NULL;
+          p.isvalid=NULL;
+        }
 
 private :
 
@@ -743,3 +756,6 @@ inline void dumpbits32_always(uint32_t v, const std::string &msg) {
   }
   std::cout << " " << msg.c_str() << "\n";
 }
+
+
+#endif

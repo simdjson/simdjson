@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMDJSON_STRINGPARSING_H
+#define SIMDJSON_STRINGPARSING_H
 
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
@@ -53,7 +54,7 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
         (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
     *src_ptr += 6;
   }
-  size_t offset = codepoint_to_utf8(code_point, *dst_ptr); 
+  size_t offset = codepoint_to_utf8(code_point, *dst_ptr);
   *dst_ptr += offset;
   return offset > 0;
 }
@@ -87,8 +88,8 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     __m256i unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
 #endif // CHECKUNESCAPED
 
-    uint32_t quote_dist = __tzcnt_u64(quote_bits);
-    uint32_t bs_dist = __tzcnt_u64(bs_bits);
+    uint32_t quote_dist = trailingzeroes(quote_bits);
+    uint32_t bs_dist = trailingzeroes(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256((__m256i *)(dst), v);
@@ -104,7 +105,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);
       bool is_ok = ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
 #ifdef JSON_TEST_STRINGS // for unit testing
-       if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1); 
+       if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
        else  foundBadString(buf + offset);
 #endif // JSON_TEST_STRINGS
       return is_ok;
@@ -176,3 +177,4 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 }
 
 
+#endif

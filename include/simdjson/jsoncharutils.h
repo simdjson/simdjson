@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMDJSON_JSONCHARUTILS_H
+#define SIMDJSON_JSONCHARUTILS_H
 
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
@@ -96,7 +97,7 @@ uint32_t hex_to_u32_nocheck(const uint8_t *src) {
 // and clz and table lookups, but JSON documents
 // have few escaped code points, and the following
 // function looks cheap.
-// 
+//
 // Note: we assume that surrogates are treated separately
 //
 inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
@@ -126,3 +127,4 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
+#endif

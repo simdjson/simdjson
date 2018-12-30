@@ -1,19 +1,20 @@
-#pragma once
+#ifndef SIMDJSON_COMMON_DEFS_H
+#define SIMDJSON_COMMON_DEFS_H
+
+#include "simdjson/portability.h"
 
 #include <cassert>
 
 // the input buf should be readable up to buf + SIMDJSON_PADDING
 #define SIMDJSON_PADDING  sizeof(__m256i)
 
-
-
-
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <x86intrin.h>
+#ifndef _MSC_VER
+// Implemented using Labels as Values which works in GCC and CLANG (and maybe
+// also in Intel's compiler), but won't work in MSVC.
+#define SIMDJSON_USE_COMPUTED_GOTO
 #endif
+
+
 
 
 // Align to N-byte boundary
@@ -53,4 +54,6 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
-#endif
+#endif  // MSC_VER
+
+#endif // COMMON_DEFS_H

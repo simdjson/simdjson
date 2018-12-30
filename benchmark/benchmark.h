@@ -106,7 +106,7 @@ double diff(timespec start, timespec end) {
       clock_gettime(CLOCK_REALTIME, &time1);                                   \
       RDTSC_START(cycles_start);                                               \
       if (test != expected) {                                                  \
-        printf("not expected (%d , %d )", (int)test, (int)expected);           \
+        fprintf(stderr, "not expected (%d , %d )", (int)test, (int)expected);           \
         break;                                                                 \
       }                                                                        \
       RDTSC_STOP(cycles_final);                                                \

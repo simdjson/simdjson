@@ -113,9 +113,9 @@ stat_t simdjson_computestats(const std::string_view &p) {
 }
 
 int main(int argc, char *argv[]) {
-  int c;
 #ifndef _MSC_VER
-  while ((c = getopt(argc, argv, "")) != -1)
+	int c;
+	while ((c = getopt(argc, argv, "")) != -1)
     switch (c) {
 
     default:

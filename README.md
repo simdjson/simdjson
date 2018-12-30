@@ -80,7 +80,7 @@ of memory allocation with each new JSON document:
 const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
-// you no longer need p at this point, can do free((void*)p.data())
+// you no longer need p at this point, can do aligned_free((void*)p.data())
 if( ! pj.isValid() ) {
     // something went wrong
 }

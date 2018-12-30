@@ -300,5 +300,5 @@ int main(int argc, char *argv[]) {
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).valid, true, , repeat, volume,
             !justdata);
-  free((void*)p.data());
+  aligned_free((void*)p.data());
 }

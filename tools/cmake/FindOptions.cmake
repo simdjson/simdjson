@@ -18,8 +18,9 @@ endif()
 if(NOT MSVC)
    set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi2 -mpclmul")
 else()
-   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2")
+   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2 /std:c++latest")
 endif()
+
 
 if(NOT MSVC)
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")

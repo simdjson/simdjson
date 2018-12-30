@@ -61,9 +61,6 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-// Implemented using Labels as Values which works in GCC and CLANG (and maybe
-// also in Intel's compiler), but won't work in MSVC. This would need to be
-// reimplemented differently if one wants to be standard compliant.
 WARN_UNUSED
 bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; // index of the structural character (0,1,2,3...)
@@ -73,7 +70,7 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
-      printf("insufficient capacity\n");
+      fprintf(stderr, "insufficient capacity\n");
       return false;
   }
 // this macro reads the next structural character, updating idx, i and c.
@@ -85,7 +82,11 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
 
 
   ////////////////////////////// START STATE /////////////////////////////
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
   pj.ret_address[depth] = &&start_continue;
+#else
+  pj.ret_address[depth] = 's';
+#endif
   pj.containing_scope_offset[depth] = pj.get_current_loc();
   pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
   // the root is used, if nothing else, to capture the size of the tape
@@ -98,7 +99,11 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   switch (c) {
   case '{':
     pj.containing_scope_offset[depth] = pj.get_current_loc();
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&start_continue;
+#else
+    pj.ret_address[depth] = 's';
+#endif
     depth++;
     if (depth > pj.depthcapacity) {
       goto fail;
@@ -107,7 +112,11 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     goto object_begin;
   case '[':
     pj.containing_scope_offset[depth] = pj.get_current_loc();
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&start_continue;
+#else
+    pj.ret_address[depth] = 's';
+#endif    
     depth++;
     if (depth > pj.depthcapacity) {
       goto fail;
@@ -299,7 +308,11 @@ object_key_state:
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); // here the compilers knows what c is so this gets optimized
     // we have not yet encountered } so we need to come back for it
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&object_continue;
+#else
+    pj.ret_address[depth] = 'o';
+#endif
     // we found an object inside an object, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
@@ -312,7 +325,11 @@ object_key_state:
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c);  // here the compilers knows what c is so this gets optimized
     // we have not yet encountered } so we need to come back for it
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&object_continue;
+#else
+    pj.ret_address[depth] = 'o';
+#endif    
     // we found an array inside an object, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
@@ -352,7 +369,15 @@ scope_end:
   pj.annotate_previousloc(pj.containing_scope_offset[depth],
                           pj.get_current_loc());
   // goto saved_state
+#ifdef SIMDJSON_USE_COMPUTED_GOT 
   goto *pj.ret_address[depth];
+#else
+  if(pj.ret_address[depth] == 'a') {
+    goto array_continue;
+  } else if (pj.ret_address[depth] == 'o') {
+    goto object_continue;
+  } else goto start_continue;
+#endif
 
   ////////////////////////////// ARRAY STATES /////////////////////////////
 array_begin:
@@ -415,7 +440,11 @@ main_array_switch:
     // we have not yet encountered ] so we need to come back for it
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); //  here the compilers knows what c is so this gets optimized
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&array_continue;
+#else
+    pj.ret_address[depth] = 'a';
+#endif
     // we found an object inside an array, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
@@ -428,7 +457,11 @@ main_array_switch:
     // we have not yet encountered ] so we need to come back for it
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); // here the compilers knows what c is so this gets optimized
+#ifdef SIMDJSON_USE_COMPUTED_GOTO 
     pj.ret_address[depth] = &&array_continue;
+#else
+    pj.ret_address[depth] = 'a';
+#endif
     // we found an array inside an array, so we need to increment the depth
     depth++;
     if (depth > pj.depthcapacity) {
@@ -457,11 +490,11 @@ array_continue:
 succeed:
   depth --;
   if(depth != 0) {
-    printf("internal bug\n");
+    fprintf(stderr, "internal bug\n");
     abort();
   }
   if(pj.containing_scope_offset[depth] != 0) {
-    printf("internal bug\n");
+    fprintf(stderr, "internal bug\n");
     abort();
   }
   pj.annotate_previousloc(pj.containing_scope_offset[depth],

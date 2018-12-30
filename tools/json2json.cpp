@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   bool is_ok = json_parse(p, pj); // do the parsing, return false on error
-  free((void *)p.data());
+  aligned_free((void *)p.data());
   if (!is_ok) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;

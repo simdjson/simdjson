@@ -32,7 +32,7 @@ std::string_view get_corpus(std::string filename) {
     size_t readb = std::fread(buf, 1, len, fp);
     std::fclose(fp);
     if(readb != len) {
-      free(buf);
+      aligned_free(buf);
       throw  std::runtime_error("could not read the data");
     }
     return std::string_view(buf,len);
