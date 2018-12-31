@@ -1,4 +1,4 @@
-/* auto-generated on Sun 30 Dec 2018 21:47:24 EST. Do not edit! */
+/* auto-generated on Mon Dec 31 11:59:09 EST 2018. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,7 +6,7 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/jsonioutil.cpp */
 #include <cstring>
 #include <stdlib.h>
 
@@ -47,8 +47,8 @@ std::string_view get_corpus(std::string filename) {
   }
   throw  std::runtime_error("could not load corpus");
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/jsonminifier.cpp */
 #include <cstdint>
 #ifndef __AVX2__
 
@@ -147,7 +147,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t even_carries = bs_bits + even_starts;
       uint64_t odd_carries;
       bool iter_ends_odd_backslash = add_overflow(
-          bs_bits, odd_starts, (unsigned long long *)&odd_carries);
+          bs_bits, odd_starts, &odd_carries);
       odd_carries |= prev_iter_ends_odd_backslash;
       prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
       uint64_t even_carry_ends = even_carries & ~bs_bits;
@@ -298,8 +298,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/jsonparser.cpp */
 #ifdef _MSC_VER
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -369,8 +369,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   }
   return pj;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
 #include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
@@ -731,8 +731,8 @@ WARN_UNUSED
   return true;
 #endif
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_flatten.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/stage2_flatten.cpp */
 
 #include <cassert>
 
@@ -855,8 +855,8 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
   return true;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage2_flatten.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage34_unified.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/stage2_flatten.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/stage34_unified.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1363,4 +1363,4 @@ succeed:
 fail:
   return false;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage34_unified.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/stage34_unified.cpp */

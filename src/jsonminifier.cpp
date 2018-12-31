@@ -98,7 +98,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t even_carries = bs_bits + even_starts;
       uint64_t odd_carries;
       bool iter_ends_odd_backslash = add_overflow(
-          bs_bits, odd_starts, (unsigned long long *)&odd_carries);
+          bs_bits, odd_starts, &odd_carries);
       odd_carries |= prev_iter_ends_odd_backslash;
       prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
       uint64_t even_carry_ends = even_carries & ~bs_bits;
