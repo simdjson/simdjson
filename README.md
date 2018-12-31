@@ -2,11 +2,7 @@
 
 ## A C++  library to see how fast we can parse JSON with complete validation.
 
-Goal: Speed up the parsing of JSON per se.
-
-Insight: Use commonly available SIMD instructions as much as possible.
-
-Constraint: Do full validation (including character encoding).
+JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding).
 
 
 ## Some performance results
