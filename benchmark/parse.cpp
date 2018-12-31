@@ -116,11 +116,11 @@ int main(int argc, char *argv[]) {
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   vector<unsigned long long> results;
   results.resize(evts.size());
-  unsigned long cy0 = 0, cy1 = 0, cy2 = 0, cy3 = 0;
-  unsigned long cl0 = 0, cl1 = 0, cl2 = 0, cl3 = 0;
-  unsigned long mis0 = 0, mis1 = 0, mis2 = 0, mis3 = 0;
-  unsigned long cref0 = 0, cref1 = 0, cref2 = 0, cref3 = 0;
-  unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0, cmis3 = 0;
+  unsigned long cy0 = 0, cy1 = 0, cy2 = 0;
+  unsigned long cl0 = 0, cl1 = 0, cl2 = 0;
+  unsigned long mis0 = 0, mis1 = 0, mis2 = 0;
+  unsigned long cref0 = 0, cref1 = 0, cref2 = 0;
+  unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0;
 #endif
   bool isok = true;
 
@@ -169,11 +169,11 @@ int main(int argc, char *argv[]) {
     isok = isok && unified_machine(p.data(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
     unified.end(results);
-    cy3 += results[0];
-    cl3 += results[1];
-    mis3 += results[2];
-    cref3 += results[3];
-    cmis3 += results[4];
+    cy2 += results[0];
+    cl2 += results[1];
+    mis2 += results[2];
+    cref2 += results[3];
+    cmis2 += results[4];
     if (!isok) {
       cout << "Failed out during stage 34\n";
       break;
@@ -190,12 +190,11 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS
-  unsigned long total = cy0 + cy1 + cy2 + cy3;
+  unsigned long total = cy0 + cy1 + cy2;
   if (justdata) {
     float cpb0 = (double)cy0 / (iterations * p.size());
     float cpb1 = (double)cy1 / (iterations * p.size());
     float cpb2 = (double)cy2 / (iterations * p.size());
-    float cpb3 = (double)cy3 / (iterations * p.size());
     float cpbtotal = (double)total / (iterations * p.size());
     char *newfile = (char *)malloc(strlen(filename) + 1);
     if (newfile == NULL)
@@ -209,7 +208,7 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    printf("\"%s\"\t%f\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2, cpb3,
+    printf("\"%s\"\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2,
            cpbtotal);
     free(newfile);
   } else {
@@ -236,13 +235,13 @@ int main(int argc, char *argv[]) {
     printf("stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: "
            "%.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache "
            "accesses: %10lu (failure %10lu)\n",
-           cl3 / iterations, cy3 / iterations, 100. * cy3 / total,
-           (double)cl3 / cy3, mis3 / iterations, (double)cy3 / mis3,
-           cref3 / iterations, cmis3 / iterations);
+           cl2 / iterations, cy2 / iterations, 100. * cy2 / total,
+           (double)cl2 / cy2, mis2 / iterations, (double)cy2 / mis2,
+           cref2 / iterations, cmis2 / iterations);
     printf(" stage 2 runs at %.2f cycles per input byte and ",
-           (double)cy3 / (iterations * p.size()));
+           (double)cy2 / (iterations * p.size()));
     printf("%.2f cycles per structural character.\n",
-           (double)cy3 / (iterations * pj.n_structural_indexes));
+           (double)cy2 / (iterations * pj.n_structural_indexes));
 
     printf(" all stages: %.2f cycles per input byte.\n",
            (double)total / (iterations * p.size()));
