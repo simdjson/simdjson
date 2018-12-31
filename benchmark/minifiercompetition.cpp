@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   ParsedJson pj;
   bool isallocok = pj.allocateCapacity(p.size(), 1024);
   if(!isallocok) {
-    printf("failed to allocate memory\n");
+    fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
   BEST_TIME("simdjson orig", json_parse((const uint8_t*)buffer, p.size(), pj), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
@@ -145,12 +145,12 @@ int main(int argc, char *argv[]) {
   ParsedJson pj2;
   bool isallocok2 = pj2.allocateCapacity(p.size(), 1024);
   if(!isallocok2) {
-    printf("failed to allocate memory\n");
+    fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
 
   BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
-  free((void*)p.data());
+  aligned_free((void*)p.data());
   free(buffer);
   free(ast_buffer);
   free(minibuffer);

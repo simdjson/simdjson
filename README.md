@@ -39,14 +39,16 @@ twitter.json:
 
 ## Requirements
 
-- Linux or macOS (currently)
+- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or better.
 - A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Rizen)
-- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG), we assume C++17
-- Bash (for benchmark scripts) and other common utilities (optional)
+- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17
+- Some benchmark scripts assume bash and other common utilities, but they are  optional.
 
 ## License
 
 This code is made available under the Apache License 2.0. 
+
+Under Windows, we build some tools using the  windows/dirent_portable.h  file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
 ## Code example
 
@@ -80,14 +82,14 @@ of memory allocation with each new JSON document:
 const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
-// you no longer need p at this point, can do free((void*)p.data())
+// you no longer need p at this point, can do aligned_free((void*)p.data())
 if( ! pj.isValid() ) {
     // something went wrong
 }
 ```
 
 
-## Usage (old-school Makefile)
+## Usage (old-school Makefile on platforms like Linux or macOS)
 
 Requirements:  clang or gcc and make. A system like Linux or macOS is expected.
 
@@ -112,7 +114,7 @@ To run comparative benchmarks (with other parsers):
 make benchmark
 ```
 
-## Usage (CMake)
+## Usage (CMake on platforms like Linux or macOS)
 
 While in the project repository, do the following:
 
@@ -135,6 +137,19 @@ cmake -DSIMDJSON_BUILD_STATIC=ON ..
 make 
 make test
 ```
+
+## Usage (CMake on Windows using Visual Studio)
+
+
+We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or better).
+
+- Grab the simdjosn code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
+- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line.
+- Create a subdirectory within simdjson, such as ``VisualStudio``.
+- Using a shell, go to this newly created directory. 
+- Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..`` in the shell while in the ``VisualStudio`` repository. (Alternatively, if you want to build a DLL, you may use the command line ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF  ..``.)
+- This last command created a Visual Studio solution file in the newly created directory (e.g., ``simdjson.sln``). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the ``Solution Explorer`` window (available from the ``View`` menu), right-click ``ALL_BUILD`` and select ``Build``. To test the code, still in the ``Solution Explorer`` window, select ``RUN_TESTS`` and select ``Build``.
+
 
 ## Tools
 

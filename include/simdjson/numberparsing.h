@@ -1,5 +1,7 @@
-#pragma once
+#ifndef SIMDJSON_NUMBERPARSING_H
+#define SIMDJSON_NUMBERPARSING_H
 
+#include "simdjson/portability.h"
 #include "simdjson/common_defs.h"
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
@@ -105,10 +107,11 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 
 #ifdef SWAR_NUMBER_PARSING
 
+#ifdef _MSC_VER
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-/*static inline bool is_made_of_eight_digits_fast(const char *chars) {
+static inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
@@ -118,8 +121,8 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return (((val & 0xF0F0F0F0F0F0F0F0) |
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
-}*/
-
+}
+#else
 // this is more efficient apparently than the scalar code above (fewer instructions)
 static inline bool is_made_of_eight_digits_fast(const char *chars) {
   __m64 val;
@@ -128,6 +131,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
   __m64 basecmp = _mm_subs_pu8(base,_mm_set1_pi8(9));
   return _mm_cvtm64_si64(basecmp) == 0;
 }
+#endif
 
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
@@ -159,7 +163,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 // Note: a redesign could avoid this function entirely.
 //
 static never_inline bool
-parse_float(const uint8_t *const buf, 
+parse_float(const uint8_t *const buf,
                           ParsedJson &pj, const uint32_t offset,
                           bool found_minus) {
   const char *p = (const char *)(buf + offset);
@@ -284,13 +288,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = *p - '0';
-      if (__builtin_umulll_overflow(i, 10, (unsigned long long *)&i)) {
+      if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         foundInvalidNumber(buf + offset);
 #endif
         return false; // overflow
       }
-      if (__builtin_uaddll_overflow(i, digit, (unsigned long long *)&i)) {
+      if (add_overflow(i, digit, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         foundInvalidNumber(buf + offset);
 #endif
@@ -324,21 +328,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
   return is_structural_or_whitespace(*p);
 }
 
-#ifndef likely
-#define likely(x) __builtin_expect(!!(x), 1)
-#endif
-
-#ifndef unlikely
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#endif
 
 
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
-static really_inline bool parse_number(const uint8_t *const buf, 
-                                       ParsedJson &pj, 
-                                       const uint32_t offset, 
+static really_inline bool parse_number(const uint8_t *const buf,
+                                       ParsedJson &pj,
+                                       const uint32_t offset,
                                        bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape_s64(0); // always write zero
@@ -459,7 +456,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, 
+      return parse_float(buf, pj, offset,
                                        found_minus);
     }
     ///////////
@@ -488,7 +485,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
-      return parse_large_integer(buf, pj, offset, 
+      return parse_large_integer(buf, pj, offset,
                                  found_minus);
     }
     pj.write_tape_s64(i);
@@ -499,3 +496,5 @@ static really_inline bool parse_number(const uint8_t *const buf,
   return  is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
+
+#endif

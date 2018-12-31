@@ -57,8 +57,8 @@ inline void foundInteger(int64_t result, const uint8_t *buf) {
   char *endptr;
   long long expected = strtoll((const char *)buf, &endptr, 10);
   if ((endptr == (const char *)buf) || (expected != result)) {
-    printf("Error: parsed %" PRId64 " out of %.32s, ", result, buf);
-    printf(" while parsing %s \n", fullpath);
+    fprintf(stderr, "Error: parsed %" PRId64 " out of %.32s, ", result, buf);
+    fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
 }
@@ -68,23 +68,23 @@ inline void foundFloat(double result, const uint8_t *buf) {
   float_count++;
   double expected = strtod((const char *)buf, &endptr);
   if (endptr == (const char *)buf) {
-    printf("parsed %f from %.32s whereas strtod refuses to parse a float, ",
+    fprintf(stderr, "parsed %f from %.32s whereas strtod refuses to parse a float, ",
            result, buf);
-    printf(" while parsing %s \n", fullpath);
+    fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
   if( fpclassify(expected) != fpclassify(result) ) {
-    printf("floats not in the same category expected: %f observed: %f \n", expected, result);
-    printf("%.128s\n", buf);
+    fprintf(stderr, "floats not in the same category expected: %f observed: %f \n", expected, result);
+    fprintf(stderr, "%.128s\n", buf);
     parse_error |= PARSE_ERROR;
   }
   // we want to get some reasonable relative accuracy
   else if (fabs(expected - result) / fmin(fabs(expected), fabs(result)) >
       1e-14) {
-    printf("parsed %.128e from \n", result);
-    printf("       %.200s whereas strtod gives\n", buf);
-    printf("       %.128e,", expected);
-    printf(" while parsing %s \n", fullpath);
+    fprintf(stderr, "parsed %.128e from \n", result);
+    fprintf(stderr, "       %.200s whereas strtod gives\n", buf);
+    fprintf(stderr, "       %.128e,", expected);
+    fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
 }
@@ -154,7 +154,7 @@ bool validate(const char *dirname) {
                float_count, invalid_count,
                int_count + float_count + invalid_count);
       }
-      free((void*)p.data());
+      aligned_free((void*)p.data());
       free(fullpath);
     }
   }

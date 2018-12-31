@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
-
-
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
 if (NOT CMAKE_BUILD_TYPE)
                 message(STATUS "No build type selected, default to Release")
@@ -10,8 +10,11 @@ endif()
 project(simdjson)
 set(SIMDJSON_LIB_NAME simdjson)
 
-
+if(NOT MSVC)
 option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+else()
+option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
+endif()
 option(SIMDJSON_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 

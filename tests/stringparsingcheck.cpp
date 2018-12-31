@@ -341,7 +341,7 @@ bool validate(const char *dirname) {
       bigbuffer = (char *) malloc(p.size());
       if(bigbuffer == NULL) {
         std::cerr << "can't allocate memory" << std::endl;
-        free((void*)p.data());
+        aligned_free((void*)p.data());
         return false;
       }
       bad_string = 0;
@@ -350,7 +350,7 @@ bool validate(const char *dirname) {
       empty_string = 0;
       bool isok = json_parse(p, pj);
       free(bigbuffer);
-      free((void*)p.data());
+      aligned_free((void*)p.data());
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "
@@ -368,7 +368,7 @@ bool validate(const char *dirname) {
   }
   printf("%zu strings checked.\n", total_strings);
   if (probable_bug) {
-    printf("STRING PARSING FAILS?\n");
+    fprintf(stderr, "STRING PARSING FAILS?\n");
   } else {
     printf("All ok.\n");
   }

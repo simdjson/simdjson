@@ -1,5 +1,17 @@
 #include "simdjson/jsonparser.h"
+#ifdef _MSC_VER
+#include <windows.h>
+#include <sysinfoapi.h>
+#else
 #include <unistd.h>
+#endif
+
+
+extern bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded);
+extern bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded);
+extern ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded);
+extern ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded);
+
 
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
@@ -12,8 +24,14 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
   bool reallocated = false;
   if(reallocifneeded) {
       // realloc is needed if the end of the memory crosses a page
-     long pagesize = sysconf (_SC_PAGESIZE); // on windows this should be SYSTEM_INFO sysInfo; GetSystemInfo(&sysInfo); sysInfo.dwPageSize
-     if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
+#ifdef _MSC_VER
+	  SYSTEM_INFO sysInfo; 
+	  GetSystemInfo(&sysInfo); 
+	  long pagesize = sysInfo.dwPageSize;
+#else
+     long pagesize = sysconf (_SC_PAGESIZE); 
+#endif
+	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
        buf = (uint8_t *) allocate_padded_buffer(len);
        if(buf == NULL) return false;

@@ -1,6 +1,7 @@
 #include <iostream>
+#ifndef _MSC_VER
 #include <unistd.h>
-
+#endif
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
@@ -41,9 +42,11 @@ void compute_dump(ParsedJson::iterator &pjh) {
 }
 
 int main(int argc, char *argv[]) {
+	bool rawdump = false;
+	bool apidump = false;
+
+#ifndef _MSC_VER
   int c;
-  bool rawdump = false;
-  bool apidump = false;
 
   while ((c = getopt(argc, argv, "da")) != -1)
     switch (c) {
@@ -56,6 +59,9 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
+#else
+  int optind = 1;
+#endif
   if (optind >= argc) {
     cerr << "Reads json in, out the result of the parsing. " << endl;
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
@@ -81,7 +87,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   bool is_ok = json_parse(p, pj); // do the parsing, return false on error
-  free((void *)p.data());
+  aligned_free((void *)p.data());
   if (!is_ok) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;

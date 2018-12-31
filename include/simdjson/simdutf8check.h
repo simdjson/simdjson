@@ -1,16 +1,12 @@
 
-#ifndef SIMDUTF8CHECK_H
-#define SIMDUTF8CHECK_H
+#ifndef SIMDJSON_SIMDUTF8CHECK_H
+#define SIMDJSON_SIMDUTF8CHECK_H
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
 #include <string.h>
+#include "simdjson/portability.h"
 /*
  * legal utf-8 byte sequence
  * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <unistd.h>
 
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
@@ -118,14 +117,7 @@ stat_t simdjson_computestats(const std::string_view &p) {
 
 
 int main(int argc, char *argv[]) {
-  int c;
-
-  while ((c = getopt(argc, argv, "")) != -1)
-    switch (c) {
-
-    default:
-      abort();
-    }
+  int optind = 1;
   if (optind >= argc) {
     cerr << "Reads json, prints stats. " << endl;
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;

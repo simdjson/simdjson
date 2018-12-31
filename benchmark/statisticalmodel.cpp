@@ -1,6 +1,7 @@
 #include <iostream>
+#ifndef _MSC_VER 
 #include <unistd.h>
-
+#endif
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 #ifdef __linux__
@@ -112,14 +113,17 @@ stat_t simdjson_computestats(const std::string_view &p) {
 }
 
 int main(int argc, char *argv[]) {
-  int c;
-
-  while ((c = getopt(argc, argv, "")) != -1)
+#ifndef _MSC_VER
+	int c;
+	while ((c = getopt(argc, argv, "")) != -1)
     switch (c) {
 
     default:
       abort();
     }
+#else
+  int optind = 1;
+#endif
   if (optind >= argc) {
     cerr << "Reads json, prints stats. " << endl;
     cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;

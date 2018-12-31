@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
   if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
             volume, !justdata);
-  free((void *)p.data());
+  aligned_free((void *)p.data());
   free(ast_buffer);
   free(buffer);
 }

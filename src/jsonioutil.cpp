@@ -1,6 +1,6 @@
 #include "simdjson/jsonioutil.h"
 #include <cstring>
-
+#include <stdlib.h>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
@@ -8,10 +8,14 @@ char * allocate_padded_buffer(size_t length) {
     // However, we might as well align to cache lines...
     char *padded_buffer;
     size_t totalpaddedlength = length + SIMDJSON_PADDING;
-    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength)) {
-      return NULL;
-    };
-    return padded_buffer;
+#ifdef _MSC_VER
+	padded_buffer = (char*) _aligned_malloc(totalpaddedlength, 64);
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
+#else
+    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength) != 0) return NULL;
+#endif
+	return padded_buffer;
 }
 
 std::string_view get_corpus(std::string filename) {
@@ -28,7 +32,7 @@ std::string_view get_corpus(std::string filename) {
     size_t readb = std::fread(buf, 1, len, fp);
     std::fclose(fp);
     if(readb != len) {
-      free(buf);
+      aligned_free(buf);
       throw  std::runtime_error("could not read the data");
     }
     return std::string_view(buf,len);

@@ -18,8 +18,9 @@ endif()
 if(NOT MSVC)
    set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi2 -mpclmul")
 else()
-   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2")
+   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2 /std:c++latest")
 endif()
+
 
 if(NOT MSVC)
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")
@@ -41,5 +42,5 @@ endif()
 set(CMAKE_CXX_FLAGS "${CXXSTD_FLAGS} ${OPT_FLAGS} ${INCLUDE_FLAGS} ${WARNING_FLAGS} ${SIMDJSON_SANITIZE_FLAGS} ")
 
 if(MSVC)
-add_definitions( "/W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
+add_definitions( "${OPT_FLAGS} /W3 /D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4996 /wd4267 /wd4244  /wd4113 /nologo")
 endif()

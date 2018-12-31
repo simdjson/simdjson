@@ -1,12 +1,5 @@
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-
+#include "simdjson/portability.h"
 #include <cassert>
-
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 
@@ -16,7 +9,7 @@
 
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
-// allows it. 
+// allows it.
 #ifdef SIMDJSON_UTF8VALIDATE
 #include "simdjson/simdutf8check.h"
 #endif
@@ -42,10 +35,10 @@ WARN_UNUSED
   }
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous = {
-      .rawbytes = _mm256_setzero_si256(),
-      .high_nibbles = _mm256_setzero_si256(),
-      .carried_continuations = _mm256_setzero_si256()};
+  struct avx_processed_utf_bytes previous;
+	previous.rawbytes = _mm256_setzero_si256();
+	previous.high_nibbles = _mm256_setzero_si256();
+  previous.carried_continuations = _mm256_setzero_si256();
  #endif
 
   // Useful constant masks
@@ -63,11 +56,13 @@ WARN_UNUSED
   // effectively the very first char is considered to follow "whitespace" for the
   // purposes of psuedo-structural character detection
   uint64_t prev_iter_ends_pseudo_pred = 1ULL;
-  size_t lenminus64 = len < 64 ? 0 : len - 64; 
+  size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
   for (; idx < lenminus64; idx += 64) {
+#ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
+#endif
+	__m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
     __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
@@ -78,7 +73,7 @@ WARN_UNUSED
                           _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                            9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                            9, 9, 9, 9, 9, 9, 9, 1)),has_error);
- 
+
     } else {
         // it is not ascii so we have to do heavy work
         previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
@@ -104,7 +99,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+		add_overflow(bs_bits, odd_starts, &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end
@@ -214,7 +209,7 @@ WARN_UNUSED
   /// but otherwise the string needs to be properly padded or else we
   /// risk invalidating the UTF-8 checks.
   ////////////
-  if (idx < len) { 
+  if (idx < len) {
     uint8_t tmpbuf[64];
     memset(tmpbuf,0x20,64);
     memcpy(tmpbuf,buf+idx,len - idx);
@@ -229,7 +224,7 @@ WARN_UNUSED
                           _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                            9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                            9, 9, 9, 9, 9, 9, 9, 1)),has_error);
- 
+
     } else {
         // it is not ascii so we have to do heavy work
         previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
@@ -255,7 +250,7 @@ WARN_UNUSED
     // indicates whether the sense of any edge going to the next iteration
     // should be flipped
     //bool iter_ends_odd_backslash =
-        __builtin_uaddll_overflow(bs_bits, odd_starts, (unsigned long long *) &odd_carries);
+	add_overflow(bs_bits, odd_starts, &odd_carries);
 
     odd_carries |=
         prev_iter_ends_odd_backslash; // push in bit zero as a potential end

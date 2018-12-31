@@ -18,5 +18,5 @@ int main(int argc, char *argv[]) {
   }
   jsonminify(p, (char *)p.data());
   printf("%s",p.data());
-  free((void*)p.data());
+  aligned_free((void*)p.data());
 }

@@ -1,7 +1,7 @@
-
+#include <cstdint>
+#include "simdjson/portability.h"
 #ifndef __AVX2__
 
-#include <cstdint>
 
 static uint8_t jump_table[256 * 3] = {
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
@@ -59,33 +59,8 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 
 #else
 
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <immintrin.h>
-#include <x86intrin.h>
-#endif // _MSC_VER
-
 #include "simdjson/simdprune_tables.h"
 #include <cstring>
-#ifndef __clang__
-static inline __m256i _mm256_loadu2_m128i(__m128i const *__addr_hi,
-                                          __m128i const *__addr_lo) {
-  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
-  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
-}
-
-static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
-                                        __m256i __a) {
-  __m128i __v128;
-
-  __v128 = _mm256_castsi256_si128(__a);
-  _mm_storeu_si128(__addr_lo, __v128);
-  __v128 = _mm256_extractf128_si256(__a, 1);
-  _mm_storeu_si128(__addr_hi, __v128);
-}
-#endif
 
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
@@ -122,7 +97,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t odd_starts = start_edges & ~even_start_mask;
       uint64_t even_carries = bs_bits + even_starts;
       uint64_t odd_carries;
-      bool iter_ends_odd_backslash = __builtin_uaddll_overflow(
+      bool iter_ends_odd_backslash = add_overflow(
           bs_bits, odd_starts, (unsigned long long *)&odd_carries);
       odd_carries |= prev_iter_ends_odd_backslash;
       prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
@@ -171,10 +146,10 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       int mask2 = (whitespace >> 16) & 0xFFFF;
       int mask3 = (whitespace >> 32) & 0xFFFF;
       int mask4 = (whitespace >> 48) & 0xFFFF;
-      int pop1 = _popcnt64((~whitespace) & 0xFFFF);
-      int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
-      int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
-      int pop4 = _popcnt64((~whitespace));
+      int pop1 = hamming((~whitespace) & 0xFFFF);
+      int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
+      int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
+      int pop4 = hamming((~whitespace));
       __m256i vmask1 =
           _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
                               (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
@@ -206,7 +181,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     uint64_t even_carries = bs_bits + even_starts;
     uint64_t odd_carries;
     //bool iter_ends_odd_backslash = 
-    __builtin_uaddll_overflow( bs_bits, odd_starts, (unsigned long long *)&odd_carries);
+	add_overflow( bs_bits, odd_starts, &odd_carries);
     odd_carries |= prev_iter_ends_odd_backslash;
     //prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL; // we never use it
     uint64_t even_carry_ends = even_carries & ~bs_bits;
@@ -250,10 +225,10 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     int mask2 = (whitespace >> 16) & 0xFFFF;
     int mask3 = (whitespace >> 32) & 0xFFFF;
     int mask4 = (whitespace >> 48) & 0xFFFF;
-    int pop1 = _popcnt64((~whitespace) & 0xFFFF);
-    int pop2 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFF));
-    int pop3 = _popcnt64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
-    int pop4 = _popcnt64((~whitespace));
+    int pop1 = hamming((~whitespace) & 0xFFFF);
+    int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
+    int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
+    int pop4 = hamming((~whitespace));
     __m256i vmask1 =
         _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
                             (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
