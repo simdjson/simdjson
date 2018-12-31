@@ -12,7 +12,7 @@
 #endif
 
 #define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (uint32_t)idx + trailingzeroes(structurals);                          \
+  base_ptr[base + i] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          \
   structurals = structurals & (structurals - 1);
 
 #define SET_BIT1 SET_BIT(0)
@@ -89,6 +89,7 @@ WARN_UNUSED
   uint64_t prev_iter_ends_pseudo_pred = 1ULL;
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
+  uint64_t structurals = 0;
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
@@ -152,6 +153,21 @@ WARN_UNUSED
     quote_bits = quote_bits & ~odd_ends;
     uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+
+
+
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
+
     quote_mask ^= prev_iter_inside_quote;
     prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
 
@@ -193,7 +209,7 @@ WARN_UNUSED
 
     uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
@@ -233,17 +249,6 @@ WARN_UNUSED
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
 
-    uint32_t cnt = hamming(structurals);
-    uint32_t next_base = base + cnt;
-    while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
-    }
-    base = next_base;
     //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
   }
 
@@ -318,6 +323,17 @@ WARN_UNUSED
     quote_mask ^= prev_iter_inside_quote;
     //prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
 
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
     // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
@@ -356,7 +372,7 @@ WARN_UNUSED
 
     uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
@@ -398,6 +414,8 @@ WARN_UNUSED
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
     //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
+    idx += 64;
+  }
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
@@ -409,7 +427,7 @@ WARN_UNUSED
       base += NO_PDEP_WIDTH;
     }
     base = next_base;
-  }
+
   pj.n_structural_indexes = base;
   if(base_ptr[pj.n_structural_indexes-1] > len) {
     fprintf( stderr,"Internal bug\n");
