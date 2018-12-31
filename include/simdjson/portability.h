@@ -46,7 +46,7 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_uaddl_overflow(value1, value2, (unsigned long *)result);
+	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
 }
 static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
