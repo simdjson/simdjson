@@ -16,9 +16,7 @@ One key difference is that the Mison parser makes moderate use of the SIMD instr
 We find that, for some inputs, we are limited in speed: for canada.json, marine_ik, mesh.json, mesh-pretty, about half of the processing time is due to number parsing (mostly floating-point numbers); for twitterescaped and random, string parsing is a burden.
 
 
-We present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded. 
-
-*Lower results are better.*
+Next we present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded.  *Lower results are better.*
 
 
 
@@ -88,7 +86,26 @@ if( ! pj.isValid() ) {
 
 See the "singleheader" repository for a single header version. See the included
 file "amalgamation_demo.cpp" for usage. This requires no specific build system: just
-copy the files in your project.
+copy the files in your project in your include path. You can then include them quite simply:
+
+```
+#include <iostream>
+#include "simdjson.h"
+#include "simdjson.cpp"
+int main(int argc, char *argv[]) {
+  const char * filename = argv[1]; 
+  std::string_view p = get_corpus(filename);
+  ParsedJson pj = build_parsed_json(p); // do the parsing
+  if( ! pj.isValid() ) {
+    std::cout << "not valid" << std::endl;
+  } else {
+    std::cout << "valid" << std::endl;
+  }
+  return EXIT_SUCCESS;
+}
+```
+
+Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
