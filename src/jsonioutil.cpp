@@ -1,6 +1,6 @@
 #include "simdjson/jsonioutil.h"
 #include <cstring>
-
+#include <stdlib.h>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
@@ -13,7 +13,7 @@ char * allocate_padded_buffer(size_t length) {
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
 #else
-    if (posix_memalign(&padded_buffer, 64, totalpaddedlength) != 0) return NULL;
+    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength) != 0) return NULL;
 #endif
 	return padded_buffer;
 }

@@ -369,7 +369,7 @@ scope_end:
   pj.annotate_previousloc(pj.containing_scope_offset[depth],
                           pj.get_current_loc());
   // goto saved_state
-#ifdef SIMDJSON_USE_COMPUTED_GOT 
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
   goto *pj.ret_address[depth];
 #else
   if(pj.ret_address[depth] == 'a') {

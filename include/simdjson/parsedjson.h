@@ -375,10 +375,10 @@ public:
     }
 
     iterator(iterator &&o):
-      pj(std::move(o.pj)), depth(std::move(o.depth)), location(std::move(o.location)),
+      pj(o.pj), depth(std::move(o.depth)), location(std::move(o.location)),
       tape_length(std::move(o.tape_length)), current_type(std::move(o.current_type)),
       current_val(std::move(o.current_val)), depthindex(std::move(o.depthindex)) {
-        o.depthindex = NULL;// we take ownship
+        o.depthindex = NULL;// we take ownership
     }
 
     WARN_UNUSED
@@ -728,7 +728,6 @@ private:
           p.ret_address=NULL;
           p.string_buf=NULL;
           p.current_string_buf_loc=NULL;
-          p.isvalid=NULL;
         }
 
 private :

@@ -46,20 +46,20 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_uaddl_overflow(value1, value2, result);
+	return __builtin_uaddl_overflow(value1, value2, (unsigned long *)result);
 }
 static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_umulll_overflow(value1, value2, result);
+	return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 }
 
 /* result might be undefined when input_num is zero */
 static inline int trailingzeroes(uint64_t input_num) {
-	return __tzcnt_u64(input_num);
+	return _tzcnt_u64(input_num);
 }
 
 /* result might be undefined when input_num is zero */
 static inline int leadingzeroes(uint64_t  input_num) {
-	return __lzcnt_u64(input_num);
+	return _lzcnt_u64(input_num);
 }
 
 /* result might be undefined when input_num is zero */
