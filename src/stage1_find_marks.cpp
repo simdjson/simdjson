@@ -7,6 +7,35 @@
 #define SIMDJSON_UTF8VALIDATE
 #endif
 
+#ifndef NO_PDEP_WIDTH
+#define NO_PDEP_WIDTH 8
+#endif
+
+#define SET_BIT(i)                                                             \
+  base_ptr[base + i] = (uint32_t)idx + trailingzeroes(structurals);                          \
+  structurals = structurals & (structurals - 1);
+
+#define SET_BIT1 SET_BIT(0)
+#define SET_BIT2 SET_BIT1 SET_BIT(1)
+#define SET_BIT3 SET_BIT2 SET_BIT(2)
+#define SET_BIT4 SET_BIT3 SET_BIT(3)
+#define SET_BIT5 SET_BIT4 SET_BIT(4)
+#define SET_BIT6 SET_BIT5 SET_BIT(5)
+#define SET_BIT7 SET_BIT6 SET_BIT(6)
+#define SET_BIT8 SET_BIT7 SET_BIT(7)
+#define SET_BIT9 SET_BIT8 SET_BIT(8)
+#define SET_BIT10 SET_BIT9 SET_BIT(9)
+#define SET_BIT11 SET_BIT10 SET_BIT(10)
+#define SET_BIT12 SET_BIT11 SET_BIT(11)
+#define SET_BIT13 SET_BIT12 SET_BIT(12)
+#define SET_BIT14 SET_BIT13 SET_BIT(13)
+#define SET_BIT15 SET_BIT14 SET_BIT(14)
+#define SET_BIT16 SET_BIT15 SET_BIT(15)
+
+#define CALL(macro, ...) macro(__VA_ARGS__)
+
+#define SET_BITLOOPN(n) SET_BIT##n
+
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it.
@@ -33,11 +62,13 @@ WARN_UNUSED
     cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
     return false;
   }
+  uint32_t *base_ptr = pj.structural_indexes;
+  uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
   struct avx_processed_utf_bytes previous;
-	previous.rawbytes = _mm256_setzero_si256();
-	previous.high_nibbles = _mm256_setzero_si256();
+  previous.rawbytes = _mm256_setzero_si256();
+  previous.high_nibbles = _mm256_setzero_si256();
   previous.carried_continuations = _mm256_setzero_si256();
  #endif
 
@@ -201,7 +232,19 @@ WARN_UNUSED
     // now, we've used our close quotes all we need to. So let's switch them off
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
-    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
+
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
+    //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
   }
 
   ////////////////
@@ -354,8 +397,30 @@ WARN_UNUSED
     // now, we've used our close quotes all we need to. So let's switch them off
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
-    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
+    //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
   }
+  pj.n_structural_indexes = base;
+  if(base_ptr[pj.n_structural_indexes-1] > len) {
+    fprintf( stderr,"Internal bug\n");
+    return false;
+  }
+  if(len != base_ptr[pj.n_structural_indexes-1]) {
+    // the string might not be NULL terminated, but we add a virtual NULL ending character. 
+    base_ptr[pj.n_structural_indexes++] = len;
+  }
+  base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
+
 #ifdef SIMDJSON_UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error);
 #else

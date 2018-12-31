@@ -40,12 +40,12 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
      }
   }
   bool isok = find_structural_bits(buf, len, pj);
-  if (isok) {
+  /*if (isok) {
     isok = flatten_indexes(len, pj);
   } else {
     if(reallocated) free((void*)buf);
     return false;
-  }
+  }*/
   if (isok) {
     isok = unified_machine(buf, len, pj);
   } else {
