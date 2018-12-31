@@ -88,6 +88,13 @@ if( ! pj.isValid() ) {
 }
 ```
 
+## Usage: easy single-header version
+
+See the "singleheader" repository for a single header version. See the included
+file "amalgamation_demo.cpp" for usage. This requires no specific build system: just
+copy the files in your project.
+
+
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 

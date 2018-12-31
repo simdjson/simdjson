@@ -12,7 +12,14 @@ AMAL_H="simdjson.h"
 AMAL_C="simdjson.cpp"
 
 # order does not matter
-ALLCFILES=$( ( [ -d $SCRIPTPATH/.git ] && ( type git >/dev/null 2>&1 ) &&  ( git ls-files $SCRIPTPATH/src/*.c $SCRIPTPATH/src/**/*c ) ) ||  ( find $SCRIPTPATH/src -name '*.c' ) )
+ALLCFILES="
+$SCRIPTPATH/src/jsonioutil.cpp
+$SCRIPTPATH/src/jsonminifier.cpp
+$SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/src/stage1_find_marks.cpp
+$SCRIPTPATH/src/stage2_flatten.cpp
+$SCRIPTPATH/src/stage34_unified.cpp
+"
 
 # order matters
 ALLCHEADERS="
@@ -112,7 +119,14 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} "
+echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} jsonexamples/twitter.json "
+
+SINGLEHDR=$SCRIPTPATH/singleheader
+echo "Copying files to $SCRIPTPATH/singleheader "
+mkdir -p $SINGLEHDR
+echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
+cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
+ls $SINGLEHDR
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

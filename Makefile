@@ -62,6 +62,8 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	@echo "It looks like the code is good!"
 	@tput sgr0
 
+amalgamate:
+	./amalgamation.sh
 
 $(SAJSON_INCLUDE):
 	git submodule update --init --recursive
