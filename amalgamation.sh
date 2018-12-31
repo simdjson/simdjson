@@ -17,8 +17,7 @@ $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/stage1_find_marks.cpp
-$SCRIPTPATH/src/stage2_flatten.cpp
-$SCRIPTPATH/src/stage34_unified.cpp
+$SCRIPTPATH/src/stage2_build_tape.cpp
 "
 
 # order matters
@@ -33,10 +32,9 @@ $SCRIPTPATH/include/simdjson/simdutf8check.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/stage2_flatten.h
 $SCRIPTPATH/include/simdjson/stringparsing.h
 $SCRIPTPATH/include/simdjson/numberparsing.h
-$SCRIPTPATH/include/simdjson/stage34_unified.h
+$SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
 "
 

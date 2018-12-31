@@ -26,7 +26,7 @@ public:
   // allocate memory
   ParsedJson()
       : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
-        current_loc(0), structurals(NULL), n_structural_indexes(0),
+        current_loc(0), n_structural_indexes(0),
         structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
         ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
 
@@ -45,11 +45,6 @@ public:
     }
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
-	structurals = (uint8_t *)aligned_malloc(8, ROUNDUP_N(len, 64) / 8);
-    if (structurals == NULL) {
-      std::cerr << "Could not allocate memory for structurals" << std::endl;
-      return false;
-    };
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new uint32_t[max_structures];
@@ -71,7 +66,6 @@ public:
       if(tape != NULL) delete[] tape;
       if(string_buf != NULL) delete[] string_buf;
       if(structural_indexes != NULL) delete[] structural_indexes;
-      aligned_free(structurals);
       return false;
     }
 
@@ -98,7 +92,6 @@ public:
     if(tape != NULL) delete[] tape;
     if(string_buf != NULL) delete[] string_buf;
     if(structural_indexes != NULL) delete[] structural_indexes;
-    aligned_free(structurals);
     isvalid = false;
   }
 
@@ -682,14 +675,12 @@ private:
   };
 
 
-  size_t bytecapacity;  // indicates how many bits are meant to be supported by
-                        // structurals
+  size_t bytecapacity;  // indicates how many bits are meant to be supported 
 
   size_t depthcapacity; // how deep we can go
   size_t tapecapacity;
   size_t stringcapacity;
   uint32_t current_loc;
-  uint8_t *structurals;
   uint32_t n_structural_indexes;
 
   uint32_t *structural_indexes;
@@ -712,7 +703,6 @@ private:
         tapecapacity(std::move(p.tapecapacity)), 
         stringcapacity(std::move(p.stringcapacity)),
         current_loc(std::move(p.current_loc)), 
-        structurals(std::move(p.structurals)), 
         n_structural_indexes(std::move(p.n_structural_indexes)),
         structural_indexes(std::move(p.structural_indexes)), 
         tape(std::move(p.tape)), 
@@ -721,7 +711,6 @@ private:
         string_buf(std::move(p.string_buf)), 
         current_string_buf_loc(std::move(p.current_string_buf_loc)), 
         isvalid(std::move(p.isvalid)) {
-          p.structurals=NULL;
           p.structural_indexes=NULL;
           p.tape=NULL;
           p.containing_scope_offset=NULL;

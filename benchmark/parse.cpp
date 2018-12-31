@@ -35,8 +35,7 @@
 #include "simdjson/jsonparser.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_flatten.h"
-#include "simdjson/stage34_unified.h"
+#include "simdjson/stage2_build_tape.h"
 using namespace std;
 
 int main(int argc, char *argv[]) {
@@ -166,20 +165,6 @@ int main(int argc, char *argv[]) {
     }
     unified.start();
 #endif
-    isok = isok && flatten_indexes(p.size(), pj);
-#ifndef SQUASH_COUNTERS
-    unified.end(results);
-    cy2 += results[0];
-    cl2 += results[1];
-    mis2 += results[2];
-    cref2 += results[3];
-    cmis2 += results[4];
-    if (!isok) {
-      cout << "Failed out during stage 2\n";
-      break;
-    }
-    unified.start();
-#endif
 
     isok = isok && unified_machine(p.data(), p.size(), pj);
 #ifndef SQUASH_COUNTERS
@@ -251,21 +236,10 @@ int main(int argc, char *argv[]) {
     printf("stage 2 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: "
            "%.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache "
            "accesses: %10lu (failure %10lu)\n",
-           cl2 / iterations, cy2 / iterations, 100. * cy2 / total,
-           (double)cl2 / cy2, mis2 / iterations, (double)cy2 / mis2,
-           cref2 / iterations, cmis2 / iterations);
-    printf(" stage 2 runs at %.2f cycles per input byte and ",
-           (double)cy2 / (iterations * p.size()));
-    printf("%.2f cycles per structural character.\n",
-           (double)cy2 / (iterations * pj.n_structural_indexes));
-
-    printf("stage 3 instructions: %10lu cycles: %10lu (%.2f %%) ins/cycles: "
-           "%.2f mis. branches: %10lu  (cycles/mis.branch %.2f)  cache "
-           "accesses: %10lu (failure %10lu)\n",
            cl3 / iterations, cy3 / iterations, 100. * cy3 / total,
            (double)cl3 / cy3, mis3 / iterations, (double)cy3 / mis3,
            cref3 / iterations, cmis3 / iterations);
-    printf(" stage 3 runs at %.2f cycles per input byte and ",
+    printf(" stage 2 runs at %.2f cycles per input byte and ",
            (double)cy3 / (iterations * p.size()));
     printf("%.2f cycles per structural character.\n",
            (double)cy3 / (iterations * pj.n_structural_indexes));

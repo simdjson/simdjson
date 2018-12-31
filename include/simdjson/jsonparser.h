@@ -5,8 +5,7 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_flatten.h"
-#include "simdjson/stage34_unified.h"
+#include "simdjson/stage2_build_tape.h"
 
 
 

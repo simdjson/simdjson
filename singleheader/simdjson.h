@@ -1,4 +1,4 @@
-/* auto-generated on Sun 30 Dec 2018 21:47:24 EST. Do not edit! */
+/* auto-generated on Mon Dec 31 17:13:28 EST 2018. Do not edit! */
 /* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/portability.h */
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
@@ -35779,7 +35779,7 @@ public:
   // allocate memory
   ParsedJson()
       : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
-        current_loc(0), structurals(NULL), n_structural_indexes(0),
+        current_loc(0), n_structural_indexes(0),
         structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
         ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
 
@@ -35798,11 +35798,6 @@ public:
     }
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
-	structurals = (uint8_t *)aligned_malloc(8, ROUNDUP_N(len, 64) / 8);
-    if (structurals == NULL) {
-      std::cerr << "Could not allocate memory for structurals" << std::endl;
-      return false;
-    };
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new uint32_t[max_structures];
@@ -35824,7 +35819,6 @@ public:
       if(tape != NULL) delete[] tape;
       if(string_buf != NULL) delete[] string_buf;
       if(structural_indexes != NULL) delete[] structural_indexes;
-      aligned_free(structurals);
       return false;
     }
 
@@ -35851,7 +35845,6 @@ public:
     if(tape != NULL) delete[] tape;
     if(string_buf != NULL) delete[] string_buf;
     if(structural_indexes != NULL) delete[] structural_indexes;
-    aligned_free(structurals);
     isvalid = false;
   }
 
@@ -36435,14 +36428,12 @@ private:
   };
 
 
-  size_t bytecapacity;  // indicates how many bits are meant to be supported by
-                        // structurals
+  size_t bytecapacity;  // indicates how many bits are meant to be supported 
 
   size_t depthcapacity; // how deep we can go
   size_t tapecapacity;
   size_t stringcapacity;
   uint32_t current_loc;
-  uint8_t *structurals;
   uint32_t n_structural_indexes;
 
   uint32_t *structural_indexes;
@@ -36465,7 +36456,6 @@ private:
         tapecapacity(std::move(p.tapecapacity)), 
         stringcapacity(std::move(p.stringcapacity)),
         current_loc(std::move(p.current_loc)), 
-        structurals(std::move(p.structurals)), 
         n_structural_indexes(std::move(p.n_structural_indexes)),
         structural_indexes(std::move(p.structural_indexes)), 
         tape(std::move(p.tape)), 
@@ -36474,7 +36464,6 @@ private:
         string_buf(std::move(p.string_buf)), 
         current_string_buf_loc(std::move(p.current_string_buf_loc)), 
         isvalid(std::move(p.isvalid)) {
-          p.structurals=NULL;
           p.structural_indexes=NULL;
           p.tape=NULL;
           p.containing_scope_offset=NULL;
@@ -36527,16 +36516,6 @@ static inline bool find_structural_bits(const char *buf, size_t len, ParsedJson 
 
 #endif
 /* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_flatten.h */
-#ifndef SIMDJSON_STAGE2_FLATTEN_H
-#define SIMDJSON_STAGE2_FLATTEN_H
-
-
-WARN_UNUSED
-bool flatten_indexes(size_t len, ParsedJson &pj);
-
-#endif
-/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_flatten.h */
 /* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_H
 #define SIMDJSON_STRINGPARSING_H
@@ -37214,7 +37193,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
 
 #endif
 /* end file /Users/lemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage34_unified.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
 #ifndef SIMDJSON_STAGE34_UNIFIED_H
 #define SIMDJSON_STAGE34_UNIFIED_H
 
@@ -37230,7 +37209,7 @@ static inline bool unified_machine(const char *buf, size_t len, ParsedJson &pj) 
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage34_unified.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
 /* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
 #ifndef SIMDJSON_JSONPARSER_H
 #define SIMDJSON_JSONPARSER_H
