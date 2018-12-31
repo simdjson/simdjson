@@ -282,7 +282,7 @@ inline void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
 }
 
 #include "simdjson/jsonparser.h"
-#include "src/stage34_unified.cpp"
+#include "src/stage2_build_tape.cpp"
 
 /**
  * Does the file filename ends with the given extension.

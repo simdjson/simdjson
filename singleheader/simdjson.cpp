@@ -1,4 +1,4 @@
-/* auto-generated on Mon Dec 31 11:59:09 EST 2018. Do not edit! */
+/* auto-generated on Mon Dec 31 17:13:28 EST 2018. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -341,12 +341,12 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
      }
   }
   bool isok = find_structural_bits(buf, len, pj);
-  if (isok) {
+  /*if (isok) {
     isok = flatten_indexes(len, pj);
   } else {
     if(reallocated) free((void*)buf);
     return false;
-  }
+  }*/
   if (isok) {
     isok = unified_machine(buf, len, pj);
   } else {
@@ -377,6 +377,35 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
 #define SIMDJSON_UTF8VALIDATE
 #endif
 
+#ifndef NO_PDEP_WIDTH
+#define NO_PDEP_WIDTH 8
+#endif
+
+#define SET_BIT(i)                                                             \
+  base_ptr[base + i] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          \
+  structurals = structurals & (structurals - 1);
+
+#define SET_BIT1 SET_BIT(0)
+#define SET_BIT2 SET_BIT1 SET_BIT(1)
+#define SET_BIT3 SET_BIT2 SET_BIT(2)
+#define SET_BIT4 SET_BIT3 SET_BIT(3)
+#define SET_BIT5 SET_BIT4 SET_BIT(4)
+#define SET_BIT6 SET_BIT5 SET_BIT(5)
+#define SET_BIT7 SET_BIT6 SET_BIT(6)
+#define SET_BIT8 SET_BIT7 SET_BIT(7)
+#define SET_BIT9 SET_BIT8 SET_BIT(8)
+#define SET_BIT10 SET_BIT9 SET_BIT(9)
+#define SET_BIT11 SET_BIT10 SET_BIT(10)
+#define SET_BIT12 SET_BIT11 SET_BIT(11)
+#define SET_BIT13 SET_BIT12 SET_BIT(12)
+#define SET_BIT14 SET_BIT13 SET_BIT(13)
+#define SET_BIT15 SET_BIT14 SET_BIT(14)
+#define SET_BIT16 SET_BIT15 SET_BIT(15)
+
+#define CALL(macro, ...) macro(__VA_ARGS__)
+
+#define SET_BITLOOPN(n) SET_BIT##n
+
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it.
@@ -402,11 +431,13 @@ WARN_UNUSED
     cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
     return false;
   }
+  uint32_t *base_ptr = pj.structural_indexes;
+  uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
   struct avx_processed_utf_bytes previous;
-	previous.rawbytes = _mm256_setzero_si256();
-	previous.high_nibbles = _mm256_setzero_si256();
+  previous.rawbytes = _mm256_setzero_si256();
+  previous.high_nibbles = _mm256_setzero_si256();
   previous.carried_continuations = _mm256_setzero_si256();
  #endif
 
@@ -427,6 +458,7 @@ WARN_UNUSED
   uint64_t prev_iter_ends_pseudo_pred = 1ULL;
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
+  uint64_t structurals = 0;
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
@@ -490,6 +522,21 @@ WARN_UNUSED
     quote_bits = quote_bits & ~odd_ends;
     uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
         _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+
+
+
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
+
     quote_mask ^= prev_iter_inside_quote;
     prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
 
@@ -531,7 +578,7 @@ WARN_UNUSED
 
     uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
@@ -570,7 +617,8 @@ WARN_UNUSED
     // now, we've used our close quotes all we need to. So let's switch them off
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
-    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
+
+    //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
   }
 
   ////////////////
@@ -644,6 +692,17 @@ WARN_UNUSED
     quote_mask ^= prev_iter_inside_quote;
     //prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20
 
+    uint32_t cnt = hamming(structurals);
+    uint32_t next_base = base + cnt;
+    while (structurals) {
+      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
+      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
+        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
+        s = s & (s - 1);
+      }*/
+      base += NO_PDEP_WIDTH;
+    }
+    base = next_base;
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
     // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
@@ -682,7 +741,7 @@ WARN_UNUSED
 
     uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-    uint64_t structurals = ~(structural_res_0 | (structural_res_1 << 32));
+    structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
     // this additional mask and transfer is non-trivially expensive,
     // unfortunately
@@ -723,90 +782,12 @@ WARN_UNUSED
     // now, we've used our close quotes all we need to. So let's switch them off
     // they will be off in the quote mask and on in quote bits.
     structurals &= ~(quote_bits & ~quote_mask);
-    *(uint64_t *)(pj.structurals + idx / 8) = structurals;
+    //*(uint64_t *)(pj.structurals + idx / 8) = structurals;
+    idx += 64;
   }
-#ifdef SIMDJSON_UTF8VALIDATE
-  return _mm256_testz_si256(has_error, has_error);
-#else
-  return true;
-#endif
-}
-/* end file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/stage2_flatten.cpp */
-
-#include <cassert>
-
-#ifndef NO_PDEP_PLEASE
-#define NO_PDEP_PLEASE // though this is not always a win, it seems to 
-// be more often a win than not. And it will be faster on AMD.
-#endif
-
-#ifndef NO_PDEP_WIDTH
-#define NO_PDEP_WIDTH 8
-#endif
-
-#define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (uint32_t)idx + trailingzeroes(s);                          \
-  s = s & (s - 1);
-
-#define SET_BIT1 SET_BIT(0)
-#define SET_BIT2 SET_BIT1 SET_BIT(1)
-#define SET_BIT3 SET_BIT2 SET_BIT(2)
-#define SET_BIT4 SET_BIT3 SET_BIT(3)
-#define SET_BIT5 SET_BIT4 SET_BIT(4)
-#define SET_BIT6 SET_BIT5 SET_BIT(5)
-#define SET_BIT7 SET_BIT6 SET_BIT(6)
-#define SET_BIT8 SET_BIT7 SET_BIT(7)
-#define SET_BIT9 SET_BIT8 SET_BIT(8)
-#define SET_BIT10 SET_BIT9 SET_BIT(9)
-#define SET_BIT11 SET_BIT10 SET_BIT(10)
-#define SET_BIT12 SET_BIT11 SET_BIT(11)
-#define SET_BIT13 SET_BIT12 SET_BIT(12)
-#define SET_BIT14 SET_BIT13 SET_BIT(13)
-#define SET_BIT15 SET_BIT14 SET_BIT(14)
-#define SET_BIT16 SET_BIT15 SET_BIT(15)
-
-#define CALL(macro, ...) macro(__VA_ARGS__)
-
-#define SET_BITLOOPN(n) SET_BIT##n
-
-// just transform the bitmask to a big list of 32-bit integers for now
-// that's all; the type of character the offset points to will
-// tell us exactly what we need to know. Naive but straightforward
-// implementation
-WARN_UNUSED
-bool flatten_indexes(size_t len, ParsedJson &pj) {
-  uint32_t *base_ptr = pj.structural_indexes;
-  uint32_t base = 0;
-#ifdef BUILDHISTOGRAM
-  uint32_t counters[66];
-  uint32_t total = 0;
-  for (int k = 0; k < 66; k++)
-    counters[k] = 0;
-  for (size_t idx = 0; idx < len; idx += 64) {
-    uint64_t s = *(uint64_t *)(pj.structurals + idx / 8);
-    uint32_t cnt = hamming(s);
-    total++;
-    counters[cnt]++;
-  }
-  printf("\n histogram:\n");
-  for (int k = 0; k < 66; k++) {
-    if (counters[k] > 0)
-      printf("%10d %10.u %10.3f \n", k, counters[k], counters[k] * 1.0 / total);
-  }
-  printf("\n\n");
-#endif
-  for (size_t idx = 0; idx < len; idx += 64) {
-    uint64_t s = *(uint64_t *)(pj.structurals + idx / 8);
-#ifdef SUPPRESS_CHEESY_FLATTEN
-    while (s) {
-      base_ptr[base++] = (uint32_t)idx + trailingzeroes(s);
-      s &= s - 1ULL;
-    }
-#elif defined(NO_PDEP_PLEASE)
-    uint32_t cnt = hamming(s);
+    uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (s) {
+    while (structurals) {
       CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
       /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
         base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
@@ -815,37 +796,10 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
       base += NO_PDEP_WIDTH;
     }
     base = next_base;
-#else
-    uint32_t cnt = hamming(s);
-    uint32_t next_base = base + cnt;
-    while (s) {
-      // spoil the suspense by reducing dependency chains; actually a win even
-      // with cost of pdep
-      uint64_t s3 = _pdep_u64(~0x7ULL, s);  // s3 will have bottom 3 1-bits unset
-      uint64_t s5 = _pdep_u64(~0x1fULL, s); // s5 will have bottom 5 1-bits unset
 
-      base_ptr[base + 0] = (uint32_t)idx + trailingzeroes(s);
-      uint64_t s1 = s & (s - 1ULL);
-      base_ptr[base + 1] = (uint32_t)idx + trailingzeroes(s1);
-      uint64_t s2 = s1 & (s1 - 1ULL);
-      base_ptr[base + 2] =
-          (uint32_t)idx + trailingzeroes(s2); // uint64_t s3 = s2 & (s2 - 1ULL);
-      base_ptr[base + 3] = (uint32_t)idx + trailingzeroes(s3);
-      uint64_t s4 = s3 & (s3 - 1ULL);
-
-      base_ptr[base + 4] =
-          (uint32_t)idx + trailingzeroes(s4); // uint64_t s5 = s4 & (s4 - 1ULL);
-      base_ptr[base + 5] = (uint32_t)idx + trailingzeroes(s5);
-      uint64_t s6 = s5 & (s5 - 1ULL);
-      s = s6;
-      base += 6;
-    }
-    base = next_base;
-#endif
-  }
   pj.n_structural_indexes = base;
   if(base_ptr[pj.n_structural_indexes-1] > len) {
-    printf("Internal bug\n");
+    fprintf( stderr,"Internal bug\n");
     return false;
   }
   if(len != base_ptr[pj.n_structural_indexes-1]) {
@@ -853,10 +807,15 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
     base_ptr[pj.n_structural_indexes++] = len;
   }
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
+
+#ifdef SIMDJSON_UTF8VALIDATE
+  return _mm256_testz_si256(has_error, has_error);
+#else
   return true;
+#endif
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/stage2_flatten.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/stage34_unified.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1363,4 +1322,4 @@ succeed:
 fail:
   return false;
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/stage34_unified.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */

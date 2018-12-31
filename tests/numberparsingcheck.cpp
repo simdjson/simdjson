@@ -90,7 +90,7 @@ inline void foundFloat(double result, const uint8_t *buf) {
 }
 
 #include "simdjson/jsonparser.h"
-#include "src/stage34_unified.cpp"
+#include "src/stage2_build_tape.cpp"
 
 /**
  * Does the file filename ends with the given extension.
