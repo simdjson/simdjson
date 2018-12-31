@@ -146,10 +146,10 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       int mask2 = (whitespace >> 16) & 0xFFFF;
       int mask3 = (whitespace >> 32) & 0xFFFF;
       int mask4 = (whitespace >> 48) & 0xFFFF;
-      int pop1 = _mm_popcnt_u64((~whitespace) & 0xFFFF);
-      int pop2 = _mm_popcnt_u64((~whitespace) & UINT64_C(0xFFFFFFFF));
-      int pop3 = _mm_popcnt_u64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
-      int pop4 = _mm_popcnt_u64((~whitespace));
+      int pop1 = hamming((~whitespace) & 0xFFFF);
+      int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
+      int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
+      int pop4 = hamming((~whitespace));
       __m256i vmask1 =
           _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
                               (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
@@ -225,10 +225,10 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     int mask2 = (whitespace >> 16) & 0xFFFF;
     int mask3 = (whitespace >> 32) & 0xFFFF;
     int mask4 = (whitespace >> 48) & 0xFFFF;
-    int pop1 = _mm_popcnt_u64((~whitespace) & 0xFFFF);
-    int pop2 = _mm_popcnt_u64((~whitespace) & UINT64_C(0xFFFFFFFF));
-    int pop3 = _mm_popcnt_u64((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
-    int pop4 = _mm_popcnt_u64((~whitespace));
+    int pop1 = hamming((~whitespace) & 0xFFFF);
+    int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
+    int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
+    int pop4 = hamming((~whitespace));
     __m256i vmask1 =
         _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
                             (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));

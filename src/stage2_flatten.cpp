@@ -72,7 +72,7 @@ bool flatten_indexes(size_t len, ParsedJson &pj) {
       s &= s - 1ULL;
     }
 #elif defined(NO_PDEP_PLEASE)
-    uint32_t cnt = _mm_popcnt_u64(s);
+    uint32_t cnt = hamming(s);
     uint32_t next_base = base + cnt;
     while (s) {
       CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
