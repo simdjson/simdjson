@@ -1,7 +1,14 @@
 #include "simdjson/jsonparser.h"
+#ifndef _MSC_VER
 #include <unistd.h>
+#include "linux-perf-events.h"
+#ifdef __linux__
+#include <libgen.h>
+#endif //__linux__
+#endif // _MSC_VER
 
 #include "benchmark.h"
+
 
 // #define RAPIDJSON_SSE2 // bad for performance
 // #define RAPIDJSON_SSE42 // bad for performance
@@ -130,6 +137,55 @@ int main(int argc, char *argv[]) {
                           sajson::mutable_string_view(p.size(), buffer))
                 .is_valid(),
             true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+#ifdef __linux__
+  if(!justdata) {
+      vector<int> evts;
+      evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
+      evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
+      evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
+      evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
+      evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
+      LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
+      vector<unsigned long long> results;
+      vector<unsigned long long> stats;
+      results.resize(evts.size());
+      stats.resize(evts.size());
+      std::fill(stats.begin(), stats.end(), 0);// unnecessary
+      for(size_t i = 0; i < repeat; i++) {
+        unified.start();
+        if(json_parse(p, pj) != true) printf("bug\n");
+        unified.end(results);
+        std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
+      }
+      printf("simdjson: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+
+      std::fill(stats.begin(), stats.end(), 0);
+      for(size_t i = 0; i < repeat; i++) {
+        memcpy(buffer, p.data(), p.size());
+        buffer[p.size()] = '\0';
+        unified.start();
+        if(d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError() != false) printf("bug\n");
+        unified.end(results);
+        std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
+      }
+      printf("RapidJSON: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+
+      std::fill(stats.begin(), stats.end(), 0);// unnecessary
+      for(size_t i = 0; i < repeat; i++) {
+        memcpy(buffer, p.data(), p.size());
+        unified.start();
+        if(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize),
+                          sajson::mutable_string_view(p.size(), buffer))
+                .is_valid() != true) printf("bug\n");
+        unified.end(results);
+        std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
+      }
+      printf("sajson: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+  }
+#endif//  __linux__
 #ifdef ALLPARSER
 
   std::string json11err;
