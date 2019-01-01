@@ -151,17 +151,17 @@ int main(int argc, char *argv[]) {
       results.resize(evts.size());
       stats.resize(evts.size());
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
-      for(size_t i = 0; i < repeat; i++) {
+      for(int i = 0; i < repeat; i++) {
         unified.start();
         if(json_parse(p, pj) != true) printf("bug\n");
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
-      printf("simdjson: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
-      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+      printf("simdjson : cycles %10.0f instructions %10.0f branchmisses %10.0f cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f inspercycle %10.1f\n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat, volume * repeat * 1.0 / stats[2], stats[1] *1.0 / stats[0] );
 
       std::fill(stats.begin(), stats.end(), 0);
-      for(size_t i = 0; i < repeat; i++) {
+      for(int i = 0; i < repeat; i++) {
         memcpy(buffer, p.data(), p.size());
         buffer[p.size()] = '\0';
         unified.start();
@@ -169,11 +169,11 @@ int main(int argc, char *argv[]) {
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
-      printf("RapidJSON: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
-      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+      printf("RapidJSON: cycles %10.0f instructions %10.0f branchmisses %10.0f cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f inspercycle %10.1f\n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat,  volume * repeat * 1.0 / stats[2], stats[1] *1.0 / stats[0] );
 
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
-      for(size_t i = 0; i < repeat; i++) {
+      for(int i = 0; i < repeat; i++) {
         memcpy(buffer, p.data(), p.size());
         unified.start();
         if(sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize),
@@ -182,8 +182,8 @@ int main(int argc, char *argv[]) {
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
-      printf("sajson: cycles %f instructions %f branchmisses %f cacheref %f cachemisses %f \n",
-      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat );
+      printf("sajson   : cycles %10.0f instructions %10.0f branchmisses %10.0f cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f inspercycle %10.1f\n",
+      stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat, stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,  stats[4] * 1.0 / repeat,  volume * repeat * 1.0 / stats[2], stats[1] *1.0 / stats[0]);
   }
 #endif//  __linux__
 #ifdef ALLPARSER
