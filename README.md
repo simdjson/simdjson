@@ -7,13 +7,10 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 ## Some performance results
 
-In [Mison: A Fast JSON Parser for Data Analytics](http://www.vldb.org/pvldb/vol10/p1118-li.pdf) (VLDB 2018), Li et al. show how their SIMD-accelerated parser can achieve speeds exceeding slightly 2GB/s by skipping as much of the input bytes as possible. Thus Mison does not attempt to validate the document, by design. In contrast, we find that we can achieve similar speeds, but with full parsing: 
+
+To our knowledge, simdjson is the first fully-validating JSON parser to run at gigabytes per second.
 
 <img src="doc/gbps.png" width="90%">
-
-One key difference is that the Mison parser makes moderate use of the SIMD instructions available in their commodity processor. 
-
-We find that, for some inputs, we are limited in speed: for canada.json, marine_ik, mesh.json, mesh-pretty, about half of the processing time is due to number parsing (mostly floating-point numbers); for twitterescaped and random, string parsing is a burden.
 
 
 Next we present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded.  *Lower results are better.*
