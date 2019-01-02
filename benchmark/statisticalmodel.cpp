@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-  unsigned long cy1 = 0, cy2 = 0, cy3 = 0;
-  unsigned long cl1 = 0, cl2 = 0, cl3 = 0;
+  unsigned long cy1 = 0, cy2 = 0;
+  unsigned long cl1 = 0, cl2 = 0;
   vector<unsigned long long> results;
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
@@ -188,26 +188,17 @@ int main(int argc, char *argv[]) {
     cl1 += results[1];
     
     unified.start();
-    isok = isok && flatten_indexes(p.size(), pj);
+    isok = isok && unified_machine(p.data(), p.size(), pj);
     unified.end(results);
     
     cy2 += results[0];
     cl2 += results[1];
-
-    unified.start();
-    isok = isok && unified_machine(p.data(), p.size(), pj);
-    unified.end(results);
-    
-    cy3 += results[0];
-    cl3 += results[1];
-    
     if(!isok) {
       std::cerr << "failure?" << std::endl;
     }
   }
-  printf("%f %f %f %f %f %f", cy1 * 1.0 / iterations, cl1 * 1.0 / iterations,
-         cy2 * 1.0 / iterations, cl2 * 1.0 / iterations, cy3 * 1.0 / iterations,
-         cl3 * 1.0 / iterations);
+  printf("%f %f %f %f ", cy1 * 1.0 / iterations, cl1 * 1.0 / iterations,
+         cy2 * 1.0 / iterations, cl2 * 1.0 / iterations);
 #endif // __linux__
   printf("\n");
   return EXIT_SUCCESS;
