@@ -181,7 +181,6 @@ To simplify the engineering, we make some assumptions.
 
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe that this is a genuine limitation in the sense that we do not think that there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
-- We only support GNU GCC and LLVM Clang at this time. There is no support for Microsoft Visual Studio, though it should not be difficult (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
 - Performance is optimized for JSON documents spanning at least a few kilobytes up to many megabytes: the performance issues with having to parse many tiny JSON documents or one truly enormous JSON document are different.
@@ -195,15 +194,14 @@ To simplify the engineering, we make some assumptions.
 - We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers  that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
-- We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tags in strings.)
+- We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tabs in strings.)
 
 ## Architecture
 
 The parser works in three stages:
 
-- Stage 1. Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
-- Stage 2. Involves the "flattening" of the data from stage 1, that is, convert bitsets into arrays of indexes.
-- Stage 3. (Structure building) Involves constructing a "tree" of sort to navigate through the data. Strings and numbers are parsed at this stage.
+- Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
+- Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
 
 
 ## Navigating the parsed document
