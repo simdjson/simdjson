@@ -111,7 +111,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       return is_ok;
 #else  //CHECKUNESCAPED
 #ifdef JSON_TEST_STRINGS // for unit testing
-       foundString(buf + offset,start_of_string,pj.current_string_buf_loc);
+       foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
 #endif // JSON_TEST_STRINGS
       return true;
 #endif //CHECKUNESCAPED
