@@ -21,3 +21,5 @@ for i in $SCRIPTPATH/../jsonexamples/*.json; do
 done
 
 echo "see results in "$datadirectory
+
+cd $datadirectory && gnuplot bar.gnuplot 
