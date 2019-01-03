@@ -7,8 +7,7 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 ## Some performance results
 
-
-To our knowledge, simdjson is the first fully-validating JSON parser to run at gigabytes per second.
+We can use a quarter or fewer instructions than a state-of-the-art parser like RapidJSON, and half as many as sajson. To our knowledge, simdjson is the first fully-validating JSON parser to run at gigabytes per second on commodity processors.
 
 <img src="doc/gbps.png" width="90%">
 
