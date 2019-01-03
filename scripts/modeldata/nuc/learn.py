@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
@@ -18,28 +18,30 @@ def displaycoefs(coef_name):
 datafile = "modeltable.txt" ## from ./scripts/statisticalmodel.sh
 
 predictors = ["integer_count", "float_count", "string_count", "backslash_count", "nonasciibyte_count", "object_count", "array_count", "null_count", "true_count", "false_count", "byte_count", "structural_indexes_count"]
-targets = ["stage1_cycle_count", "stage1_instruction_count", "stage2_cycle_count", "stage2_instruction_count", "stage3_cycle_count", "stage3_instruction_count"]
+targets = ["stage1_cycle_count", "stage1_instruction_count", "stage2_cycle_count", "stage2_instruction_count"]
 
 print("loading", datafile)
 dataset = pd.read_csv(datafile, delim_whitespace=True, skip_blank_lines=True, comment="#", header=None, names = predictors + targets)
 
 
+
 dataset.columns = predictors + targets
 
-dataset['total_cycles']=dataset['stage1_cycle_count']+dataset['stage2_cycle_count']+dataset['stage3_cycle_count']
+dataset['total_cycles']=dataset['stage1_cycle_count']+dataset['stage2_cycle_count']
 dataset['ratio']=dataset['total_cycles']/dataset['byte_count']
 #print(dataset[['ratio']])
+print(dataset.describe())
 
-chosenpredictors = predictors #["integer_count", "float_count", "string_count", "backslash_count", "nonasciibyte_count", "byte_count", "structural_indexes_count"]
+chosenpredictors = predictors
 print("chosenpredictors=",chosenpredictors)
 print()
-chosentargets=["stage1_cycle_count", "stage2_cycle_count", "stage3_cycle_count","total_cycles"]
+chosentargets=["stage1_cycle_count", "stage2_cycle_count","total_cycles"]
 for t in chosentargets:
     print("target = ", t)
     howmany = 1 # we want at most one predictors
-    if(t.startswith("stage2")):
+    if(t.startswith("stage1")):
         howmany = 2 # we allow for less
-    if(t.startswith("stage3")):
+    if(t.startswith("stage2")):
         howmany = 3 # we allow for more
     if(t.startswith("total")):
         howmany = 3 # we allow for more
