@@ -16,13 +16,13 @@
 
 template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   int fd;
+  bool working; 
   perf_event_attr attribs;
   int num_events;
   std::vector<uint64_t> temp_result_vec;
   std::vector<uint64_t> ids;
-
 public:
-  explicit LinuxEvents(std::vector<int> config_vec) : fd(0) {
+  explicit LinuxEvents(std::vector<int> config_vec) : fd(0), working(true) {
     memset(&attribs, 0, sizeof(attribs));
     attribs.type = TYPE;
     attribs.size = sizeof(attribs);
@@ -83,7 +83,8 @@ public:
 
 private:
   void report_error(const std::string &context) {
-    throw std::runtime_error(context + ": " + std::string(strerror(errno)));
+     if(working) std::cerr << (context + ": " + std::string(strerror(errno))) << std::endl;
+     working = false;
   }
 };
 #endif
