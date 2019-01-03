@@ -21,7 +21,7 @@ set ytics nomirror
 
 set yrange [0:]
 #set key right top;
-set key  samplen 1 spacing 1  font ",10"
+set key  samplen 1 spacing 1  #font ",10"
 set key width -4
 set key height -0.3
 
@@ -30,7 +30,7 @@ set key height -0.3
 set key maxrows 8
 set key noenhanced
 
-set key Left opaque   at 14.2,4.2 #at 5.5,4
+set key Left opaque   at 5.4,5.2 #at 5.5,4
 #set key right top
 #set key outside
 
