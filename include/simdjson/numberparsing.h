@@ -189,6 +189,17 @@ parse_float(const uint8_t *const buf,
   if ('.' == *p) {
     ++p;
     double fractionalweight = 1;
+    if(is_integer(*p)) {
+      unsigned char digit = *p - '0';
+      ++p;
+      fractionalweight *= 0.1;
+      i = i + digit * fractionalweight;
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
@@ -389,7 +400,16 @@ static really_inline bool parse_number(const uint8_t *const buf,
   if ('.' == *p) {
     ++p;
     const char *const firstafterperiod = p;
-
+    if(is_integer(*p)) {
+      unsigned char digit = *p - '0';
+      ++p;
+      i = i * 10 + digit;
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;      
+    }
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
     // this turns out to be frequent enough.

@@ -1,4 +1,4 @@
-/* auto-generated on Mon Dec 31 17:13:28 EST 2018. Do not edit! */
+/* auto-generated on Fri Jan  4 17:36:46 EST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -814,8 +814,8 @@ WARN_UNUSED
   return true;
 #endif
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* begin file /home/dlemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1322,4 +1322,4 @@ succeed:
 fail:
   return false;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* end file /home/dlemire/CVS/github/simdjson/src/stage2_build_tape.cpp */

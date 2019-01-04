@@ -1,5 +1,5 @@
-/* auto-generated on Mon Dec 31 17:13:28 EST 2018. Do not edit! */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/portability.h */
+/* auto-generated on Fri Jan  4 17:36:46 EST 2019. Do not edit! */
+/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/portability.h */
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
@@ -36515,8 +36515,8 @@ static inline bool find_structural_bits(const char *buf, size_t len, ParsedJson 
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
+/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
+/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_H
 #define SIMDJSON_STRINGPARSING_H
 
@@ -36627,7 +36627,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       return is_ok;
 #else  //CHECKUNESCAPED
 #ifdef JSON_TEST_STRINGS // for unit testing
-       foundString(buf + offset,start_of_string,pj.current_string_buf_loc);
+       foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
 #endif // JSON_TEST_STRINGS
       return true;
 #endif //CHECKUNESCAPED
@@ -36883,6 +36883,17 @@ parse_float(const uint8_t *const buf,
   if ('.' == *p) {
     ++p;
     double fractionalweight = 1;
+    if(is_integer(*p)) {
+      unsigned char digit = *p - '0';
+      ++p;
+      fractionalweight *= 0.1;
+      i = i + digit * fractionalweight;
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;
+    }
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
@@ -37083,7 +37094,16 @@ static really_inline bool parse_number(const uint8_t *const buf,
   if ('.' == *p) {
     ++p;
     const char *const firstafterperiod = p;
-
+    if(is_integer(*p)) {
+      unsigned char digit = *p - '0';
+      ++p;
+      i = i * 10 + digit;
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundInvalidNumber(buf + offset);
+#endif
+      return false;      
+    }
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
     // this turns out to be frequent enough.
@@ -37192,8 +37212,8 @@ static really_inline bool parse_number(const uint8_t *const buf,
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
+/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
+/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
 #ifndef SIMDJSON_STAGE34_UNIFIED_H
 #define SIMDJSON_STAGE34_UNIFIED_H
 
@@ -37209,8 +37229,8 @@ static inline bool unified_machine(const char *buf, size_t len, ParsedJson &pj) 
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
-/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
+/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
+/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
 #ifndef SIMDJSON_JSONPARSER_H
 #define SIMDJSON_JSONPARSER_H
 
