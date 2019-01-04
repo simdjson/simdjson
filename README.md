@@ -179,6 +179,7 @@ The parser builds a useful immutable (read-only) DOM (document-object model) whi
 To simplify the engineering, we make some assumptions.
 
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe that this is a genuine limitation in the sense that we do not think that there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
+- We store strings as NULL terminated C strings. Thus we implicitly assume that you do not include a NULL character within your string, which is allowed technically speaking if you escape it (\u0000).
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
