@@ -1,5 +1,5 @@
-/* auto-generated on Fri Jan  4 17:36:46 EST 2019. Do not edit! */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/portability.h */
+/* auto-generated on Fri  4 Jan 2019 20:12:48 EST. Do not edit! */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/portability.h */
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
@@ -122,8 +122,8 @@ static inline void aligned_free(void *memblock) {
 }
 
 #endif /* end of include PORTABILITY_H */
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/portability.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/common_defs.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/portability.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/common_defs.h */
 #ifndef SIMDJSON_COMMON_DEFS_H
 #define SIMDJSON_COMMON_DEFS_H
 
@@ -182,8 +182,8 @@ static inline void aligned_free(void *memblock) {
 #endif  // MSC_VER
 
 #endif // COMMON_DEFS_H
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/common_defs.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsoncharutils.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/common_defs.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsoncharutils.h */
 #ifndef SIMDJSON_JSONCHARUTILS_H
 #define SIMDJSON_JSONCHARUTILS_H
 
@@ -312,8 +312,8 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/jsoncharutils.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonformatutils.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsoncharutils.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonformatutils.h */
 #ifndef SIMDJSON_JSONFORMATUTILS_H
 #define SIMDJSON_JSONFORMATUTILS_H
 
@@ -410,8 +410,8 @@ static inline void print_with_escapes(const char *src, std::ostream &os) {
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonformatutils.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonioutil.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonformatutils.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonioutil.h */
 #ifndef SIMDJSON_JSONIOUTIL_H
 #define SIMDJSON_JSONIOUTIL_H
 
@@ -451,8 +451,8 @@ std::string_view  get_corpus(std::string filename);
 
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonioutil.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/simdprune_tables.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonioutil.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/simdprune_tables.h */
 #ifndef SIMDJSON_SIMDPRUNE_TABLES_H
 #define SIMDJSON_SIMDPRUNE_TABLES_H
 
@@ -35531,8 +35531,8 @@ static const uint32_t mask256_epi32[] = {
 #endif //__AVX2__
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/simdprune_tables.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/simdutf8check.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/simdprune_tables.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/simdutf8check.h */
 
 #ifndef SIMDJSON_SIMDUTF8CHECK_H
 #define SIMDJSON_SIMDUTF8CHECK_H
@@ -35727,8 +35727,8 @@ avxcheckUTF8Bytes(__m256i current_bytes,
 #warning "We require AVX2 support!"
 #endif // __AVX2__
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/simdutf8check.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonminifier.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/simdutf8check.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonminifier.h */
 #ifndef SIMDJSON_JSONMINIFIER_H
 #define SIMDJSON_JSONMINIFIER_H
 
@@ -35751,8 +35751,8 @@ static inline size_t jsonminify(const std::string_view & p, char *out) {
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonminifier.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/parsedjson.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonminifier.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/parsedjson.h */
 #ifndef SIMDJSON_PARSEDJSON_H
 #define SIMDJSON_PARSEDJSON_H
 
@@ -36500,8 +36500,8 @@ inline void dumpbits32_always(uint32_t v, const std::string &msg) {
 
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/parsedjson.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/parsedjson.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_H
 #define SIMDJSON_STAGE1_FIND_MARKS_H
 
@@ -36515,8 +36515,8 @@ static inline bool find_structural_bits(const char *buf, size_t len, ParsedJson 
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage1_find_marks.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_H
 #define SIMDJSON_STRINGPARSING_H
 
@@ -36694,8 +36694,8 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stringparsing.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
 #ifndef SIMDJSON_NUMBERPARSING_H
 #define SIMDJSON_NUMBERPARSING_H
 
@@ -37212,8 +37212,8 @@ static really_inline bool parse_number(const uint8_t *const buf,
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/numberparsing.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
 #ifndef SIMDJSON_STAGE34_UNIFIED_H
 #define SIMDJSON_STAGE34_UNIFIED_H
 
@@ -37229,8 +37229,8 @@ static inline bool unified_machine(const char *buf, size_t len, ParsedJson &pj) 
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
-/* begin file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
+/* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
 #ifndef SIMDJSON_JSONPARSER_H
 #define SIMDJSON_JSONPARSER_H
 
@@ -37310,4 +37310,4 @@ inline ParsedJson build_parsed_json(const std::string_view &s, bool reallocifnee
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/include/simdjson/jsonparser.h */
+/* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonparser.h */

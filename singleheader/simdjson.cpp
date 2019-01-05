@@ -1,4 +1,4 @@
-/* auto-generated on Fri Jan  4 17:36:46 EST 2019. Do not edit! */
+/* auto-generated on Fri  4 Jan 2019 20:12:48 EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,7 +6,7 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file /home/dlemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
 #include <cstring>
 #include <stdlib.h>
 
@@ -47,8 +47,8 @@ std::string_view get_corpus(std::string filename) {
   }
   throw  std::runtime_error("could not load corpus");
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/jsonioutil.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
 #include <cstdint>
 #ifndef __AVX2__
 
@@ -298,8 +298,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 }
 
 #endif
-/* end file /home/dlemire/CVS/github/simdjson/src/jsonminifier.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
 #ifdef _MSC_VER
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -369,8 +369,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   }
   return pj;
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/jsonparser.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
 #include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
@@ -814,8 +814,8 @@ WARN_UNUSED
   return true;
 #endif
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /home/dlemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1322,4 +1322,4 @@ succeed:
 fail:
   return false;
 }
-/* end file /home/dlemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
