@@ -1,6 +1,11 @@
 import os
 import csv
-import pandas as pd
+
+try: import pandas as pd
+except ImportError:
+    import pip
+    pip.main(['install', '--user', 'pandas'])
+    import pandas as pd
 
 def getdata(filename):
     df = pd.read_csv(filename, delim_whitespace=True)
