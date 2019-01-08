@@ -8,3 +8,8 @@ gnuplot -e "filename='plots/nuc/parselinuxtable.txt';name='plots/nuc/stackedperf
 
 echo "plots/skylake/stackedperf.pdf"
 echo "plots/nuc/stackedperf.pdf"
+
+cd $SCRIPTPATH/data/nuc/; gnuplot bar.gnuplot
+cd $SCRIPTPATH/data/skylake/; gnuplot bar.gnuplot
+echo "data/skylake/gbps.pdf"
+echo "data/nuc/gbps.pdf"
