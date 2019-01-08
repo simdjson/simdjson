@@ -7,35 +7,6 @@
 #define SIMDJSON_UTF8VALIDATE
 #endif
 
-#ifndef NO_PDEP_WIDTH
-#define NO_PDEP_WIDTH 8
-#endif
-
-#define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          \
-  structurals = structurals & (structurals - 1);
-
-#define SET_BIT1 SET_BIT(0)
-#define SET_BIT2 SET_BIT1 SET_BIT(1)
-#define SET_BIT3 SET_BIT2 SET_BIT(2)
-#define SET_BIT4 SET_BIT3 SET_BIT(3)
-#define SET_BIT5 SET_BIT4 SET_BIT(4)
-#define SET_BIT6 SET_BIT5 SET_BIT(5)
-#define SET_BIT7 SET_BIT6 SET_BIT(6)
-#define SET_BIT8 SET_BIT7 SET_BIT(7)
-#define SET_BIT9 SET_BIT8 SET_BIT(8)
-#define SET_BIT10 SET_BIT9 SET_BIT(9)
-#define SET_BIT11 SET_BIT10 SET_BIT(10)
-#define SET_BIT12 SET_BIT11 SET_BIT(11)
-#define SET_BIT13 SET_BIT12 SET_BIT(12)
-#define SET_BIT14 SET_BIT13 SET_BIT(13)
-#define SET_BIT15 SET_BIT14 SET_BIT(14)
-#define SET_BIT16 SET_BIT15 SET_BIT(15)
-
-#define CALL(macro, ...) macro(__VA_ARGS__)
-
-#define SET_BITLOOPN(n) SET_BIT##n
-
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it.
@@ -43,6 +14,7 @@
 #include "simdjson/simdutf8check.h"
 #endif
 using namespace std;
+
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
@@ -159,12 +131,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                   
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals); 
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
 
@@ -326,12 +309,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
     // How do we build up a user traversable data structure
@@ -419,12 +413,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
 
