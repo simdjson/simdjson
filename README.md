@@ -105,7 +105,7 @@ Note: In some settings, it might be desirable to precompile `simdjson.cpp` inste
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
-Requirements:  clang or gcc and make. A system like Linux or macOS is expected.
+Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7. A system like Linux or macOS is expected.
 
 To test:
 
@@ -130,6 +130,10 @@ make benchmark
 
 ## Usage (CMake on platforms like Linux or macOS)
 
+Requirements: You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7.
+
+We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type "brew install cmake". There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
+
 While in the project repository, do the following:
 
 ```
@@ -152,13 +156,27 @@ make
 make test
 ```
 
+
+In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old. You may proceed as follows:
+
+```
+brew install gcc@8
+mkdir build
+cd build
+export CXX=g++-8 CC=gcc-8
+cmake ..
+make
+make test
+```
+
+
 ## Usage (CMake on Windows using Visual Studio)
 
 
 We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or better).
 
 - Grab the simdjosn code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
-- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line.
+- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as ``VisualStudio``.
 - Using a shell, go to this newly created directory. 
 - Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..`` in the shell while in the ``VisualStudio`` repository. (Alternatively, if you want to build a DLL, you may use the command line ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF  ..``.)
