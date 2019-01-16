@@ -54,7 +54,12 @@ static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *re
 
 /* result might be undefined when input_num is zero */
 static inline int trailingzeroes(uint64_t input_num) {
-	return _tzcnt_u64(input_num); // for some reason, the Intel intrinsic _tzcnt_u64 may be missing
+#ifdef __BMI__
+	return _tzcnt_u64(input_num);
+#else
+#warning "BMI is missing?"
+	return __builtin_ctzll(input_num);
+#endif
 }
 
 /* result might be undefined when input_num is zero */
