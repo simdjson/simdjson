@@ -19,9 +19,8 @@ set(SIMDJSON_SRC
     jsonminifier.cpp
     jsonparser.cpp
     stage1_find_marks.cpp
-    stage2_flatten.cpp
-    stage34_unified.cpp)
-
+    stage2_build_tape.cpp)
+         
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})
 target_include_directories(${SIMDJSON_LIB_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/include
