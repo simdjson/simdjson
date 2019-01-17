@@ -5,7 +5,7 @@
 
 
 .PHONY: clean cleandist
-COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include 
+COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn 
 EXTRADEPSINCLUDE =  -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux      
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
@@ -24,7 +24,7 @@ endif
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
-COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile
+COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
@@ -39,8 +39,11 @@ JSON11_INCLUDE:=dependencies/json11/json11.hpp
 FASTJSON_INCLUDE:=dependencies/include/fastjson/fastjson.h
 GASON_INCLUDE:=dependencies/gason/src/gason.h
 UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
+CJSON_INCLUDE:=dependencies/cJSON/cJSON.h 
+JSMN_INCLUDE:=dependencies/jsmn/jsmn.h
 
-LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE)
+LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE)
+
 EXTRAOBJECTS=ujdecode.o
 all:  $(MAINEXECUTABLES)
 
@@ -137,12 +140,13 @@ distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE) 
 
+allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
+	$(CXX) $(CXXFLAGS)  -o allparsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp  $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)  -DALLPARSER
+
 
 allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) 
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)
 
-parsehisto: benchmark/parse.cpp  $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o parsehisto benchmark/parse.cpp $(LIBFILES) $(LIBFLAGS) -DBUILDHISTOGRAM
 
 cppcheck:
 	cppcheck --enable=all src/*.cpp  benchmarks/*.cpp tests/*.cpp -Iinclude -I. -Ibenchmark/linux 

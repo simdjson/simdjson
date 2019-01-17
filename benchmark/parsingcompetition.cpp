@@ -27,6 +27,10 @@
 extern "C" {
 #include "ujdecode.h"
 #include "ultrajsondec.c"
+#include "cJSON.h"
+#include "cJSON.c"
+#include "jsmn.h"
+#include "jsmn.c"
 }
 #endif 
 
@@ -117,13 +121,13 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   if(!justdata) BEST_TIME(
-      "RapidJSON (doc reused) ",
+      "RapidJSON  ",
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
       false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
-  BEST_TIME("RapidJSON",
+  BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
             false, memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'), repeat, volume, !justdata);
-  if(!justdata) BEST_TIME("sajson (dynamic mem, insitu)",
+  if(!justdata) BEST_TIME("sajson (dynamic mem)",
             sajson::parse(sajson::dynamic_allocation(),
                           sajson::mutable_string_view(p.size(), buffer))
                 .is_valid(),
@@ -187,29 +191,48 @@ int main(int argc, char *argv[]) {
   }
 #endif//  __linux__
 #ifdef ALLPARSER
-
   std::string json11err;
-  if (all)
     BEST_TIME("dropbox (json11)     ",
               ((json11::Json::parse(buffer, json11err).is_null()) ||
                (!json11err.empty())),
               false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 
-  if (all)
     BEST_TIME("fastjson             ", fastjson_parse(buffer), true,
               memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   JsonValue value;
   JsonAllocator allocator;
   char *endptr;
-  if (all)
     BEST_TIME("gason             ",
               jsonParse(buffer, &endptr, &value, allocator), JSON_OK,
               memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   void *state;
-  if (all)
     BEST_TIME("ultrajson         ",
               (UJDecode(buffer, p.size(), NULL, &state) == NULL), false,
               memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+
+
+
+  jsmntok_t * tokens = new jsmntok_t[p.size()];
+  if(tokens == NULL) {
+    printf("Failed to alloc memory for jsmn\n");
+  } else {
+    jsmn_parser parser;
+    jsmn_init(&parser);
+    memcpy(buffer, p.data(), p.size());
+    buffer[p.size()] = '\0';
+    BEST_TIME("jsmn           ",
+              (jsmn_parse(&parser, buffer, p.size(), tokens, p.size()) > 0), true,
+              jsmn_init(&parser), repeat, volume, !justdata);
+    delete[] tokens;
+  }
+
+  memcpy(buffer, p.data(), p.size());
+  buffer[p.size()] = '\0';
+  cJSON * tree = cJSON_Parse(buffer);
+  BEST_TIME("cJSON           ",
+              ((tree = cJSON_Parse(buffer)) != NULL ), true,
+               cJSON_Delete(tree), repeat, volume, !justdata);
+   cJSON_Delete(tree);
 #endif
   if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,

@@ -16,3 +16,9 @@
 [submodule "dependencies/ujson4c"]
 	path = dependencies/ujson4c
 	url = https://github.com/esnme/ujson4c.git
+[submodule "dependencies/jsmn"]
+	path = dependencies/jsmn
+	url = https://github.com/zserge/jsmn.git
+[submodule "dependencies/cJSON"]
+	path = dependencies/cJSON
+	url = https://github.com/DaveGamble/cJSON.git

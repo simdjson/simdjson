@@ -318,6 +318,33 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
 ```
 
 
+## In-depth comparisons
+
+If you want to see how a wide range of parsers validate a given JSON file:
+
+```
+make allparserscheckfile
+./allparserscheckfile myfile.json
+```
+
+For performance comparisons:
+
+```
+make parsingcompetition
+./parsingcompetition myfile.json
+```
+
+For broader comparisons:
+
+```
+make allparsingcompetition
+./allparsingcompetition myfile.json
+```
+
+
+
+
+
 ## Various References
 
 - [Google double-conv](https://github.com/google/double-conversion/)

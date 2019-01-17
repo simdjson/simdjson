@@ -18,7 +18,10 @@ extern "C"
 {
 #include "ultrajsondec.c"
 #include "ujdecode.h"
-
+#include "cJSON.h"
+#include "cJSON.c"
+#include "jsmn.h"
+#include "jsmn.c"
 }
 using namespace rapidjson;
 using namespace std;
@@ -100,6 +103,32 @@ int main(int argc, char *argv[]) {
   bool gason_correct = (jsonParse(buffer, &endptr, &value, allocator) == JSON_OK);
   void *state;
   bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
+  
+  jsmntok_t * tokens = new jsmntok_t[p.size()];
+  bool jsmn_correct = false; 
+  if(tokens == NULL) {
+    printf("Failed to alloc memory for jsmn\n");
+  } else {
+    jsmn_parser parser;
+    jsmn_init(&parser);
+    memcpy(buffer, p.data(), p.size());
+    buffer[p.size()] = '\0';
+    int r = jsmn_parse(&parser, buffer, p.size(), tokens, p.size());
+    delete[] tokens;
+    tokens = NULL;
+    jsmn_correct = (r > 0);
+  }
+
+  memcpy(buffer, p.data(), p.size());
+  buffer[p.size()] = '\0';
+  cJSON * tree = cJSON_Parse(buffer);
+  bool cjson_correct = (tree != NULL);
+  if (tree != NULL) {
+        cJSON_Delete(tree);
+  }
+
+
+
   printf("our parser                 : %s \n", ours_correct ?   "correct":"invalid");
   printf("rapid                      : %s \n", rapid_correct ?  "correct":"invalid");
   printf("rapid (check encoding)     : %s \n", rapid_correct_checkencoding ?  "correct":"invalid");
@@ -108,6 +137,9 @@ int main(int argc, char *argv[]) {
   printf("fastjson                   : %s \n", fastjson_correct ? "correct":"invalid");
   printf("gason                      : %s \n", gason_correct ? "correct":"invalid");
   printf("ultrajson                  : %s \n", ultrajson_correct ? "correct":"invalid");
+  printf("jsmn_correct               : %s \n", jsmn_correct ? "correct":"invalid");
+  printf("cjson_correct              : %s \n", cjson_correct ? "correct":"invalid");
+
   aligned_free((void*)p.data());       
   free(buffer);
   return EXIT_SUCCESS;
