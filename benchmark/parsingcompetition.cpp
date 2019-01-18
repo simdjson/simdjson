@@ -120,14 +120,20 @@ int main(int argc, char *argv[]) {
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
-  if(!justdata) BEST_TIME(
+#ifndef ALLPARSER
+  if(!justdata) 
+#endif 
+  BEST_TIME(
       "RapidJSON  ",
       d.Parse<kParseValidateEncodingFlag>((const char *)buffer).HasParseError(),
       false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
             false, memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'), repeat, volume, !justdata);
-  if(!justdata) BEST_TIME("sajson (dynamic mem)",
+#ifndef ALLPARSER
+  if(!justdata) 
+#endif 
+  BEST_TIME("sajson (dynamic mem)",
             sajson::parse(sajson::dynamic_allocation(),
                           sajson::mutable_string_view(p.size(), buffer))
                 .is_valid(),
