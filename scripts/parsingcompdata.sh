@@ -8,7 +8,7 @@ mkdir -p $datadirectory
 os=$(uname)
 
 
-make parsingcompetition
+make parsingcompetition allparsingcompetition
 echo "parsing (with competition)"
 echo 
 for i in $SCRIPTPATH/../jsonexamples/*.json; do
@@ -17,6 +17,7 @@ for i in $SCRIPTPATH/../jsonexamples/*.json; do
     shortname=$(basename $SCRIPTPATH/$i.table)
     corename=$(basename ${shortname%.*})".pdf"
     $SCRIPTPATH/../parsingcompetition -t $i > $datadirectory/$shortname
+    $SCRIPTPATH/../allparsingcompetition -t $i > $datadirectory/all$shortname
     echo
 done
 
