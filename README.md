@@ -12,19 +12,6 @@ We can use a quarter or fewer instructions than a state-of-the-art parser like R
 <img src="doc/gbps.png" width="90%">
 
 
-Next we present the time (in cycles per input byte) needed to fully parse a JSON file (with error checking) and to collect some statistics about the document (e.g., the number of integers), for some JSON files. For these tests, we use an Intel processor with a Skylake microarchitecture. All results are single-threaded.  *Lower results are better.*
-
-
-
-github_events.json:
-
-<img src="doc/github_events.jsonparseandstat.png" width="50%">
-
-
-twitter.json:
-
-<img src="doc/twitter.jsonparseandstat.png" width="50%">
-
 On a skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
 
 | parser   |  GB/s |
@@ -98,7 +85,7 @@ See the "singleheader" repository for a single header version. See the included
 file "amalgamation_demo.cpp" for usage. This requires no specific build system: just
 copy the files in your project in your include path. You can then include them quite simply:
 
-```
+```C
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
