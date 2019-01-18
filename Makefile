@@ -140,11 +140,11 @@ distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE) 
 
-allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
+allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS)  -o allparsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp  $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)  -DALLPARSER
 
 
-allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) 
+allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS) 
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)
 
 
