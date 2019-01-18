@@ -25,13 +25,27 @@ twitter.json:
 
 <img src="doc/twitter.jsonparseandstat.png" width="50%">
 
+On a skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
 
+| parser   |  GB/s |
+|---|---|
+| simdjson | 2.2	|
+| RapidJSON encoding-validation | 0.51|
+| RapidJSON encoding-validation, insitu | 0.71|
+| sajson (insitu, dynamic) | 0.70|
+| sajson (insitu, static) | 0.97|
+| dropbox | 0.14|
+| fastjson | 0.26|
+| gason | 0.85|
+| ultrajson | 0.42|
+| jsmn | 0.28|
+|cJSON | 0.34|
 
 ## Requirements
 
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or better.
 - A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Rizen)
-- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17
+- A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are  optional.
 
 ## License
@@ -105,7 +119,7 @@ Note: In some settings, it might be desirable to precompile `simdjson.cpp` inste
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
-Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7. A system like Linux or macOS is expected.
+Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A system like Linux or macOS is expected.
 
 To test:
 
@@ -130,11 +144,25 @@ make benchmark
 
 ## Usage (CMake on platforms like Linux or macOS)
 
-Requirements: You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7.
+Requirements:  We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type 
 
-We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type "brew install cmake". There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
+```
+brew install cmake"
+```
 
-While in the project repository, do the following:
+There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
+
+You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. For example, you can install a recent compiler with brew: 
+
+```
+brew install gcc@8
+```
+
+Optional: You  need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as ``export CC=gcc-7`` and ``export CXX=g++-7``. 
+
+
+
+Building: While in the project repository, do the following:
 
 ```
 mkdir build
