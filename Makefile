@@ -6,7 +6,7 @@
 
 .PHONY: clean cleandist
 COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn 
-EXTRADEPSINCLUDE =  -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
+EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux      
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 ifeq ($(SANITIZE),1)
@@ -41,6 +41,7 @@ GASON_INCLUDE:=dependencies/gason/src/gason.h
 UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
 CJSON_INCLUDE:=dependencies/cJSON/cJSON.h 
 JSMN_INCLUDE:=dependencies/jsmn/jsmn.h
+
 
 LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE)
 

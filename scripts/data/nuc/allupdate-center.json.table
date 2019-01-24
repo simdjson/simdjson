@@ -1,0 +1,12 @@
+name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err 
+"simdjson "	 1.430 0.071 1.542 0.073 
+"RapidJSON  "	 6.277 0.147 0.352 0.008 
+"RapidJSON (insitu)"	 4.859 0.036 0.454 0.003 
+"sajson (dynamic mem)"	 5.213 0.060 0.423 0.005 
+"sajson"	 2.881 0.063 0.766 0.016 
+"dropbox (json11)     "	 22.860 0.369 0.097 0.002 
+"fastjson             "	 12.205 0.821 0.181 0.011 
+"gason             "	 3.683 0.156 0.599 0.024 
+"ultrajson         "	 8.590 0.140 0.257 0.004 
+"jsmn           "	 38.342 0.295 0.058 0.000 
+"cJSON           "	 10.162 0.127 0.217 0.003 

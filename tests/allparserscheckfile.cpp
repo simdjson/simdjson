@@ -23,6 +23,8 @@ extern "C"
 #include "jsmn.h"
 #include "jsmn.c"
 }
+#include "json/json.h"
+#include "jsoncpp.cpp"
 using namespace rapidjson;
 using namespace std;
 
@@ -127,6 +129,12 @@ int main(int argc, char *argv[]) {
         cJSON_Delete(tree);
   }
 
+  Json::CharReaderBuilder b;
+  Json::CharReader * jsoncppreader = b.newCharReader();
+  Json::Value root;
+  Json::String errs;
+  bool isjsoncppok = jsoncppreader->parse(buffer,buffer+p.size(),&root,&errs);
+  delete jsoncppreader;
 
 
   printf("our parser                 : %s \n", ours_correct ?   "correct":"invalid");
@@ -137,8 +145,9 @@ int main(int argc, char *argv[]) {
   printf("fastjson                   : %s \n", fastjson_correct ? "correct":"invalid");
   printf("gason                      : %s \n", gason_correct ? "correct":"invalid");
   printf("ultrajson                  : %s \n", ultrajson_correct ? "correct":"invalid");
-  printf("jsmn_correct               : %s \n", jsmn_correct ? "correct":"invalid");
-  printf("cjson_correct              : %s \n", cjson_correct ? "correct":"invalid");
+  printf("jsmn                       : %s \n", jsmn_correct ? "correct":"invalid");
+  printf("cjson                      : %s \n", cjson_correct ? "correct":"invalid");
+  printf("jsoncpp                    : %s \n", isjsoncppok ? "correct":"invalid");
 
   aligned_free((void*)p.data());       
   free(buffer);
