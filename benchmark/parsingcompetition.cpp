@@ -20,9 +20,12 @@
 #include "sajson.h"
 
 #ifdef ALLPARSER
+
+
 #include "fastjson.cpp"
 #include "fastjson_dom.cpp"
 #include "gason.cpp"
+
 #include "json11.cpp"
 extern "C" {
 #include "ujdecode.h"
@@ -32,6 +35,10 @@ extern "C" {
 #include "jsmn.h"
 #include "jsmn.c"
 }
+
+#include "json/json.h"
+#include "jsoncpp.cpp"
+
 #endif 
 
 using namespace rapidjson;
@@ -238,7 +245,16 @@ int main(int argc, char *argv[]) {
   BEST_TIME("cJSON           ",
               ((tree = cJSON_Parse(buffer)) != NULL ), true,
                cJSON_Delete(tree), repeat, volume, !justdata);
-   cJSON_Delete(tree);
+  cJSON_Delete(tree);
+  
+  Json::CharReaderBuilder b;
+  Json::CharReader * jsoncppreader = b.newCharReader();
+  Json::Value root;
+  Json::String errs;
+  BEST_TIME("jsoncpp           ",
+              jsoncppreader->parse(buffer,buffer+volume,&root,&errs), true,
+               , repeat, volume, !justdata);
+  delete jsoncppreader;
 #endif
   if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,

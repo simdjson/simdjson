@@ -22,3 +22,6 @@
 [submodule "dependencies/cJSON"]
 	path = dependencies/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "dependencies/jsoncpp"]
+	path = dependencies/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git
