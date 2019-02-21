@@ -134,7 +134,7 @@ make benchmark
 Requirements:  We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type 
 
 ```
-brew install cmake"
+brew install cmake
 ```
 
 There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
