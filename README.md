@@ -12,7 +12,7 @@ We can use a quarter or fewer instructions than a state-of-the-art parser like R
 <img src="doc/gbps.png" width="90%">
 
 
-On a skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
+On a Skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
 
 | parser   |  GB/s |
 |---|---|
@@ -30,7 +30,7 @@ On a skylake processor, the parsing speeds (in GB/s) of various processors on th
 
 ## Requirements
 
-- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or better.
+- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Ryzen)
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are  optional.
@@ -62,7 +62,7 @@ free((void*)p.data());
 // js can be reused with other json_parse calls.
 ```
 
-It is also possible to use a simplier API if you do not mind having the overhead
+It is also possible to use a simpler API if you do not mind having the overhead
 of memory allocation with each new JSON document:
 
 ```C
@@ -188,9 +188,9 @@ make test
 ## Usage (CMake on Windows using Visual Studio)
 
 
-We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or better).
+We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or later).
 
-- Grab the simdjosn code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
+- Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as ``VisualStudio``.
 - Using a shell, go to this newly created directory. 
@@ -388,7 +388,7 @@ Validating UTF-8 takes no more than 0.7 cycles per byte:
 ## Remarks on JSON parsing
 
 - The JSON spec defines what a JSON parser is:
->  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings."
+>  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings.
 
 
 - JSON is not JavaScript:
