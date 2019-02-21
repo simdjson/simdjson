@@ -4,11 +4,10 @@
 #endif
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
-#include "simdjson/parsedjsoniterator.h"
 
 using namespace std;
 
-void compute_dump(ParsedJsonIterator &pjh) {
+void compute_dump(ParsedJson::iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   if (apidump) {
-    ParsedJsonIterator pjh(pj);
+    ParsedJson::iterator pjh(pj);
     if (!pjh.isOk()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;

@@ -1,8 +1,7 @@
-#include "simdjson/parsedjsoniterator.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/common_defs.h"
 
-ParsedJsonIterator::ParsedJsonIterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
+ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
         if(pj.isValid()) {
             depthindex = new scopeindex_t[pj.depthcapacity];
             if(depthindex == NULL) return;
@@ -23,11 +22,11 @@ ParsedJsonIterator::ParsedJsonIterator(ParsedJson &pj_) : pj(pj_), depth(0), loc
         }
     }
 
-ParsedJsonIterator::~ParsedJsonIterator() {
+ParsedJson::iterator::~iterator() {
       delete[] depthindex;
 }
 
-ParsedJsonIterator::ParsedJsonIterator(const ParsedJsonIterator &o):
+ParsedJson::iterator::iterator(const iterator &o):
     pj(o.pj), depth(o.depth), location(o.location),
     tape_length(o.tape_length), current_type(o.current_type),
     current_val(o.current_val), depthindex(NULL) {
@@ -39,7 +38,7 @@ ParsedJsonIterator::ParsedJsonIterator(const ParsedJsonIterator &o):
     }
 }
 
-ParsedJsonIterator::ParsedJsonIterator(ParsedJsonIterator &&o):
+ParsedJson::iterator::iterator(iterator &&o):
       pj(o.pj), depth(std::move(o.depth)), location(std::move(o.location)),
       tape_length(std::move(o.tape_length)), current_type(std::move(o.current_type)),
       current_val(std::move(o.current_val)), depthindex(std::move(o.depthindex)) {
@@ -47,32 +46,32 @@ ParsedJsonIterator::ParsedJsonIterator(ParsedJsonIterator &&o):
 }
 
 WARN_UNUSED
-bool ParsedJsonIterator::isOk() const {
+bool ParsedJson::iterator::isOk() const {
       return location < tape_length;
 }
 
 // useful for debuging purposes
-size_t ParsedJsonIterator::get_tape_location() const {
+size_t ParsedJson::iterator::get_tape_location() const {
     return location;
 }
 
 // useful for debuging purposes
-size_t ParsedJsonIterator::get_tape_length() const {
+size_t ParsedJson::iterator::get_tape_length() const {
     return tape_length;
 }
 
 // returns the current depth (start at 1 with 0 reserved for the fictitious root node)
-size_t ParsedJsonIterator::get_depth() const {
+size_t ParsedJson::iterator::get_depth() const {
     return depth;
 }
 
 // A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
 // The root node has type 'r'.
-uint8_t ParsedJsonIterator::get_scope_type() const {
+uint8_t ParsedJson::iterator::get_scope_type() const {
     return depthindex[depth].scope_type;
 }
 
-bool ParsedJsonIterator::move_forward() {
+bool ParsedJson::iterator::move_forward() {
     if(location + 1 >= tape_length) {
     return false; // we are at the end!
     }
@@ -101,57 +100,57 @@ bool ParsedJsonIterator::move_forward() {
     return true;
 }
 
-uint8_t ParsedJsonIterator::get_type()  const {
+uint8_t ParsedJson::iterator::get_type()  const {
     return current_type;
 }
 
 
-int64_t ParsedJsonIterator::get_integer()  const {
+int64_t ParsedJson::iterator::get_integer()  const {
     if(location + 1 >= tape_length) return 0;// default value in case of error
     return (int64_t) pj.tape[location + 1];
 }
 
-double ParsedJsonIterator::get_double()  const {
+double ParsedJson::iterator::get_double()  const {
     if(location + 1 >= tape_length) return NAN;// default value in case of error
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
-const char * ParsedJsonIterator::get_string() const {
+const char * ParsedJson::iterator::get_string() const {
     return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
 }
 
 
-bool ParsedJsonIterator::is_object_or_array() const {
+bool ParsedJson::iterator::is_object_or_array() const {
     return is_object_or_array(get_type());
 }
 
-bool ParsedJsonIterator::is_object() const {
+bool ParsedJson::iterator::is_object() const {
     return get_type() == '{';
 }
 
-bool ParsedJsonIterator::is_array() const {
+bool ParsedJson::iterator::is_array() const {
     return get_type() == '[';
 }
 
-bool ParsedJsonIterator::is_string() const {
+bool ParsedJson::iterator::is_string() const {
     return get_type() == '"';
 }
 
-bool ParsedJsonIterator::is_integer() const {
+bool ParsedJson::iterator::is_integer() const {
     return get_type() == 'l';
 }
 
-bool ParsedJsonIterator::is_double() const {
+bool ParsedJson::iterator::is_double() const {
     return get_type() == 'd';
 }
 
-bool ParsedJsonIterator::is_object_or_array(uint8_t type) {
+bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
     return (type == '[' || (type == '{'));
 }
 
-bool ParsedJsonIterator::move_to_key(const char * key) {
+bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
     do {
         assert(is_string());
@@ -165,7 +164,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
 }
 
 
- bool ParsedJsonIterator::next() {
+ bool ParsedJson::iterator::next() {
     if ((current_type == '[') || (current_type == '{')){
     // we need to jump
     size_t npos = ( current_val & JSONVALUEMASK);
@@ -197,7 +196,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
 }
 
 
- bool ParsedJsonIterator::prev() {
+ bool ParsedJson::iterator::prev() {
     if(location - 1 < depthindex[depth].start_of_scope) return false;
     location -= 1;
     current_val = pj.tape[location];
@@ -216,7 +215,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
 }
 
 
- bool ParsedJsonIterator::up() {
+ bool ParsedJson::iterator::up() {
     if(depth == 1) {
     return false; // don't allow moving back to root
     }
@@ -230,7 +229,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
 }
 
 
- bool ParsedJsonIterator::down() {
+ bool ParsedJson::iterator::down() {
     if(location + 1 >= tape_length) return false;
     if ((current_type == '[') || (current_type == '{')) {
     size_t npos = (current_val & JSONVALUEMASK);
@@ -248,13 +247,13 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
     return false;
 }
 
-void ParsedJsonIterator::to_start_scope()  {
+void ParsedJson::iterator::to_start_scope()  {
     location = depthindex[depth].start_of_scope;
     current_val = pj.tape[location];
     current_type = (current_val >> 56);
 }
 
-bool ParsedJsonIterator::print(std::ostream &os, bool escape_strings) const {
+bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     if(!isOk()) return false;
     switch (current_type) {
     case '"': // we have a string
