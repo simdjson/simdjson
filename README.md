@@ -50,7 +50,7 @@ Under Windows, we build some tools using the  windows/dirent_portable.h  file (w
 
 const char * filename = ... //
 
-// use whatever means you want to get a string of you JSON document
+// use whatever means you want to get a string of your JSON document
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
