@@ -107,20 +107,20 @@ private :
 };
 
 
-// // dump bits low to high
-// inline void dumpbits_always(uint64_t v, const std::string &msg) {
-//   for (uint32_t i = 0; i < 64; i++) {
-//     std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
-//   }
-//   std::cout << " " << msg.c_str() << "\n";
-// }
+// dump bits low to high
+inline void dumpbits_always(uint64_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 64; i++) {
+    std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
+  }
+  std::cout << " " << msg.c_str() << "\n";
+}
 
-// inline void dumpbits32_always(uint32_t v, const std::string &msg) {
-//   for (uint32_t i = 0; i < 32; i++) {
-//     std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
-//   }
-//   std::cout << " " << msg.c_str() << "\n";
-// }
+inline void dumpbits32_always(uint32_t v, const std::string &msg) {
+  for (uint32_t i = 0; i < 32; i++) {
+    std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
+  }
+  std::cout << " " << msg.c_str() << "\n";
+}
 
 
 #endif
