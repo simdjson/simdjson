@@ -202,7 +202,7 @@ We are assuming that you have a common Windows PC with at least Visual Studio 20
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
-- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters.
+- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
 
 ## Scope
 
