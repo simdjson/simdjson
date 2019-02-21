@@ -31,6 +31,7 @@ public:
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len butes and maxdepth "depth"
+  WARN_UNUSED
   bool allocateCapacity(size_t len, size_t maxdepth = DEFAULTMAXDEPTH);
 
   bool isValid() const;
@@ -45,9 +46,9 @@ public:
   // print the json to stdout (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
-  // WARN_UNUSED
+  WARN_UNUSED
   bool printjson(std::ostream &os);
-  // WARN_UNUSED
+  WARN_UNUSED
   bool dump_raw_tape(std::ostream &os);
 
 
