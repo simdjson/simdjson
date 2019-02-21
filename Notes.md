@@ -43,7 +43,7 @@ over bit vectors to discover backslash sequences and quote pairs; we introduce b
 these properties.
 
 We also make use of our ability to quickly detect whitespace in this early stage. We can use another bit-vector based 
-transformation to discover locations in our data that follow a structural character or quote or whitespace and are not whitesapce.  Excluding locations within strings, and the structural characters we have already discovered, 
+transformation to discover locations in our data that follow a structural character or quote or whitespace and are not whitespace.  Excluding locations within strings, and the structural characters we have already discovered, 
 these locations are the only place that we can expect to see the starts of the JSON 'atoms'. These locations are thus 
 treated as 'structural' ('pseudo-structural characters').
 
