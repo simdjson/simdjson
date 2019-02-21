@@ -101,28 +101,24 @@ bool ParsedJsonIterator::move_forward() {
     return true;
 }
 
-//really_inline
- uint8_t ParsedJsonIterator::get_type()  const {
+uint8_t ParsedJsonIterator::get_type()  const {
     return current_type;
 }
 
-//really_inline
 
- int64_t ParsedJsonIterator::get_integer()  const {
+int64_t ParsedJsonIterator::get_integer()  const {
     if(location + 1 >= tape_length) return 0;// default value in case of error
     return (int64_t) pj.tape[location + 1];
 }
 
-//really_inline
- double ParsedJsonIterator::get_double()  const {
+double ParsedJsonIterator::get_double()  const {
     if(location + 1 >= tape_length) return NAN;// default value in case of error
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
-//really_inline
- const char * ParsedJsonIterator::get_string() const {
+const char * ParsedJsonIterator::get_string() const {
     return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
 }
 
@@ -168,7 +164,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
     return false;
 }
 
-//really_inline
+
  bool ParsedJsonIterator::next() {
     if ((current_type == '[') || (current_type == '{')){
     // we need to jump
@@ -200,7 +196,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
     }
 }
 
-//really_inline
+
  bool ParsedJsonIterator::prev() {
     if(location - 1 < depthindex[depth].start_of_scope) return false;
     location -= 1;
@@ -219,7 +215,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
     return true;
 }
 
-//really_inline
+
  bool ParsedJsonIterator::up() {
     if(depth == 1) {
     return false; // don't allow moving back to root
@@ -233,7 +229,7 @@ bool ParsedJsonIterator::move_to_key(const char * key) {
     return true;
 }
 
-//really_inline
+
  bool ParsedJsonIterator::down() {
     if(location + 1 >= tape_length) return false;
     if ((current_type == '[') || (current_type == '{')) {
