@@ -280,26 +280,3 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
     os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
 }
-
-void ParsedJson::write_tape(uint64_t val, uint8_t c) {
-    tape[current_loc++] = val | (((uint64_t)c) << 56);
-}
-
-void ParsedJson::write_tape_s64(int64_t i) {
-    write_tape(0, 'l');
-    tape[current_loc++] = *((uint64_t *)&i);
-}
-
-void ParsedJson::write_tape_double(double d) {
-write_tape(0, 'd');
-static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
-memcpy(& tape[current_loc++], &d, sizeof(double));
-//tape[current_loc++] = *((uint64_t *)&d);
-}
-
-uint32_t ParsedJson::get_current_loc() { return current_loc; }
-
-void ParsedJson::annotate_previousloc(uint32_t saved_loc, uint64_t val) {
-    tape[saved_loc] |= val;
-}
-
