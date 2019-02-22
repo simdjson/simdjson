@@ -10,18 +10,18 @@ ParsedJson::~ParsedJson() {
 }
 
 ParsedJson::ParsedJson(ParsedJson && p)
-    : bytecapacity(std::move(p.bytecapacity)), 
-    depthcapacity(std::move(p.depthcapacity)), 
-    tapecapacity(std::move(p.tapecapacity)), 
+    : bytecapacity(std::move(p.bytecapacity)),
+    depthcapacity(std::move(p.depthcapacity)),
+    tapecapacity(std::move(p.tapecapacity)),
     stringcapacity(std::move(p.stringcapacity)),
-    current_loc(std::move(p.current_loc)), 
+    current_loc(std::move(p.current_loc)),
     n_structural_indexes(std::move(p.n_structural_indexes)),
-    structural_indexes(std::move(p.structural_indexes)), 
-    tape(std::move(p.tape)), 
+    structural_indexes(std::move(p.structural_indexes)),
+    tape(std::move(p.tape)),
     containing_scope_offset(std::move(p.containing_scope_offset)),
-    ret_address(std::move(p.ret_address)), 
-    string_buf(std::move(p.string_buf)), 
-    current_string_buf_loc(std::move(p.current_string_buf_loc)), 
+    ret_address(std::move(p.ret_address)),
+    string_buf(std::move(p.string_buf)),
+    current_string_buf_loc(std::move(p.current_string_buf_loc)),
     isvalid(std::move(p.isvalid)) {
         p.structural_indexes=NULL;
         p.tape=NULL;
@@ -50,7 +50,7 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
-    size_t localstringcapacity = ROUNDUP_N(len, 64);
+    size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
     string_buf = new uint8_t[localstringcapacity];
     tape = new uint64_t[localtapecapacity];
     containing_scope_offset = new uint32_t[maxdepth];
@@ -114,7 +114,7 @@ bool ParsedJson::printjson(std::ostream &os) {
       return false;
     }
     if (howmany > tapecapacity) {
-      fprintf(stderr, 
+      fprintf(stderr,
           "We may be exceeding the tape capacity. Is this a valid document?\n");
       return false;
     }
