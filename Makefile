@@ -67,10 +67,10 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	@tput sgr0
 
 quiettest: jsoncheck numberparsingcheck stringparsingcheck
-        ./numberparsingcheck
-        ./stringparsingcheck
-        ./jsoncheck
-        ./scripts/testjson2json.sh
+	./numberparsingcheck
+	./stringparsingcheck
+	./jsoncheck
+	./scripts/testjson2json.sh
 
 amalgamate:
 	./amalgamation.sh
