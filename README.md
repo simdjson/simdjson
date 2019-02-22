@@ -361,7 +361,9 @@ make allparsingcompetition
 ./allparsingcompetition myfile.json
 ```
 
+## Python bindings
 
+- [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 
 
 
@@ -423,6 +425,8 @@ A character is pseudo-structural if and only if:
 This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
 
 > { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null }
+
+
 
 
 ## Academic References
