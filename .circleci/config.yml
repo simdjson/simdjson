@@ -7,3 +7,4 @@ jobs:
       - checkout 
       - run: make
       - run: make test
+      - run: mkdir build && cd build && cmake .. && make  && make test
