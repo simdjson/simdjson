@@ -49,7 +49,7 @@ public:
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
-    size_t localstringcapacity = ROUNDUP_N(len, 64);
+    size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
     string_buf = new uint8_t[localstringcapacity];
     tape = new uint64_t[localtapecapacity];
     containing_scope_offset = new uint32_t[maxdepth];
