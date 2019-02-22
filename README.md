@@ -1,4 +1,5 @@
 # simdjson : Parsing gigabytes of JSON per second
+[![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 
 ## A C++  library to see how fast we can parse JSON with complete validation.
 
