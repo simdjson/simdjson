@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    docker: 
+      - image: circleci/gcc:8
+    steps:
+      - checkout 
+      - run: make
+      - run: make test
