@@ -79,7 +79,7 @@ const char digittoval[256] = {
 }*/
 
 // returns a value with the highest bit set if it is not valid
-uint32_t hex_to_u32_nocheck(const uint8_t *src) {
+static inline uint32_t hex_to_u32_nocheck(const uint8_t *src) {// strictly speaking, static inline is a C-ism
   uint8_t v1 = src[0];
   uint8_t v2 = src[1];
   uint8_t v3 = src[2];

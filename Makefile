@@ -5,9 +5,9 @@
 
 
 .PHONY: clean cleandist
-COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn 
+COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
-CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux      
+CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
@@ -23,12 +23,12 @@ endif
 endif
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
-TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck 
+TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp         src/stage2_build_tape.cpp
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp         src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h include/simdjson/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
@@ -39,7 +39,7 @@ JSON11_INCLUDE:=dependencies/json11/json11.hpp
 FASTJSON_INCLUDE:=dependencies/include/fastjson/fastjson.h
 GASON_INCLUDE:=dependencies/gason/src/gason.h
 UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
-CJSON_INCLUDE:=dependencies/cJSON/cJSON.h 
+CJSON_INCLUDE:=dependencies/cJSON/cJSON.h
 JSMN_INCLUDE:=dependencies/jsmn/jsmn.h
 
 
@@ -52,7 +52,7 @@ competition:  $(COMPARISONEXECUTABLES)
 
 .PHONY: benchmark test
 
-benchmark: 
+benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
@@ -61,7 +61,7 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	./stringparsingcheck
 	./jsoncheck
 	./scripts/testjson2json.sh
-	@echo 
+	@echo
 	@tput setaf 2
 	@echo "It looks like the code is good!"
 	@tput sgr0
@@ -116,47 +116,47 @@ jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
+	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
 
 
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp      -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
+	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp      -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
 
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(LIBS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
 minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
-	$(CXX) $(CXXFLAGS) -o minify $(MINIFIERLIBFILES) $(LIBFILES) tools/minify.cpp -I. 
+	$(CXX) $(CXXFLAGS) -o minify $(MINIFIERLIBFILES) $(LIBFILES) tools/minify.cpp -I.
 
 json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I. 
+	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I.
 
 jsonstats: tools/jsonstats.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o jsonstats $ tools/jsonstats.cpp $(LIBFILES) -I. 
+	$(CXX) $(CXXFLAGS) -o jsonstats $ tools/jsonstats.cpp $(LIBFILES) -I.
 
 ujdecode.o: $(UJSON4C_INCLUDE)
-	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c 
+	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c
 
-parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBFILES)  
+parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS)  -o parseandstatcompetition $(LIBFILES) benchmark/parseandstatcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES) 
+distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) 
-	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE) 
+parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
 allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS)  -o allparsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp  $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)  -DALLPARSER
 
 
-allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS) 
+allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)
 
 
 cppcheck:
-	cppcheck --enable=all src/*.cpp  benchmarks/*.cpp tests/*.cpp -Iinclude -I. -Ibenchmark/linux 
+	cppcheck --enable=all src/*.cpp  benchmarks/*.cpp tests/*.cpp -Iinclude -I. -Ibenchmark/linux
 
 everything: $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)
 
