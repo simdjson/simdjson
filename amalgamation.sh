@@ -18,6 +18,8 @@ $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/stage1_find_marks.cpp
 $SCRIPTPATH/src/stage2_build_tape.cpp
+$SCRIPTPATH/src/parsedjson.cpp
+$SCRIPTPATH/src/parsedjsoniterator.cpp
 "
 
 # order matters
@@ -94,7 +96,7 @@ cat <<< '
 #include "simdjson.h"
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
-  const char * filename = argv[1]; 
+  const char * filename = argv[1];
   std::string_view p = get_corpus(filename);
   ParsedJson pj = build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
@@ -117,7 +119,7 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} jsonexamples/twitter.json "
+echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
@@ -126,9 +128,10 @@ echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} .
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
+cd $SINGLEHDR && c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
+
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'
 }
 
 OS=`lowercase \`uname\``
-

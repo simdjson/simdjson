@@ -1,4 +1,4 @@
-/* auto-generated on Fri  4 Jan 2019 20:12:48 EST. Do not edit! */
+/* auto-generated on Fri 22 Feb 2019 15:42:34 EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -341,12 +341,6 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
      }
   }
   bool isok = find_structural_bits(buf, len, pj);
-  /*if (isok) {
-    isok = flatten_indexes(len, pj);
-  } else {
-    if(reallocated) free((void*)buf);
-    return false;
-  }*/
   if (isok) {
     isok = unified_machine(buf, len, pj);
   } else {
@@ -377,41 +371,13 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
 #define SIMDJSON_UTF8VALIDATE
 #endif
 
-#ifndef NO_PDEP_WIDTH
-#define NO_PDEP_WIDTH 8
-#endif
-
-#define SET_BIT(i)                                                             \
-  base_ptr[base + i] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          \
-  structurals = structurals & (structurals - 1);
-
-#define SET_BIT1 SET_BIT(0)
-#define SET_BIT2 SET_BIT1 SET_BIT(1)
-#define SET_BIT3 SET_BIT2 SET_BIT(2)
-#define SET_BIT4 SET_BIT3 SET_BIT(3)
-#define SET_BIT5 SET_BIT4 SET_BIT(4)
-#define SET_BIT6 SET_BIT5 SET_BIT(5)
-#define SET_BIT7 SET_BIT6 SET_BIT(6)
-#define SET_BIT8 SET_BIT7 SET_BIT(7)
-#define SET_BIT9 SET_BIT8 SET_BIT(8)
-#define SET_BIT10 SET_BIT9 SET_BIT(9)
-#define SET_BIT11 SET_BIT10 SET_BIT(10)
-#define SET_BIT12 SET_BIT11 SET_BIT(11)
-#define SET_BIT13 SET_BIT12 SET_BIT(12)
-#define SET_BIT14 SET_BIT13 SET_BIT(13)
-#define SET_BIT15 SET_BIT14 SET_BIT(14)
-#define SET_BIT16 SET_BIT15 SET_BIT(15)
-
-#define CALL(macro, ...) macro(__VA_ARGS__)
-
-#define SET_BITLOOPN(n) SET_BIT##n
-
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it.
 #ifdef SIMDJSON_UTF8VALIDATE
 #endif
 using namespace std;
+
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
@@ -463,7 +429,7 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
 #endif
-	__m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
+    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
     __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
@@ -528,12 +494,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                   
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals); 
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
 
@@ -695,12 +672,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
     // How do we build up a user traversable data structure
@@ -788,12 +776,23 @@ WARN_UNUSED
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
     while (structurals) {
-      CALL(SET_BITLOOPN, NO_PDEP_WIDTH)
-      /*for(size_t i = 0; i < NO_PDEP_WIDTH; i++) {
-        base_ptr[base+i] = (uint32_t)idx + trailingzeroes(s);
-        s = s & (s - 1);
-      }*/
-      base += NO_PDEP_WIDTH;
+      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      structurals = structurals & (structurals - 1);
+      base += 8;
     }
     base = next_base;
 
@@ -1323,3 +1322,579 @@ fail:
   return false;
 }
 /* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
+
+ParsedJson::ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
+        current_loc(0), n_structural_indexes(0),
+        structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
+        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
+
+ParsedJson::~ParsedJson() {
+    deallocate();
+}
+
+ParsedJson::ParsedJson(ParsedJson && p)
+    : bytecapacity(std::move(p.bytecapacity)),
+    depthcapacity(std::move(p.depthcapacity)),
+    tapecapacity(std::move(p.tapecapacity)),
+    stringcapacity(std::move(p.stringcapacity)),
+    current_loc(std::move(p.current_loc)),
+    n_structural_indexes(std::move(p.n_structural_indexes)),
+    structural_indexes(std::move(p.structural_indexes)),
+    tape(std::move(p.tape)),
+    containing_scope_offset(std::move(p.containing_scope_offset)),
+    ret_address(std::move(p.ret_address)),
+    string_buf(std::move(p.string_buf)),
+    current_string_buf_loc(std::move(p.current_string_buf_loc)),
+    isvalid(std::move(p.isvalid)) {
+        p.structural_indexes=NULL;
+        p.tape=NULL;
+        p.containing_scope_offset=NULL;
+        p.ret_address=NULL;
+        p.string_buf=NULL;
+        p.current_string_buf_loc=NULL;
+    }
+
+
+
+WARN_UNUSED
+bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
+    if ((maxdepth == 0) || (len == 0)) {
+      std::cerr << "capacities must be non-zero " << std::endl;
+      return false;
+    }
+    if (len > 0) {
+      if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+        return true;
+      deallocate();
+    }
+    isvalid = false;
+    bytecapacity = 0; // will only set it to len after allocations are a success
+    n_structural_indexes = 0;
+    uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
+    structural_indexes = new uint32_t[max_structures];
+    size_t localtapecapacity = ROUNDUP_N(len, 64);
+    size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
+    string_buf = new uint8_t[localstringcapacity];
+    tape = new uint64_t[localtapecapacity];
+    containing_scope_offset = new uint32_t[maxdepth];
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+    ret_address = new void *[maxdepth];
+#else
+    ret_address = new char[maxdepth];
+#endif
+    if ((string_buf == NULL) || (tape == NULL) ||
+        (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
+      std::cerr << "Could not allocate memory" << std::endl;
+      if(ret_address != NULL) delete[] ret_address;
+      if(containing_scope_offset != NULL) delete[] containing_scope_offset;
+      if(tape != NULL) delete[] tape;
+      if(string_buf != NULL) delete[] string_buf;
+      if(structural_indexes != NULL) delete[] structural_indexes;
+      return false;
+    }
+
+    bytecapacity = len;
+    depthcapacity = maxdepth;
+    tapecapacity = localtapecapacity;
+    stringcapacity = localstringcapacity;
+    return true;
+}
+
+bool ParsedJson::isValid() const {
+    return isvalid;
+}
+
+void ParsedJson::deallocate() {
+    bytecapacity = 0;
+    depthcapacity = 0;
+    tapecapacity = 0;
+    stringcapacity = 0;
+    if(ret_address != NULL) delete[] ret_address;
+    if(containing_scope_offset != NULL) delete[] containing_scope_offset;
+    if(tape != NULL) delete[] tape;
+    if(string_buf != NULL) delete[] string_buf;
+    if(structural_indexes != NULL) delete[] structural_indexes;
+    isvalid = false;
+}
+
+void ParsedJson::init() {
+    current_string_buf_loc = string_buf;
+    current_loc = 0;
+    isvalid = false;
+}
+
+WARN_UNUSED
+bool ParsedJson::printjson(std::ostream &os) {
+    if(!isvalid) return false;
+    size_t tapeidx = 0;
+    uint64_t tape_val = tape[tapeidx];
+    uint8_t type = (tape_val >> 56);
+    size_t howmany = 0;
+    if (type == 'r') {
+      howmany = tape_val & JSONVALUEMASK;
+    } else {
+      fprintf(stderr, "Error: no starting root node?");
+      return false;
+    }
+    if (howmany > tapecapacity) {
+      fprintf(stderr,
+          "We may be exceeding the tape capacity. Is this a valid document?\n");
+      return false;
+    }
+    tapeidx++;
+    bool *inobject = new bool[depthcapacity];
+    size_t *inobjectidx = new size_t[depthcapacity];
+    int depth = 1; // only root at level 0
+    inobjectidx[depth] = 0;
+    inobject[depth] = false;
+    for (; tapeidx < howmany; tapeidx++) {
+      tape_val = tape[tapeidx];
+      uint64_t payload = tape_val & JSONVALUEMASK;
+      type = (tape_val >> 56);
+      if (!inobject[depth]) {
+        if ((inobjectidx[depth] > 0) && (type != ']'))
+          os << ",";
+        inobjectidx[depth]++;
+      } else { // if (inobject) {
+        if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
+            (type != '}'))
+          os << ",";
+        if (((inobjectidx[depth] & 1) == 1))
+          os << ":";
+        inobjectidx[depth]++;
+      }
+      switch (type) {
+      case '"': // we have a string
+        os << '"';
+        print_with_escapes((const unsigned char *)(string_buf + payload));
+        os << '"';
+        break;
+      case 'l': // we have a long int
+        if (tapeidx + 1 >= howmany)
+          return false;
+        os <<  (int64_t)tape[++tapeidx];
+        break;
+      case 'd': // we have a double
+        if (tapeidx + 1 >= howmany)
+          return false;
+        double answer;
+        memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+        os << answer;
+        break;
+      case 'n': // we have a null
+        os << "null";
+        break;
+      case 't': // we have a true
+        os << "true";
+        break;
+      case 'f': // we have a false
+        os << "false";
+        break;
+      case '{': // we have an object
+        os << '{';
+        depth++;
+        inobject[depth] = true;
+        inobjectidx[depth] = 0;
+        break;
+      case '}': // we end an object
+        depth--;
+        os << '}';
+        break;
+      case '[': // we start an array
+        os << '[';
+        depth++;
+        inobject[depth] = false;
+        inobjectidx[depth] = 0;
+        break;
+      case ']': // we end an array
+        depth--;
+        os << ']';
+        break;
+      case 'r': // we start and end with the root node
+        fprintf(stderr, "should we be hitting the root node?\n");
+        delete[] inobject;
+        delete[] inobjectidx;
+        return false;
+      default:
+        fprintf(stderr, "bug %c\n", type);
+        delete[] inobject;
+        delete[] inobjectidx;
+        return false;
+      }
+    }
+    delete[] inobject;
+    delete[] inobjectidx;
+    return true;
+}
+
+WARN_UNUSED
+bool ParsedJson::dump_raw_tape(std::ostream &os) {
+    if(!isvalid) return false;
+    size_t tapeidx = 0;
+    uint64_t tape_val = tape[tapeidx];
+    uint8_t type = (tape_val >> 56);
+    os << tapeidx << " : " << type;
+    tapeidx++;
+    size_t howmany = 0;
+    if (type == 'r') {
+      howmany = tape_val & JSONVALUEMASK;
+    } else {
+      fprintf(stderr, "Error: no starting root node?");
+      return false;
+    }
+    os << "\t// pointing to " << howmany <<" (right after last node)\n";
+    uint64_t payload;
+    for (; tapeidx < howmany; tapeidx++) {
+      os << tapeidx << " : ";
+      tape_val = tape[tapeidx];
+      payload = tape_val & JSONVALUEMASK;
+      type = (tape_val >> 56);
+      switch (type) {
+      case '"': // we have a string
+        os << "string \"";
+        print_with_escapes((const unsigned char *)(string_buf + payload));
+        os << '"';
+        os << '\n';
+        break;
+      case 'l': // we have a long int
+        if (tapeidx + 1 >= howmany)
+          return false;
+        os << "integer " << (int64_t)tape[++tapeidx] << "\n";
+        break;
+      case 'd': // we have a double
+        os << "float ";
+        if (tapeidx + 1 >= howmany)
+          return false;
+        double answer;
+        memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+        os << answer << '\n';
+        break;
+      case 'n': // we have a null
+        os << "null\n";
+        break;
+      case 't': // we have a true
+        os << "true\n";
+        break;
+      case 'f': // we have a false
+        os << "false\n";
+        break;
+      case '{': // we have an object
+        os << "{\t// pointing to next tape location " << payload << " (first node after the scope) \n";
+        break;
+      case '}': // we end an object
+        os << "}\t// pointing to previous tape location " << payload << " (start of the scope) \n";
+        break;
+      case '[': // we start an array
+        os << "[\t// pointing to next tape location " << payload << " (first node after the scope) \n";
+        break;
+      case ']': // we end an array
+        os << "]\t// pointing to previous tape location " << payload << " (start of the scope) \n";
+        break;
+      case 'r': // we start and end with the root node
+        printf("end of root\n");
+        return false;
+      default:
+        return false;
+      }
+    }
+    tape_val = tape[tapeidx];
+    payload = tape_val & JSONVALUEMASK;
+    type = (tape_val >> 56);
+    os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
+    return true;
+}
+/* end file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
+
+ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
+        if(pj.isValid()) {
+            depthindex = new scopeindex_t[pj.depthcapacity];
+            if(depthindex == NULL) return;
+            depthindex[0].start_of_scope = location;
+            current_val = pj.tape[location++];
+            current_type = (current_val >> 56);
+            depthindex[0].scope_type = current_type;
+            if (current_type == 'r') {
+              tape_length = current_val & JSONVALUEMASK;
+              if(location < tape_length) {
+                current_val = pj.tape[location];
+                current_type = (current_val >> 56);
+                depth++;
+                depthindex[depth].start_of_scope = location;
+                depthindex[depth].scope_type = current_type;
+              }
+            }
+        }
+    }
+
+ParsedJson::iterator::~iterator() {
+      delete[] depthindex;
+}
+
+ParsedJson::iterator::iterator(const iterator &o):
+    pj(o.pj), depth(o.depth), location(o.location),
+    tape_length(o.tape_length), current_type(o.current_type),
+    current_val(o.current_val), depthindex(NULL) {
+    depthindex = new scopeindex_t[pj.depthcapacity];
+    if(depthindex != NULL) {
+        memcpy(o.depthindex, depthindex, pj.depthcapacity * sizeof(depthindex[0]));
+    } else {
+        tape_length = 0;
+    }
+}
+
+ParsedJson::iterator::iterator(iterator &&o):
+      pj(o.pj), depth(std::move(o.depth)), location(std::move(o.location)),
+      tape_length(std::move(o.tape_length)), current_type(std::move(o.current_type)),
+      current_val(std::move(o.current_val)), depthindex(std::move(o.depthindex)) {
+        o.depthindex = NULL;// we take ownership
+}
+
+WARN_UNUSED
+bool ParsedJson::iterator::isOk() const {
+      return location < tape_length;
+}
+
+// useful for debuging purposes
+size_t ParsedJson::iterator::get_tape_location() const {
+    return location;
+}
+
+// useful for debuging purposes
+size_t ParsedJson::iterator::get_tape_length() const {
+    return tape_length;
+}
+
+// returns the current depth (start at 1 with 0 reserved for the fictitious root node)
+size_t ParsedJson::iterator::get_depth() const {
+    return depth;
+}
+
+// A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
+// The root node has type 'r'.
+uint8_t ParsedJson::iterator::get_scope_type() const {
+    return depthindex[depth].scope_type;
+}
+
+bool ParsedJson::iterator::move_forward() {
+    if(location + 1 >= tape_length) {
+    return false; // we are at the end!
+    }
+    // we are entering a new scope
+    if ((current_type == '[') || (current_type == '{')){
+    depth++;
+    depthindex[depth].start_of_scope = location;
+    depthindex[depth].scope_type = current_type;
+    }
+    location = location + 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    // if we encounter a scope closure, we need to move up
+    while ((current_type == ']') || (current_type == '}')) {
+    if(location + 1 >= tape_length) {
+        return false; // we are at the end!
+    }
+    depth--;
+    if(depth == 0) {
+        return false; // should not be necessary
+    }
+    location = location + 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    }
+    return true;
+}
+
+uint8_t ParsedJson::iterator::get_type()  const {
+    return current_type;
+}
+
+
+int64_t ParsedJson::iterator::get_integer()  const {
+    if(location + 1 >= tape_length) return 0;// default value in case of error
+    return (int64_t) pj.tape[location + 1];
+}
+
+double ParsedJson::iterator::get_double()  const {
+    if(location + 1 >= tape_length) return NAN;// default value in case of error
+    double answer;
+    memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
+    return answer;
+}
+
+const char * ParsedJson::iterator::get_string() const {
+    return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+}
+
+
+bool ParsedJson::iterator::is_object_or_array() const {
+    return is_object_or_array(get_type());
+}
+
+bool ParsedJson::iterator::is_object() const {
+    return get_type() == '{';
+}
+
+bool ParsedJson::iterator::is_array() const {
+    return get_type() == '[';
+}
+
+bool ParsedJson::iterator::is_string() const {
+    return get_type() == '"';
+}
+
+bool ParsedJson::iterator::is_integer() const {
+    return get_type() == 'l';
+}
+
+bool ParsedJson::iterator::is_double() const {
+    return get_type() == 'd';
+}
+
+bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
+    return (type == '[' || (type == '{'));
+}
+
+bool ParsedJson::iterator::move_to_key(const char * key) {
+    if(down()) {
+    do {
+        assert(is_string());
+        bool rightkey = (strcmp(get_string(),key)==0);
+        next();
+        if(rightkey) return true;
+    } while(next());
+    assert(up());// not found
+    }
+    return false;
+}
+
+
+ bool ParsedJson::iterator::next() {
+    if ((current_type == '[') || (current_type == '{')){
+    // we need to jump
+    size_t npos = ( current_val & JSONVALUEMASK);
+    if(npos >= tape_length) {
+        return false; // shoud never happen unless at the root
+    }
+    uint64_t nextval = pj.tape[npos];
+    uint8_t nexttype = (nextval >> 56);
+    if((nexttype == ']') || (nexttype == '}')) {
+        return false; // we reached the end of the scope
+    }
+    location = npos;
+    current_val = nextval;
+    current_type = nexttype;
+    return true;
+    } else {
+    size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
+    if(location + increment >= tape_length) return false;
+    uint64_t nextval = pj.tape[location + increment];
+    uint8_t nexttype = (nextval >> 56);
+    if((nexttype == ']') || (nexttype == '}')) {
+        return false; // we reached the end of the scope
+    }
+    location = location + increment;
+    current_val = nextval;
+    current_type = nexttype;
+    return true;
+    }
+}
+
+
+ bool ParsedJson::iterator::prev() {
+    if(location - 1 < depthindex[depth].start_of_scope) return false;
+    location -= 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    if ((current_type == ']') || (current_type == '}')){
+    // we need to jump
+    size_t new_location = ( current_val & JSONVALUEMASK);
+    if(new_location < depthindex[depth].start_of_scope) {
+        return false; // shoud never happen
+    }
+    location = new_location;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    }
+    return true;
+}
+
+
+ bool ParsedJson::iterator::up() {
+    if(depth == 1) {
+    return false; // don't allow moving back to root
+    }
+    to_start_scope();
+    // next we just move to the previous value
+    depth--;
+    location -= 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    return true;
+}
+
+
+ bool ParsedJson::iterator::down() {
+    if(location + 1 >= tape_length) return false;
+    if ((current_type == '[') || (current_type == '{')) {
+    size_t npos = (current_val & JSONVALUEMASK);
+    if(npos == location + 2) {
+        return false; // we have an empty scope
+    }
+    depth++;
+    location = location + 1;
+    depthindex[depth].start_of_scope = location;
+    depthindex[depth].scope_type = current_type;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    return true;
+    }
+    return false;
+}
+
+void ParsedJson::iterator::to_start_scope()  {
+    location = depthindex[depth].start_of_scope;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+}
+
+bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
+    if(!isOk()) return false;
+    switch (current_type) {
+    case '"': // we have a string
+    os << '"';
+    if(escape_strings) {
+        print_with_escapes(get_string(), os);
+    } else {
+        os << get_string();
+    }
+    os << '"';
+    break;
+    case 'l': // we have a long int
+    os << get_integer();
+    break;
+    case 'd':
+    os << get_double();
+    break;
+    case 'n': // we have a null
+    os << "null";
+    break;
+    case 't': // we have a true
+    os << "true";
+    break;
+    case 'f': // we have a false
+    os << "false";
+    break;
+    case '{': // we have an object
+    case '}': // we end an object
+    case '[': // we start an array
+    case ']': // we end an array
+    os << (char) current_type;
+    break;
+    default:
+    return false;
+    }
+    return true;
+}
+/* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
