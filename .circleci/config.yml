@@ -6,5 +6,5 @@ jobs:
     steps:
       - checkout 
       - run: make
-      - run: make test
+      - run: make quiettest
       - run: mkdir build && cd build && cmake .. && make  && make test
