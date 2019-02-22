@@ -3,12 +3,7 @@ jobs:
   build:
     docker: 
       - image: gcc:8
-    dependencies:
-       pre:
-         - (brew update || brew update)
-         - (brew upgrade cmake || true)
     steps:
       - checkout 
       - run: make
       - run: make quiettest
-      - run: mkdir build && cd build && cmake .. && make  && make test
