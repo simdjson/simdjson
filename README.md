@@ -411,7 +411,7 @@ A character is pseudo-structural if and only if:
 
 1. Not enclosed in quotes, AND
 2. Is a non-whitespace character, AND
-3. It's preceding chararacter is either:
+3. It's preceding character is either:
 (a) a structural character, OR
 (b) whitespace.
 
