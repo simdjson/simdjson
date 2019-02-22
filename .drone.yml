@@ -1,0 +1,9 @@
+kind: pipeline
+name: default
+
+steps:
+- name: test
+  image: gcc:8
+  commands:
+  - make
+  - make test
