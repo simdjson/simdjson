@@ -1,11 +1,20 @@
-language: c
+language: c++
 sudo: false
-compiler:
-  - gcc
-  - clang
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-7
+      - g++-7
 
 branches:
   only:
     - master
 
-script: make && make test 
+script: 
+   - export CXX=g++-7
+   - export CC=gcc-7
+   - make 
+   - make test 
+
