@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     cref2 += results[3];
     cmis2 += results[4];
     if (!isok) {
-      cout << "Failed out during stage 34\n";
+      cout << "Failed out during stage 2\n";
       break;
     }
 #endif

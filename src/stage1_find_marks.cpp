@@ -434,6 +434,10 @@ WARN_UNUSED
     base = next_base;
 
   pj.n_structural_indexes = base;
+  // a valid JSON file cannot have zero structural indexes - we should have found something
+  if (!pj.n_structural_indexes) {
+    return false;
+  }
   if(base_ptr[pj.n_structural_indexes-1] > len) {
     fprintf( stderr,"Internal bug\n");
     return false;
