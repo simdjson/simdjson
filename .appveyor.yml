@@ -1,0 +1,17 @@
+version: '{build}'
+branches:
+  only:
+  - master
+image:
+    - Visual Studio 2017
+clone_folder: c:\projects\simdjson
+
+platform:
+- x64
+
+build_script:
+  - mkdir build
+  - cd build
+  - ps: cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
+  - cmake --build .
+  - ctest --verbose
