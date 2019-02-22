@@ -12,7 +12,7 @@ We can use a quarter or fewer instructions than a state-of-the-art parser like R
 <img src="doc/gbps.png" width="90%">
 
 
-On a skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
+On a Skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
 
 | parser   |  GB/s |
 |---|---|
@@ -30,8 +30,8 @@ On a skylake processor, the parsing speeds (in GB/s) of various processors on th
 
 ## Requirements
 
-- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or better.
-- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Rizen)
+- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
+- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Ryzen)
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are  optional.
 
@@ -50,7 +50,7 @@ Under Windows, we build some tools using the  windows/dirent_portable.h  file (w
 
 const char * filename = ... //
 
-// use whatever means you want to get a string of you JSON document
+// use whatever means you want to get a string of your JSON document
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
@@ -62,7 +62,7 @@ free((void*)p.data());
 // js can be reused with other json_parse calls.
 ```
 
-It is also possible to use a simplier API if you do not mind having the overhead
+It is also possible to use a simpler API if you do not mind having the overhead
 of memory allocation with each new JSON document:
 
 ```C
@@ -134,7 +134,7 @@ make benchmark
 Requirements:  We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type 
 
 ```
-brew install cmake"
+brew install cmake
 ```
 
 There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
@@ -188,9 +188,9 @@ make test
 ## Usage (CMake on Windows using Visual Studio)
 
 
-We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or better).
+We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or later).
 
-- Grab the simdjosn code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
+- Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as ``VisualStudio``.
 - Using a shell, go to this newly created directory. 
@@ -202,7 +202,7 @@ We are assuming that you have a common Windows PC with at least Visual Studio 20
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
-- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters.
+- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
 
 ## Scope
 
@@ -231,7 +231,7 @@ To simplify the engineering, we make some assumptions.
 
 ## Architecture
 
-The parser works in three stages:
+The parser works in two stages:
 
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
@@ -388,7 +388,7 @@ Validating UTF-8 takes no more than 0.7 cycles per byte:
 ## Remarks on JSON parsing
 
 - The JSON spec defines what a JSON parser is:
->  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings."
+>  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings.
 
 
 - JSON is not JavaScript:
@@ -411,7 +411,7 @@ A character is pseudo-structural if and only if:
 
 1. Not enclosed in quotes, AND
 2. Is a non-whitespace character, AND
-3. It's preceding chararacter is either:
+3. It's preceding character is either:
 (a) a structural character, OR
 (b) whitespace.
 
