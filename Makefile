@@ -66,6 +66,12 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	@echo "It looks like the code is good!"
 	@tput sgr0
 
+quiettest: jsoncheck numberparsingcheck stringparsingcheck
+	./numberparsingcheck
+	./stringparsingcheck
+	./jsoncheck
+	./scripts/testjson2json.sh
+
 amalgamate:
 	./amalgamation.sh
 

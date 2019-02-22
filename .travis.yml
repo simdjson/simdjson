@@ -1,0 +1,20 @@
+language: c++
+sudo: false
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-7
+      - g++-7
+
+branches:
+  only:
+    - master
+
+script: 
+   - export CXX=g++-7
+   - export CC=gcc-7
+   - make 
+   - make test 
+

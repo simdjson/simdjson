@@ -66,7 +66,7 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
 #endif
-	__m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
+    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
     __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);

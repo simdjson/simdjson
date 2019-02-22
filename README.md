@@ -1,4 +1,5 @@
 # simdjson : Parsing gigabytes of JSON per second
+[![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 
 ## A C++  library to see how fast we can parse JSON with complete validation.
 
@@ -50,7 +51,7 @@ Under Windows, we build some tools using the  windows/dirent_portable.h  file (w
 
 const char * filename = ... //
 
-// use whatever means you want to get a string of you JSON document
+// use whatever means you want to get a string of your JSON document
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
@@ -202,7 +203,7 @@ We are assuming that you have a common Windows PC with at least Visual Studio 20
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
-- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space charaters.
+- `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
 
 ## Scope
 
@@ -231,7 +232,7 @@ To simplify the engineering, we make some assumptions.
 
 ## Architecture
 
-The parser works in three stages:
+The parser works in two stages:
 
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
@@ -411,7 +412,7 @@ A character is pseudo-structural if and only if:
 
 1. Not enclosed in quotes, AND
 2. Is a non-whitespace character, AND
-3. It's preceding chararacter is either:
+3. It's preceding character is either:
 (a) a structural character, OR
 (b) whitespace.
 
