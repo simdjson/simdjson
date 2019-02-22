@@ -231,7 +231,7 @@ To simplify the engineering, we make some assumptions.
 
 ## Architecture
 
-The parser works in three stages:
+The parser works in two stages:
 
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
