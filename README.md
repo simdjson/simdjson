@@ -447,3 +447,7 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 - Lin, Dan. Bits filter: a high-performance multiple string pattern matching algorithm for malware detection. Diss. School of Computing Science-Simon Fraser University, 2010.
 - Yang, Shiyang. Validation of XML Document Based on Parallel Bit Stream Technology. Diss. Applied Sciences: School of Computing Science, 2013.
 -  N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
+
+
+[license]:LICENSE
+[license img]:https://img.shields.io/badge/License-Apache%202-blue.svg
