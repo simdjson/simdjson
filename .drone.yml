@@ -6,4 +6,4 @@ steps:
   image: gcc:8
   commands:
   - make
-  - make test
+  - make quiettest
