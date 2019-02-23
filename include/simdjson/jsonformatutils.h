@@ -81,7 +81,7 @@ static inline void print_with_escapes(const unsigned char *src, std::ostream &os
     default:
       if (*src <= 0x1F) {
         std::ios::fmtflags f(os.flags());
-        os << std::hex << std::setw(4) << std::setfill('0') << (int) *src;
+        os << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(*src);
         os.flags(f);
       } else {
         os << *src;
@@ -92,7 +92,7 @@ static inline void print_with_escapes(const unsigned char *src, std::ostream &os
 }
 
 static inline void print_with_escapes(const char *src, std::ostream &os) {
-  print_with_escapes((const unsigned char *)src, os);
+  print_with_escapes(reinterpret_cast<const unsigned char *>(src), os);
 }
 
 #endif

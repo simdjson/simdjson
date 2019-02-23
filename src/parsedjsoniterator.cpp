@@ -109,7 +109,7 @@ uint8_t ParsedJson::iterator::get_type()  const {
 int64_t ParsedJson::iterator::get_integer()  const {
     if(location + 1 >= tape_length) { return 0;// default value in case of error
 }
-    return (int64_t) pj.tape[location + 1];
+    return static_cast<int64_t>(pj.tape[location + 1]);
 }
 
 double ParsedJson::iterator::get_double()  const {
@@ -121,7 +121,7 @@ double ParsedJson::iterator::get_double()  const {
 }
 
 const char * ParsedJson::iterator::get_string() const {
-    return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+    return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)) ;
 }
 
 
@@ -292,7 +292,7 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     case '}': // we end an object
     case '[': // we start an array
     case ']': // we end an array
-    os << (char) current_type;
+    os << static_cast<char>(current_type);
     break;
     default:
     return false;

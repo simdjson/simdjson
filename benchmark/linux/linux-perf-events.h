@@ -88,5 +88,3 @@ private:
   }
 };
 #endif
-
-#endif

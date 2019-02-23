@@ -164,7 +164,7 @@ bool ParsedJson::printjson(std::ostream &os) {
         if (tapeidx + 1 >= howmany) {
           return false;
 }
-        os <<  (int64_t)tape[++tapeidx];
+        os <<  static_cast<int64_t>(tape[++tapeidx]);
         break;
       case 'd': // we have a double
         if (tapeidx + 1 >= howmany) {
@@ -254,7 +254,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
         if (tapeidx + 1 >= howmany) {
           return false;
 }
-        os << "integer " << (int64_t)tape[++tapeidx] << "\n";
+        os << "integer " << static_cast<int64_t>(tape[++tapeidx]) << "\n";
         break;
       case 'd': // we have a double
         os << "float ";

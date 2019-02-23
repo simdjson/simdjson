@@ -13,7 +13,7 @@ char * allocate_padded_buffer(size_t length) {
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
 #else
-    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength) != 0) { return nullptr;
+    if (posix_memalign(reinterpret_cast<void **>(&padded_buffer), 64, totalpaddedlength) != 0) { return nullptr;
 }
 #endif
 	return padded_buffer;

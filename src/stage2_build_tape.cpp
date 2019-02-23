@@ -22,7 +22,7 @@ using namespace std;
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
-  uint64_t tv = *(const uint64_t *)"true    ";
+  uint64_t tv = *reinterpret_cast<const uint64_t *>("true    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -34,7 +34,7 @@ really_inline bool is_valid_true_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_false_atom(const uint8_t *loc) {
-  uint64_t fv = *(const uint64_t *)"false   ";
+  uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
   uint64_t mask5 = 0x000000ffffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -46,7 +46,7 @@ really_inline bool is_valid_false_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_null_atom(const uint8_t *loc) {
-  uint64_t nv = *(const uint64_t *)"null    ";
+  uint64_t nv = *reinterpret_cast<const uint64_t *>("null    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -141,12 +141,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the true value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { goto fail;
 }
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_true_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -158,12 +158,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the false value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { goto fail;
 }
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_false_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -175,12 +175,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the null value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { goto fail;
 }
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_null_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -201,12 +201,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { goto fail;
 }
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const uint8_t *)copy, pj, idx, false)) {
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, false)) {
       free(copy);
       goto fail;
     }
@@ -217,12 +217,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { goto fail;
 }
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const uint8_t *)copy, pj, idx, true)) {
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
     }

@@ -33,7 +33,7 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 #endif
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
-       buf = (uint8_t *) allocate_padded_buffer(len);
+       buf = reinterpret_cast<uint8_t *>(allocate_padded_buffer(len));
        if(buf == nullptr) { return false;
 }
        memcpy((void*)buf,tmpbuf,len);

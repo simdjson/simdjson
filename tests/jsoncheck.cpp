@@ -57,7 +57,7 @@ bool validate(const char *dirname) {
       printf("validating: file %s ", name);
       fflush(nullptr);
       size_t filelen = strlen(name);
-      char *fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
+      char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
       strcpy(fullpath, dirname);
       if (needsep) {
         fullpath[dirlen] = '/';

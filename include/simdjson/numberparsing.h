@@ -141,7 +141,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   const __m128i mul_1_100 = _mm_setr_epi16(100, 1, 100, 1, 100, 1, 100, 1);
   const __m128i mul_1_10000 =
       _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
-  const __m128i input = _mm_sub_epi8(_mm_loadu_si128((const __m128i *)chars), ascii0);
+  const __m128i input = _mm_sub_epi8(_mm_loadu_si128(reinterpret_cast<const __m128i *>(chars)), ascii0);
   const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
   const __m128i t2 = _mm_madd_epi16(t1, mul_1_100);
   const __m128i t3 = _mm_packus_epi32(t2, t2);
@@ -166,7 +166,7 @@ static never_inline bool
 parse_float(const uint8_t *const buf,
                           ParsedJson &pj, const uint32_t offset,
                           bool found_minus) {
-  const char *p = (const char *)(buf + offset);
+  const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
     ++p;
@@ -280,7 +280,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
                                              ParsedJson &pj,
                                              const uint32_t offset,
                                              bool found_minus) {
-  const char *p = (const char *)(buf + offset);
+  const char *p = reinterpret_cast<const char *>(buf + offset);
 
   bool negative = false;
   if (found_minus) {
@@ -352,7 +352,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
   pj.write_tape_s64(0); // always write zero
   return true; // always succeeds
 #else
-  const char *p = (const char *)(buf + offset);
+  const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
     ++p;
