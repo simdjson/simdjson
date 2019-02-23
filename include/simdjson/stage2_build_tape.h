@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_STAGE34_UNIFIED_H
-#define SIMDJSON_STAGE34_UNIFIED_H
+#ifndef SIMDJSON_STAGE2_BUILD_TAPE_H
+#define SIMDJSON_STAGE2_BUILD_TAPE_H
 
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"

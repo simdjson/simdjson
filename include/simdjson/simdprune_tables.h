@@ -34989,7 +34989,7 @@ static const unsigned char mask128_epi32[] = {
 
 #ifdef __AVX2__
 
-#include <stdint.h>
+#include <cstdint>
 
 static const uint32_t mask256_epi32[] = {
     0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 7, 0, 2, 3, 4, 5, 6, 7, 7, 2,

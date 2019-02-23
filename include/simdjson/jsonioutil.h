@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_JSONIOUTIL_H
 #define SIMDJSON_JSONIOUTIL_H
 
+#include "simdjson/common_defs.h"
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "simdjson/common_defs.h"
 
 
 // low-level function to allocate memory with padding so we can read passed the "length" bytes
@@ -34,7 +34,7 @@ char * allocate_padded_buffer(size_t length);
 //        free((void*)p.data());//use aligned_free if you plan to use VisualStudio
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-std::string_view  get_corpus(std::string filename);
+std::string_view  get_corpus(const std::string& filename);
 
 
 #endif

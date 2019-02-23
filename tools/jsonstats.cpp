@@ -39,7 +39,7 @@ struct stat_s {
   bool valid;
 };
 
-typedef struct stat_s stat_t;
+using stat_t = struct stat_s;
 
 
 

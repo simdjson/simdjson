@@ -142,7 +142,8 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the true value.
     // this will almost never be called in practice
     char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_true_atom((const uint8_t *)copy + idx)) {
@@ -158,7 +159,8 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the false value.
     // this will almost never be called in practice
     char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_false_atom((const uint8_t *)copy + idx)) {
@@ -174,7 +176,8 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the null value.
     // this will almost never be called in practice
     char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_null_atom((const uint8_t *)copy + idx)) {
@@ -199,7 +202,8 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
     char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number((const uint8_t *)copy, pj, idx, false)) {
@@ -214,7 +218,8 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
     char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number((const uint8_t *)copy, pj, idx, true)) {

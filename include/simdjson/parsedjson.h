@@ -1,15 +1,15 @@
 #ifndef SIMDJSON_PARSEDJSON_H
 #define SIMDJSON_PARSEDJSON_H
 
-#include <math.h>
-#include <inttypes.h>
-#include <string.h>
+#include <cinttypes>
+#include <cmath>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 
-#include "simdjson/portability.h"
-#include "simdjson/jsonformatutils.h"
 #include "simdjson/common_defs.h"
+#include "simdjson/jsonformatutils.h"
+#include "simdjson/portability.h"
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF
 
@@ -193,7 +193,7 @@ public:
 
 private:
 
-    iterator& operator=(const iterator& other) ;
+    iterator& operator=(const iterator& other) = delete ;
 
     ParsedJson &pj;
     size_t depth;
@@ -204,13 +204,13 @@ private:
     scopeindex_t *depthindex;
   };
 
-  size_t bytecapacity;  // indicates how many bits are meant to be supported 
+  size_t bytecapacity{0};  // indicates how many bits are meant to be supported 
 
-  size_t depthcapacity; // how deep we can go
-  size_t tapecapacity;
-  size_t stringcapacity;
-  uint32_t current_loc;
-  uint32_t n_structural_indexes;
+  size_t depthcapacity{0}; // how deep we can go
+  size_t tapecapacity{0};
+  size_t stringcapacity{0};
+  uint32_t current_loc{0};
+  uint32_t n_structural_indexes{0};
 
   uint32_t *structural_indexes;
 
@@ -224,28 +224,28 @@ private:
 
   uint8_t *string_buf; // should be at least bytecapacity
   uint8_t *current_string_buf_loc;
-  bool isvalid;
+  bool isvalid{false};
 
 private :
 
  // we don't want the default constructor to be called
- ParsedJson(const ParsedJson & p); // we don't want the default constructor to be called
+ ParsedJson(const ParsedJson & p) = delete; // we don't want the default constructor to be called
  // we don't want the assignment to be called
- ParsedJson & operator=(const ParsedJson&o);
+ ParsedJson & operator=(const ParsedJson&o) = delete;
 };
 
 
 // dump bits low to high
 inline void dumpbits_always(uint64_t v, const std::string &msg) {
   for (uint32_t i = 0; i < 64; i++) {
-    std::cout << (((v >> (uint64_t)i) & 0x1ULL) ? "1" : "_");
+    std::cout << (((v >> (uint64_t)i) & 0x1ULL) != 0u ? "1" : "_");
   }
   std::cout << " " << msg.c_str() << "\n";
 }
 
 inline void dumpbits32_always(uint32_t v, const std::string &msg) {
   for (uint32_t i = 0; i < 32; i++) {
-    std::cout << (((v >> (uint32_t)i) & 0x1ULL) ? "1" : "_");
+    std::cout << (((v >> (uint32_t)i) & 0x1ULL) != 0u ? "1" : "_");
   }
   std::cout << " " << msg.c_str() << "\n";
 }

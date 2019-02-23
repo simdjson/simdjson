@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_NUMBERPARSING_H
 #define SIMDJSON_NUMBERPARSING_H
 
-#include "simdjson/portability.h"
 #include "simdjson/common_defs.h"
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
+#include "simdjson/portability.h"
 
 static const double power_of_ten[] = {
     1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,
@@ -257,7 +257,7 @@ parse_float(const uint8_t *const buf,
     }
     i *= power_of_ten[308 + exponent];
   }
-  if(is_not_structural_or_whitespace(*p)) {
+  if(is_not_structural_or_whitespace(*p) != 0u) {
     return false;
   }
   double d = negative ? -i : i;
@@ -265,7 +265,7 @@ parse_float(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundFloat(d, buf + offset);
 #endif
-  return is_structural_or_whitespace(*p);
+  return is_structural_or_whitespace(*p) != 0u;
 }
 
 // called by parse_number when we know that the output is an integer,
@@ -336,7 +336,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
 #endif
-  return is_structural_or_whitespace(*p);
+  return is_structural_or_whitespace(*p) != 0u;
 }
 
 
@@ -513,7 +513,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     foundInteger(i, buf + offset);
 #endif
   }
-  return  is_structural_or_whitespace(*p);
+  return  is_structural_or_whitespace(*p) != 0u;
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 

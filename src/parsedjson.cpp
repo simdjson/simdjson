@@ -1,34 +1,33 @@
 #include "simdjson/parsedjson.h"
 
-ParsedJson::ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
-        current_loc(0), n_structural_indexes(0),
-        structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
-        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
+ParsedJson::ParsedJson() : 
+        structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
+        ret_address(nullptr), string_buf(nullptr), current_string_buf_loc(nullptr) {}
 
 ParsedJson::~ParsedJson() {
     deallocate();
 }
 
 ParsedJson::ParsedJson(ParsedJson && p)
-    : bytecapacity(std::move(p.bytecapacity)),
-    depthcapacity(std::move(p.depthcapacity)),
-    tapecapacity(std::move(p.tapecapacity)),
-    stringcapacity(std::move(p.stringcapacity)),
-    current_loc(std::move(p.current_loc)),
-    n_structural_indexes(std::move(p.n_structural_indexes)),
-    structural_indexes(std::move(p.structural_indexes)),
-    tape(std::move(p.tape)),
-    containing_scope_offset(std::move(p.containing_scope_offset)),
-    ret_address(std::move(p.ret_address)),
-    string_buf(std::move(p.string_buf)),
-    current_string_buf_loc(std::move(p.current_string_buf_loc)),
-    isvalid(std::move(p.isvalid)) {
-        p.structural_indexes=NULL;
-        p.tape=NULL;
-        p.containing_scope_offset=NULL;
-        p.ret_address=NULL;
-        p.string_buf=NULL;
-        p.current_string_buf_loc=NULL;
+    : bytecapacity(p.bytecapacity),
+    depthcapacity(p.depthcapacity),
+    tapecapacity(p.tapecapacity),
+    stringcapacity(p.stringcapacity),
+    current_loc(p.current_loc),
+    n_structural_indexes(p.n_structural_indexes),
+    structural_indexes(p.structural_indexes),
+    tape(p.tape),
+    containing_scope_offset(p.containing_scope_offset),
+    ret_address(p.ret_address),
+    string_buf(p.string_buf),
+    current_string_buf_loc(p.current_string_buf_loc),
+    isvalid(p.isvalid) {
+        p.structural_indexes=nullptr;
+        p.tape=nullptr;
+        p.containing_scope_offset=nullptr;
+        p.ret_address=nullptr;
+        p.string_buf=nullptr;
+        p.current_string_buf_loc=nullptr;
     }
 
 
@@ -40,8 +39,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       return false;
     }
     if (len > 0) {
-      if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+      if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
         return true;
+}
       deallocate();
     }
     isvalid = false;
@@ -59,14 +59,19 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
 #else
     ret_address = new char[maxdepth];
 #endif
-    if ((string_buf == NULL) || (tape == NULL) ||
-        (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
+    if ((string_buf == nullptr) || (tape == nullptr) ||
+        (containing_scope_offset == nullptr) || (ret_address == nullptr) || (structural_indexes == nullptr)) {
       std::cerr << "Could not allocate memory" << std::endl;
-      if(ret_address != NULL) delete[] ret_address;
-      if(containing_scope_offset != NULL) delete[] containing_scope_offset;
-      if(tape != NULL) delete[] tape;
-      if(string_buf != NULL) delete[] string_buf;
-      if(structural_indexes != NULL) delete[] structural_indexes;
+       {delete[] ret_address;
+}
+       {delete[] containing_scope_offset;
+}
+       {delete[] tape;
+}
+       {delete[] string_buf;
+}
+       {delete[] structural_indexes;
+}
       return false;
     }
 
@@ -86,11 +91,16 @@ void ParsedJson::deallocate() {
     depthcapacity = 0;
     tapecapacity = 0;
     stringcapacity = 0;
-    if(ret_address != NULL) delete[] ret_address;
-    if(containing_scope_offset != NULL) delete[] containing_scope_offset;
-    if(tape != NULL) delete[] tape;
-    if(string_buf != NULL) delete[] string_buf;
-    if(structural_indexes != NULL) delete[] structural_indexes;
+     {delete[] ret_address;
+}
+     {delete[] containing_scope_offset;
+}
+     {delete[] tape;
+}
+     {delete[] string_buf;
+}
+     {delete[] structural_indexes;
+}
     isvalid = false;
 }
 
@@ -102,7 +112,8 @@ void ParsedJson::init() {
 
 WARN_UNUSED
 bool ParsedJson::printjson(std::ostream &os) {
-    if(!isvalid) return false;
+    if(!isvalid) { return false;
+}
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -120,7 +131,7 @@ bool ParsedJson::printjson(std::ostream &os) {
     }
     tapeidx++;
     bool *inobject = new bool[depthcapacity];
-    size_t *inobjectidx = new size_t[depthcapacity];
+    auto *inobjectidx = new size_t[depthcapacity];
     int depth = 1; // only root at level 0
     inobjectidx[depth] = 0;
     inobject[depth] = false;
@@ -129,15 +140,18 @@ bool ParsedJson::printjson(std::ostream &os) {
       uint64_t payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       if (!inobject[depth]) {
-        if ((inobjectidx[depth] > 0) && (type != ']'))
+        if ((inobjectidx[depth] > 0) && (type != ']')) {
           os << ",";
+}
         inobjectidx[depth]++;
       } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
-            (type != '}'))
+            (type != '}')) {
           os << ",";
-        if (((inobjectidx[depth] & 1) == 1))
+}
+        if (((inobjectidx[depth] & 1) == 1)) {
           os << ":";
+}
         inobjectidx[depth]++;
       }
       switch (type) {
@@ -147,13 +161,15 @@ bool ParsedJson::printjson(std::ostream &os) {
         os << '"';
         break;
       case 'l': // we have a long int
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         os <<  (int64_t)tape[++tapeidx];
         break;
       case 'd': // we have a double
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer;
@@ -206,7 +222,8 @@ bool ParsedJson::printjson(std::ostream &os) {
 
 WARN_UNUSED
 bool ParsedJson::dump_raw_tape(std::ostream &os) {
-    if(!isvalid) return false;
+    if(!isvalid) { return false;
+}
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -234,14 +251,16 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
         os << '\n';
         break;
       case 'l': // we have a long int
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         os << "integer " << (int64_t)tape[++tapeidx] << "\n";
         break;
       case 'd': // we have a double
         os << "float ";
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer << '\n';

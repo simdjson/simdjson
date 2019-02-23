@@ -1,5 +1,5 @@
-#include <cstdint>
 #include "simdjson/portability.h"
+#include <cstdint>
 #ifndef __AVX2__
 
 

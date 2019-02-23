@@ -42,7 +42,7 @@ struct stat_s {
   bool valid;
 };
 
-typedef struct stat_s stat_t;
+using stat_t = struct stat_s;
 
 stat_t simdjson_computestats(const std::string_view &p) {
   stat_t answer;
@@ -115,12 +115,13 @@ stat_t simdjson_computestats(const std::string_view &p) {
 int main(int argc, char *argv[]) {
 #ifndef _MSC_VER
 	int c;
-	while ((c = getopt(argc, argv, "")) != -1)
+	while ((c = getopt(argc, argv, "")) != -1) {
     switch (c) {
 
     default:
       abort();
     }
+}
 #else
   int optind = 1;
 #endif

@@ -1,7 +1,7 @@
 #include "simdjson/portability.h"
-#include <cassert>
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
+#include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
 #define SIMDJSON_UTF8VALIDATE
@@ -38,7 +38,7 @@ WARN_UNUSED
   uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous;
+  struct avx_processed_utf_bytes previous{};
   previous.rawbytes = _mm256_setzero_si256();
   previous.high_nibbles = _mm256_setzero_si256();
   previous.carried_continuations = _mm256_setzero_si256();
@@ -130,7 +130,7 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
+    while (structurals != 0u) {
       base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
@@ -308,7 +308,7 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
+    while (structurals != 0u) {
       base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
@@ -412,7 +412,7 @@ WARN_UNUSED
   }
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
+    while (structurals != 0u) {
       base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
@@ -435,7 +435,7 @@ WARN_UNUSED
 
   pj.n_structural_indexes = base;
   // a valid JSON file cannot have zero structural indexes - we should have found something
-  if (!pj.n_structural_indexes) {
+  if (pj.n_structural_indexes == 0u) {
     return false;
   }
   if(base_ptr[pj.n_structural_indexes-1] > len) {
@@ -449,7 +449,7 @@ WARN_UNUSED
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
 
 #ifdef SIMDJSON_UTF8VALIDATE
-  return _mm256_testz_si256(has_error, has_error);
+  return _mm256_testz_si256(has_error, has_error) != 0;
 #else
   return true;
 #endif

@@ -1,12 +1,12 @@
 #ifndef SIMDJSON_JSONFORMATUTILS_H
 #define SIMDJSON_JSONFORMATUTILS_H
 
-#include <stdio.h>
-#include <iostream>
+#include <cstdio>
 #include <iomanip>
+#include <iostream>
 
 static inline void print_with_escapes(const unsigned char *src) {
-  while (*src) {
+  while (*src != 0u) {
     switch (*src) {
     case '\b':
       putchar('\\');
@@ -39,15 +39,16 @@ static inline void print_with_escapes(const unsigned char *src) {
     default:
       if (*src <= 0x1F) {
         printf("\\u%04x", *src);
-      } else
+      } else {
         putchar(*src);
+}
     }
     src++;
   }
 }
 
 static inline void print_with_escapes(const unsigned char *src, std::ostream &os) {
-  while (*src) {
+  while (*src != 0u) {
     switch (*src) {
     case '\b':
       os << '\\';
@@ -82,8 +83,9 @@ static inline void print_with_escapes(const unsigned char *src, std::ostream &os
         std::ios::fmtflags f(os.flags());
         os << std::hex << std::setw(4) << std::setfill('0') << (int) *src;
         os.flags(f);
-      } else
+      } else {
         os << *src;
+}
     }
     src++;
   }

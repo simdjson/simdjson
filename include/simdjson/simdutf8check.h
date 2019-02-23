@@ -2,7 +2,7 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_H
 #define SIMDJSON_SIMDUTF8CHECK_H
 
-#include <stdbool.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -168,7 +168,7 @@ static struct avx_processed_utf_bytes
 avxcheckUTF8Bytes(__m256i current_bytes,
                   struct avx_processed_utf_bytes *previous,
                   __m256i *has_error) {
-  struct avx_processed_utf_bytes pb;
+  struct avx_processed_utf_bytes pb{};
   avx_count_nibbles(current_bytes, &pb);
 
   avxcheckSmallerThan0xF4(current_bytes, has_error);
