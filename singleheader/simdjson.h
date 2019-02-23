@@ -1,4 +1,4 @@
-/* auto-generated on Fri 22 Feb 2019 15:42:34 EST. Do not edit! */
+/* auto-generated on Fri 22 Feb 2019 19:16:31 EST. Do not edit! */
 /* begin file /Users/lemire/CVS/github/simdjson/include/simdjson/portability.h */
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
