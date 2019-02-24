@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_PARSEDJSON_H
 #define SIMDJSON_PARSEDJSON_H
 
-#include <math.h>
-#include <inttypes.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 
@@ -227,11 +226,8 @@ private:
   bool isvalid;
 
 private :
-
- // we don't want the default constructor to be called
- ParsedJson(const ParsedJson & p); // we don't want the default constructor to be called
- // we don't want the assignment to be called
- ParsedJson & operator=(const ParsedJson&o);
+ ParsedJson(const ParsedJson & p) = delete;
+ ParsedJson & operator=(const ParsedJson&o) = delete;
 };
 
 
