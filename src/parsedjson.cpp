@@ -48,16 +48,16 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     bytecapacity = 0; // will only set it to len after allocations are a success
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-    structural_indexes = new uint32_t[max_structures];
+    structural_indexes = new (std::nothrow) uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
     size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
-    string_buf = new uint8_t[localstringcapacity];
-    tape = new uint64_t[localtapecapacity];
-    containing_scope_offset = new uint32_t[maxdepth];
+    string_buf = new (std::nothrow) uint8_t[localstringcapacity];
+    tape = new (std::nothrow) uint64_t[localtapecapacity];
+    containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address = new void *[maxdepth];
+    ret_address = new (std::nothrow) void *[maxdepth];
 #else
-    ret_address = new char[maxdepth];
+    ret_address = new (std::nothrow) char[maxdepth];
 #endif
     if ((string_buf == NULL) || (tape == NULL) ||
         (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
