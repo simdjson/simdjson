@@ -363,9 +363,10 @@ make allparsingcompetition
 ./allparsingcompetition myfile.json
 ```
 
-## Python bindings
+## Other programming languages
 
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
+- [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core
 
 
 
