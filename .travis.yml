@@ -1,4 +1,4 @@
-language: c++
+language: cpp
 sudo: false
 addons:
   apt:
@@ -15,6 +15,5 @@ branches:
 script: 
    - export CXX=g++-7
    - export CC=gcc-7
-   - make 
+   - make
    - make test 
-
