@@ -15,5 +15,5 @@ branches:
 script: 
    - export CXX=g++-7
    - export CC=gcc-7
-   - make -j2
-   - make test -j2 
+   - make
+   - make test 
