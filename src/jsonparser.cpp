@@ -5,21 +5,19 @@
 #else
 #include <unistd.h>
 #endif
+#include "simdjson/simdjerr.h"
 
-
-extern bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded);
-extern bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded);
+extern enum simdjerr json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded);
+extern enum simdjerr json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded);
 extern ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded);
 extern ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded);
 
 
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
-bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
+enum simdjerr json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   if (pj.bytecapacity < len) {
-    std::cerr << "Your ParsedJson cannot support documents that big: " << len
-              << std::endl;
-    return false;
+    return simdjerr::CAPACITY_ERROR;
   }
   bool reallocated = false;
   if(reallocifneeded) {
@@ -34,18 +32,17 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
        buf = (uint8_t *) allocate_padded_buffer(len);
-       if(buf == NULL) return false;
+       if(buf == NULL) return simdjerr::ALLOC_ERROR;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
   }
   bool isok = find_structural_bits(buf, len, pj);
-  if (isok) {
-    isok = unified_machine(buf, len, pj);
-  } else {
+  if (!isok) {
     if(reallocated) free((void*)buf);
-    return false;
+    return simdjerr::CAPACITY_ERROR;
   }
+  isok = unified_machine(buf, len, pj);
   if(reallocated) free((void*)buf);
   return isok;
 }

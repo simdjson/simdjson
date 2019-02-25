@@ -6,20 +6,19 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
-
-
-
+#include "simdjson/simdjerr.h"
 
 // Parse a document found in buf, need to preallocate ParsedJson.
-// Return false in case of a failure. You can also check validity
-// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+// Return values:
+// 0: Success
+// You can also check validit by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
 // (a copy of the input string is made).
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
+enum simdjerr json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
 
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure. You can also check validity
@@ -30,7 +29,7 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-inline bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
+inline enum simdjerr json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
   return json_parse((const uint8_t *) buf, len, pj, reallocifneeded);
 }
 
@@ -43,7 +42,7 @@ inline bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallo
 // the input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after s.data()+s.size() are ignored (can be garbage).
 WARN_UNUSED
-inline bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
+inline enum simdjerr json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
   return json_parse(s.data(), s.size(), pj, reallocifneeded);
 }
 

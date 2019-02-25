@@ -31,7 +31,6 @@ WARN_UNUSED
 /*never_inline*/ bool find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
   if (len > pj.bytecapacity) {
-    cerr << "Your ParsedJson object only supports documents up to "<< pj.bytecapacity << " bytes but you are trying to process " <<  len  << " bytes\n";
     return false;
   }
   uint32_t *base_ptr = pj.structural_indexes;
