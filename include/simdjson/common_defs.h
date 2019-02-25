@@ -27,7 +27,7 @@
 
 
 #define really_inline inline
-#define never_inline inline
+#define never_inline __declspec(noinline)
 
 #define UNUSED
 #define WARN_UNUSED

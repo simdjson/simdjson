@@ -1,9 +1,82 @@
 version: 2
 jobs:
-  build:
-    docker: 
-      - image: gcc:8
+  "gcc":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: g++-7
     steps:
-      - checkout 
-      - run: make
-      - run: make quiettest
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          g++-7
+
+      - run:
+          name: Building (gcc)
+          command: make
+
+      - run:
+          name: Running tests (gcc)
+          command: make quiettest
+
+      - run:
+          name: Building (gcc, cmake)
+          command: |
+            mkdir build
+            cd build
+            cmake ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake)
+          command: |
+            cd build
+            make test
+
+  "clang":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: clang++-6.0
+    steps:
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          clang-6.0
+
+      - run:
+          name: Building (clang)
+          command: make
+
+      - run:
+          name: Running tests (clang)
+          command: make quiettest
+
+      - run:
+          name: Building (clang, cmake)
+          command: |
+            mkdir build
+            cd build
+            cmake ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake)
+          command: |
+            cd build
+            make test
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - "clang"
+      - "gcc"
