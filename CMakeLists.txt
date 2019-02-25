@@ -7,7 +7,7 @@ if (NOT CMAKE_BUILD_TYPE)
                 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-project(simdjson LANGUAGES CXX)
+project(simdjson)
 set(SIMDJSON_LIB_NAME simdjson)
 
 if(NOT MSVC)
