@@ -46,10 +46,10 @@ static inline int hamming(uint64_t input_num) {
 #include <x86intrin.h>
 
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_uaddll_overflow(value1, value2, static_cast<unsigned long long*>(result));
+	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
 }
 static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
-	return __builtin_umulll_overflow(value1, value2, static_cast<unsigned long long *>(result));
+	return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 }
 
 /* result might be undefined when input_num is zero */
