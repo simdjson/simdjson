@@ -5,5 +5,5 @@ steps:
 - name: test
   image: gcc:8
   commands:
-  - make
-  - make quiettest
+  - make -j2
+  - make quiettest -j2
