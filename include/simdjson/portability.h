@@ -86,8 +86,7 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
 #else
 	// somehow, if this is used before including "x86intrin.h", it creates an
 	// implicit defined warning.
-	if (posix_memalign(&p, alignment, size) != 0) { return nullptr;
-}
+	if (posix_memalign(&p, alignment, size) != 0) { return nullptr; }
 #endif
 	return p;
 }
@@ -115,8 +114,7 @@ static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
 
 
 static inline void aligned_free(void *memblock) {
-    if(memblock == nullptr) { return;
-}
+    if(memblock == nullptr) { return; }
 #ifdef _MSC_VER
     _aligned_free(memblock);
 #elif defined(__MINGW32__) || defined(__MINGW64__)

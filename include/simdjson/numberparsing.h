@@ -257,7 +257,7 @@ parse_float(const uint8_t *const buf,
     }
     i *= power_of_ten[308 + exponent];
   }
-  if(is_not_structural_or_whitespace(*p) != 0u) {
+  if(is_not_structural_or_whitespace(*p)) {
     return false;
   }
   double d = negative ? -i : i;
@@ -265,7 +265,7 @@ parse_float(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundFloat(d, buf + offset);
 #endif
-  return is_structural_or_whitespace(*p) != 0u;
+  return is_structural_or_whitespace(*p);
 }
 
 // called by parse_number when we know that the output is an integer,
@@ -336,7 +336,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
 #endif
-  return is_structural_or_whitespace(*p) != 0u;
+  return is_structural_or_whitespace(*p);
 }
 
 
@@ -513,7 +513,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     foundInteger(i, buf + offset);
 #endif
   }
-  return  is_structural_or_whitespace(*p) != 0u;
+  return  is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 

@@ -62,16 +62,12 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     if ((string_buf == nullptr) || (tape == nullptr) ||
         (containing_scope_offset == nullptr) || (ret_address == nullptr) || (structural_indexes == nullptr)) {
       std::cerr << "Could not allocate memory" << std::endl;
-       {delete[] ret_address;
-}
-       {delete[] containing_scope_offset;
-}
-       {delete[] tape;
-}
-       {delete[] string_buf;
-}
-       {delete[] structural_indexes;
-}
+      delete[] ret_address;
+      delete[] containing_scope_offset;
+      delete[] tape;
+      delete[] string_buf;
+      delete[] structural_indexes;
+
       return false;
     }
 
