@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   }
   int res = json_parse(p, pj); // do the parsing, return false on error
   aligned_free((void *)p.data());
-  if (res)) {
+  if (res) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;
   }
