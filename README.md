@@ -1,10 +1,10 @@
 # simdjson : Parsing gigabytes of JSON per second
+
 [![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 
-## A C++  library to see how fast we can parse JSON with complete validation.
+## A C++ library to see how fast we can parse JSON with complete validation.
 
 JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding).
-
 
 ## Some performance results
 
@@ -12,35 +12,34 @@ We can use a quarter or fewer instructions than a state-of-the-art parser like R
 
 <img src="doc/gbps.png" width="90%">
 
-
 On a Skylake processor, the parsing speeds (in GB/s) of various processors on the twitter.json file are as follows.
 
-| parser   |  GB/s |
-|---|---|
-| simdjson | 2.2	|
-| RapidJSON encoding-validation | 0.51|
-| RapidJSON encoding-validation, insitu | 0.71|
-| sajson (insitu, dynamic) | 0.70|
-| sajson (insitu, static) | 0.97|
-| dropbox | 0.14|
-| fastjson | 0.26|
-| gason | 0.85|
-| ultrajson | 0.42|
-| jsmn | 0.28|
-|cJSON | 0.34|
+| parser                                | GB/s |
+| ------------------------------------- | ---- |
+| simdjson                              | 2.2  |
+| RapidJSON encoding-validation         | 0.51 |
+| RapidJSON encoding-validation, insitu | 0.71 |
+| sajson (insitu, dynamic)              | 0.70 |
+| sajson (insitu, static)               | 0.97 |
+| dropbox                               | 0.14 |
+| fastjson                              | 0.26 |
+| gason                                 | 0.85 |
+| ultrajson                             | 0.42 |
+| jsmn                                  | 0.28 |
+| cJSON                                 | 0.34 |
 
 ## Requirements
 
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013, and processors from AMD starting with the Ryzen)
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
-- Some benchmark scripts assume bash and other common utilities, but they are  optional.
+- Some benchmark scripts assume bash and other common utilities, but they are optional.
 
 ## License
 
-This code is made available under the Apache License 2.0. 
+This code is made available under the Apache License 2.0.
 
-Under Windows, we build some tools using the  windows/dirent_portable.h  file (which is outside our library code): it under the liberal (business-friendly) MIT license.
+Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
 ## Code example
 
@@ -55,7 +54,7 @@ const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
-bool is_ok = json_parse(p, pj); // do the parsing, return false on error
+int is_ok = json_parse(p, pj); // do the parsing, return 0 on success
 // parsing is done!
 // You can safely delete the string content
 free((void*)p.data());
@@ -91,7 +90,7 @@ copy the files in your project in your include path. You can then include them q
 #include "simdjson.h"
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
-  const char * filename = argv[1]; 
+  const char * filename = argv[1];
   std::string_view p = get_corpus(filename);
   ParsedJson pj = build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
@@ -116,12 +115,13 @@ make
 make test
 ```
 
-
 To run benchmarks:
+
 ```
 make parse
 ./parse jsonexamples/twitter.json
 ```
+
 Under Linux, the `parse` command gives a detailed analysis of the performance counters.
 
 To run comparative benchmarks (with other parsers):
@@ -132,7 +132,7 @@ make benchmark
 
 ## Usage (CMake on platforms like Linux or macOS)
 
-Requirements:  We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type 
+Requirements: We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type
 
 ```
 brew install cmake
@@ -140,15 +140,13 @@ brew install cmake
 
 There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
 
-You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. For example, you can install a recent compiler with brew: 
+You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. For example, you can install a recent compiler with brew:
 
 ```
 brew install gcc@8
 ```
 
-Optional: You  need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as ``export CC=gcc-7`` and ``export CXX=g++-7``. 
-
-
+Optional: You need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as `export CC=gcc-7` and `export CXX=g++-7`.
 
 Building: While in the project repository, do the following:
 
@@ -168,10 +166,9 @@ You can build a static library:
 mkdir buildstatic
 cd buildstatic
 cmake -DSIMDJSON_BUILD_STATIC=ON ..
-make 
+make
 make test
 ```
-
 
 In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old. You may proceed as follows:
 
@@ -185,19 +182,16 @@ make
 make test
 ```
 
-
 ## Usage (CMake on Windows using Visual Studio)
-
 
 We are assuming that you have a common Windows PC with at least Visual Studio 2017, and an x64 processor with AVX2 support (2013 Haswell or later).
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
-- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that ``cmake`` be made available from the command line. Please choose a recent version of cmake.
-- Create a subdirectory within simdjson, such as ``VisualStudio``.
-- Using a shell, go to this newly created directory. 
-- Type ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..`` in the shell while in the ``VisualStudio`` repository. (Alternatively, if you want to build a DLL, you may use the command line ``cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF  ..``.)
-- This last command created a Visual Studio solution file in the newly created directory (e.g., ``simdjson.sln``). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the ``Solution Explorer`` window (available from the ``View`` menu), right-click ``ALL_BUILD`` and select ``Build``. To test the code, still in the ``Solution Explorer`` window, select ``RUN_TESTS`` and select ``Build``.
-
+- Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
+- Create a subdirectory within simdjson, such as `VisualStudio`.
+- Using a shell, go to this newly created directory.
+- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
+- This last command created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
 
 ## Tools
 
@@ -219,13 +213,12 @@ To simplify the engineering, we make some assumptions.
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
 - Performance is optimized for JSON documents spanning at least a few kilobytes up to many megabytes: the performance issues with having to parse many tiny JSON documents or one truly enormous JSON document are different.
 
-*We do not aim to provide a general-purpose JSON library.* A library like RapidJSON offers much more than just parsing, it helps you generate JSON and offers various other convenient functions. We merely parse the document.
-
+_We do not aim to provide a general-purpose JSON library._ A library like RapidJSON offers much more than just parsing, it helps you generate JSON and offers various other convenient functions. We merely parse the document.
 
 ## Features
 
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
-- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers  that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
+- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tabs in strings.)
@@ -236,7 +229,6 @@ The parser works in two stages:
 
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
-
 
 ## Navigating the parsed document
 
@@ -333,7 +325,6 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
 }
 ```
 
-
 ## In-depth comparisons
 
 If you want to see how a wide range of parsers validate a given JSON file:
@@ -357,17 +348,13 @@ make allparsingcompetition
 ./allparsingcompetition myfile.json
 ```
 
-
-
-
-
 ## Various References
 
 - [Google double-conv](https://github.com/google/double-conversion/)
 - [How to implement atoi using SIMD?](https://stackoverflow.com/questions/35127060/how-to-implement-atoi-using-simd)
 - [Parsing JSON is a Minefield 💣](http://seriot.ch/parsing_json.php)
 - https://tools.ietf.org/html/rfc7159
-- The Mison implementation in rust  https://github.com/pikkr/pikkr
+- The Mison implementation in rust https://github.com/pikkr/pikkr
 - http://rapidjson.org/md_doc_sax.html
 - https://github.com/Geal/parser_benchmarks/tree/master/json
 - Gron: A command line tool that makes JSON greppable https://news.ycombinator.com/item?id=16727665
@@ -377,25 +364,25 @@ make allparsingcompetition
 - RapidJSON. http://rapidjson.org/
 
 Inspiring links:
+
 - https://auth0.com/blog/beating-json-performance-with-protobuf/
 - https://gist.github.com/shijuvar/25ad7de9505232c87034b8359543404a
 - https://github.com/frankmcsherry/blog/blob/master/posts/2018-02-11.md
 
-
 Validating UTF-8 takes no more than 0.7 cycles per byte:
-- https://github.com/lemire/fastvalidate-utf-8 https://lemire.me/blog/2018/05/16/validating-utf-8-strings-using-as-little-as-0-7-cycles-per-byte/
 
+- https://github.com/lemire/fastvalidate-utf-8 https://lemire.me/blog/2018/05/16/validating-utf-8-strings-using-as-little-as-0-7-cycles-per-byte/
 
 ## Remarks on JSON parsing
 
 - The JSON spec defines what a JSON parser is:
->  A JSON parser transforms a JSON text into another representation.  A JSON parser MUST accept all texts that conform to the JSON grammar.  A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts.  An implementation may set limits on the maximum depth of nesting.  An implementation may set limits on the range and precision of numbers.  An implementation may set limits on the length and character contents of strings.
+  > A JSON parser transforms a JSON text into another representation. A JSON parser MUST accept all texts that conform to the JSON grammar. A JSON parser MAY accept non-JSON forms or extensions. An implementation may set limits on the size of texts that it accepts. An implementation may set limits on the maximum depth of nesting. An implementation may set limits on the range and precision of numbers. An implementation may set limits on the length and character contents of strings.
 
+* JSON is not JavaScript:
 
-- JSON is not JavaScript:
-> All JSON is Javascript but NOT all Javascript is JSON. So {property:1} is invalid because property does not have double quotes around it. {'property':1} is also invalid, because it's single quoted while the only thing that can placate the JSON specification is double quoting. JSON is even fussy enough that {"property":.1} is invalid too, because you should have of course written {"property":0.1}. Also, don't even think about having comments or semicolons, you guessed it: they're invalid. (credit:https://github.com/elzr/vim-json)
+  > All JSON is Javascript but NOT all Javascript is JSON. So {property:1} is invalid because property does not have double quotes around it. {'property':1} is also invalid, because it's single quoted while the only thing that can placate the JSON specification is double quoting. JSON is even fussy enough that {"property":.1} is invalid too, because you should have of course written {"property":0.1}. Also, don't even think about having comments or semicolons, you guessed it: they're invalid. (credit:https://github.com/elzr/vim-json)
 
-- The  structural characters are:
+* The structural characters are:
 
 
       begin-array     =  [ left square bracket
@@ -405,7 +392,6 @@ Validating UTF-8 takes no more than 0.7 cycles per byte:
       name-separator  = : colon
       value-separator = , comma
 
-
 ### Pseudo-structural elements
 
 A character is pseudo-structural if and only if:
@@ -413,13 +399,12 @@ A character is pseudo-structural if and only if:
 1. Not enclosed in quotes, AND
 2. Is a non-whitespace character, AND
 3. It's preceding character is either:
-(a) a structural character, OR
-(b) whitespace.
+   (a) a structural character, OR
+   (b) whitespace.
 
 This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
 
-> { "foo" : 1.5, "bar" : 1.5   GEOFF_IS_A_DUMMY bla bla , "baz", null }
-
+> { "foo" : 1.5, "bar" : 1.5 GEOFF_IS_A_DUMMY bla bla , "baz", null }
 
 ## Academic References
 
@@ -443,4 +428,4 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 - Cameron, Robert D., et al. "Fast Regular Expression Matching with Bit-parallel Data Streams."
 - Lin, Dan. Bits filter: a high-performance multiple string pattern matching algorithm for malware detection. Diss. School of Computing Science-Simon Fraser University, 2010.
 - Yang, Shiyang. Validation of XML Document Based on Parallel Bit Stream Technology. Diss. Applied Sciences: School of Computing Science, 2013.
--  N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
+- N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.

@@ -63,7 +63,7 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
  * for documentation.
  ***********/
 WARN_UNUSED
-enum simdjerr unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
+int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; // index of the structural character (0,1,2,3...)
   uint32_t idx;   // location of the structural character in the input (buf)
   uint8_t c; // used to track the (structural) character we are looking at, updated
@@ -504,8 +504,12 @@ succeed:
 
 
   pj.isvalid  = true;
-  return true;
+  return simdjerr::SUCCESS;
 
 fail:
-  return false;
+  return simdjerr::TAPE_ERROR;
+}
+
+int unified_machine(const char* buf, size_t len, ParsedJson& pj) {
+      return unified_machine(reinterpret_cast<const uint8_t *>(buf),len,pj);
 }

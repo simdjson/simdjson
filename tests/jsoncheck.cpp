@@ -78,24 +78,22 @@ bool validate(const char *dirname) {
         return false;
       }
       ++howmany;
-      bool isok = json_parse(p, pj);
+      const int res = json_parse(p, pj);
       aligned_free((void*)p.data());
-      printf("%s\n", isok ? "ok" : "invalid");
+      printf("%s\n", res == 0 ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
-      } else if (startsWith("pass", name)) {
-        if (!isok) {
+      } else if (startsWith("pass", name) && res) {
           isfileasexpected[i] = false;
           printf("warning: file %s should pass but it fails.\n", name);
           everythingfine = false;
-        }
-      } else if (startsWith("fail", name)) {
-        if (isok) {
+        
+      } else if (startsWith("fail", name) && !res) {
           isfileasexpected[i] = false;
           printf("warning: file %s should fail but it passes.\n", name);
           everythingfine = false;
-        }
+        
       }
       free(fullpath);
     }

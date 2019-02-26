@@ -28,10 +28,6 @@ target_include_directories(${SIMDJSON_LIB_NAME}
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
-set_target_properties(${SIMDJSON_LIB_NAME} PROPERTIES
-
-)
-
 install(TARGETS ${SIMDJSON_LIB_NAME} DESTINATION lib)
 
 if(NOT MSVC)
