@@ -516,5 +516,5 @@ fail:
 }
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
-  unified_machine(reinterpret_cast<const uint8_t*>(buf), len, pj);
+  return unified_machine(reinterpret_cast<const uint8_t*>(buf), len, pj);
 }
