@@ -1,6 +1,6 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
 # Uncomment next line to adjust line endings
-#* text=auto eol=lf
+#* text=auto 
 
 # Explicitly declare text files you want to always be normalized and converted
 # to native line endings on checkout.
