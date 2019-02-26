@@ -13,6 +13,7 @@
 #include "simdjson/numberparsing.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/stringparsing.h"
+#include "simdjson/simdjerr.h"
 
 #include <iostream>
 #define PATH_SEP '/'
@@ -62,7 +63,7 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
  * for documentation.
  ***********/
 WARN_UNUSED
-bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
+int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; // index of the structural character (0,1,2,3...)
   uint32_t idx;   // location of the structural character in the input (buf)
   uint8_t c; // used to track the (structural) character we are looking at, updated
@@ -70,8 +71,7 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
-      fprintf(stderr, "insufficient capacity\n");
-      return false;
+      return simdjerr::CAPACITY;
   }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
@@ -509,8 +509,8 @@ succeed:
 
 
   pj.isvalid  = true;
-  return true;
+  return simdjerr::SUCCESS;
 
 fail:
-  return false;
+  return simdjerr::TAPE_ERROR;
 }
