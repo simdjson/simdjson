@@ -119,16 +119,16 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
+echo "c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
 mkdir -p $SINGLEHDR
-echo "c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
+echo "c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
-cd $SINGLEHDR && c++ -march=native -O3 -std=c++11 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
+cd $SINGLEHDR && c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

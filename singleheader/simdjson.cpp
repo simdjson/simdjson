@@ -1,4 +1,4 @@
-/* auto-generated on Fri 22 Feb 2019 19:16:31 EST. Do not edit! */
+/* auto-generated on Tue 26 Feb 13:29:52 AEDT 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,7 +6,7 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /home/geoff/git/simdjson/src/jsonioutil.cpp */
 #include <cstring>
 #include <stdlib.h>
 
@@ -47,8 +47,8 @@ std::string_view get_corpus(std::string filename) {
   }
   throw  std::runtime_error("could not load corpus");
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* end file /home/geoff/git/simdjson/src/jsonioutil.cpp */
+/* begin file /home/geoff/git/simdjson/src/jsonminifier.cpp */
 #include <cstdint>
 #ifndef __AVX2__
 
@@ -298,8 +298,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* end file /home/geoff/git/simdjson/src/jsonminifier.cpp */
+/* begin file /home/geoff/git/simdjson/src/jsonparser.cpp */
 #ifdef _MSC_VER
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -363,8 +363,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   }
   return pj;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* end file /home/geoff/git/simdjson/src/jsonparser.cpp */
+/* begin file /home/geoff/git/simdjson/src/stage1_find_marks.cpp */
 #include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
@@ -817,8 +817,8 @@ WARN_UNUSED
   return true;
 #endif
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* end file /home/geoff/git/simdjson/src/stage1_find_marks.cpp */
+/* begin file /home/geoff/git/simdjson/src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1325,8 +1325,8 @@ succeed:
 fail:
   return false;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
+/* end file /home/geoff/git/simdjson/src/stage2_build_tape.cpp */
+/* begin file /home/geoff/git/simdjson/src/parsedjson.cpp */
 
 ParsedJson::ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
         current_loc(0), n_structural_indexes(0),
@@ -1376,16 +1376,16 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     bytecapacity = 0; // will only set it to len after allocations are a success
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-    structural_indexes = new uint32_t[max_structures];
+    structural_indexes = new (std::nothrow) uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
     size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
-    string_buf = new uint8_t[localstringcapacity];
-    tape = new uint64_t[localtapecapacity];
-    containing_scope_offset = new uint32_t[maxdepth];
+    string_buf = new (std::nothrow) uint8_t[localstringcapacity];
+    tape = new (std::nothrow) uint64_t[localtapecapacity];
+    containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address = new void *[maxdepth];
+    ret_address = new (std::nothrow) void *[maxdepth];
 #else
-    ret_address = new char[maxdepth];
+    ret_address = new (std::nothrow) char[maxdepth];
 #endif
     if ((string_buf == NULL) || (tape == NULL) ||
         (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
@@ -1608,8 +1608,8 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
     os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
+/* end file /home/geoff/git/simdjson/src/parsedjson.cpp */
+/* begin file /home/geoff/git/simdjson/src/parsedjsoniterator.cpp */
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
         if(pj.isValid()) {
@@ -1901,4 +1901,4 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     }
     return true;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
+/* end file /home/geoff/git/simdjson/src/parsedjsoniterator.cpp */
