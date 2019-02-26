@@ -81,7 +81,7 @@ bool validate(const char *dirname) {
       ++howmany;
       const int parseRes = json_parse(p, pj);
       aligned_free((void*)p.data());
-      printf("%s\n", parseRes === 0 ? "ok" : "invalid");
+      printf("%s\n", parseRes == 0 ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
