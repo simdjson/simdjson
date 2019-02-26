@@ -30,7 +30,7 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 // all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
 inline int json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
-  return json_parse((const uint8_t *) buf, len, pj, reallocifneeded);
+  return json_parse(reinterpret_cast<const uint8_t *>(buf), len, pj, reallocifneeded);
 }
 
 // Parse a document found in buf, need to preallocate ParsedJson.
@@ -65,7 +65,7 @@ WARN_UNUSED
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 inline ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded = true) {
-  return build_parsed_json((const uint8_t *) buf, len, reallocifneeded);
+  return build_parsed_json(reinterpret_cast<const uint8_t *>(buf), len, reallocifneeded);
 }
 
 // convenience function
