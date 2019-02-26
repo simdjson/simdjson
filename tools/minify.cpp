@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Could not load the file " << filename << std::endl;
         return EXIT_FAILURE;
   }
-  jsonminify(p, (char *)p.data());
+  jsonminify(p, const_cast<char *>(p.data()));
   printf("%s",p.data());
   aligned_free((void*)p.data());
 }

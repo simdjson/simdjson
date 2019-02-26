@@ -2,8 +2,8 @@
 #define SIMDJSON_STRINGPARSING_H
 
 #include "simdjson/common_defs.h"
-#include "simdjson/parsedjson.h"
 #include "simdjson/jsoncharutils.h"
+#include "simdjson/parsedjson.h"
 
 
 // begin copypasta
@@ -85,11 +85,11 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
   uint8_t *const start_of_string = dst;
 #endif
   while (1) {
-    __m256i v = _mm256_loadu_si256((const __m256i *)(src));
-    uint32_t bs_bits =
-        (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')));
-    uint32_t quote_bits =
-        (uint32_t)_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"')));
+    __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
+    auto bs_bits =
+        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
+    auto quote_bits =
+        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'))));
 #define CHECKUNESCAPED
     // All Unicode characters may be placed within the
     // quotation marks, except for the characters that MUST be escaped:
@@ -105,7 +105,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     uint32_t bs_dist = trailingzeroes(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
-    _mm256_storeu_si256((__m256i *)(dst), v);
+    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
     if (quote_dist < bs_dist) {
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
@@ -115,7 +115,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
-      uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);
+      auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
       bool is_ok = ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
 #ifdef JSON_TEST_STRINGS // for unit testing
        if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
@@ -128,11 +128,11 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 #endif // JSON_TEST_STRINGS
       return true;
 #endif //CHECKUNESCAPED
-    } else if (quote_dist > bs_dist) {
+    } if (quote_dist > bs_dist) {
       uint8_t escape_char = src[bs_dist + 1];
 #ifdef CHECKUNESCAPED
       // we are going to need the unescaped_bits to check for unescaped chars
-      uint32_t unescaped_bits = (uint32_t)_mm256_movemask_epi8(unescaped_vec);
+      auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
       if(((bs_bits - 1) & (~ bs_bits) & unescaped_bits) != 0) {
 #ifdef JSON_TEST_STRINGS // for unit testing
         foundBadString(buf + offset);
@@ -158,7 +158,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
         // note this may reach beyond the part of the buffer we've actually
         // seen. I think this is ok
         uint8_t escape_result = escape_map[escape_char];
-        if (!escape_result) {
+        if (escape_result == 0u) {
 #ifdef JSON_TEST_STRINGS // for unit testing
           foundBadString(buf + offset);
 #endif // JSON_TEST_STRINGS

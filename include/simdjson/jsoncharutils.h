@@ -97,7 +97,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
     c[0] = cp;
     return 1; // ascii
-  } else if (cp <= 0x7FF) {
+  } if (cp <= 0x7FF) {
     c[0] = (cp >> 6) + 192;
     c[1] = (cp & 63) + 128;
     return 2; // universal plane

@@ -56,4 +56,4 @@
 
 #endif  // MSC_VER
 
-#endif // COMMON_DEFS_H
+#endif // SIMDJSON_COMMON_DEFS_H

@@ -1,7 +1,7 @@
 #include "simdjson/portability.h"
-#include <cassert>
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
+#include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
 #define SIMDJSON_UTF8VALIDATE
@@ -21,7 +21,7 @@ using namespace std;
 really_inline uint64_t cmp_mask_against_input(__m256i input_lo, __m256i input_hi,
                                          __m256i mask) {
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
-  uint64_t res_0 = (uint32_t)_mm256_movemask_epi8(cmp_res_0);
+  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
@@ -38,7 +38,7 @@ WARN_UNUSED
   uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous;
+  struct avx_processed_utf_bytes previous{};
   previous.rawbytes = _mm256_setzero_si256();
   previous.high_nibbles = _mm256_setzero_si256();
   previous.carried_continuations = _mm256_setzero_si256();
@@ -66,8 +66,8 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
 #endif
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
-    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
+    __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 0));
+    __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
@@ -130,29 +130,29 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                   
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                   
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals); 
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals); 
       structurals = structurals & (structurals - 1);
       base += 8;
     }
     base = next_base;
 
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
+    prev_iter_inside_quote = static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
 
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
@@ -190,7 +190,7 @@ WARN_UNUSED
     __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_lo));
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
     structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
@@ -201,7 +201,7 @@ WARN_UNUSED
     __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
     // mask off anything inside quotes
@@ -244,8 +244,8 @@ WARN_UNUSED
     uint8_t tmpbuf[64];
     memset(tmpbuf,0x20,64);
     memcpy(tmpbuf,buf+idx,len - idx);
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(tmpbuf + 0));
-    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(tmpbuf + 32));
+    __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 0));
+    __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
@@ -308,22 +308,22 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base += 8;
     }
@@ -364,7 +364,7 @@ WARN_UNUSED
     __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_lo));
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
     structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
@@ -375,7 +375,7 @@ WARN_UNUSED
     __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
 
@@ -412,22 +412,22 @@ WARN_UNUSED
   }
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base += 8;
     }
@@ -435,7 +435,7 @@ WARN_UNUSED
 
   pj.n_structural_indexes = base;
   // a valid JSON file cannot have zero structural indexes - we should have found something
-  if (!pj.n_structural_indexes) {
+  if (pj.n_structural_indexes == 0u) {
     return false;
   }
   if(base_ptr[pj.n_structural_indexes-1] > len) {
@@ -449,7 +449,7 @@ WARN_UNUSED
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
 
 #ifdef SIMDJSON_UTF8VALIDATE
-  return _mm256_testz_si256(has_error, has_error);
+  return _mm256_testz_si256(has_error, has_error) != 0;
 #else
   return true;
 #endif

@@ -42,8 +42,8 @@ static inline int hamming(uint64_t input_num) {
 }
 
 #else
-#include <x86intrin.h>
 #include <cstdint>
+#include <x86intrin.h>
 
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
@@ -86,7 +86,7 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
 #else
 	// somehow, if this is used before including "x86intrin.h", it creates an
 	// implicit defined warning.
-	if (posix_memalign(&p, alignment, size) != 0) return NULL;
+	if (posix_memalign(&p, alignment, size) != 0) { return nullptr; }
 #endif
 	return p;
 }
@@ -114,7 +114,7 @@ static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
 
 
 static inline void aligned_free(void *memblock) {
-    if(memblock == NULL) return;
+    if(memblock == nullptr) { return; }
 #ifdef _MSC_VER
     _aligned_free(memblock);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
@@ -124,4 +124,4 @@ static inline void aligned_free(void *memblock) {
 #endif
 }
 
-#endif /* end of include PORTABILITY_H */
+#endif // SIMDJSON_PORTABILITY_H

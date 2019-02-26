@@ -106,18 +106,17 @@ int main(int argc, char *argv[]) {
   void *state;
   bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
   
-  jsmntok_t * tokens = new jsmntok_t[p.size()];
+  auto * tokens = make_unique<jsmntok_t[](p.size());
   bool jsmn_correct = false; 
-  if(tokens == NULL) {
+  if(tokens == nullptr) {
     printf("Failed to alloc memory for jsmn\n");
   } else {
     jsmn_parser parser;
     jsmn_init(&parser);
     memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
-    int r = jsmn_parse(&parser, buffer, p.size(), tokens, p.size());
-    delete[] tokens;
-    tokens = NULL;
+    int r = jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size());
+    tokens = nullptr;
     jsmn_correct = (r > 0);
   }
 

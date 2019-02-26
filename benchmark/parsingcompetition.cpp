@@ -7,6 +7,8 @@
 #endif //__linux__
 #endif // _MSC_VER
 
+#include <memory>
+
 #include "benchmark.h"
 
 
@@ -225,7 +227,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  jsmntok_t * tokens = new jsmntok_t[p.size()];
+  auto * tokens = make_unique<jsmntok_t[](p.size());
   if(tokens == NULL) {
     printf("Failed to alloc memory for jsmn\n");
   } else {
@@ -234,9 +236,8 @@ int main(int argc, char *argv[]) {
     memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
     BEST_TIME("jsmn           ",
-              (jsmn_parse(&parser, buffer, p.size(), tokens, p.size()) > 0), true,
+              (jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size()) > 0), true,
               jsmn_init(&parser), repeat, volume, !justdata);
-    delete[] tokens;
   }
 
   memcpy(buffer, p.data(), p.size());

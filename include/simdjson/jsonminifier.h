@@ -11,7 +11,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out);
 
 
 static inline size_t jsonminify(const char *buf, size_t len, char *out) {
-    return jsonminify((const uint8_t *)buf, len, (uint8_t *)out);
+    return jsonminify(reinterpret_cast<const uint8_t *>(buf), len, reinterpret_cast<uint8_t *>(out));
 }
 
 
