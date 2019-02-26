@@ -39,11 +39,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if (len > 0) {
-      if ((len <= bytecapacity) && (depthcapacity < maxdepth))
-        return true;
-      deallocate();
-    }
+    if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+      return true;
+    deallocate();
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
     n_structural_indexes = 0;
@@ -147,13 +145,19 @@ bool ParsedJson::printjson(std::ostream &os) {
         os << '"';
         break;
       case 'l': // we have a long int
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
+          delete[] inobject;
+          delete[] inobjectidx;
           return false;
+        }
         os <<  (int64_t)tape[++tapeidx];
         break;
       case 'd': // we have a double
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany){
+          delete[] inobject;
+          delete[] inobjectidx;
           return false;
+        }
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer;
