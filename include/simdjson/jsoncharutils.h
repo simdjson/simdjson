@@ -51,7 +51,7 @@ really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
-const char digittoval[256] = {
+const signed char digittoval[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,
@@ -67,25 +67,18 @@ const char digittoval[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-// return true if we have a valid hex between 0000 and FFFF
-/*inline bool hex_to_u32(const uint8_t *src, uint32_t *res) {
-  uint8_t v1 = src[0];
-  uint8_t v2 = src[1];
-  uint8_t v3 = src[2];
-  uint8_t v4 = src[3];
-  *res = digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
-         digittoval[v4];
-  return (int32_t)(*res) >= 0;
-}*/
-
-// returns a value with the highest bit set if it is not valid
+// returns a value with the high 16 bits set if not valid
+// otherwise returns the conversion of the 4 hex digits at src into the bottom 16 bits of the 32-bit
+// return register
 static inline uint32_t hex_to_u32_nocheck(const uint8_t *src) {// strictly speaking, static inline is a C-ism
-  uint8_t v1 = src[0];
-  uint8_t v2 = src[1];
-  uint8_t v3 = src[2];
-  uint8_t v4 = src[3];
-  return digittoval[v1] << 12 | digittoval[v2] << 8 | digittoval[v3] << 4 |
-         digittoval[v4];
+  // all these will sign-extend the chars looked up, placing 1-bits into the high 28 bits of every
+  // invalid value. After the shifts, this will *still* result in the outcome that the high 16 bits of any
+  // value with any invalid char will be all 1's. We check for this in the caller.
+  int32_t v1 = digittoval[src[0]];
+  int32_t v2 = digittoval[src[1]];
+  int32_t v3 = digittoval[src[2]];
+  int32_t v4 = digittoval[src[3]];
+  return static_cast<uint32_t>(v1 << 12 | v2 << 8 | v3 << 4 | v4);
 }
 
 // given a code point cp, writes to c
