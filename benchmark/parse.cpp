@@ -1,17 +1,17 @@
-#include <assert.h>
-#include <ctype.h>
+#include <cassert>
+#include <cctype>
 #ifndef _MSC_VER
+#include <dirent.h>
 #include <unistd.h>
 #include <x86intrin.h>
-#include <dirent.h>
 #else
 #include <intrin.h>
 #endif
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cinttypes>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <algorithm>
 #include <chrono>
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "1vdt")) != -1)
+  while ((c = getopt(argc, argv, "1vdt")) != -1) {
     switch (c) {
     case 't':
       justdata = true;
@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
+}
 #else
   int optind = 1;
 #endif
@@ -78,8 +79,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
   }
-  if (verbose)
+  if (verbose) {
     cout << "[verbose] loading " << filename << endl;
+}
   std::string_view p;
   try {
     p = get_corpus(filename);
@@ -87,9 +89,10 @@ int main(int argc, char *argv[]) {
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  if (verbose)
+  if (verbose) {
     cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)"
          << endl;
+}
 #if defined(DEBUG)
   const uint32_t iterations = 1;
 #else
@@ -125,8 +128,9 @@ int main(int argc, char *argv[]) {
   bool isok = true;
 
   for (uint32_t i = 0; i < iterations; i++) {
-    if (verbose)
+    if (verbose) {
       cout << "[verbose] iteration # " << i << endl;
+}
 #ifndef SQUASH_COUNTERS
     unified.start();
 #endif
@@ -144,8 +148,9 @@ int main(int argc, char *argv[]) {
     cref0 += results[3];
     cmis0 += results[4];
 #endif
-    if (verbose)
+    if (verbose) {
       cout << "[verbose] allocated memory for parsed JSON " << endl;
+}
 
     auto start = std::chrono::steady_clock::now();
 #ifndef SQUASH_COUNTERS
@@ -248,10 +253,11 @@ int main(int argc, char *argv[]) {
   }
 #endif
   double min_result = *min_element(res.begin(), res.end());
-  if (!justdata)
+  if (!justdata) {
     cout << "Min:  " << min_result << " bytes read: " << p.size()
          << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
          << "\n";
+}
   if (jsonoutput) {
     isok = isok && pj.printjson(std::cout);
   }

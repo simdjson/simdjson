@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "da")) != -1)
+  while ((c = getopt(argc, argv, "da")) != -1) {
     switch (c) {
     case 'd':
       rawdump = true;
@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
+}
 #else
   int optind = 1;
 #endif

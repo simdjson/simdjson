@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -7,10 +7,10 @@
 // Microsoft can't be bothered to provide standard utils.
 #include <dirent_portable.h>
 #endif
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cinttypes>
+
+#include <cstdio>
+#include <cstdlib>
 
 #include "simdjson/jsonparser.h"
 
@@ -19,7 +19,7 @@
  */
 static bool hasExtension(const char *filename, const char *extension) {
   const char *ext = strrchr(filename, '.');
-  return (ext && !strcmp(ext, extension));
+  return ((ext != nullptr) && (strcmp(ext, extension) == 0));
 }
 
 bool startsWith(const char *pre, const char *str) {
@@ -28,7 +28,7 @@ bool startsWith(const char *pre, const char *str) {
 }
 
 bool contains(const char *pre, const char *str) {
-  return (strstr(str, pre) != NULL);
+  return (strstr(str, pre) != nullptr);
 }
 
 
@@ -37,7 +37,7 @@ bool validate(const char *dirname) {
   const char *extension = ".json";
   size_t dirlen = strlen(dirname);
   struct dirent **entry_list;
-  int c = scandir(dirname, &entry_list, 0, alphasort);
+  int c = scandir(dirname, &entry_list, nullptr, alphasort);
   if (c < 0) {
     fprintf(stderr, "error accessing %s \n", dirname);
     return false;
@@ -47,16 +47,17 @@ bool validate(const char *dirname) {
     return false;
   }
   bool * isfileasexpected = new bool[c];
-  for(int i = 0; i < c; i++) isfileasexpected[i] = true;
+  for(int i = 0; i < c; i++) { isfileasexpected[i] = true;
+}
   size_t howmany = 0;
   bool needsep = (strlen(dirname) > 1) && (dirname[strlen(dirname) - 1] != '/');
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
     if (hasExtension(name, extension)) {
       printf("validating: file %s ", name);
-      fflush(NULL);
+      fflush(nullptr);
       size_t filelen = strlen(name);
-      char *fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
+      char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
       strcpy(fullpath, dirname);
       if (needsep) {
         fullpath[dirlen] = '/';
@@ -106,11 +107,13 @@ bool validate(const char *dirname) {
   } else {
     fprintf(stderr, "There were problems! Consider reviewing the following files:\n");
     for(int i = 0; i < c; i++) {
-      if(!isfileasexpected[i]) fprintf(stderr, "%s \n", entry_list[i]->d_name);
+      if(!isfileasexpected[i]) { fprintf(stderr, "%s \n", entry_list[i]->d_name);
+}
     }
   }
-  for (int i = 0; i < c; ++i)
+  for (int i = 0; i < c; ++i) {
     free(entry_list[i]);
+}
   free(entry_list);
   delete[] isfileasexpected;
   return everythingfine;

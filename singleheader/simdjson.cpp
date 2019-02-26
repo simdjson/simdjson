@@ -1,4 +1,4 @@
-/* auto-generated on Tue 26 Feb 13:29:52 AEDT 2019. Do not edit! */
+/* auto-generated on Tue 26 Feb 2019 10:14:31 EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,9 +6,9 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file /home/geoff/git/simdjson/src/jsonioutil.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
 #include <cstring>
-#include <stdlib.h>
+#include <cstdlib>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
@@ -21,18 +21,19 @@ char * allocate_padded_buffer(size_t length) {
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
 #else
-    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength) != 0) return NULL;
+    if (posix_memalign(reinterpret_cast<void **>(&padded_buffer), 64, totalpaddedlength) != 0) { return nullptr;
+}
 #endif
 	return padded_buffer;
 }
 
-std::string_view get_corpus(std::string filename) {
+std::string_view get_corpus(const std::string& filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
-  if (fp) {
+  if (fp != nullptr) {
     std::fseek(fp, 0, SEEK_END);
     size_t len = std::ftell(fp);
     char * buf = allocate_padded_buffer(len);
-    if(buf == NULL) {
+    if(buf == nullptr) {
       std::fclose(fp);
       throw  std::runtime_error("could not allocate memory");
     }
@@ -47,8 +48,8 @@ std::string_view get_corpus(std::string filename) {
   }
   throw  std::runtime_error("could not load corpus");
 }
-/* end file /home/geoff/git/simdjson/src/jsonioutil.cpp */
-/* begin file /home/geoff/git/simdjson/src/jsonminifier.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
 #include <cstdint>
 #ifndef __AVX2__
 
@@ -115,7 +116,7 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
                                             __m256i mask) {
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
-  uint64_t res_0 = (uint32_t)_mm256_movemask_epi8(cmp_res_0);
+  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
@@ -136,8 +137,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     size_t avxlen = len - 63;
 
     for (; idx < avxlen; idx += 64) {
-      __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
-      __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
+      __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 0));
+      __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 32));
       uint64_t bs_bits = cmp_mask_against_input_mini(input_lo, input_hi,
                                                      _mm256_set1_epi8('\\'));
       uint64_t start_edges = bs_bits & ~(bs_bits << 1);
@@ -161,7 +162,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
           _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
       quote_mask ^= prev_iter_inside_quote;
-      prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63);// might be undefined behavior, should be fully defined in C++20, ok according to John Regher from Utah University
+      prev_iter_inside_quote = static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);// might be undefined behavior, should be fully defined in C++20, ok according to John Regher from Utah University
       const __m256i low_nibble_mask = _mm256_setr_epi8(
           //  0                           9  a   b  c  d
           16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0,
@@ -187,7 +188,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
           _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-      uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+      uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
       uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
       uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
       whitespace &= ~quote_mask;
@@ -200,15 +201,15 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
       int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming((~whitespace));
       __m256i vmask1 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
-                              (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
+          _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
+                              reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
       __m256i vmask2 =
-          _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFF),
-                              (const __m128i *)mask128_epi8 + (mask3 & 0x7FFF));
+          _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
+                              reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
       __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
       __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-      _mm256_storeu2_m128i((__m128i *)(out + pop1), (__m128i *)out, result1);
-      _mm256_storeu2_m128i((__m128i *)(out + pop3), (__m128i *)(out + pop2),
+      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop1), reinterpret_cast<__m128i *>(out), result1);
+      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop3), reinterpret_cast<__m128i *>(out + pop2),
                            result2);
       out += pop4;
     }
@@ -219,8 +220,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     uint8_t buffer[64];
     memset(buffer, 0, 64);
     memcpy(buffer, buf + idx, len - idx);
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buffer));
-    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buffer + 32));
+    __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buffer));
+    __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buffer + 32));
     uint64_t bs_bits =
         cmp_mask_against_input_mini(input_lo, input_hi, _mm256_set1_epi8('\\'));
     uint64_t start_edges = bs_bits & ~(bs_bits << 1);
@@ -262,7 +263,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     __m256i tmp_ws_hi = _mm256_or_si256(
         _mm256_cmpeq_epi8(mask_20, input_hi),
         _mm256_shuffle_epi8(lut_cntrl, _mm256_adds_epu8(mask_70, input_hi)));
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = (ws_res_0 | (ws_res_1 << 32));
     whitespace &= ~quote_mask;
@@ -279,16 +280,16 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
     int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = hamming((~whitespace));
     __m256i vmask1 =
-        _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask2 & 0x7FFF),
-                            (const __m128i *)mask128_epi8 + (mask1 & 0x7FFF));
+        _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
+                            reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
     __m256i vmask2 =
-        _mm256_loadu2_m128i((const __m128i *)mask128_epi8 + (mask4 & 0x7FFF),
-                            (const __m128i *)mask128_epi8 + (mask3 & 0x7FFF));
+        _mm256_loadu2_m128i(reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
+                            reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
     __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
     __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-    _mm256_storeu2_m128i((__m128i *)(buffer + pop1), (__m128i *)buffer,
+    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop1), reinterpret_cast<__m128i *>(buffer),
                          result1);
-    _mm256_storeu2_m128i((__m128i *)(buffer + pop3), (__m128i *)(buffer + pop2),
+    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop3), reinterpret_cast<__m128i *>(buffer + pop2),
                          result2);
     memcpy(out, buffer, pop4);
     out += pop4;
@@ -298,8 +299,8 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 }
 
 #endif
-/* end file /home/geoff/git/simdjson/src/jsonminifier.cpp */
-/* begin file /home/geoff/git/simdjson/src/jsonparser.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
 #ifdef _MSC_VER
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -308,10 +309,10 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 #endif
 
 
-extern bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded);
-extern bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded);
-extern ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded);
-extern ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded);
+
+
+
+
 
 
 // parse a document found in buf, need to preallocate ParsedJson.
@@ -334,8 +335,9 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 #endif
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
-       buf = (uint8_t *) allocate_padded_buffer(len);
-       if(buf == NULL) return false;
+       buf = reinterpret_cast<uint8_t *>(allocate_padded_buffer(len));
+       if(buf == nullptr) { return false;
+}
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
@@ -344,10 +346,12 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
   if (isok) {
     isok = unified_machine(buf, len, pj);
   } else {
-    if(reallocated) free((void*)buf);
+    if(reallocated) { free((void*)buf);
+}
     return false;
   }
-  if(reallocated) free((void*)buf);
+  if(reallocated) { free((void*)buf);
+}
   return isok;
 }
 
@@ -363,8 +367,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   }
   return pj;
 }
-/* end file /home/geoff/git/simdjson/src/jsonparser.cpp */
-/* begin file /home/geoff/git/simdjson/src/stage1_find_marks.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
 #include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
@@ -384,7 +388,7 @@ using namespace std;
 really_inline uint64_t cmp_mask_against_input(__m256i input_lo, __m256i input_hi,
                                          __m256i mask) {
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
-  uint64_t res_0 = (uint32_t)_mm256_movemask_epi8(cmp_res_0);
+  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
@@ -401,7 +405,7 @@ WARN_UNUSED
   uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
   __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous;
+  struct avx_processed_utf_bytes previous{};
   previous.rawbytes = _mm256_setzero_si256();
   previous.high_nibbles = _mm256_setzero_si256();
   previous.carried_continuations = _mm256_setzero_si256();
@@ -429,8 +433,8 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
 #endif
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(buf + idx + 0));
-    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(buf + idx + 32));
+    __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 0));
+    __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
@@ -493,29 +497,29 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                   
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                   
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals); 
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals); 
       structurals = structurals & (structurals - 1);
       base += 8;
     }
     base = next_base;
 
     quote_mask ^= prev_iter_inside_quote;
-    prev_iter_inside_quote = (uint64_t)((int64_t)quote_mask >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
+    prev_iter_inside_quote = static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63); // right shift of a signed value expected to be well-defined and standard compliant as of C++20, John Regher from Utah U. says this is fine code
 
     // How do we build up a user traversable data structure
     // first, do a 'shufti' to detect structural JSON characters
@@ -553,7 +557,7 @@ WARN_UNUSED
     __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_lo));
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
     structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
@@ -564,7 +568,7 @@ WARN_UNUSED
     __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
     // mask off anything inside quotes
@@ -607,8 +611,8 @@ WARN_UNUSED
     uint8_t tmpbuf[64];
     memset(tmpbuf,0x20,64);
     memcpy(tmpbuf,buf+idx,len - idx);
-    __m256i input_lo = _mm256_loadu_si256((const __m256i *)(tmpbuf + 0));
-    __m256i input_hi = _mm256_loadu_si256((const __m256i *)(tmpbuf + 32));
+    __m256i input_lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 0));
+    __m256i input_hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 32));
 #ifdef SIMDJSON_UTF8VALIDATE
     __m256i highbit = _mm256_set1_epi8(0x80);
     if((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi),highbit)) == 1) {
@@ -671,22 +675,22 @@ WARN_UNUSED
 
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base += 8;
     }
@@ -727,7 +731,7 @@ WARN_UNUSED
     __m256i tmp_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t structural_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_lo);
+    uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_lo));
     uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
     structurals = ~(structural_res_0 | (structural_res_1 << 32));
 
@@ -738,7 +742,7 @@ WARN_UNUSED
     __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
         _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
 
-    uint64_t ws_res_0 = (uint32_t)_mm256_movemask_epi8(tmp_ws_lo);
+    uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
     uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
     uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
 
@@ -775,22 +779,22 @@ WARN_UNUSED
   }
     uint32_t cnt = hamming(structurals);
     uint32_t next_base = base + cnt;
-    while (structurals) {
-      base_ptr[base + 0] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+    while (structurals != 0u) {
+      base_ptr[base + 0] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 1] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 1] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 2] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 2] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 3] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 3] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 4] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 4] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 5] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 5] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 6] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 6] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
-      base_ptr[base + 7] = (uint32_t)idx - 64 + trailingzeroes(structurals);                          
+      base_ptr[base + 7] = static_cast<uint32_t>(idx) - 64 + trailingzeroes(structurals);                          
       structurals = structurals & (structurals - 1);
       base += 8;
     }
@@ -798,7 +802,7 @@ WARN_UNUSED
 
   pj.n_structural_indexes = base;
   // a valid JSON file cannot have zero structural indexes - we should have found something
-  if (!pj.n_structural_indexes) {
+  if (pj.n_structural_indexes == 0u) {
     return false;
   }
   if(base_ptr[pj.n_structural_indexes-1] > len) {
@@ -812,13 +816,13 @@ WARN_UNUSED
   base_ptr[pj.n_structural_indexes] = 0; // make it safe to dereference one beyond this array
 
 #ifdef SIMDJSON_UTF8VALIDATE
-  return _mm256_testz_si256(has_error, has_error);
+  return _mm256_testz_si256(has_error, has_error) != 0;
 #else
   return true;
 #endif
 }
-/* end file /home/geoff/git/simdjson/src/stage1_find_marks.cpp */
-/* begin file /home/geoff/git/simdjson/src/stage2_build_tape.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -838,7 +842,7 @@ using namespace std;
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
-  uint64_t tv = *(const uint64_t *)"true    ";
+  uint64_t tv = *reinterpret_cast<const uint64_t *>("true    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -850,7 +854,7 @@ really_inline bool is_valid_true_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_false_atom(const uint8_t *loc) {
-  uint64_t fv = *(const uint64_t *)"false   ";
+  uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
   uint64_t mask5 = 0x000000ffffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -862,7 +866,7 @@ really_inline bool is_valid_false_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_null_atom(const uint8_t *loc) {
-  uint64_t nv = *(const uint64_t *)"null    ";
+  uint64_t nv = *reinterpret_cast<const uint64_t *>("null    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
@@ -957,11 +961,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the true value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_true_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -973,11 +978,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the false value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_false_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -989,11 +995,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this only applies to the JSON document made solely of the null value.
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!is_valid_null_atom((const uint8_t *)copy + idx)) {
+    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
     }
@@ -1014,11 +1021,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const uint8_t *)copy, pj, idx, false)) {
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, false)) {
       free(copy);
       goto fail;
     }
@@ -1029,11 +1037,12 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // we need to make a copy to make sure that the string is NULL terminated.
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
-    char * copy = (char *) malloc(len + SIMDJSON_PADDING);
-    if(copy == NULL) goto fail;
+    char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if(copy == nullptr) { goto fail;
+}
     memcpy(copy, buf, len);
     copy[len] = '\0';
-    if (!parse_number((const uint8_t *)copy, pj, idx, true)) {
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
     }
@@ -1325,38 +1334,37 @@ succeed:
 fail:
   return false;
 }
-/* end file /home/geoff/git/simdjson/src/stage2_build_tape.cpp */
-/* begin file /home/geoff/git/simdjson/src/parsedjson.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
 
-ParsedJson::ParsedJson() : bytecapacity(0), depthcapacity(0), tapecapacity(0), stringcapacity(0),
-        current_loc(0), n_structural_indexes(0),
-        structural_indexes(NULL), tape(NULL), containing_scope_offset(NULL),
-        ret_address(NULL), string_buf(NULL), current_string_buf_loc(NULL), isvalid(false) {}
+ParsedJson::ParsedJson() : 
+        structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
+        ret_address(nullptr), string_buf(nullptr), current_string_buf_loc(nullptr) {}
 
 ParsedJson::~ParsedJson() {
     deallocate();
 }
 
 ParsedJson::ParsedJson(ParsedJson && p)
-    : bytecapacity(std::move(p.bytecapacity)),
-    depthcapacity(std::move(p.depthcapacity)),
-    tapecapacity(std::move(p.tapecapacity)),
-    stringcapacity(std::move(p.stringcapacity)),
-    current_loc(std::move(p.current_loc)),
-    n_structural_indexes(std::move(p.n_structural_indexes)),
-    structural_indexes(std::move(p.structural_indexes)),
-    tape(std::move(p.tape)),
-    containing_scope_offset(std::move(p.containing_scope_offset)),
-    ret_address(std::move(p.ret_address)),
-    string_buf(std::move(p.string_buf)),
-    current_string_buf_loc(std::move(p.current_string_buf_loc)),
-    isvalid(std::move(p.isvalid)) {
-        p.structural_indexes=NULL;
-        p.tape=NULL;
-        p.containing_scope_offset=NULL;
-        p.ret_address=NULL;
-        p.string_buf=NULL;
-        p.current_string_buf_loc=NULL;
+    : bytecapacity(p.bytecapacity),
+    depthcapacity(p.depthcapacity),
+    tapecapacity(p.tapecapacity),
+    stringcapacity(p.stringcapacity),
+    current_loc(p.current_loc),
+    n_structural_indexes(p.n_structural_indexes),
+    structural_indexes(p.structural_indexes),
+    tape(p.tape),
+    containing_scope_offset(p.containing_scope_offset),
+    ret_address(p.ret_address),
+    string_buf(p.string_buf),
+    current_string_buf_loc(p.current_string_buf_loc),
+    isvalid(p.isvalid) {
+        p.structural_indexes=nullptr;
+        p.tape=nullptr;
+        p.containing_scope_offset=nullptr;
+        p.ret_address=nullptr;
+        p.string_buf=nullptr;
+        p.current_string_buf_loc=nullptr;
     }
 
 
@@ -1368,8 +1376,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       return false;
     }
     if (len > 0) {
-      if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+      if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
         return true;
+}
       deallocate();
     }
     isvalid = false;
@@ -1387,14 +1396,15 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
 #else
     ret_address = new (std::nothrow) char[maxdepth];
 #endif
-    if ((string_buf == NULL) || (tape == NULL) ||
-        (containing_scope_offset == NULL) || (ret_address == NULL) || (structural_indexes == NULL)) {
+    if ((string_buf == nullptr) || (tape == nullptr) ||
+        (containing_scope_offset == nullptr) || (ret_address == nullptr) || (structural_indexes == nullptr)) {
       std::cerr << "Could not allocate memory" << std::endl;
-      if(ret_address != NULL) delete[] ret_address;
-      if(containing_scope_offset != NULL) delete[] containing_scope_offset;
-      if(tape != NULL) delete[] tape;
-      if(string_buf != NULL) delete[] string_buf;
-      if(structural_indexes != NULL) delete[] structural_indexes;
+      delete[] ret_address;
+      delete[] containing_scope_offset;
+      delete[] tape;
+      delete[] string_buf;
+      delete[] structural_indexes;
+
       return false;
     }
 
@@ -1414,11 +1424,16 @@ void ParsedJson::deallocate() {
     depthcapacity = 0;
     tapecapacity = 0;
     stringcapacity = 0;
-    if(ret_address != NULL) delete[] ret_address;
-    if(containing_scope_offset != NULL) delete[] containing_scope_offset;
-    if(tape != NULL) delete[] tape;
-    if(string_buf != NULL) delete[] string_buf;
-    if(structural_indexes != NULL) delete[] structural_indexes;
+     {delete[] ret_address;
+}
+     {delete[] containing_scope_offset;
+}
+     {delete[] tape;
+}
+     {delete[] string_buf;
+}
+     {delete[] structural_indexes;
+}
     isvalid = false;
 }
 
@@ -1430,7 +1445,8 @@ void ParsedJson::init() {
 
 WARN_UNUSED
 bool ParsedJson::printjson(std::ostream &os) {
-    if(!isvalid) return false;
+    if(!isvalid) { return false;
+}
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -1448,7 +1464,7 @@ bool ParsedJson::printjson(std::ostream &os) {
     }
     tapeidx++;
     bool *inobject = new bool[depthcapacity];
-    size_t *inobjectidx = new size_t[depthcapacity];
+    auto *inobjectidx = new size_t[depthcapacity];
     int depth = 1; // only root at level 0
     inobjectidx[depth] = 0;
     inobject[depth] = false;
@@ -1457,15 +1473,18 @@ bool ParsedJson::printjson(std::ostream &os) {
       uint64_t payload = tape_val & JSONVALUEMASK;
       type = (tape_val >> 56);
       if (!inobject[depth]) {
-        if ((inobjectidx[depth] > 0) && (type != ']'))
+        if ((inobjectidx[depth] > 0) && (type != ']')) {
           os << ",";
+}
         inobjectidx[depth]++;
       } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
-            (type != '}'))
+            (type != '}')) {
           os << ",";
-        if (((inobjectidx[depth] & 1) == 1))
+}
+        if (((inobjectidx[depth] & 1) == 1)) {
           os << ":";
+}
         inobjectidx[depth]++;
       }
       switch (type) {
@@ -1475,13 +1494,15 @@ bool ParsedJson::printjson(std::ostream &os) {
         os << '"';
         break;
       case 'l': // we have a long int
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
-        os <<  (int64_t)tape[++tapeidx];
+}
+        os <<  static_cast<int64_t>(tape[++tapeidx]);
         break;
       case 'd': // we have a double
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer;
@@ -1534,7 +1555,8 @@ bool ParsedJson::printjson(std::ostream &os) {
 
 WARN_UNUSED
 bool ParsedJson::dump_raw_tape(std::ostream &os) {
-    if(!isvalid) return false;
+    if(!isvalid) { return false;
+}
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -1562,14 +1584,16 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
         os << '\n';
         break;
       case 'l': // we have a long int
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
-        os << "integer " << (int64_t)tape[++tapeidx] << "\n";
+}
+        os << "integer " << static_cast<int64_t>(tape[++tapeidx]) << "\n";
         break;
       case 'd': // we have a double
         os << "float ";
-        if (tapeidx + 1 >= howmany)
+        if (tapeidx + 1 >= howmany) {
           return false;
+}
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer << '\n';
@@ -1608,13 +1632,14 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
     os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
 }
-/* end file /home/geoff/git/simdjson/src/parsedjson.cpp */
-/* begin file /home/geoff/git/simdjson/src/parsedjsoniterator.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
+/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
 
-ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(NULL) {
+ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(pj.isValid()) {
             depthindex = new scopeindex_t[pj.depthcapacity];
-            if(depthindex == NULL) return;
+            if(depthindex == nullptr) { return;
+}
             depthindex[0].start_of_scope = location;
             current_val = pj.tape[location++];
             current_type = (current_val >> 56);
@@ -1639,9 +1664,9 @@ ParsedJson::iterator::~iterator() {
 ParsedJson::iterator::iterator(const iterator &o):
     pj(o.pj), depth(o.depth), location(o.location),
     tape_length(o.tape_length), current_type(o.current_type),
-    current_val(o.current_val), depthindex(NULL) {
+    current_val(o.current_val), depthindex(nullptr) {
     depthindex = new scopeindex_t[pj.depthcapacity];
-    if(depthindex != NULL) {
+    if(depthindex != nullptr) {
         memcpy(o.depthindex, depthindex, pj.depthcapacity * sizeof(depthindex[0]));
     } else {
         tape_length = 0;
@@ -1649,10 +1674,10 @@ ParsedJson::iterator::iterator(const iterator &o):
 }
 
 ParsedJson::iterator::iterator(iterator &&o):
-      pj(o.pj), depth(std::move(o.depth)), location(std::move(o.location)),
-      tape_length(std::move(o.tape_length)), current_type(std::move(o.current_type)),
-      current_val(std::move(o.current_val)), depthindex(std::move(o.depthindex)) {
-        o.depthindex = NULL;// we take ownership
+      pj(o.pj), depth(o.depth), location(o.location),
+      tape_length(o.tape_length), current_type(o.current_type),
+      current_val(o.current_val), depthindex(o.depthindex) {
+        o.depthindex = nullptr;// we take ownership
 }
 
 WARN_UNUSED
@@ -1716,19 +1741,21 @@ uint8_t ParsedJson::iterator::get_type()  const {
 
 
 int64_t ParsedJson::iterator::get_integer()  const {
-    if(location + 1 >= tape_length) return 0;// default value in case of error
-    return (int64_t) pj.tape[location + 1];
+    if(location + 1 >= tape_length) { return 0;// default value in case of error
+}
+    return static_cast<int64_t>(pj.tape[location + 1]);
 }
 
 double ParsedJson::iterator::get_double()  const {
-    if(location + 1 >= tape_length) return NAN;// default value in case of error
+    if(location + 1 >= tape_length) { return NAN;// default value in case of error
+}
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
 const char * ParsedJson::iterator::get_string() const {
-    return  (const char *)(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+    return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)) ;
 }
 
 
@@ -1766,7 +1793,8 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
         assert(is_string());
         bool rightkey = (strcmp(get_string(),key)==0);
         next();
-        if(rightkey) return true;
+        if(rightkey) { return true;
+}
     } while(next());
     assert(up());// not found
     }
@@ -1790,9 +1818,10 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
     current_val = nextval;
     current_type = nexttype;
     return true;
-    } else {
+    } 
     size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
-    if(location + increment >= tape_length) return false;
+    if(location + increment >= tape_length) { return false;
+}
     uint64_t nextval = pj.tape[location + increment];
     uint8_t nexttype = (nextval >> 56);
     if((nexttype == ']') || (nexttype == '}')) {
@@ -1802,12 +1831,13 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
     current_val = nextval;
     current_type = nexttype;
     return true;
-    }
+    
 }
 
 
  bool ParsedJson::iterator::prev() {
-    if(location - 1 < depthindex[depth].start_of_scope) return false;
+    if(location - 1 < depthindex[depth].start_of_scope) { return false;
+}
     location -= 1;
     current_val = pj.tape[location];
     current_type = (current_val >> 56);
@@ -1840,7 +1870,8 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
 
 
  bool ParsedJson::iterator::down() {
-    if(location + 1 >= tape_length) return false;
+    if(location + 1 >= tape_length) { return false;
+}
     if ((current_type == '[') || (current_type == '{')) {
     size_t npos = (current_val & JSONVALUEMASK);
     if(npos == location + 2) {
@@ -1864,7 +1895,8 @@ void ParsedJson::iterator::to_start_scope()  {
 }
 
 bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
-    if(!isOk()) return false;
+    if(!isOk()) { return false;
+}
     switch (current_type) {
     case '"': // we have a string
     os << '"';
@@ -1894,11 +1926,11 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     case '}': // we end an object
     case '[': // we start an array
     case ']': // we end an array
-    os << (char) current_type;
+    os << static_cast<char>(current_type);
     break;
     default:
     return false;
     }
     return true;
 }
-/* end file /home/geoff/git/simdjson/src/parsedjsoniterator.cpp */
+/* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */

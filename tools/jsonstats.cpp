@@ -39,7 +39,7 @@ struct stat_s {
   bool valid;
 };
 
-typedef struct stat_s stat_t;
+using stat_t = struct stat_s;
 
 
 
@@ -50,8 +50,8 @@ stat_t simdjson_computestats(const std::string_view &p) {
   if (!answer.valid) {
     return answer;
   }
-  answer.backslash_count = count_backslash((const uint8_t*)p.data(), p.size());
-  answer.nonasciibyte_count = count_nonasciibytes((const uint8_t*)p.data(), p.size());
+  answer.backslash_count = count_backslash(reinterpret_cast<const uint8_t*>(p.data()), p.size());
+  answer.nonasciibyte_count = count_nonasciibytes(reinterpret_cast<const uint8_t*>(p.data()), p.size());
   answer.byte_count = p.size();
   answer.integer_count = 0;
   answer.float_count = 0;

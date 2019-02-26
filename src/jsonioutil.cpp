@@ -1,6 +1,6 @@
 #include "simdjson/jsonioutil.h"
 #include <cstring>
-#include <stdlib.h>
+#include <cstdlib>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
@@ -13,18 +13,19 @@ char * allocate_padded_buffer(size_t length) {
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
 #else
-    if (posix_memalign((void **)&padded_buffer, 64, totalpaddedlength) != 0) return NULL;
+    if (posix_memalign(reinterpret_cast<void **>(&padded_buffer), 64, totalpaddedlength) != 0) { return nullptr;
+}
 #endif
 	return padded_buffer;
 }
 
-std::string_view get_corpus(std::string filename) {
+std::string_view get_corpus(const std::string& filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
-  if (fp) {
+  if (fp != nullptr) {
     std::fseek(fp, 0, SEEK_END);
     size_t len = std::ftell(fp);
     char * buf = allocate_padded_buffer(len);
-    if(buf == NULL) {
+    if(buf == nullptr) {
       std::fclose(fp);
       throw  std::runtime_error("could not allocate memory");
     }

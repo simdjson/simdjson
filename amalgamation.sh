@@ -24,6 +24,7 @@ $SCRIPTPATH/src/parsedjsoniterator.cpp
 
 # order matters
 ALLCHEADERS="
+$SCRIPTPATH/include/simdjson/simdjson_version.h
 $SCRIPTPATH/include/simdjson/portability.h
 $SCRIPTPATH/include/simdjson/common_defs.h
 $SCRIPTPATH/include/simdjson/jsoncharutils.h

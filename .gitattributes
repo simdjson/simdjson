@@ -1,0 +1,19 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+# Uncomment next line to adjust line endings
+* text=auto 
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.c text
+*.cpp text
+*.h text
+*.java text
+*.xml text
+
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.svg binary
+*.json binary 
+# we don't want json files to be modified for this project
