@@ -105,7 +105,8 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     uint32_t bs_dist = trailingzeroes(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
+    memcpy(dst, src, sizeof(__m256i));
+
     if (quote_dist < bs_dist) {
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
