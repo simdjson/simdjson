@@ -124,10 +124,10 @@ const char * ParsedJson::iterator::get_string() const {
     return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONSTRINGLENGTHMASK)) ;
 }
 
-int32_t ParsedJson::iterator::get_string_length() const {
+uint32_t ParsedJson::iterator::get_string_length() const {
     // extract string length from current_val:
     // [['"']string_length][string_buffer_offset]
-    return static_cast<int64_t>((current_val >> 32) - (static_cast<int64_t>('"') << 24));
+    return static_cast<uint32_t>((current_val >> 32) - (static_cast<uint64_t>('"') << 24));
 }
 
 bool ParsedJson::iterator::is_object_or_array() const {

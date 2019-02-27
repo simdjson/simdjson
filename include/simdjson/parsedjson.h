@@ -128,7 +128,7 @@ public:
     // return value is valid UTF-8
     const char * get_string() const;
 
-    int32_t get_string_length() const;
+    uint32_t get_string_length() const;
 
     // get the double value at this node; valid only if
     // we're at "d"
