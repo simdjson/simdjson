@@ -81,9 +81,8 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
 #else
   const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
   uint8_t *dst = pj.current_string_buf_loc;
-#ifdef JSON_TEST_STRINGS // for unit testing
+  uint8_t *dst_start = dst;
   uint8_t *const start_of_string = dst;
-#endif
   while (1) {
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
     auto bs_bits =
@@ -110,8 +109,9 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0; // null terminate and get out
 
-      pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
-
+      int32_t str_length = (dst - start_of_string) + quote_dist;
+      //final value is [['"']string_length][string_buffer_offset]
+      pj.write_tape(static_cast<uint64_t>(str_length) << 32 | (pj.current_string_buf_loc - pj.string_buf), '"');
       pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote

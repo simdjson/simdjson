@@ -12,6 +12,7 @@
 #include "simdjson/portability.h"
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF
+#define JSONSTRINGLENGTHMASK 0xFFFFFFFF
 
 #define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
@@ -126,6 +127,8 @@ public:
     // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
     // return value is valid UTF-8
     const char * get_string() const;
+
+    int32_t get_string_length() const;
 
     // get the double value at this node; valid only if
     // we're at "d"
