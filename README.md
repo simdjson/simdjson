@@ -367,7 +367,7 @@ make allparsingcompetition
 
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core
-
+- [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 
 
 ## Various References
