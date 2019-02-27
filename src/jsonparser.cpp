@@ -44,11 +44,11 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
   if (isok) {
     isok = unified_machine(buf, len, pj);
   } else {
-    if(reallocated) { free((void*)buf);
+    if(reallocated) { aligned_free((void*)buf);
 }
     return false;
   }
-  if(reallocated) { free((void*)buf);
+  if(reallocated) { aligned_free((void*)buf);
 }
   return isok;
 }
