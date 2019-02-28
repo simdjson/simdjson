@@ -61,8 +61,12 @@ const char * filename = ... //
 std::string_view p = get_corpus(filename);
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
-bool is_ok = json_parse(p, pj); // do the parsing, return false on error
+const int res = json_parse(p, pj); // do the parsing, return 0 on success
 // parsing is done!
+if (res != 0) {
+    // You can use the "simdjson/simdjerr.h" header to access the error message
+    std::cout << "Error parsing:" << simdjerr::errorMsg(res) << std::endl;
+}
 // You can safely delete the string content
 free((void*)p.data());
 // the ParsedJson document can be used here
