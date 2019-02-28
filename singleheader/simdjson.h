@@ -36750,7 +36750,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
 void init_state_machine();
 
 WARN_UNUSED
-bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
+int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 
 WARN_UNUSED
@@ -36775,7 +36775,7 @@ int unified_machine(const char *buf, size_t len, ParsedJson &pj);
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
+int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
 
 // Parse a document found in buf, need to preallocate ParsedJson.
 // Return false in case of a failure. You can also check validity
@@ -36786,7 +36786,7 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 WARN_UNUSED
-inline bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
+inline int json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
   return json_parse(reinterpret_cast<const uint8_t *>(buf), len, pj, reallocifneeded);
 }
 
@@ -36799,7 +36799,7 @@ inline bool json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallo
 // the input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after s.data()+s.size() are ignored (can be garbage).
 WARN_UNUSED
-inline bool json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
+inline int json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
   return json_parse(s.data(), s.size(), pj, reallocifneeded);
 }
 

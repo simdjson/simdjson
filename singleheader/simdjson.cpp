@@ -9,6 +9,7 @@
 /* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
 #include <cstring>
 #include <cstdlib>
+#include <map>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
