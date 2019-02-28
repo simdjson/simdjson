@@ -31,13 +31,12 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
        reallocated = true;
      }
   }
-  bool isok = find_structural_bits(buf, len, pj);
-  if (!isok) {
-    if(reallocated) free((void*)buf);
-    return simdjerr::CAPACITY;
+  // find_structural_bits returns a boolean, not an int, we invert its result to keep consistent with res == 0 meaning success
+  int res = !find_structural_bits(buf, len, pj);
+  if (!res) {
+    res = unified_machine(buf, len, pj);
   }
-  int res = unified_machine(buf, len, pj);
-  if(reallocated) free((void*)buf);
+  if(reallocated) { aligned_free((void*)buf);}
   return res;
 }
 
