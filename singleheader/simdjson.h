@@ -36754,9 +36754,7 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 
 WARN_UNUSED
-static inline bool unified_machine(const char *buf, size_t len, ParsedJson &pj) {
-    return unified_machine(reinterpret_cast<const uint8_t *>(buf),len,pj);
-}
+int unified_machine(const char *buf, size_t len, ParsedJson &pj);
 
 #endif
 /* end file /Users/lemire/CVS/github/simdjson/include/simdjson/stage2_build_tape.h */
@@ -36838,6 +36836,16 @@ WARN_UNUSED
 inline ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded = true) {
   return build_parsed_json(s.data(), s.size(), reallocifneeded);
 }
+
+struct simdjerr {
+  enum errorValues {
+    SUCCESS = 0,
+    CAPACITY, // This ParsedJson can't support a document that big
+    MEMALLOC, // Error allocating memory, most likely out of memory
+    TAPE_ERROR, // Something went wrong while writing to the tape
+  };
+  static const std::string& errorMsg(const int);
+};
 
 #endif
 /* end file /Users/lemire/CVS/github/simdjson/include/simdjson/jsonparser.h */

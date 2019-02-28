@@ -317,11 +317,9 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
-bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
+int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   if (pj.bytecapacity < len) {
-    std::cerr << "Your ParsedJson cannot support documents that big: " << len
-              << std::endl;
-    return false;
+    return simdjerr::CAPACITY;
   }
   bool reallocated = false;
   if(reallocifneeded) {
@@ -335,24 +333,19 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 #endif
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
-       buf = reinterpret_cast<uint8_t *>(allocate_padded_buffer(len));
-       if(buf == nullptr) { return false;
-}
+       buf = (uint8_t *) allocate_padded_buffer(len);
+       if(buf == NULL) return simdjerr::MEMALLOC;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
   }
-  bool isok = find_structural_bits(buf, len, pj);
-  if (isok) {
-    isok = unified_machine(buf, len, pj);
-  } else {
-    if(reallocated) { free((void*)buf);
-}
-    return false;
+  // find_structural_bits returns a boolean, not an int, we invert its result to keep consistent with res == 0 meaning success
+  int res = !find_structural_bits(buf, len, pj);
+  if (!res) {
+    res = unified_machine(buf, len, pj);
   }
-  if(reallocated) { free((void*)buf);
-}
-  return isok;
+  if(reallocated) { aligned_free((void*)buf);}
+  return res;
 }
 
 WARN_UNUSED
@@ -882,7 +875,7 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
  * for documentation.
  ***********/
 WARN_UNUSED
-bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
+int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; // index of the structural character (0,1,2,3...)
   uint32_t idx;   // location of the structural character in the input (buf)
   uint8_t c; // used to track the (structural) character we are looking at, updated
@@ -890,8 +883,7 @@ bool unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
-      fprintf(stderr, "insufficient capacity\n");
-      return false;
+      return simdjerr::CAPACITY;
   }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
@@ -1329,13 +1321,17 @@ succeed:
 
 
   pj.isvalid  = true;
-  return true;
+  return simdjerr::SUCCESS;
 
 fail:
-  return false;
+  return simdjerr::TAPE_ERROR;
 }
 /* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 /* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
+
+int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
+  return unified_machine(reinterpret_cast<const uint8_t*>(buf), len, pj);
+}
 
 ParsedJson::ParsedJson() : 
         structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
