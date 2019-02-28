@@ -1929,4 +1929,15 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     }
     return true;
 }
+
+const std::map<int, const std::string> errorStrings = {
+    {simdjerr::SUCCESS, "No errors"},
+    {simdjerr::CAPACITY, "This ParsedJson can't support a document that big"},
+    {simdjerr::MEMALLOC, "Error allocating memory, we're most likely out of memory"},
+    {simdjerr::TAPE_ERROR, "Something went wrong while writing to the tape"}
+};
+
+const std::string& simdjerr::errorMsg(const int errorCode) {
+    return errorStrings.at(errorCode);
+} 
 /* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
