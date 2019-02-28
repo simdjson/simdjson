@@ -2,7 +2,6 @@
 #define SIMDJSON_STAGE2_BUILD_TAPE_H
 
 #include "simdjson/common_defs.h"
-#include "simdjson/parsedjson.h"
 
 struct ParsedJson;
 
