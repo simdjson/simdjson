@@ -354,7 +354,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   ParsedJson pj;
   bool ok = pj.allocateCapacity(len);
   if(ok) {
-    ok = json_parse(buf, len, pj, reallocifneeded);
+    int res = json_parse(buf, len, pj, reallocifneeded);
+    ok = res == simdjerr::SUCCESS;
     assert(ok == pj.isValid());
   } else {
     std::cerr << "failure during memory allocation " << std::endl;
