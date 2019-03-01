@@ -87,7 +87,7 @@ bool validate(const char *dirname) {
         howmany--;
       } else if (startsWith("pass", name) && parseRes != 0) {
           isfileasexpected[i] = false;
-          printf("warning: file %s should pass but it fails. Error is: %s\n", name, simdjerr::errorMsg(parseRes).data());
+          printf("warning: file %s should pass but it fails. Error is: %s\n", name, simdjson::errorMsg(parseRes).data());
           everythingfine = false;
       } else if (startsWith("fail", name) && parseRes == 0) {
           isfileasexpected[i] = false;

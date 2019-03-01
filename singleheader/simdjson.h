@@ -36837,7 +36837,7 @@ inline ParsedJson build_parsed_json(const std::string_view &s, bool reallocifnee
   return build_parsed_json(s.data(), s.size(), reallocifneeded);
 }
 
-struct simdjerr {
+struct simdjson {
   enum errorValues {
     SUCCESS = 0,
     CAPACITY, // This ParsedJson can't support a document that big

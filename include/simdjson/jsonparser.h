@@ -6,10 +6,10 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
-#include "simdjson/simdjerr.h"
+#include "simdjson/simdjson.h"
 
 // Parse a document found in buf, need to preallocate ParsedJson.
-// Return 0 on success, an error code from simdjson/simdjerr.h otherwise
+// Return 0 on success, an error code from simdjson/simdjson.h otherwise
 // You can also check validit by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing

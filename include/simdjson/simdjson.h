@@ -3,7 +3,7 @@
 
 #include <string>
 
-struct simdjerr {
+struct simdjson {
   enum errorValues {
     SUCCESS = 0,
     CAPACITY, // This ParsedJson can't support a document that big

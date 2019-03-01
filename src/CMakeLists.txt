@@ -22,7 +22,7 @@ set(SIMDJSON_SRC
     stage2_build_tape.cpp
     parsedjson.cpp
     parsedjsoniterator.cpp
-    simdjerr.cpp
+    simdjson.cpp
     )
          
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})

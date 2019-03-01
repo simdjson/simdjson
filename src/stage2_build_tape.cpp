@@ -13,7 +13,7 @@
 #include "simdjson/numberparsing.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/stringparsing.h"
-#include "simdjson/simdjerr.h"
+#include "simdjson/simdjson.h"
 
 #include <iostream>
 #define PATH_SEP '/'
@@ -71,7 +71,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
-      return simdjerr::CAPACITY;
+      return simdjson::CAPACITY;
   }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
@@ -509,10 +509,10 @@ succeed:
 
 
   pj.isvalid  = true;
-  return simdjerr::SUCCESS;
+  return simdjson::SUCCESS;
 
 fail:
-  return simdjerr::TAPE_ERROR;
+  return simdjson::TAPE_ERROR;
 }
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {

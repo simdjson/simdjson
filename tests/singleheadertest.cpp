@@ -11,7 +11,7 @@ int main() {
   pj.allocateCapacity(p.size());
   const int res = json_parse(p, pj);
   if (res) {
-    std::cerr << simdjerr::errorMsg(res) << std::endl;
+    std::cerr << simdjson::errorMsg(res) << std::endl;
     return EXIT_FAILURE;
   }
   free((void*)p.data());

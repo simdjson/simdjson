@@ -320,7 +320,7 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 WARN_UNUSED
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   if (pj.bytecapacity < len) {
-    return simdjerr::CAPACITY;
+    return simdjson::CAPACITY;
   }
   bool reallocated = false;
   if(reallocifneeded) {
@@ -335,7 +335,7 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
        buf = (uint8_t *) allocate_padded_buffer(len);
-       if(buf == NULL) return simdjerr::MEMALLOC;
+       if(buf == NULL) return simdjson::MEMALLOC;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
@@ -355,7 +355,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   bool ok = pj.allocateCapacity(len);
   if(ok) {
     int res = json_parse(buf, len, pj, reallocifneeded);
-    ok = res == simdjerr::SUCCESS;
+    ok = res == simdjson::SUCCESS;
     assert(ok == pj.isValid());
   } else {
     std::cerr << "failure during memory allocation " << std::endl;
@@ -885,7 +885,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init();
   if(pj.bytecapacity < len) {
-      return simdjerr::CAPACITY;
+      return simdjson::CAPACITY;
   }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
@@ -1323,10 +1323,10 @@ succeed:
 
 
   pj.isvalid  = true;
-  return simdjerr::SUCCESS;
+  return simdjson::SUCCESS;
 
 fail:
-  return simdjerr::TAPE_ERROR;
+  return simdjson::TAPE_ERROR;
 }
 /* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
 /* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
@@ -1933,13 +1933,13 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
 }
 
 const std::map<int, const std::string> errorStrings = {
-    {simdjerr::SUCCESS, "No errors"},
-    {simdjerr::CAPACITY, "This ParsedJson can't support a document that big"},
-    {simdjerr::MEMALLOC, "Error allocating memory, we're most likely out of memory"},
-    {simdjerr::TAPE_ERROR, "Something went wrong while writing to the tape"}
+    {simdjson::SUCCESS, "No errors"},
+    {simdjson::CAPACITY, "This ParsedJson can't support a document that big"},
+    {simdjson::MEMALLOC, "Error allocating memory, we're most likely out of memory"},
+    {simdjson::TAPE_ERROR, "Something went wrong while writing to the tape"}
 };
 
-const std::string& simdjerr::errorMsg(const int errorCode) {
+const std::string& simdjson::errorMsg(const int errorCode) {
     return errorStrings.at(errorCode);
 } 
 /* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
