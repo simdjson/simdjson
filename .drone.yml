@@ -7,3 +7,4 @@ steps:
   commands:
   - make -j2
   - make quiettest -j2
+  - make amalgamate

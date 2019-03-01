@@ -1,4 +1,4 @@
-/* auto-generated on Tue 26 Feb 2019 10:14:31 EST. Do not edit! */
+/* auto-generated on Fri  1 Mar 2019 16:20:33 EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,10 +6,9 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
+/* begin file src/jsonioutil.cpp */
 #include <cstring>
 #include <cstdlib>
-#include <map>
 
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
@@ -49,8 +48,8 @@ std::string_view get_corpus(const std::string& filename) {
   }
   throw  std::runtime_error("could not load corpus");
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonioutil.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
+/* end file src/jsonioutil.cpp */
+/* begin file src/jsonminifier.cpp */
 #include <cstdint>
 #ifndef __AVX2__
 
@@ -300,21 +299,14 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
 }
 
 #endif
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonminifier.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
+/* end file src/jsonminifier.cpp */
+/* begin file src/jsonparser.cpp */
 #ifdef _MSC_VER
 #include <windows.h>
 #include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #endif
-
-
-
-
-
-
-
 
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
@@ -362,8 +354,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   }
   return pj;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/jsonparser.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
+/* end file src/jsonparser.cpp */
+/* begin file src/stage1_find_marks.cpp */
 #include <cassert>
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
@@ -816,8 +808,12 @@ WARN_UNUSED
   return true;
 #endif
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage1_find_marks.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
+
+bool find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
+    return find_structural_bits(reinterpret_cast<const uint8_t*>(buf), len, pj);
+}
+/* end file src/stage1_find_marks.cpp */
+/* begin file src/stage2_build_tape.cpp */
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -1328,12 +1324,12 @@ succeed:
 fail:
   return simdjson::TAPE_ERROR;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/stage2_build_tape.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
   return unified_machine(reinterpret_cast<const uint8_t*>(buf), len, pj);
 }
+/* end file src/stage2_build_tape.cpp */
+/* begin file src/parsedjson.cpp */
 
 ParsedJson::ParsedJson() : 
         structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
@@ -1373,12 +1369,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if (len > 0) {
-      if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
-        return true;
-}
-      deallocate();
-    }
+    if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+      return true;
+    deallocate();
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
     n_structural_indexes = 0;
@@ -1422,16 +1415,11 @@ void ParsedJson::deallocate() {
     depthcapacity = 0;
     tapecapacity = 0;
     stringcapacity = 0;
-     {delete[] ret_address;
-}
-     {delete[] containing_scope_offset;
-}
-     {delete[] tape;
-}
-     {delete[] string_buf;
-}
-     {delete[] structural_indexes;
-}
+    delete[] ret_address;
+    delete[] containing_scope_offset;
+    delete[] tape;
+    delete[] string_buf;
+    delete[] structural_indexes;
     isvalid = false;
 }
 
@@ -1443,8 +1431,9 @@ void ParsedJson::init() {
 
 WARN_UNUSED
 bool ParsedJson::printjson(std::ostream &os) {
-    if(!isvalid) { return false;
-}
+    if(!isvalid) { 
+      return false;
+    }
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -1473,16 +1462,16 @@ bool ParsedJson::printjson(std::ostream &os) {
       if (!inobject[depth]) {
         if ((inobjectidx[depth] > 0) && (type != ']')) {
           os << ",";
-}
+        }
         inobjectidx[depth]++;
       } else { // if (inobject) {
         if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
             (type != '}')) {
           os << ",";
-}
+        }
         if (((inobjectidx[depth] & 1) == 1)) {
           os << ":";
-}
+        }
         inobjectidx[depth]++;
       }
       switch (type) {
@@ -1493,14 +1482,18 @@ bool ParsedJson::printjson(std::ostream &os) {
         break;
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany) {
+          delete[] inobject;
+          delete[] inobjectidx;
           return false;
-}
+        }
         os <<  static_cast<int64_t>(tape[++tapeidx]);
         break;
       case 'd': // we have a double
-        if (tapeidx + 1 >= howmany) {
+        if (tapeidx + 1 >= howmany){
+          delete[] inobject;
+          delete[] inobjectidx;
           return false;
-}
+        }
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer;
@@ -1584,14 +1577,14 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
       case 'l': // we have a long int
         if (tapeidx + 1 >= howmany) {
           return false;
-}
+        }
         os << "integer " << static_cast<int64_t>(tape[++tapeidx]) << "\n";
         break;
       case 'd': // we have a double
         os << "float ";
         if (tapeidx + 1 >= howmany) {
           return false;
-}
+        }
         double answer;
         memcpy(&answer, &tape[++tapeidx], sizeof(answer));
         os << answer << '\n';
@@ -1630,8 +1623,8 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
     os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
 }
-/* end file /Users/lemire/CVS/github/simdjson/src/parsedjson.cpp */
-/* begin file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
+/* end file src/parsedjson.cpp */
+/* begin file src/parsedjsoniterator.cpp */
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(pj.isValid()) {
@@ -1931,15 +1924,4 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     }
     return true;
 }
-
-const std::map<int, const std::string> errorStrings = {
-    {simdjson::SUCCESS, "No errors"},
-    {simdjson::CAPACITY, "This ParsedJson can't support a document that big"},
-    {simdjson::MEMALLOC, "Error allocating memory, we're most likely out of memory"},
-    {simdjson::TAPE_ERROR, "Something went wrong while writing to the tape"}
-};
-
-const std::string& simdjson::errorMsg(const int errorCode) {
-    return errorStrings.at(errorCode);
-} 
-/* end file /Users/lemire/CVS/github/simdjson/src/parsedjsoniterator.cpp */
+/* end file src/parsedjsoniterator.cpp */
