@@ -21,7 +21,7 @@ jobs:
 
       - run:
           name: Running tests (gcc)
-          command: make quiettest
+          command: make quiettest amalgamate
 
       - run:
           name: Building (gcc, cmake)
@@ -58,7 +58,7 @@ jobs:
 
       - run:
           name: Running tests (clang)
-          command: make quiettest
+          command: make quiettest amalgamate
 
       - run:
           name: Building (clang, cmake)
