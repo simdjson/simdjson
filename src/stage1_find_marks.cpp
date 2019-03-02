@@ -454,3 +454,7 @@ WARN_UNUSED
   return true;
 #endif
 }
+
+bool find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
+    return find_structural_bits(reinterpret_cast<const uint8_t*>(buf), len, pj);
+}

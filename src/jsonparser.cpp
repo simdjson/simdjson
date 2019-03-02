@@ -5,21 +5,13 @@
 #else
 #include <unistd.h>
 #endif
-
-
-
-
-
-
-
+#include "simdjson/simdjson.h"
 
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
-bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
+int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   if (pj.bytecapacity < len) {
-    std::cerr << "Your ParsedJson cannot support documents that big: " << len
-              << std::endl;
-    return false;
+    return simdjson::CAPACITY;
   }
   bool reallocated = false;
   if(reallocifneeded) {
@@ -33,24 +25,19 @@ bool json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifne
 #endif
 	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) < SIMDJSON_PADDING ) {
        const uint8_t *tmpbuf  = buf;
-       buf = reinterpret_cast<uint8_t *>(allocate_padded_buffer(len));
-       if(buf == nullptr) { return false;
-}
+       buf = (uint8_t *) allocate_padded_buffer(len);
+       if(buf == NULL) return simdjson::MEMALLOC;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
   }
-  bool isok = find_structural_bits(buf, len, pj);
-  if (isok) {
-    isok = unified_machine(buf, len, pj);
-  } else {
-    if(reallocated) { aligned_free((void*)buf);
-}
-    return false;
+  // find_structural_bits returns a boolean, not an int, we invert its result to keep consistent with res == 0 meaning success
+  int res = !find_structural_bits(buf, len, pj);
+  if (!res) {
+    res = unified_machine(buf, len, pj);
   }
-  if(reallocated) { aligned_free((void*)buf);
-}
-  return isok;
+  if(reallocated) { aligned_free((void*)buf);}
+  return res;
 }
 
 WARN_UNUSED
@@ -58,7 +45,8 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   ParsedJson pj;
   bool ok = pj.allocateCapacity(len);
   if(ok) {
-    ok = json_parse(buf, len, pj, reallocifneeded);
+    int res = json_parse(buf, len, pj, reallocifneeded);
+    ok = res == simdjson::SUCCESS;
     assert(ok == pj.isValid());
   } else {
     std::cerr << "failure during memory allocation " << std::endl;

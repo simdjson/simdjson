@@ -9,8 +9,11 @@ int main() {
     return EXIT_FAILURE;
   }
   pj.allocateCapacity(p.size());
-  bool is_ok = json_parse(p, pj);
-  if (!is_ok) {return EXIT_FAILURE;}
+  const int res = json_parse(p, pj);
+  if (res) {
+    std::cerr << simdjson::errorMsg(res) << std::endl;
+    return EXIT_FAILURE;
+  }
   free((void*)p.data());
   return EXIT_SUCCESS;
 }

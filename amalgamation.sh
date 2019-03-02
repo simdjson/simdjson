@@ -25,6 +25,7 @@ $SCRIPTPATH/src/parsedjsoniterator.cpp
 # order matters
 ALLCHEADERS="
 $SCRIPTPATH/include/simdjson/simdjson_version.h
+$SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/portability.h
 $SCRIPTPATH/include/simdjson/common_defs.h
 $SCRIPTPATH/include/simdjson/jsoncharutils.h
@@ -54,10 +55,11 @@ function stripinc()
 }
 function dofile()
 {
-    echo "/* begin file $1 */"
+    RELFILE=${1#"$SCRIPTPATH/"}
+    echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     stripinc < $1
-    echo "/* end file $1 */"
+    echo "/* end file $RELFILE */"
 }
 
 timestamp=$(date)
