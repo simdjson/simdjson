@@ -3,6 +3,7 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
+include(GNUInstallDirs)
 
 # we default on a shared library.
 if(SIMDJSON_BUILD_STATIC)
@@ -26,11 +27,25 @@ set(SIMDJSON_SRC
     )
          
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})
+
 target_include_directories(${SIMDJSON_LIB_NAME}
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
+  PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-install(TARGETS ${SIMDJSON_LIB_NAME} DESTINATION lib)
+install(TARGETS ${SIMDJSON_LIB_NAME}
+  EXPORT ${SIMDJSON_LIB_NAME}-config
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(EXPORT ${SIMDJSON_LIB_NAME}-config
+  FILE ${SIMDJSON_LIB_NAME}-config.cmake
+  NAMESPACE ${SIMDJSON_LIB_NAME}::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${SIMDJSON_LIB_NAME}
+)
 
 if(NOT MSVC)
 ## We output the library at the root of the current directory where cmake is invoked
