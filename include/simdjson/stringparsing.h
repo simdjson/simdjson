@@ -109,7 +109,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       // we encountered quotes first. Move dst to point to quotes and exit
       uint32_t str_length = (dst - start_of_string) + quote_dist;
       memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
-      pj.current_string_buf_loc = dst + quote_dist; 
+      pj.current_string_buf_loc = dst + quote_dist;
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
       auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));

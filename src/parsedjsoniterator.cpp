@@ -107,27 +107,30 @@ uint8_t ParsedJson::iterator::get_type()  const {
 
 
 int64_t ParsedJson::iterator::get_integer()  const {
-    if(location + 1 >= tape_length) { return 0;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return 0;// default value in case of error
+    }
     return static_cast<int64_t>(pj.tape[location + 1]);
 }
 
 double ParsedJson::iterator::get_double()  const {
-    if(location + 1 >= tape_length) { return NAN;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return NAN;// default value in case of error
+    }
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
 const char * ParsedJson::iterator::get_string() const {
-    return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONSTRINGLENGTHMASK)) ;
+   return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK) + sizeof(uint32_t)) ;
 }
 
+
 uint32_t ParsedJson::iterator::get_string_length() const {
-    // extract string length from current_val:
-    // [['"']string_length][string_buffer_offset]
-    return static_cast<uint32_t>((current_val >> 32) - (static_cast<uint64_t>('"') << 24));
+    uint32_t answer;
+    memcpy(&answer, reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)), sizeof(uint32_t));
+    return answer;
 }
 
 bool ParsedJson::iterator::is_object_or_array() const {
