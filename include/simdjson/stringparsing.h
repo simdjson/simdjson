@@ -79,8 +79,9 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
   pj.write_tape(0, '"');// don't bother with the string parsing at all
   return true; // always succeeds
 #else
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
   const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
-  uint8_t *dst = pj.current_string_buf_loc;
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   uint8_t *const start_of_string = dst;
   while (1) {
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
@@ -106,12 +107,9 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
     if (quote_dist < bs_dist) {
       // we encountered quotes first. Move dst to point to quotes and exit
-      dst[quote_dist] = 0; // null terminate and get out
-
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      //final value is [['"']string_length][string_buffer_offset]
-      pj.write_tape(static_cast<uint64_t>(str_length) << 32 | (pj.current_string_buf_loc - pj.string_buf), '"');
-      pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
+      pj.current_string_buf_loc = dst + quote_dist; 
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
       auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
