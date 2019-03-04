@@ -9,6 +9,9 @@ endif()
 
 project(simdjson)
 set(SIMDJSON_LIB_NAME simdjson)
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.0.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
