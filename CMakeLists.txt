@@ -10,7 +10,7 @@ endif()
 project(simdjson)
 set(SIMDJSON_LIB_NAME simdjson)
 set(SIMDJSON_LIB_VERSION "0.0.1" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "0.0.1" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
 if(NOT MSVC)
 option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
