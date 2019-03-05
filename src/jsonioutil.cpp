@@ -6,17 +6,8 @@ char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
     //return (char *) malloc(length + SIMDJSON_PADDING);
     // However, we might as well align to cache lines...
-    char *padded_buffer;
     size_t totalpaddedlength = length + SIMDJSON_PADDING;
-#ifdef _MSC_VER
-	padded_buffer = (char*) _aligned_malloc(totalpaddedlength, 64);
-#elif defined(__MINGW32__) || defined(__MINGW64__)
-	padded_buffer = __mingw_aligned_malloc(totalpaddedlength, 64);
-#else
-    if (posix_memalign(reinterpret_cast<void **>(&padded_buffer), 64, totalpaddedlength) != 0) { return nullptr;
-}
-#endif
-	return padded_buffer;
+    return (char *)aligned_malloc(64, totalpaddedlength);
 }
 
 std::string_view get_corpus(const std::string& filename) {
