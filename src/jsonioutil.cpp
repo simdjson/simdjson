@@ -7,7 +7,7 @@ char * allocate_padded_buffer(size_t length) {
     //return (char *) malloc(length + SIMDJSON_PADDING);
     // However, we might as well align to cache lines...
     size_t totalpaddedlength = length + SIMDJSON_PADDING;
-    return (char *)aligned_malloc(64, totalpaddedlength);
+    return (char *) aligned_malloc(64, totalpaddedlength);
 }
 
 std::string_view get_corpus(const std::string& filename) {
