@@ -154,6 +154,9 @@ public:
     // if successful, we are left pointing at the value,
     // if not, we are still pointing at the object ({)
     // (in case of repeated keys, this only finds the first one)
+    // We seek the key using C's strcmp so if your JSON strings contain
+    // NULL chars, this would trigger a false positive: if you expect that
+    // to be the case, take extra precautions.
     bool move_to_key(const char * key);
 
     // throughout return true if we can do the navigation, false

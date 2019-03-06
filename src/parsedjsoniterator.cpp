@@ -163,14 +163,15 @@ bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
 
 bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
-    do {
+      do {
         assert(is_string());
-        bool rightkey = (strcmp(get_string(),key)==0);
+        bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
         next();
-        if(rightkey) { return true;
-}
-    } while(next());
-    assert(up());// not found
+        if(rightkey) { 
+          return true;
+        }
+      } while(next());
+      assert(up());// not found
     }
     return false;
 }
