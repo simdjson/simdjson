@@ -1,5 +1,6 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/common_defs.h"
+#include <iterator>
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(pj.isValid()) {
@@ -269,15 +270,17 @@ void ParsedJson::iterator::to_start_scope()  {
 }
 
 bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
-    if(!isOk()) { return false;
-}
+    if(!isOk()) { 
+      return false;
+    }
     switch (current_type) {
     case '"': // we have a string
     os << '"';
     if(escape_strings) {
-        print_with_escapes(get_string(), os);
+        print_with_escapes(get_string(), os, get_string_length());
     } else {
-        os << get_string();
+        // was: os << get_string();, but given that we can include null chars, we have to do something crazier:
+        std::copy(get_string(), get_string() + get_string_length(), std::ostream_iterator<char>(os));
     }
     os << '"';
     break;

@@ -126,6 +126,8 @@ public:
     // get the string value at this node (NULL ended); valid only if we're at "
     // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
     // return value is valid UTF-8
+    // It may contain NULL chars within the string: get_string_length determines the true 
+    // string length.
     const char * get_string() const;
 
     uint32_t get_string_length() const;

@@ -110,6 +110,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0;
       uint32_t str_length = (dst - start_of_string) + quote_dist;
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       pj.current_string_buf_loc = dst + quote_dist + 1;
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
@@ -119,13 +120,11 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
        if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
        else  foundBadString(buf + offset);
 #endif // JSON_TEST_STRINGS
-      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       return is_ok;
 #else  //CHECKUNESCAPED
 #ifdef JSON_TEST_STRINGS // for unit testing
        foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
 #endif // JSON_TEST_STRINGS
-      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       return true;
 #endif //CHECKUNESCAPED
     } if (quote_dist > bs_dist) {
