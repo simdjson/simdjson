@@ -99,12 +99,22 @@ print(versionfile + " modified")
 import fileinput
 import re
 
+newmajorversionstring = str(newversion[0])
+mewminorversionstring = str(newversion[1])
+newrevversionstring = str(newversion[2])
 newversionstring = str(newversion[0]) + "." + str(newversion[1]) + "." + str(newversion[2])
 cmakefile = maindir + os.sep + "CMakeLists.txt"
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
     line = re.sub('SIMDJSON_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
-    line = re.sub('SIMDJSON_LIB_SOVERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_SOVERSION "'+newversionstring, line)
+    line = re.sub('SIMDJSON_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
+    line = re.sub('set(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
+    line = re.sub('set(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
+    line = re.sub('set(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
     print(line)
+
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 0)
+set(PROJECT_VERSION_PATCH 1)
 
 print("modified "+cmakefile+", a backup was made")
 

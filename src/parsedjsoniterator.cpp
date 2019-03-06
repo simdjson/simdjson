@@ -75,30 +75,29 @@ uint8_t ParsedJson::iterator::get_scope_type() const {
 
 bool ParsedJson::iterator::move_forward() {
     if(location + 1 >= tape_length) {
-    return false; // we are at the end!
-    }
-    // we are entering a new scope
-    if ((current_type == '[') || (current_type == '{')){
-    depth++;
-    depthindex[depth].start_of_scope = location;
-    depthindex[depth].scope_type = current_type;
-    }
-    location = location + 1;
-    current_val = pj.tape[location];
-    current_type = (current_val >> 56);
-    // if we encounter a scope closure, we need to move up
-    while ((current_type == ']') || (current_type == '}')) {
-    if(location + 1 >= tape_length) {
         return false; // we are at the end!
     }
-    depth--;
-    if(depth == 0) {
-        return false; // should not be necessary
+
+    if ((current_type == '[') || (current_type == '{')){
+        // We are entering a new scope
+        depth++;
+        depthindex[depth].start_of_scope = location;
+        depthindex[depth].scope_type = current_type;
+    } else if ((current_type == ']') || (current_type == '}')) {
+        // Leaving a scope.
+        depth--;
+        if(depth == 0) {
+            // Should not be necessary
+            return false;
+        }
+    } else if ((current_type == 'd') || (current_type == 'l')) {
+        // d and l types use 2 locations on the tape, not just one.
+        location += 1;
     }
-    location = location + 1;
+
+    location += 1;
     current_val = pj.tape[location];
     current_type = (current_val >> 56);
-    }
     return true;
 }
 

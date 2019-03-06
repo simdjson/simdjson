@@ -79,24 +79,20 @@ bool validate(const char *dirname) {
         return false;
       }
       ++howmany;
-      bool isok = json_parse(p, pj);
+      const int parseRes = json_parse(p, pj);
       aligned_free((void*)p.data());
-      printf("%s\n", isok ? "ok" : "invalid");
+      printf("%s\n", parseRes == 0 ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping
         howmany--;
-      } else if (startsWith("pass", name)) {
-        if (!isok) {
+      } else if (startsWith("pass", name) && parseRes != 0) {
           isfileasexpected[i] = false;
-          printf("warning: file %s should pass but it fails.\n", name);
+          printf("warning: file %s should pass but it fails. Error is: %s\n", name, simdjson::errorMsg(parseRes).data());
           everythingfine = false;
-        }
-      } else if (startsWith("fail", name)) {
-        if (isok) {
+      } else if (startsWith("fail", name) && parseRes == 0) {
           isfileasexpected[i] = false;
           printf("warning: file %s should fail but it passes.\n", name);
           everythingfine = false;
-        }
       }
       free(fullpath);
     }
