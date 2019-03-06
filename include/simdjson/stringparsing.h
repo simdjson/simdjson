@@ -85,10 +85,12 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
   uint8_t *const start_of_string = dst;
   while (1) {
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
+    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
     auto bs_bits =
         static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
+    auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
     auto quote_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'))));
+        static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
 #define CHECKUNESCAPED
     // All Unicode characters may be placed within the
     // quotation marks, except for the characters that MUST be escaped:
@@ -104,12 +106,10 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     uint32_t bs_dist = trailingzeroes(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
     if (quote_dist < bs_dist) {
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0;
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       pj.current_string_buf_loc = dst + quote_dist + 1;
 #ifdef CHECKUNESCAPED
       // check that there is no unescaped char before the quote
@@ -119,11 +119,13 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
        if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
        else  foundBadString(buf + offset);
 #endif // JSON_TEST_STRINGS
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       return is_ok;
 #else  //CHECKUNESCAPED
 #ifdef JSON_TEST_STRINGS // for unit testing
        foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
 #endif // JSON_TEST_STRINGS
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       return true;
 #endif //CHECKUNESCAPED
     } if (quote_dist > bs_dist) {
