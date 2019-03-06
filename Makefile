@@ -138,13 +138,13 @@ jsonstats: tools/jsonstats.cpp $(HEADERS) $(LIBFILES)
 ujdecode.o: $(UJSON4C_INCLUDE)
 	$(CC) $(CFLAGS) -c dependencies/ujson4c/src/ujdecode.c
 
-parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBFILES)
+parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBFILES) $(LIBS)
 	$(CXX) $(CXXFLAGS)  -o parseandstatcompetition $(LIBFILES) benchmark/parseandstatcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES)
+distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES) $(LIBS)
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES)
+parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(LIBS)
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
 allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS)
