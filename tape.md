@@ -103,6 +103,7 @@ Hint: we can read the first tape element to determine the length of the tape.
 
 
 ## Strings
+We prefix the string data itself by a 32-bit header to be interpreted as a 32-bit integer. It indicates the length of the string. The actual string data starts at an offset of 4 bytes.
 
 We store string values using UTF-8 encoding with null termination on a separate tape. A string value is represented on the main tape as the 64-bit tape element `('"'<< 56) + x` where the payload `x` is the location on the string tape of the null-terminated string. 
 

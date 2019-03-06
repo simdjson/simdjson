@@ -106,7 +106,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     if (quote_dist < bs_dist) {
       // we encountered quotes first. Move dst to point to quotes and exit
       dst[quote_dist] = 0;
-      uint32_t str_length = (dst - start_of_string) + quote_dist;
+      uint32_t str_length = (dst - start_of_string) + quote_dist; // TODO: check for overflow in case someone has a crazy string (>=4GB?)
       memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
       auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
       bool is_ok = ((quote_bits - 1) & unescaped_bits) == 0;
