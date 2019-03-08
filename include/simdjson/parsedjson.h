@@ -12,7 +12,6 @@
 #include "simdjson/portability.h"
 
 #define JSONVALUEMASK 0xFFFFFFFFFFFFFF
-#define JSONSTRINGLENGTHMASK 0xFFFFFFFF
 
 #define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
