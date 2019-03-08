@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
             repeat, volume, !justdata);
   // (static alloc) 
-  BEST_TIME("simdjson ", json_parse(p, pj), true, , repeat,
+  BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat,
             volume, !justdata);
 
  
