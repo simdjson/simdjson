@@ -331,7 +331,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       return false; // overflow
     }
   }
-  int64_t signed_answer = negative ? -i : i;
+  int64_t signed_answer = negative ? -static_cast<int64_t>(i) : static_cast<int64_t>(i);
   pj.write_tape_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   foundInteger(signed_answer, buf + offset);
