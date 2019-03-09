@@ -30,7 +30,7 @@ public:
   ParsedJson(ParsedJson && p);
 
   // if needed, allocate memory so that the object is able to process JSON
-  // documents having up to len butes and maxdepth "depth"
+  // documents having up to len bytes and maxdepth "depth"
   WARN_UNUSED
   bool allocateCapacity(size_t len, size_t maxdepth = DEFAULTMAXDEPTH);
 
