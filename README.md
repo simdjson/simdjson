@@ -113,7 +113,16 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+We require hardware support for AVX2 instructions. You have to make sure that you instruct your 
+compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
+flag `-march=native` used on a recent Intel compiler (Haswell or better) is sufficient. You may 
+also use the flags `-mavx2 -mbmi2`. Under Visual Studio, you need to target x64 and add the 
+flag `/arch:AVX2`. 
+
+
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
+
+
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
