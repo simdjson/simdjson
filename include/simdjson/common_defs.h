@@ -5,6 +5,9 @@
 
 #include <cassert>
 
+// we support documents up to 4GB
+#define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
+
 // the input buf should be readable up to buf + SIMDJSON_PADDING
 #define SIMDJSON_PADDING  sizeof(__m256i)
 

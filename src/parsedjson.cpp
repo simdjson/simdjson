@@ -38,8 +38,12 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+    if(len > SIMDJSON_MAXSIZE_BYTES) {
+      return false;
+    }
+    if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
       return true;
+    }
     deallocate();
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
