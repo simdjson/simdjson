@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
 We require hardware support for AVX2 instructions. You have to make sure that you instruct your 
 compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
-flag `-march=native` used on a recent Intel compiler (Haswell or better) is sufficient. For portability
+flag `-march=native` used on a recent Intel processor (Haswell or better) is sufficient. For portability
 of the binary files you can also specify directly the Haswell processor (`-march=haswell`). You may 
 also use the flags `-mavx2 -mbmi2`. Under Visual Studio, you need to target x64 and add the 
 flag `/arch:AVX2`. 
