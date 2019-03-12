@@ -1,13 +1,16 @@
-# simdjson : Parsing gigabytes of JSON per second
-
+#  simdjson : Parsing gigabytes of JSON per second
 [![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
 
+
 ## A C++ library to see how fast we can parse JSON with complete validation.
 
 JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding).
+
+<img src="images/logo.png" width="10%">
+
 
 ## Paper
 
