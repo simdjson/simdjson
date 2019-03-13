@@ -45,6 +45,16 @@ really_inline uint64_t cmp_mask_against_input(__m256i input_lo,
   return res_0 | (res_1 << 32);
 }
 
+// find all values less than or equal than the content of maxval (using unsigned arithmetic) 
+really_inline uint64_t unsigned_lteq_against_input(__m256i input_lo,
+                                              __m256i input_hi, __m256i maxval) {
+  __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_lo),maxval);
+  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
+  __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_hi),maxval);
+  uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
+  return res_0 | (res_1 << 32);
+}
+
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
 // to follow). A even-length sequence of backslashes, and, for that matter, the
@@ -103,13 +113,21 @@ find_odd_backslash_sequences(__m256i input_lo, __m256i input_hi,
 // backslash sequences (of any length) will be detected elsewhere.
 really_inline uint64_t find_quote_mask_and_bits(
     __m256i input_lo, __m256i input_hi, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits) {
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   quote_bits =
       cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
   quote_bits = quote_bits & ~odd_ends;
+  // remove from the valid quoted region the unescapted characters.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   quote_mask ^= prev_iter_inside_quote;
+  // All Unicode characters may be placed within the
+  // quotation marks, except for the characters that MUST be escaped:
+  // quotation mark, reverse solidus, and the control characters (U+0000
+  //through U+001F).
+  // https://tools.ietf.org/html/rfc8259
+  uint64_t unescaped = unsigned_lteq_against_input(input_lo, input_hi, _mm256_set1_epi8(0x1F));
+  error_mask |= quote_mask & unescaped;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20,
   // John Regher from Utah U. says this is fine code
@@ -212,11 +230,9 @@ really_inline uint64_t finalize_structurals(
     uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
   // mask off anything inside quotes
   structurals &= ~quote_mask;
-
   // add the real quote bits back into our bitmask as well, so we can
   // quickly traverse the strings we've spent all this trouble gathering
   structurals |= quote_bits;
-
   // Now, establish "pseudo-structural characters". These are non-whitespace
   // characters that are (a) outside quotes and (b) have a predecessor that's
   // either whitespace or a structural character. This means that subsequent
@@ -228,6 +244,7 @@ really_inline uint64_t finalize_structurals(
   // a qualified predecessor is something that can happen 1 position before an
   // psuedo-structural character
   uint64_t pseudo_pred = structurals | whitespace;
+
   uint64_t shifted_pseudo_pred =
       (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
   prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
@@ -285,6 +302,7 @@ WARN_UNUSED
 
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
+  uint64_t error_mask = 0; // for unescaped characters within strings (ASCII code points < 0x20)
 
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
@@ -307,7 +325,7 @@ WARN_UNUSED
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits);
+        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
@@ -348,7 +366,7 @@ WARN_UNUSED
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits);
+        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
@@ -383,7 +401,9 @@ WARN_UNUSED
   }
   // make it safe to dereference one beyond this array
   base_ptr[pj.n_structural_indexes] = 0;  
-
+  if (error_mask) {
+    return false;
+  }
 #ifdef SIMDJSON_UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error) != 0;
 #else
