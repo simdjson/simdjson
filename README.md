@@ -1,13 +1,16 @@
-# simdjson : Parsing gigabytes of JSON per second
-
+#  simdjson : Parsing gigabytes of JSON per second
 [![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
 
+
 ## A C++ library to see how fast we can parse JSON with complete validation.
 
 JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding).
+
+<img src="images/logo.png" width="10%">
+
 
 ## Paper
 
@@ -113,7 +116,17 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+We require hardware support for AVX2 instructions. You have to make sure that you instruct your 
+compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
+flag `-march=native` used on a recent Intel processor (Haswell or better) is sufficient. For portability
+of the binary files you can also specify directly the Haswell processor (`-march=haswell`). You may 
+also use the flags `-mavx2 -mbmi2`. Under Visual Studio, you need to target x64 and add the 
+flag `/arch:AVX2`. 
+
+
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
+
+
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
@@ -203,6 +216,38 @@ We assume you have a common Windows PC with at least Visual Studio 2017 and an x
 - Using a shell, go to this newly created directory.
 - Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
 - This last command created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+
+
+## Usage (Using `vcpkg` on Windows, Linux and MacOS)
+
+[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and MacOS can download and install `simdjson` with one single command from their favorite shell.
+
+On Linux and MacOS:
+
+```
+$ ./vcpkg install simdjson
+```
+
+will build and install `simdjson` as a static library.
+
+On Windows (64-bit):
+
+```
+.\vcpkg.exe install simdjson:x64-windows
+```
+
+will build and install `simdjson` as a shared library.
+
+```
+.\vcpkg.exe install simdjson:x64-windows-static  
+```
+
+will build and install `simdjson` as a static library.
+
+These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.
+
+If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
+
 
 ## Tools
 
