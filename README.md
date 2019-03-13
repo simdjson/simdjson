@@ -217,6 +217,38 @@ We assume you have a common Windows PC with at least Visual Studio 2017 and an x
 - Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
 - This last command created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
 
+
+## Usage (Using `vcpkg` on Windows, Linux and MacOS)
+
+[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and MacOS can download and install `simdjson` with one single command from their favorite shell.
+
+On Linux and MacOS:
+
+```
+$ ./vcpkg install simdjson
+```
+
+will build and install `simdjson` as a static library.
+
+On Windows (64-bit):
+
+```
+.\vcpkg.exe install simdjson:x64-windows
+```
+
+will build and install `simdjson` as a shared library.
+
+```
+.\vcpkg.exe install simdjson:x64-windows-static  
+```
+
+will build and install `simdjson` as a static library.
+
+These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.
+
+If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
+
+
 ## Tools
 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
