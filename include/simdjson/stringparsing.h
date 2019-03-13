@@ -79,67 +79,51 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
   pj.write_tape(0, '"');// don't bother with the string parsing at all
   return true; // always succeeds
 #else
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
   const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
-  uint8_t *dst = pj.current_string_buf_loc;
-#ifdef JSON_TEST_STRINGS // for unit testing
-  uint8_t *const start_of_string = dst;
-#endif
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
+  const uint8_t *const start_of_string = dst;
   while (1) {
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
-    auto bs_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
-    auto quote_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'))));
-#define CHECKUNESCAPED
-    // All Unicode characters may be placed within the
-    // quotation marks, except for the characters that MUST be escaped:
-    // quotation mark, reverse solidus, and the control characters (U+0000
-    //through U+001F).
-    // https://tools.ietf.org/html/rfc8259
-#ifdef CHECKUNESCAPED
-    __m256i unitsep = _mm256_set1_epi8(0x1F);
-    __m256i unescaped_vec = _mm256_cmpeq_epi8(_mm256_max_epu8(unitsep,v),unitsep);// could do it with saturated subtraction
-#endif // CHECKUNESCAPED
-
-    uint32_t quote_dist = trailingzeroes(quote_bits);
-    uint32_t bs_dist = trailingzeroes(bs_bits);
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
-    if (quote_dist < bs_dist) {
+    auto bs_bits =
+        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
+    auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
+    auto quote_bits =
+        static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
+    if(((bs_bits - 1) & quote_bits) != 0 ) {
       // we encountered quotes first. Move dst to point to quotes and exit
-      dst[quote_dist] = 0; // null terminate and get out
 
-      pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+      // find out where the quote is...
+      uint32_t quote_dist = trailingzeroes(quote_bits);
 
-      pj.current_string_buf_loc = dst + quote_dist + 1; // the +1 is due to the 0 value
-#ifdef CHECKUNESCAPED
-      // check that there is no unescaped char before the quote
-      auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
-      bool is_ok = ((quote_bits - 1) & (~ quote_bits) & unescaped_bits) == 0;
+      // NULL termination is still handy if you expect all your strings to be NULL terminated?
+      // It comes at a small cost
+      dst[quote_dist] = 0; 
+
+      uint32_t str_length = (dst - start_of_string) + quote_dist; 
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
+      ///////////////////////
+      // Above, check for overflow in case someone has a crazy string (>=4GB?)
+      // But only add the overflow check when the document itself exceeds 4GB
+      // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+      ////////////////////////
+
+      
+      // we advance the point, accounting for the fact that we have a NULl termination
+      pj.current_string_buf_loc = dst + quote_dist + 1;
+
 #ifdef JSON_TEST_STRINGS // for unit testing
-       if(is_ok) foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
-       else  foundBadString(buf + offset);
-#endif // JSON_TEST_STRINGS
-      return is_ok;
-#else  //CHECKUNESCAPED
-#ifdef JSON_TEST_STRINGS // for unit testing
-       foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
+      foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
 #endif // JSON_TEST_STRINGS
       return true;
-#endif //CHECKUNESCAPED
-    } if (quote_dist > bs_dist) {
+    } 
+    if(((quote_bits - 1) & bs_bits ) != 0 ) {
+      // find out where the backspace is
+      uint32_t bs_dist = trailingzeroes(bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
-#ifdef CHECKUNESCAPED
-      // we are going to need the unescaped_bits to check for unescaped chars
-      auto unescaped_bits = static_cast<uint32_t>(_mm256_movemask_epi8(unescaped_vec));
-      if(((bs_bits - 1) & (~ bs_bits) & unescaped_bits) != 0) {
-#ifdef JSON_TEST_STRINGS // for unit testing
-        foundBadString(buf + offset);
-#endif // JSON_TEST_STRINGS
-        return false;
-      }
-#endif //CHECKUNESCAPED
       // we encountered backslash first. Handle backslash
       if (escape_char == 'u') {
         // move src/dst up to the start; they will be further adjusted
@@ -173,15 +157,6 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
       // neither.
       src += 32;
       dst += 32;
-#ifdef CHECKUNESCAPED
-      // check for unescaped chars
-      if(_mm256_testz_si256(unescaped_vec,unescaped_vec) != 1) {
-#ifdef JSON_TEST_STRINGS // for unit testing
-          foundBadString(buf + offset);
-#endif // JSON_TEST_STRINGS
-        return false;
-      }
-#endif // CHECKUNESCAPED
     }
   }
   // can't be reached

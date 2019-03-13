@@ -1,5 +1,6 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/common_defs.h"
+#include <iterator>
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(pj.isValid()) {
@@ -106,23 +107,31 @@ uint8_t ParsedJson::iterator::get_type()  const {
 
 
 int64_t ParsedJson::iterator::get_integer()  const {
-    if(location + 1 >= tape_length) { return 0;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return 0;// default value in case of error
+    }
     return static_cast<int64_t>(pj.tape[location + 1]);
 }
 
 double ParsedJson::iterator::get_double()  const {
-    if(location + 1 >= tape_length) { return NAN;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return NAN;// default value in case of error
+    }
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
 const char * ParsedJson::iterator::get_string() const {
-    return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+   return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK) + sizeof(uint32_t)) ;
 }
 
+
+uint32_t ParsedJson::iterator::get_string_length() const {
+    uint32_t answer;
+    memcpy(&answer, reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)), sizeof(uint32_t));
+    return answer;
+}
 
 bool ParsedJson::iterator::is_object_or_array() const {
     return is_object_or_array(get_type());
@@ -154,14 +163,15 @@ bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
 
 bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
-    do {
+      do {
         assert(is_string());
-        bool rightkey = (strcmp(get_string(),key)==0);
+        bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
         next();
-        if(rightkey) { return true;
-}
-    } while(next());
-    assert(up());// not found
+        if(rightkey) { 
+          return true;
+        }
+      } while(next());
+      assert(up());// not found
     }
     return false;
 }
@@ -260,15 +270,17 @@ void ParsedJson::iterator::to_start_scope()  {
 }
 
 bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
-    if(!isOk()) { return false;
-}
+    if(!isOk()) { 
+      return false;
+    }
     switch (current_type) {
     case '"': // we have a string
     os << '"';
     if(escape_strings) {
-        print_with_escapes(get_string(), os);
+        print_with_escapes(get_string(), os, get_string_length());
     } else {
-        os << get_string();
+        // was: os << get_string();, but given that we can include null chars, we have to do something crazier:
+        std::copy(get_string(), get_string() + get_string_length(), std::ostream_iterator<char>(os));
     }
     os << '"';
     break;

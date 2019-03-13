@@ -38,8 +38,12 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+    if(len > SIMDJSON_MAXSIZE_BYTES) {
+      return false;
+    }
+    if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
       return true;
+    }
     deallocate();
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
@@ -47,7 +51,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new (std::nothrow) uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
-    size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
+    // a document with only zero-length strings... could have len/3 string
+    // and we would need len/3 * 5 bytes on the string buffer 
+    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64); 
     string_buf = new (std::nothrow) uint8_t[localstringcapacity];
     tape = new (std::nothrow) uint64_t[localtapecapacity];
     containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
@@ -103,6 +109,7 @@ bool ParsedJson::printjson(std::ostream &os) {
     if(!isvalid) { 
       return false;
     }
+    uint32_t string_length;
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -146,7 +153,8 @@ bool ParsedJson::printjson(std::ostream &os) {
       switch (type) {
       case '"': // we have a string
         os << '"';
-        print_with_escapes((const unsigned char *)(string_buf + payload));
+        memcpy(&string_length,string_buf + payload, sizeof(uint32_t));
+        print_with_escapes((const unsigned char *)(string_buf + payload + sizeof(uint32_t)), string_length); 
         os << '"';
         break;
       case 'l': // we have a long int
@@ -215,8 +223,10 @@ bool ParsedJson::printjson(std::ostream &os) {
 
 WARN_UNUSED
 bool ParsedJson::dump_raw_tape(std::ostream &os) {
-    if(!isvalid) { return false;
-}
+    if(!isvalid) { 
+      return false;
+    }
+    uint32_t string_length;
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -239,7 +249,8 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
       switch (type) {
       case '"': // we have a string
         os << "string \"";
-        print_with_escapes((const unsigned char *)(string_buf + payload));
+        memcpy(&string_length,string_buf + payload, sizeof(uint32_t));
+        print_with_escapes((const unsigned char *)(string_buf + payload + sizeof(uint32_t)), string_length);
         os << '"';
         os << '\n';
         break;

@@ -125,7 +125,11 @@ public:
     // get the string value at this node (NULL ended); valid only if we're at "
     // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
     // return value is valid UTF-8
+    // It may contain NULL chars within the string: get_string_length determines the true 
+    // string length.
     const char * get_string() const;
+
+    uint32_t get_string_length() const;
 
     // get the double value at this node; valid only if
     // we're at "d"
@@ -149,6 +153,9 @@ public:
     // if successful, we are left pointing at the value,
     // if not, we are still pointing at the object ({)
     // (in case of repeated keys, this only finds the first one)
+    // We seek the key using C's strcmp so if your JSON strings contain
+    // NULL chars, this would trigger a false positive: if you expect that
+    // to be the case, take extra precautions.
     bool move_to_key(const char * key);
 
     // throughout return true if we can do the navigation, false

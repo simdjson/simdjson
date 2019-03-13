@@ -20,7 +20,7 @@ WARN_UNUSED
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
 
 // Parse a document found in buf, need to preallocate ParsedJson.
-// Return false in case of a failure. You can also check validity
+// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
@@ -33,7 +33,7 @@ inline int json_parse(const char * buf, size_t len, ParsedJson &pj, bool realloc
 }
 
 // Parse a document found in buf, need to preallocate ParsedJson.
-// Return false in case of a failure. You can also check validity
+// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
