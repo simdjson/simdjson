@@ -112,9 +112,6 @@ for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
     line = re.sub('set(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
     print(line)
 
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 0)
-set(PROJECT_VERSION_PATCH 1)
 
 print("modified "+cmakefile+", a backup was made")
 
