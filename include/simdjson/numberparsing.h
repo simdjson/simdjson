@@ -447,11 +447,6 @@ static really_inline bool parse_number(const uint8_t *const buf,
     unsigned char digit = *p - '0';
     expnumber = digit;
     p++;
-    while (is_integer(*p)) {
-      digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
-      ++p;
-    }
     if (is_integer(*p)) {
       digit = *p - '0';
       expnumber = 10 * expnumber + digit;
