@@ -1,4 +1,4 @@
-/* auto-generated on Wed 13 Mar 2019 20:02:04 EDT. Do not edit! */
+/* auto-generated on Wed 13 Mar 2019 21:02:37 EDT. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -391,6 +391,16 @@ really_inline uint64_t cmp_mask_against_input(__m256i input_lo,
   return res_0 | (res_1 << 32);
 }
 
+// find all values less than or equal than the content of maxval (using unsigned arithmetic) 
+really_inline uint64_t unsigned_lteq_against_input(__m256i input_lo,
+                                              __m256i input_hi, __m256i maxval) {
+  __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_lo),maxval);
+  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
+  __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_hi),maxval);
+  uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
+  return res_0 | (res_1 << 32);
+}
+
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
 // to follow). A even-length sequence of backslashes, and, for that matter, the
@@ -449,13 +459,21 @@ find_odd_backslash_sequences(__m256i input_lo, __m256i input_hi,
 // backslash sequences (of any length) will be detected elsewhere.
 really_inline uint64_t find_quote_mask_and_bits(
     __m256i input_lo, __m256i input_hi, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits) {
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   quote_bits =
       cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
   quote_bits = quote_bits & ~odd_ends;
+  // remove from the valid quoted region the unescapted characters.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   quote_mask ^= prev_iter_inside_quote;
+  // All Unicode characters may be placed within the
+  // quotation marks, except for the characters that MUST be escaped:
+  // quotation mark, reverse solidus, and the control characters (U+0000
+  //through U+001F).
+  // https://tools.ietf.org/html/rfc8259
+  uint64_t unescaped = unsigned_lteq_against_input(input_lo, input_hi, _mm256_set1_epi8(0x1F));
+  error_mask |= quote_mask & unescaped;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20,
   // John Regher from Utah U. says this is fine code
@@ -558,11 +576,9 @@ really_inline uint64_t finalize_structurals(
     uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
   // mask off anything inside quotes
   structurals &= ~quote_mask;
-
   // add the real quote bits back into our bitmask as well, so we can
   // quickly traverse the strings we've spent all this trouble gathering
   structurals |= quote_bits;
-
   // Now, establish "pseudo-structural characters". These are non-whitespace
   // characters that are (a) outside quotes and (b) have a predecessor that's
   // either whitespace or a structural character. This means that subsequent
@@ -574,6 +590,7 @@ really_inline uint64_t finalize_structurals(
   // a qualified predecessor is something that can happen 1 position before an
   // psuedo-structural character
   uint64_t pseudo_pred = structurals | whitespace;
+
   uint64_t shifted_pseudo_pred =
       (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
   prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
@@ -631,6 +648,7 @@ WARN_UNUSED
 
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
+  uint64_t error_mask = 0; // for unescaped characters within strings (ASCII code points < 0x20)
 
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
@@ -653,7 +671,7 @@ WARN_UNUSED
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits);
+        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
@@ -694,7 +712,7 @@ WARN_UNUSED
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits);
+        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
@@ -729,7 +747,9 @@ WARN_UNUSED
   }
   // make it safe to dereference one beyond this array
   base_ptr[pj.n_structural_indexes] = 0;  
-
+  if (error_mask) {
+    return false;
+  }
 #ifdef SIMDJSON_UTF8VALIDATE
   return _mm256_testz_si256(has_error, has_error) != 0;
 #else
@@ -1297,8 +1317,12 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
       std::cerr << "capacities must be non-zero " << std::endl;
       return false;
     }
-    if ((len <= bytecapacity) && (depthcapacity < maxdepth))
+    if(len > SIMDJSON_MAXSIZE_BYTES) {
+      return false;
+    }
+    if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
       return true;
+    }
     deallocate();
     isvalid = false;
     bytecapacity = 0; // will only set it to len after allocations are a success
@@ -1306,7 +1330,9 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new (std::nothrow) uint32_t[max_structures];
     size_t localtapecapacity = ROUNDUP_N(len, 64);
-    size_t localstringcapacity = ROUNDUP_N(len + 32, 64);
+    // a document with only zero-length strings... could have len/3 string
+    // and we would need len/3 * 5 bytes on the string buffer 
+    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64); 
     string_buf = new (std::nothrow) uint8_t[localstringcapacity];
     tape = new (std::nothrow) uint64_t[localtapecapacity];
     containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
@@ -1362,6 +1388,7 @@ bool ParsedJson::printjson(std::ostream &os) {
     if(!isvalid) { 
       return false;
     }
+    uint32_t string_length;
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -1405,7 +1432,8 @@ bool ParsedJson::printjson(std::ostream &os) {
       switch (type) {
       case '"': // we have a string
         os << '"';
-        print_with_escapes((const unsigned char *)(string_buf + payload));
+        memcpy(&string_length,string_buf + payload, sizeof(uint32_t));
+        print_with_escapes((const unsigned char *)(string_buf + payload + sizeof(uint32_t)), string_length); 
         os << '"';
         break;
       case 'l': // we have a long int
@@ -1474,8 +1502,10 @@ bool ParsedJson::printjson(std::ostream &os) {
 
 WARN_UNUSED
 bool ParsedJson::dump_raw_tape(std::ostream &os) {
-    if(!isvalid) { return false;
-}
+    if(!isvalid) { 
+      return false;
+    }
+    uint32_t string_length;
     size_t tapeidx = 0;
     uint64_t tape_val = tape[tapeidx];
     uint8_t type = (tape_val >> 56);
@@ -1498,7 +1528,8 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
       switch (type) {
       case '"': // we have a string
         os << "string \"";
-        print_with_escapes((const unsigned char *)(string_buf + payload));
+        memcpy(&string_length,string_buf + payload, sizeof(uint32_t));
+        print_with_escapes((const unsigned char *)(string_buf + payload + sizeof(uint32_t)), string_length);
         os << '"';
         os << '\n';
         break;
@@ -1553,6 +1584,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
 }
 /* end file src/parsedjson.cpp */
 /* begin file src/parsedjsoniterator.cpp */
+#include <iterator>
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(pj.isValid()) {
@@ -1659,23 +1691,31 @@ uint8_t ParsedJson::iterator::get_type()  const {
 
 
 int64_t ParsedJson::iterator::get_integer()  const {
-    if(location + 1 >= tape_length) { return 0;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return 0;// default value in case of error
+    }
     return static_cast<int64_t>(pj.tape[location + 1]);
 }
 
 double ParsedJson::iterator::get_double()  const {
-    if(location + 1 >= tape_length) { return NAN;// default value in case of error
-}
+    if(location + 1 >= tape_length) { 
+      return NAN;// default value in case of error
+    }
     double answer;
     memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
     return answer;
 }
 
 const char * ParsedJson::iterator::get_string() const {
-    return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)) ;
+   return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK) + sizeof(uint32_t)) ;
 }
 
+
+uint32_t ParsedJson::iterator::get_string_length() const {
+    uint32_t answer;
+    memcpy(&answer, reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)), sizeof(uint32_t));
+    return answer;
+}
 
 bool ParsedJson::iterator::is_object_or_array() const {
     return is_object_or_array(get_type());
@@ -1707,14 +1747,15 @@ bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
 
 bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
-    do {
+      do {
         assert(is_string());
-        bool rightkey = (strcmp(get_string(),key)==0);
+        bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
         next();
-        if(rightkey) { return true;
-}
-    } while(next());
-    assert(up());// not found
+        if(rightkey) { 
+          return true;
+        }
+      } while(next());
+      assert(up());// not found
     }
     return false;
 }
@@ -1813,15 +1854,17 @@ void ParsedJson::iterator::to_start_scope()  {
 }
 
 bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
-    if(!isOk()) { return false;
-}
+    if(!isOk()) { 
+      return false;
+    }
     switch (current_type) {
     case '"': // we have a string
     os << '"';
     if(escape_strings) {
-        print_with_escapes(get_string(), os);
+        print_with_escapes(get_string(), os, get_string_length());
     } else {
-        os << get_string();
+        // was: os << get_string();, but given that we can include null chars, we have to do something crazier:
+        std::copy(get_string(), get_string() + get_string_length(), std::ostream_iterator<char>(os));
     }
     os << '"';
     break;
