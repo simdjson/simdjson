@@ -164,7 +164,7 @@ static inline void avx_count_nibbles(__m256i bytes,
 
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
-static struct avx_processed_utf_bytes
+static inline struct avx_processed_utf_bytes
 avxcheckUTF8Bytes(__m256i current_bytes,
                   struct avx_processed_utf_bytes *previous,
                   __m256i *has_error) {
