@@ -25,13 +25,13 @@ char * allocate_padded_buffer(size_t length);
 // throws exceptions in case of failure
 // first element of the pair is a string (null terminated)
 // whereas the second element is the length.
-// caller is responsible to free (free((void*)result.data())))
+// caller is responsible to free (aligned_free((void*)result.data())))
 // 
 // throws an exception if the file cannot be opened, use try/catch
 //      try {
 //        p = get_corpus(filename);
 //      } catch (const std::exception& e) { 
-//        free((void*)p.data());//use aligned_free if you plan to use VisualStudio
+//        aligned_free((void*)p.data());
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
 std::string_view  get_corpus(const std::string& filename);
