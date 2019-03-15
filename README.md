@@ -61,7 +61,7 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 const char * filename = ... //
 
 // use whatever means you want to get a string of your JSON document
-std::string_view p = get_corpus(filename);
+std::string_view p = get_corpus(filename); // you are responsible for freeing p.data()
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
 const int res = json_parse(p, pj); // do the parsing, return 0 on success
@@ -71,7 +71,7 @@ if (res != 0) {
     std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
 }
 // You can safely delete the string content
-free((void*)p.data());
+aligned_free((void*)p.data());
 // the ParsedJson document can be used here
 // js can be reused with other json_parse calls.
 ```
@@ -91,6 +91,7 @@ ParsedJson pj = build_parsed_json(p); // do the parsing
 if( ! pj.isValid() ) {
     // something went wrong
 }
+aligned_free((void*)p.data());
 ```
 
 ## Usage: easy single-header version
@@ -112,6 +113,7 @@ int main(int argc, char *argv[]) {
   } else {
     std::cout << "valid" << std::endl;
   }
+  aligned_free((void*)p.data());
   return EXIT_SUCCESS;
 }
 ```
