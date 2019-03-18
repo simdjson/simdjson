@@ -265,7 +265,7 @@ The parser builds a useful immutable (read-only) DOM (document-object model) whi
 To simplify the engineering, we make some assumptions.
 
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe that this is a genuine limitation in the sense that we do not think that there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
-- All strings in the JSON document may have up to 4294967295 bytes in UTF-8 (4GB). To enforce this constraint, we refuse to parse a document that contains more than 4294967295 bytes (4GB). This should accomodate most JSON documents.
+- All strings in the JSON document may have up to 4294967295 bytes in UTF-8 (4GB). To enforce this constraint, we refuse to parse a document that contains more than 4294967295 bytes (4GB). This should accommodate most JSON documents.
 - We assume AVX2 support which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included though it can be done. We plan to support ARM processors (help is invited).
 - In cases of failure, we just report a failure without any indication as to the nature of the problem. (This can be easily improved without affecting performance.)
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
@@ -462,11 +462,11 @@ A character is pseudo-structural if and only if:
 
 1. Not enclosed in quotes, AND
 2. Is a non-whitespace character, AND
-3. It's preceding character is either:
+3. Its preceding character is either:
    (a) a structural character, OR
    (b) whitespace.
 
-This helps as we redefine some new characters as pseudo-structural such as the characters 1, 1, G, n in the following:
+This helps as we redefine some new characters as pseudo-structural such as the characters 1, G, n in the following:
 
 > { "foo" : 1.5, "bar" : 1.5 GEOFF_IS_A_DUMMY bla bla , "baz", null }
 
