@@ -66,10 +66,10 @@ $ ./json2json -d jsonexamples/small/demo.json
 
 ## General formal of the tape elements
 
-Most tape elements  are written as `('c' << 56) + x` where `'c'` is some ASCII character determining the type of the element (out of 't', 'f', 'n', 'l', 'd', '"', '{', '}', '[', ']' ,'r') and where `x` is a 56-bit value called the payload. The payload is normally interpreted as an unsigned 56-bit integer. Note that 56-bit integers can be quite large.
+Most tape elements are written as `('c' << 56) + x` where `'c'` is some ASCII character determining the type of the element (out of 't', 'f', 'n', 'l', 'd', '"', '{', '}', '[', ']' ,'r') and where `x` is a 56-bit value called the payload. The payload is normally interpreted as an unsigned 56-bit integer. Note that 56-bit integers can be quite large.
 
 
-Performance consideration: We believe that  accessing the tape in regular units of 64 bits is more important for performance than saving memory. 
+Performance consideration: We believe that accessing the tape in regular units of 64 bits is more important for performance than saving memory. 
 
 ## Simple JSON values
 
@@ -94,27 +94,28 @@ Performance consideration: We store numbers of the main tape because we believe 
 
 Each JSON document will have two special 64-bit tape elements representing a root node, one at the beginning and one at the end.
 
-- The first 64-bit tape element contains the value `('r'<<56) + x` where `x` is the location on the tape of the last root element.
-- The last 64-bit tape element contains the value ('r'<< 56).
+- The first 64-bit tape element contains the value `('r' << 56) + x` where `x` is the location on the tape of the last root element.
+- The last 64-bit tape element contains the value `('r' << 56)`.
 
 All of the parsed document is located between these two 64-bit tape elements.
 
-Hint: we can read the first tape element to determine the length of the tape.
+Hint: We can read the first tape element to determine the length of the tape.
 
 
 ## Strings
+
 We prefix the string data itself by a 32-bit header to be interpreted as a 32-bit integer. It indicates the length of the string. The actual string data starts at an offset of 4 bytes.
 
-We store string values using UTF-8 encoding with null termination on a separate tape. A string value is represented on the main tape as the 64-bit tape element `('"'<< 56) + x` where the payload `x` is the location on the string tape of the null-terminated string. 
+We store string values using UTF-8 encoding with null termination on a separate tape. A string value is represented on the main tape as the 64-bit tape element `('"' << 56) + x` where the payload `x` is the location on the string tape of the null-terminated string. 
 
 ## Arrays 
 
 JSON arrays are represented using two 64-bit tape elements.
 
-- The first  64-bit tape element contains the value ('[' << 56) + x where the payload x is 1 + the index of the second 64-bit tape element on the tape. 
-- The second 64-bit tape element contains the value (']' << 56) + x where the payload x contains the index of the first 64-bit tape element on the tape.
+- The first 64-bit tape element contains the value `('[' << 56) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape. 
+- The second 64-bit tape element contains the value `(']' << 56) + x` where the payload `x` contains the index of the first 64-bit tape element on the tape.
 
-All the content of the array is located between these two tape elements,including arrays and objects.
+All the content of the array is located between these two tape elements, including arrays and objects.
 
 Performance consideration: We can skip the content of an array entirely by accessing the first 64-bit tape element, reading the payload and moving to the corresponding index on the tape.
 
@@ -122,10 +123,10 @@ Performance consideration: We can skip the content of an array entirely by acces
 
 JSON objects are represented using two 64-bit tape elements.
 
-- The first  64-bit tape element contains the value `('{' << 56) + x` where  the payload  `x` is 1 + the index of the second 64-bit tape element on the tape.
-- The second 64-bit tape element contains the value `('}' << 56) + x` where   the payload `x` contains the index of the first 64-bit tape element on the tape.
+- The first 64-bit tape element contains the value `('{' << 56) + x` where the payload `x` is 1 + the index of the second 64-bit tape element on the tape.
+- The second 64-bit tape element contains the value `('}' << 56) + x` where the payload `x` contains the index of the first 64-bit tape element on the tape.
 
-In-between these two tape elements, we alternate between key (which must strings) and values. A value could be an object or an array.
+In-between these two tape elements, we alternate between key (which must be strings) and values. A value could be an object or an array.
 
 All the content of the object is located between these two tape elements, including arrays and objects. 
 
