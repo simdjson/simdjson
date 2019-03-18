@@ -1,4 +1,4 @@
-# Notes on simdson
+# Notes on simdjson
 
 ## Rationale:
 
