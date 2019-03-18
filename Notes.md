@@ -21,7 +21,7 @@ may be missing the opportunity to carry out 56 operations for each branch miss.
 Many code-bases make use of SIMD and deeply pipelined, "non-branchy", processing for regular tasks. Numerical problems 
 (e.g. "matrix multiply") or simple 'bulk search' tasks (e.g. "count all the occurrences of a given character in a text", 
 "find the first occurrence of the string 'foo' in a text") frequently use this class of techniques. We are demonstrating 
-that these techniques can be applied to much more complex and less regular task.
+that these techniques can be applied to much more complex and less regular tasks.
 
 ## Design:
 
@@ -47,7 +47,7 @@ transformation to discover locations in our data that follow a structural charac
 these locations are the only place that we can expect to see the starts of the JSON 'atoms'. These locations are thus 
 treated as 'structural' ('pseudo-structural characters').
 
-This stage involves either SIMD processing over out bytes or the manipulation of bit arrays that have 1 bit corresponding 
+This stage involves either SIMD processing over bytes or the manipulation of bit arrays that have 1 bit corresponding 
 to 1 byte of input. As such, it can be quite inefficient for some inputs - it is possible to observe dozens of operations 
 taking place to discover that there are in fact no odd-numbered sequences of backslashes or quotes in a given block of 
 input. However, this inefficiency on such inputs is balanced by the fact that it costs no more to run this code over 
