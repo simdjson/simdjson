@@ -9,7 +9,13 @@
 #define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
 
 // the input buf should be readable up to buf + SIMDJSON_PADDING
+#ifdef __AVX2__
 #define SIMDJSON_PADDING  sizeof(__m256i)
+#else
+// this is a stopgap; there should be a better description of the
+// main loop and its behavior that abstracts over this
+#define SIMDJSON_PADDING  32
+#endif
 
 #ifndef _MSC_VER
 // Implemented using Labels as Values which works in GCC and CLANG (and maybe
