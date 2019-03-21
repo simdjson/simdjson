@@ -1,10 +1,3 @@
-#ifdef _MSC_VER
-/* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-
 #include <cassert>
 #include <cstring>
 
