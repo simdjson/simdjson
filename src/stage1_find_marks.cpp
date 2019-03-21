@@ -15,11 +15,23 @@
 #endif
 using namespace std;
 
-really_inline void check_utf8(__m256i input_lo, __m256i input_hi,
+struct simd_input {
+    __m256i lo;
+    __m256i hi;
+};
+
+really_inline simd_input fill_input(const uint8_t * ptr) {
+  struct simd_input in;
+  in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
+  in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
+  return in;
+}
+
+really_inline void check_utf8(simd_input in,
                               __m256i &has_error,
                               struct avx_processed_utf_bytes &previous) {
   __m256i highbit = _mm256_set1_epi8(0x80);
-  if ((_mm256_testz_si256(_mm256_or_si256(input_lo, input_hi), highbit)) == 1) {
+  if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
     // it is ascii, we just check continuation
     has_error = _mm256_or_si256(
         _mm256_cmpgt_epi8(
@@ -29,28 +41,28 @@ really_inline void check_utf8(__m256i input_lo, __m256i input_hi,
         has_error);
   } else {
     // it is not ascii so we have to do heavy work
-    previous = avxcheckUTF8Bytes(input_lo, &previous, &has_error);
-    previous = avxcheckUTF8Bytes(input_hi, &previous, &has_error);
+    previous = avxcheckUTF8Bytes(in.lo, &previous, &has_error);
+    previous = avxcheckUTF8Bytes(in.hi, &previous, &has_error);
   }
 }
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
-really_inline uint64_t cmp_mask_against_input(__m256i input_lo,
-                                              __m256i input_hi, __m256i mask) {
-  __m256i cmp_res_0 = _mm256_cmpeq_epi8(input_lo, mask);
+really_inline uint64_t cmp_mask_against_input(simd_input in,
+                                               __m256i mask) {
+  __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
-  __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
+  __m256i cmp_res_1 = _mm256_cmpeq_epi8(in.hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
 
 // find all values less than or equal than the content of maxval (using unsigned arithmetic) 
-really_inline uint64_t unsigned_lteq_against_input(__m256i input_lo,
-                                              __m256i input_hi, __m256i maxval) {
-  __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_lo),maxval);
+really_inline uint64_t unsigned_lteq_against_input(simd_input in,
+                                               __m256i maxval) {
+  __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
-  __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,input_hi),maxval);
+  __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.hi),maxval);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
@@ -65,12 +77,11 @@ really_inline uint64_t unsigned_lteq_against_input(__m256i input_lo,
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
 really_inline uint64_t
-find_odd_backslash_sequences(__m256i input_lo, __m256i input_hi,
+find_odd_backslash_sequences(simd_input in,
                              uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits =
-      cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('\\'));
+  uint64_t bs_bits = cmp_mask_against_input(in, _mm256_set1_epi8('\\'));
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   // flip lowest if we have an odd-length run at the end of the prior
   // iteration
@@ -111,11 +122,9 @@ find_odd_backslash_sequences(__m256i input_lo, __m256i input_hi,
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-really_inline uint64_t find_quote_mask_and_bits(
-    __m256i input_lo, __m256i input_hi, uint64_t odd_ends,
+really_inline uint64_t find_quote_mask_and_bits(simd_input in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  quote_bits =
-      cmp_mask_against_input(input_lo, input_hi, _mm256_set1_epi8('"'));
+  quote_bits = cmp_mask_against_input(in, _mm256_set1_epi8('"'));
   quote_bits = quote_bits & ~odd_ends;
   // remove from the valid quoted region the unescapted characters.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -126,7 +135,7 @@ really_inline uint64_t find_quote_mask_and_bits(
   // quotation mark, reverse solidus, and the control characters (U+0000
   //through U+001F).
   // https://tools.ietf.org/html/rfc8259
-  uint64_t unescaped = unsigned_lteq_against_input(input_lo, input_hi, _mm256_set1_epi8(0x1F));
+  uint64_t unescaped = unsigned_lteq_against_input(in, _mm256_set1_epi8(0x1F));
   error_mask |= quote_mask & unescaped;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20,
@@ -136,8 +145,7 @@ really_inline uint64_t find_quote_mask_and_bits(
   return quote_mask;
 }
 
-really_inline void find_whitespace_and_structurals(const __m256i input_lo,
-                                                   __m256i input_hi,
+really_inline void find_whitespace_and_structurals(simd_input in,
                                                    uint64_t &whitespace,
                                                    uint64_t &structurals) {
   // do a 'shufti' to detect structural JSON characters
@@ -158,15 +166,15 @@ really_inline void find_whitespace_and_structurals(const __m256i input_lo,
   __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
 
   __m256i v_lo = _mm256_and_si256(
-      _mm256_shuffle_epi8(low_nibble_mask, input_lo),
+      _mm256_shuffle_epi8(low_nibble_mask, in.lo),
       _mm256_shuffle_epi8(high_nibble_mask,
-                          _mm256_and_si256(_mm256_srli_epi32(input_lo, 4),
+                          _mm256_and_si256(_mm256_srli_epi32(in.lo, 4),
                                            _mm256_set1_epi8(0x7f))));
 
   __m256i v_hi = _mm256_and_si256(
-      _mm256_shuffle_epi8(low_nibble_mask, input_hi),
+      _mm256_shuffle_epi8(low_nibble_mask, in.hi),
       _mm256_shuffle_epi8(high_nibble_mask,
-                          _mm256_and_si256(_mm256_srli_epi32(input_hi, 4),
+                          _mm256_and_si256(_mm256_srli_epi32(in.hi, 4),
                                            _mm256_set1_epi8(0x7f))));
   __m256i tmp_lo = _mm256_cmpeq_epi8(
       _mm256_and_si256(v_lo, structural_shufti_mask), _mm256_set1_epi8(0));
@@ -308,32 +316,27 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 128);
 #endif
-    __m256i input_lo =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 0));
-    __m256i input_hi =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 32));
-
+    simd_input in = fill_input(buf+idx);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8(input_lo, input_hi, has_error, previous);
+    check_utf8(in, has_error, previous);
 #endif
 
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences(
-        input_lo, input_hi, prev_iter_ends_odd_backslash);
+        in, prev_iter_ends_odd_backslash);
 
     // detect insides of quote pairs ("quote_mask") and also our quote_bits
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
     flatten_bits(base_ptr, base, idx, structurals);
 
     uint64_t whitespace;
-    find_whitespace_and_structurals(input_lo, input_hi, whitespace,
-                                    structurals);
+    find_whitespace_and_structurals(in, whitespace, structurals);
 
     // fixup structurals to reflect quotes and add pseudo-structural characters
     structurals = finalize_structurals(structurals, whitespace, quote_mask,
@@ -349,32 +352,27 @@ WARN_UNUSED
     uint8_t tmpbuf[64];
     memset(tmpbuf, 0x20, 64);
     memcpy(tmpbuf, buf + idx, len - idx);
-    __m256i input_lo =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 0));
-    __m256i input_hi =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(tmpbuf + 32));
-
+    simd_input in = fill_input(tmpbuf);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8(input_lo, input_hi, has_error, previous);
+    check_utf8(in, has_error, previous);
 #endif
 
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences(
-        input_lo, input_hi, prev_iter_ends_odd_backslash);
+        in, prev_iter_ends_odd_backslash);
 
     // detect insides of quote pairs ("quote_mask") and also our quote_bits
     // themselves
     uint64_t quote_bits;
     uint64_t quote_mask = find_quote_mask_and_bits(
-        input_lo, input_hi, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
     flatten_bits(base_ptr, base, idx, structurals);
 
     uint64_t whitespace;
-    find_whitespace_and_structurals(input_lo, input_hi, whitespace,
-                                    structurals);
+    find_whitespace_and_structurals(in, whitespace, structurals);
 
     // fixup structurals to reflect quotes and add pseudo-structural characters
     structurals = finalize_structurals(structurals, whitespace, quote_mask,
