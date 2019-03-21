@@ -1,12 +1,6 @@
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
-#if defined(_MSC_VER)
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
@@ -43,7 +37,11 @@ static inline int hamming(uint64_t input_num) {
 
 #else
 #include <cstdint>
+#include <cstdlib>
+
+#if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__)
 #include <x86intrin.h>
+#endif
 
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
@@ -54,26 +52,32 @@ static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *re
 
 /* result might be undefined when input_num is zero */
 static inline int trailingzeroes(uint64_t input_num) {
-#ifdef __BMI__
+#ifdef __BMI2__
 	return _tzcnt_u64(input_num);
 #else
-#warning "BMI is missing?"
 	return __builtin_ctzll(input_num);
 #endif
 }
 
 /* result might be undefined when input_num is zero */
 static inline int leadingzeroes(uint64_t  input_num) {
+#ifdef __BMI2__
 	return _lzcnt_u64(input_num);
+#else
+	return __builtin_clzll(input_num);
+#endif
 }
 
 /* result might be undefined when input_num is zero */
 static inline int hamming(uint64_t input_num) {
+#ifdef __POPCOUNT__
 	return _popcnt64(input_num);
+#else
+	return __builtin_popcountll(input_num);
+#endif
 }
 
 #endif // _MSC_VER
-
 
 
 // portable version of  posix_memalign
@@ -91,6 +95,8 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
 	return p;
 }
 
+
+#ifdef __AVX2__
 
 #ifndef __clang__
 #ifndef _MSC_VER
@@ -112,6 +118,7 @@ static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
 #endif
 #endif
 
+#endif // AVX_2
 
 static inline void aligned_free(void *memblock) {
     if(memblock == nullptr) { return; }
