@@ -3,9 +3,6 @@
 #ifndef _MSC_VER
 #include <dirent.h>
 #include <unistd.h>
-#include <x86intrin.h>
-#else
-#include <intrin.h>
 #endif
 #include <cinttypes>
 
