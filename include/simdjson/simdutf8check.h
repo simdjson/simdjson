@@ -120,29 +120,31 @@ static inline void avxcheckOverlong(__m256i current_bytes,
                                     __m256i *has_error) {
   __m256i off1_hibits = push_last_byte_of_a_to_b(previous_hibits, hibits);
   __m256i initial_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       0xC2, -128,       // 110x
-                       0xE1,             // 1110
-                       0xF1, -128, -128, -128, -128, -128, -128, -128, -128,
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128,
                        -128, -128, -128, -128, // 10xx => false
                        0xC2, -128,             // 110x
                        0xE1,                   // 1110
-                       0xF1),
+                       0xF1,                   // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, -128, // 10xx => false
+                       0xC2, -128,             // 110x
+                       0xE1,                   // 1110
+                       0xF1),                  // 1111
       off1_hibits);
 
   __m256i initial_under = _mm256_cmpgt_epi8(initial_mins, off1_current_bytes);
 
   __m256i second_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       127, 127,         // 110x => true
-                       0xA0,             // 1110
-                       0x90, -128, -128, -128, -128, -128, -128, -128, -128,
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128,
                        -128, -128, -128, -128, // 10xx => false
                        127, 127,               // 110x => true
                        0xA0,                   // 1110
-                       0x90),
+                       0x90,                   // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, -128, // 10xx => false
+                       127, 127,               // 110x => true
+                       0xA0,                   // 1110
+                       0x90),                  // 1111
       off1_hibits);
   __m256i second_under = _mm256_cmpgt_epi8(second_mins, current_bytes);
   *has_error = _mm256_or_si256(*has_error,
