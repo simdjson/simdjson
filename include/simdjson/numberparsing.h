@@ -247,14 +247,14 @@ parse_float(const uint8_t *const buf,
 #endif
       return false;
     }
-    int exponent = (negexp ? -expnumber : expnumber);
-    if ((exponent > 308) || (exponent < -308)) {
+    if (expnumber > 308) {
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
 #endif
       return false;
     }
+    int exponent = (negexp ? -expnumber : expnumber);
     i *= power_of_ten[308 + exponent];
   }
   if(is_not_structural_or_whitespace(*p)) {
@@ -463,6 +463,13 @@ static really_inline bool parse_number(const uint8_t *const buf,
 #endif
       return false;
     }
+    if(expnumber > 308) {
+// we refuse to parse this
+#ifdef JSON_TEST_NUMBERS // for unit testing
+        foundInvalidNumber(buf + offset);
+#endif
+        return false;       
+    }
     exponent += (negexp ? -expnumber : expnumber);
   }
   if ((exponent != 0) || (expnumber != 0)) {
@@ -481,13 +488,6 @@ static really_inline bool parse_number(const uint8_t *const buf,
       foundFloat(0.0, buf + offset);
 #endif
     } else {
-      if ((exponent > 308) || (exponent < -308)) {
-// we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
-#endif
-        return false;
-      }
       double d = i;
       d = negative ? -d : d;
       d *= power_of_ten[308 + exponent];
