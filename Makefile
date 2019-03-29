@@ -10,8 +10,12 @@ EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependenc
 CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 ifeq ($(SANITIZE),1)
-	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
-	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
+	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
+else
+ifeq ($(SANITIZEGOLD),1)
+	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fuse-ld=gold
+	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fuse-ld=gold
 else
 ifeq ($(DEBUG),1)
         CXXFLAGS += -g3 -O0
@@ -21,7 +25,7 @@ else
 	CFLAGS += -O3
 endif
 endif
-
+endif
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
