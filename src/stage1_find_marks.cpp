@@ -3,8 +3,18 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
+
+#ifdef __AVX2__
+
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
 #define SIMDJSON_UTF8VALIDATE
+
+#endif
+#else
+// currently we don't UTF8 validate for ARM
+// also we assume that if you're not __AVX2__ 
+// you're ARM, which is a bit dumb. TODO: Fix...
+#include <arm_neon.h>
 #endif
 
 // It seems that many parsers do UTF-8 validation.
@@ -16,17 +26,34 @@
 using namespace std;
 
 struct simd_input {
-    __m256i lo;
-    __m256i hi;
+#ifdef __AVX2__
+  __m256i lo;
+  __m256i hi;
+#elif defined(__ARM_NEON)
+  uint8x16_t i0;
+  uint8x16_t i1;
+  uint8x16_t i2;
+  uint8x16_t i3;
+#else
+#error "It's called SIMDjson for a reason, bro"
+#endif
 };
 
 really_inline simd_input fill_input(const uint8_t * ptr) {
   struct simd_input in;
+#ifdef __AVX2__
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
+#elif defined(__ARM_NEON)
+  in.i0 = vld1q_u8(ptr + 0);
+  in.i1 = vld1q_u8(ptr + 16);
+  in.i2 = vld1q_u8(ptr + 32);
+  in.i3 = vld1q_u8(ptr + 48);
+#endif
   return in;
 }
 
+#ifdef SIMDJSON_UTF8VALIDATE
 really_inline void check_utf8(simd_input in,
                               __m256i &has_error,
                               struct avx_processed_utf_bytes &previous) {
@@ -45,26 +72,69 @@ really_inline void check_utf8(simd_input in,
     previous = avxcheckUTF8Bytes(in.hi, &previous, &has_error);
   }
 }
+#endif
+
+uint16_t neonmovemask(uint8x16_t input) {
+  const uint8x16_t bitmask = { 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+  uint8x16_t minput = vandq_u8(input, bitmask);
+  uint8x16_t tmp = vpaddq_u8(minput, minput);
+  tmp = vpaddq_u8(tmp, tmp);
+  tmp = vpaddq_u8(tmp, tmp);
+  return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
+}
+
+uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16_t p3) {
+  const uint8x16_t bitmask = { 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+  uint8x16_t t0 = vandq_u8(p0, bitmask);
+  uint8x16_t t1 = vandq_u8(p1, bitmask);
+  uint8x16_t t2 = vandq_u8(p2, bitmask);
+  uint8x16_t t3 = vandq_u8(p3, bitmask);
+  uint8x16_t sum0 = vpaddq_u8(t0, t1);
+  uint8x16_t sum1 = vpaddq_u8(t2, t3);
+  sum0 = vpaddq_u8(sum0, sum1);
+  sum0 = vpaddq_u8(sum0, sum0);
+  return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+}
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
-really_inline uint64_t cmp_mask_against_input(simd_input in,
-                                               __m256i mask) {
+really_inline uint64_t cmp_mask_against_input(simd_input in, uint8_t m) {
+#ifdef __AVX2__
+  const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(in.hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
+#elif defined(__ARM_NEON)
+  const uint8x16_t mask = vmovq_n_u8(m); 
+  uint8x16_t cmp_res_0 = vceqq_u8(in.i0, mask); 
+  uint8x16_t cmp_res_1 = vceqq_u8(in.i1, mask); 
+  uint8x16_t cmp_res_2 = vceqq_u8(in.i2, mask); 
+  uint8x16_t cmp_res_3 = vceqq_u8(in.i3, mask); 
+  return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+#endif
 }
 
 // find all values less than or equal than the content of maxval (using unsigned arithmetic) 
-really_inline uint64_t unsigned_lteq_against_input(simd_input in,
-                                               __m256i maxval) {
+really_inline uint64_t unsigned_lteq_against_input(simd_input in, uint8_t m) {
+#ifdef __AVX2__
+  const __m256i maxval = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.hi),maxval);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
+#elif defined(__ARM_NEON)
+  const uint8x16_t mask = vmovq_n_u8(m); 
+  uint8x16_t cmp_res_0 = vcleq_u8(in.i0, mask); 
+  uint8x16_t cmp_res_1 = vcleq_u8(in.i1, mask); 
+  uint8x16_t cmp_res_2 = vcleq_u8(in.i2, mask); 
+  uint8x16_t cmp_res_3 = vcleq_u8(in.i3, mask); 
+  return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+#endif
 }
 
 // return a bitvector indicating where we have characters that end an odd-length
@@ -81,7 +151,7 @@ find_odd_backslash_sequences(simd_input in,
                              uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input(in, _mm256_set1_epi8('\\'));
+  uint64_t bs_bits = cmp_mask_against_input(in, '\\');
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   // flip lowest if we have an odd-length run at the end of the prior
   // iteration
@@ -124,18 +194,22 @@ find_odd_backslash_sequences(simd_input in,
 // backslash sequences (of any length) will be detected elsewhere.
 really_inline uint64_t find_quote_mask_and_bits(simd_input in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input(in, _mm256_set1_epi8('"'));
+  quote_bits = cmp_mask_against_input(in, '"');
   quote_bits = quote_bits & ~odd_ends;
   // remove from the valid quoted region the unescapted characters.
+#ifdef __AVX2__
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+#elif defined(__ARM_NEON)
+  uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
+#endif
   quote_mask ^= prev_iter_inside_quote;
   // All Unicode characters may be placed within the
   // quotation marks, except for the characters that MUST be escaped:
   // quotation mark, reverse solidus, and the control characters (U+0000
   //through U+001F).
   // https://tools.ietf.org/html/rfc8259
-  uint64_t unescaped = unsigned_lteq_against_input(in, _mm256_set1_epi8(0x1F));
+  uint64_t unescaped = unsigned_lteq_against_input(in, 0x1F);
   error_mask |= quote_mask & unescaped;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20,
@@ -155,12 +229,13 @@ really_inline void find_whitespace_and_structurals(simd_input in,
   // we are also interested in the four whitespace characters
   // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
   // these go into the next 2 buckets of the comparison (8/16)
+#ifdef __AVX2__
   const __m256i low_nibble_mask = _mm256_setr_epi8(
-      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0,
-      0, 8, 12, 1, 2, 9, 0, 0);
+      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 
+      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
   const __m256i high_nibble_mask = _mm256_setr_epi8(
-      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 8, 0, 18, 4, 0, 1, 0, 1,
-      0, 0, 0, 3, 2, 1, 0, 0);
+      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 
+      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
 
   __m256i structural_shufti_mask = _mm256_set1_epi8(0x7);
   __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
@@ -194,6 +269,52 @@ really_inline void find_whitespace_and_structurals(simd_input in,
   uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
   uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
   whitespace = ~(ws_res_0 | (ws_res_1 << 32));
+#elif defined(__ARM_NEON)
+  // TODO: fill in
+  const uint8x16_t low_nibble_mask = (uint8x16_t){ 
+      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
+  const uint8x16_t high_nibble_mask = (uint8x16_t){ 
+      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0};
+  const uint8x16_t structural_shufti_mask = vmovq_n_u8(0x7); 
+  const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18); 
+  const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf); 
+
+  uint8x16_t nib_0_lo = vandq_u8(in.i0, low_nib_and_mask);
+  uint8x16_t nib_0_hi = vshrq_n_u8(in.i0, 4);
+  uint8x16_t shuf_0_lo = vqtbl1q_u8(low_nibble_mask, nib_0_lo);
+  uint8x16_t shuf_0_hi = vqtbl1q_u8(high_nibble_mask, nib_0_hi);
+  uint8x16_t v_0 = vandq_u8(shuf_0_lo, shuf_0_hi);
+
+  uint8x16_t nib_1_lo = vandq_u8(in.i1, low_nib_and_mask);
+  uint8x16_t nib_1_hi = vshrq_n_u8(in.i1, 4);
+  uint8x16_t shuf_1_lo = vqtbl1q_u8(low_nibble_mask, nib_1_lo);
+  uint8x16_t shuf_1_hi = vqtbl1q_u8(high_nibble_mask, nib_1_hi);
+  uint8x16_t v_1 = vandq_u8(shuf_1_lo, shuf_1_hi);
+
+  uint8x16_t nib_2_lo = vandq_u8(in.i2, low_nib_and_mask);
+  uint8x16_t nib_2_hi = vshrq_n_u8(in.i2, 4);
+  uint8x16_t shuf_2_lo = vqtbl1q_u8(low_nibble_mask, nib_2_lo);
+  uint8x16_t shuf_2_hi = vqtbl1q_u8(high_nibble_mask, nib_2_hi);
+  uint8x16_t v_2 = vandq_u8(shuf_2_lo, shuf_2_hi);
+
+  uint8x16_t nib_3_lo = vandq_u8(in.i3, low_nib_and_mask);
+  uint8x16_t nib_3_hi = vshrq_n_u8(in.i3, 4);
+  uint8x16_t shuf_3_lo = vqtbl1q_u8(low_nibble_mask, nib_3_lo);
+  uint8x16_t shuf_3_hi = vqtbl1q_u8(high_nibble_mask, nib_3_hi);
+  uint8x16_t v_3 = vandq_u8(shuf_3_lo, shuf_3_hi);
+
+  uint8x16_t tmp_0 = vtstq_u8(v_0, structural_shufti_mask);
+  uint8x16_t tmp_1 = vtstq_u8(v_1, structural_shufti_mask);
+  uint8x16_t tmp_2 = vtstq_u8(v_2, structural_shufti_mask);
+  uint8x16_t tmp_3 = vtstq_u8(v_3, structural_shufti_mask);
+  structurals = neonmovemask_bulk(tmp_0, tmp_1, tmp_2, tmp_3);
+
+  uint8x16_t tmp_ws_0 = vtstq_u8(v_0, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_1 = vtstq_u8(v_1, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_2 = vtstq_u8(v_2, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_3 = vtstq_u8(v_3, whitespace_shufti_mask);
+  whitespace = neonmovemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
+#endif
 }
 
 // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -320,7 +441,6 @@ WARN_UNUSED
 #ifdef SIMDJSON_UTF8VALIDATE
     check_utf8(in, has_error, previous);
 #endif
-
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences(
         in, prev_iter_ends_odd_backslash);
@@ -386,6 +506,7 @@ WARN_UNUSED
   // a valid JSON file cannot have zero structural indexes - we should have
   // found something
   if (pj.n_structural_indexes == 0u) {
+printf("wacky exit\n");
     return false;
   }
   if (base_ptr[pj.n_structural_indexes - 1] > len) {
@@ -400,6 +521,7 @@ WARN_UNUSED
   // make it safe to dereference one beyond this array
   base_ptr[pj.n_structural_indexes] = 0;  
   if (error_mask) {
+printf("had error mask\n");
     return false;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
