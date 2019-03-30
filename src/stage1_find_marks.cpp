@@ -74,6 +74,7 @@ really_inline void check_utf8(simd_input in,
 }
 #endif
 
+#ifdef __ARM_NEON
 uint16_t neonmovemask(uint8x16_t input) {
   const uint8x16_t bitmask = { 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
                                0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
@@ -97,6 +98,7 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
   sum0 = vpaddq_u8(sum0, sum0);
   return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
 }
+#endif
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.

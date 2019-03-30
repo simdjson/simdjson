@@ -98,7 +98,6 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
     auto quote_bits =
         static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
-    const size_t LOOP_SIZE = 32;
 #else
     uint8x16_t v0 = vld1q_u8(src);
     uint8x16_t v1 = vld1q_u8(src+16);
