@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# sudo /usr/bin/cpupower frequency-set -g performance
+#######
 # taken from http://hbfs.wordpress.com/2013/06/18/fast-path-finding-part-ii/
 # might require sudo apt-get install cpufrequtils
 # invoke with performance or ondemand 
