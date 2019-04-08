@@ -408,8 +408,11 @@ make allparsingcompetition
 
 ## Other programming languages
 
+We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
+
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
-- [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core
+- [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
+- [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port)
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 
 ## Various References
