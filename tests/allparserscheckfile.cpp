@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   void *state;
   bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
   
-  auto * tokens = make_unique<jsmntok_t[](p.size());
+  auto tokens = make_unique<jsmntok_t[]>(p.size());
   bool jsmn_correct = false; 
   if(tokens == nullptr) {
     printf("Failed to alloc memory for jsmn\n");
