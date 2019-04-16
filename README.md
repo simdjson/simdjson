@@ -414,6 +414,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port)
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
+- [simdjson_php](https://github.com/lemire/simdjson/issues/140): PHP bindings for the simdjson project.
 
 ## Various References
 
