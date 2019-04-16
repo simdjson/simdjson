@@ -9,13 +9,17 @@ COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
+ifdef SANITIZEGOLD
+    SANITIZE = 1
+    LINKER = gold
+endif
+ifdef LINKER
+	CXXFLAGS += -fuse-ld=$(LINKER)
+	CFLAGS += -fuse-ld=$(LINKER)
+endif
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
 	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
-else
-ifeq ($(SANITIZEGOLD),1)
-	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fuse-ld=gold
-	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fuse-ld=gold
 else
 ifeq ($(DEBUG),1)
         CXXFLAGS += -g3 -O0
@@ -23,7 +27,6 @@ ifeq ($(DEBUG),1)
 else
 	CXXFLAGS += -O3
 	CFLAGS += -O3
-endif
 endif
 endif
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
