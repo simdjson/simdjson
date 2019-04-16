@@ -25,9 +25,6 @@ extern "C"
 }
 #include "json/json.h"
 #include "jsoncpp.cpp"
-using namespace rapidjson;
-using namespace std;
-
 
 // fastjson has a tricky interface
 void on_json_error( void *, const fastjson::ErrorContext& ec) {
