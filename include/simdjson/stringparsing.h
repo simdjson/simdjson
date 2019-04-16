@@ -72,9 +72,13 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
   return offset > 0;
 }
 
+#ifdef __ARM_NEON
+#include <arm_neon.h>
+#endif
+
 WARN_UNUSED
-really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
-                                ParsedJson &pj, UNUSED const uint32_t depth, uint32_t offset) {
+really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
 #ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape(0, '"');// don't bother with the string parsing at all
   return true; // always succeeds
@@ -84,6 +88,7 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
   while (1) {
+#ifdef __AVX2__
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
@@ -93,6 +98,33 @@ really_inline  bool parse_string(const uint8_t *buf, UNUSED size_t len,
     auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
     auto quote_bits =
         static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
+#else
+    uint8x16_t v0 = vld1q_u8(src);
+    uint8x16_t v1 = vld1q_u8(src+16);
+    vst1q_u8(dst, v0);
+    vst1q_u8(dst+16, v1);
+    
+    uint8x16_t bs_mask = vmovq_n_u8('\\');
+    uint8x16_t qt_mask = vmovq_n_u8('"');
+    const uint8x16_t bitmask = { 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+    uint8x16_t cmp_bs_0 = vceqq_u8(v0, bs_mask);
+    uint8x16_t cmp_bs_1 = vceqq_u8(v1, bs_mask);
+    uint8x16_t cmp_qt_0 = vceqq_u8(v0, qt_mask);
+    uint8x16_t cmp_qt_1 = vceqq_u8(v1, qt_mask);
+    
+    cmp_bs_0 = vandq_u8(cmp_bs_0, bitmask);
+    cmp_bs_1 = vandq_u8(cmp_bs_1, bitmask);
+    cmp_qt_0 = vandq_u8(cmp_qt_0, bitmask);
+    cmp_qt_1 = vandq_u8(cmp_qt_1, bitmask);
+
+    uint8x16_t sum0 = vpaddq_u8(cmp_bs_0, cmp_bs_1);
+    uint8x16_t sum1 = vpaddq_u8(cmp_qt_0, cmp_qt_1);
+    sum0 = vpaddq_u8(sum0, sum1);
+    sum0 = vpaddq_u8(sum0, sum0);
+    auto bs_bits =  vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0);
+    auto quote_bits =  vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1);
+#endif
     if(((bs_bits - 1) & quote_bits) != 0 ) {
       // we encountered quotes first. Move dst to point to quotes and exit
 
