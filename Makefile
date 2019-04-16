@@ -11,12 +11,12 @@ CXXFLAGS := $(CXXFLAGS) -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclu
 CFLAGS := $(CFLAGS) -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src -O3
 
 ifeq ($(SANITIZE),1)
-	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
-	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CXXFLAGS += -g3 -Og  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CFLAGS += -g3 -Og  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 endif
 ifeq ($(DEBUG),1)
-	CXXFLAGS += -g3 -O0
-	CFLAGS += -g3 -O0
+	CXXFLAGS += -g3 -Og
+	CFLAGS += -g3 -Og
 endif
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
