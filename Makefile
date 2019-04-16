@@ -7,19 +7,16 @@
 .PHONY: clean cleandist
 COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
-CXXFLAGS := $(CXXFLAGS) -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux
-CFLAGS := $(CFLAGS) -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
+CXXFLAGS := $(CXXFLAGS) -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -O3
+CFLAGS := $(CFLAGS) -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src -O3
+
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
-else
-ifeq ($(DEBUG),1)
-        CXXFLAGS += -g3 -O0
-        CFLAGS += -g3 -O0
-else
-	CXXFLAGS += -O3
-	CFLAGS += -O3
 endif
+ifeq ($(DEBUG),1)
+	CXXFLAGS += -g3 -O0
+	CFLAGS += -g3 -O0
 endif
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
