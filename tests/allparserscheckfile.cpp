@@ -25,9 +25,6 @@ extern "C"
 }
 #include "json/json.h"
 #include "jsoncpp.cpp"
-using namespace rapidjson;
-using namespace std;
-
 
 // fastjson has a tricky interface
 void on_json_error( void *, const fastjson::ErrorContext& ec) {
@@ -86,7 +83,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  bool ours_correct = json_parse(p, pj);
+  bool ours_correct = json_parse(p, pj) == 0; // returns 0 on success
 
   rapidjson::Document d;
 
@@ -105,9 +102,9 @@ int main(int argc, char *argv[]) {
   bool gason_correct = (jsonParse(buffer, &endptr, &value, allocator) == JSON_OK);
   void *state;
   bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
-  
+
   auto tokens = make_unique<jsmntok_t[]>(p.size());
-  bool jsmn_correct = false; 
+  bool jsmn_correct = false;
   if(tokens == nullptr) {
     printf("Failed to alloc memory for jsmn\n");
   } else {
@@ -148,7 +145,7 @@ int main(int argc, char *argv[]) {
   printf("cjson                      : %s \n", cjson_correct ? "correct":"invalid");
   printf("jsoncpp                    : %s \n", isjsoncppok ? "correct":"invalid");
 
-  aligned_free((void*)p.data());       
+  aligned_free((void*)p.data());
   free(buffer);
   return EXIT_SUCCESS;
 }
