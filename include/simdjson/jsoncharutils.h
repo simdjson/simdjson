@@ -70,9 +70,8 @@ const signed char digittoval[256] = {
 // returns a value with the high 16 bits set if not valid
 // otherwise returns the conversion of the 4 hex digits at src into the bottom 16 bits of the 32-bit
 // return register
-// 
-// It is a shame that we have to do error checking, otherwise digittoval could
-// be done using (c & 0xF) + 9 * (c & 0x10). But that is unsafe.
+//
+// see https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/ 
 static inline uint32_t hex_to_u32_nocheck(const uint8_t *src) {// strictly speaking, static inline is a C-ism
   // all these will sign-extend the chars looked up, placing 1-bits into the high 28 bits of every
   // invalid value. After the shifts, this will *still* result in the outcome that the high 16 bits of any
