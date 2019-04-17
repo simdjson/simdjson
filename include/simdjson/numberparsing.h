@@ -135,6 +135,23 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 }
 #endif
 
+// clang-format off
+/***
+Should parse_eight_digits_unrolled be out of the question, one could
+use a standard approach like the following:
+
+static inline uint32_t newparse_eight_digits_unrolled(const char *chars) {
+   uint64_t val;
+   memcpy(&val, chars, sizeof(uint64_t));  
+   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
+   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
+   return (val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32;
+}
+
+credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
+*/
+// clang-format on
+
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
