@@ -16,6 +16,11 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 A description of the design and implementation of simdjson appears at https://arxiv.org/abs/1902.08318 and an informal blog post providing some background and context is at https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/.
 
+Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
+
+[<img src="images/halvarflake.png" width="50%">](https://twitter.com/halvarflake/status/1118459536686362625)
+
+
 ## Performance results
 
 simdjson uses three-quarters less instructions than state-of-the-art parser RapidJSON and fifty percent less than sajson. To our knowledge, simdjson is the first fully-validating JSON parser to run at gigabytes per second on commodity processors.
