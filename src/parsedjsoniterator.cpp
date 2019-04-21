@@ -34,7 +34,7 @@ ParsedJson::iterator::iterator(const iterator &o):
     current_val(o.current_val), depthindex(nullptr) {
     depthindex = new scopeindex_t[pj.depthcapacity];
     if(depthindex != nullptr) {
-        memcpy(o.depthindex, depthindex, pj.depthcapacity * sizeof(depthindex[0]));
+        memcpy(depthindex, o.depthindex, pj.depthcapacity * sizeof(depthindex[0]));
     } else {
         tape_length = 0;
     }
