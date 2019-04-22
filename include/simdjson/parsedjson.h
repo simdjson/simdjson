@@ -89,7 +89,14 @@ public:
       tape[saved_loc] |= val;
   }
 
+  struct InvalidJSON : public std::exception {
+	const char * what () const throw () {
+ 	     return "JSON document is invalid";
+    }
+  };
+
   struct iterator {
+    // might throw InvalidJSON if ParsedJson is invalid
     explicit iterator(ParsedJson &pj_);
     ~iterator();
 

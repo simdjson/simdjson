@@ -3,26 +3,32 @@
 #include <iterator>
 
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
-        if(pj.isValid()) {
-            depthindex = new scopeindex_t[pj.depthcapacity];
-            if(depthindex == nullptr) { return;
-}
-            depthindex[0].start_of_scope = location;
-            current_val = pj.tape[location++];
-            current_type = (current_val >> 56);
-            depthindex[0].scope_type = current_type;
-            if (current_type == 'r') {
-              tape_length = current_val & JSONVALUEMASK;
-              if(location < tape_length) {
+        if(!pj.isValid()) {
+            throw InvalidJSON();
+        }
+        depthindex = new scopeindex_t[pj.depthcapacity];
+        // memory allocation would throw
+        //if(depthindex == nullptr) { 
+        //    return;
+        //}
+        depthindex[0].start_of_scope = location;
+        current_val = pj.tape[location++];
+        current_type = (current_val >> 56);
+        depthindex[0].scope_type = current_type;
+        if (current_type == 'r') {
+            tape_length = current_val & JSONVALUEMASK;
+            if(location < tape_length) {
                 current_val = pj.tape[location];
                 current_type = (current_val >> 56);
                 depth++;
                 depthindex[depth].start_of_scope = location;
                 depthindex[depth].scope_type = current_type;
               }
-            }
+        } else {
+            // should never happen
+            throw InvalidJSON();
         }
-    }
+}
 
 ParsedJson::iterator::~iterator() {
       delete[] depthindex;
@@ -30,14 +36,12 @@ ParsedJson::iterator::~iterator() {
 
 ParsedJson::iterator::iterator(const iterator &o):
     pj(o.pj), depth(o.depth), location(o.location),
-    tape_length(o.tape_length), current_type(o.current_type),
+    tape_length(0), current_type(o.current_type),
     current_val(o.current_val), depthindex(nullptr) {
     depthindex = new scopeindex_t[pj.depthcapacity];
-    if(depthindex != nullptr) {
-        memcpy(depthindex, o.depthindex, pj.depthcapacity * sizeof(depthindex[0]));
-    } else {
-        tape_length = 0;
-    }
+    // allocation might throw
+    memcpy(depthindex, o.depthindex, pj.depthcapacity * sizeof(depthindex[0]));
+    tape_length = o.tape_length;
 }
 
 ParsedJson::iterator::iterator(iterator &&o):
