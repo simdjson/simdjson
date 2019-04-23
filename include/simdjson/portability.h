@@ -39,7 +39,7 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 #include <cstdlib>
 
-#if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__)
+#if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__SSE4_2__)
 #include <x86intrin.h>
 #endif
 

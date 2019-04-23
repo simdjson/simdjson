@@ -103,7 +103,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];
 }
 
-#ifdef __AVX2__
+#ifdef __SSE4_2__
 #define SWAR_NUMBER_PARSING
 #endif
 

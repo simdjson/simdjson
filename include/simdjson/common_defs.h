@@ -9,8 +9,8 @@
 #define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
 
 // the input buf should be readable up to buf + SIMDJSON_PADDING
-#ifdef __AVX2__
-#define SIMDJSON_PADDING  sizeof(__m256i)
+#ifdef __SSE4_2__
+#define SIMDJSON_PADDING  sizeof(__m128i) * 2
 #else
 // this is a stopgap; there should be a better description of the
 // main loop and its behavior that abstracts over this

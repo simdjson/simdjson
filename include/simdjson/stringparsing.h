@@ -88,16 +88,16 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
   while (1) {
-#ifdef __AVX2__
-    __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
+#ifdef __SSE4_2__
+    __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
-    _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), v);
     auto bs_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
-    auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
+        static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8('\\'))));
+    auto quote_mask = _mm_cmpeq_epi8(v, _mm_set1_epi8('"'));
     auto quote_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
+        static_cast<uint32_t>(_mm_movemask_epi8(quote_mask));
 #else
     uint8x16_t v0 = vld1q_u8(src);
     uint8x16_t v1 = vld1q_u8(src+16);
@@ -187,8 +187,8 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     } else {
       // they are the same. Since they can't co-occur, it means we encountered
       // neither.
-      src += 32;
-      dst += 32;
+      src += 16;
+      dst += 16;
     }
   }
   // can't be reached
