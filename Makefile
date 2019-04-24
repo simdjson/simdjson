@@ -7,17 +7,35 @@
 .PHONY: clean cleandist
 COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
-CXXFLAGS := $(CXXFLAGS) -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux -O3
-CFLAGS := $(CFLAGS) -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src -O3
+CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux
+CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 
+# This is a convenience flag
+ifdef SANITIZEGOLD
+    SANITIZE = 1
+    LINKER = gold
+endif
+
+ifdef LINKER
+	CXXFLAGS += -fuse-ld=$(LINKER)
+	CFLAGS += -fuse-ld=$(LINKER)
+endif
+
+
+# SANITIZE *implies* DEBUG
 ifeq ($(SANITIZE),1)
-	CXXFLAGS += -g3 -Og  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
-	CFLAGS += -g3 -Og  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
-endif
+	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
+	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
+else
 ifeq ($(DEBUG),1)
-	CXXFLAGS += -g3 -Og
-	CFLAGS += -g3 -Og
-endif
+        CXXFLAGS += -g3 -O0
+        CFLAGS += -g3 -O0
+else
+# we opt for  -O3 for regular builds
+	CXXFLAGS += -O3
+	CFLAGS += -O3
+endif # ifeq ($(DEBUG),1)
+endif # ifeq ($(SANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck

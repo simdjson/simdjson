@@ -135,6 +135,7 @@ int main(int argc, char *argv[]) {
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
+      aligned_free((void *)p.data());
       return EXIT_FAILURE;
     }
 #ifndef SQUASH_COUNTERS
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
     cref1 += results[3];
     cmis1 += results[4];
     if (!isok) {
-      cout << "Failed out during stage 1\n";
+      cout << "Failed during stage 1\n";
       break;
     }
     unified.start();
@@ -177,7 +178,7 @@ int main(int argc, char *argv[]) {
     cref2 += results[3];
     cmis2 += results[4];
     if (!isok) {
-      cout << "Failed out during stage 2\n";
+      cout << "Failed during stage 2\n";
       break;
     }
 #endif
@@ -189,6 +190,7 @@ int main(int argc, char *argv[]) {
   ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << "Could not parse. " << std::endl;
+    aligned_free((void *)p.data());
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS
@@ -199,8 +201,10 @@ int main(int argc, char *argv[]) {
     float cpb2 = (double)cy2 / (iterations * p.size());
     float cpbtotal = (double)total / (iterations * p.size());
     char *newfile = (char *)malloc(strlen(filename) + 1);
-    if (newfile == NULL)
+    if (newfile == NULL) {
+      aligned_free((void *)p.data());
       return EXIT_FAILURE;
+    }
     ::strcpy(newfile, filename);
     char *snewfile = ::basename(newfile);
     size_t nl = strlen(snewfile);
