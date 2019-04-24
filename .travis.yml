@@ -17,3 +17,5 @@ script:
    - export CC=gcc-7
    - make
    - make test 
+   - make clean
+   - make SANITIZEGOLD=1 test
