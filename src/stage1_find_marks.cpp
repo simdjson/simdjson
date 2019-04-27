@@ -67,26 +67,38 @@ really_inline simd_input fill_input(const uint8_t * ptr) {
   return in;
 }
 
-//#ifdef SIMDJSON_UTF8VALIDATE
-//really_inline void check_utf8(simd_input in,
-//                              __m256i &has_error,
-//                              struct avx_processed_utf_bytes &previous) {
-//  __m256i highbit = _mm256_set1_epi8(0x80);
-//  if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
-//    // it is ascii, we just check continuation
-//    has_error = _mm256_or_si256(
-//        _mm256_cmpgt_epi8(
-//            previous.carried_continuations,
-//            _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-//                             9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
-//        has_error);
-//  } else {
-//    // it is not ascii so we have to do heavy work
-//    previous = avxcheckUTF8Bytes(in.lo, &previous, &has_error);
-//    previous = avxcheckUTF8Bytes(in.hi, &previous, &has_error);
-//  }
-//}
-//#endif
+#ifdef SIMDJSON_UTF8VALIDATE
+really_inline void check_utf8(simd_input in,
+                              __m128i &has_error,
+                              struct processed_utf_bytes &previous) {
+  __m128i highbit = _mm_set1_epi8(0x80);
+  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), highbit)) == 1) {
+    // it is ascii, we just check continuation
+    has_error = _mm_or_si128(
+        _mm_cmpgt_epi8(
+            previous.carried_continuations,
+            _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
+        has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    previous = checkUTF8Bytes(in.v0, &previous, &has_error);
+    previous = checkUTF8Bytes(in.v1, &previous, &has_error);
+  }
+
+  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), highbit)) == 1) {
+    // it is ascii, we just check continuation
+    has_error = _mm_or_si128(
+            _mm_cmpgt_epi8(
+                    previous.carried_continuations,
+                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
+            has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    previous = checkUTF8Bytes(in.v2, &previous, &has_error);
+    previous = checkUTF8Bytes(in.v3, &previous, &has_error);
+  }
+}
+#endif
 
 #ifdef __ARM_NEON
 uint16_t neonmovemask(uint8x16_t input) {
@@ -544,13 +556,13 @@ WARN_UNUSED
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
-//#ifdef SIMDJSON_UTF8VALIDATE
-//  __m256i has_error = _mm256_setzero_si256();
-//  struct avx_processed_utf_bytes previous {};
-//  previous.rawbytes = _mm256_setzero_si256();
-//  previous.high_nibbles = _mm256_setzero_si256();
-//  previous.carried_continuations = _mm256_setzero_si256();
-//#endif
+#ifdef SIMDJSON_UTF8VALIDATE
+  __m128i has_error = _mm_setzero_si128();
+  struct processed_utf_bytes previous {};
+  previous.rawbytes = _mm_setzero_si128();
+  previous.high_nibbles = _mm_setzero_si128();
+  previous.carried_continuations = _mm_setzero_si128();
+#endif
 
   // we have padded the input out to 64 byte multiple with the remainder being
   // zeros
@@ -584,9 +596,9 @@ WARN_UNUSED
     __builtin_prefetch(buf + idx + 128);
 #endif
     simd_input in = fill_input(buf+idx);
-//#ifdef SIMDJSON_UTF8VALIDATE
-//    check_utf8(in, has_error, previous);
-//#endif
+#ifdef SIMDJSON_UTF8VALIDATE
+    check_utf8(in, has_error, previous);
+#endif
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences(
         in, prev_iter_ends_odd_backslash);
@@ -619,9 +631,9 @@ WARN_UNUSED
     memset(tmpbuf, 0x20, 64);
     memcpy(tmpbuf, buf + idx, len - idx);
     simd_input in = fill_input(tmpbuf);
-//#ifdef SIMDJSON_UTF8VALIDATE
-//    check_utf8(in, has_error, previous);
-//#endif
+#ifdef SIMDJSON_UTF8VALIDATE
+    check_utf8(in, has_error, previous);
+#endif
 
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences(
@@ -670,11 +682,12 @@ printf("wacky exit\n");
 printf("had error mask\n");
     return false;
   }
-//#ifdef SIMDJSON_UTF8VALIDATE
-//  return _mm256_testz_si256(has_error, has_error) != 0;
-//#else
+#ifdef SIMDJSON_UTF8VALIDATE
+  return
+    _mm_testz_si128(has_error, has_error) != 0;
+#else
   return true;
-//#endif
+#endif
 }
 
 bool find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
