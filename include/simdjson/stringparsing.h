@@ -77,7 +77,7 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
 #endif
 
 WARN_UNUSED
-really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
+really_inline  bool parse_string(UNUSED const uint8_t *buf, const size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
 #ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
   pj.write_tape(0, '"');// don't bother with the string parsing at all
@@ -87,7 +87,9 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
   const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
-  while (1) {
+  size_t position {pj.n_structural_indexes};
+  constexpr unsigned char next_32_bytes {32};
+  while (position <= len) {
 #ifdef __AVX2__
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
     // store to dest unconditionally - we can overwrite the bits we don't like
@@ -187,12 +189,12 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     } else {
       // they are the same. Since they can't co-occur, it means we encountered
       // neither.
-      src += 32;
-      dst += 32;
+      position += next_32_bytes;
+      src += next_32_bytes;
+      dst += next_32_bytes;
     }
   }
-  // can't be reached
-  return true;
+  return false;
 #endif // SIMDJSON_SKIPSTRINGPARSING
 }
 
