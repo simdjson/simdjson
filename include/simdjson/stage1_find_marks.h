@@ -5,6 +5,15 @@
 
 struct ParsedJson;
 
+class SetBitsCounter {
+    static constexpr uint8_t  set_bytes_array[16] = {
+            0, 1, 1, 2, 1, 2, 2, 3,
+            1, 2, 2, 3, 2, 3, 3, 4
+    };
+public:
+    static uint64_t count_set_bits(uint64_t num);
+};
+
 WARN_UNUSED
 bool find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 

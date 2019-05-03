@@ -1,4 +1,5 @@
 #include <cassert>
+#include <simdjson/stage1_find_marks.h>
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
@@ -61,6 +62,15 @@ really_inline simd_input fill_input(const uint8_t * ptr) {
 #endif
 #endif
   return in;
+}
+
+uint64_t SetBitsCounter::count_set_bits(uint64_t num) {
+    uint64_t  result {0};
+    while (num) {
+        result +=  SetBitsCounter::set_bytes_array[num & 0x0fu];
+        num >>= 4u;
+    }
+    return result;
 }
 
 #ifdef SIMDJSON_UTF8VALIDATE
@@ -230,10 +240,14 @@ find_odd_backslash_sequences(simd_input in,
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-really_inline uint64_t find_quote_mask_and_bits(simd_input in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
+really_inline uint64_t find_quote_mask_and_bits(simd_input in,
+        uint64_t odd_ends,
+        uint64_t &prev_iter_inside_quote,
+        uint64_t &quote_bits,
+        uint64_t &error_mask) {
   quote_bits = cmp_mask_against_input(in, '"');
   quote_bits = quote_bits & ~odd_ends;
+
   // remove from the valid quoted region the unescapted characters.
 #ifdef __AVX2__
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -542,6 +556,7 @@ WARN_UNUSED
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
   uint64_t error_mask = 0; // for unescaped characters within strings (ASCII code points < 0x20)
+  uint64_t number_of_quotes =  0;
 
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
@@ -558,9 +573,14 @@ WARN_UNUSED
     // detect insides of quote pairs ("quote_mask") and also our quote_bits
     // themselves
     uint64_t quote_bits;
-    uint64_t quote_mask = find_quote_mask_and_bits(
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
-
+    uint64_t quote_mask =
+            find_quote_mask_and_bits(
+                    in,
+                    odd_ends,
+                    prev_iter_inside_quote,
+                    quote_bits,
+                    error_mask);
+    number_of_quotes += SetBitsCounter::count_set_bits(quote_bits);
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
     flatten_bits(base_ptr, base, idx, structurals);
@@ -594,9 +614,18 @@ WARN_UNUSED
     // detect insides of quote pairs ("quote_mask") and also our quote_bits
     // themselves
     uint64_t quote_bits;
-    uint64_t quote_mask = find_quote_mask_and_bits(
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+    uint64_t quote_mask =
+            find_quote_mask_and_bits(
+                    in,
+                    odd_ends,
+                    prev_iter_inside_quote,
+                    quote_bits,
+                    error_mask);
 
+    number_of_quotes += SetBitsCounter::count_set_bits(quote_bits);
+    if (number_of_quotes & 1u) {
+        return false;
+    }
     // take the previous iterations structural bits, not our current iteration,
     // and flatten
     flatten_bits(base_ptr, base, idx, structurals);
@@ -609,6 +638,11 @@ WARN_UNUSED
                                        quote_bits, prev_iter_ends_pseudo_pred);
     idx += 64;
   }
+
+  if (number_of_quotes & 1u) {
+      return false;
+  }
+
   // finally, flatten out the remaining structurals from the last iteration
   flatten_bits(base_ptr, base, idx, structurals);
 
