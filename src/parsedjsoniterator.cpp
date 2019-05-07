@@ -161,6 +161,18 @@ bool ParsedJson::iterator::is_double() const {
     return get_type() == 'd';
 }
 
+bool ParsedJson::iterator::is_true() const {
+    return get_type() == 't';
+}
+
+bool ParsedJson::iterator::is_false() const {
+    return get_type() == 'f';
+}
+
+bool ParsedJson::iterator::is_null() const {
+    return get_type() == 'n';
+}
+
 bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
     return (type == '[' || (type == '{'));
 }

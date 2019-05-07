@@ -154,6 +154,12 @@ public:
 
     bool is_double() const;
 
+    bool is_true() const;
+
+    bool is_false() const;
+
+    bool is_null() const;
+
     static bool is_object_or_array(uint8_t type);
 
     // when at {, go one level deep, looking for a given key
