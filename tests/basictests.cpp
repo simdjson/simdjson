@@ -11,7 +11,7 @@
 
 // returns true if successful
 bool skyprophet_test() {
-  const size_t n_records = 10000000;
+  const size_t n_records = 1000000;
   std::vector<std::string> data;
   char buf[1024];
   for (size_t i = 0; i < n_records; ++i) {
@@ -44,7 +44,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
-
+  if(!skyprophet_test())
+    return EXIT_FAILURE;
   std::cout << "Basic tests are ok." << std::endl;
   return EXIT_SUCCESS;
 }
