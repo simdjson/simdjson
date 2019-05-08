@@ -609,6 +609,12 @@ WARN_UNUSED
                                        quote_bits, prev_iter_ends_pseudo_pred);
     idx += 64;
   }
+
+  // is last string quote closed?
+  if (prev_iter_inside_quote) {
+      return false;
+  }
+
   // finally, flatten out the remaining structurals from the last iteration
   flatten_bits(base_ptr, base, idx, structurals);
 
