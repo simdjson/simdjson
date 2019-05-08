@@ -4,6 +4,7 @@ if(MSVC)
   )
 endif()
 
+add_cpp_test(basictests)
 add_cpp_test(jsoncheck)
 
 add_executable(singleheader ./singleheadertest.cpp ${PROJECT_SOURCE_DIR}/singleheader/simdjson.cpp)

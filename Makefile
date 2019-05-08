@@ -71,7 +71,8 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck
+test: jsoncheck numberparsingcheck stringparsingcheck basictests
+	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
@@ -81,7 +82,8 @@ test: jsoncheck numberparsingcheck stringparsingcheck
 	@echo "It looks like the code is good!"
 	@tput sgr0
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests
+	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
@@ -129,6 +131,10 @@ parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
+
+basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o basictests $(LIBFILES) tests/basictests.cpp -I. $(LIBFLAGS)
+
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
