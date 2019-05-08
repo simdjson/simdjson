@@ -107,7 +107,7 @@ aligned_free((void*)p.data());
 
 When calling `json_parse` and `build_parsed_json`, the input data should be readable up to SIMDJSON_PADDING bytes beyond the end of the data. That is, you must overallocate SIMDJSON_PADDING bytes. The `get_corpus` function does this automatically. As a caller, you are responsible for this overallocation. You can use the `char * allocate_padded_buffer(size_t length)` function to achieve the desired effect; make sure to call `free` on the buffer to release the memory. 
 
-If this manual overallocation is not convenient, you can call the parsing functions with an extra parameter value of `true` to require memory reallocation (it defaults on `reallocifneeded = false`): replace `json_parse(p, pj)` by `json_parse(p, pj, true)` and `build_parsed_json(p)` by `build_parsed_json(p, true)`. Automatic memory reallocation may incur a performance penalty.
+If this manual overallocation is not convenient, you can call the parsing functions with an extra parameter value of `true` to require memory reallocation (it defaults on `reallocifneeded = true`). Automatic memory reallocation may incur a performance penalty.
 
 
 ## Using `std::string`
