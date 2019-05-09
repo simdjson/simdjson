@@ -12,7 +12,7 @@ int main() {
   if( ! pj.allocateCapacity(p.size()) ) {
     return EXIT_FAILURE;
   }
-  bool automated_reallocation = false;
+  automated_reallocation = false;
   const int res = json_parse(p, pj, automated_reallocation);
   if (res) {
     std::cerr << simdjson::errorMsg(res) << std::endl;
