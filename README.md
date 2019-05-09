@@ -99,22 +99,12 @@ if( ! pj.isValid() ) {
 aligned_free((void*)p.data());
 ```
 
-
+You can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
 
 
 ## Memory overallocation `
 
-
-When calling `json_parse` and `build_parsed_json`, the input data should be readable up to SIMDJSON_PADDING bytes beyond the end of the data. That is, you must overallocate SIMDJSON_PADDING bytes. The `get_corpus` function does this automatically. As a caller, you are responsible for this overallocation. You can use the `char * allocate_padded_buffer(size_t length)` function to achieve the desired effect; make sure to call `free` on the buffer to release the memory. 
-
-If this manual overallocation is not convenient, you can call the parsing functions with an extra parameter value of `true` to require memory reallocation (it defaults on `reallocifneeded = true`). Automatic memory reallocation may incur a performance penalty.
-
-
-## Using `std::string`
-
-You can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object. In such cases, the library may require a temporary copy and some performance loss. 
-
-*Performance tip*: replace `std::string` with manually allocated C strings if performance is important to you.
+As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data. To avoid this potentially expensive copy, overallocate your own input data and then call the `json_parse` and `build_parsed_json` functions with an extra parameter value set to `false` (e.g., `build_parsed_json(p,false)` and  `parsed_json(p,pj,false)`). In such instance, no temporary copy is made. The `get_corpus` function does this automatically as well as the provide `char * allocate_padded_buffer(size_t length)` function to achieve the desired effect. 
 
 ## Usage: easy single-header version
 
