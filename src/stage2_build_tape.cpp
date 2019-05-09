@@ -28,7 +28,7 @@ really_inline bool is_valid_true_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_false_atom(const uint8_t *loc) {
-  // We have ot use a integer constant because the space in the cast
+  // We have to use a integer constant because the space in the cast
   // below would lead to values illegally being qualified
   // uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
   // using this constant (that is the same false) but nulls out the
