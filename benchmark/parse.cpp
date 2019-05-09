@@ -187,7 +187,8 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
   }
-  ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
+  bool automated_reallocation = false;
+  ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << "Could not parse. " << std::endl;
     aligned_free((void *)p.data());

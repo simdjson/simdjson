@@ -47,7 +47,8 @@ void print_stat(const stat_t &s) {
 __attribute__ ((noinline))
 stat_t simdjson_computestats(const std::string_view &p) {
   stat_t answer;
-  ParsedJson pj = build_parsed_json(p);
+  bool automated_reallocation = false;
+  ParsedJson pj = build_parsed_json(p, automated_reallocation);
   answer.valid = pj.isValid();
   if (!answer.valid) {
     return answer;

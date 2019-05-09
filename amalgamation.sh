@@ -101,7 +101,8 @@ cat <<< '
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   std::string_view p = get_corpus(filename);
-  ParsedJson pj = build_parsed_json(p); // do the parsing
+  bool automated_reallocation = false;
+  ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing
   if( ! pj.isValid() ) {
     std::cout << "not valid" << std::endl;
   } else {

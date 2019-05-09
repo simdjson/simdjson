@@ -86,7 +86,7 @@ static inline bool is_integer(char c) {
 // probably frequent and it is hard than it looks. We are building all of this
 // just to differentiate between 0x1 (invalid), 0,1 (valid) 0e1 (valid)...
 const bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
@@ -99,7 +99,7 @@ const bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 really_inline bool
-is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
+is_not_structural_or_whitespace_or_exponent_or_decimal_or_null(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];
 }
 
@@ -388,7 +388,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
   uint64_t i; // an unsigned int avoids signed overflows (which are bad)
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
-    if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
+    if (is_not_structural_or_whitespace_or_exponent_or_decimal_or_null(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
 #endif

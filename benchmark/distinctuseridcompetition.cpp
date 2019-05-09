@@ -75,7 +75,8 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
 
 std::vector<int64_t> simdjson_computestats(const std::string_view &p) {
   std::vector<int64_t> answer;
-  ParsedJson pj = build_parsed_json(p);
+  bool automated_reallocation = false;
+  ParsedJson pj = build_parsed_json(p, automated_reallocation);
   if (!pj.isValid()) {
     return answer;
   }

@@ -146,7 +146,8 @@ bool validate(const char *dirname) {
       int_count = 0;
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
-      bool isok = json_parse(p, pj);
+      bool automated_reallocation = false;
+      bool isok = json_parse(p, pj, automated_reallocation);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "
                "total numbers: %10zu \n",

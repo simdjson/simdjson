@@ -79,7 +79,8 @@ bool validate(const char *dirname) {
         return false;
       }
       ++howmany;
-      const int parseRes = json_parse(p, pj);
+      bool automated_reallocation = false;
+      const int parseRes = json_parse(p, pj, automated_reallocation);
       aligned_free((void*)p.data());
       printf("%s\n", parseRes == 0 ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {

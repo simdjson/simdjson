@@ -69,7 +69,8 @@ const char * filename = ... //
 std::string_view p = get_corpus(filename); // you are responsible for freeing p.data()
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
-const int res = json_parse(p, pj); // do the parsing, return 0 on success
+bool automated_reallocation = false; // get_corpus pads so we do not need reallocation
+const int res = json_parse(p, pj, automated_reallocation); // do the parsing, return 0 on success
 // parsing is done!
 if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
@@ -91,7 +92,8 @@ of memory allocation with each new JSON document:
 
 const char * filename = ... //
 std::string_view p = get_corpus(filename);
-ParsedJson pj = build_parsed_json(p); // do the parsing
+bool automated_reallocation = false; // get_corpus pads so we do not need reallocation
+ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing
 // you no longer need p at this point, can do aligned_free((void*)p.data())
 if( ! pj.isValid() ) {
     // something went wrong
@@ -100,6 +102,41 @@ aligned_free((void*)p.data());
 ```
 
 You can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
+
+```C
+#include "simdjson/jsonparser.h"
+
+/...
+
+std::string mystring = ... //
+ParsedJson pj;
+pj.allocateCapacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
+bool automated_reallocation = true; // std::string may not overallocate so a copy will be needed
+const int res = json_parse(mystring, pj, automated_reallocation); // do the parsing, return 0 on success
+// previous line is equivalent to const int res = json_parse(mystring, pj);
+// parsing is done!
+if (res != 0) {
+    // You can use the "simdjson/simdjson.h" header to access the error message
+    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+}
+// pj can be reused with other json_parse calls.
+```
+
+or
+
+```C
+#include "simdjson/jsonparser.h"
+
+/...
+
+std::string mystring = ... //
+bool automated_reallocation = true; // std::string may not overallocate so a copy will be needed
+ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing
+// previous line is equivalent to ParsedJson pj = build_parsed_json(p); 
+if( ! pj.isValid() ) {
+    // something went wrong
+}
+```
 
 
 ## Memory overallocation `

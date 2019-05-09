@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  bool ours_correct = json_parse(p, pj) == 0; // returns 0 on success
+  bool automated_reallocation = false;
+  bool ours_correct = (json_parse(p, pj, automated_reallocation) == 0); // returns 0 on success
 
   rapidjson::Document d;
 

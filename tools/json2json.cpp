@@ -87,7 +87,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res = json_parse(p, pj); // do the parsing, return false on error
+  bool automated_reallocation = false;
+  int res = json_parse(p, pj, automated_reallocation); // do the parsing, return false on error
   aligned_free((void *)p.data());
   if (res) {
     std::cerr << " Parsing failed. " << std::endl;

@@ -348,7 +348,8 @@ bool validate(const char *dirname) {
       good_string = 0;
       total_string_length = 0;
       empty_string = 0;
-      bool isok = json_parse(p, pj);
+      bool automated_reallocation = false;
+      bool isok = json_parse(p, pj, automated_reallocation);
       free(bigbuffer);
       aligned_free((void*)p.data());
       if (good_string > 0) {

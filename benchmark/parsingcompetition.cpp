@@ -117,10 +117,11 @@ int main(int argc, char *argv[]) {
   if(justdata) {
     printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
   }
-  if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
+  bool automated_reallocation = false;
+  if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p, automated_reallocation).isValid(), true, ,
             repeat, volume, !justdata);
   // (static alloc) 
-  BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat,
+  BEST_TIME("simdjson ", json_parse(p, pj, automated_reallocation), simdjson::SUCCESS, , repeat,
             volume, !justdata);
 
  
@@ -172,7 +173,8 @@ int main(int argc, char *argv[]) {
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
       for(int i = 0; i < repeat; i++) {
         unified.start();
-        if(json_parse(p, pj) != true) printf("bug\n");
+        bool automated_reallocation = false;
+        if(json_parse(p, pj, automated_reallocation) != true) printf("bug\n");
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
