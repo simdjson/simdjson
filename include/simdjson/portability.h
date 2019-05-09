@@ -19,11 +19,11 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 }
 
 static inline int trailingzeroes(uint64_t input_num) {
-    return _tzcnt_u64(input_num);
+    return static_cast<int>(_tzcnt_u64(input_num));
 }
 
 static inline int leadingzeroes(uint64_t  input_num) {
-    return _lzcnt_u64(input_num);
+    return static_cast<int>(_lzcnt_u64(input_num));
 }
 
 static inline int hamming(uint64_t input_num) {
