@@ -9,13 +9,7 @@
 #include <string>
 
 
-// low-level function to allocate memory with padding so we can read passed the "length" bytes
-// safely.
-// if you must provide a pointer to some data, create it with this function:
-// length is the max. size in bytes of the string
-// caller is responsible to free the memory (free(...))
-char * allocate_padded_buffer(size_t length);
-
+#include "simdjson/padded_string.h"
 
 
 
@@ -34,7 +28,7 @@ char * allocate_padded_buffer(size_t length);
 //        aligned_free((void*)p.data());
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-std::string_view  get_corpus(const std::string& filename);
+padded_string get_corpus(const std::string& filename);
 
 
 #endif

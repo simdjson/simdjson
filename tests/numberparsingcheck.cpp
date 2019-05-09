@@ -79,8 +79,8 @@ inline void foundFloat(double result, const uint8_t *buf) {
     parse_error |= PARSE_ERROR;
   }
   // we want to get some reasonable relative accuracy
-  else if (fabs(expected - result) / fmin(fabs(expected), fabs(result)) >
-      1e-14) {
+  else if (fabs(expected - result)  >
+      1e-14 * fmin(fabs(expected), fabs(result))) {
     fprintf(stderr, "parsed %.128e from \n", result);
     fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
     fprintf(stderr, "       %.128e,", expected);
@@ -128,9 +128,9 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::string_view p;
+      padded_string p;
       try {
-        p = get_corpus(fullpath);
+        get_corpus(fullpath).swap(p);
       } catch (const std::exception& e) { 
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
@@ -146,8 +146,7 @@ bool validate(const char *dirname) {
       int_count = 0;
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
-      bool automated_reallocation = false;
-      bool isok = json_parse(p, pj, automated_reallocation);
+      bool isok = json_parse(p, pj);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "
                "total numbers: %10zu \n",
@@ -155,7 +154,6 @@ bool validate(const char *dirname) {
                float_count, invalid_count,
                int_count + float_count + invalid_count);
       }
-      aligned_free((void*)p.data());
       free(fullpath);
     }
   }

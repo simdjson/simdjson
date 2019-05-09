@@ -72,10 +72,9 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
   }
 }
 
-std::vector<int64_t> simdjson_computestats(const std::string_view &p) {
+std::vector<int64_t> simdjson_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
-  bool automated_reallocation = false;
-  ParsedJson pj = build_parsed_json(p, automated_reallocation);
+  ParsedJson pj = build_parsed_json(p);
   if (!pj.isValid()) {
     return answer;
   }
@@ -134,7 +133,7 @@ void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   }
 }
 
-std::vector<int64_t> sasjon_computestats(const std::string_view &p) {
+std::vector<int64_t> sasjon_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -187,7 +186,7 @@ void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
   }
 }
 
-std::vector<int64_t> rapid_computestats(const std::string_view &p) {
+std::vector<int64_t> rapid_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -230,9 +229,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -279,5 +278,4 @@ int main(int argc, char *argv[]) {
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
             !justdata);
-  aligned_free((void*)p.data());
 }

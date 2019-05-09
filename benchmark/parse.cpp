@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
   }
   if (verbose) {
     std::cout << "[verbose] loading " << filename << std::endl;
-}
-  std::string_view p;
+  }
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -106,14 +106,14 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifndef SQUASH_COUNTERS
-  vector<int> evts;
+  std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-  vector<unsigned long long> results;
+  std::vector<unsigned long long> results;
   results.resize(evts.size());
   unsigned long cy0 = 0, cy1 = 0, cy2 = 0;
   unsigned long cl0 = 0, cl1 = 0, cl2 = 0;
@@ -134,7 +134,6 @@ int main(int argc, char *argv[]) {
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
-      aligned_free((void *)p.data());
       return EXIT_FAILURE;
     }
 #ifndef SQUASH_COUNTERS
@@ -186,11 +185,9 @@ int main(int argc, char *argv[]) {
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
   }
-  bool automated_reallocation = false;
-  ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing again to get the stats
+  ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << "Could not parse. " << std::endl;
-    aligned_free((void *)p.data());
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS
@@ -202,7 +199,6 @@ int main(int argc, char *argv[]) {
     float cpbtotal = (double)total / (iterations * p.size());
     char *newfile = (char *)malloc(strlen(filename) + 1);
     if (newfile == NULL) {
-      aligned_free((void *)p.data());
       return EXIT_FAILURE;
     }
     ::strcpy(newfile, filename);
@@ -265,7 +261,6 @@ int main(int argc, char *argv[]) {
   if (dump) {
     isok = isok && pj.dump_raw_tape(std::cout);
   }
-  aligned_free((void *)p.data());
   if (!isok) {
     fprintf(stderr, " Parsing failed. \n ");
     return EXIT_FAILURE;

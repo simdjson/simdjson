@@ -44,10 +44,9 @@ void print_stat(const stat_t &s) {
 }
 
 __attribute__ ((noinline))
-stat_t simdjson_computestats(const std::string_view &p) {
+stat_t simdjson_computestats(const padded_string &p) {
   stat_t answer;
-  bool automated_reallocation = false;
-  ParsedJson pj = build_parsed_json(p, automated_reallocation);
+  ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
   if (!answer.valid) {
     return answer;
@@ -147,7 +146,7 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
 }
 
 __attribute__ ((noinline))
-stat_t sasjon_computestats(const std::string_view &p) {
+stat_t sasjon_computestats(const padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -205,7 +204,7 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
 }
 
 __attribute__ ((noinline))
-stat_t rapid_computestats(const std::string_view &p) {
+stat_t rapid_computestats(const padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -254,9 +253,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -300,5 +299,4 @@ int main(int argc, char *argv[]) {
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).valid, true, , repeat, volume,
             !justdata);
-  aligned_free((void*)p.data());
 }

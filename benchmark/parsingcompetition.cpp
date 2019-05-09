@@ -86,9 +86,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -116,11 +116,10 @@ int main(int argc, char *argv[]) {
   if(justdata) {
     printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
   }
-  bool automated_reallocation = false;
-  if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p, automated_reallocation).isValid(), true, ,
+  if(!justdata) BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).isValid(), true, ,
             repeat, volume, !justdata);
   // (static alloc) 
-  BEST_TIME("simdjson ", json_parse(p, pj, automated_reallocation), simdjson::SUCCESS, , repeat,
+  BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat,
             volume, !justdata);
 
  
@@ -258,7 +257,6 @@ int main(int argc, char *argv[]) {
   if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
             volume, !justdata);
-  aligned_free((void *)p.data());
   free(ast_buffer);
   free(buffer);
 }

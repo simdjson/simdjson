@@ -19,4 +19,8 @@ static inline size_t jsonminify(const std::string_view & p, char *out) {
     return jsonminify(p.data(), p.size(), out);
 }
 
+static inline size_t jsonminify(const padded_string & p, char *out) {
+    return jsonminify(p.data(), p.size(), out);
+}
+
 #endif

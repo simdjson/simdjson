@@ -41,10 +41,9 @@ using stat_t = struct stat_s;
 
 
 
-stat_t simdjson_computestats(const std::string_view &p) {
+stat_t simdjson_computestats(const padded_string &p) {
   stat_t answer;
-  bool automated_reallocation = false; 
-  ParsedJson pj = build_parsed_json(p, automated_reallocation);
+  ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
   if (!answer.valid) {
     return answer;
@@ -126,9 +125,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;

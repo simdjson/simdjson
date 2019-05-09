@@ -8,15 +8,14 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " <jsonfile>\n";
     exit(1);
   }
-  std::string_view p;
+  padded_string p;
   std::string filename = argv[argc - 1];
   try{
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception& e) { 
         std::cout << "Could not load the file " << filename << std::endl;
         return EXIT_FAILURE;
   }
-  jsonminify(p, const_cast<char *>(p.data()));
+  jsonminify(p, p.data());
   printf("%s",p.data());
-  aligned_free((void*)p.data());
 }

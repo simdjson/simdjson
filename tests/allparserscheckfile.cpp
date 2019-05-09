@@ -59,9 +59,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   const char * filename = argv[optind];
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception& e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -82,8 +82,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  bool automated_reallocation = false;
-  bool ours_correct = (json_parse(p, pj, automated_reallocation) == 0); // returns 0 on success
+  bool ours_correct = (json_parse(p, pj) == 0); // returns 0 on success
 
   rapidjson::Document d;
 
@@ -145,7 +144,6 @@ int main(int argc, char *argv[]) {
   printf("cjson                      : %s \n", cjson_correct ? "correct":"invalid");
   printf("jsoncpp                    : %s \n", isjsoncppok ? "correct":"invalid");
 
-  aligned_free((void*)p.data());
   free(buffer);
   return EXIT_SUCCESS;
 }
