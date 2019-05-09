@@ -28,9 +28,17 @@ really_inline bool is_valid_true_atom(const uint8_t *loc) {
 
 WARN_UNUSED
 really_inline bool is_valid_false_atom(const uint8_t *loc) {
-  uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
+  // We have to use a integer constant because the space in the cast
+  // below would lead to values illegally being qualified
+  // uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
+  // using this constant (that is the same false) but nulls out the
+  // unused bits solves that
+  uint64_t fv = 0x00000065736c6166;
   uint64_t mask5 = 0x000000ffffffffff;
-  uint32_t error = 0;
+  // we can't use the 32 bit value for checking for errors otherwise
+  // the last character of false (it being 5 byte long!) would be
+  // ignored
+  uint64_t error = 0;
   uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
   std::memcpy(&locval, loc, sizeof(uint64_t));
   error = (locval & mask5) ^ fv;
