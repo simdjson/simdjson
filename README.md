@@ -102,9 +102,12 @@ aligned_free((void*)p.data());
 ```
 
 You can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
+<<<<<<< HEAD
 
 ```C
 #include "simdjson/jsonparser.h"
+=======
+>>>>>>> master
 
 /...
 
