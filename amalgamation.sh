@@ -28,6 +28,7 @@ $SCRIPTPATH/include/simdjson/simdjson_version.h
 $SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/portability.h
 $SCRIPTPATH/include/simdjson/common_defs.h
+$SCRIPTPATH/include/simdjson/padded_string.h
 $SCRIPTPATH/include/simdjson/jsoncharutils.h
 $SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/jsonioutil.h
@@ -100,9 +101,8 @@ cat <<< '
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
-  std::string_view p = get_corpus(filename);
-  bool automated_reallocation = false;
-  ParsedJson pj = build_parsed_json(p, automated_reallocation); // do the parsing
+  padded_string p = get_corpus(filename);
+  ParsedJson pj = build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
     std::cout << "not valid" << std::endl;
   } else {
