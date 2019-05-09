@@ -33,8 +33,8 @@
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #ifdef _MSC_VER
-
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __declspec(safebuffers)
+// Visual Studio won't allow it:
+//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
 #define really_inline inline
 #define never_inline __declspec(noinline)
 
@@ -52,14 +52,14 @@
 
 // The following is likely unnecessarily complex.
 #ifdef __SANITIZE_ADDRESS__
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
 #elif defined(__has_feature)
 #  if (__has_feature(address_sanitizer))
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
 #  endif 
 #endif 
 
-
+// for non-Visual Studio compilers, we assume that same-page buffer overrun is fine:
 #ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
 #define ALLOW_SAME_PAGE_BUFFER_OVERRUN
 #endif 
@@ -79,4 +79,8 @@
 
 #endif  // MSC_VER
 
+// if it does not apply, make it an empty macro
+#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
+#endif
 #endif // SIMDJSON_COMMON_DEFS_H

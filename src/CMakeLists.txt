@@ -25,7 +25,7 @@ set(SIMDJSON_SRC
     parsedjsoniterator.cpp
     simdjson.cpp
     )
-         
+
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})
 
 target_include_directories(${SIMDJSON_LIB_NAME}
@@ -59,9 +59,9 @@ endif()
 
 if(MSVC AND (SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
   if (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." ) 
+    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
   endif()
-  MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." ) 
- set_target_properties(${SIMDJSON_LIB_NAME} 
+  MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
+ set_target_properties(${SIMDJSON_LIB_NAME}
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 endif()
