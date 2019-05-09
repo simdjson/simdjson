@@ -49,19 +49,20 @@
 #endif
 
 #else
-#if defined(__has_feature)
-#  if __has_feature(address_sanitizer)
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
-#  else //__has_feature(address_sanitizer)
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN 
-#  endif //__has_feature(address_sanitizer)
-#else //defined(__has_feature)
+
+// The following is likely unnecessarily complex.
 #ifdef __SANITIZE_ADDRESS__
 #define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
-#else // __SANITIZE_ADDRESS__
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN 
-#endif //__SANITIZE_ADDRESS__
-#endif //#if defined(__has_feature)
+#elif defined(__has_feature)
+#  if (__has_feature(address_sanitizer))
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
+#  endif 
+#endif 
+
+
+#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#endif 
 
 #define really_inline inline __attribute__((always_inline, unused))
 #define never_inline inline __attribute__((noinline, unused))
