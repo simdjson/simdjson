@@ -71,12 +71,13 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests
+test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
 	./scripts/testjson2json.sh
+	./scripts/issue150.sh
 	@echo
 	@tput setaf 2
 	@echo "It looks like the code is good!"

@@ -1,0 +1,7 @@
+{"web-app": {
+  "servlet": [   
+    {
+      "servlet-name": "cofginesList.htm",
+        "searchEngineFileTemplate": [{ "a": "b" }],
+        "searchEngineRobotsDb": "WEB-INF/robots.db",
+        "useData\\\\\\\\\\\\\\\\\\\\\\\\\\\\tb-location": "/WE
