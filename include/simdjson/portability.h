@@ -95,6 +95,9 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
 	return p;
 }
 
+static inline void *aligned_malloc_char(size_t alignment, size_t size) {
+	return (char*)aligned_malloc(alignment, size);
+}
 
 #ifdef __AVX2__
 
@@ -129,6 +132,12 @@ static inline void aligned_free(void *memblock) {
 #else
     free(memblock);
 #endif
+}
+
+
+
+static inline void aligned_free_char(char *memblock) {
+	aligned_free((void*)memblock);
 }
 
 #endif // SIMDJSON_PORTABILITY_H
