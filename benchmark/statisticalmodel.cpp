@@ -170,13 +170,13 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   const uint32_t iterations = p.size() < 1 * 1000 * 1000 ? 1000 : 50;
-  vector<int> evts;
+  std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   unsigned long cy1 = 0, cy2 = 0;
   unsigned long cl1 = 0, cl2 = 0;
-  vector<unsigned long long> results;
+  std::vector<unsigned long long> results;
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();

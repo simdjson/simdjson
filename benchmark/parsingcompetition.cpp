@@ -157,22 +157,21 @@ int main(int argc, char *argv[]) {
             true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 #ifdef __linux__
   if(!justdata) {
-      vector<int> evts;
+      std::vector<int> evts;
       evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
       evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
       evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
       evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
       evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
       LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-      vector<unsigned long long> results;
-      vector<unsigned long long> stats;
+      std::vector<unsigned long long> results;
+      std::vector<unsigned long long> stats;
       results.resize(evts.size());
       stats.resize(evts.size());
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
       for(int i = 0; i < repeat; i++) {
         unified.start();
-        bool automated_reallocation = false;
-        if(json_parse(p, pj, automated_reallocation) != true) printf("bug\n");
+        if(json_parse(p, pj) != true) printf("bug\n");
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
