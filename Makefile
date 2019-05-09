@@ -71,7 +71,7 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile
+test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
@@ -83,12 +83,13 @@ test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheck
 	@echo "It looks like the code is good!"
 	@tput sgr0
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
 	./scripts/testjson2json.sh
+	./scripts/issue150.sh
 
 amalgamate:
 	./amalgamation.sh
