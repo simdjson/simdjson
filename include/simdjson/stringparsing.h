@@ -89,6 +89,9 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
   const uint8_t *const start_of_string = dst;
   while (1) {
 #ifdef __AVX2__
+    // this can read up to 31 bytes beyond the buffer size, but we require 
+    // SIMDJSON_PADDING of padding
+    static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
     __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
@@ -99,6 +102,9 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     auto quote_bits =
         static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
 #else
+    // this can read up to 31 bytes beyond the buffer size, but we require 
+    // SIMDJSON_PADDING of padding
+    static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
     uint8x16_t v0 = vld1q_u8(src);
     uint8x16_t v1 = vld1q_u8(src+16);
     vst1q_u8(dst, v0);

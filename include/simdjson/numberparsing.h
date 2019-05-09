@@ -115,6 +115,9 @@ is_not_structural_or_whitespace_or_exponent_or_decimal_or_null(unsigned char c) 
 // http://0x80.pl/articles/swar-digits-validate.html
 static inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
+  // this can read up to 7 bytes beyond the buffer size, but we require 
+  // SIMDJSON_PADDING of padding
+  static_assert(7 <= SIMDJSON_PADDING);
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
@@ -128,6 +131,9 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 // this is more efficient apparently than the scalar code above (fewer instructions)
 static inline bool is_made_of_eight_digits_fast(const char *chars) {
   __m64 val;
+  // this can read up to 7 bytes beyond the buffer size, but we require 
+  // SIMDJSON_PADDING of padding
+  static_assert(7 <= SIMDJSON_PADDING);
   memcpy(&val, chars, 8);
   __m64 base = _mm_sub_pi8(val,_mm_set1_pi8('0'));
   __m64 basecmp = _mm_subs_pu8(base,_mm_set1_pi8(9));
