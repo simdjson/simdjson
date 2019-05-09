@@ -12,8 +12,6 @@
 #define PATH_SEP '/'
 
 
-using namespace std;
-
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
   uint64_t tv = *reinterpret_cast<const uint64_t *>("true    ");

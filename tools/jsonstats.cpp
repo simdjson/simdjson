@@ -3,8 +3,6 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
-using namespace std;
-
 size_t count_nonasciibytes(const uint8_t* input, size_t length) {
   size_t count = 0;
   for(size_t i = 0; i < length; i++) {
@@ -120,9 +118,8 @@ stat_t simdjson_computestats(const std::string_view &p) {
 int main(int argc, char *argv[]) {
   int optind = 1;
   if (optind >= argc) {
-    cerr << "Reads json, prints stats. " << endl;
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
-
+    std::cerr << "Reads json, prints stats. " << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];

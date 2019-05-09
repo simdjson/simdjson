@@ -12,7 +12,6 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-using namespace std;
 
 struct stat_s {
   size_t number_count;
@@ -245,15 +244,15 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents.\n";
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    std::cerr << "Using different parsers, we compute the content statistics of "
+            "JSON documents." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
   }
   std::string_view p;
   try {

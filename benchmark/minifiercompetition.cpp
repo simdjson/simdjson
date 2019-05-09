@@ -16,7 +16,6 @@
 
 
 using namespace rapidjson;
-using namespace std;
 
 std::string rapidstringmeInsitu(char *json) {
   Document d;
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
         abort ();
       }
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     exit(1);
   }
   const char * filename = argv[optind];
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
-  bool automated_reallocation = false; 
+  automated_reallocation = false; 
   BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2, automated_reallocation), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
   aligned_free((void*)p.data());
   free(buffer);

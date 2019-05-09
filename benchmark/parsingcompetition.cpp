@@ -44,7 +44,6 @@ extern "C" {
 #endif 
 
 using namespace rapidjson;
-using namespace std;
 
 
 #ifdef ALLPARSER
@@ -77,15 +76,15 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
-    cerr << "To enable parsers that are not standard compliant, use the -a "
-            "flag\n";
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
+    std::cerr << "To enable parsers that are not standard compliant, use the -a "
+            "flag" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
   std::string_view p;
   try {
@@ -229,10 +228,8 @@ int main(int argc, char *argv[]) {
 
 
 
-  auto * tokens = make_unique<jsmntok_t[](p.size());
-  if(tokens == NULL) {
-    printf("Failed to alloc memory for jsmn\n");
-  } else {
+  {
+    std::unique_ptr<jsmntok_t[]> tokens = std::make_unique<jsmntok_t[]>(p.size());
     jsmn_parser parser;
     jsmn_init(&parser);
     memcpy(buffer, p.data(), p.size());
@@ -241,7 +238,6 @@ int main(int argc, char *argv[]) {
               (jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size()) > 0), true,
               jsmn_init(&parser), repeat, volume, !justdata);
   }
-
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   cJSON * tree = cJSON_Parse(buffer);

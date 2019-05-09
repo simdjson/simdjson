@@ -14,17 +14,16 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-using namespace std;
 
 bool equals(const char *s1, const char *s2) { return strcmp(s1, s2) == 0; }
 
-void remove_duplicates(vector<int64_t> &v) {
+void remove_duplicates(std::vector<int64_t> &v) {
   std::sort(v.begin(), v.end());
   auto last = std::unique(v.begin(), v.end());
   v.erase(last, v.end());
 }
 
-void print_vec(vector<int64_t> &v) {
+void print_vec(const std::vector<int64_t> &v) {
   for (auto i : v) {
     std::cout << i << " ";
   }
@@ -221,15 +220,15 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents.\n";
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    std::cerr << "Using different parsers, we compute the content statistics of "
+            "JSON documents." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
   std::string_view p;
   try {

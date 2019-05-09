@@ -40,7 +40,6 @@ bool fastjson_parse(const char *input) {
 
 
 using namespace rapidjson;
-using namespace std;
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
@@ -55,8 +54,8 @@ int main(int argc, char *argv[]) {
         abort ();
       }
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char * filename = argv[optind];
@@ -104,7 +103,7 @@ int main(int argc, char *argv[]) {
   void *state;
   bool ultrajson_correct = ((UJDecode(buffer, p.size(), NULL, &state) == NULL) == false);
 
-  auto tokens = make_unique<jsmntok_t[]>(p.size());
+  auto tokens = std::make_unique<jsmntok_t[]>(p.size());
   bool jsmn_correct = false;
   if(tokens == nullptr) {
     printf("Failed to alloc memory for jsmn\n");

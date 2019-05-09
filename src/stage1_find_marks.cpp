@@ -23,7 +23,6 @@
 #ifdef SIMDJSON_UTF8VALIDATE
 #include "simdjson/simdutf8check.h"
 #endif
-using namespace std;
 
 #define TRANSPOSE
 
@@ -501,9 +500,9 @@ WARN_UNUSED
 /*never_inline*/ bool find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
   if (len > pj.bytecapacity) {
-    cerr << "Your ParsedJson object only supports documents up to "
+    std::cerr << "Your ParsedJson object only supports documents up to "
          << pj.bytecapacity << " bytes but you are trying to process " << len
-         << " bytes\n";
+         << " bytes" << std::endl;
     return false;
   }
   uint32_t *base_ptr = pj.structural_indexes;
