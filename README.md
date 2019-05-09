@@ -66,7 +66,7 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 const char * filename = ... //
 
 // use whatever means you want to get a string (UTF-8) of your JSON document
-std::string_view p = get_corpus(filename); // you are responsible for freeing p.data()
+padded_string p = get_corpus(filename); 
 ParsedJson pj;
 pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
 const int res = json_parse(p, pj); // do the parsing, return 0 on success
@@ -75,8 +75,6 @@ if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
     std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
 }
-// You can safely delete the string content
-aligned_free((void*)p.data());
 // the ParsedJson document can be used here
 // pj can be reused with other json_parse calls.
 ```
@@ -90,21 +88,49 @@ of memory allocation with each new JSON document:
 /...
 
 const char * filename = ... //
-std::string_view p = get_corpus(filename);
+padding_string p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
-// you no longer need p at this point, can do aligned_free((void*)p.data())
 if( ! pj.isValid() ) {
     // something went wrong
 }
-aligned_free((void*)p.data());
 ```
 
-You can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
+Though the `padded_string` class is recommended for best performance, you can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
 
 
-## Memory overallocation `
+```C
+#include "simdjson/jsonparser.h"
 
-As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data. To avoid this potentially expensive copy, overallocate your own input data and then call the `json_parse` and `build_parsed_json` functions with an extra parameter value set to `false` (e.g., `build_parsed_json(p,false)` and  `parsed_json(p,pj,false)`). In such instance, no temporary copy is made. The `get_corpus` function does this automatically as well as the provide `char * allocate_padded_buffer(size_t length)` function to achieve the desired effect. 
+/...
+std::string mystring = ... //
+ParsedJson pj;
+pj.allocateCapacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
+// std::string may not overallocate so a copy will be needed
+const int res = json_parse(mystring, pj); // do the parsing, return 0 on success
+// parsing is done!
+if (res != 0) {
+    // You can use the "simdjson/simdjson.h" header to access the error message
+    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+}
+// pj can be reused with other json_parse calls.
+```
+
+or
+
+```C
+#include "simdjson/jsonparser.h"
+
+/...
+
+std::string mystring = ... //
+// std::string may not overallocate so a copy will be needed
+ParsedJson pj = build_parsed_json(mystring); // do the parsing
+if( ! pj.isValid() ) {
+    // something went wrong
+}
+```
+
+As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data. 
 
 ## Usage: easy single-header version
 
@@ -118,14 +144,13 @@ copy the files in your project in your include path. You can then include them q
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
-  std::string_view p = get_corpus(filename);
+  padded_string p = get_corpus(filename);
   ParsedJson pj = build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
     std::cout << "not valid" << std::endl;
   } else {
     std::cout << "valid" << std::endl;
   }
-  aligned_free((void*)p.data());
   return EXIT_SUCCESS;
 }
 ```

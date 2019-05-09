@@ -65,9 +65,9 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::string_view p;
+      padded_string p;
       try {
-        p = get_corpus(fullpath);
+        get_corpus(fullpath).swap(p);
       } catch (const std::exception& e) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
@@ -80,7 +80,6 @@ bool validate(const char *dirname) {
       }
       ++howmany;
       const int parseRes = json_parse(p, pj);
-      aligned_free((void*)p.data());
       printf("%s\n", parseRes == 0 ? "ok" : "invalid");
       if(contains("EXCLUDE",name)) {
         // skipping

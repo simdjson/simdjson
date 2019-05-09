@@ -325,9 +325,9 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      std::string_view p;
+      padded_string p;
       try {
-        p = get_corpus(fullpath);
+        get_corpus(fullpath).swap(p);
       } catch (const std::exception& e) { 
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
@@ -341,7 +341,6 @@ bool validate(const char *dirname) {
       bigbuffer = (char *) malloc(p.size());
       if(bigbuffer == NULL) {
         std::cerr << "can't allocate memory" << std::endl;
-        aligned_free((void*)p.data());
         return false;
       }
       bad_string = 0;
@@ -350,7 +349,6 @@ bool validate(const char *dirname) {
       empty_string = 0;
       bool isok = json_parse(p, pj);
       free(bigbuffer);
-      aligned_free((void*)p.data());
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "

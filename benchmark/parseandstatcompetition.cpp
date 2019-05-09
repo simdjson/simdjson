@@ -12,7 +12,6 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-using namespace std;
 
 struct stat_s {
   size_t number_count;
@@ -45,7 +44,7 @@ void print_stat(const stat_t &s) {
 }
 
 __attribute__ ((noinline))
-stat_t simdjson_computestats(const std::string_view &p) {
+stat_t simdjson_computestats(const padded_string &p) {
   stat_t answer;
   ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
@@ -147,7 +146,7 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
 }
 
 __attribute__ ((noinline))
-stat_t sasjon_computestats(const std::string_view &p) {
+stat_t sasjon_computestats(const padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -205,7 +204,7 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
 }
 
 __attribute__ ((noinline))
-stat_t rapid_computestats(const std::string_view &p) {
+stat_t rapid_computestats(const padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -244,19 +243,19 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents.\n";
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    std::cerr << "Using different parsers, we compute the content statistics of "
+            "JSON documents." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -300,5 +299,4 @@ int main(int argc, char *argv[]) {
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).valid, true, , repeat, volume,
             !justdata);
-  aligned_free((void*)p.data());
 }

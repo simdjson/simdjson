@@ -16,7 +16,6 @@
 
 
 using namespace rapidjson;
-using namespace std;
 
 std::string rapidstringmeInsitu(char *json) {
   Document d;
@@ -62,13 +61,13 @@ int main(int argc, char *argv[]) {
         abort ();
       }
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     exit(1);
   }
   const char * filename = argv[optind];
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception& e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -140,7 +139,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
-  BEST_TIME("simdjson orig", json_parse((const uint8_t*)buffer, p.size(), pj), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+  bool automated_reallocation = false; 
+  BEST_TIME("simdjson orig", json_parse((const uint8_t*)buffer, p.size(), pj, automated_reallocation), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   
   ParsedJson pj2;
   bool isallocok2 = pj2.allocateCapacity(p.size(), 1024);
@@ -148,9 +148,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
-
-  BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
-  aligned_free((void*)p.data());
+  automated_reallocation = false; 
+  BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2, automated_reallocation), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
   free(buffer);
   free(ast_buffer);
   free(minibuffer);

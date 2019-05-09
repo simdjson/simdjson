@@ -5,8 +5,6 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
-using namespace std;
-
 void compute_dump(ParsedJson::iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
@@ -64,19 +62,19 @@ int main(int argc, char *argv[]) {
   int optind = 1;
 #endif
   if (optind >= argc) {
-    cerr << "Reads json in, out the result of the parsing. " << endl;
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
-    cerr << "The -d flag dumps the raw content of the tape." << endl;
+    std::cerr << "Reads json in, out the result of the parsing. " << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "The -d flag dumps the raw content of the tape." << std::endl;
 
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -88,7 +86,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   int res = json_parse(p, pj); // do the parsing, return false on error
-  aligned_free((void *)p.data());
   if (res) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;

@@ -33,7 +33,6 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
-using namespace std;
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
@@ -69,26 +68,26 @@ int main(int argc, char *argv[]) {
   int optind = 1;
 #endif
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
   if (verbose) {
-    cout << "[verbose] loading " << filename << endl;
-}
-  std::string_view p;
+    std::cout << "[verbose] loading " << filename << std::endl;
+  }
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
   if (verbose) {
-    cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)"
-         << endl;
+    std::cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)"
+         << std::endl;
 }
 #if defined(DEBUG)
   const uint32_t iterations = 1;
@@ -96,7 +95,7 @@ int main(int argc, char *argv[]) {
   const uint32_t iterations =
       forceoneiteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
 #endif
-  vector<double> res;
+  std::vector<double> res;
   res.resize(iterations);
 
 #if !defined(__linux__)
@@ -107,14 +106,14 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifndef SQUASH_COUNTERS
-  vector<int> evts;
+  std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-  vector<unsigned long long> results;
+  std::vector<unsigned long long> results;
   results.resize(evts.size());
   unsigned long cy0 = 0, cy1 = 0, cy2 = 0;
   unsigned long cl0 = 0, cl1 = 0, cl2 = 0;
@@ -126,8 +125,8 @@ int main(int argc, char *argv[]) {
 
   for (uint32_t i = 0; i < iterations; i++) {
     if (verbose) {
-      cout << "[verbose] iteration # " << i << endl;
-}
+      std::cout << "[verbose] iteration # " << i << std::endl;
+    }
 #ifndef SQUASH_COUNTERS
     unified.start();
 #endif
@@ -135,7 +134,6 @@ int main(int argc, char *argv[]) {
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
-      aligned_free((void *)p.data());
       return EXIT_FAILURE;
     }
 #ifndef SQUASH_COUNTERS
@@ -147,7 +145,7 @@ int main(int argc, char *argv[]) {
     cmis0 += results[4];
 #endif
     if (verbose) {
-      cout << "[verbose] allocated memory for parsed JSON " << endl;
+      std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
 }
 
     auto start = std::chrono::steady_clock::now();
@@ -163,7 +161,7 @@ int main(int argc, char *argv[]) {
     cref1 += results[3];
     cmis1 += results[4];
     if (!isok) {
-      cout << "Failed during stage 1\n";
+      std::cout << "Failed during stage 1" << std::endl;
       break;
     }
     unified.start();
@@ -178,7 +176,7 @@ int main(int argc, char *argv[]) {
     cref2 += results[3];
     cmis2 += results[4];
     if (!isok) {
-      cout << "Failed during stage 2\n";
+      std::cout << "Failed during stage 2" << std::endl;
       break;
     }
 #endif
@@ -190,7 +188,6 @@ int main(int argc, char *argv[]) {
   ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << "Could not parse. " << std::endl;
-    aligned_free((void *)p.data());
     return EXIT_FAILURE;
   }
 #ifndef SQUASH_COUNTERS
@@ -202,7 +199,6 @@ int main(int argc, char *argv[]) {
     float cpbtotal = (double)total / (iterations * p.size());
     char *newfile = (char *)malloc(strlen(filename) + 1);
     if (newfile == NULL) {
-      aligned_free((void *)p.data());
       return EXIT_FAILURE;
     }
     ::strcpy(newfile, filename);
@@ -255,9 +251,9 @@ int main(int argc, char *argv[]) {
 #endif
   double min_result = *min_element(res.begin(), res.end());
   if (!justdata) {
-    cout << "Min:  " << min_result << " bytes read: " << p.size()
+    std::cout << "Min:  " << min_result << " bytes read: " << p.size()
          << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
-         << "\n";
+         << std::endl;
 }
   if (jsonoutput) {
     isok = isok && pj.printjson(std::cout);
@@ -265,7 +261,6 @@ int main(int argc, char *argv[]) {
   if (dump) {
     isok = isok && pj.dump_raw_tape(std::cout);
   }
-  aligned_free((void *)p.data());
   if (!isok) {
     fprintf(stderr, " Parsing failed. \n ");
     return EXIT_FAILURE;

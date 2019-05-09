@@ -14,17 +14,16 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-using namespace std;
 
 bool equals(const char *s1, const char *s2) { return strcmp(s1, s2) == 0; }
 
-void remove_duplicates(vector<int64_t> &v) {
+void remove_duplicates(std::vector<int64_t> &v) {
   std::sort(v.begin(), v.end());
   auto last = std::unique(v.begin(), v.end());
   v.erase(last, v.end());
 }
 
-void print_vec(vector<int64_t> &v) {
+void print_vec(const std::vector<int64_t> &v) {
   for (auto i : v) {
     std::cout << i << " ";
   }
@@ -73,7 +72,7 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
   }
 }
 
-std::vector<int64_t> simdjson_computestats(const std::string_view &p) {
+std::vector<int64_t> simdjson_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
   ParsedJson pj = build_parsed_json(p);
   if (!pj.isValid()) {
@@ -134,7 +133,7 @@ void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   }
 }
 
-std::vector<int64_t> sasjon_computestats(const std::string_view &p) {
+std::vector<int64_t> sasjon_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -187,7 +186,7 @@ void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
   }
 }
 
-std::vector<int64_t> rapid_computestats(const std::string_view &p) {
+std::vector<int64_t> rapid_computestats(const padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -220,19 +219,19 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents.\n";
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
+    std::cerr << "Using different parsers, we compute the content statistics of "
+            "JSON documents." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -279,5 +278,4 @@ int main(int argc, char *argv[]) {
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
             !justdata);
-  aligned_free((void*)p.data());
 }

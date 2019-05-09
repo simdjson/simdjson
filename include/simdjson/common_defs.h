@@ -50,18 +50,20 @@
 
 #else
 
-// The following is likely unnecessarily complex.
-#ifdef __SANITIZE_ADDRESS__
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
-#elif defined(__has_feature)
-#  if (__has_feature(address_sanitizer))
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
-#  endif 
-#endif 
-
 // for non-Visual Studio compilers, we assume that same-page buffer overrun is fine:
 #ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
 #define ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#endif 
+
+// The following is likely unnecessarily complex.
+#ifdef __SANITIZE_ADDRESS__
+// we have GCC, stuck with https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368
+#undef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#elif defined(__has_feature)
+// we have CLANG?
+#  if (__has_feature(address_sanitizer))
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
+#  endif 
 #endif 
 
 #define really_inline inline __attribute__((always_inline, unused))

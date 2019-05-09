@@ -8,8 +8,6 @@
 #include "linux-perf-events.h"
 #endif
 
-using namespace std;
-
 size_t count_nonasciibytes(const uint8_t *input, size_t length) {
   size_t count = 0;
   for (size_t i = 0; i < length; i++) {
@@ -44,7 +42,7 @@ struct stat_s {
 
 using stat_t = struct stat_s;
 
-stat_t simdjson_computestats(const std::string_view &p) {
+stat_t simdjson_computestats(const padded_string &p) {
   stat_t answer;
   ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
@@ -126,8 +124,8 @@ int main(int argc, char *argv[]) {
   int optind = 1;
 #endif
   if (optind >= argc) {
-    cerr << "Reads json, prints stats. " << endl;
-    cerr << "Usage: " << argv[0] << " <jsonfile>" << endl;
+    std::cerr << "Reads json, prints stats. " << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
 
     exit(1);
   }
@@ -136,9 +134,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -172,13 +170,13 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   const uint32_t iterations = p.size() < 1 * 1000 * 1000 ? 1000 : 50;
-  vector<int> evts;
+  std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
   unsigned long cy1 = 0, cy2 = 0;
   unsigned long cl1 = 0, cl2 = 0;
-  vector<unsigned long long> results;
+  std::vector<unsigned long long> results;
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();

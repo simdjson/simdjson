@@ -44,7 +44,6 @@ extern "C" {
 #endif 
 
 using namespace rapidjson;
-using namespace std;
 
 
 #ifdef ALLPARSER
@@ -77,19 +76,19 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    cerr << "Usage: " << argv[0] << " <jsonfile>\n";
-    cerr << "Or " << argv[0] << " -v <jsonfile>\n";
-    cerr << "To enable parsers that are not standard compliant, use the -a "
-            "flag\n";
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
+    std::cerr << "To enable parsers that are not standard compliant, use the -a "
+            "flag" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    cerr << "warning: ignoring everything after " << argv[optind + 1] << endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  std::string_view p;
+  padded_string p;
   try {
-    p = get_corpus(filename);
+    get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -158,15 +157,15 @@ int main(int argc, char *argv[]) {
             true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 #ifdef __linux__
   if(!justdata) {
-      vector<int> evts;
+      std::vector<int> evts;
       evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
       evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
       evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
       evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
       evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
       LinuxEvents<PERF_TYPE_HARDWARE> unified(evts);
-      vector<unsigned long long> results;
-      vector<unsigned long long> stats;
+      std::vector<unsigned long long> results;
+      std::vector<unsigned long long> stats;
       results.resize(evts.size());
       stats.resize(evts.size());
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
@@ -227,10 +226,8 @@ int main(int argc, char *argv[]) {
 
 
 
-  auto * tokens = make_unique<jsmntok_t[](p.size());
-  if(tokens == NULL) {
-    printf("Failed to alloc memory for jsmn\n");
-  } else {
+  {
+    std::unique_ptr<jsmntok_t[]> tokens = std::make_unique<jsmntok_t[]>(p.size());
     jsmn_parser parser;
     jsmn_init(&parser);
     memcpy(buffer, p.data(), p.size());
@@ -239,7 +236,6 @@ int main(int argc, char *argv[]) {
               (jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size()) > 0), true,
               jsmn_init(&parser), repeat, volume, !justdata);
   }
-
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   cJSON * tree = cJSON_Parse(buffer);
@@ -260,7 +256,6 @@ int main(int argc, char *argv[]) {
   if(!justdata) BEST_TIME("memcpy            ",
             (memcpy(buffer, p.data(), p.size()) == buffer), true, , repeat,
             volume, !justdata);
-  aligned_free((void *)p.data());
   free(ast_buffer);
   free(buffer);
 }
