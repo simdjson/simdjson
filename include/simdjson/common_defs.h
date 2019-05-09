@@ -34,7 +34,7 @@
 
 #ifdef _MSC_VER
 
-
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __declspec(safebuffers)
 #define really_inline inline
 #define never_inline __declspec(noinline)
 
@@ -49,6 +49,11 @@
 #endif
 
 #else
+#if __has_feature(address_sanitizer)
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN  __attribute__((no_sanitize("address")))
+#else 
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN 
+#endif 
 
 #define really_inline inline __attribute__((always_inline, unused))
 #define never_inline inline __attribute__((noinline, unused))
