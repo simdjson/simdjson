@@ -50,10 +50,11 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new (std::nothrow) uint32_t[max_structures];
-    size_t localtapecapacity = ROUNDUP_N(len, 64);
+    // a pathological input like "[[[[..." would generate len tape elements, so need a capacity of len + 1
+    size_t localtapecapacity = ROUNDUP_N(len + 1, 64);
     // a document with only zero-length strings... could have len/3 string
     // and we would need len/3 * 5 bytes on the string buffer 
-    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64); 
+    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64);
     string_buf = new (std::nothrow) uint8_t[localstringcapacity];
     tape = new (std::nothrow) uint64_t[localtapecapacity];
     containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
