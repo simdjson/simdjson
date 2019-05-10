@@ -1,4 +1,4 @@
-/* auto-generated on Thu May  9 17:40:56 EDT 2019. Do not edit! */
+/* auto-generated on Thu May  9 20:55:13 EDT 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -1102,8 +1102,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
   // the root is used, if nothing else, to capture the size of the tape
   depth++; // everything starts at depth = 1, depth = 0 is just for the root, the root may contain an object, an array or something else.
-  if (depth > pj.depthcapacity) {
-    goto fail;
+  if (depth >= pj.depthcapacity) {
+    return simdjson::DEPTH_ERROR;
   }
 
   UPDATE_CHAR();
@@ -1116,8 +1116,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     pj.ret_address[depth] = 's';
 #endif
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     goto object_begin;
@@ -1129,8 +1129,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     pj.ret_address[depth] = 's';
 #endif    
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     pj.write_tape(0, c);
     goto array_begin;
@@ -1331,8 +1331,8 @@ object_key_state:
 #endif
     // we found an object inside an object, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
 
     goto object_begin;
@@ -1348,8 +1348,8 @@ object_key_state:
 #endif    
     // we found an array inside an object, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     goto array_begin;
   }
@@ -1463,8 +1463,8 @@ main_array_switch:
 #endif
     // we found an object inside an array, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
 
     goto object_begin;
@@ -1480,8 +1480,8 @@ main_array_switch:
 #endif
     // we found an array inside an array, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     goto array_begin;
   }
@@ -1582,10 +1582,11 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
     n_structural_indexes = 0;
     uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
     structural_indexes = new (std::nothrow) uint32_t[max_structures];
-    size_t localtapecapacity = ROUNDUP_N(len, 64);
+    // a pathological input like "[[[[..." would generate len tape elements, so need a capacity of len + 1
+    size_t localtapecapacity = ROUNDUP_N(len + 1, 64);
     // a document with only zero-length strings... could have len/3 string
     // and we would need len/3 * 5 bytes on the string buffer 
-    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64); 
+    size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64);
     string_buf = new (std::nothrow) uint8_t[localstringcapacity];
     tape = new (std::nothrow) uint64_t[localtapecapacity];
     containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
