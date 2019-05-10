@@ -1,0 +1,6 @@
+["weJ-app", {
+  "servlet": [   
+    {
+      "servlet-name": "cofaxCDS",
+      "servlet-class": "x.cds.CDSServlet",
+"}}}

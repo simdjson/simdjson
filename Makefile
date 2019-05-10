@@ -71,46 +71,34 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests
+test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
 	./scripts/testjson2json.sh
+	./scripts/issue150.sh
 	@echo
 	@tput setaf 2
 	@echo "It looks like the code is good!"
 	@tput sgr0
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
 	./scripts/testjson2json.sh
+	./scripts/issue150.sh
 
 amalgamate:
 	./amalgamation.sh
 
-$(SAJSON_INCLUDE):
+
+submodules: 
 	git submodule update --init --recursive
 
-$(RAPIDJSON_INCLUDE):
-	git submodule update --init --recursive
-
-$(JSON11_INCLUDE):
-	git submodule update --init --recursive
-
-$(FASTJSON_INCLUDE):
-	git submodule update --init --recursive
-
-$(GASON_INCLUDE):
-	git submodule update --init --recursive
-
-$(UJSON4C_INCLUDE):
-	git submodule update --init --recursive
-
-
+$(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
@@ -175,6 +163,7 @@ allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $
 allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o allparserscheckfile $(LIBFILES) tests/allparserscheckfile.cpp $(EXTRAOBJECTS) -I. $(LIBFLAGS) $(COREDEPSINCLUDE) $(EXTRADEPSINCLUDE)
 
+.PHONY: submodules clean cppcheck cleandist
 
 cppcheck:
 	cppcheck --enable=all src/*.cpp  benchmarks/*.cpp tests/*.cpp -Iinclude -I. -Ibenchmark/linux

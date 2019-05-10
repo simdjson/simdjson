@@ -99,8 +99,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   pj.write_tape(0, 'r'); // r for root, 0 is going to get overwritten
   // the root is used, if nothing else, to capture the size of the tape
   depth++; // everything starts at depth = 1, depth = 0 is just for the root, the root may contain an object, an array or something else.
-  if (depth > pj.depthcapacity) {
-    goto fail;
+  if (depth >= pj.depthcapacity) {
+    return simdjson::DEPTH_ERROR;
   }
 
   UPDATE_CHAR();
@@ -113,8 +113,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     pj.ret_address[depth] = 's';
 #endif
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     goto object_begin;
@@ -126,8 +126,8 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     pj.ret_address[depth] = 's';
 #endif    
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     pj.write_tape(0, c);
     goto array_begin;
@@ -328,8 +328,8 @@ object_key_state:
 #endif
     // we found an object inside an object, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
 
     goto object_begin;
@@ -345,8 +345,8 @@ object_key_state:
 #endif    
     // we found an array inside an object, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     goto array_begin;
   }
@@ -460,8 +460,8 @@ main_array_switch:
 #endif
     // we found an object inside an array, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
 
     goto object_begin;
@@ -477,8 +477,8 @@ main_array_switch:
 #endif
     // we found an array inside an array, so we need to increment the depth
     depth++;
-    if (depth > pj.depthcapacity) {
-      goto fail;
+    if (depth >= pj.depthcapacity) {
+      return simdjson::DEPTH_ERROR;
     }
     goto array_begin;
   }

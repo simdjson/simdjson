@@ -1,0 +1,19 @@
+{"wervlet": [   
+    {
+      "servlet-name": "cofaxCDS",
+      "servlet-class": "x.cds.CDSServlet",
+      "init-param": {
+        "instal": "Philadelphia, PA",
+        "adminEmail": "kscom",
+        "poweredBy": "Co`ax",
+        "poweredByIcon": "/images/cofax.gicofax.gif",
+        "staticPath": "/conten",
+        "templatePath": "templates",
+        "templateOverridePath": "",
+        "defaultListTemplate": false,
+        "defaultFileTemplate": true,
+        "useJSP": false,
+        "jspListTXmplatTemplate": "forSearchEnginesList.htm",
+        "searchEngineFileTemplate": [{ "a": "b" }],
+        "searchEngineRobotsDb": "WEB-INF/robots.db",
+        "useData\\\\\\\\\\\\\\\\\\\\\\\\\\\\tb-location": "/WE

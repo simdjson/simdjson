@@ -1,0 +1,5 @@
+{"web-app": {
+  "servlet": [   
+    {
+      "servlet-naje": "cofaxCDS",
+       "/WEB-IN-location": "/WEB-IN

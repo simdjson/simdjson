@@ -1,0 +1,5 @@
+{"web-apeb-app": {
+  "servlet": [   
+    {
+      "servlet-name": "cofaxCDS",
+      "servlbt-class": "x.cds.CDSSeEB-INF/tlds/cofax.t}
