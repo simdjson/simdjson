@@ -77,12 +77,14 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
   }
   ParsedJson pj;
-  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  size_t maxdepth = 1024 * 4;
+  bool allocok = pj.allocateCapacity(p.size(), maxdepth);
   if (!allocok) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  bool ours_correct = (json_parse(p, pj) == 0); // returns 0 on success
+  int oursreturn = json_parse(p, pj);
+  bool ours_correct = (oursreturn == 0); // returns 0 on success
 
   rapidjson::Document d;
 
@@ -103,6 +105,9 @@ int main(int argc, char *argv[]) {
            rapid_correct_checkencoding ? "correct" : "invalid");
     printf("sajson                     : %s \n",
            sajson_correct ? "correct" : "invalid");
+    if(oursreturn == simdjson::DEPTH_ERROR) {
+       printf("simdjson encountered a DEPTH_ERROR, it was parametrized to reject documents with depth exceeding %zu.\n", maxdepth);
+    }
     if ((ours_correct != rapid_correct_checkencoding) ||
         (rapid_correct_checkencoding != sajson_correct) ||
         (ours_correct != sajson_correct)) {
