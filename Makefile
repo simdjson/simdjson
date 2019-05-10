@@ -95,24 +95,22 @@ amalgamate:
 	./amalgamation.sh
 
 $(SAJSON_INCLUDE):
-	git submodule update --init --recursive
+	git submodule foreach git pull
 
 $(RAPIDJSON_INCLUDE):
-	git submodule update --init --recursive
+	git submodule foreach git pull
 
 $(JSON11_INCLUDE):
-	git submodule update --init --recursive
+	git submodule foreach git pull
 
 $(FASTJSON_INCLUDE):
-	git submodule update --init --recursive
+	git submodule foreach git pull
 
 $(GASON_INCLUDE):
-	git submodule update --init --recursive
+	git submodule foreach git pull
 
 $(UJSON4C_INCLUDE):
-	git submodule update --init --recursive
-
-
+	git submodule foreach git pull
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
