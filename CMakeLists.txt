@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.8...3.13)
+cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ltoresult)
+if(ltoresult)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
@@ -20,14 +26,12 @@ option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disab
 else()
 option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
 endif()
-option(SIMDJSON_BUILD_LTO "Build library with Link Time Optimization" OFF)
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 find_package(CTargets)
 find_package(Options)
-find_package(LTO)
 
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
