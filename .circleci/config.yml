@@ -14,6 +14,7 @@ jobs:
           build-essential
           cmake
           g++-7
+          git
 
       - run:
           name: Building (gcc)
@@ -51,6 +52,7 @@ jobs:
           build-essential
           cmake
           clang-6.0
+          git
 
       - run:
           name: Building (clang)
