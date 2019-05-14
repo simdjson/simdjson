@@ -433,11 +433,15 @@ really_inline void find_whitespace_and_structurals(simd_input in,
 // needs to be large enough to handle this
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
+  // In some instances, the next branch is expensive because it is mispredicted. 
+  // Unfortunately, in other cases,
+  // it helps tremendously.
+  if(bits == 0) return; 
   uint32_t cnt = hamming(bits);
   uint32_t next_base = base + cnt;
   idx -= 64;
   base_ptr += base;
-  if (bits != 0) {
+  { 
     base_ptr[0] = idx + trailingzeroes(bits);
     bits = bits & (bits - 1);
     base_ptr[1] = idx + trailingzeroes(bits);
@@ -456,6 +460,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     bits = bits & (bits - 1);
     base_ptr += 8;
   }
+  // We hope that the next branch is easily predicted.
   if (cnt > 8) {
     base_ptr[0] = idx + trailingzeroes(bits);
     bits = bits & (bits - 1);
@@ -475,8 +480,10 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     bits = bits & (bits - 1);
     base_ptr += 8;
   }
-  if (cnt > 16) { // unluckly
- do {
+  if (cnt > 16) { // unluckly: we rarely get here
+    // since it means having one structural or pseudo-structral element 
+    // every 4 characters (possible with inputs like "","","",...).
+    do {
       base_ptr[0] = idx + trailingzeroes(bits);
       bits = bits & (bits - 1);
       base_ptr++;
