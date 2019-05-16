@@ -1,8 +1,3 @@
-if (CMAKE_VERSION VERSION_GREATER 3.0.0)
-  cmake_policy(VERSION 3.0.0)
-endif ()
-
-
 function(add_cpp_test TEST_NAME)
   add_executable(${TEST_NAME} ${TEST_NAME}.cpp)
   target_link_libraries(${TEST_NAME} ${SIMDJSON_LIB_NAME})
