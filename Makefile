@@ -23,6 +23,10 @@ endif
 
 
 # SANITIZE *implies* DEBUG
+ifeq ($(MEMSANITIZE),1)
+        CXXFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
+        CFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
+else
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
 	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
@@ -36,6 +40,7 @@ else
 	CFLAGS += -O3
 endif # ifeq ($(DEBUG),1)
 endif # ifeq ($(SANITIZE),1)
+endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck

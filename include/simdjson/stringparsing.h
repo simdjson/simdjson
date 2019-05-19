@@ -76,7 +76,7 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
 #include <arm_neon.h>
 #endif
 
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
 #ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing

@@ -70,7 +70,7 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
+WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; // index of the structural character (0,1,2,3...)
   uint32_t idx;   // location of the structural character in the input (buf)

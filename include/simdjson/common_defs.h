@@ -64,6 +64,12 @@
 #  endif 
 #endif 
 
+#if defined(__has_feature)
+#  if (__has_feature(memory_sanitizer))
+#define LENIENT_MEM_SANITIZER __attribute__((no_sanitize("memory")))
+#  endif
+#endif
+
 #define really_inline inline __attribute__((always_inline, unused))
 #define never_inline inline __attribute__((noinline, unused))
 
@@ -83,4 +89,8 @@
 #ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
 #define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
 #endif
+#ifndef LENIENT_MEM_SANITIZER
+#define LENIENT_MEM_SANITIZER
+#endif
+
 #endif // SIMDJSON_COMMON_DEFS_H
