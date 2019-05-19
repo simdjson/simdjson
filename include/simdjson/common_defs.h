@@ -31,8 +31,6 @@
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #ifdef _MSC_VER
-// Visual Studio won't allow it:
-//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
 #define really_inline inline
 #define never_inline __declspec(noinline)
 
@@ -48,10 +46,11 @@
 
 #else
 
-// for non-Visual Studio compilers, we assume that same-page buffer overrun is fine:
-#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
-#endif 
+// For non-Visual Studio compilers, we may assume that same-page buffer overrun is fine.
+// However, it will make it difficult to be "valgrind clean".
+//#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
+//#endif 
 
 // The following is likely unnecessarily complex.
 #ifdef __SANITIZE_ADDRESS__

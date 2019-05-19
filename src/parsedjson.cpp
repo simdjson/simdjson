@@ -74,7 +74,13 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
 
       return false;
     }
-
+    /*
+    // We do not need to initialize this content for parsing, though we could
+    // need to initialize it for safety.
+    memset(string_buf, 0 , localstringcapacity); 
+    memset(structural_indexes, 0, max_structures * sizeof(uint32_t)); 
+    memset(tape, 0, localtapecapacity * sizeof(uint64_t)); 
+    */
     bytecapacity = len;
     depthcapacity = maxdepth;
     tapecapacity = localtapecapacity;
