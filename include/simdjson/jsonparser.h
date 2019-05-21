@@ -37,22 +37,8 @@ inline int json_parse(const char * buf, size_t len, ParsedJson &pj, bool realloc
   return json_parse(reinterpret_cast<const uint8_t *>(buf), len, pj, reallocifneeded);
 }
 
-// Parse a document found in buf.
-// You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
-// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
-//
-// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
-// (a copy of the input string is made).
-// The input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
-// all bytes at and after s.data()+s.size() are ignored (can be garbage).
-// The ParsedJson object can be reused.
-//WARN_UNUSED
-//inline int json_parse(const std::string_view &s, ParsedJson &pj, bool reallocifneeded = true) {
-//  return json_parse(s.data(), s.size(), pj, reallocifneeded);
-//}
-
-
+// We do not want to allow implicit conversion from C string to std::string.
+int json_parse(const char * buf, ParsedJson &pj) = delete;
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
@@ -97,17 +83,10 @@ inline ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocif
   return build_parsed_json(reinterpret_cast<const uint8_t *>(buf), len, reallocifneeded);
 }
 
-// convenience function
-WARN_UNUSED
-// Build a ParsedJson object. You can check validity
-// by calling pj.isValid(). This does the memory allocation needed for ParsedJson.
-// If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
-// (a copy of the input string is made).
-// The input s should be readable up to s.data() + s.size() + SIMDJSON_PADDING  if reallocifneeded is false,
-// all bytes at and after s.data()+s.size() are ignored (can be garbage).
-//inline ParsedJson build_parsed_json(const std::string_view &s, bool reallocifneeded = true) {
- // return build_parsed_json(s.data(), s.size(), reallocifneeded);
-//}
+
+// We do not want to allow implicit conversion from C string to std::string.
+ParsedJson build_parsed_json(const char *buf) = delete;
+
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
