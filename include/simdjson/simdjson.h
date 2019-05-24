@@ -10,6 +10,12 @@ struct simdjson {
     MEMALLOC, // Error allocating memory, most likely out of memory
     TAPE_ERROR, // Something went wrong while writing to the tape
     DEPTH_ERROR, // Your document exceeds the user-specified depth limitation
+    STRING_ERROR, // Problem while parsing a string
+    T_ATOM_ERROR, // Problem while parsing an atom starting with the letter 't'
+    F_ATOM_ERROR, // Problem while parsing an atom starting with the letter 'f'
+    N_ATOM_ERROR, // Problem while parsing an atom starting with the letter 'n'
+    NUMBER_ERROR, // Problem while parsing a number
+    UTF8_ERROR // the input is not valid UTF-8
   };
   static const std::string& errorMsg(const int);
 };
