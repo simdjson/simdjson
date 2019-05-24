@@ -37,7 +37,7 @@ ifeq ($(DEBUG),1)
 else
 # we opt for  -O3 for regular builds
 	CXXFLAGS += -O3
-	CFLAGS += -O2
+	CFLAGS += -O3
 endif # ifeq ($(DEBUG),1)
 endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
