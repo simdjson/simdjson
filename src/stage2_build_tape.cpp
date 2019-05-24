@@ -103,7 +103,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   // the root is used, if nothing else, to capture the size of the tape
   depth++; // everything starts at depth = 1, depth = 0 is just for the root, the root may contain an object, an array or something else.
   if (depth >= pj.depthcapacity) {
-    return simdjson::DEPTH_ERROR;
+    goto fail;
   }
 
   UPDATE_CHAR();
@@ -117,7 +117,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
 #endif
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c); // strangely, moving this to object_begin slows things down
     goto object_begin;
@@ -130,7 +130,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
 #endif    
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     goto array_begin;
@@ -144,7 +144,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
 #ifdef SIMDJSON_ALLOWANYTHINGINROOT
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      return simdjson::STRING_ERROR;
+      goto fail;
     }
     break;
   }
@@ -154,13 +154,13 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
-      return simdjson::MEMALLOC;;
+      goto fail;
     }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      return simdjson::T_ATOM_ERROR;
+      goto fail;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -172,13 +172,13 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
-      return simdjson::MEMALLOC;
+      goto fail;
     }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      return simdjson::F_ATOM_ERROR;
+      goto fail;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -190,13 +190,13 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
-      return simdjson::MEMALLOC;
+      goto fail;
     }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      return simdjson::N_ATOM_ERROR;
+      goto fail;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -217,13 +217,13 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
-      return simdjson::MEMALLOC;
+      goto fail;
     }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, false)) {
       free(copy);
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     free(copy);
     break;
@@ -234,13 +234,13 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
-      return simdjson::MEMALLOC;
+      goto fail;
     }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     free(copy);
     break;
@@ -263,7 +263,7 @@ object_begin:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      return simdjson::STRING_ERROR;
+      goto fail;
     }
     goto object_key_state;
   }
@@ -282,25 +282,25 @@ object_key_state:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      return simdjson::STRING_ERROR;
+      goto fail; 
     }
     break;
   }
   case 't':
     if (!is_valid_true_atom(buf + idx)) {
-      return simdjson::T_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break;
   case 'f':
     if (!is_valid_false_atom(buf + idx)) {
-      return simdjson::F_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break;
   case 'n':
     if (!is_valid_null_atom(buf + idx)) {
-      return simdjson::N_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break;
@@ -315,13 +315,13 @@ object_key_state:
   case '8':
   case '9': {
     if (!parse_number(buf, pj, idx, false)) {
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     break;
   }
   case '-': {
     if (!parse_number(buf, pj, idx, true)) {
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     break;
   }
@@ -337,7 +337,7 @@ object_key_state:
     // we found an object inside an object, so we need to increment the depth
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
 
     goto object_begin;
@@ -354,7 +354,7 @@ object_key_state:
     // we found an array inside an object, so we need to increment the depth
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
     goto array_begin;
   }
@@ -371,7 +371,7 @@ object_continue:
       goto fail;
     } else {
       if (!parse_string(buf, len, pj, depth, idx)) {
-        return simdjson::STRING_ERROR;
+        goto fail; 
       }
       goto object_key_state;
     }
@@ -413,25 +413,25 @@ main_array_switch:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      return simdjson::STRING_ERROR;
+      goto fail;
     }
     break;
   }
   case 't':
     if (!is_valid_true_atom(buf + idx)) {
-      return simdjson::T_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break; 
   case 'f':
     if (!is_valid_false_atom(buf + idx)) {
-      return simdjson::F_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break; 
   case 'n':
     if (!is_valid_null_atom(buf + idx)) {
-      return simdjson::N_ATOM_ERROR;
+      goto fail;
     }
     pj.write_tape(0, c);
     break; // goto array_continue;
@@ -447,13 +447,13 @@ main_array_switch:
   case '8':
   case '9': {
     if (!parse_number(buf, pj, idx, false)) {
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     break; // goto array_continue;
   }
   case '-': {
     if (!parse_number(buf, pj, idx, true)) {
-      return simdjson::NUMBER_ERROR;
+      goto fail;
     }
     break; // goto array_continue;
   }
@@ -469,7 +469,7 @@ main_array_switch:
     // we found an object inside an array, so we need to increment the depth
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
 
     goto object_begin;
@@ -486,7 +486,7 @@ main_array_switch:
     // we found an array inside an array, so we need to increment the depth
     depth++;
     if (depth >= pj.depthcapacity) {
-      return simdjson::DEPTH_ERROR;
+      goto fail;
     }
     goto array_begin;
   }
@@ -526,9 +526,36 @@ succeed:
 
   pj.isvalid  = true;
   return simdjson::SUCCESS;
-
 fail:
-  return simdjson::TAPE_ERROR;
+  // at this point in the code, we have all the time in the world.
+  if (depth >= pj.depthcapacity) {
+    return simdjson::DEPTH_ERROR;
+  }
+  switch(c) {
+    case '"': 
+      return simdjson::STRING_ERROR;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9': 
+    case '-': 
+      return simdjson::NUMBER_ERROR;
+    case 't':
+      return simdjson::T_ATOM_ERROR;
+    case 'n':
+      return simdjson::N_ATOM_ERROR;
+    case 'f':
+      return simdjson::F_ATOM_ERROR;
+    default: 
+      break;
+  }
+  return simdjson::TAPE_ERROR; 
 }
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
