@@ -144,7 +144,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
 #ifdef SIMDJSON_ALLOWANYTHINGINROOT
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
+      return simdjson::STRING_ERROR;
     }
     break;
   }
@@ -153,13 +153,14 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the true value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if(copy == nullptr) { goto fail;
-}
+    if(copy == nullptr) { 
+      return simdjson::MEMALLOC;;
+    }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      goto fail;
+      return simdjson::T_ATOM_ERROR;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -170,13 +171,14 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the false value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if(copy == nullptr) { goto fail;
-}
+    if(copy == nullptr) { 
+      return simdjson::MEMALLOC;
+    }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      goto fail;
+      return simdjson::F_ATOM_ERROR;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -187,13 +189,14 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this only applies to the JSON document made solely of the null value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if(copy == nullptr) { goto fail;
-}
+    if(copy == nullptr) { 
+      return simdjson::MEMALLOC;
+    }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
-      goto fail;
+      return simdjson::N_ATOM_ERROR;
     }
     free(copy);
     pj.write_tape(0, c);
@@ -213,13 +216,14 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if(copy == nullptr) { goto fail;
-}
+    if(copy == nullptr) { 
+      return simdjson::MEMALLOC;
+    }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, false)) {
       free(copy);
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     free(copy);
     break;
@@ -229,13 +233,14 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     // this is done only for JSON documents made of a sole number
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if(copy == nullptr) { goto fail;
-}
+    if(copy == nullptr) { 
+      return simdjson::MEMALLOC;
+    }
     memcpy(copy, buf, len);
     copy[len] = '\0';
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     free(copy);
     break;
@@ -258,7 +263,7 @@ object_begin:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
+      return simdjson::STRING_ERROR;
     }
     goto object_key_state;
   }
@@ -277,25 +282,25 @@ object_key_state:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
+      return simdjson::STRING_ERROR;
     }
     break;
   }
   case 't':
     if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
+      return simdjson::T_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break;
   case 'f':
     if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
+      return simdjson::F_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break;
   case 'n':
     if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
+      return simdjson::N_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break;
@@ -310,13 +315,13 @@ object_key_state:
   case '8':
   case '9': {
     if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     break;
   }
   case '-': {
     if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     break;
   }
@@ -366,7 +371,7 @@ object_continue:
       goto fail;
     } else {
       if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
+        return simdjson::STRING_ERROR;
       }
       goto object_key_state;
     }
@@ -408,25 +413,25 @@ main_array_switch:
   switch (c) {
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
+      return simdjson::STRING_ERROR;
     }
     break;
   }
   case 't':
     if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
+      return simdjson::T_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break; 
   case 'f':
     if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
+      return simdjson::F_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break; 
   case 'n':
     if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
+      return simdjson::N_ATOM_ERROR;
     }
     pj.write_tape(0, c);
     break; // goto array_continue;
@@ -442,13 +447,13 @@ main_array_switch:
   case '8':
   case '9': {
     if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     break; // goto array_continue;
   }
   case '-': {
     if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
+      return simdjson::NUMBER_ERROR;
     }
     break; // goto array_continue;
   }

@@ -11,7 +11,12 @@
 
 // Parse a document found in buf. 
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return 0 on success, an error code from simdjson/simdjson.h otherwise
+//
+// The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
+// simdjson/simdjson.h in case of failure such as  simdjson::CAPACITY, simdjson::MEMALLOC, 
+// simdjson::DEPTH_ERROR and so forth; the simdjson::errorMsg function converts these error codes 
+// into a string). 
+//
 // You can also check validity by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
@@ -24,7 +29,13 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 
 // Parse a document found in buf.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
+//
+// The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
+// simdjson/simdjson.h in case of failure such as  simdjson::CAPACITY, simdjson::MEMALLOC, 
+// simdjson::DEPTH_ERROR and so forth; the simdjson::errorMsg function converts these error codes 
+// into a string). 
+//
+// You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
@@ -42,8 +53,11 @@ int json_parse(const char * buf, ParsedJson &pj) = delete;
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
-// by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+//
+// The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
+// simdjson/simdjson.h in case of failure such as  simdjson::CAPACITY, simdjson::MEMALLOC, 
+// simdjson::DEPTH_ERROR and so forth; the simdjson::errorMsg function converts these error codes 
+// into a string). 
 //
 // A temporary buffer is created when needed during processing
 // (a copy of the input string is made).
@@ -54,7 +68,13 @@ inline int json_parse(const std::string &s, ParsedJson &pj) {
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
+//
+// The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
+// simdjson/simdjson.h in case of failure such as  simdjson::CAPACITY, simdjson::MEMALLOC, 
+// simdjson::DEPTH_ERROR and so forth; the simdjson::errorMsg function converts these error codes 
+// into a string). 
+//
+// You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 WARN_UNUSED
 inline int json_parse(const padded_string &s, ParsedJson &pj) {
@@ -69,6 +89,8 @@ inline int json_parse(const padded_string &s, ParsedJson &pj) {
 //
 // the input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
+//
+// This is a convenience function which calls json_parse.
 WARN_UNUSED
 ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneeded = true);
 
@@ -79,6 +101,8 @@ WARN_UNUSED
 // (a copy of the input string is made).
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
+//
+// This is a convenience function which calls json_parse.
 inline ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded = true) {
   return build_parsed_json(reinterpret_cast<const uint8_t *>(buf), len, reallocifneeded);
 }
@@ -90,11 +114,13 @@ ParsedJson build_parsed_json(const char *buf) = delete;
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
+// Return SUCCESS (an integer = 0) in case of a success. You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
 //
 // A temporary buffer is created when needed during processing
 // (a copy of the input string is made).
+//
+// This is a convenience function which calls json_parse.
 WARN_UNUSED
 inline ParsedJson build_parsed_json(const std::string &s) {
   return build_parsed_json(s.data(), s.length(), true);
@@ -103,8 +129,10 @@ inline ParsedJson build_parsed_json(const std::string &s) {
 
 // Parse a document found in in string s.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
-// Return SUCCESS (an integer = 1) in case of a success. You can also check validity
+// Return SUCCESS (an integer = 0) in case of a success. You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+//
+// This is a convenience function which calls json_parse.
 WARN_UNUSED
 inline ParsedJson build_parsed_json(const padded_string &s) {
   return build_parsed_json(s.data(), s.length(), false);

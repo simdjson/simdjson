@@ -35,18 +35,18 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 #else // SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN
      if(true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always reallocate
 #endif
-	   const uint8_t *tmpbuf  = buf;
+	     const uint8_t *tmpbuf  = buf;
        buf = (uint8_t *) allocate_padded_buffer(len);
        if(buf == NULL) return simdjson::MEMALLOC;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
   }
-  // find_structural_bits returns a boolean, not an int, we invert its result to keep consistent with res == 0 meaning success
-  int res = !find_structural_bits(buf, len, pj);
-  if (!res) {
-    res = unified_machine(buf, len, pj);
+  bool stage1_is_ok = find_structural_bits(buf, len, pj);
+  if(!stage1_is_ok) {
+    return simdjson::UTF8_ERROR;
   }
+  int res = unified_machine(buf, len, pj);
   if(reallocated) { aligned_free((void*)buf);}
   return res;
 }
