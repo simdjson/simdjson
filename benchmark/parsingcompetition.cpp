@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       std::fill(stats.begin(), stats.end(), 0);// unnecessary
       for(int i = 0; i < repeat; i++) {
         unified.start();
-        if(json_parse(p, pj) != true) printf("bug\n");
+        if(json_parse(p, pj) != simdjson::SUCCESS) printf("bug\n");
         unified.end(results);
         std::transform (stats.begin(), stats.end(), results.begin(), stats.begin(), std::plus<unsigned long long>());
       }
