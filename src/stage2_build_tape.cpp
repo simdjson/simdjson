@@ -527,7 +527,11 @@ succeed:
   pj.isvalid  = true;
   return simdjson::SUCCESS;
 fail:
-  // at this point in the code, we have all the time in the world.
+  // At this point in the code, we have all the time in the world.
+  // Note that we know exactly where we are in the document so we could,
+  // without any overhead on the processing code, report a specific location.
+  // We could even trigger special code paths to assess what happened carefully,
+  // all without any added cost.
   if (depth >= pj.depthcapacity) {
     return simdjson::DEPTH_ERROR;
   }
