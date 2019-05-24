@@ -14,8 +14,12 @@
 // currently we don't UTF8 validate for ARM
 // also we assume that if you're not __AVX2__ 
 // you're ARM, which is a bit dumb. TODO: Fix...
+#ifdef __ARM_NEON
 #include <arm_neon.h>
-#endif
+#else
+#warning It appears that neither ARM NEON nor AVX2 are detected.
+#endif // __ARM_NEON
+#endif // __AVX2__
 
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
@@ -40,7 +44,7 @@ struct simd_input {
   uint8x16x4_t i;
 #endif
 #else
-#error "It's called SIMDjson for a reason, bro"
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
 };
 
@@ -58,6 +62,8 @@ really_inline simd_input fill_input(const uint8_t * ptr) {
 #else
   in.i = vld4q_u8(ptr);
 #endif
+#else
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
   return in;
 }
@@ -152,6 +158,8 @@ really_inline uint64_t cmp_mask_against_input(simd_input in, uint8_t m) {
   uint8x16_t cmp_res_2 = vceqq_u8(in.i.val[2], mask); 
   uint8x16_t cmp_res_3 = vceqq_u8(in.i.val[3], mask); 
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+#else
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
 }
 
@@ -171,6 +179,8 @@ really_inline uint64_t unsigned_lteq_against_input(simd_input in, uint8_t m) {
   uint8x16_t cmp_res_2 = vcleq_u8(in.i.val[2], mask); 
   uint8x16_t cmp_res_3 = vcleq_u8(in.i.val[3], mask); 
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+#else
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
 }
 
@@ -239,6 +249,8 @@ really_inline uint64_t find_quote_mask_and_bits(simd_input in, uint64_t odd_ends
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
 #elif defined(__ARM_NEON)
   uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
+#else
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
   quote_mask ^= prev_iter_inside_quote;
   // All Unicode characters may be placed within the
@@ -422,7 +434,8 @@ really_inline void find_whitespace_and_structurals(simd_input in,
   structurals = neonmovemask_bulk(tmp_0, tmp_1, tmp_2, tmp_3);
   whitespace = neonmovemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 #endif
-
+#else 
+#warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif
 }
 
