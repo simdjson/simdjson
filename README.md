@@ -443,6 +443,9 @@ make allparsingcompetition
 ./allparsingcompetition myfile.json
 ```
 
+Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
+a table-oriented output that can be conventiently parsed by other tools.
+
 ## Other programming languages
 
 We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
