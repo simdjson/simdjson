@@ -101,7 +101,7 @@ amalgamate:
 
 
 submodules: 
-	git submodule update --init --recursive
+	-git submodule update --init --recursive
 
 $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
