@@ -35,7 +35,7 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
   case '{':
     if (i.down()) {
       do {
-        bool founduser = equals(i.get_string(), "user");
+        bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
         i.next(); // move to value
         if (i.is_object()) {
           if (founduser && i.move_to_key("id")) {
@@ -97,8 +97,11 @@ void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   }
   case TYPE_OBJECT: {
     auto length = node.get_length();
+    // sajson has O(log n) find_object_key, but we still visit each node anyhow
     for (auto i = 0u; i < length; ++i) {
-      if (equals(node.get_object_key(i).data(), "user")) { // found a user!!!
+      auto key = node.get_object_key(i); // expected: sajson::string
+      bool founduser = (key.length() == 4) && (memcmp(key.data(), "user", 4) == 0);
+      if (founduser) { // found a user!!!
         auto uservalue = node.get_object_value(i);         // get the value
         if (uservalue.get_type() ==
             TYPE_OBJECT) { // the value should be an object
@@ -153,7 +156,8 @@ void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
   case kObjectType:
     for (Value::ConstMemberIterator m = v.MemberBegin(); m != v.MemberEnd();
          ++m) {
-      if (equals(m->name.GetString(), "user")) {
+       bool founduser = (m->name.GetStringLength() == 4) && (memcmp(m->name.GetString(), "user", 4) == 0);
+       if (founduser) {
         const rapidjson::Value &child = m->value;
         if (child.GetType() == kObjectType) {
           for (Value::ConstMemberIterator k = child.MemberBegin();

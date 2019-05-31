@@ -124,43 +124,85 @@ public:
 
     // retrieve the character code of what we're looking at:
     // [{"sltfn are the possibilities
-    uint8_t get_type()  const;
+    inline uint8_t get_type()  const {
+       return current_type; // short functions should be inlined!
+    }
 
     // get the int64_t value at this node; valid only if we're at "l"
-    int64_t get_integer()  const;
+    inline int64_t get_integer()  const {
+       if(location + 1 >= tape_length) {
+         return 0;// default value in case of error
+       }
+       return static_cast<int64_t>(pj.tape[location + 1]);
+    }
 
     // get the string value at this node (NULL ended); valid only if we're at "
     // note that tabs, and line endings are escaped in the returned value (see print_with_escapes)
     // return value is valid UTF-8
     // It may contain NULL chars within the string: get_string_length determines the true 
     // string length.
-    const char * get_string() const;
+    inline const char * get_string() const {
+      return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK) + sizeof(uint32_t)) ;
+    }
 
-    uint32_t get_string_length() const;
+    // return the length of the string in bytes
+    inline uint32_t get_string_length() const {
+      uint32_t answer;
+      memcpy(&answer, reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)), sizeof(uint32_t));
+      return answer;
+    }
 
     // get the double value at this node; valid only if
     // we're at "d"
-    double get_double()  const;
+    inline double get_double()  const {
+      if(location + 1 >= tape_length) {
+        return NAN;// default value in case of error
+      }
+      double answer;
+      memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
+      return answer;
+    }
 
-    bool is_object_or_array() const;
 
-    bool is_object() const;
+    inline bool is_object_or_array() const {
+      return is_object() || is_array();
+    }
 
-    bool is_array() const;
+    inline bool is_object() const {
+      return get_type() == '{';
+    }
 
-    bool is_string() const;
+    inline bool is_array() const {
+      return get_type() == '[';
+    }
 
-    bool is_integer() const;
+    inline bool is_string() const {
+      return get_type() == '"';
+    }
 
-    bool is_double() const;
+    inline bool is_integer() const {
+      return get_type() == 'l';
+    }
 
-    bool is_true() const;
+    inline bool is_double() const {
+      return get_type() == 'd';
+    }
 
-    bool is_false() const;
+    inline bool is_true() const {
+      return get_type() == 't';
+    }
 
-    bool is_null() const;
+    inline bool is_false() const {
+      return get_type() == 'f';
+    }
 
-    static bool is_object_or_array(uint8_t type);
+    inline bool is_null() const {
+      return get_type() == 'n';
+    }
+
+    static bool is_object_or_array(uint8_t type) {
+      return ((type == '[') || (type == '{'));
+    }
 
     // when at {, go one level deep, looking for a given key
     // if successful, we are left pointing at the value,

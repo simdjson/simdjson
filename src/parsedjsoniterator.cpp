@@ -105,78 +105,6 @@ bool ParsedJson::iterator::move_forward() {
     return true;
 }
 
-uint8_t ParsedJson::iterator::get_type()  const {
-    return current_type;
-}
-
-
-int64_t ParsedJson::iterator::get_integer()  const {
-    if(location + 1 >= tape_length) { 
-      return 0;// default value in case of error
-    }
-    return static_cast<int64_t>(pj.tape[location + 1]);
-}
-
-double ParsedJson::iterator::get_double()  const {
-    if(location + 1 >= tape_length) { 
-      return NAN;// default value in case of error
-    }
-    double answer;
-    memcpy(&answer, & pj.tape[location + 1], sizeof(answer));
-    return answer;
-}
-
-const char * ParsedJson::iterator::get_string() const {
-   return  reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK) + sizeof(uint32_t)) ;
-}
-
-
-uint32_t ParsedJson::iterator::get_string_length() const {
-    uint32_t answer;
-    memcpy(&answer, reinterpret_cast<const char *>(pj.string_buf + (current_val & JSONVALUEMASK)), sizeof(uint32_t));
-    return answer;
-}
-
-bool ParsedJson::iterator::is_object_or_array() const {
-    return is_object_or_array(get_type());
-}
-
-bool ParsedJson::iterator::is_object() const {
-    return get_type() == '{';
-}
-
-bool ParsedJson::iterator::is_array() const {
-    return get_type() == '[';
-}
-
-bool ParsedJson::iterator::is_string() const {
-    return get_type() == '"';
-}
-
-bool ParsedJson::iterator::is_integer() const {
-    return get_type() == 'l';
-}
-
-bool ParsedJson::iterator::is_double() const {
-    return get_type() == 'd';
-}
-
-bool ParsedJson::iterator::is_true() const {
-    return get_type() == 't';
-}
-
-bool ParsedJson::iterator::is_false() const {
-    return get_type() == 'f';
-}
-
-bool ParsedJson::iterator::is_null() const {
-    return get_type() == 'n';
-}
-
-bool ParsedJson::iterator::is_object_or_array(uint8_t type) {
-    return (type == '[' || (type == '{'));
-}
-
 bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
       do {
@@ -195,24 +123,25 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
 
  bool ParsedJson::iterator::next() {
     if ((current_type == '[') || (current_type == '{')){
-    // we need to jump
-    size_t npos = ( current_val & JSONVALUEMASK);
-    if(npos >= tape_length) {
+      // we need to jump
+      size_t npos = ( current_val & JSONVALUEMASK);
+      if(npos >= tape_length) {
         return false; // shoud never happen unless at the root
-    }
-    uint64_t nextval = pj.tape[npos];
-    uint8_t nexttype = (nextval >> 56);
-    if((nexttype == ']') || (nexttype == '}')) {
+      }
+      uint64_t nextval = pj.tape[npos];
+      uint8_t nexttype = (nextval >> 56);
+      if((nexttype == ']') || (nexttype == '}')) {
         return false; // we reached the end of the scope
-    }
-    location = npos;
-    current_val = nextval;
-    current_type = nexttype;
-    return true;
+      }
+      location = npos;
+      current_val = nextval;
+      current_type = nexttype;
+      return true;
     } 
     size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
-    if(location + increment >= tape_length) { return false;
-}
+    if(location + increment >= tape_length) {
+      return false;
+    }
     uint64_t nextval = pj.tape[location + increment];
     uint8_t nexttype = (nextval >> 56);
     if((nexttype == ']') || (nexttype == '}')) {
@@ -222,25 +151,25 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
     current_val = nextval;
     current_type = nexttype;
     return true;
-    
 }
 
 
  bool ParsedJson::iterator::prev() {
-    if(location - 1 < depthindex[depth].start_of_scope) { return false;
-}
+    if(location - 1 < depthindex[depth].start_of_scope) {
+      return false;
+    }
     location -= 1;
     current_val = pj.tape[location];
     current_type = (current_val >> 56);
     if ((current_type == ']') || (current_type == '}')){
-    // we need to jump
-    size_t new_location = ( current_val & JSONVALUEMASK);
-    if(new_location < depthindex[depth].start_of_scope) {
+      // we need to jump
+      size_t new_location = ( current_val & JSONVALUEMASK);
+      if(new_location < depthindex[depth].start_of_scope) {
         return false; // shoud never happen
-    }
-    location = new_location;
-    current_val = pj.tape[location];
-    current_type = (current_val >> 56);
+      }
+      location = new_location;
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
     }
     return true;
 }
@@ -248,7 +177,7 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
 
  bool ParsedJson::iterator::up() {
     if(depth == 1) {
-    return false; // don't allow moving back to root
+      return false; // don't allow moving back to root
     }
     to_start_scope();
     // next we just move to the previous value
@@ -261,8 +190,9 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
 
 
  bool ParsedJson::iterator::down() {
-    if(location + 1 >= tape_length) { return false;
-}
+    if(location + 1 >= tape_length) {
+      return false;
+    }
     if ((current_type == '[') || (current_type == '{')) {
     size_t npos = (current_val & JSONVALUEMASK);
     if(npos == location + 2) {
