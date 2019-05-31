@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     unified.start();
 #endif
 
-    isok = isok && !unified_machine(p.data(), p.size(), pj);
+    isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
 #ifndef SQUASH_COUNTERS
     unified.end(results);
     cy2 += results[0];

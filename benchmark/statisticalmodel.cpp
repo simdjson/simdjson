@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     cl1 += results[1];
     
     unified.start();
-    isok = isok && unified_machine(p.data(), p.size(), pj);
+    isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
     unified.end(results);
     
     cy2 += results[0];
