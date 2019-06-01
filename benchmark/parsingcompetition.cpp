@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int repeat = 50;
+  int repeat = p.size() < 100 * 1000 * 1000 ? 50 : 5;
   int volume = p.size();
   if (justdata) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
