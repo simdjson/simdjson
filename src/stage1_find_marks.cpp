@@ -452,7 +452,6 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
       out_ptr[0] = idx + trailingzeroes(bits);
       bits = bits & (bits - 1);
       out_ptr++;
-    }
   }
   base = (out_ptr - base_ptr);
 }
