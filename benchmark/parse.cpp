@@ -200,6 +200,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not parse. " << std::endl;
     return EXIT_FAILURE;
   }
+  double min_result = *min_element(res.begin(), res.end());
 #ifndef SQUASH_COUNTERS
   unsigned long total = cy0 + cy1 + cy2;
   if (justdata) {
@@ -257,9 +258,9 @@ int main(int argc, char *argv[]) {
 
     printf(" all stages: %.2f cycles per input byte.\n",
            (double)total / (iterations * p.size()));
+    printf("Estimated average frequency: %.3f GHz.\n", (double)total / (iterations * min_result * 1000000000.0)); 
   }
 #endif
-  double min_result = *min_element(res.begin(), res.end());
   if (!justdata) {
     std::cout << "Min:  " << min_result << " bytes read: " << p.size()
          << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
