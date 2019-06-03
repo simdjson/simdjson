@@ -448,6 +448,7 @@ really_inline void find_whitespace_and_structurals(simd_input in,
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
   uint32_t * out_ptr = base_ptr + base;
+  idx -= 64;
   while(bits != 0) {
       out_ptr[0] = idx + trailingzeroes(bits);
       bits = bits & (bits - 1);
