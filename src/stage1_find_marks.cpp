@@ -439,6 +439,25 @@ really_inline void find_whitespace_and_structurals(simd_input in,
 #endif
 }
 
+
+#ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
+//
+// This is just a naive implementation. It should be normally
+// disable, but can be used for research purposes to compare
+// again our optimized version.
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
+                                uint32_t idx, uint64_t bits) {
+  uint32_t * out_ptr = base_ptr + base;
+  while(bits != 0) {
+      out_ptr[0] = idx + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      out_ptr++;
+    }
+  }
+  base = (out_ptr - base_ptr);
+}
+
+#else 
 // flatten out values in 'bits' assuming that they are are to have values of idx
 // plus their position in the bitvector, and store these indexes at
 // base_ptr[base] incrementing base as we go
@@ -504,6 +523,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   }
   base = next_base;
 }
+#endif
 
 // return a updated structural bit vector with quoted contents cleared out and
 // pseudo-structural characters added to the mask
