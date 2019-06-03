@@ -48,6 +48,30 @@ struct simd_input {
 #endif
 };
 
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+  // In practice, if you have NEON or __PCLMUL__, you would
+  // always want to use them, but it might be useful, for research
+  // purposes, to disable it willingly, that's what SIMDJSON_AVOID_CLMUL
+  // does.
+  // Also: we don't know of an instance where AVX2 is supported but 
+  // where clmul is not supported, so check for both, to be sure.
+#if (defined(__PCLMUL__) || defined(__AVX2__)) && !defined(SIMDJSON_AVOID_CLMUL)
+  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+#elif defined(__ARM_NEON) && !defined(SIMDJSON_AVOID_CLMUL)
+  uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
+#else
+  // this code should always be used if SIMDJSON_AVOID_CLMUL is defined.
+  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+  quote_mask = quote_mask ^ (quote_mask << 2);
+  quote_mask = quote_mask ^ (quote_mask << 4);
+  quote_mask = quote_mask ^ (quote_mask << 8);
+  quote_mask = quote_mask ^ (quote_mask << 16);
+  quote_mask = quote_mask ^ (quote_mask << 32);
+#endif
+  return quote_mask;
+}
+
 really_inline simd_input fill_input(const uint8_t * ptr) {
   struct simd_input in;
 #ifdef __AVX2__
@@ -243,15 +267,7 @@ really_inline uint64_t find_quote_mask_and_bits(simd_input in, uint64_t odd_ends
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   quote_bits = cmp_mask_against_input(in, '"');
   quote_bits = quote_bits & ~odd_ends;
-  // remove from the valid quoted region the unescapted characters.
-#ifdef __AVX2__
-  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
-#elif defined(__ARM_NEON)
-  uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
-#else
-#warning It appears that neither ARM NEON nor AVX2 are detected.
-#endif
+  uint64_t quote_mask = compute_quote_mask(quote_bits);
   quote_mask ^= prev_iter_inside_quote;
   // All Unicode characters may be placed within the
   // quotation marks, except for the characters that MUST be escaped:
