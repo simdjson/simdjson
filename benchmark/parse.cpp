@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 #endif
   std::vector<double> res;
   res.resize(iterations);
-  printf("number of iterations %u \n", iterations);
+  if(!justdata) printf("number of iterations %u \n", iterations);
 #if !defined(__linux__)
 #define SQUASH_COUNTERS
   if (justdata) {
@@ -201,6 +201,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   double min_result = *min_element(res.begin(), res.end());
+  double speedinGBs = (p.size()) / (min_result * 1000000000.0);
 #ifndef SQUASH_COUNTERS
   unsigned long total = cy0 + cy1 + cy2;
   if (justdata) {
@@ -221,8 +222,8 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    printf("\"%s\"\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2,
-           cpbtotal);
+    printf("\"%s\"\t%f\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2,
+           cpbtotal, speedinGBs);
     free(newfile);
   } else {
     printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
@@ -263,9 +264,9 @@ int main(int argc, char *argv[]) {
 #endif
   if (!justdata) {
     std::cout << "Min:  " << min_result << " bytes read: " << p.size()
-         << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
+         << " Gigabytes/second: " << speedinGBs
          << std::endl;
-}
+  }
   if (jsonoutput) {
     isok = isok && pj.printjson(std::cout);
   }
