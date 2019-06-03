@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 #endif
   std::vector<double> res;
   res.resize(iterations);
-
+  printf("number of iterations %u \n", iterations);
 #if !defined(__linux__)
 #define SQUASH_COUNTERS
   if (justdata) {
@@ -122,38 +122,29 @@ int main(int argc, char *argv[]) {
   unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0;
 #endif
   bool isok = true;
-
+#ifndef SQUASH_COUNTERS
   for (uint32_t i = 0; i < iterations; i++) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }
-#ifndef SQUASH_COUNTERS
     unified.start();
-#endif
     ParsedJson pj;
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
       return EXIT_FAILURE;
     }
-#ifndef SQUASH_COUNTERS
     unified.end(results);
     cy0 += results[0];
     cl0 += results[1];
     mis0 += results[2];
     cref0 += results[3];
     cmis0 += results[4];
-#endif
     if (verbose) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
-}
-
-    auto start = std::chrono::steady_clock::now();
-#ifndef SQUASH_COUNTERS
+    }
     unified.start();
-#endif
     isok = find_structural_bits(p.data(), p.size(), pj);
-#ifndef SQUASH_COUNTERS
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
@@ -165,10 +156,7 @@ int main(int argc, char *argv[]) {
       break;
     }
     unified.start();
-#endif
-
     isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
-#ifndef SQUASH_COUNTERS
     unified.end(results);
     cy2 += results[0];
     cl2 += results[1];
@@ -179,12 +167,34 @@ int main(int argc, char *argv[]) {
       std::cout << "Failed during stage 2" << std::endl;
       break;
     }
+  }
 #endif
+  // we do it again, this time just measuring the elapsed time
+  for (uint32_t i = 0; i < iterations; i++) {
+    if (verbose) {
+      std::cout << "[verbose] iteration # " << i << std::endl;
+    }
+    ParsedJson pj;
+    bool allocok = pj.allocateCapacity(p.size());
+    if (!allocok) {
+      std::cerr << "failed to allocate memory" << std::endl;
+      return EXIT_FAILURE;
+    }
+    if (verbose) {
+      std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
+    }
 
+    auto start = std::chrono::steady_clock::now();
+    isok = find_structural_bits(p.data(), p.size(), pj);
+    isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
-  }
+    if(! isok) {
+      std::cerr << "Could not parse. " << std::endl;
+      return EXIT_FAILURE;
+    }
+  }  
   ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << "Could not parse. " << std::endl;
