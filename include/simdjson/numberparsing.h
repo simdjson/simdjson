@@ -520,13 +520,18 @@ static really_inline bool parse_number(const uint8_t *const buf,
       double d = i;
       d = negative ? -d : d;
       uint64_t powerindex = 308 + exponent;
-      if(unlikely(powerindex > 2 * 308)) {
+      if(likely(powerindex <= 2 * 308)) {
+        // common case
+        d *= power_of_ten[powerindex];
+      } else 
+      return parse_float(buf, pj, offset,
+                                       found_minus);
+/*else { 
         // unlikely branch
         if(exponent < 0) {
           // we either have zero or a subnormal
           // this is expected to be uncommon
           d = subnormal_power10(d, exponent); 
-          pj.write_tape_double(d);
         } else {
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
@@ -534,10 +539,8 @@ static really_inline bool parse_number(const uint8_t *const buf,
 #endif
           return false;  
         }     
-      } else {
-        d *= power_of_ten[308 + exponent];
-        pj.write_tape_double(d);
-      }
+      }*/ 
+      pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
