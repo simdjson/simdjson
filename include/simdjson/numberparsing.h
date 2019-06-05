@@ -523,23 +523,11 @@ static really_inline bool parse_number(const uint8_t *const buf,
       if(likely(powerindex <= 2 * 308)) {
         // common case
         d *= power_of_ten[powerindex];
-      } else 
-      return parse_float(buf, pj, offset,
-                                       found_minus);
-/*else { 
-        // unlikely branch
-        if(exponent < 0) {
-          // we either have zero or a subnormal
-          // this is expected to be uncommon
-          d = subnormal_power10(d, exponent); 
-        } else {
-// we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-          foundInvalidNumber(buf + offset);
-#endif
-          return false;  
-        }     
-      }*/ 
+      } else {
+        // this is uncommon so let us move this special case out
+        // of the main loop
+        return parse_float(buf, pj, offset,found_minus);
+      }
       pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
