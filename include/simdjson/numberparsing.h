@@ -6,6 +6,10 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
+// Allowable floating-point values range from  std::numeric_limits<double>::lowest() 
+// to std::numeric_limits<double>::max(), so from 
+// -1.7976e308 all the way to 1.7975e308 in binary64. The lowest non-zero
+// normal values is std::numeric_limits<double>::min() or about 2.225074e-308.
 static const double power_of_ten[] = {
     1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,
     1e-299, 1e-298, 1e-297, 1e-296, 1e-295, 1e-294, 1e-293, 1e-292, 1e-291,
@@ -163,6 +167,15 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #endif
 
+//
+// This function computes base * 10 ^ (- negative_exponent ).
+// It is only even going to be used when negative_exponent is tiny.
+double subnormal_power10(double base, int negative_exponent) {
+  // this is probably not going to be fast
+  return base * 1e-308 * pow(10, negative_exponent + 308); 
+}
+
+
 // called by parse_number when we know that the output is a float,
 // but where there might be some integer overflow. The trick here is to
 // parse using floats from the start.
@@ -258,15 +271,27 @@ parse_float(const uint8_t *const buf,
 #endif
       return false;
     }
-    if (expnumber > 308) {
+    if (unlikely(expnumber > 308)) {
+      // this path is unlikely
+      if(negexp) { 
+        // We either have zero or a subnormal. 
+        // We expect this to be uncommon so we go through a slow path.
+        i = subnormal_power10(i, - expnumber);
+      } else {
+// We know for sure that we have a number that is too large,
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+        foundInvalidNumber(buf + offset);
 #endif
-      return false;
-    }
-    int exponent = (negexp ? -expnumber : expnumber);
-    i *= power_of_ten[308 + exponent];
+        return false;
+      }
+    } else {
+      int exponent = (negexp ? -expnumber : expnumber);
+      // we have that expnumber is [0,308] so that 
+      // exponent is [-308,308] so that 
+      // 308 + exponent is in [0, 2 * 308]
+      i *= power_of_ten[308 + exponent];
+   }
   }
   if(is_not_structural_or_whitespace(*p)) {
     return false;
@@ -474,13 +499,6 @@ static really_inline bool parse_number(const uint8_t *const buf,
 #endif
       return false;
     }
-    if(expnumber > 308) {
-// we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
-#endif
-        return false;       
-    }
     exponent += (negexp ? -expnumber : expnumber);
   }
   if ((exponent != 0) || (expnumber != 0)) {
@@ -501,8 +519,25 @@ static really_inline bool parse_number(const uint8_t *const buf,
     } else {
       double d = i;
       d = negative ? -d : d;
-      d *= power_of_ten[308 + exponent];
-      pj.write_tape_double(d);
+      uint64_t powerindex = 308 + exponent;
+      if(unlikely(powerindex > 2 * 308)) {
+        // unlikely branch
+        if(exponent < 0) {
+          // we either have zero or a subnormal
+          // this is expected to be uncommon
+          d = subnormal_power10(d, exponent); 
+          pj.write_tape_double(d);
+        } else {
+// we refuse to parse this
+#ifdef JSON_TEST_NUMBERS // for unit testing
+          foundInvalidNumber(buf + offset);
+#endif
+          return false;  
+        }     
+      } else {
+        d *= power_of_ten[308 + exponent];
+        pj.write_tape_double(d);
+      }
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
