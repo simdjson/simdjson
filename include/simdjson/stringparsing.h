@@ -150,7 +150,7 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
       ////////////////////////
 
       
-      // we advance the point, accounting for the fact that we have a NULl termination
+      // we advance the point, accounting for the fact that we have a NULL termination
       pj.current_string_buf_loc = dst + quote_dist + 1;
 
 #ifdef JSON_TEST_STRINGS // for unit testing
