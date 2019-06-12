@@ -212,6 +212,9 @@ public:
     // NULL chars, this would trigger a false positive: if you expect that
     // to be the case, take extra precautions.
     bool move_to_key(const char * key);
+    
+    // when at a key location within an object, this moves to the accompanying value (located next to it);
+    void move_to_value();
 
     // throughout return true if we can do the navigation, false
     // otherwise

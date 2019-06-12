@@ -105,12 +105,20 @@ bool ParsedJson::iterator::move_forward() {
     return true;
 }
 
+void ParsedJson::iterator::move_to_value() {
+    // assume that we are on a key, so move by 1.
+    location += 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+}
+
+
 bool ParsedJson::iterator::move_to_key(const char * key) {
     if(down()) {
       do {
         assert(is_string());
         bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
-        next();
+        move_to_value();
         if(rightkey) { 
           return true;
         }
@@ -122,32 +130,19 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
 
 
  bool ParsedJson::iterator::next() {
+    size_t npos; // next position
     if ((current_type == '[') || (current_type == '{')){
       // we need to jump
-      size_t npos = ( current_val & JSONVALUEMASK);
-      if(npos >= tape_length) {
-        return false; // shoud never happen unless at the root
-      }
-      uint64_t nextval = pj.tape[npos];
-      uint8_t nexttype = (nextval >> 56);
-      if((nexttype == ']') || (nexttype == '}')) {
-        return false; // we reached the end of the scope
-      }
-      location = npos;
-      current_val = nextval;
-      current_type = nexttype;
-      return true;
-    } 
-    size_t increment = (current_type == 'd' || current_type == 'l') ? 2 : 1;
-    if(location + increment >= tape_length) {
-      return false;
+      npos = ( current_val & JSONVALUEMASK);
+    } else {
+      npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
-    uint64_t nextval = pj.tape[location + increment];
+    uint64_t nextval = pj.tape[npos];
     uint8_t nexttype = (nextval >> 56);
     if((nexttype == ']') || (nexttype == '}')) {
         return false; // we reached the end of the scope
     }
-    location = location + increment;
+    location = npos;
     current_val = nextval;
     current_type = nexttype;
     return true;
