@@ -361,10 +361,6 @@ bool ParsedJson::iterator::move_forward() {
     } else if ((current_type == ']') || (current_type == '}')) {
         // Leaving a scope.
         depth--;
-        if(depth == 0) {
-            // Should not be necessary
-            return false;
-        }
     } else if ((current_type == 'd') || (current_type == 'l')) {
         // d and l types use 2 locations on the tape, not just one.
         location += 1;
