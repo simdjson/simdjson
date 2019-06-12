@@ -104,23 +104,23 @@ public:
 
     iterator(iterator &&o);
 
-    bool isOk() const;
+    inline bool isOk() const;
 
     // useful for debuging purposes
-    size_t get_tape_location() const;
+    inline size_t get_tape_location() const;
 
     // useful for debuging purposes
-    size_t get_tape_length() const;
+    inline size_t get_tape_length() const;
 
     // returns the current depth (start at 1 with 0 reserved for the fictitious root node)
-    size_t get_depth() const;
+    inline size_t get_depth() const;
 
     // A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
     // The root node has type 'r'.
-    uint8_t get_scope_type() const;
+    inline uint8_t get_scope_type() const;
 
     // move forward in document order
-    bool move_forward();
+    inline bool move_forward();
 
     // retrieve the character code of what we're looking at:
     // [{"sltfn are the possibilities
@@ -211,7 +211,11 @@ public:
     // We seek the key using C's strcmp so if your JSON strings contain
     // NULL chars, this would trigger a false positive: if you expect that
     // to be the case, take extra precautions.
-    bool move_to_key(const char * key);
+    inline bool move_to_key(const char * key);
+    
+    // when at a key location within an object, this moves to the accompanying value (located next to it).
+    // this is equivalent but much faster than calling "next()".
+    inline void move_to_value();
 
     // throughout return true if we can do the navigation, false
     // otherwise
@@ -221,30 +225,30 @@ public:
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [.
     // At the object ({) or at the array ([), you can issue a "down" to visit their content.
     // valid if we're not at the end of a scope (returns true).
-    bool next();
+    inline bool next();
 
     // Withing a given scope (series of nodes at the same depth within either an
     // array or an object), we move backward.
     // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true when starting at the end
     // of the scope.
     // At the object ({) or at the array ([), you can issue a "down" to visit their content.
-    bool prev();
+    inline bool prev();
 
     // Moves back to either the containing array or object (type { or [) from
     // within a contained scope.
     // Valid unless we are at the first level of the document
-    bool up();
+    inline bool up();
 
 
     // Valid if we're at a [ or { and it starts a non-empty scope; moves us to start of
     // that deeper scope if it not empty.
     // Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the
     // "a" node.
-    bool down();
+    inline bool down();
 
     // move us to the start of our current scope,
     // a scope is a series of nodes at the same level
-    void to_start_scope();
+    inline void to_start_scope();
 
     // void to_end_scope();              // move us to
     // the start of our current scope; always succeeds
@@ -312,5 +316,161 @@ inline void dumpbits32_always(uint32_t v, const std::string &msg) {
   std::cout << " " << msg.c_str() << "\n";
 }
 
+WARN_UNUSED
+bool ParsedJson::iterator::isOk() const {
+      return location < tape_length;
+}
 
+// useful for debuging purposes
+size_t ParsedJson::iterator::get_tape_location() const {
+    return location;
+}
+
+// useful for debuging purposes
+size_t ParsedJson::iterator::get_tape_length() const {
+    return tape_length;
+}
+
+// returns the current depth (start at 1 with 0 reserved for the fictitious root node)
+size_t ParsedJson::iterator::get_depth() const {
+    return depth;
+}
+
+// A scope is a series of nodes at the same depth, typically it is either an object ({) or an array ([).
+// The root node has type 'r'.
+uint8_t ParsedJson::iterator::get_scope_type() const {
+    return depthindex[depth].scope_type;
+}
+
+bool ParsedJson::iterator::move_forward() {
+    if(location + 1 >= tape_length) {
+        return false; // we are at the end!
+    }
+
+    if ((current_type == '[') || (current_type == '{')){
+        // We are entering a new scope
+        depth++;
+        depthindex[depth].start_of_scope = location;
+        depthindex[depth].scope_type = current_type;
+    } else if ((current_type == ']') || (current_type == '}')) {
+        // Leaving a scope.
+        depth--;
+        if(depth == 0) {
+            // Should not be necessary
+            return false;
+        }
+    } else if ((current_type == 'd') || (current_type == 'l')) {
+        // d and l types use 2 locations on the tape, not just one.
+        location += 1;
+    }
+
+    location += 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    return true;
+}
+
+void ParsedJson::iterator::move_to_value() {
+    // assume that we are on a key, so move by 1.
+    location += 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+}
+
+
+bool ParsedJson::iterator::move_to_key(const char * key) {
+    if(down()) {
+      do {
+        assert(is_string());
+        bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
+        move_to_value();
+        if(rightkey) { 
+          return true;
+        }
+      } while(next());
+      assert(up());// not found
+    }
+    return false;
+}
+
+
+ bool ParsedJson::iterator::prev() {
+    if(location - 1 < depthindex[depth].start_of_scope) {
+      return false;
+    }
+    location -= 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    if ((current_type == ']') || (current_type == '}')){
+      // we need to jump
+      size_t new_location = ( current_val & JSONVALUEMASK);
+      if(new_location < depthindex[depth].start_of_scope) {
+        return false; // shoud never happen
+      }
+      location = new_location;
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+    }
+    return true;
+}
+
+
+ bool ParsedJson::iterator::up() {
+    if(depth == 1) {
+      return false; // don't allow moving back to root
+    }
+    to_start_scope();
+    // next we just move to the previous value
+    depth--;
+    location -= 1;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+    return true;
+}
+
+
+ bool ParsedJson::iterator::down() {
+    if(location + 1 >= tape_length) {
+      return false;
+    }
+    if ((current_type == '[') || (current_type == '{')) {
+      size_t npos = (current_val & JSONVALUEMASK);
+      if(npos == location + 2) {
+        return false; // we have an empty scope
+      }
+      depth++;
+      location = location + 1;
+      depthindex[depth].start_of_scope = location;
+      depthindex[depth].scope_type = current_type;
+      current_val = pj.tape[location];
+      current_type = (current_val >> 56);
+      return true;
+    }
+    return false;
+}
+
+void ParsedJson::iterator::to_start_scope()  {
+    location = depthindex[depth].start_of_scope;
+    current_val = pj.tape[location];
+    current_type = (current_val >> 56);
+}
+
+bool ParsedJson::iterator::next() {
+    size_t npos; // next position
+    if ((current_type == '[') || (current_type == '{')){
+      // we need to jump
+      npos = ( current_val & JSONVALUEMASK);
+    } else {
+      npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
+    }
+    uint64_t nextval = pj.tape[npos];
+    uint8_t nexttype = (nextval >> 56);
+    if((nexttype == ']') || (nexttype == '}')) {
+        return false; // we reached the end of the scope
+    }
+    location = npos;
+    current_val = nextval;
+    current_type = nexttype;
+    return true;
+}
 #endif
