@@ -432,8 +432,9 @@ static really_inline bool parse_number(const uint8_t *const buf,
   }
 
   int64_t exponent = 0;
-
+  bool is_float = false;
   if ('.' == *p) {
+    is_float = true;
     ++p;
     const char *const firstafterperiod = p;
     if(is_integer(*p)) {
@@ -462,9 +463,9 @@ static really_inline bool parse_number(const uint8_t *const buf,
     exponent = firstafterperiod - p;
   }
   int digitcount = p - startdigits - 1;
-
   int64_t expnumber = 0; // exponential part
   if (('e' == *p) || ('E' == *p)) {
+    is_float = true;
     ++p;
     bool negexp = false;
     if ('-' == *p) {
@@ -501,7 +502,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }
     exponent += (negexp ? -expnumber : expnumber);
   }
-  if ((exponent != 0) || (expnumber != 0)) {
+  if (is_float) {
     if (unlikely(digitcount >= 19)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
