@@ -378,46 +378,21 @@ void compute_dump(ParsedJson::iterator &pjh) {
 The following function will find all user.id integers:
 
 ```C
-void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
-  switch (i.get_type()) {
-  case '{':
-    if (i.down()) {
-      do {
-        bool founduser = equals(i.get_string(), "user");
-        i.next(); // move to value
-        if (i.is_object()) {
-          if (founduser && i.move_to_key("id")) {
+void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
+   while(i.move_forward()) {
+     if(i.get_scope_type() == '{') {
+       bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
+       i.move_to_value();
+       if(founduser) {
+          if(i.is_object() && i.move_to_key("id",2)) {
             if (i.is_integer()) {
               answer.push_back(i.get_integer());
             }
             i.up();
           }
-          simdjson_traverse(answer, i);
-        } else if (i.is_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case '[':
-    if (i.down()) {
-      do {
-        if (i.is_object_or_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case 'l':
-  case 'd':
-  case 'n':
-  case 't':
-  case 'f':
-  default:
-    break;
-  }
+       }
+     }
+   }
 }
 ```
 

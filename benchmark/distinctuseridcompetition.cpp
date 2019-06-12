@@ -30,54 +30,28 @@ void print_vec(const std::vector<int64_t> &v) {
   std::cout << std::endl;
 }
 
-void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
-  switch (i.get_type()) {
-  case '{':
-    if (i.down()) {
-      do {
-        bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
-        i.move_to_value(); // move to value
-        if (i.is_object()) {
-          if (founduser && i.move_to_key("id")) {
+void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
+   while(i.move_forward()) {
+     if(i.get_scope_type() == '{') {
+       bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
+       i.move_to_value();
+       if(founduser) {
+          if(i.is_object() && i.move_to_key("id",2)) {
             if (i.is_integer()) {
               answer.push_back(i.get_integer());
-            }
+            } 
             i.up();
-           }
-           simdjson_traverse(answer, i);
-        } else if (i.is_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case '[':
-    if (i.down()) {
-      do {
-        if (i.is_object_or_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case 'l':
-  case 'd':
-  case 'n':
-  case 't':
-  case 'f':
-  default:
-    break;
-  }
+          } 
+       } 
+     }
+   }
 }
 
 __attribute__ ((noinline))
 std::vector<int64_t> simdjson_justdom(ParsedJson &pj) {
   std::vector<int64_t> answer;
   ParsedJson::iterator i(pj);
-
-  simdjson_traverse(answer, i);
+  simdjson_scan(answer,i);
   remove_duplicates(answer);
   return answer;
 }
@@ -90,8 +64,7 @@ std::vector<int64_t> simdjson_computestats(const padded_string &p) {
     return answer;
   }
   ParsedJson::iterator i(pj);
-
-  simdjson_traverse(answer, i);
+  simdjson_scan(answer,i);
   remove_duplicates(answer);
   return answer;
 }
@@ -338,7 +311,6 @@ int main(int argc, char *argv[]) {
   }
   BEST_TIME("simdjson  ", simdjson_computestats(p).size(), size, , repeat,
             volume, !justdata);
-
   BEST_TIME("rapid  ", rapid_computestats(p).size(), size, , repeat, volume,
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,

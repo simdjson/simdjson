@@ -207,11 +207,17 @@ public:
     // when at {, go one level deep, looking for a given key
     // if successful, we are left pointing at the value,
     // if not, we are still pointing at the object ({)
-    // (in case of repeated keys, this only finds the first one)
+    // (in case of repeated keys, this only finds the first one).
     // We seek the key using C's strcmp so if your JSON strings contain
     // NULL chars, this would trigger a false positive: if you expect that
     // to be the case, take extra precautions.
     inline bool move_to_key(const char * key);
+    // when at {, go one level deep, looking for a given key
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing at the object ({)
+    // (in case of repeated keys, this only finds the first one).
+    // The string we search for can contain NULL values.
+    inline bool move_to_key(const char * key, uint32_t length);
     
     // when at a key location within an object, this moves to the accompanying value (located next to it).
     // this is equivalent but much faster than calling "next()".
@@ -355,10 +361,6 @@ bool ParsedJson::iterator::move_forward() {
     } else if ((current_type == ']') || (current_type == '}')) {
         // Leaving a scope.
         depth--;
-        if(depth == 0) {
-            // Should not be necessary
-            return false;
-        }
     } else if ((current_type == 'd') || (current_type == 'l')) {
         // d and l types use 2 locations on the tape, not just one.
         location += 1;
@@ -383,6 +385,21 @@ bool ParsedJson::iterator::move_to_key(const char * key) {
       do {
         assert(is_string());
         bool rightkey = (strcmp(get_string(),key)==0);// null chars would fool this
+        move_to_value();
+        if(rightkey) { 
+          return true;
+        }
+      } while(next());
+      assert(up());// not found
+    }
+    return false;
+}
+
+bool ParsedJson::iterator::move_to_key(const char * key, uint32_t length) {
+    if(down()) {
+      do {
+        assert(is_string());
+        bool rightkey = ((get_string_length() == length) && (memcmp(get_string(),key,length)==0));
         move_to_value();
         if(rightkey) { 
           return true;
@@ -456,7 +473,7 @@ void ParsedJson::iterator::to_start_scope()  {
 }
 
 bool ParsedJson::iterator::next() {
-    size_t npos; // next position
+    size_t npos; 
     if ((current_type == '[') || (current_type == '{')){
       // we need to jump
       npos = ( current_val & JSONVALUEMASK);
