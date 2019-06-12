@@ -36,16 +36,16 @@ void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
     if (i.down()) {
       do {
         bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
-        i.move_to_value(); // move to value
-        if (i.is_object()) {
-          if (founduser && i.move_to_key("id")) {
+        i.move_to_value();
+        if(founduser) {
+          if(i.is_object() && i.move_to_key("id",2)) {
             if (i.is_integer()) {
               answer.push_back(i.get_integer());
             }
             i.up();
-           }
-           simdjson_traverse(answer, i);
-        } else if (i.is_array()) {
+          }
+        }
+        if (i.is_object_or_array()) {
           simdjson_traverse(answer, i);
         }
       } while (i.next());
@@ -338,7 +338,6 @@ int main(int argc, char *argv[]) {
   }
   BEST_TIME("simdjson  ", simdjson_computestats(p).size(), size, , repeat,
             volume, !justdata);
-
   BEST_TIME("rapid  ", rapid_computestats(p).size(), size, , repeat, volume,
             !justdata);
   BEST_TIME("sasjon  ", sasjon_computestats(p).size(), size, , repeat, volume,
