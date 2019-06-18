@@ -88,7 +88,7 @@ of memory allocation with each new JSON document:
 /...
 
 const char * filename = ... //
-padding_string p = get_corpus(filename);
+padded_string p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
 if( ! pj.isValid() ) {
     // something went wrong
