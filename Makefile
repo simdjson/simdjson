@@ -8,8 +8,17 @@
 COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 # users can provide their own additional flags with make EXTRAFLAGS=something
-CXXFLAGS =  -std=c++17  -march=native -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
+architecture:=$(shell arch)
+CXXFLAGS =  -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
+ifeq ($(architecture),aarch64)
+$(echo fuck)
+CXXFLAGS += -march=armv8-a+crc+crypto
+CFLAGS += -march=armv8-a+crc+crypto
+else
+CXXFLAGS += -march=native
+CFLAGS += -march=native
+endif
 
 # This is a convenience flag
 ifdef SANITIZEGOLD
