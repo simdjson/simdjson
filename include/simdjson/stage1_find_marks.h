@@ -6,9 +6,9 @@
 struct ParsedJson;
 
 WARN_UNUSED
-bool find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
+int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 WARN_UNUSED
-bool find_structural_bits(const char *buf, size_t len, ParsedJson &pj);
+int find_structural_bits(const char *buf, size_t len, ParsedJson &pj);
 
 #endif

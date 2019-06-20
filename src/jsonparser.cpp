@@ -42,10 +42,11 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
        reallocated = true;
      }
   }
-  bool stage1_is_ok = find_structural_bits(buf, len, pj);
-  if(!stage1_is_ok) {
-    return simdjson::UTF8_ERROR;
-  }
+  int stage1_is_ok = find_structural_bits(buf, len, pj);
+  if(stage1_is_ok != simdjson::SUCCESS) {
+    pj.errorcode = stage1_is_ok;
+    return pj.errorcode;
+  } 
   int res = unified_machine(buf, len, pj);
   if(reallocated) { aligned_free((void*)buf);}
   return res;
@@ -56,9 +57,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   ParsedJson pj;
   bool ok = pj.allocateCapacity(len);
   if(ok) {
-    int res = json_parse(buf, len, pj, reallocifneeded);
-    ok = res == simdjson::SUCCESS;
-    assert(ok == pj.isValid());
+    (void)json_parse(buf, len, pj, reallocifneeded);
   } else {
     std::cerr << "failure during memory allocation " << std::endl;
   }

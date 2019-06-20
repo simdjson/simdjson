@@ -15,7 +15,12 @@ struct simdjson {
     F_ATOM_ERROR, // Problem while parsing an atom starting with the letter 'f'
     N_ATOM_ERROR, // Problem while parsing an atom starting with the letter 'n'
     NUMBER_ERROR, // Problem while parsing a number
-    UTF8_ERROR // the input is not valid UTF-8
+    UTF8_ERROR, // the input is not valid UTF-8
+    UNITIALIZED, // unknown error, or uninitialized document
+    EMPTY, // no structural document found
+    UNESCAPED_CHARS, // found unescaped characters in a string.
+    UNCLOSED_STRING, // missing quote at the end
+    UNEXPECTED_ERROR // indicative of a bug in simdjson
   };
   static const std::string& errorMsg(const int);
 };

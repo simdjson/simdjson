@@ -92,6 +92,7 @@ padded_string p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
 if( ! pj.isValid() ) {
     // something went wrong
+    std::cout << pj.getErrorMsg() << std::endl;
 }
 ```
 
@@ -127,6 +128,7 @@ std::string mystring = ... //
 ParsedJson pj = build_parsed_json(mystring); // do the parsing
 if( ! pj.isValid() ) {
     // something went wrong
+    std::cout << pj.getErrorMsg() << std::endl;
 }
 ```
 
@@ -148,6 +150,7 @@ int main(int argc, char *argv[]) {
   ParsedJson pj = build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
     std::cout << "not valid" << std::endl;
+    std::cout << pj.getErrorMsg() << std::endl;
   } else {
     std::cout << "valid" << std::endl;
   }

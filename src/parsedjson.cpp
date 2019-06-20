@@ -92,6 +92,14 @@ bool ParsedJson::isValid() const {
     return isvalid;
 }
 
+int ParsedJson::getErrorCode() const {
+    return errorcode;
+}
+
+std::string ParsedJson::getErrorMsg() const {
+  return simdjson::errorMsg(errorcode);
+}
+
 void ParsedJson::deallocate() {
     bytecapacity = 0;
     depthcapacity = 0;
