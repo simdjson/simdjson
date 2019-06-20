@@ -609,7 +609,7 @@ really_inline uint64_t finalize_structurals(
   // following it.
 
   // a qualified predecessor is something that can happen 1 position before an
-  // psuedo-structural character
+  // pseudo-structural character
   uint64_t pseudo_pred = structurals | whitespace;
 
   uint64_t shifted_pseudo_pred =
@@ -626,13 +626,13 @@ really_inline uint64_t finalize_structurals(
 }
 
 WARN_UNUSED
-/*never_inline*/ bool find_structural_bits(const uint8_t *buf, size_t len,
+/*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
   if (len > pj.bytecapacity) {
     std::cerr << "Your ParsedJson object only supports documents up to "
          << pj.bytecapacity << " bytes but you are trying to process " << len
          << " bytes" << std::endl;
-    return false;
+    return simdjson::CAPACITY;
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
@@ -740,7 +740,7 @@ WARN_UNUSED
 
   // is last string quote closed?
   if (prev_iter_inside_quote) {
-      return false;
+      return simdjson::UNCLOSED_STRING;
   }
 
   // finally, flatten out the remaining structurals from the last iteration
@@ -750,12 +750,12 @@ WARN_UNUSED
   // a valid JSON file cannot have zero structural indexes - we should have
   // found something
   if (pj.n_structural_indexes == 0u) {
-printf("wacky exit\n");
-    return false;
+    fprintf(stderr, "Empty document?\n");
+    return simdjson::EMPTY;
   }
   if (base_ptr[pj.n_structural_indexes - 1] > len) {
     fprintf(stderr, "Internal bug\n");
-    return false;
+    return simdjson::UNEXPECTED_ERROR;
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
     // the string might not be NULL terminated, but we add a virtual NULL ending
@@ -765,16 +765,16 @@ printf("wacky exit\n");
   // make it safe to dereference one beyond this array
   base_ptr[pj.n_structural_indexes] = 0;  
   if (error_mask) {
-printf("had error mask\n");
-    return false;
+    fprintf(stderr, "Unescaped characters\n");
+    return simdjson::UNESCAPED_CHARS;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
-  return _mm256_testz_si256(has_error, has_error) != 0;
+    return _mm256_testz_si256(has_error, has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 #else
-  return true;
+  return simdjson::SUCCESS;
 #endif
 }
 
-bool find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
+int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits(reinterpret_cast<const uint8_t *>(buf), len, pj);
 }

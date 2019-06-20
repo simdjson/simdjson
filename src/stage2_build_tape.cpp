@@ -80,9 +80,10 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint8_t c; // used to track the (structural) character we are looking at, updated
         // by UPDATE_CHAR macro
   uint32_t depth = 0; // could have an arbitrary starting depth
-  pj.init();
+  pj.init(); // sets isvalid to false
   if(pj.bytecapacity < len) {
-      return simdjson::CAPACITY;
+      pj.errorcode = simdjson::CAPACITY;
+      return pj.errorcode;
   }
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
@@ -149,7 +150,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 't': {
-    // we need to make a copy to make sure that the string is NULL terminated.
+    // we need to make a copy to make sure that the string is space terminated.
     // this only applies to the JSON document made solely of the true value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
@@ -157,7 +158,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = '\0';
+    copy[len] = ' ';
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -167,7 +168,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 'f': {
-    // we need to make a copy to make sure that the string is NULL terminated.
+    // we need to make a copy to make sure that the string is space terminated.
     // this only applies to the JSON document made solely of the false value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
@@ -175,7 +176,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = '\0';
+    copy[len] = ' ';
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -185,7 +186,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 'n': {
-    // we need to make a copy to make sure that the string is NULL terminated.
+    // we need to make a copy to make sure that the string is space terminated.
     // this only applies to the JSON document made solely of the null value.
     // this will almost never be called in practice
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
@@ -193,7 +194,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = '\0';
+    copy[len] = ' ';
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -212,15 +213,17 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   case '7':
   case '8':
   case '9': {
-    // we need to make a copy to make sure that the string is NULL terminated.
+    // we need to make a copy to make sure that the string is space terminated.
     // this is done only for JSON documents made of a sole number
-    // this will almost never be called in practice
+    // this will almost never be called in practice. We terminate with a space
+    // because we do not want to allow NULLs in the middle of a number (whereas a
+    // space in the middle of a number would be identified in stage 1).
     char * copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if(copy == nullptr) { 
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = '\0';
+    copy[len] = ' ';
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, false)) {
       free(copy);
       goto fail;
@@ -522,22 +525,25 @@ succeed:
                           pj.get_current_loc());
   pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
 
-
-
   pj.isvalid  = true;
-  return simdjson::SUCCESS;
+  pj.errorcode = simdjson::SUCCESS;
+  return pj.errorcode;
 fail:
+  // we do not need the next line because this is done by pj.init(), pessimistically.
+  // pj.isvalid  = false;
   // At this point in the code, we have all the time in the world.
   // Note that we know exactly where we are in the document so we could,
   // without any overhead on the processing code, report a specific location.
   // We could even trigger special code paths to assess what happened carefully,
   // all without any added cost.
   if (depth >= pj.depthcapacity) {
-    return simdjson::DEPTH_ERROR;
+    pj.errorcode = simdjson::DEPTH_ERROR;
+    return pj.errorcode;
   }
   switch(c) {
-    case '"': 
-      return simdjson::STRING_ERROR;
+    case '"':
+      pj.errorcode = simdjson::STRING_ERROR; 
+      return pj.errorcode;
     case '0':
     case '1':
     case '2':
@@ -549,17 +555,22 @@ fail:
     case '8':
     case '9': 
     case '-': 
-      return simdjson::NUMBER_ERROR;
+      pj.errorcode = simdjson::NUMBER_ERROR;
+      return pj.errorcode;
     case 't':
-      return simdjson::T_ATOM_ERROR;
+      pj.errorcode = simdjson::T_ATOM_ERROR;
+      return pj.errorcode;
     case 'n':
-      return simdjson::N_ATOM_ERROR;
+      pj.errorcode = simdjson::N_ATOM_ERROR;
+      return pj.errorcode;
     case 'f':
-      return simdjson::F_ATOM_ERROR;
+      pj.errorcode = simdjson::F_ATOM_ERROR;
+      return pj.errorcode;
     default: 
       break;
   }
-  return simdjson::TAPE_ERROR; 
+  pj.errorcode = simdjson::TAPE_ERROR;
+  return pj.errorcode; 
 }
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {

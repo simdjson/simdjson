@@ -11,7 +11,11 @@ const std::map<int, const std::string> errorStrings = {
     {simdjson::F_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'f'"},
     {simdjson::N_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'n'"},
     {simdjson::NUMBER_ERROR, "Problem while parsing a number"},
-    {simdjson::UTF8_ERROR, "The input is not valid UTF-8"}
+    {simdjson::UTF8_ERROR, "The input is not valid UTF-8"},
+    {simdjson::UNITIALIZED, "Unitialized"},
+    {simdjson::EMPTY, "Empty"},
+    {simdjson::UNESCAPED_CHARS, "Within strings, some characters must be escapted, we found unescapted characters"},
+    {simdjson::UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson"},
 };
 
 const std::string& simdjson::errorMsg(const int errorCode) {

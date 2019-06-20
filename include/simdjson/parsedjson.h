@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
-
+#include "simdjson/simdjson.h"
 #include "simdjson/common_defs.h"
 #include "simdjson/jsonformatutils.h"
 #include "simdjson/portability.h"
@@ -34,7 +34,15 @@ public:
   WARN_UNUSED
   bool allocateCapacity(size_t len, size_t maxdepth = DEFAULTMAXDEPTH);
 
+  // returns true if the document parsed was valid
   bool isValid() const;
+
+  // return an error code corresponding to the last parsing attempt, see simdjson.h
+  // will return simdjson::UNITIALIZED if no parsing was attempted
+  int getErrorCode() const;
+
+  // return the string equivalent of "getErrorCode"
+  std::string getErrorMsg() const;
 
   // deallocate memory and set capacity to zero, called automatically by the
   // destructor
@@ -297,6 +305,7 @@ private:
   uint8_t *string_buf; // should be at least bytecapacity
   uint8_t *current_string_buf_loc;
   bool isvalid{false};
+  int errorcode{simdjson::UNITIALIZED};
 
 private :
 
