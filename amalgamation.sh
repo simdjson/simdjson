@@ -13,6 +13,7 @@ AMAL_C="simdjson.cpp"
 
 # order does not matter
 ALLCFILES="
+$SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
