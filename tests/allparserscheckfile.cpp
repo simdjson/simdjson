@@ -105,8 +105,10 @@ int main(int argc, char *argv[]) {
            rapid_correct_checkencoding ? "correct" : "invalid");
     printf("sajson                     : %s \n",
            sajson_correct ? "correct" : "invalid");
-    if(oursreturn == simdjson::DEPTH_ERROR) {
-       printf("simdjson encountered a DEPTH_ERROR, it was parametrized to reject documents with depth exceeding %zu.\n", maxdepth);
+    if (oursreturn == simdjson::DEPTH_ERROR) {
+      printf("simdjson encountered a DEPTH_ERROR, it was parametrized to "
+             "reject documents with depth exceeding %zu.\n",
+             maxdepth);
     }
     if ((ours_correct != rapid_correct_checkencoding) ||
         (rapid_correct_checkencoding != sajson_correct) ||
