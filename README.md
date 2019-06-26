@@ -517,5 +517,11 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 - Yang, Shiyang. Validation of XML Document Based on Parallel Bit Stream Technology. Diss. Applied Sciences: School of Computing Science, 2013.
 - N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
 
+
+## Funding
+
+The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant number RGPIN-2017-03910. 
+
+
 [license]: LICENSE
 [license img]: https://img.shields.io/badge/License-Apache%202-blue.svg
