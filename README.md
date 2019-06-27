@@ -12,6 +12,11 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 <img src="images/logo.png" width="10%">
 
 
+## Real-world usage
+
+- [Microsoft FishStore](https://github.com/microsoft/FishStore)
+- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
+
 ## Paper
 
 A description of the design and implementation of simdjson appears at https://arxiv.org/abs/1902.08318 and an informal blog post providing some background and context is at https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/.
