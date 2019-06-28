@@ -3,6 +3,7 @@
 
 #include <string>
 
+namespace SimdJson {
 struct simdjson {
   enum errorValues {
     SUCCESS = 0,
@@ -24,5 +25,5 @@ struct simdjson {
   };
   static const std::string& errorMsg(const int);
 };
-
+}
 #endif

@@ -28,7 +28,7 @@
 
 
 #ifdef __AVX2__
-
+namespace SimdJson {
 /*****************************/
 static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
@@ -190,7 +190,7 @@ avxcheckUTF8Bytes(__m256i current_bytes,
                    previous->high_nibbles, has_error);
   return pb;
 }
-
+}
 #else // __AVX2__
 #warning "We require AVX2 support!"
 #endif // __AVX2__

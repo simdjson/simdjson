@@ -1,6 +1,7 @@
 #include <map>
 #include "simdjson/simdjson.h"
 
+namespace SimdJson {
 const std::map<int, const std::string> errorStrings = {
     {simdjson::SUCCESS, "No errors"},
     {simdjson::CAPACITY, "This ParsedJson can't support a document that big"},
@@ -20,4 +21,5 @@ const std::map<int, const std::string> errorStrings = {
 
 const std::string& simdjson::errorMsg(const int errorCode) {
     return errorStrings.at(errorCode);
+}
 }

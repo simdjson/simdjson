@@ -7,6 +7,7 @@
 #endif
 #include "simdjson/simdjson.h"
 
+namespace SimdJson {
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
@@ -62,4 +63,5 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
     std::cerr << "failure during memory allocation " << std::endl;
   }
   return pj;
+}
 }

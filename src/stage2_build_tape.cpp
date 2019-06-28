@@ -11,6 +11,7 @@
 #include <iostream>
 #define PATH_SEP '/'
 
+namespace SimdJson {
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
@@ -575,4 +576,5 @@ fail:
 
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
   return unified_machine(reinterpret_cast<const uint8_t*>(buf), len, pj);
+}
 }

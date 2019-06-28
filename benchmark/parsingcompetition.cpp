@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  padded_string p;
+  SimdJson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    SimdJson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  ParsedJson pj;
+  SimdJson::ParsedJson pj;
   bool allocok = pj.allocateCapacity(p.size(), 1024);
 
   if (!allocok) {

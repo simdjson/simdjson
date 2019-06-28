@@ -9,6 +9,7 @@
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
 
+namespace SimdJson {
 // Parse a document found in buf. 
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 //
@@ -137,7 +138,7 @@ WARN_UNUSED
 inline ParsedJson build_parsed_json(const padded_string &s) {
   return build_parsed_json(s.data(), s.length(), false);
 }
-
+}
 
 
 #endif

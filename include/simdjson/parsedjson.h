@@ -15,7 +15,7 @@
 
 #define DEFAULTMAXDEPTH 1024// a JSON document with a depth exceeding 1024 is probably de facto invalid
 
-
+namespace SimdJson {
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
@@ -498,5 +498,6 @@ bool ParsedJson::iterator::next() {
     current_val = nextval;
     current_type = nexttype;
     return true;
+}
 }
 #endif

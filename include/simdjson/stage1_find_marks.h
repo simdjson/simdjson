@@ -3,6 +3,8 @@
 
 #include "simdjson/common_defs.h"
 
+namespace SimdJson {
+
 struct ParsedJson;
 
 WARN_UNUSED
@@ -10,5 +12,6 @@ int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 WARN_UNUSED
 int find_structural_bits(const char *buf, size_t len, ParsedJson &pj);
+}
 
 #endif

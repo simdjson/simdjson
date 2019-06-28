@@ -29,6 +29,7 @@
 #endif
 
 #define TRANSPOSE
+namespace SimdJson {
 
 struct simd_input {
 #ifdef __AVX2__
@@ -777,4 +778,5 @@ WARN_UNUSED
 
 int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits(reinterpret_cast<const uint8_t *>(buf), len, pj);
+}
 }

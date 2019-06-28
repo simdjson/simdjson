@@ -1,5 +1,6 @@
 #include "simdjson/parsedjson.h"
 
+namespace SimdJson {
 ParsedJson::ParsedJson() : 
         structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
         ret_address(nullptr), string_buf(nullptr), current_string_buf_loc(nullptr) {}
@@ -317,4 +318,5 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
     type = (tape_val >> 56);
     os << tapeidx << " : "<< type <<"\t// pointing to " << payload <<" (start root)\n";
     return true;
+}
 }

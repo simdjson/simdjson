@@ -42,9 +42,9 @@ struct stat_s {
 
 using stat_t = struct stat_s;
 
-stat_t simdjson_computestats(const padded_string &p) {
+stat_t simdjson_computestats(const SimdJson::padded_string &p) {
   stat_t answer;
-  ParsedJson pj = build_parsed_json(p);
+  SimdJson::ParsedJson pj = SimdJson::build_parsed_json(p);
   answer.valid = pj.isValid();
   if (!answer.valid) {
     return answer;
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  padded_string p;
+  SimdJson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    SimdJson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
          s.object_count, s.array_count, s.null_count, s.true_count,
          s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
-  ParsedJson pj;
+  SimdJson::ParsedJson pj;
   bool allocok = pj.allocateCapacity(p.size());
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
@@ -180,14 +180,14 @@ int main(int argc, char *argv[]) {
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
-    bool isok = (find_structural_bits(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    bool isok = (find_structural_bits(p.data(), p.size(), pj) == SimdJson::simdjson::SUCCESS);
     unified.end(results);
     
     cy1 += results[0];
     cl1 += results[1];
     
     unified.start();
-    isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
+    isok = isok && (SimdJson::simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
     unified.end(results);
     
     cy2 += results[0];

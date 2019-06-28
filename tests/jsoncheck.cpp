@@ -65,14 +65,14 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      padded_string p;
+      SimdJson::padded_string p;
       try {
-        get_corpus(fullpath).swap(p);
+        SimdJson::get_corpus(fullpath).swap(p);
       } catch (const std::exception &e) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
-      ParsedJson pj;
+      SimdJson::ParsedJson pj;
       bool allocok = pj.allocateCapacity(p.size(), 1024);
       if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
@@ -87,7 +87,7 @@ bool validate(const char *dirname) {
       } else if (startsWith("pass", name) && parseRes != 0) {
         isfileasexpected[i] = false;
         printf("warning: file %s should pass but it fails. Error is: %s\n",
-               name, simdjson::errorMsg(parseRes).data());
+               name, SimdJson::simdjson::errorMsg(parseRes).data());
         everythingfine = false;
       } else if (startsWith("fail", name) && parseRes == 0) {
         isfileasexpected[i] = false;
