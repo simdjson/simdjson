@@ -8,6 +8,62 @@
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
+#ifdef _MSC_VER
+#include <windows.h>
+#include <sysinfoapi.h>
+#else
+#include <unistd.h>
+#endif
+
+// function pointer type for json_parse
+using json_parse_functype = int (const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded);
+
+// Pointer that holds the json_parse implementation corresponding to the available SIMD instruction set
+extern json_parse_functype *json_parse_ptr;
+
+template<simdjson::instruction_set T>
+int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
+  if (pj.bytecapacity < len) {
+    return simdjson::CAPACITY;
+  }
+  bool reallocated = false;
+  if(reallocifneeded) {
+#ifdef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+	  // realloc is needed if the end of the memory crosses a page
+#ifdef _MSC_VER
+	  SYSTEM_INFO sysInfo; 
+	  GetSystemInfo(&sysInfo); 
+	  long pagesize = sysInfo.dwPageSize;
+#else
+    long pagesize = sysconf (_SC_PAGESIZE); 
+#endif
+  //////////////
+  // We want to check that buf + len - 1 and buf + len - 1 + SIMDJSON_PADDING
+  // are in the same page.
+  // That is, we want to check that  
+  // (buf + len - 1) / pagesize == (buf + len - 1 + SIMDJSON_PADDING) / pagesize
+  // That's true if (buf + len - 1) % pagesize + SIMDJSON_PADDING < pagesize.
+  ///////////
+	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) + SIMDJSON_PADDING < static_cast<uintptr_t>(pagesize) ) {
+#else // SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN
+     if(true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always reallocate
+#endif
+	     const uint8_t *tmpbuf  = buf;
+       buf = (uint8_t *) allocate_padded_buffer(len);
+       if(buf == NULL) return simdjson::MEMALLOC;
+       memcpy((void*)buf,tmpbuf,len);
+       reallocated = true;
+     }
+  }
+  int stage1_is_ok = find_structural_bits<T>(buf, len, pj);
+  if(stage1_is_ok != simdjson::SUCCESS) {
+    pj.errorcode = stage1_is_ok;
+    return pj.errorcode;
+  } 
+  int res = unified_machine(buf, len, pj);
+  if(reallocated) { aligned_free((void*)buf);}
+  return res;
+}
 
 // Parse a document found in buf. 
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
@@ -24,8 +80,11 @@
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
 // The ParsedJson object can be reused.
+
 WARN_UNUSED
-int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true);
+inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
+  return json_parse_ptr(buf, len, pj, reallocifneeded);
+}
 
 // Parse a document found in buf.
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
@@ -45,7 +104,7 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 // The ParsedJson object can be reused.
 WARN_UNUSED
 inline int json_parse(const char * buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
-  return json_parse(reinterpret_cast<const uint8_t *>(buf), len, pj, reallocifneeded);
+  return json_parse_ptr(reinterpret_cast<const uint8_t *>(buf), len, pj, reallocifneeded);
 }
 
 // We do not want to allow implicit conversion from C string to std::string.

@@ -144,7 +144,11 @@ int main(int argc, char *argv[]) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
     }
     unified.start();
-    isok = (find_structural_bits(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#ifdef __AVX2__
+    isok = (find_structural_bits<simdjson::instruction_set::avx2>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#elif defined (__ARM_NEON)
+    isok = (find_structural_bits<simdjson::instruction_set::neon>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#endif
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
@@ -185,7 +189,11 @@ int main(int argc, char *argv[]) {
     }
 
     auto start = std::chrono::steady_clock::now();
-    isok = (find_structural_bits(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#ifdef __AVX2__
+    isok = (find_structural_bits<simdjson::instruction_set::avx2>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#elif defined (__ARM_NEON)
+    isok = (find_structural_bits<simdjson::instruction_set::neon>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#endif
     isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;

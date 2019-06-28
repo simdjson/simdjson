@@ -180,7 +180,11 @@ int main(int argc, char *argv[]) {
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
-    bool isok = (find_structural_bits(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#ifdef __AVX2__
+    bool isok = (find_structural_bits<simdjson::instruction_set::avx2>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#elif defined (__ARM_NEON)
+    bool isok = (find_structural_bits<simdjson::instruction_set::neon>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+#endif
     unified.end(results);
     
     cy1 += results[0];

@@ -4,6 +4,13 @@
 #include <string>
 
 struct simdjson {
+  enum class instruction_set {
+    avx2,
+    sse4_2,
+    neon,
+    none
+  };
+
   enum errorValues {
     SUCCESS = 0,
     CAPACITY, // This ParsedJson can't support a document that big
