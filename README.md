@@ -12,6 +12,11 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 <img src="images/logo.png" width="10%">
 
 
+## Real-world usage
+
+- [Microsoft FishStore](https://github.com/microsoft/FishStore)
+- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
+
 ## Paper
 
 A description of the design and implementation of simdjson appears at https://arxiv.org/abs/1902.08318 and an informal blog post providing some background and context is at https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/.
@@ -516,6 +521,12 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 - Lin, Dan. Bits filter: a high-performance multiple string pattern matching algorithm for malware detection. Diss. School of Computing Science-Simon Fraser University, 2010.
 - Yang, Shiyang. Validation of XML Document Based on Parallel Bit Stream Technology. Diss. Applied Sciences: School of Computing Science, 2013.
 - N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
+
+
+## Funding
+
+The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant number RGPIN-2017-03910. 
+
 
 [license]: LICENSE
 [license img]: https://img.shields.io/badge/License-Apache%202-blue.svg

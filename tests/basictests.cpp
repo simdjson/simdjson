@@ -15,10 +15,10 @@ bool skyprophet_test() {
   std::vector<std::string> data;
   char buf[1024];
   for (size_t i = 0; i < n_records; ++i) {
-    auto n = sprintf(buf,
-                     "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+    auto n =
+        sprintf(buf, "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                      "\"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-                     i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+                i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
     data.emplace_back(std::string(buf, n));
   }
   for (size_t i = 0; i < n_records; ++i) {

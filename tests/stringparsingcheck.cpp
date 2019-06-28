@@ -2,11 +2,11 @@
 #include <cstring>
 #include <dirent.h>
 #include <inttypes.h>
+#include <iostream>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 
 #ifndef JSON_TEST_STRINGS
 #define JSON_TEST_STRINGS
@@ -201,7 +201,7 @@ static bool parse_string(const char *p, char *output, char **end) {
   }
 }
 // end of borrowed code
-char * bigbuffer; // global variable
+char *bigbuffer; // global variable
 
 inline void foundBadString(const uint8_t *buf) {
   bad_string++;
@@ -328,18 +328,18 @@ bool validate(const char *dirname) {
       padded_string p;
       try {
         get_corpus(fullpath).swap(p);
-      } catch (const std::exception& e) { 
+      } catch (const std::exception &e) {
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
-      }      
+      }
       ParsedJson pj;
       bool allocok = pj.allocateCapacity(p.size(), 1024);
       if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
-      bigbuffer = (char *) malloc(p.size());
-      if(bigbuffer == NULL) {
+      bigbuffer = (char *)malloc(p.size());
+      if (bigbuffer == NULL) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -380,12 +380,14 @@ int main(int argc, char *argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
               << std::endl;
-#if defined(SIMDJSON_TEST_DATA_DIR) &&  defined(SIMDJSON_BENCHMARK_DATA_DIR) 
-    std::cout
-        << "We are going to assume you mean to use the '"<< SIMDJSON_TEST_DATA_DIR <<"'  and  '"<< SIMDJSON_BENCHMARK_DATA_DIR <<"'directories."
-        << std::endl;
-    return validate(SIMDJSON_TEST_DATA_DIR) && validate(SIMDJSON_BENCHMARK_DATA_DIR) ? EXIT_SUCCESS
-                                                                 : EXIT_FAILURE;
+#if defined(SIMDJSON_TEST_DATA_DIR) && defined(SIMDJSON_BENCHMARK_DATA_DIR)
+    std::cout << "We are going to assume you mean to use the '"
+              << SIMDJSON_TEST_DATA_DIR << "'  and  '"
+              << SIMDJSON_BENCHMARK_DATA_DIR << "'directories." << std::endl;
+    return validate(SIMDJSON_TEST_DATA_DIR) &&
+                   validate(SIMDJSON_BENCHMARK_DATA_DIR)
+               ? EXIT_SUCCESS
+               : EXIT_FAILURE;
 #else
     std::cout << "We are going to assume you mean to use the 'jsonchecker' and "
                  "'jsonexamples' directories."
