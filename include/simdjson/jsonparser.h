@@ -44,16 +44,16 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
   // (buf + len - 1) / pagesize == (buf + len - 1 + SIMDJSON_PADDING) / pagesize
   // That's true if (buf + len - 1) % pagesize + SIMDJSON_PADDING < pagesize.
   ///////////
-	 if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) + SIMDJSON_PADDING < static_cast<uintptr_t>(pagesize) ) {
+	if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) + SIMDJSON_PADDING < static_cast<uintptr_t>(pagesize) ) {
 #else // SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN
-     if(true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always reallocate
+    if(true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always reallocate
 #endif
-	     const uint8_t *tmpbuf  = buf;
-       buf = (uint8_t *) allocate_padded_buffer(len);
-       if(buf == NULL) return simdjson::MEMALLOC;
-       memcpy((void*)buf,tmpbuf,len);
-       reallocated = true;
-     }
+	    const uint8_t *tmpbuf  = buf;
+      buf = (uint8_t *) allocate_padded_buffer(len);
+      if(buf == NULL) return simdjson::MEMALLOC;
+      memcpy((void*)buf,tmpbuf,len);
+      reallocated = true;
+    }
   }
   int stage1_is_ok = find_structural_bits<T>(buf, len, pj);
   if(stage1_is_ok != simdjson::SUCCESS) {

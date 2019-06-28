@@ -149,7 +149,8 @@ template<> really_inline
 uint64_t compute_quote_mask<simdjson::instruction_set::neon>(uint64_t quote_bits) {
 #ifdef __PCLMUL__ // Might cause problems on runtime dispatch
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+                                          _mm_set_epi64x(0ULL, quote_bits),
+                                          _mm_set1_epi8(0xFF), 0));
 #else
   uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
 #endif
@@ -161,8 +162,8 @@ uint64_t compute_quote_mask<simdjson::instruction_set::neon>(uint64_t quote_bits
 #ifdef SIMDJSON_UTF8VALIDATE
 template<simdjson::instruction_set T>really_inline
 void check_utf8(simd_input<T> in,
-                              __m256i &has_error,
-                              struct avx_processed_utf_bytes &previous) {
+                __m256i &has_error,
+                struct avx_processed_utf_bytes &previous) {
   __m256i highbit = _mm256_set1_epi8(0x80);
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
     // it is ascii, we just check continuation
@@ -449,9 +450,10 @@ void find_whitespace_and_structurals<simdjson::instruction_set::avx2>(simd_input
 
 #ifdef __ARM_NEON
 template<> really_inline
-void find_whitespace_and_structurals<simdjson::instruction_set::neon>(simd_input<simdjson::instruction_set::neon> in,
-                                                     uint64_t &whitespace,
-                                                     uint64_t &structurals) {
+void find_whitespace_and_structurals<simdjson::instruction_set::neon>(
+                                                  simd_input<simdjson::instruction_set::neon> in,
+                                                  uint64_t &whitespace,
+                                                  uint64_t &structurals) {
 #ifndef FUNKY_BAD_TABLE
   const uint8x16_t low_nibble_mask = (uint8x16_t){ 
       16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
