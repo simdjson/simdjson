@@ -39,7 +39,7 @@ bool skyprophet_test() {
     if (maxsize < s.size())
       maxsize = s.size();
   }
-  SimdJson::ParsedJson pj;
+  simdjson::ParsedJson pj;
   if (!pj.allocateCapacity(maxsize)) {
     printf("allocation failure in skyprophet_test\n");
     return false;

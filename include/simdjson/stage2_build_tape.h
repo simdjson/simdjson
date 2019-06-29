@@ -3,7 +3,7 @@
 
 #include "simdjson/common_defs.h"
 
-namespace SimdJson {
+namespace simdjson {
 struct ParsedJson;
 
 void init_state_machine();

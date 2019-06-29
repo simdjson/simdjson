@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 
-namespace SimdJson {
+namespace simdjson {
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
     //return (char *) malloc(length + SIMDJSON_PADDING);

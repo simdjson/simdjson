@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <iostream>
 
-namespace SimdJson {
+namespace simdjson {
 // ends with zero char
 static inline void print_with_escapes(const unsigned char *src) {
   while (*src) {

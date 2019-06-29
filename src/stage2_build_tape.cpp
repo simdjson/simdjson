@@ -11,7 +11,7 @@
 #include <iostream>
 #define PATH_SEP '/'
 
-namespace SimdJson {
+namespace simdjson {
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
@@ -83,7 +83,7 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0; // could have an arbitrary starting depth
   pj.init(); // sets isvalid to false
   if(pj.bytecapacity < len) {
-      pj.errorcode = simdjson::CAPACITY;
+      pj.errorcode = CAPACITY;
       return pj.errorcode;
   }
 // this macro reads the next structural character, updating idx, i and c.
@@ -527,7 +527,7 @@ succeed:
   pj.write_tape(pj.containing_scope_offset[depth], 'r'); // r is root
 
   pj.isvalid  = true;
-  pj.errorcode = simdjson::SUCCESS;
+  pj.errorcode = SUCCESS;
   return pj.errorcode;
 fail:
   // we do not need the next line because this is done by pj.init(), pessimistically.
@@ -538,12 +538,12 @@ fail:
   // We could even trigger special code paths to assess what happened carefully,
   // all without any added cost.
   if (depth >= pj.depthcapacity) {
-    pj.errorcode = simdjson::DEPTH_ERROR;
+    pj.errorcode = DEPTH_ERROR;
     return pj.errorcode;
   }
   switch(c) {
     case '"':
-      pj.errorcode = simdjson::STRING_ERROR; 
+      pj.errorcode = STRING_ERROR; 
       return pj.errorcode;
     case '0':
     case '1':
@@ -556,21 +556,21 @@ fail:
     case '8':
     case '9': 
     case '-': 
-      pj.errorcode = simdjson::NUMBER_ERROR;
+      pj.errorcode = NUMBER_ERROR;
       return pj.errorcode;
     case 't':
-      pj.errorcode = simdjson::T_ATOM_ERROR;
+      pj.errorcode = T_ATOM_ERROR;
       return pj.errorcode;
     case 'n':
-      pj.errorcode = simdjson::N_ATOM_ERROR;
+      pj.errorcode = N_ATOM_ERROR;
       return pj.errorcode;
     case 'f':
-      pj.errorcode = simdjson::F_ATOM_ERROR;
+      pj.errorcode = F_ATOM_ERROR;
       return pj.errorcode;
     default: 
       break;
   }
-  pj.errorcode = simdjson::TAPE_ERROR;
+  pj.errorcode = TAPE_ERROR;
   return pj.errorcode; 
 }
 

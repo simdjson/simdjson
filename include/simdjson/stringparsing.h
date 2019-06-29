@@ -5,7 +5,7 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 
-namespace SimdJson {
+namespace simdjson {
 // begin copypasta
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab

@@ -325,14 +325,14 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      SimdJson::padded_string p;
+      simdjson::padded_string p;
       try {
-        SimdJson::get_corpus(fullpath).swap(p);
+        simdjson::get_corpus(fullpath).swap(p);
       } catch (const std::exception &e) {
         std::cout << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
-      SimdJson::ParsedJson pj;
+      simdjson::ParsedJson pj;
       bool allocok = pj.allocateCapacity(p.size(), 1024);
       if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;

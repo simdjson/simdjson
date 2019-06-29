@@ -7,7 +7,7 @@
 #include <iso646.h>
 #include <cstdint>
 
-namespace SimdJson {
+namespace simdjson {
 static inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 	return _addcarry_u64(0, value1, value2, reinterpret_cast<unsigned __int64 *>(result));
 }
@@ -43,7 +43,7 @@ static inline int hamming(uint64_t input_num) {
 #if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__)
 #include <x86intrin.h>
 #endif
-namespace SimdJson {
+namespace simdjson {
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
 }
@@ -81,7 +81,7 @@ static inline int hamming(uint64_t input_num) {
 #endif // _MSC_VER
 
 
-namespace SimdJson {
+namespace simdjson {
 // portable version of  posix_memalign
 static inline void *aligned_malloc(size_t alignment, size_t size) {
 	void *p;

@@ -29,7 +29,7 @@
 #endif
 
 #define TRANSPOSE
-namespace SimdJson {
+namespace simdjson {
 
 struct simd_input {
 #ifdef __AVX2__
@@ -633,7 +633,7 @@ WARN_UNUSED
     std::cerr << "Your ParsedJson object only supports documents up to "
          << pj.bytecapacity << " bytes but you are trying to process " << len
          << " bytes" << std::endl;
-    return simdjson::CAPACITY;
+    return CAPACITY;
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
@@ -741,7 +741,7 @@ WARN_UNUSED
 
   // is last string quote closed?
   if (prev_iter_inside_quote) {
-      return simdjson::UNCLOSED_STRING;
+      return UNCLOSED_STRING;
   }
 
   // finally, flatten out the remaining structurals from the last iteration
@@ -752,11 +752,11 @@ WARN_UNUSED
   // found something
   if (pj.n_structural_indexes == 0u) {
     fprintf(stderr, "Empty document?\n");
-    return simdjson::EMPTY;
+    return EMPTY;
   }
   if (base_ptr[pj.n_structural_indexes - 1] > len) {
     fprintf(stderr, "Internal bug\n");
-    return simdjson::UNEXPECTED_ERROR;
+    return UNEXPECTED_ERROR;
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
     // the string might not be NULL terminated, but we add a virtual NULL ending
@@ -767,12 +767,12 @@ WARN_UNUSED
   base_ptr[pj.n_structural_indexes] = 0;  
   if (error_mask) {
     fprintf(stderr, "Unescaped characters\n");
-    return simdjson::UNESCAPED_CHARS;
+    return UNESCAPED_CHARS;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
-    return _mm256_testz_si256(has_error, has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    return _mm256_testz_si256(has_error, has_error) == 0 ? UTF8_ERROR : SUCCESS;
 #else
-  return simdjson::SUCCESS;
+  return SUCCESS;
 #endif
 }
 

@@ -9,7 +9,7 @@
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
 
-namespace SimdJson {
+namespace simdjson {
 // Parse a document found in buf. 
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 //

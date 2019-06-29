@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace SimdJson {
+namespace simdjson {
 // Take input from buf and remove useless whitespace, write it to out; buf and
 // out can be the same pointer. Result is null terminated,
 // return the string length (minus the null termination).

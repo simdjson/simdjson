@@ -1,6 +1,6 @@
 #include "simdjson/parsedjson.h"
 
-namespace SimdJson {
+namespace simdjson {
 ParsedJson::ParsedJson() : 
         structural_indexes(nullptr), tape(nullptr), containing_scope_offset(nullptr),
         ret_address(nullptr), string_buf(nullptr), current_string_buf_loc(nullptr) {}
@@ -98,7 +98,7 @@ int ParsedJson::getErrorCode() const {
 }
 
 std::string ParsedJson::getErrorMsg() const {
-  return simdjson::errorMsg(errorcode);
+  return errorMsg(errorcode);
 }
 
 void ParsedJson::deallocate() {

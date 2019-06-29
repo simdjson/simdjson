@@ -7,12 +7,12 @@
 #endif
 #include "simdjson/simdjson.h"
 
-namespace SimdJson {
+namespace simdjson {
 // parse a document found in buf, need to preallocate ParsedJson.
 WARN_UNUSED
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   if (pj.bytecapacity < len) {
-    return simdjson::CAPACITY;
+    return CAPACITY;
   }
   bool reallocated = false;
   if(reallocifneeded) {
@@ -38,13 +38,13 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifnee
 #endif
 	     const uint8_t *tmpbuf  = buf;
        buf = (uint8_t *) allocate_padded_buffer(len);
-       if(buf == NULL) return simdjson::MEMALLOC;
+       if(buf == NULL) return MEMALLOC;
        memcpy((void*)buf,tmpbuf,len);
        reallocated = true;
      }
   }
   int stage1_is_ok = find_structural_bits(buf, len, pj);
-  if(stage1_is_ok != simdjson::SUCCESS) {
+  if(stage1_is_ok != SUCCESS) {
     pj.errorcode = stage1_is_ok;
     return pj.errorcode;
   } 

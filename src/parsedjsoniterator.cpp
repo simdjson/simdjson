@@ -2,7 +2,7 @@
 #include "simdjson/common_defs.h"
 #include <iterator>
 
-namespace SimdJson {
+namespace simdjson {
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(!pj.isValid()) {
             throw InvalidJSON();

@@ -12,7 +12,7 @@
 #include "simdjson/padded_string.h"
 
 
-namespace SimdJson {
+namespace simdjson {
 
 // load a file in memory...
 // get a corpus; pad out to cache line so we can always use SIMD

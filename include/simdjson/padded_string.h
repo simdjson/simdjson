@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstring>
 
-namespace SimdJson {
+namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
 // "length" bytes safely. if you must provide a pointer to some data, create it
 // with this function: length is the max. size in bytes of the string caller is

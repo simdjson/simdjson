@@ -3,8 +3,7 @@
 
 #include <string>
 
-namespace SimdJson {
-struct simdjson {
+namespace simdjson {
   enum errorValues {
     SUCCESS = 0,
     CAPACITY, // This ParsedJson can't support a document that big
@@ -23,7 +22,6 @@ struct simdjson {
     UNCLOSED_STRING, // missing quote at the end
     UNEXPECTED_ERROR // indicative of a bug in simdjson
   };
-  static const std::string& errorMsg(const int);
-};
+  const std::string& errorMsg(const int);
 }
 #endif

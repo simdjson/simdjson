@@ -5,7 +5,7 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
-void compute_dump(SimdJson::ParsedJson::iterator &pjh) {
+void compute_dump(simdjson::ParsedJson::iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -72,26 +72,26 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
   }
-  SimdJson::padded_string p;
+  simdjson::padded_string p;
   try {
-    SimdJson::get_corpus(filename).swap(p);
+    simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  SimdJson::ParsedJson pj;
+  simdjson::ParsedJson pj;
   bool allocok = pj.allocateCapacity(p.size(), 1024);
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res = SimdJson::json_parse(p, pj); // do the parsing, return false on error
+  int res = simdjson::json_parse(p, pj); // do the parsing, return false on error
   if (res) {
     std::cerr << " Parsing failed. " << std::endl;
     return EXIT_FAILURE;
   }
   if (apidump) {
-    SimdJson::ParsedJson::iterator pjh(pj);
+    simdjson::ParsedJson::iterator pjh(pj);
     if (!pjh.isOk()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;

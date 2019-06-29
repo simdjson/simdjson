@@ -3,7 +3,7 @@
 
 #ifndef __AVX2__
 
-namespace SimdJson {
+namespace simdjson {
 static uint8_t jump_table[256 * 3] = {
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
     1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1,
@@ -62,7 +62,7 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 #include "simdjson/simdprune_tables.h"
 #include <cstring>
 
-namespace SimdJson {
+namespace simdjson {
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
                                             __m256i mask) {

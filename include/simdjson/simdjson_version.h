@@ -2,7 +2,7 @@
 #ifndef SIMDJSON_INCLUDE_SIMDJSON_VERSION 
 #define SIMDJSON_INCLUDE_SIMDJSON_VERSION 
 #define SIMDJSON_VERSION 0.1.2 
-namespace SimdJson {
+namespace simdjson {
 enum { 
     SIMDJSON_VERSION_MAJOR = 0,  
     SIMDJSON_VERSION_MINOR = 1,  
