@@ -48,7 +48,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
 #else // SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN
     if(true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always reallocate
 #endif
-	    const uint8_t *tmpbuf  = buf;
+      const uint8_t *tmpbuf  = buf;
       buf = (uint8_t *) allocate_padded_buffer(len);
       if(buf == NULL) return simdjson::MEMALLOC;
       memcpy((void*)buf,tmpbuf,len);
