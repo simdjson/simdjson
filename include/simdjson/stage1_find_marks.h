@@ -697,7 +697,7 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
-template<simdjson::instruction_set T>
+template<simdjson::instruction_set T = simdjson::instruction_set::native>
 WARN_UNUSED
 /*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
@@ -848,7 +848,7 @@ WARN_UNUSED
 #endif
 }
 
-template<simdjson::instruction_set T>
+template<simdjson::instruction_set T = simdjson::instruction_set::native>
 WARN_UNUSED
 int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits<T>(reinterpret_cast<const uint8_t *>(buf), len, pj);

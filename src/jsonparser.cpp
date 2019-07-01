@@ -63,7 +63,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
   ParsedJson pj;
   bool ok = pj.allocateCapacity(len);
   if(ok) {
-    (void)json_parse(buf, len, pj, reallocifneeded);
+    json_parse(buf, len, pj, reallocifneeded);
   } else {
     std::cerr << "failure during memory allocation " << std::endl;
   }
