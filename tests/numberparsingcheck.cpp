@@ -38,7 +38,7 @@ bool is_in_bad_list(const char *buf) {
   return false;
 }
 
-inline void foundInvalidNumber(const uint8_t *buf) {
+void foundInvalidNumber(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
   double expected = strtod((const char *)buf, &endptr);
@@ -53,7 +53,7 @@ inline void foundInvalidNumber(const uint8_t *buf) {
   }
 }
 
-inline void foundInteger(int64_t result, const uint8_t *buf) {
+void foundInteger(int64_t result, const uint8_t *buf) {
   int_count++;
   char *endptr;
   long long expected = strtoll((const char *)buf, &endptr, 10);
@@ -64,7 +64,7 @@ inline void foundInteger(int64_t result, const uint8_t *buf) {
   }
 }
 
-inline void foundFloat(double result, const uint8_t *buf) {
+void foundFloat(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
   double expected = strtod((const char *)buf, &endptr);

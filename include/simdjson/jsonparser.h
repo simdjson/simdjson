@@ -25,7 +25,6 @@ using json_parse_functype = int (const uint8_t *buf, size_t len, ParsedJson &pj,
 // Pointer that holds the json_parse implementation corresponding to the available SIMD instruction set
 extern json_parse_functype *json_parse_ptr;
 
-
 // json_parse_implementation is the generic function, it is specialized for various 
 // SIMD instruction sets, e.g., as json_parse_implementation<simdjson::instruction_set::avx2>
 // or json_parse_implementation<simdjson::instruction_set::neon> 
@@ -68,7 +67,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
     pj.errorcode = stage1_is_ok;
     return pj.errorcode;
   } 
-  int res = unified_machine(buf, len, pj);
+  int res = unified_machine<T>(buf, len, pj);
   if(reallocated) { aligned_free((void*)buf);}
   return res;
 }
