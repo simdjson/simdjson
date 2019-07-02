@@ -12,7 +12,7 @@
 #include "simdjson/padded_string.h"
 
 
-
+namespace simdjson {
 
 // load a file in memory...
 // get a corpus; pad out to cache line so we can always use SIMD
@@ -29,6 +29,6 @@
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
 padded_string get_corpus(const std::string& filename);
-
+}
 
 #endif
