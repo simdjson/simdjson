@@ -100,6 +100,7 @@ cat <<< '
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
+using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
