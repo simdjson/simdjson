@@ -115,15 +115,15 @@ stat_t simdjson_computestats(const padded_string &p) {
 
 
 int main(int argc, char *argv[]) {
-  int optind = 1;
-  if (optind >= argc) {
+  int myoptind = 1;
+  if (myoptind >= argc) {
     std::cerr << "Reads json, prints stats. " << std::endl;
     std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     exit(1);
   }
-  const char *filename = argv[optind];
-  if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
+  const char *filename = argv[myoptind];
+  if (myoptind + 1 < argc) {
+    std::cerr << "warning: ignoring everything after " << argv[myoptind + 1] << std::endl;
   }
   padded_string p;
   try {
