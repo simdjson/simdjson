@@ -15,7 +15,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
   json_parse_functype* avx_implementation = &json_parse_implementation<instruction_set::avx2>;
 #endif
 #ifdef __SSE4_2__
-  // json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>; // not implemented yet
+  json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>;
 #endif
 #ifdef __ARM_NEON
   json_parse_functype* neon_implementation = &json_parse_implementation<instruction_set::neon>;
@@ -39,11 +39,13 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
   case instruction_set::avx2 :
     json_parse_ptr = avx_implementation;
     break;
-#elif defined (__SSE4_2__)
-  /*case instruction_set::sse4_2 :
+#endif
+#ifdef __SSE4_2__
+  case instruction_set::sse4_2 :
     json_parse_ptr = sse4_2_implementation;
-    break;*/
-#elif defined (__ARM_NEON)
+    break;
+#endif
+#ifdef __ARM_NEON
   case instruction_set::neon :
     json_parse_ptr = neon_implementation;
     break;

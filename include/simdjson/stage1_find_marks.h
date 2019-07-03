@@ -6,7 +6,7 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
-#ifdef __AVX2__
+#if defined (__AVX2__) || (__SSE4_2__)
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
 #define SIMDJSON_UTF8VALIDATE
@@ -21,7 +21,7 @@
 #else
 #warning It appears that neither ARM NEON nor AVX2 are detected.
 #endif // __ARM_NEON
-#endif // __AVX2__
+#endif // (__AVX2__) || (__SSE4_2__)
 
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
@@ -35,12 +35,24 @@
 namespace simdjson {
 template<instruction_set>
 struct simd_input;
+
 #ifdef __AVX2__
 template<>
 struct simd_input<instruction_set::avx2>
 {
   __m256i lo;
   __m256i hi;
+};
+#endif
+
+#ifdef __SSE4_2__
+template<>
+struct simd_input<instruction_set::sse4_2>
+{
+  __m128i v0;
+  __m128i v1;
+  __m128i v2;
+  __m128i v3;
 };
 #endif
 
@@ -122,8 +134,7 @@ uint64_t compute_quote_mask(uint64_t quote_bits);
 // where clmul is not supported, so check for both, to be sure.
 #ifdef SIMDJSON_AVOID_CLMUL
 template<instruction_set T> really_inline
-uint64_t compute_quote_mask(uint64_t quote_bits)
-{
+uint64_t compute_quote_mask(uint64_t quote_bits) {
   uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
   quote_mask = quote_mask ^ (quote_mask << 2);
   quote_mask = quote_mask ^ (quote_mask << 4);
@@ -145,6 +156,15 @@ uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
 }
 #endif
 
+#ifdef __SSE4_2__
+template<> really_inline
+uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
+  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+  return quote_mask;
+}
+#endif
+
 #ifdef __ARM_NEON
 template<> really_inline
 uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
@@ -158,29 +178,114 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
   return quote_mask;
 }
 #endif
-#endif
+#endif // SIMDJSON_AVOID_CLMUL
 
 #ifdef SIMDJSON_UTF8VALIDATE
-template<instruction_set T>really_inline
-void check_utf8(simd_input<T> in,
-                __m256i &has_error,
-                struct avx_processed_utf_bytes &previous) {
+// some hack to bypass the impossibily to overload the check_utf8() specialized template
+template<instruction_set>
+struct check_utf8_helper;
+
+#ifdef __AVX2__
+template<>
+struct check_utf8_helper<instruction_set::avx2>
+{
+  __m256i has_error = _mm256_setzero_si256();
+  avx_processed_utf_bytes previous {
+    _mm256_setzero_si256(),
+    _mm256_setzero_si256(),
+    _mm256_setzero_si256()
+  };
+};
+#endif
+
+#ifdef __SSE4_2__
+template<>
+struct check_utf8_helper<instruction_set::sse4_2>
+{
+  __m128i has_error = _mm_setzero_si128();
+  processed_utf_bytes previous {
+    _mm_setzero_si128(),
+    _mm_setzero_si128(),
+    _mm_setzero_si128()
+  };
+};
+#endif
+
+template<instruction_set T>
+void check_utf8(simd_input<T> in, check_utf8_helper<T>& helper);
+
+#ifdef __AVX2__
+template<> really_inline
+void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
+                check_utf8_helper<instruction_set::avx2>& helper) {
   __m256i highbit = _mm256_set1_epi8(0x80);
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
     // it is ascii, we just check continuation
-    has_error = _mm256_or_si256(
+    helper.has_error = _mm256_or_si256(
         _mm256_cmpgt_epi8(
-            previous.carried_continuations,
+            helper.previous.carried_continuations,
             _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                              9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
-        has_error);
+        helper.has_error);
   } else {
     // it is not ascii so we have to do heavy work
-    previous = avxcheckUTF8Bytes(in.lo, &previous, &has_error);
-    previous = avxcheckUTF8Bytes(in.hi, &previous, &has_error);
+    helper.previous = avxcheckUTF8Bytes(in.lo, &(helper.previous), &(helper.has_error));
+    helper.previous = avxcheckUTF8Bytes(in.hi, &(helper.previous), &(helper.has_error));
   }
 }
+#endif //__AVX2__
+
+#ifdef __SSE4_2__
+template<> really_inline
+void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
+                check_utf8_helper<instruction_set::sse4_2>& helper) {
+  __m128i highbit = _mm_set1_epi8(0x80);
+  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), highbit)) == 1) {
+    // it is ascii, we just check continuation
+    helper.has_error = _mm_or_si128(
+        _mm_cmpgt_epi8(
+            helper.previous.carried_continuations,
+            _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
+        helper.has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    helper.previous = checkUTF8Bytes(in.v0, &(helper.previous), &(helper.has_error));
+    helper.previous = checkUTF8Bytes(in.v1, &(helper.previous), &(helper.has_error));
+  }
+
+  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), highbit)) == 1) {
+    // it is ascii, we just check continuation
+    helper.has_error = _mm_or_si128(
+            _mm_cmpgt_epi8(
+                    helper.previous.carried_continuations,
+                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
+            helper.has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    helper.previous = checkUTF8Bytes(in.v2, &(helper.previous), &(helper.has_error));
+    helper.previous = checkUTF8Bytes(in.v3, &(helper.previous), &(helper.has_error));
+  }
+}
+#endif // __SSE4_2
+
+// Checks if the utf8 validation has found any error.
+template<instruction_set T>
+errorValues check_utf8_errors(check_utf8_helper<T>& helper);
+
+#ifdef __AVX2__
+template<> really_inline
+errorValues check_utf8_errors<instruction_set::avx2>(check_utf8_helper<instruction_set::avx2>& helper) {
+  return _mm256_testz_si256(helper.has_error, helper.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+}
 #endif
+
+#ifdef __SSE4_2__
+template<> really_inline
+errorValues check_utf8_errors<instruction_set::sse4_2>(check_utf8_helper<instruction_set::sse4_2>& helper) {
+  return _mm_testz_si128(helper.has_error, helper.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+}
+#endif
+#endif // SIMDJSON_UTF8VALIDATE
 
 template<instruction_set T>
 simd_input<T> fill_input(const uint8_t * ptr);
@@ -191,6 +296,18 @@ simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_
   struct simd_input<instruction_set::avx2> in;
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
+  return in;
+}
+#endif
+
+#ifdef __SSE4_2__
+template<> really_inline
+simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
+  struct simd_input<instruction_set::sse4_2> in;
+  in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
+  in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
+  in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
+  in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
   return in;
 }
 #endif
@@ -219,12 +336,28 @@ uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 #ifdef __AVX2__
 template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
-
   const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(in.hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
+  return res_0 | (res_1 << 32);
+}
+#endif
+
+#ifdef __SSE4_2__
+template<> really_inline
+uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
+  const __m128i mask = _mm_set1_epi8(m);
+  __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
+  uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
+  __m128i cmp_res_1 = _mm_cmpeq_epi8(in.v1, mask);
+  uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
+  __m128i cmp_res_2 = _mm_cmpeq_epi8(in.v2, mask);
+  uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
+  __m128i cmp_res_3 = _mm_cmpeq_epi8(in.v3, mask);
+  uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
+  return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
   return res_0 | (res_1 << 32);
 }
 #endif
@@ -254,6 +387,22 @@ uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instructi
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.hi),maxval);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
+}
+#endif
+
+#ifdef __SSE4_2__
+template<> really_inline
+uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
+  const __m128i maxval = _mm_set1_epi8(m);
+  __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v0),maxval);
+  uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
+  __m128i cmp_res_1 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v1),maxval);
+  uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
+  __m128i cmp_res_2 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v2),maxval);
+  uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
+  __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v3),maxval);
+  uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
+  return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
 #endif
 
@@ -447,7 +596,78 @@ void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instructi
   whitespace = ~(ws_res_0 | (ws_res_1 << 32));
 #endif // SIMDJSON_NAIVE_STRUCTURAL
 }
-#endif
+#endif // __AVX2__
+
+#ifdef __SSE4_2__
+template<> really_inline
+void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
+                                                     uint64_t &whitespace,
+                                                     uint64_t &structurals) {
+  const __m128i low_nibble_mask = _mm_setr_epi8(
+      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  const __m128i high_nibble_mask = _mm_setr_epi8(
+      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+
+  __m128i structural_shufti_mask = _mm_set1_epi8(0x7);
+  __m128i whitespace_shufti_mask = _mm_set1_epi8(0x18);
+
+  __m128i v_0 = _mm_and_si128(
+      _mm_shuffle_epi8(low_nibble_mask, in.v0),
+      _mm_shuffle_epi8(high_nibble_mask,
+                          _mm_and_si128(_mm_srli_epi32(in.v0, 4),
+                                           _mm_set1_epi8(0x7f))));
+
+  __m128i v_1 = _mm_and_si128(
+      _mm_shuffle_epi8(low_nibble_mask, in.v1),
+      _mm_shuffle_epi8(high_nibble_mask,
+                          _mm_and_si128(_mm_srli_epi32(in.v1, 4),
+                                           _mm_set1_epi8(0x7f))));
+
+  __m128i v_2 = _mm_and_si128(
+      _mm_shuffle_epi8(low_nibble_mask, in.v2),
+      _mm_shuffle_epi8(high_nibble_mask,
+                         _mm_and_si128(_mm_srli_epi32(in.v2, 4),
+                                           _mm_set1_epi8(0x7f))));
+
+  __m128i v_3 = _mm_and_si128(
+      _mm_shuffle_epi8(low_nibble_mask, in.v3),
+      _mm_shuffle_epi8(high_nibble_mask,
+                         _mm_and_si128(_mm_srli_epi32(in.v3, 4),
+                                           _mm_set1_epi8(0x7f))));
+
+  __m128i tmp_v0 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_0, structural_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_v1 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_1, structural_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_v2 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_2, structural_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_v3 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_3, structural_shufti_mask), _mm_set1_epi8(0));
+
+  uint64_t structural_res_0 = _mm_movemask_epi8(tmp_v0);
+  uint64_t structural_res_1 = _mm_movemask_epi8(tmp_v1);
+  uint64_t structural_res_2 = _mm_movemask_epi8(tmp_v2);
+  uint64_t structural_res_3 = _mm_movemask_epi8(tmp_v3);
+
+  structurals = ~(structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
+
+  __m128i tmp_ws_v0 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_0, whitespace_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_ws_v1 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_1, whitespace_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_ws_v2 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_2, whitespace_shufti_mask), _mm_set1_epi8(0));
+  __m128i tmp_ws_v3 = _mm_cmpeq_epi8(
+      _mm_and_si128(v_3, whitespace_shufti_mask), _mm_set1_epi8(0));
+
+  uint64_t ws_res_0 = _mm_movemask_epi8(tmp_ws_v0);
+  uint64_t ws_res_1 = _mm_movemask_epi8(tmp_ws_v1);
+  uint64_t ws_res_2 = _mm_movemask_epi8(tmp_ws_v2);
+  uint64_t ws_res_3 = _mm_movemask_epi8(tmp_ws_v3);
+
+  whitespace = ~(ws_res_0 | (ws_res_1 << 16) | (ws_res_2 << 32) | (ws_res_3 << 48));
+}
+#endif // __SSE4_2__
 
 #ifdef __ARM_NEON
 template<> really_inline
@@ -569,9 +789,9 @@ void find_whitespace_and_structurals<instruction_set::neon>(
 
   structurals = neonmovemask_bulk(tmp_0, tmp_1, tmp_2, tmp_3);
   whitespace = neonmovemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
-#endif
+#endif // FUNKY_BAD_TABLE
 }
-#endif
+#endif // __ARM_NEON
 
 
 #ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
@@ -657,7 +877,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   }
   base = next_base;
 }
-#endif
+#endif // SIMDJSON_NAIVE_FLATTEN
 
 // return a updated structural bit vector with quoted contents cleared out and
 // pseudo-structural characters added to the mask
@@ -711,11 +931,7 @@ WARN_UNUSED
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
-  __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous {};
-  previous.rawbytes = _mm256_setzero_si256();
-  previous.high_nibbles = _mm256_setzero_si256();
-  previous.carried_continuations = _mm256_setzero_si256();
+  check_utf8_helper<T> helper;
 #endif
 
   // we have padded the input out to 64 byte multiple with the remainder being
@@ -751,7 +967,7 @@ WARN_UNUSED
 #endif
     simd_input<T> in = fill_input<T>(buf+idx);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8(in, has_error, previous);
+    check_utf8<T>(in, helper);
 #endif
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences<T>(
@@ -786,7 +1002,7 @@ WARN_UNUSED
     memcpy(tmpbuf, buf + idx, len - idx);
     simd_input<T> in = fill_input<T>(tmpbuf);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8(in, has_error, previous);
+    check_utf8<T>(in, helper);
 #endif
 
     // detect odd sequences of backslashes
@@ -843,7 +1059,7 @@ WARN_UNUSED
     return simdjson::UNESCAPED_CHARS;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
-    return _mm256_testz_si256(has_error, has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  return check_utf8_errors<T>(helper);
 #else
   return simdjson::SUCCESS;
 #endif

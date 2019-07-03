@@ -109,6 +109,23 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const ui
 }
 #endif
 
+#ifdef __SSE4_2__
+template<> really_inline
+parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const uint8_t *src, uint8_t *dst) {
+    // this can read up to 31 bytes beyond the buffer size, but we require 
+    // SIMDJSON_PADDING of padding
+    __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
+    // store to dest unconditionally - we can overwrite the bits we don't like
+    // later
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), v);
+    auto quote_mask = _mm_cmpeq_epi8(v, _mm_set1_epi8('"'));
+    return {
+      static_cast<uint32_t>(_mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8('\\')))), // bs_bits
+      static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
+    };
+}
+#endif
+
 #ifdef __ARM_NEON
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
@@ -221,8 +238,13 @@ bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     } else {
       // they are the same. Since they can't co-occur, it means we encountered
       // neither.
-      src += 32;
-      dst += 32;
+      if constexpr(T == instruction_set::sse4_2) {
+        src += 16;
+        dst += 16;
+      } else {
+        src += 32;
+        dst += 32;
+      }
     }
   }
   // can't be reached
