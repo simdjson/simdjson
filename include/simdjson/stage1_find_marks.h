@@ -33,11 +33,11 @@
 #define TRANSPOSE
 
 namespace simdjson {
-template<simdjson::instruction_set>
+template<instruction_set>
 struct simd_input;
 #ifdef __AVX2__
 template<>
-struct simd_input<simdjson::instruction_set::avx2>
+struct simd_input<instruction_set::avx2>
 {
   __m256i lo;
   __m256i hi;
@@ -45,7 +45,7 @@ struct simd_input<simdjson::instruction_set::avx2>
 #endif
 
 #ifdef __ARM_NEON
-template<> struct simd_input<simdjson::instruction_set::neon>
+template<> struct simd_input<instruction_set::neon>
 {
 #ifndef TRANSPOSE
   uint8x16_t i0;
@@ -111,7 +111,7 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
 }
 #endif
 
-template<simdjson::instruction_set T>
+template<instruction_set T>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 // In practice, if you have NEON or __PCLMUL__, you would
@@ -121,7 +121,7 @@ uint64_t compute_quote_mask(uint64_t quote_bits);
 // Also: we don't know of an instance where AVX2 is supported but 
 // where clmul is not supported, so check for both, to be sure.
 #ifdef SIMDJSON_AVOID_CLMUL
-template<simdjson::instruction_set T> really_inline
+template<instruction_set T> really_inline
 uint64_t compute_quote_mask(uint64_t quote_bits)
 {
   uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
@@ -133,12 +133,12 @@ uint64_t compute_quote_mask(uint64_t quote_bits)
   return quote_mask;
 }
 #else
-template<simdjson::instruction_set>
+template<instruction_set>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 #ifdef __AVX2__ 
 template<> really_inline
-uint64_t compute_quote_mask<simdjson::instruction_set::avx2>(uint64_t quote_bits) {
+uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   return quote_mask;
@@ -147,7 +147,7 @@ uint64_t compute_quote_mask<simdjson::instruction_set::avx2>(uint64_t quote_bits
 
 #ifdef __ARM_NEON
 template<> really_inline
-uint64_t compute_quote_mask<simdjson::instruction_set::neon>(uint64_t quote_bits) {
+uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 #ifdef __PCLMUL__ // Might cause problems on runtime dispatch
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
                                           _mm_set_epi64x(0ULL, quote_bits),
@@ -161,7 +161,7 @@ uint64_t compute_quote_mask<simdjson::instruction_set::neon>(uint64_t quote_bits
 #endif
 
 #ifdef SIMDJSON_UTF8VALIDATE
-template<simdjson::instruction_set T>really_inline
+template<instruction_set T>really_inline
 void check_utf8(simd_input<T> in,
                 __m256i &has_error,
                 struct avx_processed_utf_bytes &previous) {
@@ -182,13 +182,13 @@ void check_utf8(simd_input<T> in,
 }
 #endif
 
-template<simdjson::instruction_set T>
+template<instruction_set T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
 #ifdef __AVX2__
 template<> really_inline
-simd_input<simdjson::instruction_set::avx2> fill_input<simdjson::instruction_set::avx2>(const uint8_t * ptr) {
-  struct simd_input<simdjson::instruction_set::avx2> in;
+simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
+  struct simd_input<instruction_set::avx2> in;
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   return in;
@@ -197,8 +197,8 @@ simd_input<simdjson::instruction_set::avx2> fill_input<simdjson::instruction_set
 
 #ifdef __ARM_NEON
 template<> really_inline
-simd_input<simdjson::instruction_set::neon> fill_input<simdjson::instruction_set::neon>(const uint8_t * ptr) {
-  struct simd_input<simdjson::instruction_set::neon> in;
+simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_t * ptr) {
+  struct simd_input<instruction_set::neon> in;
 #ifndef TRANSPOSE
   in.i0 = vld1q_u8(ptr + 0);
   in.i1 = vld1q_u8(ptr + 16);
@@ -213,12 +213,12 @@ simd_input<simdjson::instruction_set::neon> fill_input<simdjson::instruction_set
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
-template<simdjson::instruction_set T>
+template<instruction_set T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef __AVX2__
 template<> really_inline
-uint64_t cmp_mask_against_input<simdjson::instruction_set::avx2>(simd_input<simdjson::instruction_set::avx2> in, uint8_t m) {
+uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
 
   const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
@@ -231,7 +231,7 @@ uint64_t cmp_mask_against_input<simdjson::instruction_set::avx2>(simd_input<simd
 
 #ifdef __ARM_NEON
 template<> really_inline
-uint64_t cmp_mask_against_input<simdjson::instruction_set::neon>(simd_input<simdjson::instruction_set::neon> in, uint8_t m) {
+uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
   uint8x16_t cmp_res_0 = vceqq_u8(in.i.val[0], mask); 
   uint8x16_t cmp_res_1 = vceqq_u8(in.i.val[1], mask); 
@@ -242,12 +242,12 @@ uint64_t cmp_mask_against_input<simdjson::instruction_set::neon>(simd_input<simd
 #endif
 
 // find all values less than or equal than the content of maxval (using unsigned arithmetic) 
-template<simdjson::instruction_set T>
+template<instruction_set T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef __AVX2__
 template<> really_inline
-uint64_t unsigned_lteq_against_input<simdjson::instruction_set::avx2>(simd_input<simdjson::instruction_set::avx2> in, uint8_t m) {
+uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
   const __m256i maxval = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
@@ -259,7 +259,7 @@ uint64_t unsigned_lteq_against_input<simdjson::instruction_set::avx2>(simd_input
 
 #ifdef __ARM_NEON
 template<> really_inline
-uint64_t unsigned_lteq_against_input<simdjson::instruction_set::neon>(simd_input<simdjson::instruction_set::neon> in, uint8_t m) {
+uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
   uint8x16_t cmp_res_0 = vcleq_u8(in.i.val[0], mask); 
   uint8x16_t cmp_res_1 = vcleq_u8(in.i.val[1], mask); 
@@ -278,7 +278,7 @@ uint64_t unsigned_lteq_against_input<simdjson::instruction_set::neon>(simd_input
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-template<simdjson::instruction_set T> really_inline
+template<instruction_set T> really_inline
 uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
@@ -323,7 +323,7 @@ uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-template<simdjson::instruction_set T> really_inline
+template<instruction_set T> really_inline
 uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   quote_bits = cmp_mask_against_input<T>(in, '"');
@@ -352,14 +352,14 @@ uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 // these go into the next 2 buckets of the comparison (8/16)
-template<simdjson::instruction_set T>
+template<instruction_set T>
 void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &whitespace,
                                      uint64_t &structurals);
 
 #ifdef __AVX2__
 template<> really_inline
-void find_whitespace_and_structurals<simdjson::instruction_set::avx2>(simd_input<simdjson::instruction_set::avx2> in,
+void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
                                                      uint64_t &whitespace,
                                                      uint64_t &structurals) {
 #ifdef SIMDJSON_NAIVE_STRUCTURAL
@@ -451,8 +451,8 @@ void find_whitespace_and_structurals<simdjson::instruction_set::avx2>(simd_input
 
 #ifdef __ARM_NEON
 template<> really_inline
-void find_whitespace_and_structurals<simdjson::instruction_set::neon>(
-                                                  simd_input<simdjson::instruction_set::neon> in,
+void find_whitespace_and_structurals<instruction_set::neon>(
+                                                  simd_input<instruction_set::neon> in,
                                                   uint64_t &whitespace,
                                                   uint64_t &structurals) {
 #ifndef FUNKY_BAD_TABLE
@@ -698,7 +698,7 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
-template<simdjson::instruction_set T = simdjson::instruction_set::native>
+template<instruction_set T = instruction_set::native>
 WARN_UNUSED
 /*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len,
                                            ParsedJson &pj) {
@@ -849,7 +849,7 @@ WARN_UNUSED
 #endif
 }
 
-template<simdjson::instruction_set T = simdjson::instruction_set::native>
+template<instruction_set T = instruction_set::native>
 WARN_UNUSED
 int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits<T>(reinterpret_cast<const uint8_t *>(buf), len, pj);

@@ -88,12 +88,12 @@ struct parse_string_helper {
 };
 
 // Finds where the backslashes and quotes are located.
-template<simdjson::instruction_set>
+template<instruction_set>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
 
 #ifdef __AVX2__
 template<> really_inline
-parse_string_helper find_bs_bits_and_quote_bits<simdjson::instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
+parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
@@ -101,12 +101,7 @@ parse_string_helper find_bs_bits_and_quote_bits<simdjson::instruction_set::avx2>
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
-    //auto bs_bits =
-    //    static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
     auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
-    //uint32_t quote_bits =
-    //    static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
-
     return {
       static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')))), // bs_bits
       static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
@@ -116,7 +111,7 @@ parse_string_helper find_bs_bits_and_quote_bits<simdjson::instruction_set::avx2>
 
 #ifdef __ARM_NEON
 template<> really_inline
-parse_string_helper find_bs_bits_and_quote_bits<simdjson::instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
+parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
@@ -150,7 +145,7 @@ parse_string_helper find_bs_bits_and_quote_bits<simdjson::instruction_set::neon>
 }
 #endif
 
-template<simdjson::instruction_set T>
+template<instruction_set T>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline 
 bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
