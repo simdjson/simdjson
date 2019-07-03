@@ -7,44 +7,44 @@
 #endif
 #include "simdjson/simdjson.h"
 
-
+namespace simdjson {
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   // Versions for each implementation
 #ifdef __AVX2__
-  json_parse_functype* avx_implementation = &json_parse_implementation<simdjson::instruction_set::avx2>;
+  json_parse_functype* avx_implementation = &json_parse_implementation<instruction_set::avx2>;
 #endif
 #ifdef __SSE4_2__
-  // json_parse_functype* sse4_2_implementation = &json_parse_implementation<simdjson::instruction_set::sse4_2>; // not implemented yet
+  // json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>; // not implemented yet
 #endif
 #ifdef __ARM_NEON
-  json_parse_functype* neon_implementation = &json_parse_implementation<simdjson::instruction_set::neon>;
+  json_parse_functype* neon_implementation = &json_parse_implementation<instruction_set::neon>;
 #endif
 
   // Determining which implementation is the more suitable
   // Should be done at runtime. Does not make any sense on preprocessor.
 #ifdef __AVX2__
-  simdjson::instruction_set best_implementation = simdjson::instruction_set::avx2;
+  instruction_set best_implementation = instruction_set::avx2;
 #elif defined (__SSE4_2__)
-  simdjson::instruction_set best_implementation = simdjson::instruction_set::sse4_2;
+  instruction_set best_implementation = instruction_set::sse4_2;
 #elif defined (__ARM_NEON)
-  simdjson::instruction_set best_implementation = simdjson::instruction_set::neon;
+  instruction_set best_implementation = instruction_set::neon;
 #else
-  simdjson::instruction_set best_implementation = simdjson::instruction_set::none;
+  instruction_set best_implementation = instruction_set::none;
 #endif
   
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef __AVX2__
-  case simdjson::instruction_set::avx2 :
+  case instruction_set::avx2 :
     json_parse_ptr = avx_implementation;
     break;
 #elif defined (__SSE4_2__)
-  /*case simdjson::instruction_set::sse4_2 :
+  /*case instruction_set::sse4_2 :
     json_parse_ptr = sse4_2_implementation;
     break;*/
 #elif defined (__ARM_NEON)
-  case simdjson::instruction_set::neon :
+  case instruction_set::neon :
     json_parse_ptr = neon_implementation;
     break;
 #endif
@@ -68,4 +68,5 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool reallocifneede
     std::cerr << "failure during memory allocation " << std::endl;
   }
   return pj;
+}
 }

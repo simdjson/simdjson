@@ -7,6 +7,7 @@
 #include <iso646.h>
 #include <cstdint>
 
+namespace simdjson {
 static inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 	return _addcarry_u64(0, value1, value2, reinterpret_cast<unsigned __int64 *>(result));
 }
@@ -34,7 +35,7 @@ static inline int hamming(uint64_t input_num) {
 		__popcnt((uint32_t)(input_num >> 32)));
 #endif
 }
-
+}
 #else
 #include <cstdint>
 #include <cstdlib>
@@ -42,7 +43,7 @@ static inline int hamming(uint64_t input_num) {
 #if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__)
 #include <x86intrin.h>
 #endif
-
+namespace simdjson {
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
 }
@@ -76,10 +77,11 @@ static inline int hamming(uint64_t input_num) {
 	return __builtin_popcountll(input_num);
 #endif
 }
-
+}
 #endif // _MSC_VER
 
 
+namespace simdjson {
 // portable version of  posix_memalign
 static inline void *aligned_malloc(size_t alignment, size_t size) {
 	void *p;
@@ -138,6 +140,7 @@ static inline void aligned_free(void *memblock) {
 
 static inline void aligned_free_char(char *memblock) {
 	aligned_free((void*)memblock);
+}
 }
 
 #endif // SIMDJSON_PORTABILITY_H

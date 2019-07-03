@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 
+namespace simdjson {
 char * allocate_padded_buffer(size_t length) {
     // we could do a simple malloc
     //return (char *) malloc(length + SIMDJSON_PADDING);
@@ -30,4 +31,5 @@ padded_string get_corpus(const std::string& filename) {
     return s;
   }
   throw  std::runtime_error("could not load corpus");
+}
 }

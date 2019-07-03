@@ -146,7 +146,7 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
 }
 
 __attribute__ ((noinline))
-stat_t sasjon_computestats(const padded_string &p) {
+stat_t sasjon_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -204,7 +204,7 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
 }
 
 __attribute__ ((noinline))
-stat_t rapid_computestats(const padded_string &p) {
+stat_t rapid_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -253,9 +253,9 @@ int main(int argc, char *argv[]) {
   if (optind + 1 < argc) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
   }
-  padded_string p;
+  simdjson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;

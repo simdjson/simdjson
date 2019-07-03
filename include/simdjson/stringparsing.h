@@ -10,7 +10,7 @@ void foundString(const uint8_t *buf, const uint8_t *parsed_begin, const uint8_t 
 void foundBadString(const uint8_t *buf);
 #endif
 
-
+namespace simdjson {
 // begin copypasta
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
@@ -234,6 +234,6 @@ bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
   return true;
 #endif // SIMDJSON_SKIPSTRINGPARSING
 }
-
+}
 
 #endif

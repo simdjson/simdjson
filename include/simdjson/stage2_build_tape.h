@@ -14,6 +14,7 @@
 
 #define PATH_SEP '/'
 
+namespace simdjson {
 void init_state_machine();
 
 WARN_UNUSED
@@ -581,6 +582,7 @@ fail:
 template<simdjson::instruction_set T = simdjson::instruction_set::native>
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
   return unified_machine<T>(reinterpret_cast<const uint8_t*>(buf), len, pj);
+}
 }
 
 #endif

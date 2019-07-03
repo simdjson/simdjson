@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     std::cout << "[verbose] loading " << filename << std::endl;
   }
-  padded_string p;
+  simdjson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }
     unified.start();
-    ParsedJson pj;
+    simdjson::ParsedJson pj;
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     }
     unified.start();
     // The default template is simdjson::instruction_set::native.
-    isok = (find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
     unified.start();
     // The default template is simdjson::instruction_set::native.
-    isok = isok && (simdjson::SUCCESS == unified_machine<>(p.data(), p.size(), pj));
+    isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
     unified.end(results);
     cy2 += results[0];
     cl2 += results[1];
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }
-    ParsedJson pj;
+    simdjson::ParsedJson pj;
     bool allocok = pj.allocateCapacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
 
     auto start = std::chrono::steady_clock::now();
     // The default template is simdjson::instruction_set::native.
-    isok = (find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
-    isok = isok && (simdjson::SUCCESS == unified_machine<>(p.data(), p.size(), pj));
+    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }  
-  ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
+  simdjson::ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
   if (!pj.isValid()) {
     std::cerr << pj.getErrorMsg() << std::endl;
     std::cerr << "Could not parse. " << std::endl;

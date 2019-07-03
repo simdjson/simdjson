@@ -1,6 +1,8 @@
 #include "../singleheader/simdjson.h"
 #include <iostream>
 
+using namespace simdjson;
+
 int main() {
   const char *filename = JSON_TEST_PATH;
   padded_string p = get_corpus(filename);
@@ -13,7 +15,7 @@ int main() {
   }
   const int res = json_parse(p, pj);
   if (res) {
-    std::cerr << simdjson::errorMsg(res) << std::endl;
+    std::cerr << errorMsg(res) << std::endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
