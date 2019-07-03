@@ -6,6 +6,7 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
+namespace simdjson {
 // Allowable floating-point values range from  std::numeric_limits<double>::lowest() 
 // to std::numeric_limits<double>::max(), so from 
 // -1.7976e308 all the way to 1.7975e308 in binary64. The lowest non-zero
@@ -553,5 +554,5 @@ static really_inline bool parse_number(const uint8_t *const buf,
   return  is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
-
+}
 #endif

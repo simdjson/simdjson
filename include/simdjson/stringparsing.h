@@ -5,7 +5,7 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 
-
+namespace simdjson {
 // begin copypasta
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
@@ -201,6 +201,6 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
   return true;
 #endif // SIMDJSON_SKIPSTRINGPARSING
 }
-
+}
 
 #endif

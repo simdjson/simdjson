@@ -3,6 +3,7 @@
 
 #include "simdjson/common_defs.h"
 
+namespace simdjson {
 struct ParsedJson;
 
 void init_state_machine();
@@ -12,5 +13,6 @@ int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 WARN_UNUSED
 int unified_machine(const char *buf, size_t len, ParsedJson &pj);
+}
 
 #endif

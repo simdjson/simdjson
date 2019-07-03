@@ -2,6 +2,7 @@
 #include "simdjson/common_defs.h"
 #include <iterator>
 
+namespace simdjson {
 ParsedJson::iterator::iterator(ParsedJson &pj_) : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
         if(!pj.isValid()) {
             throw InvalidJSON();
@@ -91,4 +92,5 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
     return false;
     }
     return true;
+}
 }

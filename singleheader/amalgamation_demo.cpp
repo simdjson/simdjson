@@ -1,8 +1,9 @@
-/* auto-generated on Thu May  9 20:55:13 EDT 2019. Do not edit! */
+/* auto-generated on Tue 02 Jul 2019 04:34:44 PM EDT. Do not edit! */
 
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
+using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
