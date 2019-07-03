@@ -5,6 +5,11 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 
+#ifdef JSON_TEST_STRINGS
+void foundString(const uint8_t *buf, const uint8_t *parsed_begin, const uint8_t *parsed_end);
+void foundBadString(const uint8_t *buf);
+#endif
+
 namespace simdjson {
 // begin copypasta
 // These chars yield themselves: " \ /
@@ -76,19 +81,19 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
 #include <arm_neon.h>
 #endif
 
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
-                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
-#ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
-  pj.write_tape(0, '"');// don't bother with the string parsing at all
-  return true; // always succeeds
-#else
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
-  const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
-  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
-  const uint8_t *const start_of_string = dst;
-  while (1) {
+// Holds backslashes and quotes locations.
+struct parse_string_helper {
+  uint32_t bs_bits;
+  uint32_t quote_bits;
+};
+
+// Finds where the backslashes and quotes are located.
+template<instruction_set>
+parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
+
 #ifdef __AVX2__
+template<> really_inline
+parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
@@ -96,12 +101,17 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     // store to dest unconditionally - we can overwrite the bits we don't like
     // later
     _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
-    auto bs_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\'))));
     auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
-    auto quote_bits =
-        static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask));
-#else
+    return {
+      static_cast<uint32_t>(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')))), // bs_bits
+      static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
+    };
+}
+#endif
+
+#ifdef __ARM_NEON
+template<> really_inline
+parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
@@ -128,14 +138,32 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
     uint8x16_t sum1 = vpaddq_u8(cmp_qt_0, cmp_qt_1);
     sum0 = vpaddq_u8(sum0, sum1);
     sum0 = vpaddq_u8(sum0, sum0);
-    auto bs_bits =  vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0);
-    auto quote_bits =  vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1);
+    return {
+      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0), // bs_bits
+      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1) // quote_bits
+    };
+}
 #endif
-    if(((bs_bits - 1) & quote_bits) != 0 ) {
+
+template<instruction_set T>
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline 
+bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
+#ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
+  pj.write_tape(0, '"');// don't bother with the string parsing at all
+  return true; // always succeeds
+#else
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
+  const uint8_t *const start_of_string = dst;
+  while (1) {
+    parse_string_helper helper = find_bs_bits_and_quote_bits<T>(src, dst);
+    if(((helper.bs_bits - 1) & helper.quote_bits) != 0 ) {
       // we encountered quotes first. Move dst to point to quotes and exit
 
       // find out where the quote is...
-      uint32_t quote_dist = trailingzeroes(quote_bits);
+      uint32_t quote_dist = trailingzeroes(helper.quote_bits);
 
       // NULL termination is still handy if you expect all your strings to be NULL terminated?
       // It comes at a small cost
@@ -158,9 +186,9 @@ really_inline  bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
 #endif // JSON_TEST_STRINGS
       return true;
     } 
-    if(((quote_bits - 1) & bs_bits ) != 0 ) {
+    if(((helper.quote_bits - 1) & helper.bs_bits ) != 0 ) {
       // find out where the backspace is
-      uint32_t bs_dist = trailingzeroes(bs_bits);
+      uint32_t bs_dist = trailingzeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       // we encountered backslash first. Handle backslash
       if (escape_char == 'u') {

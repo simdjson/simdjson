@@ -6,6 +6,12 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
+#ifdef JSON_TEST_NUMBERS // for unit testing
+void foundInvalidNumber(const uint8_t *buf);
+void foundInteger(int64_t result, const uint8_t *buf);
+void foundFloat(double result, const uint8_t *buf);
+#endif
+
 namespace simdjson {
 // Allowable floating-point values range from  std::numeric_limits<double>::lowest() 
 // to std::numeric_limits<double>::max(), so from 
@@ -375,9 +381,6 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #endif
   return is_structural_or_whitespace(*p);
 }
-
-
-
 
 // parse the number at buf + offset
 // define JSON_TEST_NUMBERS for unit testing
