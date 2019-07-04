@@ -109,7 +109,7 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const ui
 }
 #endif
 
-#ifdef __SSE4_2__
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 

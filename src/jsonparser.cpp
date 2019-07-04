@@ -40,7 +40,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
     json_parse_ptr = avx_implementation;
     break;
 #endif
-#ifdef __SSE4_2__
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
   case instruction_set::sse4_2 :
     json_parse_ptr = sse4_2_implementation;
     break;
