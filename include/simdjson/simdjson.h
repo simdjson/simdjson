@@ -12,7 +12,7 @@ enum class instruction_set {
 // the 'native' enum class value should point at a good default on the current machine
 #ifdef __AVX2__
   native = avx2
-#elif defined(__ARM_NEON)
+#elif defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
   native = neon
 #else
   // Let us assume that we have an old x64 processor, but one that has SSE (i.e., something
