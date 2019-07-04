@@ -10,7 +10,7 @@ EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependenc
 # users can provide their own additional flags with make EXTRAFLAGS=something
 architecture:=$(shell arch)
 CXXFLAGS =  -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
-CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
+CFLAGS =   -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 ifeq ($(architecture),aarch64)
 CXXFLAGS += -march=armv8-a+crc+crypto
 CFLAGS += -march=armv8-a+crc+crypto
