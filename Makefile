@@ -12,7 +12,6 @@ architecture:=$(shell arch)
 CXXFLAGS =  -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
 CFLAGS = -march=native  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 ifeq ($(architecture),aarch64)
-$(echo fuck)
 CXXFLAGS += -march=armv8-a+crc+crypto
 CFLAGS += -march=armv8-a+crc+crypto
 else
