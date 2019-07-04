@@ -1,12 +1,12 @@
-#ifndef SIMDUTF8CHECK_H
-#define SIMDUTF8CHECK_H
-#include <stdbool.h>
+
+#ifndef SIMDJSON_SIMDUTF8CHECK_H
+#define SIMDJSON_SIMDUTF8CHECK_H
+
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <x86intrin.h>
-
-namespace simdjson {
+#include "simdjson/portability.h"
 /*
  * legal utf-8 byte sequence
  * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
@@ -24,6 +24,9 @@ namespace simdjson {
  *
  */
 
+// all byte values must be no larger than 0xF4
+
+namespace simdjson {
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(__m128i current_bytes,
                                         __m128i *has_error) {
@@ -156,40 +159,7 @@ checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
   return pb;
 }
 
-static bool validate_utf8_fast(const char *src, size_t len) {
-  size_t i = 0;
-  __m128i has_error = _mm_setzero_si128();
-  struct processed_utf_bytes previous = {.rawbytes = _mm_setzero_si128(),
-                                         .high_nibbles = _mm_setzero_si128(),
-                                         .carried_continuations =
-                                             _mm_setzero_si128()};
-  if (len >= 16) {
-    for (; i <= len - 16; i += 16) {
-      __m128i current_bytes = _mm_loadu_si128((const __m128i *)(src + i));
-      previous = checkUTF8Bytes(current_bytes, &previous, &has_error);
-    }
-  }
-
-  // last part
-  if (i < len) {
-    char buffer[16];
-    memset(buffer, 0, 16);
-    memcpy(buffer, src + i, len - i);
-    __m128i current_bytes = _mm_loadu_si128((const __m128i *)(buffer));
-    previous = checkUTF8Bytes(current_bytes, &previous, &has_error);
-  } else {
-    has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     has_error);
-  }
-
-  return _mm_testz_si128(has_error, has_error);
-}
-
 #ifdef __AVX2__
-
 /*****************************/
 static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
@@ -281,29 +251,31 @@ static inline void avxcheckOverlong(__m256i current_bytes,
                                     __m256i *has_error) {
   __m256i off1_hibits = push_last_byte_of_a_to_b(previous_hibits, hibits);
   __m256i initial_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       0xC2, -128,       // 110x
-                       0xE1,             // 1110
-                       0xF1, -128, -128, -128, -128, -128, -128, -128, -128,
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128,
                        -128, -128, -128, -128, // 10xx => false
                        0xC2, -128,             // 110x
                        0xE1,                   // 1110
-                       0xF1),
+                       0xF1,                   // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, -128, // 10xx => false
+                       0xC2, -128,             // 110x
+                       0xE1,                   // 1110
+                       0xF1),                  // 1111
       off1_hibits);
 
   __m256i initial_under = _mm256_cmpgt_epi8(initial_mins, off1_current_bytes);
 
   __m256i second_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       127, 127,         // 110x => true
-                       0xA0,             // 1110
-                       0x90, -128, -128, -128, -128, -128, -128, -128, -128,
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128,
                        -128, -128, -128, -128, // 10xx => false
                        127, 127,               // 110x => true
                        0xA0,                   // 1110
-                       0x90),
+                       0x90,                   // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, -128, // 10xx => false
+                       127, 127,               // 110x => true
+                       0xA0,                   // 1110
+                       0x90),                  // 1111
       off1_hibits);
   __m256i second_under = _mm256_cmpgt_epi8(second_mins, current_bytes);
   *has_error = _mm256_or_si256(*has_error,
@@ -325,11 +297,11 @@ static inline void avx_count_nibbles(__m256i bytes,
 
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
-static struct avx_processed_utf_bytes
+static inline struct avx_processed_utf_bytes
 avxcheckUTF8Bytes(__m256i current_bytes,
                   struct avx_processed_utf_bytes *previous,
                   __m256i *has_error) {
-  struct avx_processed_utf_bytes pb;
+  struct avx_processed_utf_bytes pb{};
   avx_count_nibbles(current_bytes, &pb);
 
   avxcheckSmallerThan0xF4(current_bytes, has_error);
@@ -350,111 +322,8 @@ avxcheckUTF8Bytes(__m256i current_bytes,
   return pb;
 }
 
-// check whether the current bytes are valid UTF-8
-// at the end of the function, previous gets updated
-static struct avx_processed_utf_bytes
-avxcheckUTF8Bytes_asciipath(__m256i current_bytes,
-                            struct avx_processed_utf_bytes *previous,
-                            __m256i *has_error) {
-  if (_mm256_testz_si256(current_bytes,
-                         _mm256_set1_epi8(0x80))) { // fast ascii path
-    *has_error = _mm256_or_si256(
-        _mm256_cmpgt_epi8(previous->carried_continuations,
-                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 1)),
-        *has_error);
-    return *previous;
-  }
-
-  struct avx_processed_utf_bytes pb;
-  avx_count_nibbles(current_bytes, &pb);
-
-  avxcheckSmallerThan0xF4(current_bytes, has_error);
-
-  __m256i initial_lengths = avxcontinuationLengths(pb.high_nibbles);
-
-  pb.carried_continuations =
-      avxcarryContinuations(initial_lengths, previous->carried_continuations);
-
-  avxcheckContinuations(initial_lengths, pb.carried_continuations, has_error);
-
-  __m256i off1_current_bytes =
-      push_last_byte_of_a_to_b(previous->rawbytes, pb.rawbytes);
-  avxcheckFirstContinuationMax(current_bytes, off1_current_bytes, has_error);
-
-  avxcheckOverlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                   previous->high_nibbles, has_error);
-  return pb;
-}
-
-static bool validate_utf8_fast_avx_asciipath(const char *src, size_t len) {
-  size_t i = 0;
-  __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous = {
-      .rawbytes = _mm256_setzero_si256(),
-      .high_nibbles = _mm256_setzero_si256(),
-      .carried_continuations = _mm256_setzero_si256()};
-  if (len >= 32) {
-    for (; i <= len - 32; i += 32) {
-      __m256i current_bytes = _mm256_loadu_si256((const __m256i *)(src + i));
-      previous =
-          avxcheckUTF8Bytes_asciipath(current_bytes, &previous, &has_error);
-    }
-  }
-
-  // last part
-  if (i < len) {
-    char buffer[32];
-    memset(buffer, 0, 32);
-    memcpy(buffer, src + i, len - i);
-    __m256i current_bytes = _mm256_loadu_si256((const __m256i *)(buffer));
-    previous = avxcheckUTF8Bytes(current_bytes, &previous, &has_error);
-  } else {
-    has_error = _mm256_or_si256(
-        _mm256_cmpgt_epi8(previous.carried_continuations,
-                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 1)),
-        has_error);
-  }
-
-  return _mm256_testz_si256(has_error, has_error);
-}
-
-static bool validate_utf8_fast_avx(const char *src, size_t len) {
-  size_t i = 0;
-  __m256i has_error = _mm256_setzero_si256();
-  struct avx_processed_utf_bytes previous = {
-      .rawbytes = _mm256_setzero_si256(),
-      .high_nibbles = _mm256_setzero_si256(),
-      .carried_continuations = _mm256_setzero_si256()};
-  if (len >= 32) {
-    for (; i <= len - 32; i += 32) {
-      __m256i current_bytes = _mm256_loadu_si256((const __m256i *)(src + i));
-      previous = avxcheckUTF8Bytes(current_bytes, &previous, &has_error);
-    }
-  }
-
-  // last part
-  if (i < len) {
-    char buffer[32];
-    memset(buffer, 0, 32);
-    memcpy(buffer, src + i, len - i);
-    __m256i current_bytes = _mm256_loadu_si256((const __m256i *)(buffer));
-    previous = avxcheckUTF8Bytes(current_bytes, &previous, &has_error);
-  } else {
-    has_error = _mm256_or_si256(
-        _mm256_cmpgt_epi8(previous.carried_continuations,
-                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 1)),
-        has_error);
-  }
-
-  return _mm256_testz_si256(has_error, has_error);
-}
-
+#else // __AVX2__
+#warning "We require AVX2 support!"
 #endif // __AVX2__
 }
 #endif
