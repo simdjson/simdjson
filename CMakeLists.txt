@@ -5,6 +5,7 @@ if(ltoresult)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
+# usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
 option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
 	
 set(CMAKE_CXX_STANDARD 17)

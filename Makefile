@@ -13,6 +13,7 @@ architecture:=$(shell arch)
 ####
 # If you want to specify your own target architecture,
 # then define ARCHFLAGS. Otherwise, we set good default.
+# E.g., type ' ARCHFLAGS="-march=nehalem" make parse '
 ###
 ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a+crc+crypto
