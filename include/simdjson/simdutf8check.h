@@ -322,8 +322,6 @@ avxcheckUTF8Bytes(__m256i current_bytes,
   return pb;
 }
 
-#else // __AVX2__
-#warning "We require AVX2 support!"
 #endif // __AVX2__
 }
 #endif

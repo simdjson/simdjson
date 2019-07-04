@@ -126,6 +126,19 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
 template<instruction_set T>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
+namespace {
+  // for when clmul is unavailable
+  [[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+    uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+    quote_mask = quote_mask ^ (quote_mask << 2);
+    quote_mask = quote_mask ^ (quote_mask << 4);
+    quote_mask = quote_mask ^ (quote_mask << 8);
+    quote_mask = quote_mask ^ (quote_mask << 16);
+    quote_mask = quote_mask ^ (quote_mask << 32);
+    return quote_mask;
+  }
+}
+
 // In practice, if you have NEON or __PCLMUL__, you would
 // always want to use them, but it might be useful, for research
 // purposes, to disable it willingly, that's what SIMDJSON_AVOID_CLMUL
@@ -135,13 +148,7 @@ uint64_t compute_quote_mask(uint64_t quote_bits);
 #ifdef SIMDJSON_AVOID_CLMUL
 template<instruction_set T> really_inline
 uint64_t compute_quote_mask(uint64_t quote_bits) {
-  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
-  quote_mask = quote_mask ^ (quote_mask << 2);
-  quote_mask = quote_mask ^ (quote_mask << 4);
-  quote_mask = quote_mask ^ (quote_mask << 8);
-  quote_mask = quote_mask ^ (quote_mask << 16);
-  quote_mask = quote_mask ^ (quote_mask << 32);
-  return quote_mask;
+  return portable_compute_quote_mask(quote_bits);
 }
 #else
 template<instruction_set>
@@ -150,6 +157,8 @@ uint64_t compute_quote_mask(uint64_t quote_bits);
 #ifdef __AVX2__ 
 template<> really_inline
 uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
+  // There should be no such thing with a processing supporting avx2
+  // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   return quote_mask;
@@ -159,23 +168,25 @@ uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
 #ifdef __SSE4_2__
 template<> really_inline
 uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
-  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+  // CLMUL is supported on some SSE42 hardware such as Sandy Bridge,
+  // but not on others.
+#ifdef __PCLMUL__
+  return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
-  return quote_mask;
+#else
+  return portable_compute_quote_mask(quote_bits);
+#endif
 }
 #endif
 
 #ifdef __ARM_NEON
 template<> really_inline
 uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
-#ifdef __PCLMUL__ // Might cause problems on runtime dispatch
-  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-                                          _mm_set_epi64x(0ULL, quote_bits),
-                                          _mm_set1_epi8(0xFF), 0));
+#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
+  return vmull_p64( -1ULL, quote_bits);
 #else
-  uint64_t quote_mask = vmull_p64( -1ULL, quote_bits);
-#endif
-  return quote_mask;
+  return portable_compute_quote_mask(quote_bits);
+#endif 
 }
 #endif
 #endif // SIMDJSON_AVOID_CLMUL

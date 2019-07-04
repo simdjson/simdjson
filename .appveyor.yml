@@ -9,9 +9,14 @@ clone_folder: c:\projects\simdjson
 platform:
 - x64
 
+environment:
+  matrix:
+    - AVXFLAG: "OFF"
+    - AVXFLAG: "ON"
+
 build_script:
   - mkdir build
   - cd build
-  - ps: cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..
+  - ps: cmake -DSIMDJSON_DISABLE_AVX="$env:AVXFLAG"  -DCMAKE_GENERATOR_PLATFORM=x64 ..
   - cmake --build .
   - ctest --verbose

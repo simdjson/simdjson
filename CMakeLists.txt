@@ -5,6 +5,8 @@ if(ltoresult)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
+option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+	
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
