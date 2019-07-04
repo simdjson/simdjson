@@ -65,6 +65,7 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
@@ -89,6 +90,7 @@ of memory allocation with each new JSON document:
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
@@ -106,6 +108,7 @@ Though the `padded_string` class is recommended for best performance, you can ca
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 std::string mystring = ... //
@@ -125,6 +128,7 @@ or
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
@@ -149,6 +153,7 @@ copy the files in your project in your include path. You can then include them q
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
+using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
