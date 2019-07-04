@@ -38,6 +38,44 @@ jobs:
             cd build
             make test
 
+  "gccnoavx":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: g++-7
+    steps:
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          g++-7
+          git
+
+      - run:
+          name: Building (gcc)
+          command: ARCHFLAGS="-march=nehalem" make
+
+      - run:
+          name: Running tests (gcc)
+          command: ARCHFLAGS="-march=nehalem" make quiettest amalgamate
+
+      - run:
+          name: Building (gcc, cmake)
+          command: |
+            mkdir build
+            cd build
+            cmake -DSIMDJSON_DISABLE_AVX=on ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake)
+          command: |
+            cd build
+            make test
+
   "clang":
     docker:
       - image: ubuntu:18.04
@@ -76,9 +114,49 @@ jobs:
             cd build
             make test
 
+  "clangnoavx":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: clang++-6.0
+    steps:
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          clang-6.0
+          git
+
+      - run:
+          name: Building (clang)
+          command: ARCHFLAGS="-march=nehalem"  make
+
+      - run:
+          name: Running tests (clang)
+          command: ARCHFLAGS="-march=nehalem"  make quiettest amalgamate
+
+      - run:
+          name: Building (clang, cmake)
+          command: |
+            mkdir build
+            cd build
+            cmake -DSIMDJSON_DISABLE_AVX=on ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake)
+          command: |
+            cd build
+            make test
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - "clang"
       - "gcc"
+      - "clangnoavx"
+      - "gccnoavx"
