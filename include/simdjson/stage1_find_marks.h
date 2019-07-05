@@ -6,30 +6,32 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
-#if defined (__AVX2__) || defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+#if defined (__AVX2__)
+#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+#elif defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
+#include <arm_neon.h>
+#else
+#warning It appears that neither ARM NEON nor AVX2 nor SSE are detected.
+#endif // (__AVX2__)
 
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
 #define SIMDJSON_UTF8VALIDATE
 #endif
-#else
-// currently we don't UTF8 validate for ARM
-// also we assume that if you're not __AVX2__ 
-// you're ARM, which is a bit dumb. TODO: Fix...
-#if defined(__ARM_NEON)   || (defined(_MSC_VER) && defined(_M_ARM64))
-#include <arm_neon.h>
-#else
-#warning It appears that neither ARM NEON nor AVX2 are detected.
-#endif // __ARM_NEON
-#endif // (__AVX2__) || (__SSE4_2__)
 
 // It seems that many parsers do UTF-8 validation.
 // RapidJSON does not do it by default, but a flag
 // allows it.
 #ifdef SIMDJSON_UTF8VALIDATE
+#if defined (__AVX2__)
 #include "simdjson/simdutf8check.h"
-#endif
+#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+#include "simdjson/simdutf8check.h"
+#elif defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
+#include "simdjson/simdutf8check_neon.h"
+#endif // (__AVX2__)
+#endif  // SIMDJSON_UTF8VALIDATE
 
-#define TRANSPOSE
+//#define TRANSPOSE
 
 namespace simdjson {
 template<instruction_set>
@@ -221,6 +223,34 @@ struct utf8_checking_state<instruction_set::sse4_2>
 };
 #endif
 
+#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+template<>
+struct utf8_checking_state<instruction_set::neon>
+{
+  int8x16_t has_error = vdupq_n_s8(0);
+  processed_utf_bytes previous {
+    vdupq_n_s8(0),
+    vdupq_n_s8(0),
+    vdupq_n_s8(0)
+  };
+};
+#endif
+
+#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+really_inline
+bool check_ascii_neon(simd_input<instruction_set::neon> in) {
+    uint8x16_t highbit = vdupq_n_u8(0x80);
+    uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
+    uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
+    uint8x16_t t3 = vorrq_u8(t0, t1);
+    uint8x16_t t4 = vandq_u8(t3, highbit);
+    uint64x2_t v64 = vreinterpretq_u64_u8(t4);
+    uint32x2_t v32 = vqmovn_u64(v64);
+    uint64x1_t result = vreinterpret_u64_u32(v32);
+    return vget_lane_u64(result, 0) == 0;
+}
+#endif
+
 template<instruction_set T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
@@ -278,6 +308,26 @@ void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
 }
 #endif // __SSE4_2
 
+#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+template<> really_inline
+void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
+                utf8_checking_state<instruction_set::neon>& state) {
+  if (check_ascii_neon(in)) {
+    int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
+    state.has_error =
+        vorrq_s8(vreinterpretq_s8_u8(vcgtq_s8(state.previous.carried_continuations,
+                                    vld1q_s8(_verror))),
+                     state.has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i0), &(state.previous), &(state.has_error));
+    state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i1), &(state.previous), &(state.has_error));
+    state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i2), &(state.previous), &(state.has_error));
+    state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i3), &(state.previous), &(state.has_error));
+  }
+}
+#endif
+
 // Checks if the utf8 validation has found any error.
 template<instruction_set T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
@@ -293,6 +343,16 @@ errorValues check_utf8_errors<instruction_set::avx2>(utf8_checking_state<instruc
 template<> really_inline
 errorValues check_utf8_errors<instruction_set::sse4_2>(utf8_checking_state<instruction_set::sse4_2>& state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+}
+#endif
+
+#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+template<> really_inline
+errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruction_set::neon>& state) {
+  uint64x2_t v64 = vreinterpretq_u64_s8(state.has_error);
+  uint32x2_t v32 = vqmovn_u64(v64);
+  uint64x1_t result = vreinterpret_u64_u32(v32);
+  return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 #endif
 #endif // SIMDJSON_UTF8VALIDATE
@@ -375,10 +435,10 @@ uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_
 template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
-  uint8x16_t cmp_res_0 = vceqq_u8(in.i.val[0], mask); 
-  uint8x16_t cmp_res_1 = vceqq_u8(in.i.val[1], mask); 
-  uint8x16_t cmp_res_2 = vceqq_u8(in.i.val[2], mask); 
-  uint8x16_t cmp_res_3 = vceqq_u8(in.i.val[3], mask); 
+  uint8x16_t cmp_res_0 = vceqq_u8(in.i0, mask); 
+  uint8x16_t cmp_res_1 = vceqq_u8(in.i1, mask); 
+  uint8x16_t cmp_res_2 = vceqq_u8(in.i2, mask); 
+  uint8x16_t cmp_res_3 = vceqq_u8(in.i3, mask); 
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
 }
 #endif
@@ -419,10 +479,10 @@ uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruc
 template<> really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
-  uint8x16_t cmp_res_0 = vcleq_u8(in.i.val[0], mask); 
-  uint8x16_t cmp_res_1 = vcleq_u8(in.i.val[1], mask); 
-  uint8x16_t cmp_res_2 = vcleq_u8(in.i.val[2], mask); 
-  uint8x16_t cmp_res_3 = vcleq_u8(in.i.val[3], mask); 
+  uint8x16_t cmp_res_0 = vcleq_u8(in.i0, mask); 
+  uint8x16_t cmp_res_1 = vcleq_u8(in.i1, mask); 
+  uint8x16_t cmp_res_2 = vcleq_u8(in.i2, mask); 
+  uint8x16_t cmp_res_3 = vcleq_u8(in.i3, mask); 
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
 }
 #endif
@@ -693,26 +753,26 @@ void find_whitespace_and_structurals<instruction_set::neon>(
   const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18); 
   const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf); 
 
-  uint8x16_t nib_0_lo = vandq_u8(in.i.val[0], low_nib_and_mask);
-  uint8x16_t nib_0_hi = vshrq_n_u8(in.i.val[0], 4);
+  uint8x16_t nib_0_lo = vandq_u8(in.i0, low_nib_and_mask);
+  uint8x16_t nib_0_hi = vshrq_n_u8(in.i0, 4);
   uint8x16_t shuf_0_lo = vqtbl1q_u8(low_nibble_mask, nib_0_lo);
   uint8x16_t shuf_0_hi = vqtbl1q_u8(high_nibble_mask, nib_0_hi);
   uint8x16_t v_0 = vandq_u8(shuf_0_lo, shuf_0_hi);
 
-  uint8x16_t nib_1_lo = vandq_u8(in.i.val[1], low_nib_and_mask);
-  uint8x16_t nib_1_hi = vshrq_n_u8(in.i.val[1], 4);
+  uint8x16_t nib_1_lo = vandq_u8(in.i1, low_nib_and_mask);
+  uint8x16_t nib_1_hi = vshrq_n_u8(in.i1, 4);
   uint8x16_t shuf_1_lo = vqtbl1q_u8(low_nibble_mask, nib_1_lo);
   uint8x16_t shuf_1_hi = vqtbl1q_u8(high_nibble_mask, nib_1_hi);
   uint8x16_t v_1 = vandq_u8(shuf_1_lo, shuf_1_hi);
 
-  uint8x16_t nib_2_lo = vandq_u8(in.i.val[2], low_nib_and_mask);
-  uint8x16_t nib_2_hi = vshrq_n_u8(in.i.val[2], 4);
+  uint8x16_t nib_2_lo = vandq_u8(in.i2, low_nib_and_mask);
+  uint8x16_t nib_2_hi = vshrq_n_u8(in.i2, 4);
   uint8x16_t shuf_2_lo = vqtbl1q_u8(low_nibble_mask, nib_2_lo);
   uint8x16_t shuf_2_hi = vqtbl1q_u8(high_nibble_mask, nib_2_hi);
   uint8x16_t v_2 = vandq_u8(shuf_2_lo, shuf_2_hi);
 
-  uint8x16_t nib_3_lo = vandq_u8(in.i.val[3], low_nib_and_mask);
-  uint8x16_t nib_3_hi = vshrq_n_u8(in.i.val[3], 4);
+  uint8x16_t nib_3_lo = vandq_u8(in.i3, low_nib_and_mask);
+  uint8x16_t nib_3_hi = vshrq_n_u8(in.i3, 4);
   uint8x16_t shuf_3_lo = vqtbl1q_u8(low_nibble_mask, nib_3_lo);
   uint8x16_t shuf_3_hi = vqtbl1q_u8(high_nibble_mask, nib_3_hi);
   uint8x16_t v_3 = vandq_u8(shuf_3_lo, shuf_3_hi);
@@ -768,29 +828,29 @@ void find_whitespace_and_structurals<instruction_set::neon>(
   const uint8x16_t low_3bits_and_mask = vmovq_n_u8(0x7); 
   const uint8x16_t high_1bit_tst_mask = vmovq_n_u8(0x80); 
 
-  int8x16_t low_3bits_0 = vreinterpretq_s8_u8(vandq_u8(in.i.val[0], low_3bits_and_mask));
-  uint8x16_t high_5bits_0 = vshrq_n_u8(in.i.val[0], 3);
+  int8x16_t low_3bits_0 = vreinterpretq_s8_u8(vandq_u8(in.i0, low_3bits_and_mask));
+  uint8x16_t high_5bits_0 = vshrq_n_u8(in.i0, 3);
   uint8x16_t shuffle_structural_0 = vshlq_u8(vqtbl1q_u8(structural_bitvec, high_5bits_0), low_3bits_0);
   uint8x16_t shuffle_ws_0 = vshlq_u8(vqtbl1q_u8(whitespace_bitvec, high_5bits_0), low_3bits_0);
   uint8x16_t tmp_0 = vtstq_u8(shuffle_structural_0, high_1bit_tst_mask);
   uint8x16_t tmp_ws_0 = vtstq_u8(shuffle_ws_0, high_1bit_tst_mask);
 
-  int8x16_t low_3bits_1 = vreinterpretq_s8_u8(vandq_u8(in.i.val[1], low_3bits_and_mask));
-  uint8x16_t high_5bits_1 = vshrq_n_u8(in.i.val[1], 3);
+  int8x16_t low_3bits_1 = vreinterpretq_s8_u8(vandq_u8(in.i1, low_3bits_and_mask));
+  uint8x16_t high_5bits_1 = vshrq_n_u8(in.i1, 3);
   uint8x16_t shuffle_structural_1 = vshlq_u8(vqtbl1q_u8(structural_bitvec, high_5bits_1), low_3bits_1);
   uint8x16_t shuffle_ws_1 = vshlq_u8(vqtbl1q_u8(whitespace_bitvec, high_5bits_1), low_3bits_1);
   uint8x16_t tmp_1 = vtstq_u8(shuffle_structural_1, high_1bit_tst_mask);
   uint8x16_t tmp_ws_1 = vtstq_u8(shuffle_ws_1, high_1bit_tst_mask);
 
-  int8x16_t low_3bits_2 = vreinterpretq_s8_u8(vandq_u8(in.i.val[2], low_3bits_and_mask));
-  uint8x16_t high_5bits_2 = vshrq_n_u8(in.i.val[2], 3);
+  int8x16_t low_3bits_2 = vreinterpretq_s8_u8(vandq_u8(in.i2, low_3bits_and_mask));
+  uint8x16_t high_5bits_2 = vshrq_n_u8(in.i2, 3);
   uint8x16_t shuffle_structural_2 = vshlq_u8(vqtbl1q_u8(structural_bitvec, high_5bits_2), low_3bits_2);
   uint8x16_t shuffle_ws_2 = vshlq_u8(vqtbl1q_u8(whitespace_bitvec, high_5bits_2), low_3bits_2);
   uint8x16_t tmp_2 = vtstq_u8(shuffle_structural_2, high_1bit_tst_mask);
   uint8x16_t tmp_ws_2 = vtstq_u8(shuffle_ws_2, high_1bit_tst_mask);
 
-  int8x16_t low_3bits_3 = vreinterpretq_s8_u8(vandq_u8(in.i.val[3], low_3bits_and_mask));
-  uint8x16_t high_5bits_3 = vshrq_n_u8(in.i.val[3], 3);
+  int8x16_t low_3bits_3 = vreinterpretq_s8_u8(vandq_u8(in.i3, low_3bits_and_mask));
+  uint8x16_t high_5bits_3 = vshrq_n_u8(in.i3, 3);
   uint8x16_t shuffle_structural_3 = vshlq_u8(vqtbl1q_u8(structural_bitvec, high_5bits_3), low_3bits_3);
   uint8x16_t shuffle_ws_3 = vshlq_u8(vqtbl1q_u8(whitespace_bitvec, high_5bits_3), low_3bits_3);
   uint8x16_t tmp_3 = vtstq_u8(shuffle_structural_3, high_1bit_tst_mask);
