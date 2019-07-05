@@ -3,6 +3,7 @@
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
+[![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/lemire/simdjson.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/lemire/simdjson/context:cpp)
 
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
