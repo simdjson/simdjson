@@ -14,10 +14,10 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
 #ifdef __AVX2__
   json_parse_functype* avx_implementation = &json_parse_implementation<instruction_set::avx2>;
 #endif
-#ifdef __SSE4_2__
-  // json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>; // not implemented yet
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+  json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>;
 #endif
-#ifdef __ARM_NEON
+#if  defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
   json_parse_functype* neon_implementation = &json_parse_implementation<instruction_set::neon>;
 #endif
 
@@ -25,9 +25,9 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
   // Should be done at runtime. Does not make any sense on preprocessor.
 #ifdef __AVX2__
   instruction_set best_implementation = instruction_set::avx2;
-#elif defined (__SSE4_2__)
+#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
   instruction_set best_implementation = instruction_set::sse4_2;
-#elif defined (__ARM_NEON)
+#elif defined (__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
   instruction_set best_implementation = instruction_set::neon;
 #else
   instruction_set best_implementation = instruction_set::none;
@@ -39,11 +39,13 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
   case instruction_set::avx2 :
     json_parse_ptr = avx_implementation;
     break;
-#elif defined (__SSE4_2__)
-  /*case instruction_set::sse4_2 :
+#endif
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+  case instruction_set::sse4_2 :
     json_parse_ptr = sse4_2_implementation;
-    break;*/
-#elif defined (__ARM_NEON)
+    break;
+#endif
+#if defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
   case instruction_set::neon :
     json_parse_ptr = neon_implementation;
     break;

@@ -52,7 +52,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 ## Requirements
 
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
-- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017).
+- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017) or at least SSE 4.2 (i.e., Intel processors going back to Nehalem released in 2008 or AMD processors starting with the Jaguar used in the PS4 and XBox One).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-We require hardware support for AVX2 instructions. You have to make sure that you instruct your 
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. You have to make sure that you instruct your 
 compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
 flag `-march=native` used on a recent Intel processor (Haswell or better) is sufficient. For portability
 of the binary files you can also specify directly the Haswell processor (`-march=haswell`). You may 
@@ -261,14 +261,15 @@ make test
 
 ## Usage (CMake on Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later).
+We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 (2008 Nehalem or later). 
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `VisualStudio`.
 - Using a shell, go to this newly created directory.
-- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
-- This last command created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.) This will build the code with AVX2 instructions. If your target processor does not support AVX2, you need to replace `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` by `cmake  -DSIMDJSON_DISABLE_AVX=on -DCMAKE_GENERATOR_PLATFORM=x64 ..` . That is, you need to set the flag to forcefully disable AVX support since we compile with AVX2 instructions *by default*.
+- This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+
 
 
 ## Usage (Using `vcpkg` on Windows, Linux and MacOS)

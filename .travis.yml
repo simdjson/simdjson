@@ -19,3 +19,6 @@ script:
    - make test 
    - make clean
    - make SANITIZEGOLD=1 test
+   - make clean
+   - ARCHFLAGS="-march=nehalem" make 
+   - ARCHFLAGS="-march=nehalem" make test

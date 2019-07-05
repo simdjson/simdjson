@@ -5,9 +5,11 @@
 #include <cstdint>
 
 namespace simdjson {
+
 // Take input from buf and remove useless whitespace, write it to out; buf and
 // out can be the same pointer. Result is null terminated,
 // return the string length (minus the null termination).
+// The accelerated version of this function only runs on AVX2 hardware.
 size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out);
 
 

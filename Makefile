@@ -9,15 +9,21 @@ COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 # users can provide their own additional flags with make EXTRAFLAGS=something
 architecture:=$(shell arch)
-CXXFLAGS =  -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
-CFLAGS =   -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
+
+####
+# If you want to specify your own target architecture,
+# then define ARCHFLAGS. Otherwise, we set good default.
+# E.g., type ' ARCHFLAGS="-march=nehalem" make parse '
+###
 ifeq ($(architecture),aarch64)
-CXXFLAGS += -march=armv8-a+crc+crypto
-CFLAGS += -march=armv8-a+crc+crypto
+ARCHFLAGS ?= -march=armv8-a+crc+crypto
 else
-CXXFLAGS += -march=native
-CFLAGS += -march=native
+ARCHFLAGS ?= -march=native
 endif
+
+CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
+CFLAGS =  $(ARCHFLAGS)  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
+
 
 # This is a convenience flag
 ifdef SANITIZEGOLD

@@ -13,14 +13,20 @@ if(SIMDJSON_SANITIZE)
 endif()
 
 
-
-# some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
-if(NOT MSVC)
+if(SIMDJSON_DISABLE_AVX) 
+  if(NOT MSVC)
+   set (OPT_FLAGS "${OPT_FLAGS} -mno-avx -mno-bmi -mno-pclmul -msse4.2")
+  else()
+   set (OPT_FLAGS "${OPT_FLAGS}")
+  endif()
+else() 
+  # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
+  if(NOT MSVC)
    set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi -mbmi2 -mpclmul")
-else()
-   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2 /std:c++latest")
+  else()
+   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2")
+  endif()
 endif()
-
 
 if(NOT MSVC)
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")
