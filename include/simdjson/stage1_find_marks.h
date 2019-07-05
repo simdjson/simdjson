@@ -191,56 +191,56 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 #endif // SIMDJSON_AVOID_CLMUL
 
 #ifdef SIMDJSON_UTF8VALIDATE
-// some hack to bypass the impossibily to overload the check_utf8() specialized template
+// Holds the state required to perform check_utf8().
 template<instruction_set>
-struct check_utf8_helper;
+struct utf8_checking_state;
 
 #ifdef __AVX2__
 template<>
-struct check_utf8_helper<instruction_set::avx2>
+struct utf8_checking_state<instruction_set::avx2>
 {
   __m256i has_error = _mm256_setzero_si256();
   avx_processed_utf_bytes previous {
-    _mm256_setzero_si256(),
-    _mm256_setzero_si256(),
-    _mm256_setzero_si256()
+    _mm256_setzero_si256(), // rawbytes
+    _mm256_setzero_si256(), // high_nibbles
+    _mm256_setzero_si256()  // carried_continuations
   };
 };
 #endif
 
 #if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<>
-struct check_utf8_helper<instruction_set::sse4_2>
+struct utf8_checking_state<instruction_set::sse4_2>
 {
   __m128i has_error = _mm_setzero_si128();
   processed_utf_bytes previous {
-    _mm_setzero_si128(),
-    _mm_setzero_si128(),
-    _mm_setzero_si128()
+    _mm_setzero_si128(), // rawbytes
+    _mm_setzero_si128(), // high_nibbles
+    _mm_setzero_si128()  // carried_continuations
   };
 };
 #endif
 
 template<instruction_set T>
-void check_utf8(simd_input<T> in, check_utf8_helper<T>& helper);
+void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
 #ifdef __AVX2__
 template<> really_inline
 void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
-                check_utf8_helper<instruction_set::avx2>& helper) {
+                utf8_checking_state<instruction_set::avx2>& state) {
   __m256i highbit = _mm256_set1_epi8(0x80);
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
     // it is ascii, we just check continuation
-    helper.has_error = _mm256_or_si256(
+    state.has_error = _mm256_or_si256(
         _mm256_cmpgt_epi8(
-            helper.previous.carried_continuations,
+            state.previous.carried_continuations,
             _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                              9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
-        helper.has_error);
+        state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
-    helper.previous = avxcheckUTF8Bytes(in.lo, &(helper.previous), &(helper.has_error));
-    helper.previous = avxcheckUTF8Bytes(in.hi, &(helper.previous), &(helper.has_error));
+    state.previous = avxcheckUTF8Bytes(in.lo, &(state.previous), &(state.has_error));
+    state.previous = avxcheckUTF8Bytes(in.hi, &(state.previous), &(state.has_error));
   }
 }
 #endif //__AVX2__
@@ -248,51 +248,51 @@ void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
 #if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<> really_inline
 void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
-                check_utf8_helper<instruction_set::sse4_2>& helper) {
+                utf8_checking_state<instruction_set::sse4_2>& state) {
   __m128i highbit = _mm_set1_epi8(0x80);
   if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), highbit)) == 1) {
     // it is ascii, we just check continuation
-    helper.has_error = _mm_or_si128(
+    state.has_error = _mm_or_si128(
         _mm_cmpgt_epi8(
-            helper.previous.carried_continuations,
+            state.previous.carried_continuations,
             _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
-        helper.has_error);
+        state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
-    helper.previous = checkUTF8Bytes(in.v0, &(helper.previous), &(helper.has_error));
-    helper.previous = checkUTF8Bytes(in.v1, &(helper.previous), &(helper.has_error));
+    state.previous = checkUTF8Bytes(in.v0, &(state.previous), &(state.has_error));
+    state.previous = checkUTF8Bytes(in.v1, &(state.previous), &(state.has_error));
   }
 
   if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), highbit)) == 1) {
     // it is ascii, we just check continuation
-    helper.has_error = _mm_or_si128(
+    state.has_error = _mm_or_si128(
             _mm_cmpgt_epi8(
-                    helper.previous.carried_continuations,
+                    state.previous.carried_continuations,
                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1)),
-            helper.has_error);
+            state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
-    helper.previous = checkUTF8Bytes(in.v2, &(helper.previous), &(helper.has_error));
-    helper.previous = checkUTF8Bytes(in.v3, &(helper.previous), &(helper.has_error));
+    state.previous = checkUTF8Bytes(in.v2, &(state.previous), &(state.has_error));
+    state.previous = checkUTF8Bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
 #endif // __SSE4_2
 
 // Checks if the utf8 validation has found any error.
 template<instruction_set T>
-errorValues check_utf8_errors(check_utf8_helper<T>& helper);
+errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
 #ifdef __AVX2__
 template<> really_inline
-errorValues check_utf8_errors<instruction_set::avx2>(check_utf8_helper<instruction_set::avx2>& helper) {
-  return _mm256_testz_si256(helper.has_error, helper.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+errorValues check_utf8_errors<instruction_set::avx2>(utf8_checking_state<instruction_set::avx2>& state) {
+  return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 #endif
 
 #if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<> really_inline
-errorValues check_utf8_errors<instruction_set::sse4_2>(check_utf8_helper<instruction_set::sse4_2>& helper) {
-  return _mm_testz_si128(helper.has_error, helper.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+errorValues check_utf8_errors<instruction_set::sse4_2>(utf8_checking_state<instruction_set::sse4_2>& state) {
+  return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 #endif
 #endif // SIMDJSON_UTF8VALIDATE
@@ -368,7 +368,6 @@ uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_
   __m128i cmp_res_3 = _mm_cmpeq_epi8(in.v3, mask);
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
-  return res_0 | (res_1 << 32);
 }
 #endif
 
@@ -941,7 +940,7 @@ WARN_UNUSED
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
 #ifdef SIMDJSON_UTF8VALIDATE
-  check_utf8_helper<T> helper;
+  utf8_checking_state<T> state;
 #endif
 
   // we have padded the input out to 64 byte multiple with the remainder being
@@ -977,7 +976,7 @@ WARN_UNUSED
 #endif
     simd_input<T> in = fill_input<T>(buf+idx);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8<T>(in, helper);
+    check_utf8<T>(in, state);
 #endif
     // detect odd sequences of backslashes
     uint64_t odd_ends = find_odd_backslash_sequences<T>(
@@ -1012,7 +1011,7 @@ WARN_UNUSED
     memcpy(tmpbuf, buf + idx, len - idx);
     simd_input<T> in = fill_input<T>(tmpbuf);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8<T>(in, helper);
+    check_utf8<T>(in, state);
 #endif
 
     // detect odd sequences of backslashes
@@ -1069,7 +1068,7 @@ WARN_UNUSED
     return simdjson::UNESCAPED_CHARS;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
-  return check_utf8_errors<T>(helper);
+  return check_utf8_errors<T>(state);
 #else
   return simdjson::SUCCESS;
 #endif
