@@ -182,10 +182,11 @@ checkUTF8Bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
   return pb;
 }
 
+#if 0
 static const int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
 
 /* Return 0 on success, -1 on error */
-/*int utf8_lemire(const unsigned char *src, int len) {
+int utf8_lemire(const unsigned char *src, int len) {
   int i = 0;
   int8x16_t has_error = vdupq_n_s8(0);
   struct processed_utf_bytes previous = {.rawbytes = vdupq_n_s8(0),
@@ -215,6 +216,7 @@ static const int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1}
 
   return vmaxvq_u8(vreinterpretq_u8_s8(has_error)) == 0 ? 0 : -1;
 }
-*/
+#endif
+
 #endif
 #endif

@@ -227,27 +227,25 @@ struct utf8_checking_state<instruction_set::sse4_2>
 template<>
 struct utf8_checking_state<instruction_set::neon>
 {
-  int8x16_t has_error = vdupq_n_s8(0);
-  processed_utf_bytes previous {
-    vdupq_n_s8(0),
-    vdupq_n_s8(0),
-    vdupq_n_s8(0)
-  };
+  int8x16_t has_error {};
+  processed_utf_bytes previous {};
 };
 #endif
 
 #if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+// Checks that all bytes are ascii
 really_inline
 bool check_ascii_neon(simd_input<instruction_set::neon> in) {
-    uint8x16_t highbit = vdupq_n_u8(0x80);
-    uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
-    uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
-    uint8x16_t t3 = vorrq_u8(t0, t1);
-    uint8x16_t t4 = vandq_u8(t3, highbit);
-    uint64x2_t v64 = vreinterpretq_u64_u8(t4);
-    uint32x2_t v32 = vqmovn_u64(v64);
-    uint64x1_t result = vreinterpret_u64_u32(v32);
-    return vget_lane_u64(result, 0) == 0;
+  // checking if the most significant bit is always equal to 0.
+  uint8x16_t highbit = vdupq_n_u8(0x80);
+  uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
+  uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
+  uint8x16_t t3 = vorrq_u8(t0, t1);
+  uint8x16_t t4 = vandq_u8(t3, highbit);
+  uint64x2_t v64 = vreinterpretq_u64_u8(t4);
+  uint32x2_t v32 = vqmovn_u64(v64);
+  uint64x1_t result = vreinterpret_u64_u32(v32);
+  return vget_lane_u64(result, 0) == 0;
 }
 #endif
 
@@ -313,6 +311,8 @@ template<> really_inline
 void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
                 utf8_checking_state<instruction_set::neon>& state) {
   if (check_ascii_neon(in)) {
+    // All bytes are ascii. Therefore the byte that was just before must be ascii too.
+    // We only check the byte that was just before simd_input. Nines are arbitrary values.
     int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
     state.has_error =
         vorrq_s8(vreinterpretq_s8_u8(vcgtq_s8(state.previous.carried_continuations,
@@ -326,7 +326,7 @@ void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
     state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i3), &(state.previous), &(state.has_error));
   }
 }
-#endif
+#endif // __ARM_NEON
 
 // Checks if the utf8 validation has found any error.
 template<instruction_set T>
