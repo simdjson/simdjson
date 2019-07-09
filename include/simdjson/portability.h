@@ -35,7 +35,7 @@ static inline int hamming(uint64_t input_num) {
 		__popcnt((uint32_t)(input_num >> 32)));
 #endif
 }
-}
+} // namespace simdjson
 #else
 #include <cstdint>
 #include <cstdlib>

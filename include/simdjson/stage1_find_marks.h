@@ -106,18 +106,10 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
                                 0x04, 0x40, 0x04, 0x40, 0x04, 0x40, 0x04, 0x40};
   const uint8x16_t bitmask4 = { 0x08, 0x80, 0x08, 0x80, 0x08, 0x80, 0x08, 0x80,
                                 0x08, 0x80, 0x08, 0x80, 0x08, 0x80, 0x08, 0x80};
-#if 0
-  uint8x16_t t0 = vandq_u8(p0, bitmask1);
-  uint8x16_t t1 = vandq_u8(p1, bitmask2);
-  uint8x16_t t2 = vandq_u8(p2, bitmask3);
-  uint8x16_t t3 = vandq_u8(p3, bitmask4);
-  uint8x16_t tmp = vorrq_u8(vorrq_u8(t0, t1), vorrq_u8(t2, t3));
-#else
   uint8x16_t t0 = vandq_u8(p0, bitmask1);
   uint8x16_t t1 = vbslq_u8(bitmask2, p1, t0);
   uint8x16_t t2 = vbslq_u8(bitmask3, p2, t1);
   uint8x16_t tmp = vbslq_u8(bitmask4, p3, t2);
-#endif
   uint8x16_t sum = vpaddq_u8(tmp, tmp);
   return vgetq_lane_u64(vreinterpretq_u64_u8(sum), 0);
 #endif
