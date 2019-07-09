@@ -4,7 +4,7 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_NEON_H
 #define SIMDJSON_SIMDUTF8CHECK_NEON_H
 
-#ifdef __aarch64__
+#if defined(__aarch64__) || (defined(_MSC_VER) && defined(_M_ARM64))
 
 #include <stdio.h>
 #include <stddef.h>
@@ -29,20 +29,6 @@
  * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
  *
  */
-
-#if 0
-static void print128(const char *s, const int8x16_t *v128)
-{
-    int8_t v8[16];
-    vst1q_s8(v8, *v128);
-
-    if (s)
-        printf("%s:\t", s);
-    for (int i = 0; i < 16; ++i)
-        printf("%02x ", (unsigned char)v8[i]);
-    printf("\n");
-}
-#endif
 
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(int8x16_t current_bytes,
@@ -181,42 +167,6 @@ checkUTF8Bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
                 previous->high_nibbles, has_error);
   return pb;
 }
-
-#if 0
-static const int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
-
-/* Return 0 on success, -1 on error */
-int utf8_lemire(const unsigned char *src, int len) {
-  int i = 0;
-  int8x16_t has_error = vdupq_n_s8(0);
-  struct processed_utf_bytes previous = {.rawbytes = vdupq_n_s8(0),
-                                         .high_nibbles = vdupq_n_s8(0),
-                                         .carried_continuations =
-                                             vdupq_n_s8(0)};
-  if (len >= 16) {
-    for (; i <= len - 16; i += 16) {
-      int8x16_t current_bytes = vld1q_s8((int8_t*)(src + i));
-      previous = checkUTF8Bytes(current_bytes, &previous, &has_error);
-    }
-  }
-
-  // last part
-  if (i < len) {
-    char buffer[16];
-    memset(buffer, 0, 16);
-    memcpy(buffer, src + i, len - i);
-    int8x16_t current_bytes = vld1q_s8((int8_t *)buffer);
-    previous = checkUTF8Bytes(current_bytes, &previous, &has_error);
-  } else {
-    has_error =
-        vorrq_s8(vreinterpretq_s8_u8(vcgtq_s8(previous.carried_continuations,
-                                    vld1q_s8(_verror))),
-                     has_error);
-  }
-
-  return vmaxvq_u8(vreinterpretq_u8_s8(has_error)) == 0 ? 0 : -1;
-}
-#endif
 
 #endif
 #endif

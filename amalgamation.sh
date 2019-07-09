@@ -35,6 +35,7 @@ $SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/jsonioutil.h
 $SCRIPTPATH/include/simdjson/simdprune_tables.h
 $SCRIPTPATH/include/simdjson/simdutf8check.h
+$SCRIPTPATH/include/simdjson/simdutf8check_neon.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h

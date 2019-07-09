@@ -2,6 +2,7 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_H
 #define SIMDJSON_SIMDUTF8CHECK_H
 
+#if defined (__AVX2__) || defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 
 #include <stddef.h>
 #include <stdint.h>
@@ -324,4 +325,7 @@ avxcheckUTF8Bytes(__m256i current_bytes,
 
 #endif // __AVX2__
 }
+
+#endif // defined (__AVX2__) || defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+
 #endif
