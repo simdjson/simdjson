@@ -3,6 +3,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
+#include "simdjson/padded_string.h"
 
 namespace simdjson {
 
