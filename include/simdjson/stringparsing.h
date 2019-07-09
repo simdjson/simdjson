@@ -77,10 +77,6 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr, uint8_t **d
   return offset > 0;
 }
 
-#ifdef __ARM_NEON
-#include <arm_neon.h>
-#endif
-
 // Holds backslashes and quotes locations.
 struct parse_string_helper {
   uint32_t bs_bits;
