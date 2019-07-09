@@ -1109,11 +1109,9 @@ WARN_UNUSED
   // a valid JSON file cannot have zero structural indexes - we should have
   // found something
   if (pj.n_structural_indexes == 0u) {
-    fprintf(stderr, "Empty document?\n");
     return simdjson::EMPTY;
   }
   if (base_ptr[pj.n_structural_indexes - 1] > len) {
-    fprintf(stderr, "Internal bug\n");
     return simdjson::UNEXPECTED_ERROR;
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
@@ -1124,7 +1122,6 @@ WARN_UNUSED
   // make it safe to dereference one beyond this array
   base_ptr[pj.n_structural_indexes] = 0;  
   if (error_mask) {
-    fprintf(stderr, "Unescaped characters\n");
     return simdjson::UNESCAPED_CHARS;
   }
 #ifdef SIMDJSON_UTF8VALIDATE
