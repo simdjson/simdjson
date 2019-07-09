@@ -101,11 +101,10 @@ cat <<< '
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
-using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
-  padded_string p = get_corpus(filename);
-  ParsedJson pj = build_parsed_json(p); // do the parsing
+  simdjson::padded_string p = simdjson::get_corpus(filename);
+  simdjson::ParsedJson pj = simdjson::build_parsed_json(p); // do the parsing
   if( ! pj.isValid() ) {
     std::cout << "not valid" << std::endl;
   } else {

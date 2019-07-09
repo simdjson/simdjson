@@ -4,13 +4,13 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_NEON_H
 #define SIMDJSON_SIMDUTF8CHECK_NEON_H
 
-#if defined(__aarch64__) || (defined(_MSC_VER) && defined(_M_ARM64))
+#if defined(_ARM_NEON) || defined(__aarch64__) || (defined(_MSC_VER) && defined(_M_ARM64))
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-#include <inttypes.h>
+#include <cstdio>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <cinttypes>
 #include <arm_neon.h>
 
 /*
