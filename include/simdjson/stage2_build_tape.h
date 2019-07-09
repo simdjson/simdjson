@@ -12,8 +12,6 @@
 #include "simdjson/stringparsing.h"
 #include "simdjson/simdjson.h"
 
-#define PATH_SEP '/'
-
 namespace simdjson {
 void init_state_machine();
 
