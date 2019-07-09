@@ -70,10 +70,17 @@ static bool parse_string(const char *p, char *output, char **end) {
   p++;
 
   for (;;) {
-
+#if CHAR_MIN < 0
+    // in this path, char is *signed*
     if ((*p >= 0 && *p < 0x20)) {
       return false; // unescaped
     }
+#else
+    // we have unsigned chars
+    if (*p < 0x20) {
+      return false; // unescaped
+    }
+#endif
 
     switch (*p) {
     case '"':
