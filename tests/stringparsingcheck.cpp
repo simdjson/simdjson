@@ -2,6 +2,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <inttypes.h>
+#include <climits>
 #include <iostream>
 #include <math.h>
 #include <stdbool.h>
@@ -70,8 +71,8 @@ static bool parse_string(const char *p, char *output, char **end) {
   p++;
 
   for (;;) {
-#if CHAR_MIN < 0
-    // in this path, char is *signed*
+#if (CHAR_MIN < 0) || (!defined(CHAR_MIN)) // the '!defined' is just paranoia
+    // in this path, char is *signed* 
     if ((*p >= 0 && *p < 0x20)) {
       return false; // unescaped
     }
