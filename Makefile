@@ -98,10 +98,7 @@ test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheck
 	./jsoncheck
 	./scripts/testjson2json.sh
 	./scripts/issue150.sh
-	@echo
-	@tput setaf 2
 	@echo "It looks like the code is good!"
-	@tput sgr0
 
 quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
 	./basictests
