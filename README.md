@@ -440,6 +440,18 @@ make allparsingcompetition
 Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
 a table-oriented output that can be conventiently parsed by other tools.
 
+
+## Docker
+
+One can run tests and benchmarks using docker. It especially makes sense under Linux. A privileged access may be needed to get performance counters.
+
+```
+git clone https://github.com/lemire/simdjson.git
+cd simdjson
+docker build -t simdjson . 
+docker run --privileged -t simdjson
+```
+
 ## Other programming languages
 
 We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
