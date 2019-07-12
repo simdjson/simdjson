@@ -305,10 +305,10 @@ void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
   if (check_ascii_neon(in)) {
     // All bytes are ascii. Therefore the byte that was just before must be ascii too.
     // We only check the byte that was just before simd_input. Nines are arbitrary values.
-    int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
+    const int8x16_t verror = (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
     state.has_error =
         vorrq_s8(vreinterpretq_s8_u8(vcgtq_s8(state.previous.carried_continuations,
-                                    vld1q_s8(_verror))),
+                                    verror)),
                      state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
