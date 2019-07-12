@@ -112,7 +112,7 @@ void foundFloat(double result, const uint8_t *buf) {
   }
   // we want to get some reasonable relative accuracy
   uint64_t ULP = f64_ulp_dist(expected,result);
-  if (f64_ulp_dist(expected,result) > 1) {
+  if (f64_ulp_dist(expected,result) > 3) {
     fprintf(stderr, "parsed %.128e from \n", result);
     fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
     fprintf(stderr, "       %.128e,", expected);

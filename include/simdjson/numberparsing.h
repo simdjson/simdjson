@@ -217,12 +217,13 @@ parse_float(const uint8_t *const buf,
   }
   if ('.' == *p) {
     ++p;
-    double fractionalweight = 1;
+    int fractionalweight = 308;
     if(is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractionalweight *= 0.1;
-      i = i + digit * fractionalweight;
+
+      fractionalweight --;
+      i = i + digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
@@ -232,8 +233,8 @@ parse_float(const uint8_t *const buf,
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractionalweight *= 0.1;
-      i = i + digit * fractionalweight;
+      fractionalweight --;
+      i = i + digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
     }
   }
   if (('e' == *p) || ('E' == *p)) {
@@ -525,7 +526,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
       foundFloat(0.0, buf + offset);
 #endif
     } else {
-      double d = i;
+      double d = (double)i;
       d = negative ? -d : d;
       uint64_t powerindex = 308 + exponent;
       if(likely(powerindex <= 2 * 308)) {
