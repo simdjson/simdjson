@@ -231,6 +231,23 @@ public:
     // this is equivalent but much faster than calling "next()".
     inline void move_to_value();
 
+    // Moves the iterator to the value correspoding to the json pointer.
+    // Always search from the root of the document.
+    // if successful, we are left pointing at the value,
+    // in case of failure, we do not move.
+    // The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+    bool move_to(const char * pointer, uint32_t length);
+
+    // Almost the same as move_to(), except it searchs from the current position.
+    // The pointer's syntax is identical, though that case is not handled by the rfc6901 standard.
+    // The '/' is still required at the beginning.
+    // However, contrary to move_to(), the URI Fragment Identifier Representation is not supported here.
+    // Also, in case of failure, we are left pointing at the closest value it could reach.
+    // For these reasons it is private. It exists because it is used by move_to().
+  private:
+    bool relative_move_to(const char * pointer, uint32_t length);
+  public:
+
     // throughout return true if we can do the navigation, false
     // otherwise
 
@@ -263,6 +280,10 @@ public:
     // move us to the start of our current scope,
     // a scope is a series of nodes at the same level
     inline void to_start_scope();
+
+    inline void rewind() {
+      while(up());
+    }
 
     // void to_end_scope();              // move us to
     // the start of our current scope; always succeeds
@@ -419,8 +440,7 @@ bool ParsedJson::iterator::move_to_key(const char * key, uint32_t length) {
     return false;
 }
 
-
- bool ParsedJson::iterator::prev() {
+bool ParsedJson::iterator::prev() {
     if(location - 1 < depthindex[depth].start_of_scope) {
       return false;
     }
