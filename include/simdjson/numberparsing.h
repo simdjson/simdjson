@@ -201,7 +201,7 @@ parse_float(const uint8_t *const buf,
     ++p;
     negative = true;
   }
-  double i;
+  long double i;
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     i = 0;
@@ -511,37 +511,30 @@ static really_inline bool parse_number(const uint8_t *const buf,
     exponent += (negexp ? -expnumber : expnumber);
   }
   if (is_float) {
-    if (unlikely(digitcount >= 19)) { // this is uncommon!!!
+    uint64_t powerindex = 308 + exponent;
+    if (unlikely((digitcount >= 19) || (powerindex > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
       return parse_float(buf, pj, offset,
                                        found_minus);
     }
-    ///////////
-    // We want 0.1e1 to be a float.
-    //////////
-    if (i == 0) {
-      pj.write_tape_double(0.0);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(0.0, buf + offset);
-#endif
-    } else {
-      double d = (double)i;
-      d = negative ? -d : d;
-      uint64_t powerindex = 308 + exponent;
-      if(likely(powerindex <= 2 * 308)) {
-        // common case
-        d *= power_of_ten[powerindex];
-      } else {
-        // this is uncommon so let us move this special case out
-        // of the main loop
-        return parse_float(buf, pj, offset,found_minus);
-      }
+    double factor = power_of_ten[powerindex];
+    factor = negative ? -factor : factor;
+    if(i <= UINT64_C(0x1fffffffffffff)) {
+      double d = i * factor;
       pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundFloat(d, buf + offset);
 #endif
-    }
+    } else {//if(i=< UINT64_C(0x1fffffffffffff))
+      double d1 = (double)(uint32_t)i;
+      double d2 = (double)(uint32_t)(i>>32);
+      double d = d1 * factor + d2 * factor * 4294967296;
+      pj.write_tape_double(d);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      foundFloat(d, buf + offset);
+#endif
+    }//if(i=< UINT64_C(0x1fffffffffffff))
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
       return parse_large_integer(buf, pj, offset,
