@@ -1,9 +1,36 @@
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
+#if defined(__x86_64__) || defined(_M_AMD64)
+# define IS_x86_64 1
+#endif
+#if defined(__aarch64__) || defined(_M_ARM64)
+# define IS_ARM64 1
+#endif
+#define TARGET(T) [[gnu::target(T)]]
+
+#define STRINGIFY(a) #a
+#define TARGET_REGION(T) \
+_Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) \
+_Pragma("GCC push_options") \
+_Pragma(STRINGIFY(GCC target(T)))
+
+#define UNTARGET_REGION \
+_Pragma("clang attribute pop") \
+_Pragma("GCC pop_options")
+
+#ifdef _MSC_VER
+# include <intrin.h>
+#else
+# if IS_x86_64
+#  include <x86intrin.h>
+# elif IS_ARM64
+#  include <arm_neon.h>
+# endif
+#endif
+
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
 #include <iso646.h>
 #include <cstdint>
 
@@ -40,9 +67,6 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 #include <cstdlib>
 
-#if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__) || defined(__SSE4_2__)
-#include <x86intrin.h>
-#endif
 namespace simdjson {
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);

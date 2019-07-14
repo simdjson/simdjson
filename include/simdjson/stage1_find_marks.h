@@ -6,16 +6,8 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
-#if defined (__AVX2__)
-#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-#elif defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
-#include <arm_neon.h>
-#else
-#warning It appears that neither ARM NEON nor AVX2 nor SSE are detected.
-#endif // (__AVX2__)
-
 #ifndef SIMDJSON_SKIPUTF8VALIDATION
-#define SIMDJSON_UTF8VALIDATE
+// #define SIMDJSON_UTF8VALIDATE
 #endif
 
 // It seems that many parsers do UTF-8 validation.
@@ -37,16 +29,14 @@ namespace simdjson {
 template<instruction_set>
 struct simd_input;
 
-#ifdef __AVX2__
+#ifdef IS_x86_64
 template<>
 struct simd_input<instruction_set::avx2>
 {
   __m256i lo;
   __m256i hi;
 };
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<>
 struct simd_input<instruction_set::sse4_2>
 {
@@ -55,9 +45,9 @@ struct simd_input<instruction_set::sse4_2>
   __m128i v2;
   __m128i v3;
 };
-#endif
+#endif // IS_x86_64
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> struct simd_input<instruction_set::neon>
 {
 #ifndef TRANSPOSE
@@ -69,9 +59,7 @@ template<> struct simd_input<instruction_set::neon>
   uint8x16x4_t i;
 #endif
 };
-#endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
 really_inline
 uint16_t neonmovemask(uint8x16_t input) {
   const uint8x16_t bitmask = { 0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
@@ -114,7 +102,7 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
   return vgetq_lane_u64(vreinterpretq_u64_u8(sum), 0);
 #endif
 }
-#endif
+#endif // IS_ARM64
 
 template<instruction_set T>
 uint64_t compute_quote_mask(uint64_t quote_bits);
@@ -147,8 +135,8 @@ uint64_t compute_quote_mask(uint64_t quote_bits) {
 template<instruction_set>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
-#ifdef __AVX2__ 
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
@@ -156,23 +144,18 @@ uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   return quote_mask;
 }
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2,pclmul") really_inline // NB: this only needs SSE2, but AFAIK the earliest processor with CLMUL has SSE4.2
+// TODO templ param needs pclmul
 uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
   // CLMUL is supported on some SSE42 hardware such as Sandy Bridge,
   // but not on others.
-#ifdef __PCLMUL__
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
-#else
-  return portable_compute_quote_mask(quote_bits);
-#endif
 }
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
@@ -181,7 +164,7 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
   return portable_compute_quote_mask(quote_bits);
 #endif 
 }
-#endif
+#endif // IS_ARM64
 #endif // SIMDJSON_AVOID_CLMUL
 
 #ifdef SIMDJSON_UTF8VALIDATE
@@ -189,7 +172,9 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 template<instruction_set>
 struct utf8_checking_state;
 
-#ifdef __AVX2__
+#ifdef IS_x86_64
+
+TARGET_REGION("avx2")
 template<>
 struct utf8_checking_state<instruction_set::avx2>
 {
@@ -200,9 +185,9 @@ struct utf8_checking_state<instruction_set::avx2>
     _mm256_setzero_si256()  // carried_continuations
   };
 };
-#endif
+UNTARGET_REGION()
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+TARGET_REGION("sse4.2")
 template<>
 struct utf8_checking_state<instruction_set::sse4_2>
 {
@@ -213,18 +198,17 @@ struct utf8_checking_state<instruction_set::sse4_2>
     _mm_setzero_si128()  // carried_continuations
   };
 };
+UNTARGET_REGION()
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<>
 struct utf8_checking_state<instruction_set::neon>
 {
   int8x16_t has_error {};
   processed_utf_bytes previous {};
 };
-#endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
 // Checks that all bytes are ascii
 really_inline
 bool check_ascii_neon(simd_input<instruction_set::neon> in) {
@@ -244,8 +228,8 @@ bool check_ascii_neon(simd_input<instruction_set::neon> in) {
 template<instruction_set T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
                 utf8_checking_state<instruction_set::avx2>& state) {
   __m256i highbit = _mm256_set1_epi8(0x80);
@@ -263,10 +247,8 @@ void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
     state.previous = avxcheckUTF8Bytes(in.hi, &(state.previous), &(state.has_error));
   }
 }
-#endif //__AVX2__
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
                 utf8_checking_state<instruction_set::sse4_2>& state) {
   __m128i highbit = _mm_set1_epi8(0x80);
@@ -296,9 +278,9 @@ void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
     state.previous = checkUTF8Bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
-#endif // __SSE4_2
+#endif // IS_x86_64
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
                 utf8_checking_state<instruction_set::neon>& state) {
@@ -318,27 +300,25 @@ void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
     state.previous = checkUTF8Bytes(vreinterpretq_s8_u8(in.i3), &(state.previous), &(state.has_error));
   }
 }
-#endif // __ARM_NEON
+#endif // IS_ARM64
 
 // Checks if the utf8 validation has found any error.
 template<instruction_set T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 errorValues check_utf8_errors<instruction_set::avx2>(utf8_checking_state<instruction_set::avx2>& state) {
   return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 errorValues check_utf8_errors<instruction_set::sse4_2>(utf8_checking_state<instruction_set::sse4_2>& state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruction_set::neon>& state) {
   uint64x2_t v64 = vreinterpretq_u64_s8(state.has_error);
@@ -352,18 +332,16 @@ errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruc
 template<instruction_set T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
   struct simd_input<instruction_set::avx2> in;
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   return in;
 }
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
   struct simd_input<instruction_set::sse4_2> in;
   in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
@@ -374,7 +352,7 @@ simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const ui
 }
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_t * ptr) {
   struct simd_input<instruction_set::neon> in;
@@ -395,8 +373,8 @@ simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_
 template<instruction_set T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
   const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
@@ -405,10 +383,8 @@ uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_se
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
   const __m128i mask = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
@@ -423,7 +399,7 @@ uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_
 }
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
@@ -439,8 +415,8 @@ uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_se
 template<instruction_set T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
   const __m256i maxval = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
@@ -449,10 +425,8 @@ uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instructi
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
-#endif
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
   const __m128i maxval = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v0),maxval);
@@ -467,7 +441,7 @@ uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruc
 }
 #endif
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
@@ -488,11 +462,11 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-template<instruction_set T> really_inline
+template<instruction_set T> TARGET("avx2") really_inline
 uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input(in, '\\');
+  uint64_t bs_bits = cmp_mask_against_input<T>(in, '\\');
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   // flip lowest if we have an odd-length run at the end of the prior
   // iteration
@@ -567,8 +541,8 @@ void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &whitespace,
                                      uint64_t &structurals);
 
-#ifdef __AVX2__
-template<> really_inline
+#ifdef IS_x86_64
+template<> TARGET("avx2") really_inline
 void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
                                                      uint64_t &whitespace,
                                                      uint64_t &structurals) {
@@ -647,10 +621,8 @@ void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instructi
   structurals = (structural_res_0 | (structural_res_1 << 32));
 #endif // SIMDJSON_NAIVE_STRUCTURAL
 }
-#endif // __AVX2__
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
+template<> TARGET("sse4.2") really_inline
 void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
                                                      uint64_t &whitespace, uint64_t &structurals) {
   const __m128i structural_table = _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
@@ -701,9 +673,9 @@ void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruc
 
   structurals = (structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
 }
-#endif // __SSE4_2__
+#endif // X86_64
 
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 template<> really_inline
 void find_whitespace_and_structurals<instruction_set::neon>(
                                                   simd_input<instruction_set::neon> in,

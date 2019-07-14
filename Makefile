@@ -18,7 +18,7 @@ architecture:=$(shell arch)
 ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a+crc+crypto
 else
-ARCHFLAGS ?= -march=native
+ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
 CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
