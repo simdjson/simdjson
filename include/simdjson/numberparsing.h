@@ -195,7 +195,6 @@ static never_inline bool
 parse_float(const uint8_t *const buf,
                           ParsedJson &pj, const uint32_t offset,
                           bool found_minus) {
-  printf("parse_float %.32s \n", buf + offset);
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -323,7 +322,6 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
                                              ParsedJson &pj,
                                              const uint32_t offset,
                                              bool found_minus) {
-printf("parse_large_integer\n");
   const char *p = reinterpret_cast<const char *>(buf + offset);
 
   bool negative = false;
@@ -391,6 +389,7 @@ printf("parse_large_integer\n");
 // is made of a single number), then it is necessary to copy the content and append
 // a space before calling this function.
 //
+// Our objective is accurate parsing (ULP of 0 or 1) at high speed.
 static really_inline bool parse_number(const uint8_t *const buf,
                                        ParsedJson &pj,
                                        const uint32_t offset,
@@ -411,7 +410,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
       return false;
     }
   }
-  const char * const startdigits = p;
+  const char *const startdigits = p;
 
   uint64_t i; // an unsigned int avoids signed overflows (which are bad)
   if (*p == '0') { // 0 cannot be followed by an integer
@@ -421,7 +420,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
       foundInvalidNumber(buf + offset);
 #endif
       return false;
-    } 
+    }
     i = 0;
   } else {
     if (!(is_integer(*p))) { // must start with an integer
@@ -437,20 +436,26 @@ static really_inline bool parse_number(const uint8_t *const buf,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = *p - '0';
-      i = 10 * i + digit; // might overflow
+      // a multiplication by 10 is cheaper than an arbitrary integer multiplication
+      i = 10 * i + digit; // might overflow, we will handle the overflow later
       ++p;
     }
   }
   int64_t exponent = 0;
   bool is_float = false;
   if ('.' == *p) {
-    is_float = true;
+    is_float = true; // At this point we know that we have a float
+    // we continue with the fiction that we have an integer. If the
+    // floating point number is representable as x * 10^z for some integer
+    // z that fits in 53 bits, then we will be able to convert back the
+    // the integer into a float in a lossless manner.
     ++p;
     const char *const firstafterperiod = p;
     if(is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      i = i * 10 + digit;
+      i = i * 10 + digit; // might overflow + multiplication by 10 is likely cheaper than arbitrary mult.
+      // we will handle the overflow later
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
@@ -560,6 +565,8 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }//if(i=< UINT64_C(0x1fffffffffffff))
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
+      // there is a good chance that we had an overflow, so we need
+      // need to recover: we parse the whole thing again.
       return parse_large_integer(buf, pj, offset,
                                  found_minus);
     }
