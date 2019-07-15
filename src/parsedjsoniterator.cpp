@@ -125,11 +125,10 @@ bool ParsedJson::iterator::move_to(const char * pointer, uint32_t length) {
       length = new_length;
       pointer = new_pointer;
     }
-    std::cout << pointer << " -----------------" << std::endl;
+    
     // saving the current state
     size_t depth_s = depth;
     size_t location_s = location;
-    size_t tape_length_s = tape_length;
     uint8_t current_type_s = current_type;
     uint64_t current_val_s = current_val;
     scopeindex_t *depthindex_s = depthindex;
@@ -143,7 +142,6 @@ bool ParsedJson::iterator::move_to(const char * pointer, uint32_t length) {
       // since the pointer has found nothing, we get back to the original position.
       depth = depth_s;
       location = location_s;
-      tape_length = tape_length_s;
       current_type = current_type_s;
       current_val = current_val_s;
       depthindex = depthindex_s;
@@ -210,7 +208,7 @@ bool ParsedJson::iterator::relative_move_to(const char * pointer, uint32_t lengt
       }
       key_or_index += pointer[offset];
     }
-    
+
     bool found = false;
     if (is_object()) {
       if (move_to_key(key_or_index.c_str(), key_or_index.length())) {
@@ -221,7 +219,18 @@ bool ParsedJson::iterator::relative_move_to(const char * pointer, uint32_t lengt
       if (down()) {
         if (key_or_index == "-") {
           while(next()); // moving to the end of the array
-          return true;
+          // moving to the nonexistent value right after...
+          size_t npos; 
+          if ((current_type == '[') || (current_type == '{')){
+            // we need to jump
+            npos = ( current_val & JSONVALUEMASK);
+          } else {
+            npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
+          }
+          location = npos;
+          current_val = pj.tape[npos];
+          current_type = (current_val >> 56);
+          return true; // how could it fail ?
         }
         // we already checked the index contains only valid digits
         uint32_t index = std::stoi(key_or_index);

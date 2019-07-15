@@ -58,7 +58,7 @@ endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
-TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck
+TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck pointercheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -91,20 +91,22 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
+test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
+	./pointercheck
 	./scripts/testjson2json.sh
 	./scripts/issue150.sh
 	@echo "It looks like the code is good!"
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
+	./pointercheck
 	./scripts/testjson2json.sh
 	./scripts/issue150.sh
 
@@ -147,6 +149,10 @@ numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp      -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
+
+
+pointercheck:tests/pointercheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o pointercheck tests/pointercheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp src/parsedjsoniterator.cpp -I. $(LIBFLAGS)
 
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) $(LIBS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
