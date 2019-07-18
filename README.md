@@ -55,7 +55,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 - A processor with 
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
   - or SSE 4.2 (i.e., Intel processors going back to Nehalem released in 2008 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
-  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale.
+  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going back as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
 
