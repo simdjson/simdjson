@@ -544,25 +544,11 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }
     double factor = power_of_ten[powerindex];
     factor = negative ? -factor : factor;
-    if(i <= UINT64_C(0x1fffffffffffff)) {
-      // we can convert i to a double safely (losslessly) so the 
-      // following should have good performance.
-      double d = i * factor;
-      pj.write_tape_double(d);
+    double d = i * factor;
+    pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(d, buf + offset);
+    foundFloat(d, buf + offset);
 #endif
-    } else {//if(i=< UINT64_C(0x1fffffffffffff))
-      // we cannot convert the number in a lossless manner.
-      // we have to do it in two steps.
-      double d1 = (double)(uint32_t)i;
-      double d2 = (double)(uint32_t)(i>>32);
-      double d = d1 * factor + d2 * factor * 4294967296;
-      pj.write_tape_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(d, buf + offset);
-#endif
-    }//if(i=< UINT64_C(0x1fffffffffffff))
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
