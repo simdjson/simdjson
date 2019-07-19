@@ -65,7 +65,9 @@ This code is made available under the Apache License 2.0.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
-## Code example
+## Code usage and example
+
+The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::iterator pjh(pj)`, see 'Navigating the parsed document').
 
 ```C
 #include "simdjson/jsonparser.h"
