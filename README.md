@@ -459,6 +459,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
+- [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings)
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port)
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
