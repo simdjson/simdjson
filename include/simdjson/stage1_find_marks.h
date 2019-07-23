@@ -424,6 +424,8 @@ void split_bitmask(uint64_t (&dest)[4], const simd_bitmask<T> bitmask);
 template<instruction_set T>
 simd_bitmask<T> join_bitmask(const uint64_t bitmask[4]);
 template<instruction_set T>
+simd_bitmask<T> set_bitmask(const uint64_t hi, const uint64_t mid_hi, const uint64_t mid_lo, const uint64_t lo);
+template<instruction_set T>
 simd_bitmask<T> splat_bitmask(const uint64_t bitmask);
 
 #ifdef __AVX2__
@@ -438,14 +440,49 @@ really_inline simd_bitmask<instruction_set::avx2> join_bitmask(const uint64_t bi
   return result;
 }
 template<>
+really_inline simd_bitmask<instruction_set::avx2> set_bitmask(const uint64_t hi, const uint64_t mid_hi, const uint64_t mid_lo, const uint64_t lo) {
+	simd_bitmask<instruction_set::avx2> result;
+	result.mask = _mm256_set_epi64x(hi, mid_hi, mid_lo, lo);
+	return result;
+}
+template<>
 really_inline simd_bitmask<instruction_set::avx2> splat_bitmask(const uint64_t bitmask) {
 	simd_bitmask<instruction_set::avx2> result;
 	result.mask = _mm256_set1_epi64x(bitmask);
 	return result;
 }
-really_inline simd_bitmask<instruction_set::avx2> operator~(const simd_bitmask<instruction_set::avx2> bitmask) {
+really_inline simd_bitmask<instruction_set::avx2> operator&(const simd_bitmask<instruction_set::avx2> a, const simd_bitmask<instruction_set::avx2> b) {
 	simd_bitmask<instruction_set::avx2> result;
-	result.mask = _mm256_xor_si256(bitmask.mask, _mm256_set1_epi64x(-1));
+	result.mask = _mm256_and_si256(a.mask, b.mask);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::avx2> operator|(const simd_bitmask<instruction_set::avx2> a, const simd_bitmask<instruction_set::avx2> b) {
+	simd_bitmask<instruction_set::avx2> result;
+	result.mask = _mm256_or_si256(a.mask, b.mask);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::avx2> operator^(const simd_bitmask<instruction_set::avx2> a, const simd_bitmask<instruction_set::avx2> b) {
+	simd_bitmask<instruction_set::avx2> result;
+	result.mask = _mm256_xor_si256(a.mask, b.mask);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::avx2> operator~(const simd_bitmask<instruction_set::avx2> bitmask) {
+	return bitmask ^ splat_bitmask<instruction_set::avx2>(-1);
+}
+// Lifted straight from https://stackoverflow.com/questions/25248766/emulating-shifts-on-32-bytes-with-avx
+template<int n>
+really_inline simd_bitmask<instruction_set::avx2> simd_shl(const simd_bitmask<instruction_set::avx2> a) {
+	simd_bitmask<instruction_set::avx2> result;
+	if (n < 16) {
+		__m256i x = _mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0));
+		result.mask = _mm256_alignr_epi8(a.mask, x, 16 - n);
+	}
+	else if (n == 16) {
+		result.mask = _mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0));
+	}
+	else {
+		result.mask = _mm256_slli_si256(_mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0)), n - 16);
+	}
 	return result;
 }
 #endif
@@ -458,22 +495,51 @@ really_inline void split_bitmask(uint64_t(&dest)[4], const simd_bitmask<instruct
 }
 template<>
 really_inline simd_bitmask<instruction_set::sse4_2> join_bitmask(const uint64_t bitmasks[4]) {
-  simd_bitmask<instruction_set::sse4_2> bitmask;
-  bitmask.lo = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[0]));
-  bitmask.hi = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[2]));
-  return bitmask;
+	simd_bitmask<instruction_set::sse4_2> bitmask;
+	bitmask.lo = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[0]));
+	bitmask.hi = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[2]));
+	return bitmask;
+}
+template<>
+really_inline simd_bitmask<instruction_set::sse4_2> set_bitmask(const uint64_t hi, const uint64_t mid_hi, const uint64_t mid_lo, const uint64_t lo) {
+	simd_bitmask<instruction_set::sse4_2> result;
+	result.hi = _mm_set_epi64x(hi, mid_hi);
+	result.lo = _mm_set_epi64x(mid_lo, lo);
+	return result;
 }
 template<>
 really_inline simd_bitmask<instruction_set::sse4_2> splat_bitmask(const uint64_t bitmask) {
 	simd_bitmask<instruction_set::sse4_2> result;
-	result.lo = _mm_set1_epi64x(bitmask);
 	result.hi = _mm_set1_epi64x(bitmask);
+	result.lo = _mm_set1_epi64x(bitmask);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::sse4_2> operator&(const simd_bitmask<instruction_set::sse4_2> a, const simd_bitmask<instruction_set::sse4_2> b) {
+	simd_bitmask<instruction_set::sse4_2> result;
+	result.hi = _mm_and_si128(a.hi, b.hi);
+	result.lo = _mm_and_si128(a.lo, b.lo);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::sse4_2> operator|(const simd_bitmask<instruction_set::sse4_2> a, const simd_bitmask<instruction_set::sse4_2> b) {
+	simd_bitmask<instruction_set::sse4_2> result;
+	result.hi = _mm_or_si128(a.hi, b.hi);
+	result.lo = _mm_or_si128(a.lo, b.lo);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::sse4_2> operator^(const simd_bitmask<instruction_set::sse4_2> a, const simd_bitmask<instruction_set::sse4_2> b) {
+	simd_bitmask<instruction_set::sse4_2> result;
+	result.hi = _mm_xor_si128(a.hi, b.hi);
+	result.lo = _mm_xor_si128(a.lo, b.lo);
 	return result;
 }
 really_inline simd_bitmask<instruction_set::sse4_2> operator~(const simd_bitmask<instruction_set::sse4_2> bitmask) {
+	return bitmask ^ splat_bitmask<instruction_set::sse4_2>(-1);
+}
+template<int n>
+really_inline simd_bitmask<instruction_set::sse4_2> simd_shl(const simd_bitmask<instruction_set::sse4_2> a, int n) {
 	simd_bitmask<instruction_set::sse4_2> result;
-	result.lo = _mm_xor_si128(bitmask.lo, _mm_set1_epi64x(-1));
-	result.hi = _mm_xor_si128(bitmask.hi, _mm_set1_epi64x(-1));
+	result.hi = _mm_or_si128(_mm_slli_si128(a.hi, n), _mm_srli_si128(a.lo, 128 - n));
+	result.lo = _mm_slli_si128(a.lo, n);
 	return result;
 }
 #endif
@@ -602,44 +668,45 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 // sequences of backslashes in an obvious way.
 template<instruction_set T> really_inline
 simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t &prev_iter_ends_odd_backslash) {
-	//const simd_bitmask<T> even_bits = splat_bitmask<T>(0x5555555555555555ULL);
-	//const simd_bitmask<T> odd_bits = ~even_bits;
+	simd_bitmask<T> even_bits = splat_bitmask<T>(0x5555555555555555ULL);
+	simd_bitmask<T> odd_bits = ~even_bits;
 
 	// detect odd sequences of backslashes
-	uint64_t bs_bits_simd[4];
-	split_bitmask<T>(bs_bits_simd, cmp_mask_against_each_input<T>(chunk, '\\'));
-	uint64_t odd_ends[4];
+	simd_bitmask<T> bs_bits = cmp_mask_against_each_input<T>(chunk, '\\');
+	//simd_bitmask<T> start_edges = bs_bits & ~(simd_shl<1>(bs_bits));
+	// flip lowest if we have an odd-length run at the end of the prior
+	// iteration
+
+	uint64_t bs_bits_split[4]; split_bitmask<T>(bs_bits_split, bs_bits);
+	//uint64_t start_edges_split[4]; split_bitmask<T>(start_edges_split, start_edges);
+	uint64_t even_carries[4];
+	uint64_t odd_carries[4];
 	for (int lane = 0; lane < 4; lane++) {
-		const uint64_t even_bits = 0x5555555555555555ULL;
-		const uint64_t odd_bits = ~even_bits;
-		uint64_t bs_bits = bs_bits_simd[lane];
-		uint64_t start_edges = bs_bits & ~(bs_bits << 1);
-		// flip lowest if we have an odd-length run at the end of the prior
-		// iteration
+		uint64_t even_bits = 0x5555555555555555ULL;
+		uint64_t odd_bits = ~even_bits;
+		uint64_t start_edges = bs_bits_split[lane] & ~(bs_bits_split[lane] << 1);
 		uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
 		uint64_t even_starts = start_edges & even_start_mask;
 		uint64_t odd_starts = start_edges & ~even_start_mask;
-		uint64_t even_carries = bs_bits + even_starts;
-
-		uint64_t odd_carries;
+		even_carries[lane] = bs_bits_split[lane] + even_starts;
 		// must record the carry-out of our odd-carries out of bit 63; this
 		// indicates whether the sense of any edge going to the next iteration
 		// should be flipped
 		bool iter_ends_odd_backslash =
-			add_overflow(bs_bits, odd_starts, &odd_carries);
+			add_overflow(bs_bits_split[lane], odd_starts, &odd_carries[lane]);
 
-		odd_carries |=
+		odd_carries[lane] |=
 			prev_iter_ends_odd_backslash;  // push in bit zero as a potential end
 											// if we had an odd-numbered run at the
 											// end of the previous iteration
 		prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-		uint64_t even_carry_ends = even_carries & ~bs_bits;
-		uint64_t odd_carry_ends = odd_carries & ~bs_bits;
-		uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-		uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-		odd_ends[lane] = even_start_odd_end | odd_start_even_end;
 	}
-	return join_bitmask<T>(odd_ends);
+	simd_bitmask<T> even_carry_ends = join_bitmask<T>(even_carries) & ~bs_bits;
+	simd_bitmask<T> odd_carry_ends = join_bitmask<T>(odd_carries) & ~bs_bits;
+	simd_bitmask<T> even_start_odd_end = even_carry_ends & odd_bits;
+	simd_bitmask<T> odd_start_even_end = odd_carry_ends & even_bits;
+	simd_bitmask<T> odd_ends = even_start_odd_end | odd_start_even_end;
+	return odd_ends;
 }
 
 // return both the quote mask (which is a half-open mask that covers the first
