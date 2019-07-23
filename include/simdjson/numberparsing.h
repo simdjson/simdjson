@@ -201,7 +201,7 @@ parse_float(const uint8_t *const buf,
     ++p;
     negative = true;
   }
-  double i;
+  long double i;
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     i = 0;
@@ -217,12 +217,13 @@ parse_float(const uint8_t *const buf,
   }
   if ('.' == *p) {
     ++p;
-    double fractionalweight = 1;
+    int fractionalweight = 308;
     if(is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractionalweight *= 0.1;
-      i = i + digit * fractionalweight;
+
+      fractionalweight --;
+      i = i + digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
@@ -232,8 +233,8 @@ parse_float(const uint8_t *const buf,
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractionalweight *= 0.1;
-      i = i + digit * fractionalweight;
+      fractionalweight --;
+      i = i + digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
     }
   }
   if (('e' == *p) || ('E' == *p)) {
@@ -388,6 +389,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // is made of a single number), then it is necessary to copy the content and append
 // a space before calling this function.
 //
+// Our objective is accurate parsing (ULP of 0 or 1) at high speed.
 static really_inline bool parse_number(const uint8_t *const buf,
                                        ParsedJson &pj,
                                        const uint32_t offset,
@@ -434,20 +436,26 @@ static really_inline bool parse_number(const uint8_t *const buf,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = *p - '0';
-      i = 10 * i + digit; // might overflow
+      // a multiplication by 10 is cheaper than an arbitrary integer multiplication
+      i = 10 * i + digit; // might overflow, we will handle the overflow later
       ++p;
     }
   }
   int64_t exponent = 0;
   bool is_float = false;
   if ('.' == *p) {
-    is_float = true;
+    is_float = true; // At this point we know that we have a float
+    // we continue with the fiction that we have an integer. If the
+    // floating point number is representable as x * 10^z for some integer
+    // z that fits in 53 bits, then we will be able to convert back the
+    // the integer into a float in a lossless manner.
     ++p;
     const char *const firstafterperiod = p;
     if(is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      i = i * 10 + digit;
+      i = i * 10 + digit; // might overflow + multiplication by 10 is likely cheaper than arbitrary mult.
+      // we will handle the overflow later
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       foundInvalidNumber(buf + offset);
@@ -469,7 +477,7 @@ static really_inline bool parse_number(const uint8_t *const buf,
     }
     exponent = firstafterperiod - p;
   }
-  int digitcount = p - startdigits - 1;
+  int digitcount = p - startdigits - 1; // used later to guard against overflows
   int64_t expnumber = 0; // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -510,39 +518,41 @@ static really_inline bool parse_number(const uint8_t *const buf,
     exponent += (negexp ? -expnumber : expnumber);
   }
   if (is_float) {
-    if (unlikely(digitcount >= 19)) { // this is uncommon!!!
+    uint64_t powerindex = 308 + exponent;
+    if (unlikely((digitcount >= 19))) { // this is uncommon
+      // It is possible that the integer had an overflow. 
+      // We have to handle the case where we have 0.0000somenumber.
+      const char * start = startdigits;
+      while((*start == '0') || (*start == '.')) {
+         start++;
+      }
+      digitcount -= (start - startdigits);
+      if(digitcount >= 19) {
+        // Ok, chances are good that we had an overflow!
+        // this is almost never going to get called!!!
+        // we start anew, going slowly!!!
+        return parse_float(buf, pj, offset,
+                                       found_minus);
+        
+      } 
+    }
+    if (unlikely((powerindex > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
       return parse_float(buf, pj, offset,
                                        found_minus);
     }
-    ///////////
-    // We want 0.1e1 to be a float.
-    //////////
-    if (i == 0) {
-      pj.write_tape_double(0.0);
+    double factor = power_of_ten[powerindex];
+    factor = negative ? -factor : factor;
+    double d = i * factor;
+    pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(0.0, buf + offset);
+    foundFloat(d, buf + offset);
 #endif
-    } else {
-      double d = i;
-      d = negative ? -d : d;
-      uint64_t powerindex = 308 + exponent;
-      if(likely(powerindex <= 2 * 308)) {
-        // common case
-        d *= power_of_ten[powerindex];
-      } else {
-        // this is uncommon so let us move this special case out
-        // of the main loop
-        return parse_float(buf, pj, offset,found_minus);
-      }
-      pj.write_tape_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      foundFloat(d, buf + offset);
-#endif
-    }
   } else {
     if (unlikely(digitcount >= 18)) { // this is uncommon!!!
+      // there is a good chance that we had an overflow, so we need
+      // need to recover: we parse the whole thing again.
       return parse_large_integer(buf, pj, offset,
                                  found_minus);
     }

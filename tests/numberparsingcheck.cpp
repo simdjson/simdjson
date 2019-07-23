@@ -13,6 +13,33 @@
 
 #include "simdjson/common_defs.h"
 
+
+// ulp distance 
+// Marc B. Reynolds, 2016-2019
+// Public Domain under http://unlicense.org, see link for details.
+// adapted by D. Lemire
+inline uint32_t f32_ulp_dist(float a, float b) {
+  uint32_t ua, ub;
+  memcpy(&ua, &a, sizeof(ua)); 
+  memcpy(&ub, &b, sizeof(ub)); 
+  if ((int32_t)(ub^ua) >= 0)
+    return (int32_t)(ua-ub) >= 0 ? (ua-ub) : (ub-ua);
+  return ua+ub+0x80000000;
+}
+
+// ulp distance 
+// Marc B. Reynolds, 2016-2019
+// Public Domain under http://unlicense.org, see link for details.
+// adapted by D. Lemire
+inline uint64_t f64_ulp_dist(double a, double b) {
+  uint64_t ua, ub;
+  memcpy(&ua, &a, sizeof(ua)); 
+  memcpy(&ub, &b, sizeof(ub)); 
+  if ((int64_t)(ub^ua) >= 0)
+    return (int64_t)(ua-ub) >= 0 ? (ua-ub) : (ub-ua);
+  return ua+ub+0x80000000;
+}
+
 int parse_error;
 char *fullpath;
 enum { PARSE_WARNING, PARSE_ERROR };
@@ -81,14 +108,16 @@ void foundFloat(double result, const uint8_t *buf) {
             expected, result);
     fprintf(stderr, "%.32s\n", buf);
     parse_error |= PARSE_ERROR;
+    return;
   }
   // we want to get some reasonable relative accuracy
-  else if (fabs(expected - result) >
-           1e-14 * fmin(fabs(expected), fabs(result))) {
+  uint64_t ULP = f64_ulp_dist(expected,result);
+  if (f64_ulp_dist(expected,result) > 1) {
     fprintf(stderr, "parsed %.128e from \n", result);
     fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
     fprintf(stderr, "       %.128e,", expected);
     fprintf(stderr, " while parsing %s \n", fullpath);
+    fprintf(stderr, " ===========  ULP:  %u,", (unsigned int)ULP);
     parse_error |= PARSE_ERROR;
   }
 }

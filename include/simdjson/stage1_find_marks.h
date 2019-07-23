@@ -305,10 +305,10 @@ void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
   if (check_ascii_neon(in)) {
     // All bytes are ascii. Therefore the byte that was just before must be ascii too.
     // We only check the byte that was just before simd_input. Nines are arbitrary values.
-    int8_t _verror[] = {9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
+    const int8x16_t verror = (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
     state.has_error =
         vorrq_s8(vreinterpretq_s8_u8(vcgtq_s8(state.previous.carried_continuations,
-                                    vld1q_s8(_verror))),
+                                    verror)),
                      state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
@@ -616,45 +616,35 @@ void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instructi
   // end of naive approach
 
 #else // SIMDJSON_NAIVE_STRUCTURAL
-  const __m256i low_nibble_mask = _mm256_setr_epi8(
-      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0, 
-      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  const __m256i high_nibble_mask = _mm256_setr_epi8(
-      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0, 
-      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+  const __m256i structural_table = _mm256_setr_epi8(
+      44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123, 
+      44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+  const __m256i white_table = _mm256_setr_epi8(
+      32,  100,  100,  100,  17,  100,  113,  2,  100,  9,  10,  112,  100,  13,  100,  100, 
+      32,  100,  100,  100,  17,  100,  113,  2,  100,  9,  10,  112,  100,  13,  100,  100);
+  const __m256i struct_offset = _mm256_set1_epi8(0xd4);
+  const __m256i struct_mask = _mm256_set1_epi8(32);
 
-  __m256i structural_shufti_mask = _mm256_set1_epi8(0x7);
-  __m256i whitespace_shufti_mask = _mm256_set1_epi8(0x18);
-
-  __m256i v_lo = _mm256_and_si256(
-      _mm256_shuffle_epi8(low_nibble_mask, in.lo),
-      _mm256_shuffle_epi8(high_nibble_mask,
-                          _mm256_and_si256(_mm256_srli_epi32(in.lo, 4),
-                                           _mm256_set1_epi8(0x7f))));
-
-  __m256i v_hi = _mm256_and_si256(
-      _mm256_shuffle_epi8(low_nibble_mask, in.hi),
-      _mm256_shuffle_epi8(high_nibble_mask,
-                          _mm256_and_si256(_mm256_srli_epi32(in.hi, 4),
-                                           _mm256_set1_epi8(0x7f))));
-  __m256i tmp_lo = _mm256_cmpeq_epi8(
-      _mm256_and_si256(v_lo, structural_shufti_mask), _mm256_set1_epi8(0));
-  __m256i tmp_hi = _mm256_cmpeq_epi8(
-      _mm256_and_si256(v_hi, structural_shufti_mask), _mm256_set1_epi8(0));
-
+  __m256i lo_white = _mm256_cmpeq_epi8(in.lo, 
+           _mm256_shuffle_epi8(white_table, in.lo));
+  __m256i hi_white = _mm256_cmpeq_epi8(in.hi, 
+           _mm256_shuffle_epi8(white_table, in.hi));
+  uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(lo_white));
+  uint64_t ws_res_1 = _mm256_movemask_epi8(hi_white);
+  whitespace = (ws_res_0 | (ws_res_1 << 32));
+  __m256i lo_struct_r1 = _mm256_add_epi8(struct_offset, in.lo);
+  __m256i hi_struct_r1 = _mm256_add_epi8(struct_offset, in.hi);
+  __m256i lo_struct_r2 = _mm256_or_si256(in.lo, struct_mask);
+  __m256i hi_struct_r2 = _mm256_or_si256(in.hi, struct_mask);
+  __m256i lo_struct_r3 = _mm256_shuffle_epi8(structural_table, lo_struct_r1);
+  __m256i hi_struct_r3 = _mm256_shuffle_epi8(structural_table, hi_struct_r1);
+  __m256i lo_struct = _mm256_cmpeq_epi8(lo_struct_r2, lo_struct_r3);
+  __m256i hi_struct = _mm256_cmpeq_epi8(hi_struct_r2, hi_struct_r3);
+  
   uint64_t structural_res_0 =
-      static_cast<uint32_t>(_mm256_movemask_epi8(tmp_lo));
-  uint64_t structural_res_1 = _mm256_movemask_epi8(tmp_hi);
-  structurals = ~(structural_res_0 | (structural_res_1 << 32));
-
-  __m256i tmp_ws_lo = _mm256_cmpeq_epi8(
-      _mm256_and_si256(v_lo, whitespace_shufti_mask), _mm256_set1_epi8(0));
-  __m256i tmp_ws_hi = _mm256_cmpeq_epi8(
-      _mm256_and_si256(v_hi, whitespace_shufti_mask), _mm256_set1_epi8(0));
-
-  uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(tmp_ws_lo));
-  uint64_t ws_res_1 = _mm256_movemask_epi8(tmp_ws_hi);
-  whitespace = ~(ws_res_0 | (ws_res_1 << 32));
+      static_cast<uint32_t>(_mm256_movemask_epi8(lo_struct));
+  uint64_t structural_res_1 = _mm256_movemask_epi8(hi_struct);
+  structurals = (structural_res_0 | (structural_res_1 << 32));
 #endif // SIMDJSON_NAIVE_STRUCTURAL
 }
 #endif // __AVX2__
@@ -662,71 +652,54 @@ void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instructi
 #if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<> really_inline
 void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
-                                                     uint64_t &whitespace,
-                                                     uint64_t &structurals) {
-  const __m128i low_nibble_mask = _mm_setr_epi8(
-      16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  const __m128i high_nibble_mask = _mm_setr_epi8(
-      8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+                                                     uint64_t &whitespace, uint64_t &structurals) {
+  const __m128i structural_table = _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+  const __m128i white_table = _mm_setr_epi8(
+      32,  100,  100,  100,  17,  100,  113,  2,  100,  9,  10,  112,  100,  13,  100,  100);
+  const __m128i struct_offset = _mm_set1_epi8(0xd4);
+  const __m128i struct_mask = _mm_set1_epi8(32);
 
-  __m128i structural_shufti_mask = _mm_set1_epi8(0x7);
-  __m128i whitespace_shufti_mask = _mm_set1_epi8(0x18);
+  __m128i white0 = _mm_cmpeq_epi8(in.v0,
+           _mm_shuffle_epi8(white_table, in.v0));
+  __m128i white1 = _mm_cmpeq_epi8(in.v1,
+           _mm_shuffle_epi8(white_table, in.v1));
+  __m128i white2 = _mm_cmpeq_epi8(in.v2,
+           _mm_shuffle_epi8(white_table, in.v2));
+  __m128i white3 = _mm_cmpeq_epi8(in.v3,
+           _mm_shuffle_epi8(white_table, in.v3));
+  uint64_t ws_res_0 = _mm_movemask_epi8(white0);
+  uint64_t ws_res_1 = _mm_movemask_epi8(white1);
+  uint64_t ws_res_2 = _mm_movemask_epi8(white2);
+  uint64_t ws_res_3 = _mm_movemask_epi8(white3);
 
-  __m128i v_0 = _mm_and_si128(
-      _mm_shuffle_epi8(low_nibble_mask, in.v0),
-      _mm_shuffle_epi8(high_nibble_mask,
-                          _mm_and_si128(_mm_srli_epi32(in.v0, 4),
-                                           _mm_set1_epi8(0x7f))));
+  whitespace = (ws_res_0 | (ws_res_1 << 16) | (ws_res_2 << 32) | (ws_res_3 << 48));
 
-  __m128i v_1 = _mm_and_si128(
-      _mm_shuffle_epi8(low_nibble_mask, in.v1),
-      _mm_shuffle_epi8(high_nibble_mask,
-                          _mm_and_si128(_mm_srli_epi32(in.v1, 4),
-                                           _mm_set1_epi8(0x7f))));
+  __m128i struct1_r1 = _mm_add_epi8(struct_offset, in.v0);
+  __m128i struct2_r1 = _mm_add_epi8(struct_offset, in.v1);
+  __m128i struct3_r1 = _mm_add_epi8(struct_offset, in.v2);
+  __m128i struct4_r1 = _mm_add_epi8(struct_offset, in.v3);
 
-  __m128i v_2 = _mm_and_si128(
-      _mm_shuffle_epi8(low_nibble_mask, in.v2),
-      _mm_shuffle_epi8(high_nibble_mask,
-                         _mm_and_si128(_mm_srli_epi32(in.v2, 4),
-                                           _mm_set1_epi8(0x7f))));
+  __m128i struct1_r2 = _mm_or_si128(in.v0, struct_mask);
+  __m128i struct2_r2 = _mm_or_si128(in.v1, struct_mask);
+  __m128i struct3_r2 = _mm_or_si128(in.v2, struct_mask);
+  __m128i struct4_r2 = _mm_or_si128(in.v3, struct_mask);
 
-  __m128i v_3 = _mm_and_si128(
-      _mm_shuffle_epi8(low_nibble_mask, in.v3),
-      _mm_shuffle_epi8(high_nibble_mask,
-                         _mm_and_si128(_mm_srli_epi32(in.v3, 4),
-                                           _mm_set1_epi8(0x7f))));
+  __m128i struct1_r3 = _mm_shuffle_epi8(structural_table, struct1_r1);
+  __m128i struct2_r3 = _mm_shuffle_epi8(structural_table, struct2_r1);
+  __m128i struct3_r3 = _mm_shuffle_epi8(structural_table, struct3_r1);
+  __m128i struct4_r3 = _mm_shuffle_epi8(structural_table, struct4_r1);
 
-  __m128i tmp_v0 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_0, structural_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_v1 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_1, structural_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_v2 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_2, structural_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_v3 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_3, structural_shufti_mask), _mm_set1_epi8(0));
+  __m128i struct1 = _mm_cmpeq_epi8(struct1_r2, struct1_r3);
+  __m128i struct2 = _mm_cmpeq_epi8(struct2_r2, struct2_r3);
+  __m128i struct3 = _mm_cmpeq_epi8(struct3_r2, struct3_r3);
+  __m128i struct4 = _mm_cmpeq_epi8(struct4_r2, struct4_r3);
 
-  uint64_t structural_res_0 = _mm_movemask_epi8(tmp_v0);
-  uint64_t structural_res_1 = _mm_movemask_epi8(tmp_v1);
-  uint64_t structural_res_2 = _mm_movemask_epi8(tmp_v2);
-  uint64_t structural_res_3 = _mm_movemask_epi8(tmp_v3);
+  uint64_t structural_res_0 = _mm_movemask_epi8(struct1);
+  uint64_t structural_res_1 = _mm_movemask_epi8(struct2);
+  uint64_t structural_res_2 = _mm_movemask_epi8(struct3);
+  uint64_t structural_res_3 = _mm_movemask_epi8(struct4);
 
-  structurals = ~(structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
-
-  __m128i tmp_ws_v0 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_0, whitespace_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_ws_v1 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_1, whitespace_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_ws_v2 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_2, whitespace_shufti_mask), _mm_set1_epi8(0));
-  __m128i tmp_ws_v3 = _mm_cmpeq_epi8(
-      _mm_and_si128(v_3, whitespace_shufti_mask), _mm_set1_epi8(0));
-
-  uint64_t ws_res_0 = _mm_movemask_epi8(tmp_ws_v0);
-  uint64_t ws_res_1 = _mm_movemask_epi8(tmp_ws_v1);
-  uint64_t ws_res_2 = _mm_movemask_epi8(tmp_ws_v2);
-  uint64_t ws_res_3 = _mm_movemask_epi8(tmp_ws_v3);
-
-  whitespace = ~(ws_res_0 | (ws_res_1 << 16) | (ws_res_2 << 32) | (ws_res_3 << 48));
+  structurals = (structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
 }
 #endif // __SSE4_2__
 
