@@ -419,42 +419,38 @@ simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_
 }
 #endif
 
-//template<instruction_set T>
-//uint64_t extract_bitmask64(const simd_bitmask<T> bitmask, const int lane);
-//template<instruction_set T>
-//simd_bitmask<T> load_bitmask(const uint64_t* bitmask);
-//
-//#ifdef __AVX2__
-//template<> really_inline
-//uint64_t extract_bitmask64(const simd_bitmask<instruction_set::avx2> bitmask, const int lane) {
-//	return _mm256_extract_epi64(bitmask.mask, lane);
-//}
-//template<> really_inline
-//simd_bitmask<instruction_set::avx2> load_bitmask(const uint64_t* bitmask) {
-//  simd_bitmask<instruction_set::avx2> bitmask;
-//	bitmask.mask = _mm256_load_epi64(bitmask);
-//  return bitmask;
-//}
-//#endif
-//
-//#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-//template<> really_inline
-//uint64_t extract_bitmask64(const simd_bitmask<instruction_set::sse4_2> bitmask, int lane) {
-//	if (lane <= 1) {
-//		_mm_extract_epi64(bitmask.lo, lane);
-//	}
-//	else {
-//		_mm_extract_epi64(bitmask.hi, lane % 2);
-//	}
-//}
-//template<> really_inline
-//simd_bitmask<instruction_set::sse4_2> load_bitmask(const uint64_t* bitmasks) {
-//  simd_bitmask<instruction_set::sse4_2> bitmask;
-//	bitmask.lo = _mm_load_si128((const __m128i*)bitmasks);
-//	bitmask.hi = _mm_load_si128((const __m128i*)(bitmasks + 2));
-//  return bitmask;
-//}
-//#endif
+template<instruction_set T>
+void split_bitmask(uint64_t (&dest)[4], const simd_bitmask<T> bitmask);
+template<instruction_set T>
+simd_bitmask<T> join_bitmask(const uint64_t bitmask[4]);
+
+#ifdef __AVX2__
+template<> really_inline
+void split_bitmask(uint64_t(&dest)[4], const simd_bitmask<instruction_set::avx2> bitmask) {
+	_mm256_storeu_si256(reinterpret_cast<__m256i*>(&dest[0]), bitmask.mask);
+}
+template<> really_inline
+simd_bitmask<instruction_set::avx2> join_bitmask(const uint64_t bitmasks[4]) {
+  simd_bitmask<instruction_set::avx2> result;
+  result.mask = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&bitmasks[0]));
+  return result;
+}
+#endif
+
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+template<> really_inline
+void split_bitmask(uint64_t(&dest)[4], const simd_bitmask<instruction_set::sse4_2> bitmask) {
+	_mm_storeu_si128(reinterpret_cast<__m128i*>(&dest[0]), bitmask.lo);
+	_mm_storeu_si128(reinterpret_cast<__m128i*>(&dest[2]), bitmask.hi);
+}
+template<> really_inline
+simd_bitmask<instruction_set::sse4_2> join_bitmask(const uint64_t bitmasks[4]) {
+  simd_bitmask<instruction_set::sse4_2> bitmask;
+  bitmask.lo = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[0]));
+  bitmask.hi = _mm_load_si128(reinterpret_cast<const __m128i*>(&bitmasks[2]));
+  return bitmask;
+}
+#endif
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
@@ -545,6 +541,18 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 }
 #endif
 
+template<instruction_set T> really_inline
+simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t &prev_iter_ends_odd_backslash) {
+	uint64_t odd_ends[4];
+	for (size_t lane = 0; lane < 4; lane++) {
+		simd_input<T> in = fill_input<T>(chunk + lane * 64);
+
+		// detect odd sequences of backslashes
+		odd_ends[lane] = find_odd_backslash_sequences_64<T>(in, prev_iter_ends_odd_backslash);
+	}
+	return join_bitmask<T>(odd_ends);
+}
+
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
 // to follow). A even-length sequence of backslashes, and, for that matter, the
@@ -555,7 +563,7 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
 template<instruction_set T> really_inline
-uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash) {
+uint64_t find_odd_backslash_sequences_64(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
   uint64_t bs_bits = cmp_mask_against_input(in, '\\');
@@ -958,18 +966,17 @@ really_inline void find_structural_bits_256(const uint8_t *chunk,
                                            uint64_t &prev_iter_ends_pseudo_pred,
                                            uint64_t &structurals,
                                            uint64_t &error_mask) {
+	// detect odd sequences of backslashes
+	uint64_t odd_ends[4];
+	split_bitmask(odd_ends, find_odd_backslash_sequences_256<T>(chunk, prev_iter_ends_odd_backslash));
 	for (size_t lane = 0; lane < 4; lane++) {
 		simd_input<T> in = fill_input<T>(chunk + lane * 64);
-
-		// detect odd sequences of backslashes
-		uint64_t odd_ends = find_odd_backslash_sequences<T>(
-		in, prev_iter_ends_odd_backslash);
 
 		// detect insides of quote pairs ("quote_mask") and also our quote_bits
 		// themselves
 		uint64_t quote_bits;
 		uint64_t quote_mask = find_quote_mask_and_bits<T>(
-			in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+			in, odd_ends[lane], prev_iter_inside_quote, quote_bits, error_mask);
 
 		// take the previous iterations structural bits, not our current iteration,
 		// and flatten
