@@ -136,6 +136,47 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
 #endif
 
 template<instruction_set T>
+simd_input<T> fill_input(const uint8_t * ptr);
+
+#ifdef __AVX2__
+template<> really_inline
+simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
+	struct simd_input<instruction_set::avx2> in;
+	in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
+	in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
+	return in;
+}
+#endif
+
+#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+template<> really_inline
+simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
+	struct simd_input<instruction_set::sse4_2> in;
+	in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
+	in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
+	in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
+	in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
+	return in;
+}
+#endif
+
+#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
+template<> really_inline
+simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_t * ptr) {
+	struct simd_input<instruction_set::neon> in;
+#ifndef TRANSPOSE
+	in.i0 = vld1q_u8(ptr + 0);
+	in.i1 = vld1q_u8(ptr + 16);
+	in.i2 = vld1q_u8(ptr + 32);
+	in.i3 = vld1q_u8(ptr + 48);
+#else
+	in.i = vld4q_u8(ptr);
+#endif
+	return in;
+}
+#endif
+
+template<instruction_set T>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 namespace {
@@ -377,47 +418,6 @@ errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruc
 }
 #endif
 #endif // SIMDJSON_UTF8VALIDATE
-
-template<instruction_set T>
-simd_input<T> fill_input(const uint8_t * ptr);
-
-#ifdef __AVX2__
-template<> really_inline
-simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::avx2> in;
-  in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
-  in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
-  return in;
-}
-#endif
-
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-template<> really_inline
-simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::sse4_2> in;
-  in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
-  in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
-  in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
-  in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
-  return in;
-}
-#endif
-
-#if defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
-template<> really_inline
-simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::neon> in;
-#ifndef TRANSPOSE
-  in.i0 = vld1q_u8(ptr + 0);
-  in.i1 = vld1q_u8(ptr + 16);
-  in.i2 = vld1q_u8(ptr + 32);
-  in.i3 = vld1q_u8(ptr + 48);
-#else
-  in.i = vld4q_u8(ptr);
-#endif
-  return in;
-}
-#endif
 
 template<instruction_set T>
 void split_bitmask(uint64_t (&dest)[4], const simd_bitmask<T> bitmask);
