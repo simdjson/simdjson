@@ -19,19 +19,19 @@ int main() {
     assert(it.get_string() == std::string("value0"));
 
     // valid URI Fragment Identifier Representation pointer
-    std::string pointer2("#/~1~001abc/1/%5C%22%200/1");
+    std::string pointer2("#/~1~001abc/1/%x5C%x22%x200/1");
     assert(it.move_to(pointer2.c_str(), pointer2.length()));
     assert(it.is_string());
     assert(it.get_string() == std::string("value1"));
 
-    // invalid pointer
-    std::string pointer3("0");
+    // invalid pointer with leading 0 in index
+    std::string pointer3("#/~1~001abc/01");
     assert(!it.move_to(pointer3.c_str(), pointer3.length())); // failed
-    assert(it.is_string());
-    assert(it.get_string() == std::string("value1")); // did not move
+    assert(it.is_string()); // has probably not moved
+    assert(it.get_string() == std::string("value1")); // has not move
 
     // "the (nonexistent) member after the last array element"
-    std::string pointer4("#/~1~001abc/-");
+    std::string pointer4("/~1~001abc/-");
     assert(it.move_to(pointer4.c_str(), pointer4.length()));
     assert(it.get_type() == ']');
 }

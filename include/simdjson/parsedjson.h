@@ -231,11 +231,19 @@ public:
     // this is equivalent but much faster than calling "next()".
     inline void move_to_value();
 
+    // when at [, go one level deep, and advance to the given index.
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing at the array ([)
+    inline bool move_to_index(uint32_t index);
+
     // Moves the iterator to the value correspoding to the json pointer.
     // Always search from the root of the document.
     // if successful, we are left pointing at the value,
-    // in case of failure, we do not move.
+    // if not, we are still pointing the same value we were pointing before the call.
     // The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+    // However, the standard says "If a referenced member name is not unique in an object,
+    // the member that is referenced is undefined, and evaluation fails".
+    // Here we just return the first corresponding value
     bool move_to(const char * pointer, uint32_t length);
 
     // Almost the same as move_to(), except it searchs from the current position.
@@ -436,6 +444,23 @@ bool ParsedJson::iterator::move_to_key(const char * key, uint32_t length) {
         }
       } while(next());
       assert(up());// not found
+    }
+    return false;
+}
+
+bool ParsedJson::iterator::move_to_index(uint32_t index) {
+    assert(is_array());
+    if (down()) {
+      uint32_t i = 0;
+      for (; i < index; i++) {
+        if (!next()) {
+          break;
+        }
+      }
+      if (i == index) {
+        return true;
+      }
+      assert(up());
     }
     return false;
 }
