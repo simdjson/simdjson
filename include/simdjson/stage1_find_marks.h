@@ -473,16 +473,16 @@ really_inline simd_bitmask<instruction_set::avx2> operator~(const simd_bitmask<i
 template<int n>
 really_inline simd_bitmask<instruction_set::avx2> simd_shl(const simd_bitmask<instruction_set::avx2> a) {
 	simd_bitmask<instruction_set::avx2> result;
-	if (n < 16) {
-		__m256i x = _mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0));
-		result.mask = _mm256_alignr_epi8(a.mask, x, 16 - n);
-	}
-	else if (n == 16) {
-		result.mask = _mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0));
-	}
-	else {
-		result.mask = _mm256_slli_si256(_mm256_permute2x128_si256(a.mask, a.mask, _MM_SHUFFLE(0, 0, 2, 0)), n - 16);
-	}
+	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
+	__m256i shifted64 = _mm256_slli_epi64(a.mask, n);
+	// Move the carry bit over to the right side of each 64-bit lane, shifting zeroes in on the left.
+	__m256i carry64 = _mm256_srli_epi64(a.mask, 64 - n);
+	// Move each 64-bit lane up 1, effectively moving that carry bit into the right place.
+	carry64 = _mm256_permute4x64_epi64(carry64, _MM_SHUFFLE(2, 1, 0, 3));
+	// Mask out the low bit, which now has the high bit from the far left.
+	carry64 = _mm256_andnot_si256(carry64, _mm256_set_epi64x(0, 0, 0, 1));
+	// Put the answer together!
+	result.mask = _mm256_or_si256(shifted64, carry64);
 	return result;
 }
 #endif
@@ -673,21 +673,22 @@ simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t 
 
 	// detect odd sequences of backslashes
 	simd_bitmask<T> bs_bits = cmp_mask_against_each_input<T>(chunk, '\\');
-	//simd_bitmask<T> start_edges = bs_bits & ~(simd_shl<1>(bs_bits));
+	simd_bitmask<T> prev_bs_bits = simd_shl<1>(bs_bits);
+	simd_bitmask<T> start_edges = bs_bits & ~(simd_shl<1>(bs_bits));
 	// flip lowest if we have an odd-length run at the end of the prior
 	// iteration
 
 	uint64_t bs_bits_split[4]; split_bitmask<T>(bs_bits_split, bs_bits);
-	//uint64_t start_edges_split[4]; split_bitmask<T>(start_edges_split, start_edges);
+	uint64_t start_edges_split[4]; split_bitmask<T>(start_edges_split, start_edges);
 	uint64_t even_carries[4];
 	uint64_t odd_carries[4];
 	for (int lane = 0; lane < 4; lane++) {
 		uint64_t even_bits = 0x5555555555555555ULL;
 		uint64_t odd_bits = ~even_bits;
-		uint64_t start_edges = bs_bits_split[lane] & ~(bs_bits_split[lane] << 1);
+		//uint64_t start_edges = bs_bits_split[lane] & ~(bs_bits_split[lane] << 1);
 		uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-		uint64_t even_starts = start_edges & even_start_mask;
-		uint64_t odd_starts = start_edges & ~even_start_mask;
+		uint64_t even_starts = start_edges_split[lane] & even_start_mask;
+		uint64_t odd_starts = start_edges_split[lane] & ~even_start_mask;
 		even_carries[lane] = bs_bits_split[lane] + even_starts;
 		// must record the carry-out of our odd-carries out of bit 63; this
 		// indicates whether the sense of any edge going to the next iteration
