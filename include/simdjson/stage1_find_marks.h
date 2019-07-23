@@ -6,22 +6,11 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
-#ifndef SIMDJSON_SKIPUTF8VALIDATION
-// #define SIMDJSON_UTF8VALIDATE
-#endif
-
-// It seems that many parsers do UTF-8 validation.
-// RapidJSON does not do it by default, but a flag
-// allows it.
-#ifdef SIMDJSON_UTF8VALIDATE
-#if defined (__AVX2__)
+#ifdef IS_x86_64
 #include "simdjson/simdutf8check.h"
-#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-#include "simdjson/simdutf8check.h"
-#elif defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
+#elif IS_ARM64
 #include "simdjson/simdutf8check_neon.h"
-#endif // (__AVX2__)
-#endif  // SIMDJSON_UTF8VALIDATE
+#endif
 
 //#define TRANSPOSE
 
@@ -30,13 +19,16 @@ template<instruction_set>
 struct simd_input;
 
 #ifdef IS_x86_64
+TARGET_REGION("avx2")
 template<>
 struct simd_input<instruction_set::avx2>
 {
   __m256i lo;
   __m256i hi;
 };
+UNTARGET_REGION
 
+TARGET_REGION("sse4.2")
 template<>
 struct simd_input<instruction_set::sse4_2>
 {
@@ -45,6 +37,7 @@ struct simd_input<instruction_set::sse4_2>
   __m128i v2;
   __m128i v3;
 };
+UNTARGET_REGION
 #endif // IS_x86_64
 
 #ifdef IS_ARM64
@@ -136,7 +129,8 @@ template<instruction_set>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
@@ -144,8 +138,10 @@ uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   return quote_mask;
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2,pclmul") really_inline // NB: this only needs SSE2, but AFAIK the earliest processor with CLMUL has SSE4.2
+TARGET_REGION("sse4.2,pclmul")
+template<> really_inline // NB: this only needs SSE2, but AFAIK the earliest processor with CLMUL has SSE4.2
 // TODO templ param needs pclmul
 uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
   // CLMUL is supported on some SSE42 hardware such as Sandy Bridge,
@@ -153,7 +149,8 @@ uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
 }
-#endif
+UNTARGET_REGION
+#endif //IS_x86_64
 
 #ifdef IS_ARM64
 template<> really_inline
@@ -167,25 +164,26 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 #endif // IS_ARM64
 #endif // SIMDJSON_AVOID_CLMUL
 
-#ifdef SIMDJSON_UTF8VALIDATE
 // Holds the state required to perform check_utf8().
 template<instruction_set>
 struct utf8_checking_state;
 
 #ifdef IS_x86_64
-
+#include "simdjson/simdutf8check.h"
 TARGET_REGION("avx2")
 template<>
 struct utf8_checking_state<instruction_set::avx2>
 {
-  __m256i has_error = _mm256_setzero_si256();
-  avx_processed_utf_bytes previous {
-    _mm256_setzero_si256(), // rawbytes
-    _mm256_setzero_si256(), // high_nibbles
-    _mm256_setzero_si256()  // carried_continuations
-  };
+  __m256i has_error;
+  avx_processed_utf_bytes previous;
+  utf8_checking_state() {
+    has_error = _mm256_setzero_si256();
+    previous.rawbytes = _mm256_setzero_si256();
+    previous.high_nibbles = _mm256_setzero_si256();
+    previous.carried_continuations =_mm256_setzero_si256();
+  }
 };
-UNTARGET_REGION()
+UNTARGET_REGION
 
 TARGET_REGION("sse4.2")
 template<>
@@ -198,7 +196,7 @@ struct utf8_checking_state<instruction_set::sse4_2>
     _mm_setzero_si128()  // carried_continuations
   };
 };
-UNTARGET_REGION()
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -229,7 +227,8 @@ template<instruction_set T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
                 utf8_checking_state<instruction_set::avx2>& state) {
   __m256i highbit = _mm256_set1_epi8(0x80);
@@ -247,8 +246,10 @@ void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
     state.previous = avxcheckUTF8Bytes(in.hi, &(state.previous), &(state.has_error));
   }
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
                 utf8_checking_state<instruction_set::sse4_2>& state) {
   __m128i highbit = _mm_set1_epi8(0x80);
@@ -278,6 +279,7 @@ void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
     state.previous = checkUTF8Bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
+UNTARGET_REGION
 #endif // IS_x86_64
 
 #ifdef IS_ARM64
@@ -307,15 +309,19 @@ template<instruction_set T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 errorValues check_utf8_errors<instruction_set::avx2>(utf8_checking_state<instruction_set::avx2>& state) {
   return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 errorValues check_utf8_errors<instruction_set::sse4_2>(utf8_checking_state<instruction_set::sse4_2>& state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -327,21 +333,23 @@ errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruc
   return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 #endif
-#endif // SIMDJSON_UTF8VALIDATE
 
 template<instruction_set T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
   struct simd_input<instruction_set::avx2> in;
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   return in;
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
   struct simd_input<instruction_set::sse4_2> in;
   in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
@@ -350,6 +358,7 @@ simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const ui
   in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
   return in;
 }
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -374,7 +383,8 @@ template<instruction_set T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
   const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
@@ -383,8 +393,10 @@ uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_se
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
   const __m128i mask = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
@@ -397,6 +409,7 @@ uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -416,7 +429,8 @@ template<instruction_set T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
   const __m256i maxval = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
@@ -425,8 +439,10 @@ uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instructi
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
   const __m128i maxval = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v0),maxval);
@@ -439,6 +455,7 @@ uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruc
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -462,38 +479,65 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-template<instruction_set T> TARGET("avx2") really_inline
-uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input<T>(in, '\\');
-  uint64_t start_edges = bs_bits & ~(bs_bits << 1);
-  // flip lowest if we have an odd-length run at the end of the prior
-  // iteration
-  uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = bs_bits + even_starts;
+// Target attributes can be used only once by function definition. Code duplication is worse than macros
+// uint64_t FIND_ODD_BACKSLASH_SEQUENCES(instruction_set T, simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash)
+#define FIND_ODD_BACKSLASH_SEQUENCES(T, in, prev_iter_ends_odd_backslash) {     \
+  const uint64_t even_bits = 0x5555555555555555ULL;                             \
+  const uint64_t odd_bits = ~even_bits;                                         \
+  uint64_t bs_bits = cmp_mask_against_input<T>(in, '\\');                       \
+  uint64_t start_edges = bs_bits & ~(bs_bits << 1);                             \
+  /* flip lowest if we have an odd-length run at the end of the prior        */ \
+  /* iteration                                                               */ \
+  uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;          \
+  uint64_t even_starts = start_edges & even_start_mask;                         \
+  uint64_t odd_starts = start_edges & ~even_start_mask;                         \
+  uint64_t even_carries = bs_bits + even_starts;                                \
+                                                                                \
+  uint64_t odd_carries;                                                         \
+  /* must record the carry-out of our odd-carries out of bit 63; this        */ \
+  /* indicates whether the sense of any edge going to the next iteration     */ \
+  /* should be flipped                                                       */ \
+  bool iter_ends_odd_backslash =                                                \
+      add_overflow(bs_bits, odd_starts, &odd_carries);                          \
+                                                                                \
+  odd_carries |=                                                                \
+      prev_iter_ends_odd_backslash;  /* push in bit zero as a potential end  */ \
+                                     /* if we had an odd-numbered run at the */ \
+                                     /* end of the previous iteration        */ \
+  prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;     \
+  uint64_t even_carry_ends = even_carries & ~bs_bits;                           \
+  uint64_t odd_carry_ends = odd_carries & ~bs_bits;                             \
+  uint64_t even_start_odd_end = even_carry_ends & odd_bits;                     \
+  uint64_t odd_start_even_end = odd_carry_ends & even_bits;                     \
+  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;                  \
+  return odd_ends;                                                              \
+}                                                                               \
 
-  uint64_t odd_carries;
-  // must record the carry-out of our odd-carries out of bit 63; this
-  // indicates whether the sense of any edge going to the next iteration
-  // should be flipped
-  bool iter_ends_odd_backslash =
-      add_overflow(bs_bits, odd_starts, &odd_carries);
+template<instruction_set T> really_inline
+uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
-  odd_carries |=
-      prev_iter_ends_odd_backslash;  // push in bit zero as a potential end
-                                     // if we had an odd-numbered run at the
-                                     // end of the previous iteration
-  prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~bs_bits;
-  uint64_t odd_carry_ends = odd_carries & ~bs_bits;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
+#ifdef IS_x86_64
+TARGET_REGION("avx2")
+template<> really_inline
+uint64_t find_odd_backslash_sequences<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::avx2, in, prev_iter_ends_odd_backslash);
 }
+UNTARGET_REGION
+
+TARGET_REGION("sse4.2")
+template<> really_inline
+uint64_t find_odd_backslash_sequences<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::sse4_2, in, prev_iter_ends_odd_backslash);
+}
+UNTARGET_REGION
+#endif // IS_x86_64
+
+#ifdef ARM64
+template<> really_inline
+uint64_t find_odd_backslash_sequences<instruction_set::neon>(simd_input<instruction_set::neon> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::neon, in, prev_iter_ends_odd_backslash);
+}
+#endif // ARM64
 
 // return both the quote mask (which is a half-open mask that covers the first
 // quote
@@ -507,27 +551,58 @@ uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
+// Target attributes can be used only once by function definition. Code duplication is worse than macros.
+// uint64_t FIND_QUOTE_MASK_AND_BITS(instruction_set T, simd_input<T> in, uint64_t odd_ends,
+//    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask)
+#define FIND_QUOTE_MASK_AND_BITS(T, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask) {    \
+  quote_bits = cmp_mask_against_input<T>(in, '"');                                                     \
+  quote_bits = quote_bits & ~odd_ends;                                                                 \
+  uint64_t quote_mask = compute_quote_mask<T>(quote_bits);                                             \
+  quote_mask ^= prev_iter_inside_quote;                                                                \
+  /* All Unicode characters may be placed within the                                                */ \
+  /* quotation marks, except for the characters that MUST be escaped:                               */ \
+  /* quotation mark, reverse solidus, and the control characters (U+0000                            */ \
+  /*through U+001F).                                                                                */ \
+  /* https://tools.ietf.org/html/rfc8259                                                            */ \
+  uint64_t unescaped = unsigned_lteq_against_input<T>(in, 0x1F);                                       \
+  error_mask |= quote_mask & unescaped;                                                                \
+  /* right shift of a signed value expected to be well-defined and standard                         */ \
+  /* compliant as of C++20,                                                                         */ \
+  /* John Regher from Utah U. says this is fine code                                                */ \
+  prev_iter_inside_quote =                                                                             \
+      static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);                                   \
+  return quote_mask;                                                                                   \
+}                                                                                                      \
+
 template<instruction_set T> really_inline
 uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask);
+
+#ifdef IS_x86_64
+TARGET_REGION("avx2")
+template<> really_inline
+uint64_t find_quote_mask_and_bits<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input<T>(in, '"');
-  quote_bits = quote_bits & ~odd_ends;
-  uint64_t quote_mask = compute_quote_mask<T>(quote_bits);
-  quote_mask ^= prev_iter_inside_quote;
-  // All Unicode characters may be placed within the
-  // quotation marks, except for the characters that MUST be escaped:
-  // quotation mark, reverse solidus, and the control characters (U+0000
-  //through U+001F).
-  // https://tools.ietf.org/html/rfc8259
-  uint64_t unescaped = unsigned_lteq_against_input<T>(in, 0x1F);
-  error_mask |= quote_mask & unescaped;
-  // right shift of a signed value expected to be well-defined and standard
-  // compliant as of C++20,
-  // John Regher from Utah U. says this is fine code
-  prev_iter_inside_quote =
-      static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);
-  return quote_mask;
+  FIND_QUOTE_MASK_AND_BITS(instruction_set::avx2, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
+UNTARGET_REGION
+
+TARGET_REGION("sse4.2")
+template<> really_inline
+uint64_t find_quote_mask_and_bits<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint64_t odd_ends,
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
+  FIND_QUOTE_MASK_AND_BITS(instruction_set::sse4_2, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
+}
+UNTARGET_REGION
+#endif // IS_x86_64
+
+#ifdef IS_ARM64
+template<> really_inline
+uint64_t find_quote_mask_and_bits<instruction_set::neon>(simd_input<instruction_set::neon> in, uint64_t odd_ends,
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
+  FIND_QUOTE_MASK_AND_BITS(instruction_set::neon, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
+}
+#endif // IS_ARM64
 
 // do a 'shufti' to detect structural JSON characters
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
@@ -542,7 +617,8 @@ void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &structurals);
 
 #ifdef IS_x86_64
-template<> TARGET("avx2") really_inline
+TARGET_REGION("avx2")
+template<> really_inline
 void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
                                                      uint64_t &whitespace,
                                                      uint64_t &structurals) {
@@ -621,8 +697,10 @@ void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instructi
   structurals = (structural_res_0 | (structural_res_1 << 32));
 #endif // SIMDJSON_NAIVE_STRUCTURAL
 }
+UNTARGET_REGION
 
-template<> TARGET("sse4.2") really_inline
+TARGET_REGION("sse4.2")
+template<> really_inline
 void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
                                                      uint64_t &whitespace, uint64_t &structurals) {
   const __m128i structural_table = _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
@@ -673,6 +751,7 @@ void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruc
 
   structurals = (structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
 }
+UNTARGET_REGION
 #endif // X86_64
 
 #ifdef IS_ARM64
@@ -852,149 +931,163 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
+// Target attributes can be used only once by function definition. Code duplication is worse than macro.
+// FIND_STRUCTURAL_BITS(instruction_set T, const uint8_t *buf, size_t len, ParsedJson &pj)
+#define FIND_STRUCTURAL_BITS(T, buf, len, pj) {                                                     \
+  if (len > pj.bytecapacity) {                                                                      \
+    std::cerr << "Your ParsedJson object only supports documents up to "                            \
+         << pj.bytecapacity << " bytes but you are trying to process " << len                       \
+         << " bytes" << std::endl;                                                                  \
+    return simdjson::CAPACITY;                                                                      \
+  }                                                                                                 \
+  uint32_t *base_ptr = pj.structural_indexes;                                                       \
+  uint32_t base = 0;                                                                                \
+  utf8_checking_state<T> state;                                                                     \
+                                                                                                    \
+  /* we have padded the input out to 64 byte multiple with the remainder being                   */ \
+  /* zeros                                                                                       */ \
+                                                                                                    \
+  /* persistent state across loop                                                                */ \
+  /* does the last iteration end with an odd-length sequence of backslashes?                     */ \
+  /* either 0 or 1, but a 64-bit value                                                           */ \
+  uint64_t prev_iter_ends_odd_backslash = 0ULL;                                                     \
+  /* does the previous iteration end inside a double-quote pair?                                 */ \
+  uint64_t prev_iter_inside_quote = 0ULL;  /* either all zeros or all ones                       */ \
+  /* does the previous iteration end on something that is a predecessor of a                     */ \
+  /* pseudo-structural character - i.e. whitespace or a structural character                     */ \
+  /* effectively the very first char is considered to follow "whitespace" for                    */ \
+  /* the                                                                                         */ \
+  /* purposes of pseudo-structural character detection so we initialize to 1                     */ \
+  uint64_t prev_iter_ends_pseudo_pred = 1ULL;                                                       \
+                                                                                                    \
+  /* structurals are persistent state across loop as we flatten them on the                      */ \
+  /* subsequent iteration into our array pointed to be base_ptr.                                 */ \
+  /* This is harmless on the first iteration as structurals==0                                   */ \
+  /* and is done for performance reasons; we can hide some of the latency of the                 */ \
+  /* expensive carryless multiply in the previous step with this work                            */ \
+  uint64_t structurals = 0;                                                                         \
+                                                                                                    \
+  size_t lenminus64 = len < 64 ? 0 : len - 64;                                                      \
+  size_t idx = 0;                                                                                   \
+  uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII code points < 0x20) */ \
+                                                                                                    \
+  for (; idx < lenminus64; idx += 64) {                                                             \
+                                                                                                    \
+    simd_input<T> in = fill_input<T>(buf+idx);                                                      \
+    check_utf8<T>(in, state);                                                                       \
+    /* detect odd sequences of backslashes                                                       */ \
+    uint64_t odd_ends = find_odd_backslash_sequences<T>(                                            \
+        in, prev_iter_ends_odd_backslash);                                                          \
+                                                                                                    \
+    /* detect insides of quote pairs ("quote_mask") and also our quote_bits                      */ \
+    /* themselves                                                                                */ \
+    uint64_t quote_bits;                                                                            \
+    uint64_t quote_mask = find_quote_mask_and_bits<T>(                                              \
+        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);                              \
+                                                                                                    \
+    /* take the previous iterations structural bits, not our current iteration,                  */ \
+    /* and flatten                                                                               */ \
+    flatten_bits(base_ptr, base, idx, structurals);                                                 \
+                                                                                                    \
+    uint64_t whitespace;                                                                            \
+    find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
+                                                                                                    \
+    /* fixup structurals to reflect quotes and add pseudo-structural characters                  */ \
+    structurals = finalize_structurals(structurals, whitespace, quote_mask,                         \
+                                       quote_bits, prev_iter_ends_pseudo_pred);                     \
+  }                                                                                                 \
+                                                                                                    \
+  /*//////////////                                                                               */ \
+  /*/ we use a giant copy-paste which is ugly.                                                   */ \
+  /*/ but otherwise the string needs to be properly padded or else we                            */ \
+  /*/ risk invalidating the UTF-8 checks.                                                        */ \
+  /*//////////                                                                                   */ \
+  if (idx < len) {                                                                                  \
+    uint8_t tmpbuf[64];                                                                             \
+    memset(tmpbuf, 0x20, 64);                                                                       \
+    memcpy(tmpbuf, buf + idx, len - idx);                                                           \
+    simd_input<T> in = fill_input<T>(tmpbuf);                                                       \
+    check_utf8<T>(in, state);                                                                       \
+                                                                                                    \
+    /* detect odd sequences of backslashes                                                       */ \
+    uint64_t odd_ends = find_odd_backslash_sequences<T>(                                            \
+        in, prev_iter_ends_odd_backslash);                                                          \
+                                                                                                    \
+    /* detect insides of quote pairs ("quote_mask") and also our quote_bits                      */ \
+    /* themselves                                                                                */ \
+    uint64_t quote_bits;                                                                            \
+    uint64_t quote_mask = find_quote_mask_and_bits<T>(                                              \
+        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);                              \
+                                                                                                    \
+    /* take the previous iterations structural bits, not our current iteration,                  */ \
+    /* and flatten                                                                               */ \
+    flatten_bits(base_ptr, base, idx, structurals);                                                 \
+                                                                                                    \
+    uint64_t whitespace;                                                                            \
+    find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
+                                                                                                    \
+    /* fixup structurals to reflect quotes and add pseudo-structural characters                  */ \
+    structurals = finalize_structurals(structurals, whitespace, quote_mask,                         \
+                                       quote_bits, prev_iter_ends_pseudo_pred);                     \
+    idx += 64;                                                                                      \
+  }                                                                                                 \
+                                                                                                    \
+  /* is last string quote closed?                                                                */ \
+  if (prev_iter_inside_quote) {                                                                     \
+      return simdjson::UNCLOSED_STRING;                                                             \
+  }                                                                                                 \
+                                                                                                    \
+  /* finally, flatten out the remaining structurals from the last iteration                      */ \
+  flatten_bits(base_ptr, base, idx, structurals);                                                   \
+                                                                                                    \
+  pj.n_structural_indexes = base;                                                                   \
+  /* a valid JSON file cannot have zero structural indexes - we should have                      */ \
+  /* found something                                                                             */ \
+  if (pj.n_structural_indexes == 0u) {                                                              \
+    return simdjson::EMPTY;                                                                         \
+  }                                                                                                 \
+  if (base_ptr[pj.n_structural_indexes - 1] > len) {                                                \
+    return simdjson::UNEXPECTED_ERROR;                                                              \
+  }                                                                                                 \
+  if (len != base_ptr[pj.n_structural_indexes - 1]) {                                               \
+    /* the string might not be NULL terminated, but we add a virtual NULL ending                 */ \
+    /* character.                                                                                */ \
+    base_ptr[pj.n_structural_indexes++] = len;                                                      \
+  }                                                                                                 \
+  /* make it safe to dereference one beyond this array                                           */ \
+  base_ptr[pj.n_structural_indexes] = 0;                                                            \
+  if (error_mask) {                                                                                 \
+    return simdjson::UNESCAPED_CHARS;                                                               \
+  }                                                                                                 \
+  return check_utf8_errors<T>(state);                                                               \
+}                                                                                                   \
+
 template<instruction_set T = instruction_set::native>
-WARN_UNUSED
-/*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len,
-                                           ParsedJson &pj) {
-  if (len > pj.bytecapacity) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-         << pj.bytecapacity << " bytes but you are trying to process " << len
-         << " bytes" << std::endl;
-    return simdjson::CAPACITY;
-  }
-  uint32_t *base_ptr = pj.structural_indexes;
-  uint32_t base = 0;
-#ifdef SIMDJSON_UTF8VALIDATE
-  utf8_checking_state<T> state;
-#endif
+/*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 
-  // we have padded the input out to 64 byte multiple with the remainder being
-  // zeros
-
-  // persistent state across loop
-  // does the last iteration end with an odd-length sequence of backslashes? 
-  // either 0 or 1, but a 64-bit value
-  uint64_t prev_iter_ends_odd_backslash = 0ULL;
-  // does the previous iteration end inside a double-quote pair?
-  uint64_t prev_iter_inside_quote = 0ULL;  // either all zeros or all ones
-  // does the previous iteration end on something that is a predecessor of a
-  // pseudo-structural character - i.e. whitespace or a structural character
-  // effectively the very first char is considered to follow "whitespace" for
-  // the
-  // purposes of pseudo-structural character detection so we initialize to 1
-  uint64_t prev_iter_ends_pseudo_pred = 1ULL;
-
-  // structurals are persistent state across loop as we flatten them on the
-  // subsequent iteration into our array pointed to be base_ptr.
-  // This is harmless on the first iteration as structurals==0
-  // and is done for performance reasons; we can hide some of the latency of the
-  // expensive carryless multiply in the previous step with this work
-  uint64_t structurals = 0;
-
-  size_t lenminus64 = len < 64 ? 0 : len - 64;
-  size_t idx = 0;
-  uint64_t error_mask = 0; // for unescaped characters within strings (ASCII code points < 0x20)
-
-  for (; idx < lenminus64; idx += 64) {
-#ifndef _MSC_VER
-    __builtin_prefetch(buf + idx + 128);
-#endif
-    simd_input<T> in = fill_input<T>(buf+idx);
-#ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8<T>(in, state);
-#endif
-    // detect odd sequences of backslashes
-    uint64_t odd_ends = find_odd_backslash_sequences<T>(
-        in, prev_iter_ends_odd_backslash);
-
-    // detect insides of quote pairs ("quote_mask") and also our quote_bits
-    // themselves
-    uint64_t quote_bits;
-    uint64_t quote_mask = find_quote_mask_and_bits<T>(
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
-
-    // take the previous iterations structural bits, not our current iteration,
-    // and flatten
-    flatten_bits(base_ptr, base, idx, structurals);
-
-    uint64_t whitespace;
-    find_whitespace_and_structurals<T>(in, whitespace, structurals);
-
-    // fixup structurals to reflect quotes and add pseudo-structural characters
-    structurals = finalize_structurals(structurals, whitespace, quote_mask,
-                                       quote_bits, prev_iter_ends_pseudo_pred);
-  }
-
-  ////////////////
-  /// we use a giant copy-paste which is ugly.
-  /// but otherwise the string needs to be properly padded or else we
-  /// risk invalidating the UTF-8 checks.
-  ////////////
-  if (idx < len) {
-    uint8_t tmpbuf[64];
-    memset(tmpbuf, 0x20, 64);
-    memcpy(tmpbuf, buf + idx, len - idx);
-    simd_input<T> in = fill_input<T>(tmpbuf);
-#ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8<T>(in, state);
-#endif
-
-    // detect odd sequences of backslashes
-    uint64_t odd_ends = find_odd_backslash_sequences<T>(
-        in, prev_iter_ends_odd_backslash);
-
-    // detect insides of quote pairs ("quote_mask") and also our quote_bits
-    // themselves
-    uint64_t quote_bits;
-    uint64_t quote_mask = find_quote_mask_and_bits<T>(
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
-
-    // take the previous iterations structural bits, not our current iteration,
-    // and flatten
-    flatten_bits(base_ptr, base, idx, structurals);
-
-    uint64_t whitespace;
-    find_whitespace_and_structurals<T>(in, whitespace, structurals);
-
-    // fixup structurals to reflect quotes and add pseudo-structural characters
-    structurals = finalize_structurals(structurals, whitespace, quote_mask,
-                                       quote_bits, prev_iter_ends_pseudo_pred);
-    idx += 64;
-  }
-
-  // is last string quote closed?
-  if (prev_iter_inside_quote) {
-      return simdjson::UNCLOSED_STRING;
-  }
-
-  // finally, flatten out the remaining structurals from the last iteration
-  flatten_bits(base_ptr, base, idx, structurals);
-
-  pj.n_structural_indexes = base;
-  // a valid JSON file cannot have zero structural indexes - we should have
-  // found something
-  if (pj.n_structural_indexes == 0u) {
-    return simdjson::EMPTY;
-  }
-  if (base_ptr[pj.n_structural_indexes - 1] > len) {
-    return simdjson::UNEXPECTED_ERROR;
-  }
-  if (len != base_ptr[pj.n_structural_indexes - 1]) {
-    // the string might not be NULL terminated, but we add a virtual NULL ending
-    // character.
-    base_ptr[pj.n_structural_indexes++] = len;
-  }
-  // make it safe to dereference one beyond this array
-  base_ptr[pj.n_structural_indexes] = 0;  
-  if (error_mask) {
-    return simdjson::UNESCAPED_CHARS;
-  }
-#ifdef SIMDJSON_UTF8VALIDATE
-  return check_utf8_errors<T>(state);
-#else
-  return simdjson::SUCCESS;
-#endif
+#ifdef IS_x86_64
+TARGET_REGION("avx2")
+template<>
+int find_structural_bits<instruction_set::avx2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(instruction_set::avx2, buf, len, pj);
 }
+UNTARGET_REGION
+
+TARGET_REGION("sse4.2")
+template<>
+int find_structural_bits<instruction_set::sse4_2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(instruction_set::sse4_2, buf, len, pj);
+}
+UNTARGET_REGION
+#endif
+
+#ifdef IS_ARM64
+template<>
+int find_structural_bits<instruction_set::neon>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(instruction_set::neon, buf, len, pj);
+}
+#endif
+#undef FIND_STRUCTURAL_BITS
 
 template<instruction_set T = instruction_set::native>
 WARN_UNUSED

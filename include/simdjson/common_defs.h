@@ -49,7 +49,9 @@
 // For non-Visual Studio compilers, we may assume that same-page buffer overrun is fine.
 // However, it will make it difficult to be "valgrind clean".
 //#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
-//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN
+//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN true
+//#else
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
 //#endif 
 
 // The following is likely unnecessarily complex.

@@ -1,4 +1,6 @@
-/*
+/* From https://github.com/endorno/pytorch/blob/master/torch/lib/TH/generic/simd/simd.h
+Slightly modified.
+
 Copyright (c) 2016-     Facebook, Inc            (Adam Paszke)
 Copyright (c) 2014-     Facebook, Inc            (Soumith Chintala)
 Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
@@ -85,11 +87,11 @@ enum SIMDExtensions {
   DEFAULT   = 0x0,
   NEON      = 0x1,
   VSX       = 0x2,
-  AVX2      = 0x3,
-  AVX       = 0x4,
-  SSE       = 0x5,
-  SSE42     = 0x6,
-  PCLMULQDQ = 0x7
+  AVX2      = 0x4,
+  AVX       = 0x8,
+  SSE       = 0x10,
+  SSE42     = 0x20,
+  PCLMULQDQ = 0x40
 };
 
 
@@ -175,7 +177,6 @@ static inline uint32_t detectHostSIMDExtensions()
   // Detect and enable AVX and SSE
   eax = 0x1;
   cpuid(&eax, &ebx, &ecx, &edx);
-
   evar = getenv("TH_NO_AVX");
   if (evar == NULL || strncmp(evar, "1", 2) != 0)
     TH_NO_AVX = 0;
@@ -193,7 +194,7 @@ static inline uint32_t detectHostSIMDExtensions()
   evar = getenv("TH_NO_SSE42");
   if (evar == NULL || strncmp(evar, "1", 2) != 0)
     TH_NO_SSE42 = 0;  
-  if (edx & CPUID_SSE42_BIT && TH_NO_SSE42 == 0) {
+  if (ecx & CPUID_SSE42_BIT && TH_NO_SSE42 == 0) {
     hostSimdExts |= SIMDExtensions::SSE42;
   }
 

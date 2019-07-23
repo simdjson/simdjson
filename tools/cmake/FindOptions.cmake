@@ -22,7 +22,7 @@ if(SIMDJSON_DISABLE_AVX)
 else() 
   # some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
   if(NOT MSVC)
-   set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi -mbmi2 -mpclmul")
+   set (OPT_FLAGS "${OPT_FLAGS} -mpclmul")
   else()
    set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2")
   endif()

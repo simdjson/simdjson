@@ -24,7 +24,6 @@ instruction_set find_best_supported_implementation() {
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
   instruction_set best_implementation = find_best_supported_implementation();
-
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_x86_64 // TODO this only needs to be IS_X86 -- CPUID is safe on 32-bit

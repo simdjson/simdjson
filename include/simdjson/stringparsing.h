@@ -87,7 +87,8 @@ struct parse_string_helper {
 template<instruction_set>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
 
-#ifdef __AVX2__
+#ifdef IS_x86_64
+TARGET_REGION("avx2")
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
@@ -103,9 +104,9 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const ui
       static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
     };
 }
-#endif
+UNTARGET_REGION
 
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
+TARGET_REGION("sse4.2")
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
@@ -120,9 +121,10 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const 
       static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
     };
 }
+UNTARGET_REGION
 #endif
 
-#ifdef __ARM_NEON
+#ifdef IS_ARM64
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
@@ -158,95 +160,116 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const ui
 }
 #endif
 
+// Target attributes can be used only once by function definition. Code duplication is worse than macros
+// bool PARSE_STRING(instruction_set T, UNUSED const uint8_t *buf, UNUSED size_t len,
+//                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset)
+#define PARSE_STRING(T, buf, len, pj, depth, offset) {                                            \
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');                                  \
+  const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a "                  */ \
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);                                    \
+  const uint8_t *const start_of_string = dst;                                                     \
+  while (1) {                                                                                     \
+    parse_string_helper helper = find_bs_bits_and_quote_bits<T>(src, dst);                        \
+    if(((helper.bs_bits - 1) & helper.quote_bits) != 0 ) {                                        \
+      /* we encountered quotes first. Move dst to point to quotes and exit                     */ \
+                                                                                                  \
+      /* find out where the quote is...                                                        */ \
+      uint32_t quote_dist = trailingzeroes(helper.quote_bits);                                    \
+                                                                                                  \
+      /* NULL termination is still handy if you expect all your strings to be NULL terminated? */ \
+      /* It comes at a small cost                                                              */ \
+      dst[quote_dist] = 0;                                                                        \
+                                                                                                  \
+      uint32_t str_length = (dst - start_of_string) + quote_dist;                                 \
+      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));                            \
+      /*/////////////////////                                                                  */ \
+      /* Above, check for overflow in case someone has a crazy string (>=4GB?)                 */ \
+      /* But only add the overflow check when the document itself exceeds 4GB                  */ \
+      /* Currently unneeded because we refuse to parse docs larger or equal to 4GB.            */ \
+      /*//////////////////////                                                                 */ \
+                                                                                                  \
+                                                                                                  \
+      /* we advance the point, accounting for the fact that we have a NULL termination         */ \
+      pj.current_string_buf_loc = dst + quote_dist + 1;                                           \
+      return true;                                                                                \
+    }                                                                                             \
+    if(((helper.quote_bits - 1) & helper.bs_bits ) != 0 ) {                                       \
+      /* find out where the backspace is                                                       */ \
+      uint32_t bs_dist = trailingzeroes(helper.bs_bits);                                          \
+      uint8_t escape_char = src[bs_dist + 1];                                                     \
+      /* we encountered backslash first. Handle backslash                                      */ \
+      if (escape_char == 'u') {                                                                   \
+        /* move src/dst up to the start; they will be further adjusted                         */ \
+        /* within the unicode codepoint handling code.                                         */ \
+        src += bs_dist;                                                                           \
+        dst += bs_dist;                                                                           \
+        if (!handle_unicode_codepoint(&src, &dst)) {                                              \
+          return false;                                                                           \
+        }                                                                                         \
+      } else {                                                                                    \
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and                   */ \
+        /* write bs_dist+1 characters to output                                                */ \
+        /* note this may reach beyond the part of the buffer we've actually                    */ \
+        /* seen. I think this is ok                                                            */ \
+        uint8_t escape_result = escape_map[escape_char];                                          \
+        if (escape_result == 0u) {                                                                \
+          return false; /* bogus escape value is an error                                      */ \
+        }                                                                                         \
+        dst[bs_dist] = escape_result;                                                             \
+        src += bs_dist + 2;                                                                       \
+        dst += bs_dist + 1;                                                                       \
+      }                                                                                           \
+    } else {                                                                                      \
+      /* they are the same. Since they can't co-occur, it means we encountered                 */ \
+      /* neither.                                                                              */ \
+      if constexpr(T == instruction_set::sse4_2) {                                                \
+        src += 16;                                                                                \
+        dst += 16;                                                                                \
+      } else {                                                                                    \
+        src += 32;                                                                                \
+        dst += 32;                                                                                \
+      }                                                                                           \
+    }                                                                                             \
+  }                                                                                               \
+  /* can't be reached                                                                          */ \
+  return true;                                                                                    \
+}                                                                                                 \
+
+
 template<instruction_set T>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline 
 bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset);
+
+#ifdef IS_x86_64
+TARGET_REGION("avx2")
+template<>
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
+bool parse_string<instruction_set::avx2>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
-#ifdef SIMDJSON_SKIPSTRINGPARSING // for performance analysis, it is sometimes useful to skip parsing
-  pj.write_tape(0, '"');// don't bother with the string parsing at all
-  return true; // always succeeds
-#else
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
-  const uint8_t *src = &buf[offset + 1]; // we know that buf at offset is a "
-  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
-  const uint8_t *const start_of_string = dst;
-  while (1) {
-    parse_string_helper helper = find_bs_bits_and_quote_bits<T>(src, dst);
-    if(((helper.bs_bits - 1) & helper.quote_bits) != 0 ) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-
-      // find out where the quote is...
-      uint32_t quote_dist = trailingzeroes(helper.quote_bits);
-
-      // NULL termination is still handy if you expect all your strings to be NULL terminated?
-      // It comes at a small cost
-      dst[quote_dist] = 0; 
-
-      uint32_t str_length = (dst - start_of_string) + quote_dist; 
-      memcpy(pj.current_string_buf_loc,&str_length, sizeof(uint32_t));
-      ///////////////////////
-      // Above, check for overflow in case someone has a crazy string (>=4GB?)
-      // But only add the overflow check when the document itself exceeds 4GB
-      // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-      ////////////////////////
-
-      
-      // we advance the point, accounting for the fact that we have a NULL termination
-      pj.current_string_buf_loc = dst + quote_dist + 1;
-
-#ifdef JSON_TEST_STRINGS // for unit testing
-      foundString(buf + offset,start_of_string,pj.current_string_buf_loc - 1);
-#endif // JSON_TEST_STRINGS
-      return true;
-    } 
-    if(((helper.quote_bits - 1) & helper.bs_bits ) != 0 ) {
-      // find out where the backspace is
-      uint32_t bs_dist = trailingzeroes(helper.bs_bits);
-      uint8_t escape_char = src[bs_dist + 1];
-      // we encountered backslash first. Handle backslash
-      if (escape_char == 'u') {
-        // move src/dst up to the start; they will be further adjusted
-        // within the unicode codepoint handling code.
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst)) {
-#ifdef JSON_TEST_STRINGS // for unit testing
-          foundBadString(buf + offset);
-#endif // JSON_TEST_STRINGS
-          return false;
-        }
-      } else {
-        // simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-        // write bs_dist+1 characters to output
-        // note this may reach beyond the part of the buffer we've actually
-        // seen. I think this is ok
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-#ifdef JSON_TEST_STRINGS // for unit testing
-          foundBadString(buf + offset);
-#endif // JSON_TEST_STRINGS
-          return false; // bogus escape value is an error
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      // they are the same. Since they can't co-occur, it means we encountered
-      // neither.
-      if constexpr(T == instruction_set::sse4_2) {
-        src += 16;
-        dst += 16;
-      } else {
-        src += 32;
-        dst += 32;
-      }
-    }
-  }
-  // can't be reached
-  return true;
-#endif // SIMDJSON_SKIPSTRINGPARSING
+  PARSE_STRING(instruction_set::avx2, buf, len, pj, depth, offset);
 }
+UNTARGET_REGION
+
+TARGET_REGION("sse4.2")
+template<>
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
+bool parse_string<instruction_set::sse4_2>(UNUSED const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
+  PARSE_STRING(instruction_set::sse4_2, buf, len, pj, depth, offset);
+}
+UNTARGET_REGION
+#endif // IS_x86_64
+
+#ifdef IS_ARM64
+template<>
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
+bool parse_string<instruction_set::neon>(UNUSED const uint8_t *buf, UNUSED size_t len,
+                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
+  PARSE_STRING(instruction_set::neon, buf, len, pj, depth, offset);
+}
+#endif // IS_ARM64
+
 }
 
 #endif
