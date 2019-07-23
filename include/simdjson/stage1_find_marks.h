@@ -470,8 +470,7 @@ really_inline simd_bitmask<instruction_set::avx2> operator~(const simd_bitmask<i
 	return bitmask ^ splat_bitmask<instruction_set::avx2>(-1);
 }
 // Lifted straight from https://stackoverflow.com/questions/25248766/emulating-shifts-on-32-bytes-with-avx
-template<int n>
-really_inline simd_bitmask<instruction_set::avx2> simd_shl(const simd_bitmask<instruction_set::avx2> a) {
+really_inline simd_bitmask<instruction_set::avx2> operator<<(const simd_bitmask<instruction_set::avx2> a, int n) {
 	simd_bitmask<instruction_set::avx2> result;
 	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
 	__m256i shifted64 = _mm256_slli_epi64(a.mask, n);
@@ -535,11 +534,20 @@ really_inline simd_bitmask<instruction_set::sse4_2> operator^(const simd_bitmask
 really_inline simd_bitmask<instruction_set::sse4_2> operator~(const simd_bitmask<instruction_set::sse4_2> bitmask) {
 	return bitmask ^ splat_bitmask<instruction_set::sse4_2>(-1);
 }
-template<int n>
-really_inline simd_bitmask<instruction_set::sse4_2> simd_shl(const simd_bitmask<instruction_set::sse4_2> a, int n) {
+really_inline __m128i shl128(__m128i a, int n) {
+	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
+	__m128i shifted64 = _mm_slli_epi64(a, n);
+	// Move the carry bit over to the right side of each 64-bit lane, shifting zeroes in on the left.
+	__m128i carry64 = _mm_srli_epi64(a, 64 - n);
+	// Move each 64-bit lane up 1, effectively moving that carry bit into the right place.
+	carry64 = _mm_permutex2var_epi64(carry64, _mm_set_epi64x(0b00, 0b10), _mm_set1_epi64x(0));
+	// Put the answer together!
+	return _mm_or_si128(shifted64, carry64);
+}
+really_inline simd_bitmask<instruction_set::sse4_2> operator<<(const simd_bitmask<instruction_set::sse4_2> a, int n) {
 	simd_bitmask<instruction_set::sse4_2> result;
-	result.hi = _mm_or_si128(_mm_slli_si128(a.hi, n), _mm_srli_si128(a.lo, 128 - n));
-	result.lo = _mm_slli_si128(a.lo, n);
+	result.hi = shl128(a.hi, n);
+	result.lo = shl128(a.lo, n);
 	return result;
 }
 #endif
@@ -673,8 +681,7 @@ simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t 
 
 	// detect odd sequences of backslashes
 	simd_bitmask<T> bs_bits = cmp_mask_against_each_input<T>(chunk, '\\');
-	simd_bitmask<T> prev_bs_bits = simd_shl<1>(bs_bits);
-	simd_bitmask<T> start_edges = bs_bits & ~(simd_shl<1>(bs_bits));
+	simd_bitmask<T> start_edges = bs_bits & ~(bs_bits << 1);
 	// flip lowest if we have an odd-length run at the end of the prior
 	// iteration
 
