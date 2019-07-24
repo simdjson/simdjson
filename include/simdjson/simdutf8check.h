@@ -124,13 +124,13 @@ static inline void checkOverlong(__m128i current_bytes,
       _mm_or_si128(*has_error, _mm_and_si128(initial_under, second_under));
 }
 
-TARGET_REGION("sse4.2")
+TARGET_WESTMERE();
 struct processed_utf_bytes {
   __m128i rawbytes;
   __m128i high_nibbles;
   __m128i carried_continuations;
 };
-UNTARGET_REGION
+UNTARGET_REGION();
 
 static inline void count_nibbles(__m128i bytes,
                                  struct processed_utf_bytes *answer) {
@@ -296,13 +296,13 @@ static inline void avxcheckOverlong(__m256i current_bytes,
                                _mm256_and_si256(initial_under, second_under));
 }
 
-TARGET_REGION("avx2")
+TARGET_HASWELL();
 struct avx_processed_utf_bytes {
   __m256i rawbytes;
   __m256i high_nibbles;
   __m256i carried_continuations;
 };
-UNTARGET_REGION
+UNTARGET_REGION();
 
 TARGET("avx2")
 static inline void avx_count_nibbles(__m256i bytes,

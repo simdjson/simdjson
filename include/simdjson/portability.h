@@ -14,14 +14,17 @@
 
 #ifdef __clang__
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
-#define UNTARGET_REGION _Pragma("clang attribute pop")
+#define UNTARGET_REGION() _Pragma("clang attribute pop")
 #elif defined(__GNUC__)
 #define TARGET_REGION(T) \
 _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
-#define UNTARGET_REGION \
+#define UNTARGET_REGION() \
 _Pragma("GCC pop_options")
 #endif
+
+#define TARGET_HASWELL() TARGET_REGION("avx2,bmi,bmi2,pclmul")
+#define TARGET_WESTMERE() TARGET_REGION("sse4.2,pclmul")
 
 #ifdef _MSC_VER
 # include <intrin.h>

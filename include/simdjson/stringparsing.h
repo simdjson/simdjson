@@ -88,7 +88,7 @@ template<instruction_set>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
 
 #ifdef IS_x86_64
-TARGET_REGION("avx2")
+TARGET_HASWELL();
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
@@ -104,9 +104,9 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const ui
       static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
     };
 }
-UNTARGET_REGION
+UNTARGET_REGION();
 
-TARGET_REGION("sse4.2")
+TARGET_WESTMERE();
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
@@ -121,7 +121,7 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const 
       static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
     };
 }
-UNTARGET_REGION
+UNTARGET_REGION();
 #endif
 
 #ifdef IS_ARM64
@@ -242,23 +242,23 @@ bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset);
 
 #ifdef IS_x86_64
-TARGET_REGION("avx2")
+TARGET_HASWELL();
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
 bool parse_string<instruction_set::avx2>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
   PARSE_STRING(instruction_set::avx2, buf, len, pj, depth, offset);
 }
-UNTARGET_REGION
+UNTARGET_REGION();
 
-TARGET_REGION("sse4.2")
+TARGET_WESTMERE();
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
 bool parse_string<instruction_set::sse4_2>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
   PARSE_STRING(instruction_set::sse4_2, buf, len, pj, depth, offset);
 }
-UNTARGET_REGION
+UNTARGET_REGION();
 #endif // IS_x86_64
 
 #ifdef IS_ARM64
