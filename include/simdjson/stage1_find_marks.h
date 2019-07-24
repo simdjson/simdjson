@@ -304,15 +304,15 @@ bool check_ascii_neon(simd_input<instruction_set::neon> in) {
 template<instruction_set T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
+#ifdef SIMDJSON_UTF8VALIDATE
 template<instruction_set T>
 void check_utf8_256(const uint8_t *buf, utf8_checking_state<T>& state) {
-  for (int lane = 0; lane < 4; lane++) {
-    simd_input<T> in = fill_input<T>(buf + lane * 64);
-#ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8<T>(in, state);
-#endif
-  }
+    check_utf8<T>(fill_input<T>(buf + 0 * 64), state);
+	check_utf8<T>(fill_input<T>(buf + 1 * 64), state);
+	check_utf8<T>(fill_input<T>(buf + 2 * 64), state);
+	check_utf8<T>(fill_input<T>(buf + 3 * 64), state);
 }
+#endif
 
 #ifdef __AVX2__
 template<> really_inline
@@ -427,16 +427,22 @@ template<instruction_set T>
 simd_bitmask<T> set_bitmask(const uint64_t hi, const uint64_t mid_hi, const uint64_t mid_lo, const uint64_t lo);
 template<instruction_set T>
 simd_bitmask<T> splat_bitmask(const uint64_t bitmask);
+really_inline uint64_t add_overflow(uint64_t a, uint64_t b, uint64_t& overflow) {
+	// TODO can we do this with less than 2 add_overflows?
+	uint64_t result;
+	overflow = add_overflow(a, overflow, &result) ? 1 : 0;
+	overflow = add_overflow(result, b, &result) ? 1 : overflow;
+	return result;
+}
 template<instruction_set T>
 really_inline simd_bitmask<T> add_overflow(simd_bitmask<T> a, simd_bitmask<T> b, uint64_t& overflow) {
 	uint64_t split_a[4]; split_bitmask<T>(split_a, a);
 	uint64_t split_b[4]; split_bitmask<T>(split_b, b);
 	uint64_t result[4];
-	for (int lane = 3; lane >= 0; lane--) {
-		// TODO can we do this with less than 2 add_overflows?
-		overflow = add_overflow(split_a[lane], overflow, &result[lane]) ? 1 : 0;
-		overflow = add_overflow(result[lane], split_b[lane], &result[lane]) ? 1 : overflow;
-	}
+	result[0] = add_overflow(split_a[0], split_b[0], overflow);
+	result[1] = add_overflow(split_a[1], split_b[1], overflow);
+	result[2] = add_overflow(split_a[2], split_b[2], overflow);
+	result[3] = add_overflow(split_a[3], split_b[3], overflow);
 	return join_bitmask<T>(result);
 }
 template<instruction_set T>
@@ -1123,7 +1129,7 @@ really_inline uint64_t finalize_structurals(
 }
 
 // Find structural bits, for a guaranteed-256-byte-wide chunk
-template<instruction_set T = instruction_set::native>
+template<instruction_set T>
 really_inline void find_structural_bits_256(const uint8_t *chunk,
                                            const size_t chunk_idx,
                                            ParsedJson &pj,
@@ -1206,9 +1212,9 @@ WARN_UNUSED
     __builtin_prefetch(buf + idx + 512);
 #endif
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8_256(buf + idx, utf8_state);
+    check_utf8_256<T>(buf + idx, utf8_state);
 #endif
-    find_structural_bits_256(buf + idx, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
+    find_structural_bits_256<T>(buf + idx, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
   }
 
   // Handle the final, partial buffer
@@ -1218,9 +1224,9 @@ WARN_UNUSED
     memset(tmpbuf, 0x20, 256);
     memcpy(tmpbuf, buf + idx, len - idx);
 #ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8_256(tmpbuf, utf8_state);
+    check_utf8_256<T>(tmpbuf, utf8_state);
 #endif
-    find_structural_bits_256(tmpbuf, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
+    find_structural_bits_256<T>(tmpbuf, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
 
     idx += 256;
   }
