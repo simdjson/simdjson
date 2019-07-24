@@ -716,15 +716,15 @@ really_inline void print_bits(char* title, simd_bitmask<T> bits) {
 	printf("\n");
 }
 
-really_inline void print_m128(char* title, __m128i bits) {
-	printf("%20s: ", title);
-	for (int i = 1; i >= 0; i--) {
-		for (int bit = 63; bit >= 0; bit--) {
-			printf("%s", ((bits.m128i_u64[i] & (1 << bit)) > 0) ? "X" : " ");
-		}
-	}
-	printf("\n");
-}
+//really_inline void print_m128(char* title, __m128i bits) {
+//	printf("%20s: ", title);
+//	for (int i = 1; i >= 0; i--) {
+//		for (int bit = 63; bit >= 0; bit--) {
+//			printf("%s", ((bits.m128i_u64[i] & (1 << bit)) > 0) ? "X" : " ");
+//		}
+//	}
+//	printf("\n");
+//}
 
 #define PRINT_BITS(name) print_bits(#name, name)
 
