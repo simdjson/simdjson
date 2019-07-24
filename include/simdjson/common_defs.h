@@ -31,7 +31,7 @@
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #ifdef _MSC_VER
-#define really_inline inline
+#define really_inline __forceinline
 #define never_inline __declspec(noinline)
 
 #define UNUSED
