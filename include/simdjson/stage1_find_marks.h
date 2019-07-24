@@ -427,6 +427,23 @@ template<instruction_set T>
 simd_bitmask<T> set_bitmask(const uint64_t hi, const uint64_t mid_hi, const uint64_t mid_lo, const uint64_t lo);
 template<instruction_set T>
 simd_bitmask<T> splat_bitmask(const uint64_t bitmask);
+template<instruction_set T>
+really_inline simd_bitmask<T> add_overflow(simd_bitmask<T> a, simd_bitmask<T> b, uint64_t& overflow) {
+	uint64_t split_a[4]; split_bitmask<T>(split_a, a);
+	uint64_t split_b[4]; split_bitmask<T>(split_b, b);
+	uint64_t result[4];
+	for (int lane = 3; lane >= 0; lane--) {
+		// TODO can we do this with less than 2 add_overflows?
+		overflow = add_overflow(split_a[lane], overflow, &result[lane]) ? 1 : 0;
+		overflow = add_overflow(result[lane], split_b[lane], &result[lane]) ? 1 : overflow;
+	}
+	return join_bitmask<T>(result);
+}
+template<instruction_set T>
+really_inline simd_bitmask<T> operator+(simd_bitmask<T> a, simd_bitmask<T> b) {
+	uint64_t overflow;
+	return add_overflow(a, b, overflow);
+}
 
 #ifdef __AVX2__
 template<>
@@ -469,8 +486,24 @@ really_inline simd_bitmask<instruction_set::avx2> operator^(const simd_bitmask<i
 really_inline simd_bitmask<instruction_set::avx2> operator~(const simd_bitmask<instruction_set::avx2> bitmask) {
 	return bitmask ^ splat_bitmask<instruction_set::avx2>(-1);
 }
-// Lifted straight from https://stackoverflow.com/questions/25248766/emulating-shifts-on-32-bytes-with-avx
-really_inline simd_bitmask<instruction_set::avx2> operator<<(const simd_bitmask<instruction_set::avx2> a, int n) {
+really_inline simd_bitmask<instruction_set::avx2> shl_overflow(const simd_bitmask<instruction_set::avx2> a, int n, uint64_t &overflow) {
+	simd_bitmask<instruction_set::avx2> result;
+	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
+	__m256i shifted64 = _mm256_slli_epi64(a.mask, n);
+	// Move the carry bit over to the right side of each 64-bit lane, shifting zeroes in on the left.
+	__m256i carry64 = _mm256_srli_epi64(a.mask, 64 - n);
+	// Pull the overflow from the high bit (and save the current overflow, since we still need to use it)
+	uint64_t prev_overflow = overflow;
+	overflow = _mm256_extract_epi64(carry64, 3);
+	// Move each 64-bit lane up 1, effectively moving that carry bit into the right place.
+	carry64 = _mm256_permute4x64_epi64(carry64, _MM_SHUFFLE(2, 1, 0, 3));
+	// Replace the low bit with the overflow from last time
+	carry64 = _mm256_or_si256(carry64, _mm256_set_epi64x(0, 0, 0, prev_overflow));
+	// Put the answer together!
+	result.mask = _mm256_or_si256(shifted64, carry64);
+	return result;
+}
+really_inline simd_bitmask<instruction_set::avx2> add_overflow(const simd_bitmask<instruction_set::avx2> a, int n) {
 	simd_bitmask<instruction_set::avx2> result;
 	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
 	__m256i shifted64 = _mm256_slli_epi64(a.mask, n);
@@ -681,36 +714,19 @@ simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t 
 
 	// detect odd sequences of backslashes
 	simd_bitmask<T> bs_bits = cmp_mask_against_each_input<T>(chunk, '\\');
-	simd_bitmask<T> start_edges = bs_bits & ~(bs_bits << 1);
-	// flip lowest if we have an odd-length run at the end of the prior
-	// iteration
-
-	uint64_t bs_bits_split[4]; split_bitmask<T>(bs_bits_split, bs_bits);
-	uint64_t start_edges_split[4]; split_bitmask<T>(start_edges_split, start_edges);
-	uint64_t even_carries[4];
-	uint64_t odd_carries[4];
-	for (int lane = 0; lane < 4; lane++) {
-		uint64_t even_bits = 0x5555555555555555ULL;
-		uint64_t odd_bits = ~even_bits;
-		//uint64_t start_edges = bs_bits_split[lane] & ~(bs_bits_split[lane] << 1);
-		uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-		uint64_t even_starts = start_edges_split[lane] & even_start_mask;
-		uint64_t odd_starts = start_edges_split[lane] & ~even_start_mask;
-		even_carries[lane] = bs_bits_split[lane] + even_starts;
-		// must record the carry-out of our odd-carries out of bit 63; this
-		// indicates whether the sense of any edge going to the next iteration
-		// should be flipped
-		bool iter_ends_odd_backslash =
-			add_overflow(bs_bits_split[lane], odd_starts, &odd_carries[lane]);
-
-		odd_carries[lane] |=
-			prev_iter_ends_odd_backslash;  // push in bit zero as a potential end
-											// if we had an odd-numbered run at the
-											// end of the previous iteration
-		prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-	}
-	simd_bitmask<T> even_carry_ends = join_bitmask<T>(even_carries) & ~bs_bits;
-	simd_bitmask<T> odd_carry_ends = join_bitmask<T>(odd_carries) & ~bs_bits;
+	// If we have a significant (odd-series) backslash at the end of the previous run, pull that backslash in
+	uint64_t bs_overflow = prev_iter_ends_odd_backslash;
+	simd_bitmask<T> prev_bs_bits = shl_overflow(bs_bits, 1, prev_iter_ends_odd_backslash);
+	simd_bitmask<T> start_edges = bs_bits & ~prev_bs_bits;
+	simd_bitmask<T> even_starts = start_edges & even_bits;
+	simd_bitmask<T> odd_starts = start_edges & odd_bits;
+	simd_bitmask<T> even_carries = bs_bits + even_starts;
+	// must record the carry-out of our odd-carries out of bit 63; this
+	// indicates whether the sense of any edge going to the next iteration
+	// should be flipped
+	simd_bitmask<T> odd_carries = add_overflow(bs_bits, odd_starts, prev_iter_ends_odd_backslash);
+	simd_bitmask<T> even_carry_ends = even_carries & ~bs_bits;
+	simd_bitmask<T> odd_carry_ends = odd_carries & ~bs_bits;
 	simd_bitmask<T> even_start_odd_end = even_carry_ends & odd_bits;
 	simd_bitmask<T> odd_start_even_end = odd_carry_ends & even_bits;
 	simd_bitmask<T> odd_ends = even_start_odd_end | odd_start_even_end;
