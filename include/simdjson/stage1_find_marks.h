@@ -567,20 +567,25 @@ really_inline simd_bitmask<instruction_set::sse4_2> operator^(const simd_bitmask
 really_inline simd_bitmask<instruction_set::sse4_2> operator~(const simd_bitmask<instruction_set::sse4_2> bitmask) {
 	return bitmask ^ splat_bitmask<instruction_set::sse4_2>(-1);
 }
-really_inline __m128i shl128(__m128i a, int n) {
+really_inline __m128i shl128_overflow(__m128i a, int n, uint64_t &overflow) {
 	// Shift the bits inside each 64-bit lane left, and bring zeroes in.
 	__m128i shifted64 = _mm_slli_epi64(a, n);
 	// Move the carry bit over to the right side of each 64-bit lane, shifting zeroes in on the left.
 	__m128i carry64 = _mm_srli_epi64(a, 64 - n);
-	// Move each 64-bit lane up 1, effectively moving that carry bit into the right place.
+	// Pull the overflow from the high bit (and save last time's overflow, since we still need to use it)
+	uint64_t prev_overflow = overflow;
+	overflow = _mm_extract_epi64(carry64, 1);
+	// Move the overflow from the low 64 bits into the high 64 bits, zeroing everything else out
 	carry64 = _mm_shuffle_epi32(carry64, 0b11001111);
+	// Bring in the overflow from last time)
+	carry64 = _mm_or_si128(carry64, _mm_set_epi64x(0, prev_overflow));
 	// Put the answer together!
 	return _mm_or_si128(shifted64, carry64);
 }
-really_inline simd_bitmask<instruction_set::sse4_2> operator<<(const simd_bitmask<instruction_set::sse4_2> a, int n) {
+really_inline simd_bitmask<instruction_set::sse4_2> shl_overflow(const simd_bitmask<instruction_set::sse4_2> a, int n, uint64_t &overflow) {
 	simd_bitmask<instruction_set::sse4_2> result;
-	result.hi = shl128(a.hi, n);
-	result.lo = shl128(a.lo, n);
+	result.hi = shl128_overflow(a.hi, n, overflow);
+	result.lo = shl128_overflow(a.lo, n, overflow);
 	return result;
 }
 #endif
