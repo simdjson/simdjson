@@ -540,7 +540,7 @@ really_inline __m128i shl128(__m128i a, int n) {
 	// Move the carry bit over to the right side of each 64-bit lane, shifting zeroes in on the left.
 	__m128i carry64 = _mm_srli_epi64(a, 64 - n);
 	// Move each 64-bit lane up 1, effectively moving that carry bit into the right place.
-	carry64 = _mm_permutex2var_epi64(carry64, _mm_set_epi64x(0b00, 0b10), _mm_set1_epi64x(0));
+	carry64 = _mm_shuffle_epi32(carry64, 0b11001111);
 	// Put the answer together!
 	return _mm_or_si128(shifted64, carry64);
 }
