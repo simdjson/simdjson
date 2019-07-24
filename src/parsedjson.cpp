@@ -35,9 +35,11 @@ ParsedJson::ParsedJson(ParsedJson && p)
 
 WARN_UNUSED
 bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
-    if ((maxdepth == 0) || (len == 0)) {
-      std::cerr << "capacities must be non-zero " << std::endl;
-      return false;
+    if (maxdepth <= 0) {
+      maxdepth = 1; // don't let the user allocate nothing
+    }
+    if (len <= 0) {
+      len = 64; // allocating 0 bytes is wasteful.
     }
     if(len > SIMDJSON_MAXSIZE_BYTES) {
       return false;
