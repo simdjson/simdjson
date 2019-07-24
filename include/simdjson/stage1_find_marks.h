@@ -441,7 +441,7 @@ really_inline simd_bitmask<T> add_overflow(simd_bitmask<T> a, simd_bitmask<T> b,
 }
 template<instruction_set T>
 really_inline simd_bitmask<T> operator+(simd_bitmask<T> a, simd_bitmask<T> b) {
-	uint64_t overflow;
+	uint64_t overflow = 0;
 	return add_overflow(a, b, overflow);
 }
 
@@ -702,6 +702,31 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
 }
 #endif
+
+template<instruction_set T>
+really_inline void print_bits(char* title, simd_bitmask<T> bits) {
+	uint64_t masks[4];
+	split_bitmask<T>(masks, bits);
+	printf("%20s: ", title);
+	for (int i = 3; i >= 0; i--) {
+		for (int bit = 63; bit >= 0; bit--) {
+			printf("%s", ((masks[i] & (1 << bit)) > 0) ? "X" : " ");
+		}
+	}
+	printf("\n");
+}
+
+really_inline void print_m128(char* title, __m128i bits) {
+	printf("%20s: ", title);
+	for (int i = 1; i >= 0; i--) {
+		for (int bit = 63; bit >= 0; bit--) {
+			printf("%s", ((bits.m128i_u64[i] & (1 << bit)) > 0) ? "X" : " ");
+		}
+	}
+	printf("\n");
+}
+
+#define PRINT_BITS(name) print_bits(#name, name)
 
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
