@@ -748,9 +748,8 @@ simd_bitmask<T> find_odd_backslash_sequences_256(simd_bitmask<T> bs_bits, uint64
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
 template<instruction_set T> really_inline
-uint64_t find_quote_mask_and_bits(uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t unescaped, uint64_t &error_mask) {
-  quote_bits = quote_bits & ~odd_ends;
+uint64_t find_quote_mask_and_bits(uint64_t quote_bits,
+    uint64_t &prev_iter_inside_quote, uint64_t unescaped, uint64_t &error_mask) {
   uint64_t quote_mask = compute_quote_mask<T>(quote_bits);
   quote_mask ^= prev_iter_inside_quote;
   // All Unicode characters may be placed within the
@@ -1163,17 +1162,17 @@ really_inline void find_structural_bits_256(const uint8_t *chunk,
 	prep_find_structural_bits_64<T>(2, chunk, utf8_state, bs_bits, quote_bits, unescaped, whitespace, found_structurals);
 	prep_find_structural_bits_64<T>(3, chunk, utf8_state, bs_bits, quote_bits, unescaped, whitespace, found_structurals);
 
-	// detect odd sequences of backslashes
-	uint64_t odd_ends[4];
-	split_bitmask(odd_ends, find_odd_backslash_sequences_256<T>(join_bitmask<T>(bs_bits), prev_iter_ends_odd_backslash));
+	// detect odd sequences of backslashes and mask off backslashed quotes
+	simd_bitmask<T> odd_ends = find_odd_backslash_sequences_256<T>(join_bitmask<T>(bs_bits), prev_iter_ends_odd_backslash);
+	split_bitmask(quote_bits, join_bitmask<T>(quote_bits) & ~odd_ends);
 
 	// detect insides of quote pairs ("quote_mask") and also our quote_bits
 	// themselves
 	uint64_t quote_mask[4];
-	quote_mask[0] = find_quote_mask_and_bits<T>(odd_ends[0], prev_iter_inside_quote, quote_bits[0], unescaped[0], error_mask);
-	quote_mask[1] = find_quote_mask_and_bits<T>(odd_ends[1], prev_iter_inside_quote, quote_bits[1], unescaped[1], error_mask);
-	quote_mask[2] = find_quote_mask_and_bits<T>(odd_ends[2], prev_iter_inside_quote, quote_bits[2], unescaped[2], error_mask);
-	quote_mask[3] = find_quote_mask_and_bits<T>(odd_ends[3], prev_iter_inside_quote, quote_bits[3], unescaped[3], error_mask);
+	quote_mask[0] = find_quote_mask_and_bits<T>(quote_bits[0], prev_iter_inside_quote, unescaped[0], error_mask);
+	quote_mask[1] = find_quote_mask_and_bits<T>(quote_bits[1], prev_iter_inside_quote, unescaped[1], error_mask);
+	quote_mask[2] = find_quote_mask_and_bits<T>(quote_bits[2], prev_iter_inside_quote, unescaped[2], error_mask);
+	quote_mask[3] = find_quote_mask_and_bits<T>(quote_bits[3], prev_iter_inside_quote, unescaped[3], error_mask);
 
 	finish_find_structural_bits_64<T>(0, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
 	finish_find_structural_bits_64<T>(1, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
