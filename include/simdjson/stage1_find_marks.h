@@ -615,28 +615,6 @@ uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_se
 }
 #endif
 
-template<instruction_set T, typename Func>
-really_inline void each_simd_input(const uint8_t* chunk, Func&&f)
-{
-	//some things
-	f(0, fill_input<T>(&chunk[0*64]));
-	f(1, fill_input<T>(&chunk[1*64]));
-	f(2, fill_input<T>(&chunk[2*64]));
-	f(3, fill_input<T>(&chunk[3*64]));
-}
-template<instruction_set T, typename Func>
-really_inline simd_bitmask<T> mask_each_simd_input(const uint8_t* chunk, Func&&f)
-{
-	uint64_t result[4];
-	each_simd_input<T>(chunk, [&](int lane, simd_input<T> in) { result[lane] = f(in); });
-	return join_bitmask<T>(result);
-}
-template<instruction_set T>
-really_inline simd_bitmask<T> cmp_mask_against_each_input(const uint8_t* chunk, uint8_t m)
-{
-	return mask_each_simd_input<T>(chunk, [&](simd_input<T> in) -> uint64_t { return cmp_mask_against_input<T>(in, m); });
-}
-
 #if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
 template<> really_inline
 uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
@@ -749,7 +727,12 @@ simd_bitmask<T> find_odd_backslash_sequences_256(const uint8_t* chunk, uint64_t 
 	simd_bitmask<T> odd_bits = ~even_bits;
 
 	// detect odd sequences of backslashes
-	simd_bitmask<T> bs_bits = cmp_mask_against_each_input<T>(chunk, '\\');
+	simd_bitmask<T> bs_bits = set_bitmask<T>(
+		cmp_mask_against_input<T>(fill_input<T>(chunk + 3 * 64), '\\'),
+		cmp_mask_against_input<T>(fill_input<T>(chunk + 2 * 64), '\\'),
+		cmp_mask_against_input<T>(fill_input<T>(chunk + 1 * 64), '\\'),
+		cmp_mask_against_input<T>(fill_input<T>(chunk + 0 * 64), '\\')
+	);
 	// If we have a significant (odd-series) backslash at the end of the previous run, pull that backslash in
 	uint64_t bs_overflow = prev_iter_ends_odd_backslash;
 	simd_bitmask<T> prev_bs_bits = shl_overflow(bs_bits, 1, prev_iter_ends_odd_backslash);
@@ -1128,10 +1111,48 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
+#ifdef SIMDJSON_UTF8VALIDATE
+#define UTF8_CHECKING_STATE utf8_checking_state<T>
+#else
+#define UTF8_CHECKING_STATE bool
+#endif
+
+template<instruction_set T>
+really_inline void finish_find_structural_bits_256(int lane,
+	const uint8_t *chunk,
+	const size_t idx,
+	ParsedJson &pj,
+	uint32_t *base_ptr,
+	uint32_t &base,
+	uint64_t &prev_iter_inside_quote,
+	uint64_t &prev_iter_ends_pseudo_pred,
+	uint64_t &structurals,
+	uint64_t &error_mask,
+	uint64_t (&odd_ends)[4]
+	) {
+	simd_input<T> in = fill_input<T>(chunk + lane * 64);
+	// detect insides of quote pairs ("quote_mask") and also our quote_bits
+	// themselves
+	uint64_t quote_bits;
+	uint64_t quote_mask = find_quote_mask_and_bits<T>(
+		in, odd_ends[lane], prev_iter_inside_quote, quote_bits, error_mask);
+
+	// take the previous iterations structural bits, not our current iteration,
+	// and flatten
+	flatten_bits(base_ptr, base, idx + lane * 64, structurals);
+
+	uint64_t whitespace;
+	find_whitespace_and_structurals<T>(in, whitespace, structurals);
+
+	// fixup structurals to reflect quotes and add pseudo-structural characters
+	structurals = finalize_structurals(structurals, whitespace, quote_mask,
+		quote_bits, prev_iter_ends_pseudo_pred);
+}
+
 // Find structural bits, for a guaranteed-256-byte-wide chunk
 template<instruction_set T>
 really_inline void find_structural_bits_256(const uint8_t *chunk,
-                                           const size_t chunk_idx,
+                                           const size_t idx,
                                            ParsedJson &pj,
                                            uint32_t *base_ptr,
                                            uint32_t &base,
@@ -1139,28 +1160,20 @@ really_inline void find_structural_bits_256(const uint8_t *chunk,
                                            uint64_t &prev_iter_inside_quote,
                                            uint64_t &prev_iter_ends_pseudo_pred,
                                            uint64_t &structurals,
-                                           uint64_t &error_mask) {
+                                           uint64_t &error_mask,
+										   UTF8_CHECKING_STATE &utf8_state
+) {
+#ifdef SIMDJSON_UTF8VALIDATE
+	check_utf8_256<T>(chunk, utf8_state);
+#endif
 	// detect odd sequences of backslashes
 	uint64_t odd_ends[4];
 	split_bitmask(odd_ends, find_odd_backslash_sequences_256<T>(chunk, prev_iter_ends_odd_backslash));
-	each_simd_input<T>(chunk, [&](int lane, simd_input<T> in) {
-		// detect insides of quote pairs ("quote_mask") and also our quote_bits
-		// themselves
-		uint64_t quote_bits;
-		uint64_t quote_mask = find_quote_mask_and_bits<T>(
-			in, odd_ends[lane], prev_iter_inside_quote, quote_bits, error_mask);
 
-		// take the previous iterations structural bits, not our current iteration,
-		// and flatten
-		flatten_bits(base_ptr, base, chunk_idx + lane * 64, structurals);
-
-		uint64_t whitespace;
-		find_whitespace_and_structurals<T>(in, whitespace, structurals);
-
-		// fixup structurals to reflect quotes and add pseudo-structural characters
-		structurals = finalize_structurals(structurals, whitespace, quote_mask,
-			quote_bits, prev_iter_ends_pseudo_pred);
-	});
+	finish_find_structural_bits_256<T>(0, chunk, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, odd_ends);
+	finish_find_structural_bits_256<T>(1, chunk, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, odd_ends);
+	finish_find_structural_bits_256<T>(2, chunk, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, odd_ends);
+	finish_find_structural_bits_256<T>(3, chunk, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, odd_ends);
 }
 
 template<instruction_set T = instruction_set::native>
@@ -1175,9 +1188,7 @@ WARN_UNUSED
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
-#ifdef SIMDJSON_UTF8VALIDATE
-  utf8_checking_state<T> utf8_state;
-#endif
+  UTF8_CHECKING_STATE utf8_state;
 
   // we have padded the input out to 64 byte multiple with the remainder being
   // zeros
@@ -1211,10 +1222,7 @@ WARN_UNUSED
 #ifndef _MSC_VER
     __builtin_prefetch(buf + idx + 512);
 #endif
-#ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8_256<T>(buf + idx, utf8_state);
-#endif
-    find_structural_bits_256<T>(buf + idx, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
+    find_structural_bits_256<T>(buf + idx, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, utf8_state);
   }
 
   // Handle the final, partial buffer
@@ -1223,10 +1231,7 @@ WARN_UNUSED
     // Fill with spaces
     memset(tmpbuf, 0x20, 256);
     memcpy(tmpbuf, buf + idx, len - idx);
-#ifdef SIMDJSON_UTF8VALIDATE
-    check_utf8_256<T>(tmpbuf, utf8_state);
-#endif
-    find_structural_bits_256<T>(tmpbuf, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask);
+    find_structural_bits_256<T>(tmpbuf, idx, pj, base_ptr, base, prev_iter_ends_odd_backslash, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, error_mask, utf8_state);
 
     idx += 256;
   }
