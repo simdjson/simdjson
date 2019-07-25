@@ -33,7 +33,8 @@ namespace simdjson {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-// Target attributes can be used only once by function definition. Code duplication is worse than macros
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
 // int UNIFIED_MACHINE(const uint8_t *buf, size_t len, ParsedJson &pj)
 #define UNIFIED_MACHINE(T, buf, len, pj) {                                                                                                   \
   if (ALLOW_SAME_PAGE_BUFFER_OVERRUN) {                                                                                                      \
@@ -185,7 +186,7 @@ namespace simdjson {
       goto fail;                                                                                                                             \
     }                                                                                                                                        \
     memcpy(copy, buf, len);                                                                                                                  \
-    copy[len] = '\0';                                                                                                                        \
+    copy[len] = ' ';                                                                                                                        \
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {                                                             \
       free(copy);                                                                                                                            \
       goto fail;                                                                                                                             \
@@ -498,16 +499,16 @@ fail:                                                                           
 TARGET_HASWELL();
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-int unified_machine<instruction_set::avx2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  UNIFIED_MACHINE(instruction_set::avx2, buf, len, pj);
+int unified_machine<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  UNIFIED_MACHINE(architecture::haswell, buf, len, pj);
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-int unified_machine<instruction_set::sse4_2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  UNIFIED_MACHINE(instruction_set::sse4_2, buf, len, pj);
+int unified_machine<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  UNIFIED_MACHINE(architecture::westmere, buf, len, pj);
 }
 UNTARGET_REGION();
 #endif // IS_x86_64
@@ -515,8 +516,8 @@ UNTARGET_REGION();
 #ifdef IS_ARM64
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-int unified_machine<instruction_set::neon>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  UNIFIED_MACHINE(instruction_set::neon, buf, len, pj);
+int unified_machine<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  UNIFIED_MACHINE(architecture::arm64, buf, len, pj);
 }
 #endif
 

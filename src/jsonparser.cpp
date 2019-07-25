@@ -11,36 +11,42 @@
 
 namespace simdjson {
 
-instruction_set find_best_supported_implementation() {
-  uint32_t supports = detectHostSIMDExtensions();
-  // Order from best to worst (within architecture)
-  if (supports & SIMDExtensions::AVX2) return instruction_set::avx2;
-  if (supports & SIMDExtensions::SSE42) return instruction_set::sse4_2;
-  if (supports & SIMDExtensions::NEON) return instruction_set::neon;
+architecture find_best_supported_implementation() {
+  constexpr uint32_t haswell_flags = SIMDExtensions::AVX2 | SIMDExtensions::PCLMULQDQ
+                             | SIMDExtensions::BMI1 | SIMDExtensions::BMI2;
+  constexpr uint32_t westmere_flags = SIMDExtensions::SSE42 | SIMDExtensions::PCLMULQDQ;
 
-  return instruction_set::none;
+  uint32_t supports = detect_supported_architectures();
+  // Order from best to worst (within architecture)
+  if ((haswell_flags & supports) == haswell_flags) return architecture::haswell;
+  if ((westmere_flags & supports) == westmere) return architecture::westmere;
+  if (SIMDExtensions::NEON & supports) return architecture::arm64;
+
+  return architecture::none;
 }
 
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
-  instruction_set best_implementation = find_best_supported_implementation();
+  architecture best_implementation = find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_x86_64 // TODO this only needs to be IS_X86 -- CPUID is safe on 32-bit
-  case instruction_set::avx2:
-    json_parse_ptr = &json_parse_implementation<instruction_set::avx2>;
+  case architecture::haswell:
+  std::cout << "haswell" << std::endl;
+    json_parse_ptr = &json_parse_implementation<architecture::haswell>;
     break;
-  case instruction_set::sse4_2:
-    json_parse_ptr = &json_parse_implementation<instruction_set::sse4_2>;
+  case architecture::westmere:
+    std::cout << "westmere" << std::endl;
+    json_parse_ptr = &json_parse_implementation<architecture::westmere>;
     break;
 #endif
 #ifdef IS_ARM64
-  case instruction_set::neon:
-    json_parse_ptr = &json_parse_implementation<instruction_set::neon>;
+  case architecture::arm64:
+    json_parse_ptr = &json_parse_implementation<architecture::arm64>;
     break;
 #endif
   default :
-    std::cerr << "No implemented simd instruction set supported" << std::endl;
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
     return simdjson::UNEXPECTED_ERROR;
   }
 

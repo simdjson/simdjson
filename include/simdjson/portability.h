@@ -23,7 +23,7 @@ _Pragma(STRINGIFY(GCC target(T)))
 _Pragma("GCC pop_options")
 #endif
 
-#define TARGET_HASWELL() TARGET_REGION("avx2,bmi,bmi2,pclmul")
+#define TARGET_HASWELL() TARGET_REGION("avx2,bmi,pclmul")
 #define TARGET_WESTMERE() TARGET_REGION("sse4.2,pclmul")
 
 #ifdef _MSC_VER

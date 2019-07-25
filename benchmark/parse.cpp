@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
     }
     unified.start();
-    // The default template is simdjson::instruction_set::native.
+    // The default template is simdjson::architecture::native.
     isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
     unified.end(results);
     cy1 += results[0];
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
       break;
     }
     unified.start();
-    // The default template is simdjson::instruction_set::native.
+    // The default template is simdjson::architecture::native.
     isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
     unified.end(results);
     cy2 += results[0];
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto start = std::chrono::steady_clock::now();
-    // The default template is simdjson::instruction_set::native.
+    // The default template is simdjson::architecture::native.
     isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
     isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();

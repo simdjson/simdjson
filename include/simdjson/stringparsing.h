@@ -84,13 +84,13 @@ struct parse_string_helper {
 };
 
 // Finds where the backslashes and quotes are located.
-template<instruction_set>
+template<architecture>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-parse_string_helper find_bs_bits_and_quote_bits<instruction_set::avx2> (const uint8_t *src, uint8_t *dst) {
+parse_string_helper find_bs_bits_and_quote_bits<architecture::haswell> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
@@ -108,7 +108,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-parse_string_helper find_bs_bits_and_quote_bits<instruction_set::sse4_2> (const uint8_t *src, uint8_t *dst) {
+parse_string_helper find_bs_bits_and_quote_bits<architecture::westmere> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
@@ -126,7 +126,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const uint8_t *src, uint8_t *dst) {
+parse_string_helper find_bs_bits_and_quote_bits<architecture::arm64> (const uint8_t *src, uint8_t *dst) {
     // this can read up to 31 bytes beyond the buffer size, but we require 
     // SIMDJSON_PADDING of padding
     static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
@@ -160,8 +160,9 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const ui
 }
 #endif
 
-// Target attributes can be used only once by function definition. Code duplication is worse than macros
-// bool PARSE_STRING(instruction_set T, UNUSED const uint8_t *buf, UNUSED size_t len,
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
+// bool PARSE_STRING(architecture T, UNUSED const uint8_t *buf, UNUSED size_t len,
 //                                ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset)
 #define PARSE_STRING(T, buf, len, pj, depth, offset) {                                            \
   pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');                                  \
@@ -222,7 +223,7 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const ui
     } else {                                                                                      \
       /* they are the same. Since they can't co-occur, it means we encountered                 */ \
       /* neither.                                                                              */ \
-      if constexpr(T == instruction_set::sse4_2) {                                                \
+      if constexpr(T == architecture::westmere) {                                                \
         src += 16;                                                                                \
         dst += 16;                                                                                \
       } else {                                                                                    \
@@ -236,7 +237,7 @@ parse_string_helper find_bs_bits_and_quote_bits<instruction_set::neon> (const ui
 }                                                                                                 \
 
 
-template<instruction_set T>
+template<architecture T>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline 
 bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset);
@@ -245,18 +246,18 @@ bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
 TARGET_HASWELL();
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
-bool parse_string<instruction_set::avx2>(UNUSED const uint8_t *buf, UNUSED size_t len,
+bool parse_string<architecture::haswell>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
-  PARSE_STRING(instruction_set::avx2, buf, len, pj, depth, offset);
+  PARSE_STRING(architecture::haswell, buf, len, pj, depth, offset);
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
-bool parse_string<instruction_set::sse4_2>(UNUSED const uint8_t *buf, UNUSED size_t len,
+bool parse_string<architecture::westmere>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
-  PARSE_STRING(instruction_set::sse4_2, buf, len, pj, depth, offset);
+  PARSE_STRING(architecture::westmere, buf, len, pj, depth, offset);
 }
 UNTARGET_REGION();
 #endif // IS_x86_64
@@ -264,9 +265,9 @@ UNTARGET_REGION();
 #ifdef IS_ARM64
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
-bool parse_string<instruction_set::neon>(UNUSED const uint8_t *buf, UNUSED size_t len,
+bool parse_string<architecture::arm64>(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
-  PARSE_STRING(instruction_set::neon, buf, len, pj, depth, offset);
+  PARSE_STRING(architecture::arm64, buf, len, pj, depth, offset);
 }
 #endif // IS_ARM64
 

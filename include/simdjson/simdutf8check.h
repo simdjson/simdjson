@@ -27,6 +27,8 @@
 // all byte values must be no larger than 0xF4
 
 namespace simdjson {
+/********** sse code **********/
+TARGET_WESTMERE()
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(__m128i current_bytes,
                                         __m128i *has_error) {
@@ -35,7 +37,6 @@ static inline void checkSmallerThan0xF4(__m128i current_bytes,
                             _mm_subs_epu8(current_bytes, _mm_set1_epi8(0xF4)));
 }
 
-TARGET("sse4.2")
 static inline __m128i continuationLengths(__m128i high_nibbles) {
   return _mm_shuffle_epi8(
       _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
@@ -46,7 +47,6 @@ static inline __m128i continuationLengths(__m128i high_nibbles) {
       high_nibbles);
 }
 
-TARGET("sse4.2")
 static inline __m128i carryContinuations(__m128i initial_lengths,
                                          __m128i previous_carries) {
 
@@ -76,7 +76,6 @@ static inline void checkContinuations(__m128i initial_lengths, __m128i carries,
 // when 0xED is found, next byte must be no larger than 0x9F
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
-TARGET("sse4.2")
 static inline void checkFirstContinuationMax(__m128i current_bytes,
                                              __m128i off1_current_bytes,
                                              __m128i *has_error) {
@@ -97,7 +96,6 @@ static inline void checkFirstContinuationMax(__m128i current_bytes,
 // E       => < E1 && < A0
 // F       => < F1 && < 90
 // else      false && false
-TARGET("sse4.2")
 static inline void checkOverlong(__m128i current_bytes,
                                  __m128i off1_current_bytes, __m128i hibits,
                                  __m128i previous_hibits, __m128i *has_error) {
@@ -141,7 +139,6 @@ static inline void count_nibbles(__m128i bytes,
 
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
-TARGET("sse4.2")
 static struct processed_utf_bytes
 checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
                __m128i *has_error) {
@@ -165,20 +162,19 @@ checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
                 previous->high_nibbles, has_error);
   return pb;
 }
+UNTARGET_REGION(); // westmere
 
-/*****************************/
-TARGET("avx2")
+/********** avx2 code **********/
+TARGET_HASWELL()
 static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
 }
 
-TARGET("avx2")
 static inline __m256i push_last_2bytes_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 14);
 }
 
 // all byte values must be no larger than 0xF4
-TARGET("avx2")
 static inline void avxcheckSmallerThan0xF4(__m256i current_bytes,
                                            __m256i *has_error) {
   // unsigned, saturates to 0 below max
@@ -186,7 +182,6 @@ static inline void avxcheckSmallerThan0xF4(__m256i current_bytes,
       *has_error, _mm256_subs_epu8(current_bytes, _mm256_set1_epi8(0xF4)));
 }
 
-TARGET("avx2")
 static inline __m256i avxcontinuationLengths(__m256i high_nibbles) {
   return _mm256_shuffle_epi8(
       _mm256_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
@@ -203,7 +198,6 @@ static inline __m256i avxcontinuationLengths(__m256i high_nibbles) {
       high_nibbles);
 }
 
-TARGET("avx2")
 static inline __m256i avxcarryContinuations(__m256i initial_lengths,
                                             __m256i previous_carries) {
 
@@ -217,7 +211,6 @@ static inline __m256i avxcarryContinuations(__m256i initial_lengths,
   return _mm256_add_epi8(sum, right2);
 }
 
-TARGET("avx2")
 static inline void avxcheckContinuations(__m256i initial_lengths,
                                          __m256i carries, __m256i *has_error) {
 
@@ -234,7 +227,6 @@ static inline void avxcheckContinuations(__m256i initial_lengths,
 // when 0xED is found, next byte must be no larger than 0x9F
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
-TARGET("avx2")
 static inline void avxcheckFirstContinuationMax(__m256i current_bytes,
                                                 __m256i off1_current_bytes,
                                                 __m256i *has_error) {
@@ -258,7 +250,6 @@ static inline void avxcheckFirstContinuationMax(__m256i current_bytes,
 // E       => < E1 && < A0
 // F       => < F1 && < 90
 // else      false && false
-TARGET("avx2")
 static inline void avxcheckOverlong(__m256i current_bytes,
                                     __m256i off1_current_bytes, __m256i hibits,
                                     __m256i previous_hibits,
@@ -296,15 +287,12 @@ static inline void avxcheckOverlong(__m256i current_bytes,
                                _mm256_and_si256(initial_under, second_under));
 }
 
-TARGET_HASWELL();
 struct avx_processed_utf_bytes {
   __m256i rawbytes;
   __m256i high_nibbles;
   __m256i carried_continuations;
 };
-UNTARGET_REGION();
 
-TARGET("avx2")
 static inline void avx_count_nibbles(__m256i bytes,
                                      struct avx_processed_utf_bytes *answer) {
   answer->rawbytes = bytes;
@@ -314,7 +302,6 @@ static inline void avx_count_nibbles(__m256i bytes,
 
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
-TARGET("avx2")
 static inline struct avx_processed_utf_bytes
 avxcheckUTF8Bytes(__m256i current_bytes,
                   struct avx_processed_utf_bytes *previous,
@@ -339,6 +326,7 @@ avxcheckUTF8Bytes(__m256i current_bytes,
                    previous->high_nibbles, has_error);
   return pb;
 }
+UNTARGET_REGION(); // haswell
 }
 
 #endif // IS_x86_64

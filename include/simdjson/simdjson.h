@@ -4,26 +4,17 @@
 #include <string>
 
 namespace simdjson {
-enum instruction_set {
-  avx2,
-  sse4_2,
-  pclmul,
-  neon,
-  arm_crypto,
+enum architecture {
+  westmere,
+  haswell,
+  arm64,
   none,
   // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current machine
-#ifdef __AVX2__
-  native = avx2
-#elif defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64)) // TODO _MSC_VER is redundant, only MSVC defines _M_ARM64
-  native = neon
-#else
-  // Let us assume that we have an old x64 processor, but one that has SSE (i.e., something
-  // that came out in the second decade of the XXIst century.
-  // It would be nicer to check explicitly, but there many not be a good way to do so
-  // that is cross-platform.
-  // Under Visual Studio, there is no way to check for SSE4.2 support at compile-time.
-  native = sse4_2
+#ifdef IS_x86_64
+  native = westmere
+#elif defined(IS_ARM64)
+  native = arm64
 #endif
 };
 

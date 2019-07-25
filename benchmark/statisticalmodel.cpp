@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
   results.resize(evts.size());
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
-    // The default template is simdjson::instruction_set::native.
+    // The default template is simdjson::architecture::native.
     bool isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
     unified.end(results);
     

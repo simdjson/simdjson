@@ -1,8 +1,9 @@
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {
-// Target attributes can be used only once by function definition. Code duplication is worse than macro.
-// FIND_STRUCTURAL_BITS(instruction_set T, const uint8_t *buf, size_t len, ParsedJson &pj)
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
+// FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
 #define FIND_STRUCTURAL_BITS(T, buf, len, pj) {                                                     \
   if (len > pj.bytecapacity) {                                                                      \
     std::cerr << "Your ParsedJson object only supports documents up to "                            \
@@ -137,23 +138,23 @@ namespace simdjson {
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<>
-int find_structural_bits<instruction_set::avx2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  FIND_STRUCTURAL_BITS(instruction_set::avx2, buf, len, pj);
+int find_structural_bits<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(architecture::haswell, buf, len, pj);
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<>
-int find_structural_bits<instruction_set::sse4_2>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  FIND_STRUCTURAL_BITS(instruction_set::sse4_2, buf, len, pj);
+int find_structural_bits<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(architecture::westmere, buf, len, pj);
 }
 UNTARGET_REGION();
 #endif
 
 #ifdef IS_ARM64
 template<>
-int find_structural_bits<instruction_set::neon>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  FIND_STRUCTURAL_BITS(instruction_set::neon, buf, len, pj);
+int find_structural_bits<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  FIND_STRUCTURAL_BITS(architecture::arm64, buf, len, pj);
 }
 #endif
 //#undef FIND_STRUCTURAL_BITS

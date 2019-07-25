@@ -1,5 +1,5 @@
 /* From https://github.com/endorno/pytorch/blob/master/torch/lib/TH/generic/simd/simd.h
-Slightly modified.
+Highly modified. 
 
 Copyright (c) 2016-     Facebook, Inc            (Adam Paszke)
 Copyright (c) 2014-     Facebook, Inc            (Soumith Chintala)
@@ -41,8 +41,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef TH_SIMD_INC
-#define TH_SIMD_INC
+#ifndef ISADETECTION_H
+#define ISADETECTION_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -52,79 +52,36 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <cpuid.h>
 #endif
 
+namespace simdjson {
 // Can be found on Intel ISA Reference for CPUID
-#define CPUID_AVX2_BIT 0x20       // Bit 5 of EBX for EAX=0x7
-#define CPUID_AVX_BIT  0x10000000 // Bit 28 of ECX for EAX=0x1
-#define CPUID_SSE_BIT  0x2000000  // bit 25 of EDX for EAX=0x1
-#define CPUID_SSE42_BIT 1 << 20   // bit 20 of EcX for EAX=0x1
-
-// Helper macros for initialization
-#define FUNCTION_IMPL(NAME, EXT) \
-    { .function=(void *)NAME,    \
-      .supportedSimdExt=EXT      \
-    }
-
-#define INIT_DISPATCH_PTR(OP)    \
-  do {                           \
-    int i;                       \
-    for (i = 0; i < sizeof(THVector_(OP ## _DISPATCHTABLE)) / sizeof(FunctionDescription); ++i) { \
-      THVector_(OP ## _DISPATCHPTR) = THVector_(OP ## _DISPATCHTABLE)[i].function;                     \
-      if (THVector_(OP ## _DISPATCHTABLE)[i].supportedSimdExt & hostSimdExts) {                       \
-        break;                                                                                     \
-      }                                                                                            \
-    }                                                                                              \
-  } while(0)
-
-
-typedef struct FunctionDescription
-{
-  void *function;
-  uint32_t supportedSimdExt;
-} FunctionDescription;
-
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;      // Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      // bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      // bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;    // bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; // bit  1 of ECX for EAX=0x1
 
 enum SIMDExtensions {
   DEFAULT   = 0x0,
   NEON      = 0x1,
-  VSX       = 0x2,
   AVX2      = 0x4,
-  AVX       = 0x8,
-  SSE       = 0x10,
-  SSE42     = 0x20,
-  PCLMULQDQ = 0x40
+  SSE42     = 0x8,
+  PCLMULQDQ = 0x10,
+  BMI1      = 0x20,
+  BMI2      = 0x40
 };
-
 
 #if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
 
  #if defined(__NEON__)
 
-static inline uint32_t detectHostSIMDExtensions()
+static inline uint32_t detect_supported_architectures()
 {
   return SIMDExtensions::NEON;
 }
 
  #else //ARM without NEON
 
-static inline uint32_t detectHostSIMDExtensions()
-{
-  return SIMDExtensions::DEFAULT;
-}
-
- #endif
-
-#elif defined(__PPC64__)
-
- #if defined(__VSX__)
-
-static inline uint32_t detectHostSIMDExtensions()
-{
-  return SIMDExtensions::VSX;
-}
-
- #else //PPC64 without VSX
-
-static inline uint32_t detectHostSIMDExtensions()
+static inline uint32_t detect_supported_architectures()
 {
   return SIMDExtensions::DEFAULT;
 }
@@ -155,52 +112,43 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *
 #endif
 }
 
-static inline uint32_t detectHostSIMDExtensions()
+static inline uint32_t detect_supported_architectures()
 {
   uint32_t eax, ebx, ecx, edx;
   uint32_t hostSimdExts = 0x0;
-  int TH_NO_AVX = 1, TH_NO_AVX2 = 1, TH_NO_SSE = 1, TH_NO_SSE42 = 1;
-  char *evar;
 
-  evar = getenv("TH_NO_AVX2");
-  if (evar == NULL || strncmp(evar, "1", 2) != 0)
-    TH_NO_AVX2 = 0;
-
-  // Check for AVX2. Requires separate CPUID
+  // ECX for EAX=0x1
   eax = 0x7;
   ecx = 0x0;
   cpuid(&eax, &ebx, &ecx, &edx);
-  if ((ebx & CPUID_AVX2_BIT) && TH_NO_AVX2 == 0) {
+
+  if (ebx & cpuid_avx2_bit) {
     hostSimdExts |= SIMDExtensions::AVX2;
   }
 
-  // Detect and enable AVX and SSE
+  if (ebx & cpuid_bmi1_bit) {
+    hostSimdExts |= SIMDExtensions::BMI1;
+  }
+
+  if (ebx & cpuid_bmi2_bit) {
+    hostSimdExts |= SIMDExtensions::BMI2;
+  }
+
+  // EBX for EAX=0x7
   eax = 0x1;
   cpuid(&eax, &ebx, &ecx, &edx);
-  evar = getenv("TH_NO_AVX");
-  if (evar == NULL || strncmp(evar, "1", 2) != 0)
-    TH_NO_AVX = 0;
-  if (ecx & CPUID_AVX_BIT && TH_NO_AVX == 0) {
-    hostSimdExts |= SIMDExtensions::AVX;
-  }
 
-  evar = getenv("TH_NO_SSE");
-  if (evar == NULL || strncmp(evar, "1", 2) != 0)
-    TH_NO_SSE = 0;  
-  if (edx & CPUID_SSE_BIT && TH_NO_SSE == 0) {
-    hostSimdExts |= SIMDExtensions::SSE;
-  }
-
-  evar = getenv("TH_NO_SSE42");
-  if (evar == NULL || strncmp(evar, "1", 2) != 0)
-    TH_NO_SSE42 = 0;  
-  if (ecx & CPUID_SSE42_BIT && TH_NO_SSE42 == 0) {
+  if (ecx & cpuid_sse42_bit) {
     hostSimdExts |= SIMDExtensions::SSE42;
+  }
+
+  if (ecx & cpuid_pclmulqdq_bit) {
+    hostSimdExts |= SIMDExtensions::PCLMULQDQ;
   }
 
   return hostSimdExts;
 }
 
 #endif // end SIMD extension detection code
-
+}
 #endif

@@ -15,13 +15,13 @@
 //#define TRANSPOSE
 
 namespace simdjson {
-template<instruction_set>
+template<architecture>
 struct simd_input;
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<>
-struct simd_input<instruction_set::avx2>
+struct simd_input<architecture::haswell>
 {
   __m256i lo;
   __m256i hi;
@@ -30,7 +30,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<>
-struct simd_input<instruction_set::sse4_2>
+struct simd_input<architecture::westmere>
 {
   __m128i v0;
   __m128i v1;
@@ -41,7 +41,7 @@ UNTARGET_REGION();
 #endif // IS_x86_64
 
 #ifdef IS_ARM64
-template<> struct simd_input<instruction_set::neon>
+template<> struct simd_input<architecture::arm64>
 {
 #ifndef TRANSPOSE
   uint8x16_t i0;
@@ -97,7 +97,7 @@ uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16
 }
 #endif // IS_ARM64
 
-template<instruction_set T>
+template<architecture T>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 namespace {
@@ -120,18 +120,18 @@ namespace {
 // Also: we don't know of an instance where AVX2 is supported but 
 // where clmul is not supported, so check for both, to be sure.
 #ifdef SIMDJSON_AVOID_CLMUL
-template<instruction_set T> really_inline
+template<architecture T> really_inline
 uint64_t compute_quote_mask(uint64_t quote_bits) {
   return portable_compute_quote_mask(quote_bits);
 }
 #else
-template<instruction_set>
+template<architecture>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-uint64_t compute_quote_mask<instruction_set::avx2>(uint64_t quote_bits) {
+uint64_t compute_quote_mask<architecture::haswell>(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -143,7 +143,7 @@ UNTARGET_REGION();
 TARGET_WESTMERE();
 template<> really_inline // NB: this only needs SSE2, but AFAIK the earliest processor with CLMUL has SSE4.2
 // TODO templ param needs pclmul
-uint64_t compute_quote_mask<instruction_set::sse4_2>(uint64_t quote_bits) {
+uint64_t compute_quote_mask<architecture::westmere>(uint64_t quote_bits) {
   // CLMUL is supported on some SSE42 hardware such as Sandy Bridge,
   // but not on others.
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -154,7 +154,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
+uint64_t compute_quote_mask<architecture::arm64>(uint64_t quote_bits) {
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64( -1ULL, quote_bits);
 #else
@@ -165,14 +165,14 @@ uint64_t compute_quote_mask<instruction_set::neon>(uint64_t quote_bits) {
 #endif // SIMDJSON_AVOID_CLMUL
 
 // Holds the state required to perform check_utf8().
-template<instruction_set>
+template<architecture>
 struct utf8_checking_state;
 
 #ifdef IS_x86_64
 #include "simdjson/simdutf8check.h"
 TARGET_HASWELL();
 template<>
-struct utf8_checking_state<instruction_set::avx2>
+struct utf8_checking_state<architecture::haswell>
 {
   __m256i has_error;
   avx_processed_utf_bytes previous;
@@ -187,7 +187,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<>
-struct utf8_checking_state<instruction_set::sse4_2>
+struct utf8_checking_state<architecture::westmere>
 {
   __m128i has_error = _mm_setzero_si128();
   processed_utf_bytes previous {
@@ -201,7 +201,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<>
-struct utf8_checking_state<instruction_set::neon>
+struct utf8_checking_state<architecture::arm64>
 {
   int8x16_t has_error {};
   processed_utf_bytes previous {};
@@ -209,7 +209,7 @@ struct utf8_checking_state<instruction_set::neon>
 
 // Checks that all bytes are ascii
 really_inline
-bool check_ascii_neon(simd_input<instruction_set::neon> in) {
+bool check_ascii_neon(simd_input<architecture::arm64> in) {
   // checking if the most significant bit is always equal to 0.
   uint8x16_t highbit = vdupq_n_u8(0x80);
   uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
@@ -223,14 +223,14 @@ bool check_ascii_neon(simd_input<instruction_set::neon> in) {
 }
 #endif
 
-template<instruction_set T>
+template<architecture T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-void check_utf8<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
-                utf8_checking_state<instruction_set::avx2>& state) {
+void check_utf8<architecture::haswell>(simd_input<architecture::haswell> in,
+                utf8_checking_state<architecture::haswell>& state) {
   __m256i highbit = _mm256_set1_epi8(0x80);
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), highbit)) == 1) {
     // it is ascii, we just check continuation
@@ -250,8 +250,8 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-void check_utf8<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
-                utf8_checking_state<instruction_set::sse4_2>& state) {
+void check_utf8<architecture::westmere>(simd_input<architecture::westmere> in,
+                utf8_checking_state<architecture::westmere>& state) {
   __m128i highbit = _mm_set1_epi8(0x80);
   if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), highbit)) == 1) {
     // it is ascii, we just check continuation
@@ -284,8 +284,8 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
-                utf8_checking_state<instruction_set::neon>& state) {
+void check_utf8<architecture::arm64>(simd_input<architecture::arm64> in,
+                utf8_checking_state<architecture::arm64>& state) {
   if (check_ascii_neon(in)) {
     // All bytes are ascii. Therefore the byte that was just before must be ascii too.
     // We only check the byte that was just before simd_input. Nines are arbitrary values.
@@ -305,20 +305,20 @@ void check_utf8<instruction_set::neon>(simd_input<instruction_set::neon> in,
 #endif // IS_ARM64
 
 // Checks if the utf8 validation has found any error.
-template<instruction_set T>
+template<architecture T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-errorValues check_utf8_errors<instruction_set::avx2>(utf8_checking_state<instruction_set::avx2>& state) {
+errorValues check_utf8_errors<architecture::haswell>(utf8_checking_state<architecture::haswell>& state) {
   return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-errorValues check_utf8_errors<instruction_set::sse4_2>(utf8_checking_state<instruction_set::sse4_2>& state) {
+errorValues check_utf8_errors<architecture::westmere>(utf8_checking_state<architecture::westmere>& state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
 UNTARGET_REGION();
@@ -326,7 +326,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruction_set::neon>& state) {
+errorValues check_utf8_errors<architecture::arm64>(utf8_checking_state<architecture::arm64>& state) {
   uint64x2_t v64 = vreinterpretq_u64_s8(state.has_error);
   uint32x2_t v32 = vqmovn_u64(v64);
   uint64x1_t result = vreinterpret_u64_u32(v32);
@@ -334,14 +334,14 @@ errorValues check_utf8_errors<instruction_set::neon>(utf8_checking_state<instruc
 }
 #endif
 
-template<instruction_set T>
+template<architecture T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-simd_input<instruction_set::avx2> fill_input<instruction_set::avx2>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::avx2> in;
+simd_input<architecture::haswell> fill_input<architecture::haswell>(const uint8_t * ptr) {
+  struct simd_input<architecture::haswell> in;
   in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   return in;
@@ -350,8 +350,8 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-simd_input<instruction_set::sse4_2> fill_input<instruction_set::sse4_2>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::sse4_2> in;
+simd_input<architecture::westmere> fill_input<architecture::westmere>(const uint8_t * ptr) {
+  struct simd_input<architecture::westmere> in;
   in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
   in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
   in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
@@ -363,8 +363,8 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_t * ptr) {
-  struct simd_input<instruction_set::neon> in;
+simd_input<architecture::arm64> fill_input<architecture::arm64>(const uint8_t * ptr) {
+  struct simd_input<architecture::arm64> in;
 #ifndef TRANSPOSE
   in.i0 = vld1q_u8(ptr + 0);
   in.i1 = vld1q_u8(ptr + 16);
@@ -379,13 +379,13 @@ simd_input<instruction_set::neon> fill_input<instruction_set::neon>(const uint8_
 
 // a straightforward comparison of a mask against input. 5 uops; would be
 // cheaper in AVX512.
-template<instruction_set T>
+template<architecture T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-uint64_t cmp_mask_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
+uint64_t cmp_mask_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
   const __m256i mask = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
@@ -397,7 +397,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-uint64_t cmp_mask_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
+uint64_t cmp_mask_against_input<architecture::westmere>(simd_input<architecture::westmere> in, uint8_t m) {
   const __m128i mask = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
   uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
@@ -414,7 +414,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
+uint64_t cmp_mask_against_input<architecture::arm64>(simd_input<architecture::arm64> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
   uint8x16_t cmp_res_0 = vceqq_u8(in.i0, mask); 
   uint8x16_t cmp_res_1 = vceqq_u8(in.i1, mask); 
@@ -425,13 +425,13 @@ uint64_t cmp_mask_against_input<instruction_set::neon>(simd_input<instruction_se
 #endif
 
 // find all values less than or equal than the content of maxval (using unsigned arithmetic) 
-template<instruction_set T>
+template<architecture T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-uint64_t unsigned_lteq_against_input<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint8_t m) {
+uint64_t unsigned_lteq_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
   const __m256i maxval = _mm256_set1_epi8(m);
   __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.lo),maxval);
   uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
@@ -443,7 +443,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-uint64_t unsigned_lteq_against_input<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint8_t m) {
+uint64_t unsigned_lteq_against_input<architecture::westmere>(simd_input<architecture::westmere> in, uint8_t m) {
   const __m128i maxval = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v0),maxval);
   uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
@@ -460,7 +460,7 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instruction_set::neon> in, uint8_t m) {
+uint64_t unsigned_lteq_against_input<architecture::arm64>(simd_input<architecture::arm64> in, uint8_t m) {
   const uint8x16_t mask = vmovq_n_u8(m); 
   uint8x16_t cmp_res_0 = vcleq_u8(in.i0, mask); 
   uint8x16_t cmp_res_1 = vcleq_u8(in.i1, mask); 
@@ -479,8 +479,9 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-// Target attributes can be used only once by function definition. Code duplication is worse than macros
-// uint64_t FIND_ODD_BACKSLASH_SEQUENCES(instruction_set T, simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash)
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
+// uint64_t FIND_ODD_BACKSLASH_SEQUENCES(architecture T, simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash)
 #define FIND_ODD_BACKSLASH_SEQUENCES(T, in, prev_iter_ends_odd_backslash) {     \
   const uint64_t even_bits = 0x5555555555555555ULL;                             \
   const uint64_t odd_bits = ~even_bits;                                         \
@@ -513,29 +514,29 @@ uint64_t unsigned_lteq_against_input<instruction_set::neon>(simd_input<instructi
   return odd_ends;                                                              \
 }                                                                               \
 
-template<instruction_set T> really_inline
+template<architecture T> really_inline
 uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-uint64_t find_odd_backslash_sequences<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::avx2, in, prev_iter_ends_odd_backslash);
+uint64_t find_odd_backslash_sequences<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(architecture::haswell, in, prev_iter_ends_odd_backslash);
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-uint64_t find_odd_backslash_sequences<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::sse4_2, in, prev_iter_ends_odd_backslash);
+uint64_t find_odd_backslash_sequences<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(architecture::westmere, in, prev_iter_ends_odd_backslash);
 }
 UNTARGET_REGION();
 #endif // IS_x86_64
 
 #ifdef ARM64
 template<> really_inline
-uint64_t find_odd_backslash_sequences<instruction_set::neon>(simd_input<instruction_set::neon> in, uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(instruction_set::neon, in, prev_iter_ends_odd_backslash);
+uint64_t find_odd_backslash_sequences<architecture::arm64>(simd_input<architecture::arm64> in, uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(architecture::arm64, in, prev_iter_ends_odd_backslash);
 }
 #endif // ARM64
 
@@ -551,8 +552,9 @@ uint64_t find_odd_backslash_sequences<instruction_set::neon>(simd_input<instruct
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-// Target attributes can be used only once by function definition. Code duplication is worse than macros.
-// uint64_t FIND_QUOTE_MASK_AND_BITS(instruction_set T, simd_input<T> in, uint64_t odd_ends,
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
+// uint64_t FIND_QUOTE_MASK_AND_BITS(architecture T, simd_input<T> in, uint64_t odd_ends,
 //    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask)
 #define FIND_QUOTE_MASK_AND_BITS(T, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask) {    \
   quote_bits = cmp_mask_against_input<T>(in, '"');                                                     \
@@ -574,33 +576,33 @@ uint64_t find_odd_backslash_sequences<instruction_set::neon>(simd_input<instruct
   return quote_mask;                                                                                   \
 }                                                                                                      \
 
-template<instruction_set T> really_inline
+template<architecture T> really_inline
 uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask);
 
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-uint64_t find_quote_mask_and_bits<instruction_set::avx2>(simd_input<instruction_set::avx2> in, uint64_t odd_ends,
+uint64_t find_quote_mask_and_bits<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(instruction_set::avx2, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
+  FIND_QUOTE_MASK_AND_BITS(architecture::haswell, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-uint64_t find_quote_mask_and_bits<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in, uint64_t odd_ends,
+uint64_t find_quote_mask_and_bits<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(instruction_set::sse4_2, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
+  FIND_QUOTE_MASK_AND_BITS(architecture::westmere, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 UNTARGET_REGION();
 #endif // IS_x86_64
 
 #ifdef IS_ARM64
 template<> really_inline
-uint64_t find_quote_mask_and_bits<instruction_set::neon>(simd_input<instruction_set::neon> in, uint64_t odd_ends,
+uint64_t find_quote_mask_and_bits<architecture::arm64>(simd_input<architecture::arm64> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(instruction_set::neon, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
+  FIND_QUOTE_MASK_AND_BITS(architecture::arm64, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 #endif // IS_ARM64
 
@@ -611,7 +613,7 @@ uint64_t find_quote_mask_and_bits<instruction_set::neon>(simd_input<instruction_
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 // these go into the next 2 buckets of the comparison (8/16)
-template<instruction_set T>
+template<architecture T>
 void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &whitespace,
                                      uint64_t &structurals);
@@ -619,7 +621,7 @@ void find_whitespace_and_structurals(simd_input<T> in,
 #ifdef IS_x86_64
 TARGET_HASWELL();
 template<> really_inline
-void find_whitespace_and_structurals<instruction_set::avx2>(simd_input<instruction_set::avx2> in,
+void find_whitespace_and_structurals<architecture::haswell>(simd_input<architecture::haswell> in,
                                                      uint64_t &whitespace,
                                                      uint64_t &structurals) {
 #ifdef SIMDJSON_NAIVE_STRUCTURAL
@@ -701,7 +703,7 @@ UNTARGET_REGION();
 
 TARGET_WESTMERE();
 template<> really_inline
-void find_whitespace_and_structurals<instruction_set::sse4_2>(simd_input<instruction_set::sse4_2> in,
+void find_whitespace_and_structurals<architecture::westmere>(simd_input<architecture::westmere> in,
                                                      uint64_t &whitespace, uint64_t &structurals) {
   const __m128i structural_table = _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
   const __m128i white_table = _mm_setr_epi8(
@@ -756,8 +758,8 @@ UNTARGET_REGION();
 
 #ifdef IS_ARM64
 template<> really_inline
-void find_whitespace_and_structurals<instruction_set::neon>(
-                                                  simd_input<instruction_set::neon> in,
+void find_whitespace_and_structurals<architecture::arm64>(
+                                                  simd_input<architecture::arm64> in,
                                                   uint64_t &whitespace,
                                                   uint64_t &structurals) {
   const uint8x16_t low_nibble_mask = (uint8x16_t){ 
@@ -931,11 +933,11 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
-template<instruction_set T = instruction_set::native>
+template<architecture T = architecture::native>
 /*never_inline*/ int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 
-template<instruction_set T = instruction_set::native>
+template<architecture T = architecture::native>
 WARN_UNUSED
 int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits<T>(reinterpret_cast<const uint8_t *>(buf), len, pj);
