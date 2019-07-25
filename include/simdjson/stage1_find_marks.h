@@ -1143,6 +1143,9 @@ really_inline void prep_find_structural_bits_64(const int lane,
 #ifdef SIMDJSON_UTF8VALIDATE
 	check_utf8<T>(in, utf8_state);
 #endif
+	bs_bits[lane] = cmp_mask_against_input<T>(in, '\\');
+	quote_bits[lane] = cmp_mask_against_input<T>(in, '"');
+	unescaped[lane] = unsigned_lteq_against_input<T>(in, 0x1F);
 	find_whitespace_and_structurals<T>(in, whitespace[lane], found_structurals[lane]);
 
 }
