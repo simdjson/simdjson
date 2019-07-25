@@ -30,13 +30,11 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
   architecture best_implementation = find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
-#ifdef IS_x86_64 // TODO this only needs to be IS_X86 -- CPUID is safe on 32-bit
+#ifdef IS_X86_64
   case architecture::haswell:
-  std::cout << "haswell" << std::endl;
     json_parse_ptr = &json_parse_implementation<architecture::haswell>;
     break;
   case architecture::westmere:
-    std::cout << "westmere" << std::endl;
     json_parse_ptr = &json_parse_implementation<architecture::westmere>;
     break;
 #endif

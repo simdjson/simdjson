@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_H
 #define SIMDJSON_SIMDUTF8CHECK_H
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 
 #include <stddef.h>
 #include <stdint.h>
@@ -329,6 +329,6 @@ avxcheckUTF8Bytes(__m256i current_bytes,
 UNTARGET_REGION(); // haswell
 }
 
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #endif

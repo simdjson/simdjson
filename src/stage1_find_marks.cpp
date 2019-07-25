@@ -135,7 +135,7 @@ namespace simdjson {
 
 
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<>
 int find_structural_bits<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {

@@ -2,15 +2,13 @@
 #define SIMDJSON_PORTABILITY_H
 
 #if defined(__x86_64__) || defined(_M_AMD64)
-# define IS_x86_64 1
+# define IS_X86_64 1
 #endif
 #if defined(__aarch64__) || defined(_M_ARM64)
 # define IS_ARM64 1
 #endif
-#define TARGET(T) [[gnu::target(T)]]
 
 #define STRINGIFY(a) #a
-
 
 #ifdef __clang__
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
@@ -29,7 +27,7 @@ _Pragma("GCC pop_options")
 #ifdef _MSC_VER
 # include <intrin.h>
 #else
-# if IS_x86_64
+# if IS_X86_64
 #  include <x86intrin.h>
 # elif IS_ARM64
 #  include <arm_neon.h>
@@ -134,7 +132,7 @@ static inline char *aligned_malloc_char(size_t alignment, size_t size) {
 
 #ifndef __clang__
 #ifndef _MSC_VER
-TARGET("avx2")
+TARGET_HASWELL();
 static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
                                           __m128i const *__addr_lo) {
   __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
@@ -150,6 +148,7 @@ static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
   __v128 = _mm256_extractf128_si256(__a, 1);
   _mm_storeu_si128(__addr_hi, __v128);
 }
+UNTARGET_REGION();
 #endif
 #endif
 

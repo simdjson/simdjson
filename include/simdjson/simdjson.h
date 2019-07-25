@@ -11,7 +11,7 @@ enum architecture {
   none,
   // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current machine
-#ifdef IS_x86_64
+#ifdef IS_X86_64
   native = westmere
 #elif defined(IS_ARM64)
   native = arm64

@@ -186,7 +186,7 @@ namespace simdjson {
       goto fail;                                                                                                                             \
     }                                                                                                                                        \
     memcpy(copy, buf, len);                                                                                                                  \
-    copy[len] = ' ';                                                                                                                        \
+    copy[len] = ' ';                                                                                                                         \
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {                                                             \
       free(copy);                                                                                                                            \
       goto fail;                                                                                                                             \
@@ -495,7 +495,7 @@ fail:                                                                           
   return pj.errorcode;                                                                                                                       \
 }                                                                                                                                            \
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
@@ -511,7 +511,7 @@ int unified_machine<architecture::westmere>(const uint8_t *buf, size_t len, Pars
   UNIFIED_MACHINE(architecture::westmere, buf, len, pj);
 }
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef IS_ARM64
 template<>

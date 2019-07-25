@@ -6,7 +6,7 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 #include "simdjson/simdutf8check.h"
 #elif IS_ARM64
 #include "simdjson/simdutf8check_neon.h"
@@ -18,7 +18,7 @@ namespace simdjson {
 template<architecture>
 struct simd_input;
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<>
 struct simd_input<architecture::haswell>
@@ -38,7 +38,7 @@ struct simd_input<architecture::westmere>
   __m128i v3;
 };
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef IS_ARM64
 template<> struct simd_input<architecture::arm64>
@@ -128,7 +128,7 @@ uint64_t compute_quote_mask(uint64_t quote_bits) {
 template<architecture>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 uint64_t compute_quote_mask<architecture::haswell>(uint64_t quote_bits) {
@@ -141,16 +141,13 @@ uint64_t compute_quote_mask<architecture::haswell>(uint64_t quote_bits) {
 UNTARGET_REGION();
 
 TARGET_WESTMERE();
-template<> really_inline // NB: this only needs SSE2, but AFAIK the earliest processor with CLMUL has SSE4.2
-// TODO templ param needs pclmul
+template<> really_inline
 uint64_t compute_quote_mask<architecture::westmere>(uint64_t quote_bits) {
-  // CLMUL is supported on some SSE42 hardware such as Sandy Bridge,
-  // but not on others.
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
 }
 UNTARGET_REGION();
-#endif //IS_x86_64
+#endif //IS_X86_64
 
 #ifdef IS_ARM64
 template<> really_inline
@@ -168,7 +165,7 @@ uint64_t compute_quote_mask<architecture::arm64>(uint64_t quote_bits) {
 template<architecture>
 struct utf8_checking_state;
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 #include "simdjson/simdutf8check.h"
 TARGET_HASWELL();
 template<>
@@ -226,7 +223,7 @@ bool check_ascii_neon(simd_input<architecture::arm64> in) {
 template<architecture T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 void check_utf8<architecture::haswell>(simd_input<architecture::haswell> in,
@@ -280,7 +277,7 @@ void check_utf8<architecture::westmere>(simd_input<architecture::westmere> in,
   }
 }
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef IS_ARM64
 template<> really_inline
@@ -308,7 +305,7 @@ void check_utf8<architecture::arm64>(simd_input<architecture::arm64> in,
 template<architecture T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 errorValues check_utf8_errors<architecture::haswell>(utf8_checking_state<architecture::haswell>& state) {
@@ -337,7 +334,7 @@ errorValues check_utf8_errors<architecture::arm64>(utf8_checking_state<architect
 template<architecture T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 simd_input<architecture::haswell> fill_input<architecture::haswell>(const uint8_t * ptr) {
@@ -382,7 +379,7 @@ simd_input<architecture::arm64> fill_input<architecture::arm64>(const uint8_t * 
 template<architecture T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 uint64_t cmp_mask_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
@@ -428,7 +425,7 @@ uint64_t cmp_mask_against_input<architecture::arm64>(simd_input<architecture::ar
 template<architecture T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 uint64_t unsigned_lteq_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
@@ -517,7 +514,7 @@ uint64_t unsigned_lteq_against_input<architecture::arm64>(simd_input<architectur
 template<architecture T> really_inline
 uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 uint64_t find_odd_backslash_sequences<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t &prev_iter_ends_odd_backslash) {
@@ -531,7 +528,7 @@ uint64_t find_odd_backslash_sequences<architecture::westmere>(simd_input<archite
   FIND_ODD_BACKSLASH_SEQUENCES(architecture::westmere, in, prev_iter_ends_odd_backslash);
 }
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef ARM64
 template<> really_inline
@@ -580,7 +577,7 @@ template<architecture T> really_inline
 uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 uint64_t find_quote_mask_and_bits<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t odd_ends,
@@ -596,7 +593,7 @@ uint64_t find_quote_mask_and_bits<architecture::westmere>(simd_input<architectur
   FIND_QUOTE_MASK_AND_BITS(architecture::westmere, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef IS_ARM64
 template<> really_inline
@@ -618,7 +615,7 @@ void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &whitespace,
                                      uint64_t &structurals);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 void find_whitespace_and_structurals<architecture::haswell>(simd_input<architecture::haswell> in,

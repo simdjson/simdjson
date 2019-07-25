@@ -87,7 +87,7 @@ struct parse_string_helper {
 template<architecture>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<> really_inline
 parse_string_helper find_bs_bits_and_quote_bits<architecture::haswell> (const uint8_t *src, uint8_t *dst) {
@@ -242,7 +242,7 @@ WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER reall
 bool parse_string(UNUSED const uint8_t *buf, UNUSED size_t len,
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset);
 
-#ifdef IS_x86_64
+#ifdef IS_X86_64
 TARGET_HASWELL();
 template<>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER really_inline
@@ -260,7 +260,7 @@ bool parse_string<architecture::westmere>(UNUSED const uint8_t *buf, UNUSED size
   PARSE_STRING(architecture::westmere, buf, len, pj, depth, offset);
 }
 UNTARGET_REGION();
-#endif // IS_x86_64
+#endif // IS_X86_64
 
 #ifdef IS_ARM64
 template<>
