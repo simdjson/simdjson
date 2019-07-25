@@ -1101,30 +1101,20 @@ really_inline uint64_t finalize_structurals(
 template<instruction_set T>
 really_inline void finish_find_structural_bits_64(int lane,
 	const size_t idx,
-	ParsedJson &pj,
 	uint32_t *base_ptr,
 	uint32_t &base,
-	uint64_t &prev_iter_inside_quote,
 	uint64_t &prev_iter_ends_pseudo_pred,
 	uint64_t &structurals,
 	uint64_t (&quote_bits)[4],
-	uint64_t (&unescaped)[4],
 	uint64_t (&whitespace)[4],
 	uint64_t (&found_structurals)[4],
-	uint64_t &error_mask,
-	uint64_t (&odd_ends)[4]
-	) {
-	// detect insides of quote pairs ("quote_mask") and also our quote_bits
-	// themselves
-	uint64_t quote_mask = find_quote_mask_and_bits<T>(
-		odd_ends[lane], prev_iter_inside_quote, quote_bits[lane], unescaped[lane], error_mask);
-
+	uint64_t (&quote_mask)[4]) {
 	// take the previous iterations structural bits, not our current iteration,
 	// and flatten
 	flatten_bits(base_ptr, base, idx + lane * 64, structurals);
 
 	// fixup structurals to reflect quotes and add pseudo-structural characters
-	structurals = finalize_structurals(found_structurals[lane], whitespace[lane], quote_mask,
+	structurals = finalize_structurals(found_structurals[lane], whitespace[lane], quote_mask[lane],
 		quote_bits[lane], prev_iter_ends_pseudo_pred);
 }
 
@@ -1147,7 +1137,6 @@ really_inline void prep_find_structural_bits_64(const int lane,
 	quote_bits[lane] = cmp_mask_against_input<T>(in, '"');
 	unescaped[lane] = unsigned_lteq_against_input<T>(in, 0x1F);
 	find_whitespace_and_structurals<T>(in, whitespace[lane], found_structurals[lane]);
-
 }
 
 // Find structural bits, for a guaranteed-256-byte-wide chunk
@@ -1178,10 +1167,18 @@ really_inline void find_structural_bits_256(const uint8_t *chunk,
 	uint64_t odd_ends[4];
 	split_bitmask(odd_ends, find_odd_backslash_sequences_256<T>(join_bitmask<T>(bs_bits), prev_iter_ends_odd_backslash));
 
-	finish_find_structural_bits_64<T>(0, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, quote_bits, unescaped, whitespace, found_structurals, error_mask, odd_ends);
-	finish_find_structural_bits_64<T>(1, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, quote_bits, unescaped, whitespace, found_structurals, error_mask, odd_ends);
-	finish_find_structural_bits_64<T>(2, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, quote_bits, unescaped, whitespace, found_structurals, error_mask, odd_ends);
-	finish_find_structural_bits_64<T>(3, idx, pj, base_ptr, base, prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals, quote_bits, unescaped, whitespace, found_structurals, error_mask, odd_ends);
+	// detect insides of quote pairs ("quote_mask") and also our quote_bits
+	// themselves
+	uint64_t quote_mask[4];
+	quote_mask[0] = find_quote_mask_and_bits<T>(odd_ends[0], prev_iter_inside_quote, quote_bits[0], unescaped[0], error_mask);
+	quote_mask[1] = find_quote_mask_and_bits<T>(odd_ends[1], prev_iter_inside_quote, quote_bits[1], unescaped[1], error_mask);
+	quote_mask[2] = find_quote_mask_and_bits<T>(odd_ends[2], prev_iter_inside_quote, quote_bits[2], unescaped[2], error_mask);
+	quote_mask[3] = find_quote_mask_and_bits<T>(odd_ends[3], prev_iter_inside_quote, quote_bits[3], unescaped[3], error_mask);
+
+	finish_find_structural_bits_64<T>(0, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
+	finish_find_structural_bits_64<T>(1, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
+	finish_find_structural_bits_64<T>(2, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
+	finish_find_structural_bits_64<T>(3, idx, base_ptr, base, prev_iter_ends_pseudo_pred, structurals, quote_bits, whitespace, found_structurals, quote_mask);
 }
 
 template<instruction_set T = instruction_set::native>
