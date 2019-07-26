@@ -242,11 +242,13 @@ bool ParsedJson::iterator::relative_move_to(const char * pointer, uint32_t lengt
           current_type = (current_val >> 56);
           return true; // how could it fail ?
         }
-      }
-      else { // regular numeric index
+      } else { // regular numeric index
         // The index can't have a leading '0'
         if (key_or_index[0] == '0' && key_or_index.length() > 1) {
-
+          return false;
+        }
+        // it cannot be empty
+        if (key_or_index.length() == 0) {
           return false;
         }
         // we already checked the index contains only valid digits

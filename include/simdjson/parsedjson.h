@@ -243,8 +243,25 @@ public:
     // The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
     // However, the standard says "If a referenced member name is not unique in an object,
     // the member that is referenced is undefined, and evaluation fails".
-    // Here we just return the first corresponding value
+    // Here we just return the first corresponding value.
+    // The length parameter is the length of the jsonpointer string ('pointer').
     bool move_to(const char * pointer, uint32_t length);
+
+    // Moves the iterator to the value correspoding to the json pointer.
+    // Always search from the root of the document.
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing the same value we were pointing before the call.
+    // The json pointer implementation follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+    // However, the standard says "If a referenced member name is not unique in an object,
+    // the member that is referenced is undefined, and evaluation fails".
+    // Here we just return the first corresponding value.
+    inline bool move_to(const std::string & pointer) {
+      return move_to(pointer.c_str(), pointer.length());
+    }
+
+
+
+  private:
 
     // Almost the same as move_to(), except it searchs from the current position.
     // The pointer's syntax is identical, though that case is not handled by the rfc6901 standard.
@@ -252,7 +269,6 @@ public:
     // However, contrary to move_to(), the URI Fragment Identifier Representation is not supported here.
     // Also, in case of failure, we are left pointing at the closest value it could reach.
     // For these reasons it is private. It exists because it is used by move_to().
-  private:
     bool relative_move_to(const char * pointer, uint32_t length);
   public:
 

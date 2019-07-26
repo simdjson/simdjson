@@ -57,7 +57,7 @@ endif # ifeq ($(DEBUG),1)
 endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
-MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
+MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
 TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck pointercheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
@@ -162,6 +162,9 @@ minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIB
 
 json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I.
+
+jsonpointer: tools/jsonpointer.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsonpointer $ tools/jsonpointer.cpp $(LIBFILES) -I.
 
 jsonstats: tools/jsonstats.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsonstats $ tools/jsonstats.cpp $(LIBFILES) -I.
