@@ -136,19 +136,19 @@ namespace simdjson {
 
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<>
 int find_structural_bits<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::haswell, buf, len, pj);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<>
 int find_structural_bits<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::westmere, buf, len, pj);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64

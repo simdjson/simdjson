@@ -28,7 +28,7 @@
 
 namespace simdjson {
 /********** sse code **********/
-TARGET_WESTMERE()
+TARGET_WESTMERE
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(__m128i current_bytes,
                                         __m128i *has_error) {
@@ -122,13 +122,13 @@ static inline void checkOverlong(__m128i current_bytes,
       _mm_or_si128(*has_error, _mm_and_si128(initial_under, second_under));
 }
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 struct processed_utf_bytes {
   __m128i rawbytes;
   __m128i high_nibbles;
   __m128i carried_continuations;
 };
-UNTARGET_REGION();
+UNTARGET_REGION
 
 static inline void count_nibbles(__m128i bytes,
                                  struct processed_utf_bytes *answer) {
@@ -162,10 +162,10 @@ checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
                 previous->high_nibbles, has_error);
   return pb;
 }
-UNTARGET_REGION(); // westmere
+UNTARGET_REGION // westmere
 
 /********** avx2 code **********/
-TARGET_HASWELL()
+TARGET_HASWELL
 static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
 }
@@ -326,7 +326,7 @@ avxcheckUTF8Bytes(__m256i current_bytes,
                    previous->high_nibbles, has_error);
   return pb;
 }
-UNTARGET_REGION(); // haswell
+UNTARGET_REGION // haswell
 }
 
 #endif // IS_X86_64

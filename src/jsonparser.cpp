@@ -19,7 +19,7 @@ architecture find_best_supported_implementation() {
   uint32_t supports = detect_supported_architectures();
   // Order from best to worst (within architecture)
   if ((haswell_flags & supports) == haswell_flags) return architecture::haswell;
-  if ((westmere_flags & supports) == westmere) return architecture::westmere;
+  if ((westmere_flags & supports) == westmere_flags) return architecture::westmere;
   if (SIMDExtensions::NEON & supports) return architecture::arm64;
 
   return architecture::none;

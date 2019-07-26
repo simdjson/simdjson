@@ -496,21 +496,21 @@ fail:                                                                           
 }                                                                                                                                            \
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   UNIFIED_MACHINE(architecture::haswell, buf, len, pj);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   UNIFIED_MACHINE(architecture::westmere, buf, len, pj);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef IS_ARM64

@@ -12,17 +12,17 @@
 
 #ifdef __clang__
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
-#define UNTARGET_REGION() _Pragma("clang attribute pop")
+#define UNTARGET_REGION _Pragma("clang attribute pop")
 #elif defined(__GNUC__)
 #define TARGET_REGION(T) \
 _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
-#define UNTARGET_REGION() \
+#define UNTARGET_REGION \
 _Pragma("GCC pop_options")
 #endif
 
-#define TARGET_HASWELL() TARGET_REGION("avx2,bmi,pclmul")
-#define TARGET_WESTMERE() TARGET_REGION("sse4.2,pclmul")
+#define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
+#define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 
 #ifdef _MSC_VER
 # include <intrin.h>
@@ -132,7 +132,7 @@ static inline char *aligned_malloc_char(size_t alignment, size_t size) {
 
 #ifndef __clang__
 #ifndef _MSC_VER
-TARGET_HASWELL();
+TARGET_HASWELL
 static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
                                           __m128i const *__addr_lo) {
   __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
@@ -148,7 +148,7 @@ static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
   __v128 = _mm256_extractf128_si256(__a, 1);
   _mm_storeu_si128(__addr_hi, __v128);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 #endif
 

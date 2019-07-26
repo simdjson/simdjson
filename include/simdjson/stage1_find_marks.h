@@ -19,16 +19,16 @@ template<architecture>
 struct simd_input;
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<>
 struct simd_input<architecture::haswell>
 {
   __m256i lo;
   __m256i hi;
 };
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<>
 struct simd_input<architecture::westmere>
 {
@@ -37,7 +37,7 @@ struct simd_input<architecture::westmere>
   __m128i v2;
   __m128i v3;
 };
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef IS_ARM64
@@ -129,7 +129,7 @@ template<architecture>
 uint64_t compute_quote_mask(uint64_t quote_bits);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 uint64_t compute_quote_mask<architecture::haswell>(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
@@ -138,15 +138,15 @@ uint64_t compute_quote_mask<architecture::haswell>(uint64_t quote_bits) {
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
   return quote_mask;
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 uint64_t compute_quote_mask<architecture::westmere>(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif //IS_X86_64
 
 #ifdef IS_ARM64
@@ -167,7 +167,7 @@ struct utf8_checking_state;
 
 #ifdef IS_X86_64
 #include "simdjson/simdutf8check.h"
-TARGET_HASWELL();
+TARGET_HASWELL
 template<>
 struct utf8_checking_state<architecture::haswell>
 {
@@ -180,9 +180,9 @@ struct utf8_checking_state<architecture::haswell>
     previous.carried_continuations =_mm256_setzero_si256();
   }
 };
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<>
 struct utf8_checking_state<architecture::westmere>
 {
@@ -193,7 +193,7 @@ struct utf8_checking_state<architecture::westmere>
     _mm_setzero_si128()  // carried_continuations
   };
 };
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -224,7 +224,7 @@ template<architecture T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 void check_utf8<architecture::haswell>(simd_input<architecture::haswell> in,
                 utf8_checking_state<architecture::haswell>& state) {
@@ -243,9 +243,9 @@ void check_utf8<architecture::haswell>(simd_input<architecture::haswell> in,
     state.previous = avxcheckUTF8Bytes(in.hi, &(state.previous), &(state.has_error));
   }
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 void check_utf8<architecture::westmere>(simd_input<architecture::westmere> in,
                 utf8_checking_state<architecture::westmere>& state) {
@@ -276,7 +276,7 @@ void check_utf8<architecture::westmere>(simd_input<architecture::westmere> in,
     state.previous = checkUTF8Bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef IS_ARM64
@@ -306,19 +306,19 @@ template<architecture T>
 errorValues check_utf8_errors(utf8_checking_state<T>& state);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 errorValues check_utf8_errors<architecture::haswell>(utf8_checking_state<architecture::haswell>& state) {
   return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 errorValues check_utf8_errors<architecture::westmere>(utf8_checking_state<architecture::westmere>& state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -335,7 +335,7 @@ template<architecture T>
 simd_input<T> fill_input(const uint8_t * ptr);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 simd_input<architecture::haswell> fill_input<architecture::haswell>(const uint8_t * ptr) {
   struct simd_input<architecture::haswell> in;
@@ -343,9 +343,9 @@ simd_input<architecture::haswell> fill_input<architecture::haswell>(const uint8_
   in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   return in;
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 simd_input<architecture::westmere> fill_input<architecture::westmere>(const uint8_t * ptr) {
   struct simd_input<architecture::westmere> in;
@@ -355,7 +355,7 @@ simd_input<architecture::westmere> fill_input<architecture::westmere>(const uint
   in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
   return in;
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -380,7 +380,7 @@ template<architecture T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 uint64_t cmp_mask_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
   const __m256i mask = _mm256_set1_epi8(m);
@@ -390,9 +390,9 @@ uint64_t cmp_mask_against_input<architecture::haswell>(simd_input<architecture::
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 uint64_t cmp_mask_against_input<architecture::westmere>(simd_input<architecture::westmere> in, uint8_t m) {
   const __m128i mask = _mm_set1_epi8(m);
@@ -406,7 +406,7 @@ uint64_t cmp_mask_against_input<architecture::westmere>(simd_input<architecture:
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -426,7 +426,7 @@ template<architecture T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 uint64_t unsigned_lteq_against_input<architecture::haswell>(simd_input<architecture::haswell> in, uint8_t m) {
   const __m256i maxval = _mm256_set1_epi8(m);
@@ -436,9 +436,9 @@ uint64_t unsigned_lteq_against_input<architecture::haswell>(simd_input<architect
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 uint64_t unsigned_lteq_against_input<architecture::westmere>(simd_input<architecture::westmere> in, uint8_t m) {
   const __m128i maxval = _mm_set1_epi8(m);
@@ -452,7 +452,7 @@ uint64_t unsigned_lteq_against_input<architecture::westmere>(simd_input<architec
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif
 
 #ifdef IS_ARM64
@@ -515,19 +515,19 @@ template<architecture T> really_inline
 uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 uint64_t find_odd_backslash_sequences<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t &prev_iter_ends_odd_backslash) {
   FIND_ODD_BACKSLASH_SEQUENCES(architecture::haswell, in, prev_iter_ends_odd_backslash);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 uint64_t find_odd_backslash_sequences<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t &prev_iter_ends_odd_backslash) {
   FIND_ODD_BACKSLASH_SEQUENCES(architecture::westmere, in, prev_iter_ends_odd_backslash);
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef ARM64
@@ -578,21 +578,21 @@ uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 uint64_t find_quote_mask_and_bits<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   FIND_QUOTE_MASK_AND_BITS(architecture::haswell, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 uint64_t find_quote_mask_and_bits<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
   FIND_QUOTE_MASK_AND_BITS(architecture::westmere, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef IS_ARM64
@@ -616,7 +616,7 @@ void find_whitespace_and_structurals(simd_input<T> in,
                                      uint64_t &structurals);
 
 #ifdef IS_X86_64
-TARGET_HASWELL();
+TARGET_HASWELL
 template<> really_inline
 void find_whitespace_and_structurals<architecture::haswell>(simd_input<architecture::haswell> in,
                                                      uint64_t &whitespace,
@@ -696,9 +696,9 @@ void find_whitespace_and_structurals<architecture::haswell>(simd_input<architect
   structurals = (structural_res_0 | (structural_res_1 << 32));
 #endif // SIMDJSON_NAIVE_STRUCTURAL
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 
-TARGET_WESTMERE();
+TARGET_WESTMERE
 template<> really_inline
 void find_whitespace_and_structurals<architecture::westmere>(simd_input<architecture::westmere> in,
                                                      uint64_t &whitespace, uint64_t &structurals) {
@@ -750,7 +750,7 @@ void find_whitespace_and_structurals<architecture::westmere>(simd_input<architec
 
   structurals = (structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
 }
-UNTARGET_REGION();
+UNTARGET_REGION
 #endif // X86_64
 
 #ifdef IS_ARM64

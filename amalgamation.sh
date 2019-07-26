@@ -26,8 +26,9 @@ $SCRIPTPATH/src/parsedjsoniterator.cpp
 # order matters
 ALLCHEADERS="
 $SCRIPTPATH/include/simdjson/simdjson_version.h
-$SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/portability.h
+$SCRIPTPATH/include/simdjson/simddetection.h
+$SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/common_defs.h
 $SCRIPTPATH/include/simdjson/padded_string.h
 $SCRIPTPATH/include/simdjson/jsoncharutils.h
@@ -125,16 +126,16 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
+echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
 mkdir -p $SINGLEHDR
-echo "c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
+echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
-cd $SINGLEHDR && c++ -march=native -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
+cd $SINGLEHDR && c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

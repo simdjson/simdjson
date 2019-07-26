@@ -1,16 +1,17 @@
-#ifndef  SIMDJSON_ERR_H
-# define SIMDJSON_ERR_H
+#ifndef SIMDJSON_ERR_H
+#define SIMDJSON_ERR_H
 
 #include <string>
 
 namespace simdjson {
-enum architecture {
+// Represents the minimal architecture that would support an implementation
+enum class architecture {
   westmere,
   haswell,
   arm64,
   none,
   // TODO remove 'native' in favor of runtime dispatch?
-// the 'native' enum class value should point at a good default on the current machine
+  // the 'native' enum class value should point at a good default on the current machine
 #ifdef IS_X86_64
   native = westmere
 #elif defined(IS_ARM64)
