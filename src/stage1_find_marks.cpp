@@ -31,7 +31,6 @@ UNTARGET_REGION
 #ifdef IS_ARM64
 #include "simdjson/stage1_find_marks_arm64.h"
 namespace simdjson {
-
 template<>
 inline int find_structural_bits<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::arm64, buf, len, pj);

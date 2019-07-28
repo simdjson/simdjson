@@ -46,5 +46,6 @@ bool parse_string<architecture::arm64>(UNUSED const uint8_t *buf, UNUSED size_t 
                                 ParsedJson &pj, UNUSED const uint32_t depth, UNUSED uint32_t offset) {
   PARSE_STRING(architecture::arm64, buf, len, pj, depth, offset);
 }
+}
 #endif
 #endif
