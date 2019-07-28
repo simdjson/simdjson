@@ -14,7 +14,7 @@
 #include "rapidjson/writer.h"
 #include "sajson.h"
 
-
+using namespace simdjson;
 using namespace rapidjson;
 
 std::string rapidstringmeInsitu(char *json) {
