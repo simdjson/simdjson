@@ -15,16 +15,6 @@
 
 // we are going to use runtime dispatch
 #ifdef IS_X86_64
-#if defined(_MSC_VER) 
-// under visual studio, nothing needs to be done
-// under ARM, we don't want these macros
-#define TARGET_HASWELL 
-#define TARGET_WESTMERE 
-#else
-///////
-// under clang OR gcc, we need do do extra work
-///////
-
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up til 8.0 so TARGET_REGION and 
@@ -38,14 +28,15 @@ _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
 #define UNTARGET_REGION \
 _Pragma("GCC pop_options")
+#else 
+#define TARGET_REGION(T)
+#define UNTARGET_REGION
 #endif // clang then gcc
 
 // under GCC and CLANG, we use these two macros
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 
-
-#endif // msc_ver
 #endif // x86
 
 
