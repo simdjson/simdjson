@@ -8,13 +8,14 @@
 # define IS_ARM64 1
 #endif
 
-#define STRINGIFY(a) #a
 
 
 
 // we are going to use runtime dispatch
-#ifdef _MSC_VER
+#ifdef IS_X86_64
+#if defined(_MSC_VER) 
 // under visual studio, nothing needs to be done
+// under ARM, we don't want these macros
 #define TARGET_HASWELL 
 #define TARGET_WESTMERE 
 #else
@@ -26,8 +27,10 @@
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up til 8.0 so TARGET_REGION and 
 // UNTARGET_REGION must be *outside* of a namespace.
+#define STRINGIFY(a) #a
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
 #define UNTARGET_REGION _Pragma("clang attribute pop")
+#undef STINGIFY
 #elif defined(__GNUC__)
 // GCC is easier
 #define TARGET_REGION(T) \
@@ -37,12 +40,13 @@ _Pragma(STRINGIFY(GCC target(T)))
 _Pragma("GCC pop_options")
 #endif
 
+// under GCC and CLANG, we use these two macros
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 
 
-#endif
-
+#endif // msc_ver
+#endif // x86
 
 
 
@@ -151,28 +155,6 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
 static inline char *aligned_malloc_char(size_t alignment, size_t size) {
 	return (char*)aligned_malloc(alignment, size);
 }
-
-#ifndef __clang__
-#ifndef _MSC_VER
-TARGET_HASWELL
-static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
-                                          __m128i const *__addr_lo) {
-  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
-  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
-}
-
-static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
-                                        __m256i __a) {
-  __m128i __v128;
-
-  __v128 = _mm256_castsi256_si128(__a);
-  _mm_storeu_si128(__addr_lo, __v128);
-  __v128 = _mm256_extractf128_si256(__a, 1);
-  _mm_storeu_si128(__addr_hi, __v128);
-}
-UNTARGET_REGION
-#endif
-#endif
 
 static inline void aligned_free(void *memblock) {
     if(memblock == nullptr) { return; }
