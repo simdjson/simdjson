@@ -495,30 +495,40 @@ fail:                                                                           
   return pj.errorcode;                                                                                                                       \
 }                                                                                                                                            \
 
+
+}
+
+
 #ifdef IS_X86_64
 TARGET_HASWELL
+namespace simdjson {
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   UNIFIED_MACHINE(architecture::haswell, buf, len, pj);
 }
+}
 UNTARGET_REGION
 
 TARGET_WESTMERE
+namespace simdjson {
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   UNIFIED_MACHINE(architecture::westmere, buf, len, pj);
 }
+}
 UNTARGET_REGION
 #endif // IS_X86_64
 
 #ifdef IS_ARM64
+namepace simdjson {
 template<>
 WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
 int unified_machine<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   UNIFIED_MACHINE(architecture::arm64, buf, len, pj);
 }
+}
 #endif
 
-}
+

@@ -63,7 +63,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
       reallocated = true;
     } // if (true) OR if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) + SIMDJSON_PADDING < static_cast<uintptr_t>(pagesize) ) {
   } // if(reallocifneeded) {
-  int stage1_is_ok = find_structural_bits<T>(buf, len, pj);
+  int stage1_is_ok = simdjson::find_structural_bits<T>(buf, len, pj);
   if(stage1_is_ok != simdjson::SUCCESS) {
     pj.errorcode = stage1_is_ok;
     return pj.errorcode;

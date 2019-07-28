@@ -113,13 +113,14 @@ really_inline bool
 is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];
 }
-
+}// simdjson
 #ifndef SIMDJSON_DISABLE_SWAR_NUMBER_PARSING
 #define SWAR_NUMBER_PARSING
 #endif
 
 #ifdef SWAR_NUMBER_PARSING
 
+namespace simdjson {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
@@ -137,9 +138,10 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
 }
-
+}
 #ifdef IS_X86_64
 TARGET_WESTMERE
+namespace simdjson {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -156,9 +158,11 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   return _mm_cvtsi128_si32(
       t4); // only captures the sum of the first 8 digits, drop the rest
 }
+}
 UNTARGET_REGION
 #endif
 
+namespace simdjson {
 #ifdef IS_ARM64
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
@@ -557,5 +561,5 @@ static really_inline bool parse_number(const uint8_t *const buf,
   return  is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
-}
+}//simdjson
 #endif

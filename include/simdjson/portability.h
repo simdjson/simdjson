@@ -10,10 +10,26 @@
 
 #define STRINGIFY(a) #a
 
+
+
+// we are going to use runtime dispatch
+#ifdef _MSC_VER
+// under visual studio, nothing needs to be done
+#define TARGET_HASWELL 
+#define TARGET_WESTMERE 
+#else
+///////
+// under clang OR gcc, we need do do extra work
+///////
+
 #ifdef __clang__
+// clang does not have GCC push pop
+// warning: clang attribute push can't be used within a namespace in clang up til 8.0 so TARGET_REGION and 
+// UNTARGET_REGION must be *outside* of a namespace.
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
 #define UNTARGET_REGION _Pragma("clang attribute pop")
 #elif defined(__GNUC__)
+// GCC is easier
 #define TARGET_REGION(T) \
 _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
@@ -23,6 +39,12 @@ _Pragma("GCC pop_options")
 
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
+
+
+#endif
+
+
+
 
 #ifdef _MSC_VER
 # include <intrin.h>
@@ -169,5 +191,4 @@ static inline void aligned_free_char(char *memblock) {
 	aligned_free((void*)memblock);
 }
 }
-
 #endif // SIMDJSON_PORTABILITY_H

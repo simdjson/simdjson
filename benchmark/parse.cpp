@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 
     auto start = std::chrono::steady_clock::now();
     // The default template is simdjson::architecture::native.
-    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = (simdjson::find_structural_bits<>((const uint8_t*)p.data(), p.size(), pj) == simdjson::SUCCESS);
     isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
