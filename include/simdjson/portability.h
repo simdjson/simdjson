@@ -8,6 +8,8 @@
 # define IS_ARM64 1
 #endif
 
+// this is almost standard?
+#define STRINGIFY(a) #a
 
 
 
@@ -27,10 +29,8 @@
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up til 8.0 so TARGET_REGION and 
 // UNTARGET_REGION must be *outside* of a namespace.
-#define STRINGIFY(a) #a
 #define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
 #define UNTARGET_REGION _Pragma("clang attribute pop")
-#undef STINGIFY
 #elif defined(__GNUC__)
 // GCC is easier
 #define TARGET_REGION(T) \
@@ -38,7 +38,7 @@ _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
 #define UNTARGET_REGION \
 _Pragma("GCC pop_options")
-#endif
+#endif // clang then gcc
 
 // under GCC and CLANG, we use these two macros
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
