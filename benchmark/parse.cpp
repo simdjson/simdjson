@@ -39,7 +39,6 @@ architecture _find_best_supported_implementation() {
   constexpr uint32_t haswell_flags = SIMDExtensions::AVX2 | SIMDExtensions::PCLMULQDQ
                              | SIMDExtensions::BMI1 | SIMDExtensions::BMI2;
   constexpr uint32_t westmere_flags = SIMDExtensions::SSE42 | SIMDExtensions::PCLMULQDQ;
-
   uint32_t supports = detect_supported_architectures();
   // Order from best to worst (within architecture)
   if ((haswell_flags & supports) == haswell_flags) {
@@ -189,7 +188,7 @@ int main(int argc, char *argv[]) {
     printf("justdata (-t) flag only works under linux.\n");
   }
 #endif
-  {// practice run
+  for(int k = 0; k < 10; k++) {// practice run
     simdjson::ParsedJson pj;
     bool allocok = pj.allocateCapacity(p.size());
     if(allocok) {
