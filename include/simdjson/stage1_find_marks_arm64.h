@@ -4,9 +4,10 @@
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage1_find_marks_macros.h"
 #include "simdjson/stage1_find_marks_flatten.h"
-
+#include "simdjson/simdutf8check_arm64.h"
 
 #ifdef IS_ARM64
+namespace simdjson {
 template<> struct simd_input<architecture::arm64> {
   uint8x16_t i0;
   uint8x16_t i1;
@@ -190,7 +191,7 @@ void find_whitespace_and_structurals<architecture::arm64>(
   uint8x16_t tmp_ws_3 = vtstq_u8(v_3, whitespace_shufti_mask);
   whitespace = neonmovemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
-
+}// simdjson namespace
 
 #endif // IS_ARM64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
