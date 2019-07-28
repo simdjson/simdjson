@@ -11,8 +11,7 @@ template<>
 int find_structural_bits<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::haswell, buf, len, pj);
 }
-
-}
+} // simdjson
 UNTARGET_REGION
 
 TARGET_WESTMERE
@@ -21,8 +20,7 @@ template<>
 int find_structural_bits<architecture::westmere>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::westmere, buf, len, pj);
 }
-
-}
+} // simdjson
 UNTARGET_REGION
 
 #endif
@@ -32,10 +30,8 @@ UNTARGET_REGION
 #include "simdjson/stage1_find_marks_arm64.h"
 namespace simdjson {
 template<>
-inline int find_structural_bits<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+int find_structural_bits<architecture::arm64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   FIND_STRUCTURAL_BITS(architecture::arm64, buf, len, pj);
 }
-
-
 }
 #endif
