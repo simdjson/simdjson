@@ -19,6 +19,9 @@ _Pragma("GCC push_options") \
 _Pragma(STRINGIFY(GCC target(T)))
 #define UNTARGET_REGION \
 _Pragma("GCC pop_options")
+#else
+#define TARGET_REGION(T)
+#define UNTARGET_REGION
 #endif
 
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
