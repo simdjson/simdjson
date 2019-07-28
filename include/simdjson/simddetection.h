@@ -92,7 +92,7 @@ static inline uint32_t detect_supported_architectures()
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
 #if defined(_MSC_VER)
-  uint32_t cpuInfo[4];
+  int cpuInfo[4];
   __cpuid(cpuInfo, *eax);
   *eax = cpuInfo[0];
   *ebx = cpuInfo[1];

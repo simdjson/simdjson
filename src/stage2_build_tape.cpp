@@ -23,8 +23,8 @@ namespace simdjson {
     goto array_continue;                                                       \
   } else if (pj.ret_address[depth] == 'o') {                                   \
     goto object_continue;                                                      \
-  } else goto {                                                                \
-    start_continue;                                                            \
+  } else {                                                                     \
+    goto start_continue;                                                       \
   }                                                                            \
 }
 #endif 
