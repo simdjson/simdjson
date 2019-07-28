@@ -76,7 +76,7 @@ int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
 #endif
 #ifdef IS_ARM64
   case architecture::arm64:
-    unified_ptr = &unified_marchine<architecture::arm64>;
+    unified_ptr = &unified_machine<architecture::arm64>;
     break;
 #endif
   default :
