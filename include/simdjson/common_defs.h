@@ -44,6 +44,9 @@
 #define unlikely(x) x
 #endif
 
+// For Visual Studio compilers, same-page buffer overrun is not fine.
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
+
 #else
 
 // For non-Visual Studio compilers, we may assume that same-page buffer overrun is fine.
@@ -57,9 +60,10 @@
 // The following is likely unnecessarily complex.
 #ifdef __SANITIZE_ADDRESS__
 // we have GCC, stuck with https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368
-#undef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
 #elif defined(__has_feature)
 // we have CLANG?
+// todo: if we're setting ALLOW_SAME_PAGE_BUFFER_OVERRUN to false, why do we have a non-empty qualifier?
 #  if (__has_feature(address_sanitizer))
 #define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER  __attribute__((no_sanitize("address")))
 #  endif 

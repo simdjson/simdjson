@@ -36,7 +36,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
   }
   bool reallocated = false;
   if(reallocifneeded) {
-#ifdef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#if ALLOW_SAME_PAGE_BUFFER_OVERRUN
     // realloc is needed if the end of the memory crosses a page
 #ifdef _MSC_VER
     SYSTEM_INFO sysInfo; 
