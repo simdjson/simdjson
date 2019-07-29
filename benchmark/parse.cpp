@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     printf("justdata (-t) flag only works under linux.\n");
   }
 #endif
-  for(int k = 0; k < 10; k++) {// practice run
+  {// practice run
     simdjson::ParsedJson pj;
     bool allocok = pj.allocateCapacity(p.size());
     if(allocok) {
@@ -276,9 +276,8 @@ int main(int argc, char *argv[]) {
     }
 
     auto start = std::chrono::steady_clock::now();
-    // The default template is simdjson::architecture::native.
-    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
-    isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
+    isok = (simdjson::stage1_ptr((const uint8_t*)p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = isok && (simdjson::SUCCESS == simdjson::unified_ptr((const uint8_t*)p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
