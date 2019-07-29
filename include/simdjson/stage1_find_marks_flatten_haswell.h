@@ -29,41 +29,41 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   idx -= 64;
   base_ptr += base;
   { 
-    base_ptr[0] = idx + _mm_tzcnt_64(bits);
+    base_ptr[0] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[1] = idx + _mm_tzcnt_64(bits);
+    base_ptr[1] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[2] = idx + _mm_tzcnt_64(bits);
+    base_ptr[2] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[3] = idx + _mm_tzcnt_64(bits);
+    base_ptr[3] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[4] = idx + _mm_tzcnt_64(bits);
+    base_ptr[4] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[5] = idx + _mm_tzcnt_64(bits);
+    base_ptr[5] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[6] = idx + _mm_tzcnt_64(bits);
+    base_ptr[6] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[7] = idx + _mm_tzcnt_64(bits);
+    base_ptr[7] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
     base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
   if (cnt > 8) {
-    base_ptr[0] = idx + _mm_tzcnt_64(bits);
+    base_ptr[0] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[1] = idx + _mm_tzcnt_64(bits);
+    base_ptr[1] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[2] = idx + _mm_tzcnt_64(bits);
+    base_ptr[2] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[3] = idx + _mm_tzcnt_64(bits);
+    base_ptr[3] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[4] = idx + _mm_tzcnt_64(bits);
+    base_ptr[4] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[5] = idx + _mm_tzcnt_64(bits);
+    base_ptr[5] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[6] = idx + _mm_tzcnt_64(bits);
+    base_ptr[6] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
-    base_ptr[7] = idx + _mm_tzcnt_64(bits);
+    base_ptr[7] = idx + __tzcnt_u64(bits);
     bits = _blsr_u64(bits);
     base_ptr += 8;
   }
@@ -71,7 +71,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     // since it means having one structural or pseudo-structral element 
     // every 4 characters (possible with inputs like "","","",...).
     do {
-      base_ptr[0] = idx + _mm_tzcnt_64(bits);
+      base_ptr[0] = idx + __tzcnt_u64(bits);
       bits = _blsr_u64(bits);
       base_ptr++;
     } while(bits != 0);
