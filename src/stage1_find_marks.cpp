@@ -9,7 +9,7 @@ TARGET_HASWELL
 namespace simdjson {
 template<>
 int find_structural_bits<architecture::haswell>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  FIND_STRUCTURAL_BITS(architecture::haswell, buf, len, pj, simdjson::haswell::flatten_bits);
+  FIND_STRUCTURAL_BITS(architecture::haswell, buf, len, pj, simdjson::flatten_bits);
 }
 } // simdjson
 UNTARGET_REGION
