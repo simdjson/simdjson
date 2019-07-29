@@ -95,7 +95,7 @@
 //                              uint64_t &prev_iter_ends_pseudo_pred,
 //                              uint64_t &structurals,
 //                              uint64_t &error_mask,
-//                              utf8_checking_state<T> &utf8_state)
+//                              utf8_checking_state<T> &utf8_state, flatten function)
 #define FIND_STRUCTURAL_BITS_64(T,                                                          \
                                 buf,                                                        \
                                 idx,                                                        \
@@ -106,7 +106,8 @@
                                 prev_iter_ends_pseudo_pred,                                 \
                                 structurals,                                                \
                                 error_mask,                                                 \
-                                utf8_state                                                  \
+                                utf8_state,                                                 \
+                                flat                                                        \
 ) {                                                                                         \
   simd_input<T> in = fill_input<T>(buf);                                                    \
   check_utf8<T>(in, utf8_state);                                                            \
@@ -121,7 +122,7 @@
                                                                                             \
   /* take the previous iterations structural bits, not our current iteration,            */ \
   /* and flatten                                                                         */ \
-  flatten_bits(base_ptr, base, idx, structurals);                                           \
+  flat(base_ptr, base, idx, structurals);                                                   \
                                                                                             \
   uint64_t whitespace;                                                                      \
   find_whitespace_and_structurals<T>(in, whitespace, structurals);                          \
@@ -134,8 +135,8 @@
 
 // We need to compile that code for multiple architectures. However, target attributes can be used
 // only once by function definition. Huge macro seemed better than huge code duplication.
-// errorValues FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
-#define FIND_STRUCTURAL_BITS(T, buf, len, pj) {                                                     \
+// errorValues FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj, flatten functio )
+#define FIND_STRUCTURAL_BITS(T, buf, len, pj, flat) {                                                     \
   if (len > pj.bytecapacity) {                                                                      \
     std::cerr << "Your ParsedJson object only supports documents up to "                            \
          << pj.bytecapacity << " bytes but you are trying to process " << len                       \
@@ -176,7 +177,7 @@
   for (; idx < lenminus64; idx += 64) {                                                             \
     FIND_STRUCTURAL_BITS_64(T, &buf[idx], idx, base_ptr, base, prev_iter_ends_odd_backslash,        \
                                prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals,     \
-                               error_mask, utf8_state);                                             \
+                               error_mask, utf8_state, flat);                                       \
   }                                                                                                 \
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with spaces                    */ \
   /* before processing it (otherwise, we risk invalidating the UTF-8 checks).                    */ \
@@ -186,7 +187,7 @@
     memcpy(tmpbuf, buf + idx, len - idx);                                                           \
     FIND_STRUCTURAL_BITS_64(T, &tmpbuf[0], idx, base_ptr, base, prev_iter_ends_odd_backslash,       \
                                prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals,     \
-                               error_mask, utf8_state);                                             \
+                               error_mask, utf8_state, flat);                                       \
     idx += 64;                                                                                      \
   }                                                                                                 \
                                                                                                     \
@@ -196,7 +197,7 @@
   }                                                                                                 \
                                                                                                     \
   /* finally, flatten out the remaining structurals from the last iteration                      */ \
-  flatten_bits(base_ptr, base, idx, structurals);                                                   \
+  flat(base_ptr, base, idx, structurals);                                                           \
                                                                                                     \
   pj.n_structural_indexes = base;                                                                   \
   /* a valid JSON file cannot have zero structural indexes - we should have                      */ \
