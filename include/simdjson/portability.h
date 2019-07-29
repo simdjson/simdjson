@@ -1,9 +1,58 @@
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
+#if defined(__x86_64__) || defined(_M_AMD64)
+# define IS_X86_64 1
+#endif
+#if defined(__aarch64__) || defined(_M_ARM64)
+# define IS_ARM64 1
+#endif
+
+// this is almost standard?
+#define STRINGIFY(a) #a
+
+
+
+// we are going to use runtime dispatch
+#ifdef IS_X86_64
+#ifdef __clang__
+// clang does not have GCC push pop
+// warning: clang attribute push can't be used within a namespace in clang up til 8.0 so TARGET_REGION and 
+// UNTARGET_REGION must be *outside* of a namespace.
+#define TARGET_REGION(T) _Pragma(STRINGIFY(clang attribute push(__attribute__((target(T))), apply_to=function))) 
+#define UNTARGET_REGION _Pragma("clang attribute pop")
+#elif defined(__GNUC__)
+// GCC is easier
+#define TARGET_REGION(T) \
+_Pragma("GCC push_options") \
+_Pragma(STRINGIFY(GCC target(T)))
+#define UNTARGET_REGION \
+_Pragma("GCC pop_options")
+#else 
+#define TARGET_REGION(T)
+#define UNTARGET_REGION
+#endif // clang then gcc
+
+// under GCC and CLANG, we use these two macros
+#define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
+#define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
+
+#endif // x86
+
+
+
+#ifdef _MSC_VER
+# include <intrin.h>
+#else
+# if IS_X86_64
+#  include <x86intrin.h>
+# elif IS_ARM64
+#  include <arm_neon.h>
+# endif
+#endif
+
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
-#include <intrin.h>
 #include <iso646.h>
 #include <cstdint>
 
@@ -40,9 +89,6 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 #include <cstdlib>
 
-#if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__) || defined(__SSE4_2__)
-#include <x86intrin.h>
-#endif
 namespace simdjson {
 static inline bool add_overflow(uint64_t  value1, uint64_t  value2, uint64_t *result) {
 	return __builtin_uaddll_overflow(value1, value2, (unsigned long long*)result);
@@ -101,30 +147,6 @@ static inline char *aligned_malloc_char(size_t alignment, size_t size) {
 	return (char*)aligned_malloc(alignment, size);
 }
 
-#ifdef __AVX2__
-
-#ifndef __clang__
-#ifndef _MSC_VER
-static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
-                                          __m128i const *__addr_lo) {
-  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
-  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
-}
-
-static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
-                                        __m256i __a) {
-  __m128i __v128;
-
-  __v128 = _mm256_castsi256_si128(__a);
-  _mm_storeu_si128(__addr_lo, __v128);
-  __v128 = _mm256_extractf128_si256(__a, 1);
-  _mm_storeu_si128(__addr_hi, __v128);
-}
-#endif
-#endif
-
-#endif // AVX_2
-
 static inline void aligned_free(void *memblock) {
     if(memblock == nullptr) { return; }
 #ifdef _MSC_VER
@@ -142,5 +164,4 @@ static inline void aligned_free_char(char *memblock) {
 	aligned_free((void*)memblock);
 }
 }
-
 #endif // SIMDJSON_PORTABILITY_H

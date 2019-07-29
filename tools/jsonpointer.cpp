@@ -1,9 +1,7 @@
 #include <iostream>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
+
 
 void compute_dump(simdjson::ParsedJson::iterator &pjh) {
   if (pjh.is_object()) {
@@ -40,38 +38,14 @@ void compute_dump(simdjson::ParsedJson::iterator &pjh) {
 }
 
 int main(int argc, char *argv[]) {
-	bool rawdump = false;
-	bool apidump = false;
-
-#ifndef _MSC_VER
-  int c;
-
-  while ((c = getopt(argc, argv, "da")) != -1) {
-    switch (c) {
-    case 'd':
-      rawdump = true;
-      break;
-    case 'a':
-      apidump = true;
-      break;
-    default:
-      abort();
-    }
-}
-#else
-  int optind = 1;
-#endif
-  if (optind >= argc) {
-    std::cerr << "Reads json in, out the result of the parsing. " << std::endl;
-    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
-    std::cerr << "The -d flag dumps the raw content of the tape." << std::endl;
-
+  if (argc < 3) {
+    std::cerr << "Usage: " << argv[0] << " <jsonfile> <jsonpath>" << std::endl;
+    std::cerr << "Follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901" << std::endl;
+    std::cerr << " Example: " << argv[0] << " jsonexamples/small/demo.json /Image/Width /Image/Height /Image/IDs/2 " << std::endl;
+    std::cerr << "Multiple <jsonpath> can be issued in the same command, but at least one is needed." << std::endl;
     exit(1);
   }
-  const char *filename = argv[optind];
-  if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
-  }
+  const char *filename = argv[1];
   simdjson::padded_string p;
   try {
     simdjson::get_corpus(filename).swap(p);
@@ -86,23 +60,26 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   int res = simdjson::json_parse(p, pj); // do the parsing, return false on error
-  if (res != simdjson::SUCCESS) {
-    std::cerr << " Parsing failed. Error is '" << simdjson::errorMsg(res) << "'." << std::endl;
+  if (res) {
+    std::cerr << " Parsing failed with error " << simdjson::errorMsg(res) << std::endl;
     return EXIT_FAILURE;
   }
-  if (apidump) {
-    simdjson::ParsedJson::iterator pjh(pj);
-    if (!pjh.isOk()) {
-      std::cerr << " Could not iterate parsed result. " << std::endl;
-      return EXIT_FAILURE;
-    }
-    compute_dump(pjh);
-  } else {
-    const bool is_ok = rawdump ? pj.dump_raw_tape(std::cout) : pj.printjson(std::cout);
-    if (!is_ok) {
-      std::cerr << " Could not print out parsed result. " << std::endl;
-      return EXIT_FAILURE;
-    }
+  std::cout << "[" << std::endl;
+  for(int idx = 2; idx < argc; idx++) {
+      const char * jsonpath = argv[idx];
+      simdjson::ParsedJson::iterator it(pj);
+      if(it.move_to(std::string(jsonpath))) {
+          std::cout << "{\"jsonpath\": \"" << jsonpath << "\"," <<  std::endl;
+          std::cout << "\"value\":";
+          compute_dump(it);
+          std::cout << "}" << std::endl;
+      } else {
+          std::cout << "null" << std::endl;
+      }
+      if(idx + 1 < argc) {
+          std::cout << "," << std::endl;
+      }
   }
+  std::cout << "]" << std::endl;
   return EXIT_SUCCESS;
 }

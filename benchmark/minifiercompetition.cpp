@@ -14,7 +14,7 @@
 #include "rapidjson/writer.h"
 #include "sajson.h"
 
-
+using namespace simdjson;
 using namespace rapidjson;
 
 std::string rapidstringmeInsitu(char *json) {
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  char *buffer = allocate_padded_buffer(p.size() + 1);
+  char *buffer = simdjson::allocate_padded_buffer(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 
@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
   memcpy(buffer, p.data(), p.size());
 
   size_t outlength =
-      jsonminify((const uint8_t *)buffer, p.size(), (uint8_t *)buffer);
+      simdjson::jsonminify((const uint8_t *)buffer, p.size(), (uint8_t *)buffer);
   if (verbose)
     std::cout << "jsonminify length is " << outlength << std::endl;
 
   uint8_t *cbuffer = (uint8_t *)buffer;
-  BEST_TIME("jsonminify", jsonminify(cbuffer, p.size(), cbuffer), outlength,
+  BEST_TIME("jsonminify", simdjson::jsonminify(cbuffer, p.size(), cbuffer), outlength,
             memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   printf("minisize = %zu, original size = %zu  (minified down to %.2f percent of original) \n", outlength, p.size(), outlength * 100.0 / p.size());
 
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
   BEST_TIME("RapidJSON Insitu orig", d.ParseInsitu(buffer).HasParseError(), false,
             memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
 
-  char *minibuffer = allocate_padded_buffer(p.size() + 1);
-  size_t minisize = jsonminify((const uint8_t *)p.data(), p.size(), (uint8_t*) minibuffer);
+  char *minibuffer = simdjson::allocate_padded_buffer(p.size() + 1);
+  size_t minisize = simdjson::jsonminify((const uint8_t *)p.data(), p.size(), (uint8_t*) minibuffer);
   minibuffer[minisize] = '\0';
 
   BEST_TIME("RapidJSON Insitu despaced", d.ParseInsitu(buffer).HasParseError(), false,
@@ -133,23 +133,23 @@ int main(int argc, char *argv[]) {
 
   BEST_TIME("sajson despaced", sajson::parse(sajson::bounded_allocation(ast_buffer, astbuffersize), sajson::mutable_string_view(minisize, buffer)).is_valid(), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
 
-  ParsedJson pj;
+  simdjson::ParsedJson pj;
   bool isallocok = pj.allocateCapacity(p.size(), 1024);
   if(!isallocok) {
     fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
   bool automated_reallocation = false; 
-  BEST_TIME("simdjson orig", json_parse((const uint8_t*)buffer, p.size(), pj, automated_reallocation), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+  BEST_TIME("simdjson orig", simdjson::json_parse((const uint8_t*)buffer, p.size(), pj, automated_reallocation), true, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
   
-  ParsedJson pj2;
+  simdjson::ParsedJson pj2;
   bool isallocok2 = pj2.allocateCapacity(p.size(), 1024);
   if(!isallocok2) {
     fprintf(stderr, "failed to allocate memory\n");
     return EXIT_FAILURE;
   } 
   automated_reallocation = false; 
-  BEST_TIME("simdjson despaced", json_parse((const uint8_t*)buffer, minisize, pj2, automated_reallocation), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
+  BEST_TIME("simdjson despaced", simdjson::json_parse((const uint8_t*)buffer, minisize, pj2, automated_reallocation), true, memcpy(buffer, minibuffer, p.size()), repeat, volume, !justdata);
   free(buffer);
   free(ast_buffer);
   free(minibuffer);

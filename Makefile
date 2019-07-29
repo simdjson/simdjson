@@ -18,7 +18,7 @@ architecture:=$(shell arch)
 ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a+crc+crypto
 else
-ARCHFLAGS ?= -march=native
+ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
 CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
@@ -57,13 +57,13 @@ endif # ifeq ($(DEBUG),1)
 endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
-MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel
-TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck
+MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
+TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck pointercheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
-HEADERS= include/simdjson/simdutf8check.h include/simdjson/stringparsing.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp        src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
+HEADERS= include/simdjson/simdutf8check_haswell.h include/simdjson/simdutf8check_westmere.h include/simdjson/simdutf8check_arm64.h include/simdjson/stringparsing.h include/simdjson/stringparsing_arm64.h  include/simdjson/stringparsing_haswell.h  include/simdjson/stringparsing_macros.h  include/simdjson/stringparsing_westmere.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h  include/simdjson/stage1_find_marks_arm64.h  include/simdjson/stage1_find_marks_haswell.h   include/simdjson/stage1_find_marks_westmere.h   include/simdjson/stage1_find_marks_macros.h include/simdjson/stage2_build_tape.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h include/simdjson/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
@@ -91,20 +91,22 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
+test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
+	./pointercheck
 	./scripts/testjson2json.sh
 	./scripts/issue150.sh
 	@echo "It looks like the code is good!"
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
 	./jsoncheck
+	./pointercheck
 	./scripts/testjson2json.sh
 	./scripts/issue150.sh
 
@@ -149,6 +151,8 @@ numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp      -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
 
+pointercheck:tests/pointercheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o pointercheck tests/pointercheck.cpp src/stage2_build_tape.cpp src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp src/parsedjsoniterator.cpp -I. $(LIBFLAGS)
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) submodules $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
@@ -158,6 +162,9 @@ minify: tools/minify.cpp $(HEADERS) $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIB
 
 json2json: tools/json2json.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o json2json $ tools/json2json.cpp $(LIBFILES) -I.
+
+jsonpointer: tools/jsonpointer.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsonpointer $ tools/jsonpointer.cpp $(LIBFILES) -I.
 
 jsonstats: tools/jsonstats.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsonstats $ tools/jsonstats.cpp $(LIBFILES) -I.
