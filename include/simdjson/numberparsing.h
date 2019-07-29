@@ -276,12 +276,17 @@ parse_float(const uint8_t *const buf,
       expnumber = 10 * expnumber + digit;
       ++p;
     }
-    if (is_integer(*p)) {
+    while (is_integer(*p)) {
+      if(expnumber > 0x100000000) {// we need to check for overflows
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+        foundInvalidNumber(buf + offset);
 #endif
-      return false;
+        return false;
+      }
+      digit = *p - '0';
+      expnumber = 10 * expnumber + digit;
+      ++p;      
     }
     if (unlikely(expnumber > 308)) {
       // this path is unlikely
@@ -514,12 +519,17 @@ static really_inline bool parse_number(const uint8_t *const buf,
       expnumber = 10 * expnumber + digit;
       ++p;
     }
-    if (is_integer(*p)) {
+    while (is_integer(*p)) {
+      if(expnumber > 0x100000000) {// we need to check for overflows
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+        foundInvalidNumber(buf + offset);
 #endif
-      return false;
+        return false;
+      }
+      digit = *p - '0';
+      expnumber = 10 * expnumber + digit;
+      ++p;      
     }
     exponent += (negexp ? -expnumber : expnumber);
   }
