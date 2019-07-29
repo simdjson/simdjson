@@ -85,7 +85,7 @@
 // Find structural bits in a 64-byte chunk.
 // We need to compile that code for multiple architectures. However, target attributes can be used
 // only once by function definition. Huge macro seemed better than huge code duplication.
-// void FIND_STRUCTURAL_BITS_64(T,
+// void FIND_STRUCTURAL_BITS_64(architecture T,
 //                              const uint8_t *buf,
 //                              size_t idx,
 //                              uint32_t *base_ptr,
@@ -134,7 +134,7 @@
 
 // We need to compile that code for multiple architectures. However, target attributes can be used
 // only once by function definition. Huge macro seemed better than huge code duplication.
-// FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
+// errorValues FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
 #define FIND_STRUCTURAL_BITS(T, buf, len, pj) {                                                     \
   if (len > pj.bytecapacity) {                                                                      \
     std::cerr << "Your ParsedJson object only supports documents up to "                            \
