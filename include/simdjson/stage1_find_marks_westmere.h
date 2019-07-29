@@ -1,12 +1,11 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 #define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 
+#ifdef IS_X86_64
+
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_macros.h"
 #include "simdjson/stage1_find_marks_flatten.h"
 #include "simdjson/simdutf8check_westmere.h"
-
-#ifdef IS_X86_64
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -78,7 +77,7 @@ void check_utf8<architecture::westmere>(simd_input<architecture::westmere> in,
 
 template<> really_inline
 errorValues check_utf8_errors<architecture::westmere>(utf8_checking_state<architecture::westmere>& state) {
-  return _mm_testz_si128(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  return _mm_testz_si128(state.has_error, state.has_error) == 0 ? UTF8_ERROR : SUCCESS;
 }
 
 template<> really_inline
@@ -107,17 +106,6 @@ uint64_t unsigned_lteq_against_input<architecture::westmere>(simd_input<architec
   __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval,in.v3),maxval);
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
-}
-
-template<> really_inline
-uint64_t find_odd_backslash_sequences<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(architecture::westmere, in, prev_iter_ends_odd_backslash);
-}
-
-template<> really_inline
-uint64_t find_quote_mask_and_bits<architecture::westmere>(simd_input<architecture::westmere> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(architecture::westmere, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template<> really_inline
@@ -172,9 +160,12 @@ void find_whitespace_and_structurals<architecture::westmere>(simd_input<architec
   structurals = (structural_res_0 | (structural_res_1 << 16) | (structural_res_2 << 32) | (structural_res_3 << 48));
 }
 
-
 } // namespace simdjson
 UNTARGET_REGION
+
+#define IMPL_TARGET_REGION TARGET_WESTMERE
+#define IMPL_ARCHITECTURE architecture::westmere
+#include "./stage1_find_marks_impl.h"
 
 
 #endif // IS_X86_64

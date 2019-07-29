@@ -2,7 +2,6 @@
 #define SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
 
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_macros.h"
 #include "simdjson/stage1_find_marks_flatten.h"
 #include "simdjson/simdutf8check_haswell.h"
 
@@ -67,7 +66,7 @@ void check_utf8<architecture::haswell>(simd_input<architecture::haswell> in,
 
 template<> really_inline
 errorValues check_utf8_errors<architecture::haswell>(utf8_checking_state<architecture::haswell>& state) {
-  return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  return _mm256_testz_si256(state.has_error, state.has_error) == 0 ? UTF8_ERROR : SUCCESS;
 }
 
 template<> really_inline
@@ -88,17 +87,6 @@ uint64_t unsigned_lteq_against_input<architecture::haswell>(simd_input<architect
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval,in.hi),maxval);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
-}
-
-template<> really_inline
-uint64_t find_odd_backslash_sequences<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(architecture::haswell, in, prev_iter_ends_odd_backslash);
-}
-
-template<> really_inline
-uint64_t find_quote_mask_and_bits<architecture::haswell>(simd_input<architecture::haswell> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(architecture::haswell, in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template<> really_inline
@@ -183,6 +171,10 @@ void find_whitespace_and_structurals<architecture::haswell>(simd_input<architect
 
 } // namespace simdjson
 UNTARGET_REGION
+
+#define IMPL_TARGET_REGION TARGET_HASWELL
+#define IMPL_ARCHITECTURE architecture::haswell
+#include "./stage1_find_marks_impl.h"
 
 
 #endif // IS_X86_64

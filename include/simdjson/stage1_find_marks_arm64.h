@@ -2,7 +2,6 @@
 #define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
 
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_macros.h"
 #include "simdjson/stage1_find_marks_flatten.h"
 #include "simdjson/simdutf8check_arm64.h"
 
@@ -192,6 +191,10 @@ void find_whitespace_and_structurals<architecture::arm64>(
   whitespace = neonmovemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
 }// simdjson namespace
+
+#define IMPL_TARGET_REGION TARGET_ARM64
+#define IMPL_ARCHITECTURE architecture::arm64
+#include "./stage1_find_marks_impl.h"
 
 #endif // IS_ARM64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H

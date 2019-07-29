@@ -115,10 +115,10 @@ really_inline uint64_t finalize_structurals(
 }
 
 template<architecture T = architecture::native>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj);
+int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 template<architecture T = architecture::native>
-int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj) {
+int find_structural_bits(const char *buf, size_t len, ParsedJson &pj) {
   return find_structural_bits((const uint8_t*)buf, len, pj);
 }
 
