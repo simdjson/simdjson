@@ -46,6 +46,7 @@ stat_t simdjson_computestats(const simdjson::padded_string &p) {
   simdjson::ParsedJson pj = simdjson::build_parsed_json(p);
   answer.valid = pj.isValid();
   if (!answer.valid) {
+    std::cerr << pj.getErrorMsg() << std::endl;
     return answer;
   }
   answer.backslash_count = count_backslash(reinterpret_cast<const uint8_t*>(p.data()), p.size());

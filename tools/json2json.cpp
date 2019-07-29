@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   int res = simdjson::json_parse(p, pj); // do the parsing, return false on error
-  if (res) {
-    std::cerr << " Parsing failed. " << std::endl;
+  if (res != simdjson::SUCCESS) {
+    std::cerr << " Parsing failed. Error is '" << simdjson::errorMsg(res) << "'." << std::endl;
     return EXIT_FAILURE;
   }
   if (apidump) {
