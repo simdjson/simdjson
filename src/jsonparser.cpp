@@ -6,52 +6,45 @@
 #include <unistd.h>
 #endif
 #include "simdjson/simdjson.h"
+#include "simdjson/isadetection.h"
+#include "simdjson/portability.h"
 
 namespace simdjson {
+
+architecture find_best_supported_implementation() {
+  constexpr uint32_t haswell_flags = SIMDExtensions::AVX2 | SIMDExtensions::PCLMULQDQ
+                             | SIMDExtensions::BMI1 | SIMDExtensions::BMI2;
+  constexpr uint32_t westmere_flags = SIMDExtensions::SSE42 | SIMDExtensions::PCLMULQDQ;
+
+  uint32_t supports = detect_supported_architectures();
+  // Order from best to worst (within architecture)
+  if ((haswell_flags & supports) == haswell_flags) return architecture::haswell;
+  if ((westmere_flags & supports) == westmere_flags) return architecture::westmere;
+  if (SIMDExtensions::NEON) return architecture::arm64;
+
+  return architecture::none;
+}
+
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded) {
-  // Versions for each implementation
-#ifdef __AVX2__
-  json_parse_functype* avx_implementation = &json_parse_implementation<instruction_set::avx2>;
-#endif
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-  json_parse_functype* sse4_2_implementation = &json_parse_implementation<instruction_set::sse4_2>;
-#endif
-#if  defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
-  json_parse_functype* neon_implementation = &json_parse_implementation<instruction_set::neon>;
-#endif
-
-  // Determining which implementation is the more suitable
-  // Should be done at runtime. Does not make any sense on preprocessor.
-#ifdef __AVX2__
-  instruction_set best_implementation = instruction_set::avx2;
-#elif defined (__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-  instruction_set best_implementation = instruction_set::sse4_2;
-#elif defined (__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
-  instruction_set best_implementation = instruction_set::neon;
-#else
-  instruction_set best_implementation = instruction_set::none;
-#endif
-  
+  architecture best_implementation = find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
-#ifdef __AVX2__
-  case instruction_set::avx2 :
-    json_parse_ptr = avx_implementation;
+#ifdef IS_X86_64
+  case architecture::haswell:
+    json_parse_ptr = &json_parse_implementation<architecture::haswell>;
+    break;
+  case architecture::westmere:
+    json_parse_ptr = &json_parse_implementation<architecture::westmere>;
     break;
 #endif
-#if defined(__SSE4_2__) || (defined(_MSC_VER) && defined(_M_AMD64))
-  case instruction_set::sse4_2 :
-    json_parse_ptr = sse4_2_implementation;
-    break;
-#endif
-#if defined(__ARM_NEON) || (defined(_MSC_VER) && defined(_M_ARM64))
-  case instruction_set::neon :
-    json_parse_ptr = neon_implementation;
+#ifdef IS_ARM64
+  case architecture::arm64:
+    json_parse_ptr = &json_parse_implementation<architecture::arm64>;
     break;
 #endif
   default :
-    std::cerr << "No implemented simd instruction set supported" << std::endl;
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
     return simdjson::UNEXPECTED_ERROR;
   }
 

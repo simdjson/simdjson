@@ -5,6 +5,6 @@ steps:
 - name: test
   image: gcc:8
   commands:
-  - make -j2
-  - make quiettest -j2
+  - make 
+  - make quiettest 
   - make amalgamate

@@ -63,6 +63,30 @@ size_t jsonminify(const unsigned char *bytes, size_t howmany,
 #include <cstring>
 
 namespace simdjson {
+
+
+// some intrinsics are missing under GCC?
+#ifndef __clang__
+#ifndef _MSC_VER
+static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
+                                          __m128i const *__addr_lo) {
+  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
+  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
+}
+
+static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
+                                        __m256i __a) {
+  __m128i __v128;
+  __v128 = _mm256_castsi256_si128(__a);
+  _mm_storeu_si128(__addr_lo, __v128);
+  __v128 = _mm256_extractf128_si256(__a, 1);
+  _mm_storeu_si128(__addr_hi, __v128);
+}
+#endif
+#endif
+
+	
+	
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
                                             __m256i mask) {

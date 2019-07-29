@@ -12,7 +12,7 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-
+using namespace simdjson;
 struct stat_s {
   size_t number_count;
   size_t object_count;

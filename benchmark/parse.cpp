@@ -33,6 +33,90 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+#include "simdjson/isadetection.h"
+namespace simdjson {
+architecture _find_best_supported_implementation() {
+  constexpr uint32_t haswell_flags = SIMDExtensions::AVX2 | SIMDExtensions::PCLMULQDQ
+                             | SIMDExtensions::BMI1 | SIMDExtensions::BMI2;
+  constexpr uint32_t westmere_flags = SIMDExtensions::SSE42 | SIMDExtensions::PCLMULQDQ;
+  uint32_t supports = detect_supported_architectures();
+  // Order from best to worst (within architecture)
+  if ((haswell_flags & supports) == haswell_flags) {
+     return architecture::haswell;
+  }
+  if ((westmere_flags & supports) == westmere_flags) {
+     return architecture::westmere;
+  }
+  if (SIMDExtensions::NEON) return architecture::arm64;
+
+  return architecture::none;
+}
+
+
+using unified_functype = int (const uint8_t *buf, size_t len, ParsedJson &pj);
+using stage1_functype = int (const uint8_t *buf, size_t len, ParsedJson &pj);
+
+
+extern unified_functype *unified_ptr;
+
+extern stage1_functype *stage1_ptr;
+
+int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  architecture best_implementation = _find_best_supported_implementation();
+  // Selecting the best implementation
+  switch (best_implementation) {
+#ifdef IS_X86_64
+  case architecture::haswell:
+    unified_ptr = &unified_machine<architecture::haswell>;
+    break;
+  case architecture::westmere:
+    unified_ptr = &unified_machine<architecture::westmere>;
+    break;
+#endif
+#ifdef IS_ARM64
+  case architecture::arm64:
+    unified_ptr = &unified_machine<architecture::arm64>;
+    break;
+#endif
+  default :
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return simdjson::UNEXPECTED_ERROR;
+  }
+
+  return unified_ptr(buf, len, pj);
+}
+
+// Responsible to select the best json_parse implementation
+int find_structural_bits_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  architecture best_implementation = _find_best_supported_implementation();
+  // Selecting the best implementation
+  switch (best_implementation) {
+#ifdef IS_X86_64
+  case architecture::haswell:
+    stage1_ptr = &find_structural_bits<architecture::haswell>;
+    break;
+  case architecture::westmere:
+    stage1_ptr = &find_structural_bits<architecture::westmere>;
+    break;
+#endif
+#ifdef IS_ARM64
+  case architecture::arm64:
+    stage1_ptr = &find_structural_bits<architecture::arm64>;
+    break;
+#endif
+  default :
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return simdjson::UNEXPECTED_ERROR;
+  }
+
+  return stage1_ptr(buf, len, pj);
+}
+
+stage1_functype *stage1_ptr = &find_structural_bits_dispatch;
+unified_functype *unified_ptr = &unified_machine_dispatch;
+}
+
+
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
@@ -104,7 +188,14 @@ int main(int argc, char *argv[]) {
     printf("justdata (-t) flag only works under linux.\n");
   }
 #endif
-
+  {// practice run
+    simdjson::ParsedJson pj;
+    bool allocok = pj.allocateCapacity(p.size());
+    if(allocok) {
+      simdjson::stage1_ptr((const uint8_t*)p.data(), p.size(), pj);
+      simdjson::unified_ptr((const uint8_t*)(const uint8_t*)(const uint8_t*)(const uint8_t*)(const uint8_t*)(const uint8_t*)(const uint8_t*)(const uint8_t*)p.data(), p.size(), pj);
+    }
+  }
 #ifndef SQUASH_COUNTERS
   std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
@@ -144,8 +235,7 @@ int main(int argc, char *argv[]) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
     }
     unified.start();
-    // The default template is simdjson::instruction_set::native.
-    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = (simdjson::stage1_ptr((const uint8_t*)p.data(), p.size(), pj) == simdjson::SUCCESS);
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
@@ -157,8 +247,7 @@ int main(int argc, char *argv[]) {
       break;
     }
     unified.start();
-    // The default template is simdjson::instruction_set::native.
-    isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
+    isok = isok && (simdjson::SUCCESS == simdjson::unified_ptr((const uint8_t*)p.data(), p.size(), pj));
     unified.end(results);
     cy2 += results[0];
     cl2 += results[1];
@@ -187,9 +276,8 @@ int main(int argc, char *argv[]) {
     }
 
     auto start = std::chrono::steady_clock::now();
-    // The default template is simdjson::instruction_set::native.
-    isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
-    isok = isok && (simdjson::SUCCESS == simdjson::unified_machine<>(p.data(), p.size(), pj));
+    isok = (simdjson::stage1_ptr((const uint8_t*)p.data(), p.size(), pj) == simdjson::SUCCESS);
+    isok = isok && (simdjson::SUCCESS == simdjson::unified_ptr((const uint8_t*)p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
