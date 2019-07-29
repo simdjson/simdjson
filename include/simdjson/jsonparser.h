@@ -74,6 +74,10 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
 }
 
 // Parse a document found in buf. 
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
+//
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 //
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
@@ -94,6 +98,10 @@ inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool reall
 }
 
 // Parse a document found in buf.
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
+//
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 //
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
@@ -131,6 +139,10 @@ inline int json_parse(const std::string &s, ParsedJson &pj) {
 }
 
 // Parse a document found in in string s.
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
+//
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 //
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success or an error code from 
@@ -150,8 +162,11 @@ inline int json_parse(const padded_string &s, ParsedJson &pj) {
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
 // (a copy of the input string is made).
 //
-// the input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
+// The input buf should be readable up to buf + len + SIMDJSON_PADDING  if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
 //
 // This is a convenience function which calls json_parse.
 WARN_UNUSED
@@ -162,8 +177,13 @@ WARN_UNUSED
 // by calling pj.isValid(). This does the memory allocation needed for ParsedJson.
 // If reallocifneeded is true (default) then a temporary buffer is created when needed during processing
 // (a copy of the input string is made).
+//
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if reallocifneeded is false,
 // all bytes at and after buf + len  are ignored (can be garbage).
+//
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
 //
 // This is a convenience function which calls json_parse.
 inline ParsedJson build_parsed_json(const char * buf, size_t len, bool reallocifneeded = true) {
@@ -182,6 +202,9 @@ ParsedJson build_parsed_json(const char *buf) = delete;
 //
 // A temporary buffer is created when needed during processing
 // (a copy of the input string is made).
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
 //
 // This is a convenience function which calls json_parse.
 WARN_UNUSED
@@ -194,6 +217,9 @@ inline ParsedJson build_parsed_json(const std::string &s) {
 // You need to preallocate ParsedJson with a capacity of len (e.g., pj.allocateCapacity(len)).
 // Return SUCCESS (an integer = 0) in case of a success. You can also check validity
 // by calling pj.isValid(). The same ParsedJson can be reused for other documents.
+// 
+// The content should be a valid JSON document encoded as UTF-8. If there is a UTF-8 BOM, the caller
+// is responsible for omitting it, UTF-8 BOM are discouraged.
 //
 // This is a convenience function which calls json_parse.
 WARN_UNUSED
