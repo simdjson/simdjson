@@ -82,11 +82,60 @@
   return quote_mask;                                                                                   \
 }                                                                                                      \
 
+// Find structural bits in a 64-byte chunk.
+// We need to compile that code for multiple architectures. However, target attributes can be used
+// only once by function definition. Huge macro seemed better than huge code duplication.
+// void FIND_STRUCTURAL_BITS_64(architecture T,
+//                              const uint8_t *buf,
+//                              size_t idx,
+//                              uint32_t *base_ptr,
+//                              uint32_t &base,
+//                              uint64_t &prev_iter_ends_odd_backslash,
+//                              uint64_t &prev_iter_inside_quote,
+//                              uint64_t &prev_iter_ends_pseudo_pred,
+//                              uint64_t &structurals,
+//                              uint64_t &error_mask,
+//                              utf8_checking_state<T> &utf8_state, flatten function)
+#define FIND_STRUCTURAL_BITS_64(T,                                                          \
+                                buf,                                                        \
+                                idx,                                                        \
+                                base_ptr,                                                   \
+                                base,                                                       \
+                                prev_iter_ends_odd_backslash,                               \
+                                prev_iter_inside_quote,                                     \
+                                prev_iter_ends_pseudo_pred,                                 \
+                                structurals,                                                \
+                                error_mask,                                                 \
+                                utf8_state,                                                 \
+                                flat                                                        \
+) {                                                                                         \
+  simd_input<T> in = fill_input<T>(buf);                                                    \
+  check_utf8<T>(in, utf8_state);                                                            \
+  /* detect odd sequences of backslashes                                                 */ \
+  uint64_t odd_ends = find_odd_backslash_sequences<T>(in, prev_iter_ends_odd_backslash);    \
+                                                                                            \
+  /* detect insides of quote pairs ("quote_mask") and also our quote_bits                */ \
+  /* themselves                                                                          */ \
+  uint64_t quote_bits;                                                                      \
+  uint64_t quote_mask = find_quote_mask_and_bits<T>(                                        \
+    in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);                          \
+                                                                                            \
+  /* take the previous iterations structural bits, not our current iteration,            */ \
+  /* and flatten                                                                         */ \
+  flat(base_ptr, base, idx, structurals);                                                   \
+                                                                                            \
+  uint64_t whitespace;                                                                      \
+  find_whitespace_and_structurals<T>(in, whitespace, structurals);                          \
+                                                                                            \
+  /* fixup structurals to reflect quotes and add pseudo-structural characters            */ \
+  structurals = finalize_structurals(structurals, whitespace, quote_mask,                   \
+                                     quote_bits, prev_iter_ends_pseudo_pred);               \
+}                                                                                           \
 
 
 // We need to compile that code for multiple architectures. However, target attributes can be used
 // only once by function definition. Huge macro seemed better than huge code duplication.
-// FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
+// errorValues FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj, flatten functio )
 #define FIND_STRUCTURAL_BITS(T, buf, len, pj, flat) {                                                     \
   if (len > pj.bytecapacity) {                                                                      \
     std::cerr << "Your ParsedJson object only supports documents up to "                            \
@@ -96,7 +145,7 @@
   }                                                                                                 \
   uint32_t *base_ptr = pj.structural_indexes;                                                       \
   uint32_t base = 0;                                                                                \
-  utf8_checking_state<T> state;                                                                     \
+  utf8_checking_state<T> utf8_state;                                                                \
                                                                                                     \
   /* we have padded the input out to 64 byte multiple with the remainder being                   */ \
   /* zeros                                                                                       */ \
@@ -126,63 +175,19 @@
   uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII code points < 0x20) */ \
                                                                                                     \
   for (; idx < lenminus64; idx += 64) {                                                             \
-                                                                                                    \
-    simd_input<T> in = fill_input<T>(buf+idx);                                                      \
-    check_utf8<T>(in, state);                                                                       \
-    /* detect odd sequences of backslashes                                                       */ \
-    uint64_t odd_ends = find_odd_backslash_sequences<T>(                                            \
-        in, prev_iter_ends_odd_backslash);                                                          \
-                                                                                                    \
-    /* detect insides of quote pairs ("quote_mask") and also our quote_bits                      */ \
-    /* themselves                                                                                */ \
-    uint64_t quote_bits;                                                                            \
-    uint64_t quote_mask = find_quote_mask_and_bits<T>(                                              \
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);                              \
-                                                                                                    \
-    /* take the previous iterations structural bits, not our current iteration,                  */ \
-    /* and flatten                                                                               */ \
-    flat(base_ptr, base, idx, structurals);                                                 \
-                                                                                                    \
-    uint64_t whitespace;                                                                            \
-    find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
-                                                                                                    \
-    /* fixup structurals to reflect quotes and add pseudo-structural characters                  */ \
-    structurals = finalize_structurals(structurals, whitespace, quote_mask,                         \
-                                       quote_bits, prev_iter_ends_pseudo_pred);                     \
+    FIND_STRUCTURAL_BITS_64(T, &buf[idx], idx, base_ptr, base, prev_iter_ends_odd_backslash,        \
+                               prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals,     \
+                               error_mask, utf8_state, flat);                                       \
   }                                                                                                 \
-                                                                                                    \
-  /*//////////////                                                                               */ \
-  /*/ we use a giant copy-paste which is ugly.                                                   */ \
-  /*/ but otherwise the string needs to be properly padded or else we                            */ \
-  /*/ risk invalidating the UTF-8 checks.                                                        */ \
-  /*//////////                                                                                   */ \
+  /* If we have a final chunk of less than 64 bytes, pad it to 64 with spaces                    */ \
+  /* before processing it (otherwise, we risk invalidating the UTF-8 checks).                    */ \
   if (idx < len) {                                                                                  \
     uint8_t tmpbuf[64];                                                                             \
     memset(tmpbuf, 0x20, 64);                                                                       \
     memcpy(tmpbuf, buf + idx, len - idx);                                                           \
-    simd_input<T> in = fill_input<T>(tmpbuf);                                                       \
-    check_utf8<T>(in, state);                                                                       \
-                                                                                                    \
-    /* detect odd sequences of backslashes                                                       */ \
-    uint64_t odd_ends = find_odd_backslash_sequences<T>(                                            \
-        in, prev_iter_ends_odd_backslash);                                                          \
-                                                                                                    \
-    /* detect insides of quote pairs ("quote_mask") and also our quote_bits                      */ \
-    /* themselves                                                                                */ \
-    uint64_t quote_bits;                                                                            \
-    uint64_t quote_mask = find_quote_mask_and_bits<T>(                                              \
-        in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);                              \
-                                                                                                    \
-    /* take the previous iterations structural bits, not our current iteration,                  */ \
-    /* and flatten                                                                               */ \
-    flat(base_ptr, base, idx, structurals);                                                 \
-                                                                                                    \
-    uint64_t whitespace;                                                                            \
-    find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
-                                                                                                    \
-    /* fixup structurals to reflect quotes and add pseudo-structural characters                  */ \
-    structurals = finalize_structurals(structurals, whitespace, quote_mask,                         \
-                                       quote_bits, prev_iter_ends_pseudo_pred);                     \
+    FIND_STRUCTURAL_BITS_64(T, &tmpbuf[0], idx, base_ptr, base, prev_iter_ends_odd_backslash,       \
+                               prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals,     \
+                               error_mask, utf8_state, flat);                                       \
     idx += 64;                                                                                      \
   }                                                                                                 \
                                                                                                     \
@@ -192,7 +197,7 @@
   }                                                                                                 \
                                                                                                     \
   /* finally, flatten out the remaining structurals from the last iteration                      */ \
-  flat(base_ptr, base, idx, structurals);                                                   \
+  flat(base_ptr, base, idx, structurals);                                                           \
                                                                                                     \
   pj.n_structural_indexes = base;                                                                   \
   /* a valid JSON file cannot have zero structural indexes - we should have                      */ \
@@ -213,7 +218,7 @@
   if (error_mask) {                                                                                 \
     return simdjson::UNESCAPED_CHARS;                                                               \
   }                                                                                                 \
-  return check_utf8_errors<T>(state);                                                               \
+  return check_utf8_errors<T>(utf8_state);                                                          \
 }                                                                                                   
 
 
