@@ -1,5 +1,5 @@
 #include <iostream>
-#ifndef _MSC_VER 
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 #include "simdjson/jsonioutil.h"
@@ -49,9 +49,10 @@ stat_t simdjson_computestats(const simdjson::padded_string &p) {
   if (!answer.valid) {
     return answer;
   }
-  answer.backslash_count = count_backslash(reinterpret_cast<const uint8_t *>(p.data()), p.size());
-  answer.nonasciibyte_count =
-      count_nonasciibytes(reinterpret_cast<const uint8_t *>(p.data()), p.size());
+  answer.backslash_count =
+      count_backslash(reinterpret_cast<const uint8_t *>(p.data()), p.size());
+  answer.nonasciibyte_count = count_nonasciibytes(
+      reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.byte_count = p.size();
   answer.integer_count = 0;
   answer.float_count = 0;
@@ -112,14 +113,14 @@ stat_t simdjson_computestats(const simdjson::padded_string &p) {
 
 int main(int argc, char *argv[]) {
 #ifndef _MSC_VER
-	int c;
-	while ((c = getopt(argc, argv, "")) != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "")) != -1) {
     switch (c) {
 
     default:
       abort();
     }
-}
+  }
 #else
   int optind = 1;
 #endif
@@ -151,9 +152,9 @@ int main(int argc, char *argv[]) {
          "nonasciibyte_count object_count array_count null_count true_count "
          "false_count byte_count structural_indexes_count ");
 #ifdef __linux__
-  printf(
-      "  stage1_cycle_count stage1_instruction_count  stage2_cycle_count "
-      " stage2_instruction_count  stage3_cycle_count stage3_instruction_count  ");
+  printf("  stage1_cycle_count stage1_instruction_count  stage2_cycle_count "
+         " stage2_instruction_count  stage3_cycle_count "
+         "stage3_instruction_count  ");
 #else
   printf("(you are not under linux, so perf counters are disaabled)");
 #endif
@@ -181,19 +182,21 @@ int main(int argc, char *argv[]) {
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
     // The default template is simdjson::architecture::native.
-    bool isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) == simdjson::SUCCESS);
+    bool isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) ==
+                 simdjson::SUCCESS);
     unified.end(results);
-    
+
     cy1 += results[0];
     cl1 += results[1];
-    
+
     unified.start();
-    isok = isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
+    isok =
+        isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
     unified.end(results);
-    
+
     cy2 += results[0];
     cl2 += results[1];
-    if(!isok) {
+    if (!isok) {
       std::cerr << "failure?" << std::endl;
     }
   }

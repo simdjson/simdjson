@@ -4,14 +4,15 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
 #define SIMDJSON_SIMDUTF8CHECK_ARM64_H
 
-#if defined(_ARM_NEON) || defined(__aarch64__) || (defined(_MSC_VER) && defined(_M_ARM64))
+#if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
+    (defined(_MSC_VER) && defined(_M_ARM64))
 
-#include <cstdio>
+#include <arm_neon.h>
+#include <cinttypes>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
-#include <cinttypes>
-#include <arm_neon.h>
 
 /*
  * legal utf-8 byte sequence
@@ -35,16 +36,17 @@ namespace simdjson {
 static inline void checkSmallerThan0xF4(int8x16_t current_bytes,
                                         int8x16_t *has_error) {
   // unsigned, saturates to 0 below max
-  *has_error = vorrq_s8(*has_error,
-          vreinterpretq_s8_u8(vqsubq_u8(vreinterpretq_u8_s8(current_bytes), vdupq_n_u8(0xF4))));
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vqsubq_u8(
+                      vreinterpretq_u8_s8(current_bytes), vdupq_n_u8(0xF4))));
 }
 
 static const int8_t _nibbles[] = {
-  1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-  0, 0, 0, 0,             // 10xx (continuation)
-  2, 2,                   // 110x
-  3,                      // 1110
-  4, // 1111, next should be 0 (not checked here)
+    1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+    0, 0, 0, 0,             // 10xx (continuation)
+    2, 2,                   // 110x
+    3,                      // 1110
+    4,                      // 1111, next should be 0 (not checked here)
 };
 
 static inline int8x16_t continuationLengths(int8x16_t high_nibbles) {
@@ -52,27 +54,27 @@ static inline int8x16_t continuationLengths(int8x16_t high_nibbles) {
 }
 
 static inline int8x16_t carryContinuations(int8x16_t initial_lengths,
-                                         int8x16_t previous_carries) {
+                                           int8x16_t previous_carries) {
 
-  int8x16_t right1 =
-     vreinterpretq_s8_u8(vqsubq_u8(vreinterpretq_u8_s8(vextq_s8(previous_carries, initial_lengths, 16 - 1)),
-                    vdupq_n_u8(1)));
+  int8x16_t right1 = vreinterpretq_s8_u8(vqsubq_u8(
+      vreinterpretq_u8_s8(vextq_s8(previous_carries, initial_lengths, 16 - 1)),
+      vdupq_n_u8(1)));
   int8x16_t sum = vaddq_s8(initial_lengths, right1);
 
-  int8x16_t right2 = vreinterpretq_s8_u8(vqsubq_u8(vreinterpretq_u8_s8(vextq_s8(previous_carries, sum, 16 - 2)),
-                                 vdupq_n_u8(2)));
+  int8x16_t right2 = vreinterpretq_s8_u8(
+      vqsubq_u8(vreinterpretq_u8_s8(vextq_s8(previous_carries, sum, 16 - 2)),
+                vdupq_n_u8(2)));
   return vaddq_s8(sum, right2);
 }
 
-static inline void checkContinuations(int8x16_t initial_lengths, int8x16_t carries,
-                                      int8x16_t *has_error) {
+static inline void checkContinuations(int8x16_t initial_lengths,
+                                      int8x16_t carries, int8x16_t *has_error) {
 
   // overlap || underlap
   // carry > length && length > 0 || !(carry > length) && !(length > 0)
   // (carries > length) == (lengths > 0)
-  uint8x16_t overunder =
-      vceqq_u8(vcgtq_s8(carries, initial_lengths),
-                     vcgtq_s8(initial_lengths, vdupq_n_s8(0)));
+  uint8x16_t overunder = vceqq_u8(vcgtq_s8(carries, initial_lengths),
+                                  vcgtq_s8(initial_lengths, vdupq_n_s8(0)));
 
   *has_error = vorrq_s8(*has_error, vreinterpretq_s8_u8(overunder));
 }
@@ -91,23 +93,24 @@ static inline void checkFirstContinuationMax(int8x16_t current_bytes,
   uint8x16_t badfollowF4 =
       vandq_u8(vcgtq_s8(current_bytes, vdupq_n_s8(0x8F)), maskF4);
 
-  *has_error = vorrq_s8(*has_error, vreinterpretq_s8_u8(vorrq_u8(badfollowED, badfollowF4)));
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vorrq_u8(badfollowED, badfollowF4)));
 }
 
 static const int8_t _initial_mins[] = {
-  -128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-  -128, -128, // 10xx => false
-  (int8_t) 0xC2, -128, // 110x
-  (int8_t) 0xE1,       // 1110
-  (int8_t) 0xF1,
+    -128,         -128, -128, -128, -128, -128,
+    -128,         -128, -128, -128, -128, -128, // 10xx => false
+    (int8_t)0xC2, -128,                         // 110x
+    (int8_t)0xE1,                               // 1110
+    (int8_t)0xF1,
 };
 
 static const int8_t _second_mins[] = {
-  -128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-  -128, -128, // 10xx => false
-  127, 127,   // 110x => true
-  (int8_t) 0xA0,       // 1110
-  (int8_t) 0x90,
+    -128,         -128, -128, -128, -128, -128,
+    -128,         -128, -128, -128, -128, -128, // 10xx => false
+    127,          127,                          // 110x => true
+    (int8_t)0xA0,                               // 1110
+    (int8_t)0x90,
 };
 
 // map off1_hibits => error condition
@@ -118,16 +121,19 @@ static const int8_t _second_mins[] = {
 // else      false && false
 static inline void checkOverlong(int8x16_t current_bytes,
                                  int8x16_t off1_current_bytes, int8x16_t hibits,
-                                 int8x16_t previous_hibits, int8x16_t *has_error) {
+                                 int8x16_t previous_hibits,
+                                 int8x16_t *has_error) {
   int8x16_t off1_hibits = vextq_s8(previous_hibits, hibits, 16 - 1);
-  int8x16_t initial_mins = vqtbl1q_s8(vld1q_s8(_initial_mins), vreinterpretq_u8_s8(off1_hibits));
+  int8x16_t initial_mins =
+      vqtbl1q_s8(vld1q_s8(_initial_mins), vreinterpretq_u8_s8(off1_hibits));
 
   uint8x16_t initial_under = vcgtq_s8(initial_mins, off1_current_bytes);
 
-  int8x16_t second_mins = vqtbl1q_s8(vld1q_s8(_second_mins), vreinterpretq_u8_s8(off1_hibits));
+  int8x16_t second_mins =
+      vqtbl1q_s8(vld1q_s8(_second_mins), vreinterpretq_u8_s8(off1_hibits));
   uint8x16_t second_under = vcgtq_s8(second_mins, current_bytes);
-  *has_error =
-     vorrq_s8(*has_error, vreinterpretq_s8_u8(vandq_u8(initial_under, second_under)));
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vandq_u8(initial_under, second_under)));
 }
 
 struct processed_utf_bytes {
@@ -140,7 +146,7 @@ static inline void count_nibbles(int8x16_t bytes,
                                  struct processed_utf_bytes *answer) {
   answer->rawbytes = bytes;
   answer->high_nibbles =
-    vreinterpretq_s8_u8(vshrq_n_u8(vreinterpretq_u8_s8(bytes), 4));
+      vreinterpretq_s8_u8(vshrq_n_u8(vreinterpretq_u8_s8(bytes), 4));
 }
 
 // check whether the current bytes are valid UTF-8
@@ -161,13 +167,13 @@ checkUTF8Bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
   checkContinuations(initial_lengths, pb.carried_continuations, has_error);
 
   int8x16_t off1_current_bytes =
-    vextq_s8(previous->rawbytes, pb.rawbytes, 16 - 1);
+      vextq_s8(previous->rawbytes, pb.rawbytes, 16 - 1);
   checkFirstContinuationMax(current_bytes, off1_current_bytes, has_error);
 
   checkOverlong(current_bytes, off1_current_bytes, pb.high_nibbles,
                 previous->high_nibbles, has_error);
   return pb;
 }
-}// simdjson
+} // namespace simdjson
 #endif
 #endif

@@ -43,8 +43,8 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
-__attribute__ ((noinline))
-stat_t simdjson_computestats(const simdjson::padded_string &p) {
+__attribute__((noinline)) stat_t
+simdjson_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   simdjson::ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
@@ -145,8 +145,8 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
-__attribute__ ((noinline))
-stat_t sasjon_computestats(const simdjson::padded_string &p) {
+__attribute__((noinline)) stat_t
+sasjon_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -203,8 +203,8 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
   }
 }
 
-__attribute__ ((noinline))
-stat_t rapid_computestats(const simdjson::padded_string &p) {
+__attribute__((noinline)) stat_t
+rapid_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -243,15 +243,18 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    std::cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents." << std::endl;
+    std::cerr
+        << "Using different parsers, we compute the content statistics of "
+           "JSON documents."
+        << std::endl;
     std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
+              << std::endl;
   }
   simdjson::padded_string p;
   try {
@@ -290,7 +293,7 @@ int main(int argc, char *argv[]) {
   assert(stat_equal(s1, s3));
   int repeat = 50;
   int volume = p.size();
-  if(justdata) {
+  if (justdata) {
     printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }
   BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,

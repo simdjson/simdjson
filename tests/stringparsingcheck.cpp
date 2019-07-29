@@ -1,8 +1,8 @@
 #include <assert.h>
+#include <climits>
 #include <cstring>
 #include <dirent.h>
 #include <inttypes.h>
-#include <climits>
 #include <iostream>
 #include <math.h>
 #include <stdbool.h>
@@ -72,7 +72,7 @@ static bool parse_string(const char *p, char *output, char **end) {
 
   for (;;) {
 #if (CHAR_MIN < 0) || (!defined(CHAR_MIN)) // the '!defined' is just paranoia
-    // in this path, char is *signed* 
+    // in this path, char is *signed*
     if ((*p >= 0 && *p < 0x20)) {
       return false; // unescaped
     }
@@ -235,7 +235,7 @@ void print_cmp_hex(const char *s1, const char *s2, size_t len) {
 }
 
 void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
-                        const uint8_t *parsed_end) {
+                 const uint8_t *parsed_end) {
   size_t thislen = parsed_end - parsed_begin;
   total_string_length += thislen;
   good_string++;

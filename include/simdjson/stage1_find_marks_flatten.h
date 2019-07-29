@@ -10,17 +10,17 @@ namespace simdjson {
 // again our optimized version.
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
-  uint32_t * out_ptr = base_ptr + base;
+  uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
-  while(bits != 0) {
-      out_ptr[0] = idx + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      out_ptr++;
+  while (bits != 0) {
+    out_ptr[0] = idx + trailingzeroes(bits);
+    bits = bits & (bits - 1);
+    out_ptr++;
   }
   base = (out_ptr - base_ptr);
 }
 
-#else 
+#else
 // flatten out values in 'bits' assuming that they are are to have values of idx
 // plus their position in the bitvector, and store these indexes at
 // base_ptr[base] incrementing base as we go
@@ -28,15 +28,16 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 // needs to be large enough to handle this
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted. 
+  // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
-  if(bits == 0) return; 
+  if (bits == 0)
+    return;
   uint32_t cnt = hamming(bits);
   uint32_t next_base = base + cnt;
   idx -= 64;
   base_ptr += base;
-  { 
+  {
     base_ptr[0] = idx + trailingzeroes(bits);
     bits = bits & (bits - 1);
     base_ptr[1] = idx + trailingzeroes(bits);
@@ -76,17 +77,17 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     base_ptr += 8;
   }
   if (cnt > 16) { // unluckly: we rarely get here
-    // since it means having one structural or pseudo-structral element 
+    // since it means having one structural or pseudo-structral element
     // every 4 characters (possible with inputs like "","","",...).
     do {
       base_ptr[0] = idx + trailingzeroes(bits);
       bits = bits & (bits - 1);
       base_ptr++;
-    } while(bits != 0);
+    } while (bits != 0);
   }
   base = next_base;
 }
 #endif // SIMDJSON_NAIVE_FLATTEN
-}
+} // namespace simdjson
 
 #endif // SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H

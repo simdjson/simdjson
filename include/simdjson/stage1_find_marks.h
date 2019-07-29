@@ -1,67 +1,60 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_H
 #define SIMDJSON_STAGE1_FIND_MARKS_H
 
-#include <cassert>
 #include "simdjson/common_defs.h"
-#include "simdjson/simdjson.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
+#include "simdjson/simdjson.h"
+#include <cassert>
 
 namespace simdjson {
 
-template<architecture>
-struct simd_input;
+template <architecture> struct simd_input;
 
-template<architecture T>
-uint64_t compute_quote_mask(uint64_t quote_bits);
+template <architecture T> uint64_t compute_quote_mask(uint64_t quote_bits);
 
 namespace {
-  // for when clmul is unavailable
-  [[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
-    uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
-    quote_mask = quote_mask ^ (quote_mask << 2);
-    quote_mask = quote_mask ^ (quote_mask << 4);
-    quote_mask = quote_mask ^ (quote_mask << 8);
-    quote_mask = quote_mask ^ (quote_mask << 16);
-    quote_mask = quote_mask ^ (quote_mask << 32);
-    return quote_mask;
-  }
+// for when clmul is unavailable
+[[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+  quote_mask = quote_mask ^ (quote_mask << 2);
+  quote_mask = quote_mask ^ (quote_mask << 4);
+  quote_mask = quote_mask ^ (quote_mask << 8);
+  quote_mask = quote_mask ^ (quote_mask << 16);
+  quote_mask = quote_mask ^ (quote_mask << 32);
+  return quote_mask;
 }
+} // namespace
 
 // Holds the state required to perform check_utf8().
-template<architecture>
-struct utf8_checking_state;
+template <architecture> struct utf8_checking_state;
 
-
-template<architecture T>
-void check_utf8(simd_input<T> in, utf8_checking_state<T>& state);
+template <architecture T>
+void check_utf8(simd_input<T> in, utf8_checking_state<T> &state);
 
 // Checks if the utf8 validation has found any error.
-template<architecture T>
-errorValues check_utf8_errors(utf8_checking_state<T>& state);
+template <architecture T>
+errorValues check_utf8_errors(utf8_checking_state<T> &state);
 
-// a straightforward comparison of a mask against input. 
-template<architecture T>
+// a straightforward comparison of a mask against input.
+template <architecture T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
- 
-template<architecture T>
-simd_input<T> fill_input(const uint8_t * ptr);
+template <architecture T> simd_input<T> fill_input(const uint8_t *ptr);
 
-
-// find all values less than or equal than the content of maxval (using unsigned arithmetic) 
-template<architecture T>
+// find all values less than or equal than the content of maxval (using unsigned
+// arithmetic)
+template <architecture T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
+template <architecture T>
+really_inline uint64_t find_odd_backslash_sequences(
+    simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
-template<architecture T> really_inline
-uint64_t find_odd_backslash_sequences(simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
-
-
-template<architecture T> really_inline
-uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t &error_mask);
-
+template <architecture T>
+really_inline uint64_t find_quote_mask_and_bits(
+    simd_input<T> in, uint64_t odd_ends, uint64_t &prev_iter_inside_quote,
+    uint64_t &quote_bits, uint64_t &error_mask);
 
 // do a 'shufti' to detect structural JSON characters
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c
@@ -70,9 +63,8 @@ uint64_t find_quote_mask_and_bits(simd_input<T> in, uint64_t odd_ends,
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 // these go into the next 2 buckets of the comparison (8/16)
-template<architecture T>
-void find_whitespace_and_structurals(simd_input<T> in,
-                                     uint64_t &whitespace,
+template <architecture T>
+void find_whitespace_and_structurals(simd_input<T> in, uint64_t &whitespace,
                                      uint64_t &structurals);
 
 // return a updated structural bit vector with quoted contents cleared out and
@@ -114,12 +106,14 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
-template<architecture T = architecture::native>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj);
+template <architecture T = architecture::native>
+int find_structural_bits(const uint8_t *buf, size_t len,
+                         simdjson::ParsedJson &pj);
 
-template<architecture T = architecture::native>
-int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj) {
-  return find_structural_bits((const uint8_t*)buf, len, pj);
+template <architecture T = architecture::native>
+int find_structural_bits(const char *buf, size_t len,
+                         simdjson::ParsedJson &pj) {
+  return find_structural_bits((const uint8_t *)buf, len, pj);
 }
 
 } // namespace simdjson

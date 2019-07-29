@@ -40,8 +40,8 @@ void compute_dump(simdjson::ParsedJson::iterator &pjh) {
 }
 
 int main(int argc, char *argv[]) {
-	bool rawdump = false;
-	bool apidump = false;
+  bool rawdump = false;
+  bool apidump = false;
 
 #ifndef _MSC_VER
   int c;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
-}
+  }
 #else
   int optind = 1;
 #endif
@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
+              << std::endl;
   }
   simdjson::padded_string p;
   try {
@@ -85,9 +86,11 @@ int main(int argc, char *argv[]) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res = simdjson::json_parse(p, pj); // do the parsing, return false on error
+  int res =
+      simdjson::json_parse(p, pj); // do the parsing, return false on error
   if (res != simdjson::SUCCESS) {
-    std::cerr << " Parsing failed. Error is '" << simdjson::errorMsg(res) << "'." << std::endl;
+    std::cerr << " Parsing failed. Error is '" << simdjson::errorMsg(res)
+              << "'." << std::endl;
     return EXIT_FAILURE;
   }
   if (apidump) {
@@ -98,7 +101,8 @@ int main(int argc, char *argv[]) {
     }
     compute_dump(pjh);
   } else {
-    const bool is_ok = rawdump ? pj.dump_raw_tape(std::cout) : pj.printjson(std::cout);
+    const bool is_ok =
+        rawdump ? pj.dump_raw_tape(std::cout) : pj.printjson(std::cout);
     if (!is_ok) {
       std::cerr << " Could not print out parsed result. " << std::endl;
       return EXIT_FAILURE;

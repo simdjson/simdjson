@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int repeat =  (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
+  int repeat = (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
   int volume = p.size();
   if (justdata) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
@@ -129,10 +129,11 @@ int main(int argc, char *argv[]) {
 #ifndef ALLPARSER
   if (!justdata)
 #endif
-    BEST_TIME(
-        "RapidJSON  ", d.Parse<kParseValidateEncodingFlag>((const char *)buffer)
-                           .HasParseError(),
-        false, memcpy(buffer, p.data(), p.size()), repeat, volume, !justdata);
+    BEST_TIME("RapidJSON  ",
+              d.Parse<kParseValidateEncodingFlag>((const char *)buffer)
+                  .HasParseError(),
+              false, memcpy(buffer, p.data(), p.size()), repeat, volume,
+              !justdata);
   BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
             false,
@@ -185,9 +186,10 @@ int main(int argc, char *argv[]) {
     jsmn_init(&parser);
     memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
-    BEST_TIME("jsmn           ", (jsmn_parse(&parser, buffer, p.size(),
-                                             tokens.get(), p.size()) > 0),
-              true, jsmn_init(&parser), repeat, volume, !justdata);
+    BEST_TIME(
+        "jsmn           ",
+        (jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size()) > 0),
+        true, jsmn_init(&parser), repeat, volume, !justdata);
   }
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';

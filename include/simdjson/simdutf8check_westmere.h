@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 #define SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 
+#include "simdjson/portability.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "simdjson/portability.h"
 #ifdef IS_X86_64
 
 /*
@@ -29,7 +29,7 @@
 /********** sse code **********/
 TARGET_WESTMERE
 
-namespace simdjson{
+namespace simdjson {
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(__m128i current_bytes,
                                         __m128i *has_error) {
@@ -161,9 +161,8 @@ checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
                 previous->high_nibbles, has_error);
   return pb;
 }
-}//simdjson
+} // namespace simdjson
 UNTARGET_REGION // westmere
-
 
 #endif // IS_X86_64
 

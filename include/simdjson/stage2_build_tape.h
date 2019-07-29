@@ -9,8 +9,8 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/numberparsing.h"
 #include "simdjson/parsedjson.h"
-#include "simdjson/stringparsing.h"
 #include "simdjson/simdjson.h"
+#include "simdjson/stringparsing.h"
 
 namespace simdjson {
 void init_state_machine();
@@ -20,7 +20,8 @@ really_inline bool is_valid_true_atom(const uint8_t *loc) {
   uint64_t tv = *reinterpret_cast<const uint64_t *>("true    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
-  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  uint64_t
+      locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
@@ -43,8 +44,9 @@ really_inline bool is_valid_false_atom(const uint8_t *loc) {
   // the last character of false (it being 5 byte long!) would be
   // ignored
   uint64_t error = 0;
-  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  // this can read up to 7 bytes beyond the buffer size, but we require 
+  uint64_t
+      locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
   std::memcpy(&locval, loc, sizeof(uint64_t));
@@ -58,8 +60,9 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
   uint64_t nv = *reinterpret_cast<const uint64_t *>("null    ");
   uint64_t mask4 = 0x00000000ffffffff;
   uint32_t error = 0;
-  uint64_t locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  // this can read up to 7 bytes beyond the buffer size, but we require 
+  uint64_t
+      locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
   std::memcpy(&locval, loc, sizeof(uint64_t));
@@ -68,15 +71,15 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
   return error == 0;
 }
 
-template<architecture T = architecture::native>
-WARN_UNUSED  ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-int unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
+template <architecture T = architecture::native>
+WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER int
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
-template<architecture T = architecture::native>
+template <architecture T = architecture::native>
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
-  return unified_machine<T>(reinterpret_cast<const uint8_t*>(buf), len, pj);
+  return unified_machine<T>(reinterpret_cast<const uint8_t *>(buf), len, pj);
 }
 
-}
+} // namespace simdjson
 
 #endif

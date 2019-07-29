@@ -3,23 +3,21 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
-size_t count_nonasciibytes(const uint8_t* input, size_t length) {
+size_t count_nonasciibytes(const uint8_t *input, size_t length) {
   size_t count = 0;
-  for(size_t i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; i++) {
     count += input[i] >> 7;
-  }
-  return count;
-} 
-
-
-size_t count_backslash(const uint8_t* input, size_t length) {
-  size_t count = 0;
-  for(size_t i = 0; i < length; i++) {
-    count += (input[i] == '\\')  ? 1 : 0;
   }
   return count;
 }
 
+size_t count_backslash(const uint8_t *input, size_t length) {
+  size_t count = 0;
+  for (size_t i = 0; i < length; i++) {
+    count += (input[i] == '\\') ? 1 : 0;
+  }
+  return count;
+}
 
 struct stat_s {
   size_t integer_count;
@@ -39,8 +37,6 @@ struct stat_s {
 
 using stat_t = struct stat_s;
 
-
-
 stat_t simdjson_computestats(const simdjson::padded_string &p) {
   stat_t answer;
   simdjson::ParsedJson pj = simdjson::build_parsed_json(p);
@@ -49,8 +45,10 @@ stat_t simdjson_computestats(const simdjson::padded_string &p) {
     std::cerr << pj.getErrorMsg() << std::endl;
     return answer;
   }
-  answer.backslash_count = count_backslash(reinterpret_cast<const uint8_t*>(p.data()), p.size());
-  answer.nonasciibyte_count = count_nonasciibytes(reinterpret_cast<const uint8_t*>(p.data()), p.size());
+  answer.backslash_count =
+      count_backslash(reinterpret_cast<const uint8_t *>(p.data()), p.size());
+  answer.nonasciibyte_count = count_nonasciibytes(
+      reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.byte_count = p.size();
   answer.integer_count = 0;
   answer.float_count = 0;
@@ -109,12 +107,6 @@ stat_t simdjson_computestats(const simdjson::padded_string &p) {
   return answer;
 }
 
-
-
-
-
-
-
 int main(int argc, char *argv[]) {
   int myoptind = 1;
   if (myoptind >= argc) {
@@ -124,7 +116,8 @@ int main(int argc, char *argv[]) {
   }
   const char *filename = argv[myoptind];
   if (myoptind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[myoptind + 1] << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[myoptind + 1]
+              << std::endl;
   }
   simdjson::padded_string p;
   try {
@@ -133,16 +126,18 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  stat_t s =  simdjson_computestats(p);
-  if(!s.valid) {
+  stat_t s = simdjson_computestats(p);
+  if (!s.valid) {
     std::cerr << "not a valid JSON" << std::endl;
     return EXIT_FAILURE;
   }
 
-
-  printf("# integer_count float_count string_count backslash_count nonasciibyte_count object_count array_count null_count true_count false_count byte_count structural_indexes_count\n");
-  printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", s.integer_count, s.float_count,
-  s.string_count, s.backslash_count, s.nonasciibyte_count, s.object_count, s.array_count,
-  s.null_count, s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
+  printf("# integer_count float_count string_count backslash_count "
+         "nonasciibyte_count object_count array_count null_count true_count "
+         "false_count byte_count structural_indexes_count\n");
+  printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", s.integer_count,
+         s.float_count, s.string_count, s.backslash_count, s.nonasciibyte_count,
+         s.object_count, s.array_count, s.null_count, s.true_count,
+         s.false_count, s.byte_count, s.structural_indexes_count);
   return EXIT_SUCCESS;
 }
