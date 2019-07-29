@@ -6,7 +6,7 @@
 #include <unistd.h>
 #endif
 #include "simdjson/simdjson.h"
-#include "simdjson/simddetection.h"
+#include "simdjson/isadetection.h"
 #include "simdjson/portability.h"
 
 namespace simdjson {

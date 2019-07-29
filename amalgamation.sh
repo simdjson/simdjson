@@ -27,7 +27,7 @@ $SCRIPTPATH/src/parsedjsoniterator.cpp
 ALLCHEADERS="
 $SCRIPTPATH/include/simdjson/simdjson_version.h
 $SCRIPTPATH/include/simdjson/portability.h
-$SCRIPTPATH/include/simdjson/simddetection.h
+$SCRIPTPATH/include/simdjson/isadetection.h
 $SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/common_defs.h
 $SCRIPTPATH/include/simdjson/padded_string.h

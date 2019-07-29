@@ -182,7 +182,7 @@ Note: In some settings, it might be desirable to precompile `simdjson.cpp` inste
 On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
 runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
 The code automatically detects the feature set of your processor and switches to the right function at runtime (a technical
-sometimes called runtime dispatch)..
+sometimes called runtime dispatch).
 
 
 We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.

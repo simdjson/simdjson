@@ -41,8 +41,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef ISADETECTION_H
-#define ISADETECTION_H
+#ifndef SIMDJSON_ISADETECTION_H
+#define SIMDJSON_ISADETECTION_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -117,7 +117,7 @@ static inline uint32_t detect_supported_architectures()
   uint32_t eax, ebx, ecx, edx;
   uint32_t hostSimdExts = 0x0;
 
-  // ECX for EAX=0x1
+  // ECX for EAX=0x7
   eax = 0x7;
   ecx = 0x0;
   cpuid(&eax, &ebx, &ecx, &edx);
@@ -134,7 +134,7 @@ static inline uint32_t detect_supported_architectures()
     hostSimdExts |= SIMDExtensions::BMI2;
   }
 
-  // EBX for EAX=0x7
+  // EBX for EAX=0x1
   eax = 0x1;
   cpuid(&eax, &ebx, &ecx, &edx);
 

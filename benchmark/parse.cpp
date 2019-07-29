@@ -33,7 +33,7 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
-#include "simdjson/simddetection.h"
+#include "simdjson/isadetection.h"
 namespace simdjson {
 architecture _find_best_supported_implementation() {
   constexpr uint32_t haswell_flags = SIMDExtensions::AVX2 | SIMDExtensions::PCLMULQDQ
