@@ -87,7 +87,7 @@
 // We need to compile that code for multiple architectures. However, target attributes can be used
 // only once by function definition. Huge macro seemed better than huge code duplication.
 // FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len, ParsedJson &pj)
-#define FIND_STRUCTURAL_BITS(T, buf, len, pj) {                                                     \
+#define FIND_STRUCTURAL_BITS(T, buf, len, pj, flat) {                                                     \
   if (len > pj.bytecapacity) {                                                                      \
     std::cerr << "Your ParsedJson object only supports documents up to "                            \
          << pj.bytecapacity << " bytes but you are trying to process " << len                       \
@@ -141,7 +141,7 @@
                                                                                                     \
     /* take the previous iterations structural bits, not our current iteration,                  */ \
     /* and flatten                                                                               */ \
-    flatten_bits(base_ptr, base, idx, structurals);                                                 \
+    flat(base_ptr, base, idx, structurals);                                                 \
                                                                                                     \
     uint64_t whitespace;                                                                            \
     find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
@@ -175,7 +175,7 @@
                                                                                                     \
     /* take the previous iterations structural bits, not our current iteration,                  */ \
     /* and flatten                                                                               */ \
-    flatten_bits(base_ptr, base, idx, structurals);                                                 \
+    flat(base_ptr, base, idx, structurals);                                                 \
                                                                                                     \
     uint64_t whitespace;                                                                            \
     find_whitespace_and_structurals<T>(in, whitespace, structurals);                                \
@@ -192,7 +192,7 @@
   }                                                                                                 \
                                                                                                     \
   /* finally, flatten out the remaining structurals from the last iteration                      */ \
-  flatten_bits(base_ptr, base, idx, structurals);                                                   \
+  flat(base_ptr, base, idx, structurals);                                                   \
                                                                                                     \
   pj.n_structural_indexes = base;                                                                   \
   /* a valid JSON file cannot have zero structural indexes - we should have                      */ \

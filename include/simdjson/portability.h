@@ -99,7 +99,7 @@ static inline bool mul_overflow(uint64_t  value1, uint64_t  value2, uint64_t *re
 
 /* result might be undefined when input_num is zero */
 static inline int trailingzeroes(uint64_t input_num) {
-#ifdef __BMI2__
+#ifdef __BMI__// tzcnt is BMI1
 	return _tzcnt_u64(input_num);
 #else
 	return __builtin_ctzll(input_num);
