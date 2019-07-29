@@ -1,26 +1,21 @@
-#ifndef  SIMDJSON_ERR_H
-# define SIMDJSON_ERR_H
+#ifndef SIMDJSON_ERR_H
+#define SIMDJSON_ERR_H
 
 #include <string>
 
 namespace simdjson {
-enum class instruction_set {
-  avx2,
-  sse4_2,
-  neon,
+// Represents the minimal architecture that would support an implementation
+enum class architecture {
+  westmere,
+  haswell,
+  arm64,
   none,
-// the 'native' enum class value should point at a good default on the current machine
-#ifdef __AVX2__
-  native = avx2
-#elif defined(__ARM_NEON)  || (defined(_MSC_VER) && defined(_M_ARM64))
-  native = neon
-#else
-  // Let us assume that we have an old x64 processor, but one that has SSE (i.e., something
-  // that came out in the second decade of the XXIst century.
-  // It would be nicer to check explicitly, but there many not be a good way to do so
-  // that is cross-platform.
-  // Under Visual Studio, there is no way to check for SSE4.2 support at compile-time.
-  native = sse4_2
+  // TODO remove 'native' in favor of runtime dispatch?
+  // the 'native' enum class value should point at a good default on the current machine
+#ifdef IS_X86_64
+  native = westmere
+#elif defined(IS_ARM64)
+  native = arm64
 #endif
 };
 

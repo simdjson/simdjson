@@ -231,6 +231,47 @@ public:
     // this is equivalent but much faster than calling "next()".
     inline void move_to_value();
 
+    // when at [, go one level deep, and advance to the given index.
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing at the array ([)
+    inline bool move_to_index(uint32_t index);
+
+    // Moves the iterator to the value correspoding to the json pointer.
+    // Always search from the root of the document.
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing the same value we were pointing before the call.
+    // The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+    // However, the standard says "If a referenced member name is not unique in an object,
+    // the member that is referenced is undefined, and evaluation fails".
+    // Here we just return the first corresponding value.
+    // The length parameter is the length of the jsonpointer string ('pointer').
+    bool move_to(const char * pointer, uint32_t length);
+
+    // Moves the iterator to the value correspoding to the json pointer.
+    // Always search from the root of the document.
+    // if successful, we are left pointing at the value,
+    // if not, we are still pointing the same value we were pointing before the call.
+    // The json pointer implementation follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+    // However, the standard says "If a referenced member name is not unique in an object,
+    // the member that is referenced is undefined, and evaluation fails".
+    // Here we just return the first corresponding value.
+    inline bool move_to(const std::string & pointer) {
+      return move_to(pointer.c_str(), pointer.length());
+    }
+
+
+
+  private:
+
+    // Almost the same as move_to(), except it searchs from the current position.
+    // The pointer's syntax is identical, though that case is not handled by the rfc6901 standard.
+    // The '/' is still required at the beginning.
+    // However, contrary to move_to(), the URI Fragment Identifier Representation is not supported here.
+    // Also, in case of failure, we are left pointing at the closest value it could reach.
+    // For these reasons it is private. It exists because it is used by move_to().
+    bool relative_move_to(const char * pointer, uint32_t length);
+  public:
+
     // throughout return true if we can do the navigation, false
     // otherwise
 
@@ -263,6 +304,10 @@ public:
     // move us to the start of our current scope,
     // a scope is a series of nodes at the same level
     inline void to_start_scope();
+
+    inline void rewind() {
+      while(up());
+    }
 
     // void to_end_scope();              // move us to
     // the start of our current scope; always succeeds
@@ -419,8 +464,24 @@ bool ParsedJson::iterator::move_to_key(const char * key, uint32_t length) {
     return false;
 }
 
+bool ParsedJson::iterator::move_to_index(uint32_t index) {
+    assert(is_array());
+    if (down()) {
+      uint32_t i = 0;
+      for (; i < index; i++) {
+        if (!next()) {
+          break;
+        }
+      }
+      if (i == index) {
+        return true;
+      }
+      assert(up());
+    }
+    return false;
+}
 
- bool ParsedJson::iterator::prev() {
+bool ParsedJson::iterator::prev() {
     if(location - 1 < depthindex[depth].start_of_scope) {
       return false;
     }

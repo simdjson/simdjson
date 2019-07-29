@@ -27,16 +27,16 @@ using json_parse_functype = int (const uint8_t *buf, size_t len, ParsedJson &pj,
 extern json_parse_functype *json_parse_ptr;
 
 // json_parse_implementation is the generic function, it is specialized for various 
-// SIMD instruction sets, e.g., as json_parse_implementation<instruction_set::avx2>
-// or json_parse_implementation<instruction_set::neon> 
-template<instruction_set T>
+// architectures, e.g., as json_parse_implementation<architecture::haswell>
+// or json_parse_implementation<architecture::arm64> 
+template<architecture T>
 int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bool reallocifneeded = true) {
   if (pj.bytecapacity < len) {
     return simdjson::CAPACITY;
   }
   bool reallocated = false;
   if(reallocifneeded) {
-#ifdef ALLOW_SAME_PAGE_BUFFER_OVERRUN
+#if ALLOW_SAME_PAGE_BUFFER_OVERRUN
     // realloc is needed if the end of the memory crosses a page
 #ifdef _MSC_VER
     SYSTEM_INFO sysInfo; 
@@ -63,7 +63,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj, bo
       reallocated = true;
     } // if (true) OR if ( (reinterpret_cast<uintptr_t>(buf + len - 1) % pagesize ) + SIMDJSON_PADDING < static_cast<uintptr_t>(pagesize) ) {
   } // if(reallocifneeded) {
-  int stage1_is_ok = find_structural_bits<T>(buf, len, pj);
+  int stage1_is_ok = simdjson::find_structural_bits<T>(buf, len, pj);
   if(stage1_is_ok != simdjson::SUCCESS) {
     pj.errorcode = stage1_is_ok;
     return pj.errorcode;

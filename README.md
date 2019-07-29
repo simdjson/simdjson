@@ -54,7 +54,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with 
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
-  - or SSE 4.2 (i.e., Intel processors going back to Nehalem released in 2008 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
+  - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
   - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going back as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
@@ -67,7 +67,7 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 
 ## Code usage and example
 
-The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::iterator pjh(pj)`, see 'Navigating the parsed document').
+The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::iterator pjh(pj)`, see 'Navigating the parsed document').
 
 ```C
 #include "simdjson/jsonparser.h"
@@ -174,16 +174,19 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. You have to make sure that you instruct your 
-compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
-flag `-march=native` used on a recent Intel processor (Haswell or better) is sufficient. For portability
-of the binary files you can also specify directly the Haswell processor (`-march=haswell`). You may 
-also use the flags `-mavx2 -mbmi2`. Under Visual Studio, you need to target x64 and add the 
-flag `/arch:AVX2`. 
-
 
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
 
+## Runtime dispatch
+
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
+runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
+The code automatically detects the feature set of your processor and switches to the right function at runtime (a technical
+sometimes called runtime dispatch).
+
+
+We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
+There is no runtime dispatch on ARM.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
@@ -266,13 +269,13 @@ make test
 
 ## Usage (CMake on Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 (2008 Nehalem or later). 
+We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later). 
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `VisualStudio`.
 - Using a shell, go to this newly created directory.
-- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.) This will build the code with AVX2 instructions. If your target processor does not support AVX2, you need to replace `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` by `cmake  -DSIMDJSON_DISABLE_AVX=on -DCMAKE_GENERATOR_PLATFORM=x64 ..` . That is, you need to set the flag to forcefully disable AVX support since we compile with AVX2 instructions *by default*.
+- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.) 
 - This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
 
 
@@ -313,6 +316,7 @@ If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
 - `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
+- `jsonpointer mydoc.json <jsonpath> <jsonpath> ... <jsonpath>` parses the document, constructs a model and then processes a series of [JSON Pointer paths](https://tools.ietf.org/html/rfc6901). The result is itself a JSON document.
 
 ## Scope
 
@@ -323,7 +327,6 @@ To simplify the engineering, we make some assumptions.
 
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe this is a genuine limitation, because we do not think there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
 - All strings in the JSON document may have up to 4294967295 bytes in UTF-8 (4GB). To enforce this constraint, we refuse to parse a document that contains more than 4294967295 bytes (4GB). This should accommodate most JSON documents.
-- We assume AVX2 support, which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included, though it can be done. We plan to support ARM processors (help is invited).
 - In cases of failure, we report a failure without any indication to the nature of the problem. (This can be easily improved without affecting performance.)
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
 - Performance is optimized for JSON documents spanning at least a tens kilobytes up to many megabytes: the performance issues with having to parse many tiny JSON documents or one truly enormous JSON document are different.
@@ -346,6 +349,20 @@ The parser works in two stages:
 
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
+
+## JSON Pointer
+
+We can navigate the parsed JSON using JSON Pointers as per the [RFC6901 standard](https://tools.ietf.org/html/rfc6901).
+
+You can build a tool (jsonpointer) to parse a JSON document and then issue an array of JSON Pointer queries:
+
+```
+make jsonpointer 
+ ./jsonpointer jsonexamples/small/demo.json /Image/Width /Image/Height /Image/IDs/2
+ ./jsonpointer jsonexamples/twitter.json /statuses/0/id /statuses/1/id /statuses/2/id /statuses/3/id /statuses/4/id /statuses/5/id
+```
+
+In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, passing a `std::string` representing the JSON Pointer query.
 
 ## Navigating the parsed document
 

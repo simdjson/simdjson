@@ -1,8 +1,8 @@
 // From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
 // Adapted from https://github.com/lemire/fastvalidate-utf-8
 
-#ifndef SIMDJSON_SIMDUTF8CHECK_NEON_H
-#define SIMDJSON_SIMDUTF8CHECK_NEON_H
+#ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
+#define SIMDJSON_SIMDUTF8CHECK_ARM64_H
 
 #if defined(_ARM_NEON) || defined(__aarch64__) || (defined(_MSC_VER) && defined(_M_ARM64))
 
@@ -29,6 +29,7 @@
  * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
  *
  */
+namespace simdjson {
 
 // all byte values must be no larger than 0xF4
 static inline void checkSmallerThan0xF4(int8x16_t current_bytes,
@@ -167,6 +168,6 @@ checkUTF8Bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
                 previous->high_nibbles, has_error);
   return pb;
 }
-
+}// simdjson
 #endif
 #endif

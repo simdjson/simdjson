@@ -12,7 +12,7 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-
+using namespace simdjson;
 struct stat_s {
   size_t number_count;
   size_t object_count;
@@ -44,9 +44,9 @@ void print_stat(const stat_t &s) {
 }
 
 __attribute__ ((noinline))
-stat_t simdjson_computestats(const padded_string &p) {
+stat_t simdjson_computestats(const simdjson::padded_string &p) {
   stat_t answer;
-  ParsedJson pj = build_parsed_json(p);
+  simdjson::ParsedJson pj = build_parsed_json(p);
   answer.valid = pj.isValid();
   if (!answer.valid) {
     return answer;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
   int repeat = 50;
   int volume = p.size();
   if(justdata) {
-    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+    printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }
   BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,
             volume, !justdata);
