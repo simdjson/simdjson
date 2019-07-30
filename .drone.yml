@@ -1,5 +1,9 @@
 kind: pipeline
-name: default
+name: x64
+
+platform:
+  os: linux
+  arch: amd64
 
 steps:
 - name: test
@@ -8,3 +12,22 @@ steps:
   - make 
   - make quiettest 
   - make amalgamate
+
+---
+kind: pipeline
+name: arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: test
+  image: gcc:8
+  commands:
+  - make 
+  - make quiettest 
+  - make amalgamate
+
+
+
