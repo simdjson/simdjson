@@ -35,7 +35,7 @@
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 namespace simdjson {
-architecture _find_best_supported_implementation() {
+Architecture _find_best_supported_implementation() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ | instruction_set::BMI1 |
       instruction_set::BMI2;
@@ -63,7 +63,7 @@ extern unified_functype *unified_ptr;
 extern stage1_functype *stage1_ptr;
 
 int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  architecture best_implementation = _find_best_supported_implementation();
+  Architecture best_implementation = _find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_X86_64
@@ -90,7 +90,7 @@ int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
 // Responsible to select the best json_parse implementation
 int find_structural_bits_dispatch(const uint8_t *buf, size_t len,
                                   ParsedJson &pj) {
-  architecture best_implementation = _find_best_supported_implementation();
+  Architecture best_implementation = _find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_X86_64
