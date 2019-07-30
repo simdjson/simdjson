@@ -9,6 +9,8 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 
+#ifdef IS_X86_64
+
 TARGET_HASWELL
 namespace simdjson {
 namespace haswell {
@@ -82,5 +84,5 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 } // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION
-
+#endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H
