@@ -9,8 +9,8 @@
 #include "simdjson/stage2_build_tape.h"
 #include <string>
 #ifdef _MSC_VER
-#include <sysinfoapi.h>
 #include <windows.h>
+#include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #endif
