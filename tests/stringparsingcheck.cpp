@@ -1,8 +1,8 @@
 #include <assert.h>
+#include <climits>
 #include <cstring>
 #include <dirent.h>
 #include <inttypes.h>
-#include <climits>
 #include <iostream>
 #include <math.h>
 #include <stdbool.h>
@@ -72,7 +72,7 @@ static bool parse_string(const char *p, char *output, char **end) {
 
   for (;;) {
 #if (CHAR_MIN < 0) || (!defined(CHAR_MIN)) // the '!defined' is just paranoia
-    // in this path, char is *signed* 
+    // in this path, char is *signed*
     if ((*p >= 0 && *p < 0x20)) {
       return false; // unescaped
     }
@@ -209,12 +209,12 @@ static bool parse_string(const char *p, char *output, char **end) {
   }
 }
 // end of borrowed code
-char *bigbuffer; // global variable
+char *big_buffer; // global variable
 
-void foundBadString(const uint8_t *buf) {
+void found_bad_string(const uint8_t *buf) {
   bad_string++;
   char *end;
-  if (parse_string((const char *)buf, bigbuffer, &end)) {
+  if (parse_string((const char *)buf, big_buffer, &end)) {
     printf("WARNING: Sajson-like parser seems to think that the string is "
            "valid %32s \n",
            buf);
@@ -234,18 +234,18 @@ void print_cmp_hex(const char *s1, const char *s2, size_t len) {
   }
 }
 
-void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
-                        const uint8_t *parsed_end) {
-  size_t thislen = parsed_end - parsed_begin;
-  total_string_length += thislen;
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
+                  const uint8_t *parsed_end) {
+  size_t this_len = parsed_end - parsed_begin;
+  total_string_length += this_len;
   good_string++;
   char *end = NULL;
-  if (!parse_string((const char *)buf, bigbuffer, &end)) {
+  if (!parse_string((const char *)buf, big_buffer, &end)) {
     printf("WARNING: reference parser seems to think that the string is NOT "
            "valid %32s \n",
            buf);
   }
-  if (end == bigbuffer) {
+  if (end == big_buffer) {
     // we have a zero-length string
     if (parsed_begin != parsed_end) {
       printf("WARNING: We have a zero-length but gap is %zu \n",
@@ -255,35 +255,35 @@ void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
     empty_string++;
     return;
   }
-  size_t len = end - bigbuffer;
-  if (len != thislen) {
-    printf("WARNING: lengths on parsed strings disagree %zu %zu \n", thislen,
+  size_t len = end - big_buffer;
+  if (len != this_len) {
+    printf("WARNING: lengths on parsed strings disagree %zu %zu \n", this_len,
            len);
-    printf("\nour parsed string  : '%*s'\n\n", (int)thislen,
+    printf("\nour parsed string  : '%*s'\n\n", (int)this_len,
            (const char *)parsed_begin);
-    print_hex((const char *)parsed_begin, thislen);
+    print_hex((const char *)parsed_begin, this_len);
     printf("\n");
 
-    printf("reference parsing   :'%*s'\n\n", (int)len, bigbuffer);
-    print_hex((const char *)bigbuffer, len);
+    printf("reference parsing   :'%*s'\n\n", (int)len, big_buffer);
+    print_hex((const char *)big_buffer, len);
     printf("\n");
 
     probable_bug = true;
   }
-  if (memcmp(bigbuffer, parsed_begin, thislen) != 0) {
+  if (memcmp(big_buffer, parsed_begin, this_len) != 0) {
     printf("WARNING: parsed strings disagree  \n");
-    printf("Lengths %zu %zu  \n", thislen, len);
+    printf("Lengths %zu %zu  \n", this_len, len);
 
-    printf("\nour parsed string  : '%*s'\n", (int)thislen,
+    printf("\nour parsed string  : '%*s'\n", (int)this_len,
            (const char *)parsed_begin);
-    print_hex((const char *)parsed_begin, thislen);
+    print_hex((const char *)parsed_begin, this_len);
     printf("\n");
 
-    printf("reference parsing   :'%*s'\n", (int)len, bigbuffer);
-    print_hex((const char *)bigbuffer, len);
+    printf("reference parsing   :'%*s'\n", (int)len, big_buffer);
+    print_hex((const char *)big_buffer, len);
     printf("\n");
 
-    print_cmp_hex((const char *)parsed_begin, bigbuffer, thislen);
+    print_cmp_hex((const char *)parsed_begin, big_buffer, this_len);
 
     probable_bug = true;
   }
@@ -295,12 +295,12 @@ void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
 /**
  * Does the file filename ends with the given extension.
  */
-static bool hasExtension(const char *filename, const char *extension) {
+static bool has_extension(const char *filename, const char *extension) {
   const char *ext = strrchr(filename, '.');
   return (ext && !strcmp(ext, extension));
 }
 
-bool startsWith(const char *pre, const char *str) {
+bool starts_with(const char *pre, const char *str) {
   size_t lenpre = strlen(pre), lenstr = strlen(str);
   return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
 }
@@ -323,7 +323,7 @@ bool validate(const char *dirname) {
   bool needsep = (strlen(dirname) > 1) && (dirname[strlen(dirname) - 1] != '/');
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
-    if (hasExtension(name, extension)) {
+    if (has_extension(name, extension)) {
       size_t filelen = strlen(name);
       fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
@@ -341,13 +341,13 @@ bool validate(const char *dirname) {
         return EXIT_FAILURE;
       }
       simdjson::ParsedJson pj;
-      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      bool allocok = pj.allocate_capacity(p.size(), 1024);
       if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
-      bigbuffer = (char *)malloc(p.size());
-      if (bigbuffer == NULL) {
+      big_buffer = (char *)malloc(p.size());
+      if (big_buffer == NULL) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;
       }
@@ -356,7 +356,7 @@ bool validate(const char *dirname) {
       total_string_length = 0;
       empty_string = 0;
       bool isok = json_parse(p, pj);
-      free(bigbuffer);
+      free(big_buffer);
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "
                "empty strings: %10zu "

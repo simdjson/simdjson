@@ -8,9 +8,7 @@
 #include <sstream>
 #include <string>
 
-
 #include "simdjson/padded_string.h"
-
 
 namespace simdjson {
 
@@ -20,15 +18,15 @@ namespace simdjson {
 // first element of the pair is a string (null terminated)
 // whereas the second element is the length.
 // caller is responsible to free (aligned_free((void*)result.data())))
-// 
+//
 // throws an exception if the file cannot be opened, use try/catch
 //      try {
 //        p = get_corpus(filename);
-//      } catch (const std::exception& e) { 
+//      } catch (const std::exception& e) {
 //        aligned_free((void*)p.data());
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-padded_string get_corpus(const std::string& filename);
-}
+padded_string get_corpus(const std::string &filename);
+} // namespace simdjson
 
 #endif

@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 #define SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 
+#include "simdjson/portability.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "simdjson/portability.h"
 #ifdef IS_X86_64
 
 /*
@@ -29,16 +29,16 @@
 /********** sse code **********/
 TARGET_WESTMERE
 
-namespace simdjson{
+namespace simdjson {
 // all byte values must be no larger than 0xF4
-static inline void checkSmallerThan0xF4(__m128i current_bytes,
-                                        __m128i *has_error) {
+static inline void check_smaller_than_0xF4(__m128i current_bytes,
+                                           __m128i *has_error) {
   // unsigned, saturates to 0 below max
   *has_error = _mm_or_si128(*has_error,
                             _mm_subs_epu8(current_bytes, _mm_set1_epi8(0xF4)));
 }
 
-static inline __m128i continuationLengths(__m128i high_nibbles) {
+static inline __m128i continuation_lengths(__m128i high_nibbles) {
   return _mm_shuffle_epi8(
       _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
                     0, 0, 0, 0,             // 10xx (continuation)
@@ -48,8 +48,8 @@ static inline __m128i continuationLengths(__m128i high_nibbles) {
       high_nibbles);
 }
 
-static inline __m128i carryContinuations(__m128i initial_lengths,
-                                         __m128i previous_carries) {
+static inline __m128i carry_continuations(__m128i initial_lengths,
+                                          __m128i previous_carries) {
 
   __m128i right1 =
       _mm_subs_epu8(_mm_alignr_epi8(initial_lengths, previous_carries, 16 - 1),
@@ -61,8 +61,8 @@ static inline __m128i carryContinuations(__m128i initial_lengths,
   return _mm_add_epi8(sum, right2);
 }
 
-static inline void checkContinuations(__m128i initial_lengths, __m128i carries,
-                                      __m128i *has_error) {
+static inline void check_continuations(__m128i initial_lengths, __m128i carries,
+                                       __m128i *has_error) {
 
   // overlap || underlap
   // carry > length && length > 0 || !(carry > length) && !(length > 0)
@@ -77,9 +77,9 @@ static inline void checkContinuations(__m128i initial_lengths, __m128i carries,
 // when 0xED is found, next byte must be no larger than 0x9F
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
-static inline void checkFirstContinuationMax(__m128i current_bytes,
-                                             __m128i off1_current_bytes,
-                                             __m128i *has_error) {
+static inline void check_first_continuation_max(__m128i current_bytes,
+                                                __m128i off1_current_bytes,
+                                                __m128i *has_error) {
   __m128i maskED = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xED));
   __m128i maskF4 = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xF4));
 
@@ -97,9 +97,9 @@ static inline void checkFirstContinuationMax(__m128i current_bytes,
 // E       => < E1 && < A0
 // F       => < F1 && < 90
 // else      false && false
-static inline void checkOverlong(__m128i current_bytes,
-                                 __m128i off1_current_bytes, __m128i hibits,
-                                 __m128i previous_hibits, __m128i *has_error) {
+static inline void check_overlong(__m128i current_bytes,
+                                  __m128i off1_current_bytes, __m128i hibits,
+                                  __m128i previous_hibits, __m128i *has_error) {
   __m128i off1_hibits = _mm_alignr_epi8(hibits, previous_hibits, 16 - 1);
   __m128i initial_mins = _mm_shuffle_epi8(
       _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
@@ -124,14 +124,14 @@ static inline void checkOverlong(__m128i current_bytes,
 }
 
 struct processed_utf_bytes {
-  __m128i rawbytes;
+  __m128i raw_bytes;
   __m128i high_nibbles;
   __m128i carried_continuations;
 };
 
 static inline void count_nibbles(__m128i bytes,
                                  struct processed_utf_bytes *answer) {
-  answer->rawbytes = bytes;
+  answer->raw_bytes = bytes;
   answer->high_nibbles =
       _mm_and_si128(_mm_srli_epi16(bytes, 4), _mm_set1_epi8(0x0F));
 }
@@ -139,31 +139,30 @@ static inline void count_nibbles(__m128i bytes,
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
 static struct processed_utf_bytes
-checkUTF8Bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
-               __m128i *has_error) {
+check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
+                 __m128i *has_error) {
   struct processed_utf_bytes pb;
   count_nibbles(current_bytes, &pb);
 
-  checkSmallerThan0xF4(current_bytes, has_error);
+  check_smaller_than_0xF4(current_bytes, has_error);
 
-  __m128i initial_lengths = continuationLengths(pb.high_nibbles);
+  __m128i initial_lengths = continuation_lengths(pb.high_nibbles);
 
   pb.carried_continuations =
-      carryContinuations(initial_lengths, previous->carried_continuations);
+      carry_continuations(initial_lengths, previous->carried_continuations);
 
-  checkContinuations(initial_lengths, pb.carried_continuations, has_error);
+  check_continuations(initial_lengths, pb.carried_continuations, has_error);
 
   __m128i off1_current_bytes =
-      _mm_alignr_epi8(pb.rawbytes, previous->rawbytes, 16 - 1);
-  checkFirstContinuationMax(current_bytes, off1_current_bytes, has_error);
+      _mm_alignr_epi8(pb.raw_bytes, previous->raw_bytes, 16 - 1);
+  check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
 
-  checkOverlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                previous->high_nibbles, has_error);
+  check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
+                 previous->high_nibbles, has_error);
   return pb;
 }
-}//simdjson
+} // namespace simdjson
 UNTARGET_REGION // westmere
-
 
 #endif // IS_X86_64
 

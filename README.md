@@ -67,7 +67,7 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 
 ## Code usage and example
 
-The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::iterator pjh(pj)`, see 'Navigating the parsed document').
+The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::Iterator pjh(pj)`, see 'Navigating the parsed document').
 
 ```C
 #include "simdjson/jsonparser.h"
@@ -80,12 +80,12 @@ const char * filename = ... //
 // use whatever means you want to get a string (UTF-8) of your JSON document
 padded_string p = get_corpus(filename); 
 ParsedJson pj;
-pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
+pj.allocate_capacity(p.size()); // allocate memory for parsing up to p.size() bytes
 const int res = json_parse(p, pj); // do the parsing, return 0 on success
 // parsing is done!
 if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
 }
 // the ParsedJson document can be used here
 // pj can be reused with other json_parse calls.
@@ -103,9 +103,9 @@ using namespace simdjson;
 const char * filename = ... //
 padded_string p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
-if( ! pj.isValid() ) {
+if( ! pj.is_valid() ) {
     // something went wrong
-    std::cout << pj.getErrorMsg() << std::endl;
+    std::cout << pj.get_error_message() << std::endl;
 }
 ```
 
@@ -119,13 +119,13 @@ using namespace simdjson;
 /...
 std::string mystring = ... //
 ParsedJson pj;
-pj.allocateCapacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
+pj.allocate_capacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
 // std::string may not overallocate so a copy will be needed
 const int res = json_parse(mystring, pj); // do the parsing, return 0 on success
 // parsing is done!
 if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
 }
 // pj can be reused with other json_parse calls.
 ```
@@ -141,9 +141,9 @@ using namespace simdjson;
 std::string mystring = ... //
 // std::string may not overallocate so a copy will be needed
 ParsedJson pj = build_parsed_json(mystring); // do the parsing
-if( ! pj.isValid() ) {
+if( ! pj.is_valid() ) {
     // something went wrong
-    std::cout << pj.getErrorMsg() << std::endl;
+    std::cout << pj.get_error_message() << std::endl;
 }
 ```
 
@@ -164,9 +164,9 @@ int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
   ParsedJson pj = build_parsed_json(p); // do the parsing
-  if( ! pj.isValid() ) {
+  if( ! pj.is_valid() ) {
     std::cout << "not valid" << std::endl;
-    std::cout << pj.getErrorMsg() << std::endl;
+    std::cout << pj.get_error_message() << std::endl;
   } else {
     std::cout << "valid" << std::endl;
   }
@@ -370,8 +370,8 @@ In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, p
 Here is a code sample to dump back the parsed JSON to a string:
 
 ```c
-    ParsedJson::iterator pjh(pj);
-    if (!pjh.isOk()) {
+    ParsedJson::Iterator pjh(pj);
+    if (!pjh.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
     }
@@ -379,7 +379,7 @@ Here is a code sample to dump back the parsed JSON to a string:
     //
     // where compute_dump is :
 
-void compute_dump(ParsedJson::iterator &pjh) {
+void compute_dump(ParsedJson::Iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -417,12 +417,12 @@ void compute_dump(ParsedJson::iterator &pjh) {
 The following function will find all user.id integers:
 
 ```C
-void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
+void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::Iterator &i) {
    while(i.move_forward()) {
      if(i.get_scope_type() == '{') {
-       bool founduser = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
+       bool found_user = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
        i.move_to_value();
-       if(founduser) {
+       if(found_user) {
           if(i.is_object() && i.move_to_key("id",2)) {
             if (i.is_integer()) {
               answer.push_back(i.get_integer());
