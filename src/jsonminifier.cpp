@@ -38,13 +38,13 @@ static uint8_t jump_table[256 * 3] = {
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
 };
 
-size_t jsonminify(const unsigned char *bytes, size_t howmany,
+size_t json_minify(const unsigned char *bytes, size_t how_many,
                   unsigned char *out) {
   size_t i = 0, pos = 0;
   uint8_t quote = 0;
   uint8_t nonescape = 1;
 
-  while (i < howmany) {
+  while (i < how_many) {
     unsigned char c = bytes[i];
     uint8_t *meta = jump_table + 3 * c;
 
@@ -97,7 +97,7 @@ static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
 // take input from buf and remove useless whitespace, input and output can be
 // the same, result is null terminated, return the string length (minus the null
 // termination)
-size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
+size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
   // Useful constant masks
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
@@ -107,9 +107,9 @@ size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out) {
   uint64_t prev_iter_inside_quote = 0ULL; // either all zeros or all ones
   size_t idx = 0;
   if (len >= 64) {
-    size_t avxlen = len - 63;
+    size_t avx_len = len - 63;
 
-    for (; idx < avxlen; idx += 64) {
+    for (; idx < avx_len; idx += 64) {
       __m256i input_lo =
           _mm256_loadu_si256(reinterpret_cast<const __m256i *>(buf + idx + 0));
       __m256i input_hi =

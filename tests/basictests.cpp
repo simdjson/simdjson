@@ -40,7 +40,7 @@ bool skyprophet_test() {
       maxsize = s.size();
   }
   simdjson::ParsedJson pj;
-  if (!pj.allocateCapacity(maxsize)) {
+  if (!pj.allocate_capacity(maxsize)) {
     printf("allocation failure in skyprophet_test\n");
     return false;
   }
@@ -52,12 +52,12 @@ bool skyprophet_test() {
     }
     counter++;
     auto ok1 = json_parse(rec.c_str(), rec.length(), pj);
-    if (ok1 != 0 || !pj.isValid()) {
+    if (ok1 != 0 || !pj.is_valid()) {
       printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
       return false;
     }
     auto ok2 = json_parse(rec, pj);
-    if (ok2 != 0 || !pj.isValid()) {
+    if (ok2 != 0 || !pj.is_valid()) {
       printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
       return false;
     }

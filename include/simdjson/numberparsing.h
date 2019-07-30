@@ -7,9 +7,9 @@
 #include "simdjson/portability.h"
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
-void foundInvalidNumber(const uint8_t *buf);
-void foundInteger(int64_t result, const uint8_t *buf);
-void foundFloat(double result, const uint8_t *buf);
+void found_invalid_number(const uint8_t *buf);
+void found_integer(int64_t result, const uint8_t *buf);
+void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
@@ -221,90 +221,90 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   }
   if ('.' == *p) {
     ++p;
-    int fractionalweight = 308;
+    int fractional_weight = 308;
     if (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
 
-      fractionalweight--;
+      fractional_weight--;
       i = i +
-          digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
+          digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight] : 0);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractionalweight--;
+      fractional_weight--;
       i = i +
-          digit * (fractionalweight >= 0 ? power_of_ten[fractionalweight] : 0);
+          digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight] : 0);
     }
   }
   if (('e' == *p) || ('E' == *p)) {
     ++p;
-    bool negexp = false;
+    bool neg_exp = false;
     if ('-' == *p) {
-      negexp = true;
+      neg_exp = true;
       ++p;
     } else if ('+' == *p) {
       ++p;
     }
     if (!is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
     unsigned char digit = *p - '0';
-    int64_t expnumber = digit; // exponential part
+    int64_t exp_number = digit; // exponential part
     p++;
     if (is_integer(*p)) {
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
     while (is_integer(*p)) {
-      if (expnumber > 0x100000000) { // we need to check for overflows
+      if (exp_number > 0x100000000) { // we need to check for overflows
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+        found_invalid_number(buf + offset);
 #endif
         return false;
       }
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
-    if (unlikely(expnumber > 308)) {
+    if (unlikely(exp_number > 308)) {
       // this path is unlikely
-      if (negexp) {
+      if (neg_exp) {
         // We either have zero or a subnormal.
         // We expect this to be uncommon so we go through a slow path.
-        i = subnormal_power10(i, -expnumber);
+        i = subnormal_power10(i, -exp_number);
       } else {
 // We know for sure that we have a number that is too large,
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+        found_invalid_number(buf + offset);
 #endif
         return false;
       }
     } else {
-      int exponent = (negexp ? -expnumber : expnumber);
-      // we have that expnumber is [0,308] so that
+      int exponent = (neg_exp ? -exp_number : exp_number);
+      // we have that exp_number is [0,308] so that
       // exponent is [-308,308] so that
       // 308 + exponent is in [0, 2 * 308]
       i *= power_of_ten[308 + exponent];
@@ -316,7 +316,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   double d = negative ? -i : i;
   pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-  foundFloat(d, buf + offset);
+  found_float(d, buf + offset);
 #endif
   return is_structural_or_whitespace(*p);
 }
@@ -354,13 +354,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       digit = *p - '0';
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+        found_invalid_number(buf + offset);
 #endif
         return false; // overflow
       }
       if (add_overflow(i, digit, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+        found_invalid_number(buf + offset);
 #endif
         return false; // overflow
       }
@@ -371,7 +371,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
     if (i > 0x8000000000000000) {
 // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false; // overflow
     }
@@ -379,7 +379,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
     if (i >= 0x8000000000000000) {
 // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false; // overflow
     }
@@ -388,7 +388,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       negative ? -static_cast<int64_t>(i) : static_cast<int64_t>(i);
   pj.write_tape_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-  foundInteger(signed_answer, buf + offset);
+  found_integer(signed_answer, buf + offset);
 #endif
   return is_structural_or_whitespace(*p);
 }
@@ -417,19 +417,19 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     negative = true;
     if (!is_integer(*p)) { // a negative sign must be followed by an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
   }
-  const char *const startdigits = p;
+  const char *const start_digits = p;
 
   uint64_t i;      // an unsigned int avoids signed overflows (which are bad)
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
@@ -437,7 +437,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
   } else {
     if (!(is_integer(*p))) { // must start with an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
@@ -463,7 +463,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     // z that fits in 53 bits, then we will be able to convert back the
     // the integer into a float in a lossless manner.
     ++p;
-    const char *const firstafterperiod = p;
+    const char *const first_after_period = p;
     if (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
@@ -472,7 +472,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       // we will handle the overflow later
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
@@ -490,84 +490,84 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
     }
-    exponent = firstafterperiod - p;
+    exponent = first_after_period - p;
   }
-  int digitcount = p - startdigits - 1; // used later to guard against overflows
-  int64_t expnumber = 0;                // exponential part
+  int digit_count = p - start_digits - 1; // used later to guard against overflows
+  int64_t exp_number = 0;                // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    bool negexp = false;
+    bool neg_exp = false;
     if ('-' == *p) {
-      negexp = true;
+      neg_exp = true;
       ++p;
     } else if ('+' == *p) {
       ++p;
     }
     if (!is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      foundInvalidNumber(buf + offset);
+      found_invalid_number(buf + offset);
 #endif
       return false;
     }
     unsigned char digit = *p - '0';
-    expnumber = digit;
+    exp_number = digit;
     p++;
     if (is_integer(*p)) {
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
     while (is_integer(*p)) {
-      if (expnumber > 0x100000000) { // we need to check for overflows
+      if (exp_number > 0x100000000) { // we need to check for overflows
                                      // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        foundInvalidNumber(buf + offset);
+        found_invalid_number(buf + offset);
 #endif
         return false;
       }
       digit = *p - '0';
-      expnumber = 10 * expnumber + digit;
+      exp_number = 10 * exp_number + digit;
       ++p;
     }
-    exponent += (negexp ? -expnumber : expnumber);
+    exponent += (neg_exp ? -exp_number : exp_number);
   }
   if (is_float) {
-    uint64_t powerindex = 308 + exponent;
-    if (unlikely((digitcount >= 19))) { // this is uncommon
+    uint64_t power_index = 308 + exponent;
+    if (unlikely((digit_count >= 19))) { // this is uncommon
       // It is possible that the integer had an overflow.
       // We have to handle the case where we have 0.0000somenumber.
-      const char *start = startdigits;
+      const char *start = start_digits;
       while ((*start == '0') || (*start == '.')) {
         start++;
       }
-      digitcount -= (start - startdigits);
-      if (digitcount >= 19) {
+      digit_count -= (start - start_digits);
+      if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
         return parse_float(buf, pj, offset, found_minus);
       }
     }
-    if (unlikely((powerindex > 2 * 308))) { // this is uncommon!!!
+    if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
       return parse_float(buf, pj, offset, found_minus);
     }
-    double factor = power_of_ten[powerindex];
+    double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
     pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    foundFloat(d, buf + offset);
+    found_float(d, buf + offset);
 #endif
   } else {
-    if (unlikely(digitcount >= 18)) { // this is uncommon!!!
+    if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
       return parse_large_integer(buf, pj, offset, found_minus);
@@ -575,7 +575,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     i = negative ? 0 - i : i;
     pj.write_tape_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    foundInteger(i, buf + offset);
+    found_integer(i, buf + offset);
 #endif
   }
   return is_structural_or_whitespace(*p);

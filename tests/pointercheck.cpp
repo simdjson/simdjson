@@ -8,10 +8,10 @@ int main() {
   std::string json =
       "{\"/~01abc\": [0, {\"\\\\\\\" 0\": [\"value0\", \"value1\"]}]}";
   simdjson::ParsedJson pj;
-  assert(pj.allocateCapacity(json.length()));
+  assert(pj.allocate_capacity(json.length()));
   simdjson::json_parse(json.c_str(), json.length(), pj);
-  assert(pj.isValid());
-  simdjson::ParsedJson::iterator it(pj);
+  assert(pj.is_valid());
+  simdjson::ParsedJson::Iterator it(pj);
 
   // valid JSON String Representation pointer
   std::string pointer1("/~1~001abc/1/\\\\\\\" 0/0");

@@ -10,7 +10,7 @@
 
 TARGET_WESTMERE
 namespace simdjson {
-template <> struct simd_input<architecture::westmere> {
+template <> struct simd_input<Architecture::WESTMERE> {
   __m128i v0;
   __m128i v1;
   __m128i v2;
@@ -18,9 +18,9 @@ template <> struct simd_input<architecture::westmere> {
 };
 
 template <>
-really_inline simd_input<architecture::westmere>
-fill_input<architecture::westmere>(const uint8_t *ptr) {
-  struct simd_input<architecture::westmere> in;
+really_inline simd_input<Architecture::WESTMERE>
+fill_input<Architecture::WESTMERE>(const uint8_t *ptr) {
+  struct simd_input<Architecture::WESTMERE> in;
   in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
   in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
   in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
@@ -30,26 +30,26 @@ fill_input<architecture::westmere>(const uint8_t *ptr) {
 
 template <>
 really_inline uint64_t
-compute_quote_mask<architecture::westmere>(uint64_t quote_bits) {
+compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
 }
 
-template <> struct utf8_checking_state<architecture::westmere> {
+template <> struct utf8_checking_state<Architecture::WESTMERE> {
   __m128i has_error = _mm_setzero_si128();
   processed_utf_bytes previous{
-      _mm_setzero_si128(), // rawbytes
+      _mm_setzero_si128(), // raw_bytes
       _mm_setzero_si128(), // high_nibbles
       _mm_setzero_si128()  // carried_continuations
   };
 };
 
 template <>
-really_inline void check_utf8<architecture::westmere>(
-    simd_input<architecture::westmere> in,
-    utf8_checking_state<architecture::westmere> &state) {
-  __m128i highbit = _mm_set1_epi8(0x80);
-  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), highbit)) == 1) {
+really_inline void check_utf8<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in,
+    utf8_checking_state<Architecture::WESTMERE> &state) {
+  __m128i high_bit = _mm_set1_epi8(0x80);
+  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error =
         _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
@@ -59,12 +59,12 @@ really_inline void check_utf8<architecture::westmere>(
   } else {
     // it is not ascii so we have to do heavy work
     state.previous =
-        checkUTF8Bytes(in.v0, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
     state.previous =
-        checkUTF8Bytes(in.v1, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
   }
 
-  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), highbit)) == 1) {
+  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error =
         _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
@@ -74,23 +74,23 @@ really_inline void check_utf8<architecture::westmere>(
   } else {
     // it is not ascii so we have to do heavy work
     state.previous =
-        checkUTF8Bytes(in.v2, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
     state.previous =
-        checkUTF8Bytes(in.v3, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
 
 template <>
-really_inline errorValues check_utf8_errors<architecture::westmere>(
-    utf8_checking_state<architecture::westmere> &state) {
+really_inline ErrorValues check_utf8_errors<Architecture::WESTMERE>(
+    utf8_checking_state<Architecture::WESTMERE> &state) {
   return _mm_testz_si128(state.has_error, state.has_error) == 0
              ? simdjson::UTF8_ERROR
              : simdjson::SUCCESS;
 }
 
 template <>
-really_inline uint64_t cmp_mask_against_input<architecture::westmere>(
-    simd_input<architecture::westmere> in, uint8_t m) {
+really_inline uint64_t cmp_mask_against_input<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in, uint8_t m) {
   const __m128i mask = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
   uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
@@ -104,8 +104,8 @@ really_inline uint64_t cmp_mask_against_input<architecture::westmere>(
 }
 
 template <>
-really_inline uint64_t unsigned_lteq_against_input<architecture::westmere>(
-    simd_input<architecture::westmere> in, uint8_t m) {
+really_inline uint64_t unsigned_lteq_against_input<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in, uint8_t m) {
   const __m128i maxval = _mm_set1_epi8(m);
   __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v0), maxval);
   uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
@@ -119,25 +119,25 @@ really_inline uint64_t unsigned_lteq_against_input<architecture::westmere>(
 }
 
 template <>
-really_inline uint64_t find_odd_backslash_sequences<architecture::westmere>(
-    simd_input<architecture::westmere> in,
+really_inline uint64_t find_odd_backslash_sequences<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in,
     uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(architecture::westmere, in,
+  FIND_ODD_BACKSLASH_SEQUENCES(Architecture::WESTMERE, in,
                                prev_iter_ends_odd_backslash);
 }
 
 template <>
-really_inline uint64_t find_quote_mask_and_bits<architecture::westmere>(
-    simd_input<architecture::westmere> in, uint64_t odd_ends,
+really_inline uint64_t find_quote_mask_and_bits<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
     uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(architecture::westmere, in, odd_ends,
+  FIND_QUOTE_MASK_AND_BITS(Architecture::WESTMERE, in, odd_ends,
                            prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template <>
-really_inline void find_whitespace_and_structurals<architecture::westmere>(
-    simd_input<architecture::westmere> in, uint64_t &whitespace,
+really_inline void find_whitespace_and_structurals<Architecture::WESTMERE>(
+    simd_input<Architecture::WESTMERE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const __m128i structural_table =
       _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);

@@ -50,7 +50,7 @@ size_t invalid_count;
 // strings that start with these should not be parsed as numbers
 const char *really_bad[] = {"013}", "0x14", "0e]", "0e+]", "0e+-1]"};
 
-bool startsWith(const char *pre, const char *str) {
+bool starts_with(const char *pre, const char *str) {
   size_t lenpre = strlen(pre);
   return strncmp(pre, str, lenpre) == 0;
 }
@@ -59,19 +59,19 @@ bool is_in_bad_list(const char *buf) {
   if (buf[0] != '0')
     return false;
   for (size_t i = 0; i < sizeof(really_bad) / sizeof(really_bad[0]); i++)
-    if (startsWith(really_bad[i], buf))
+    if (starts_with(really_bad[i], buf))
       return true;
   return false;
 }
 
-void foundInvalidNumber(const uint8_t *buf) {
+void found_invalid_number(const uint8_t *buf) {
   invalid_count++;
   char *endptr;
   double expected = strtod((const char *)buf, &endptr);
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
       printf(
-          "Warning: foundInvalidNumber %.32s whereas strtod parses it to %f, ",
+          "Warning: found_invalid_number %.32s whereas strtod parses it to %f, ",
           buf, expected);
       printf(" while parsing %s \n", fullpath);
       parse_error |= PARSE_WARNING;
@@ -79,7 +79,7 @@ void foundInvalidNumber(const uint8_t *buf) {
   }
 }
 
-void foundInteger(int64_t result, const uint8_t *buf) {
+void found_integer(int64_t result, const uint8_t *buf) {
   int_count++;
   char *endptr;
   long long expected = strtoll((const char *)buf, &endptr, 10);
@@ -90,7 +90,7 @@ void foundInteger(int64_t result, const uint8_t *buf) {
   }
 }
 
-void foundFloat(double result, const uint8_t *buf) {
+void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;
   double expected = strtod((const char *)buf, &endptr);
@@ -127,7 +127,7 @@ void foundFloat(double result, const uint8_t *buf) {
 /**
  * Does the file filename ends with the given extension.
  */
-static bool hasExtension(const char *filename, const char *extension) {
+static bool has_extension(const char *filename, const char *extension) {
   const char *ext = strrchr(filename, '.');
   return (ext && !strcmp(ext, extension));
 }
@@ -150,7 +150,7 @@ bool validate(const char *dirname) {
   bool needsep = (strlen(dirname) > 1) && (dirname[strlen(dirname) - 1] != '/');
   for (int i = 0; i < c; i++) {
     const char *name = entry_list[i]->d_name;
-    if (hasExtension(name, extension)) {
+    if (has_extension(name, extension)) {
       size_t filelen = strlen(name);
       fullpath = (char *)malloc(dirlen + filelen + 1 + 1);
       strcpy(fullpath, dirname);
@@ -169,7 +169,7 @@ bool validate(const char *dirname) {
       }
       // terrible hack but just to get it working
       simdjson::ParsedJson pj;
-      bool allocok = pj.allocateCapacity(p.size(), 1024);
+      bool allocok = pj.allocate_capacity(p.size(), 1024);
       if (!allocok) {
         std::cerr << "can't allocate memory" << std::endl;
         return false;

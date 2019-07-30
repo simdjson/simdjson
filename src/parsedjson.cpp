@@ -9,13 +9,13 @@ ParsedJson::ParsedJson()
 ParsedJson::~ParsedJson() { deallocate(); }
 
 ParsedJson::ParsedJson(ParsedJson &&p)
-    : bytecapacity(p.bytecapacity), depthcapacity(p.depthcapacity),
-      tapecapacity(p.tapecapacity), stringcapacity(p.stringcapacity),
+    : byte_capacity(p.byte_capacity), depth_capacity(p.depth_capacity),
+      tape_capacity(p.tape_capacity), string_capacity(p.string_capacity),
       current_loc(p.current_loc), n_structural_indexes(p.n_structural_indexes),
       structural_indexes(p.structural_indexes), tape(p.tape),
       containing_scope_offset(p.containing_scope_offset),
       ret_address(p.ret_address), string_buf(p.string_buf),
-      current_string_buf_loc(p.current_string_buf_loc), isvalid(p.isvalid) {
+      current_string_buf_loc(p.current_string_buf_loc), valid(p.valid) {
   p.structural_indexes = nullptr;
   p.tape = nullptr;
   p.containing_scope_offset = nullptr;
@@ -25,9 +25,9 @@ ParsedJson::ParsedJson(ParsedJson &&p)
 }
 
 WARN_UNUSED
-bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
-  if (maxdepth <= 0) {
-    maxdepth = 1; // don't let the user allocate nothing
+bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
+  if (max_depth <= 0) {
+    max_depth = 1; // don't let the user allocate nothing
   }
   if (len <= 0) {
     len = 64; // allocating 0 bytes is wasteful.
@@ -35,28 +35,28 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
   if (len > SIMDJSON_MAXSIZE_BYTES) {
     return false;
   }
-  if ((len <= bytecapacity) && (depthcapacity < maxdepth)) {
+  if ((len <= byte_capacity) && (depth_capacity < max_depth)) {
     return true;
   }
   deallocate();
-  isvalid = false;
-  bytecapacity = 0; // will only set it to len after allocations are a success
+  valid = false;
+  byte_capacity = 0; // will only set it to len after allocations are a success
   n_structural_indexes = 0;
   uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
   structural_indexes = new (std::nothrow) uint32_t[max_structures];
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of len + 1
-  size_t localtapecapacity = ROUNDUP_N(len + 1, 64);
+  size_t local_tape_capacity = ROUNDUP_N(len + 1, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
-  size_t localstringcapacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  string_buf = new (std::nothrow) uint8_t[localstringcapacity];
-  tape = new (std::nothrow) uint64_t[localtapecapacity];
-  containing_scope_offset = new (std::nothrow) uint32_t[maxdepth];
+  size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
+  string_buf = new (std::nothrow) uint8_t[local_string_capacity];
+  tape = new (std::nothrow) uint64_t[local_tape_capacity];
+  containing_scope_offset = new (std::nothrow) uint32_t[max_depth];
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-  ret_address = new (std::nothrow) void *[maxdepth];
+  ret_address = new (std::nothrow) void *[max_depth];
 #else
-  ret_address = new (std::nothrow) char[maxdepth];
+  ret_address = new (std::nothrow) char[max_depth];
 #endif
   if ((string_buf == nullptr) || (tape == nullptr) ||
       (containing_scope_offset == nullptr) || (ret_address == nullptr) ||
@@ -73,88 +73,88 @@ bool ParsedJson::allocateCapacity(size_t len, size_t maxdepth) {
   /*
   // We do not need to initialize this content for parsing, though we could
   // need to initialize it for safety.
-  memset(string_buf, 0 , localstringcapacity);
+  memset(string_buf, 0 , local_string_capacity);
   memset(structural_indexes, 0, max_structures * sizeof(uint32_t));
-  memset(tape, 0, localtapecapacity * sizeof(uint64_t));
+  memset(tape, 0, local_tape_capacity * sizeof(uint64_t));
   */
-  bytecapacity = len;
-  depthcapacity = maxdepth;
-  tapecapacity = localtapecapacity;
-  stringcapacity = localstringcapacity;
+  byte_capacity = len;
+  depth_capacity = max_depth;
+  tape_capacity = local_tape_capacity;
+  string_capacity = local_string_capacity;
   return true;
 }
 
-bool ParsedJson::isValid() const { return isvalid; }
+bool ParsedJson::is_valid() const { return valid; }
 
-int ParsedJson::getErrorCode() const { return errorcode; }
+int ParsedJson::get_error_code() const { return error_code; }
 
-std::string ParsedJson::getErrorMsg() const { return errorMsg(errorcode); }
+std::string ParsedJson::get_error_message() const { return error_message(error_code); }
 
 void ParsedJson::deallocate() {
-  bytecapacity = 0;
-  depthcapacity = 0;
-  tapecapacity = 0;
-  stringcapacity = 0;
+  byte_capacity = 0;
+  depth_capacity = 0;
+  tape_capacity = 0;
+  string_capacity = 0;
   delete[] ret_address;
   delete[] containing_scope_offset;
   delete[] tape;
   delete[] string_buf;
   delete[] structural_indexes;
-  isvalid = false;
+  valid = false;
 }
 
 void ParsedJson::init() {
   current_string_buf_loc = string_buf;
   current_loc = 0;
-  isvalid = false;
+  valid = false;
 }
 
 WARN_UNUSED
-bool ParsedJson::printjson(std::ostream &os) {
-  if (!isvalid) {
+bool ParsedJson::print_json(std::ostream &os) {
+  if (!valid) {
     return false;
   }
   uint32_t string_length;
-  size_t tapeidx = 0;
-  uint64_t tape_val = tape[tapeidx];
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
   uint8_t type = (tape_val >> 56);
-  size_t howmany = 0;
+  size_t how_many = 0;
   if (type == 'r') {
-    howmany = tape_val & JSONVALUEMASK;
+    how_many = tape_val & JSON_VALUE_MASK;
   } else {
     fprintf(stderr, "Error: no starting root node?");
     return false;
   }
-  if (howmany > tapecapacity) {
+  if (how_many > tape_capacity) {
     fprintf(
         stderr,
         "We may be exceeding the tape capacity. Is this a valid document?\n");
     return false;
   }
-  tapeidx++;
-  bool *inobject = new bool[depthcapacity];
-  auto *inobjectidx = new size_t[depthcapacity];
+  tape_idx++;
+  bool *in_object = new bool[depth_capacity];
+  auto *in_object_idx = new size_t[depth_capacity];
   int depth = 1; // only root at level 0
-  inobjectidx[depth] = 0;
-  inobject[depth] = false;
-  for (; tapeidx < howmany; tapeidx++) {
-    tape_val = tape[tapeidx];
-    uint64_t payload = tape_val & JSONVALUEMASK;
+  in_object_idx[depth] = 0;
+  in_object[depth] = false;
+  for (; tape_idx < how_many; tape_idx++) {
+    tape_val = tape[tape_idx];
+    uint64_t payload = tape_val & JSON_VALUE_MASK;
     type = (tape_val >> 56);
-    if (!inobject[depth]) {
-      if ((inobjectidx[depth] > 0) && (type != ']')) {
+    if (!in_object[depth]) {
+      if ((in_object_idx[depth] > 0) && (type != ']')) {
         os << ",";
       }
-      inobjectidx[depth]++;
-    } else { // if (inobject) {
-      if ((inobjectidx[depth] > 0) && ((inobjectidx[depth] & 1) == 0) &&
+      in_object_idx[depth]++;
+    } else { // if (in_object) {
+      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
           (type != '}')) {
         os << ",";
       }
-      if (((inobjectidx[depth] & 1) == 1)) {
+      if (((in_object_idx[depth] & 1) == 1)) {
         os << ":";
       }
-      inobjectidx[depth]++;
+      in_object_idx[depth]++;
     }
     switch (type) {
     case '"': // we have a string
@@ -166,21 +166,21 @@ bool ParsedJson::printjson(std::ostream &os) {
       os << '"';
       break;
     case 'l': // we have a long int
-      if (tapeidx + 1 >= howmany) {
-        delete[] inobject;
-        delete[] inobjectidx;
+      if (tape_idx + 1 >= how_many) {
+        delete[] in_object;
+        delete[] in_object_idx;
         return false;
       }
-      os << static_cast<int64_t>(tape[++tapeidx]);
+      os << static_cast<int64_t>(tape[++tape_idx]);
       break;
     case 'd': // we have a double
-      if (tapeidx + 1 >= howmany) {
-        delete[] inobject;
-        delete[] inobjectidx;
+      if (tape_idx + 1 >= how_many) {
+        delete[] in_object;
+        delete[] in_object_idx;
         return false;
       }
       double answer;
-      memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
       os << answer;
       break;
     case 'n': // we have a null
@@ -195,8 +195,8 @@ bool ParsedJson::printjson(std::ostream &os) {
     case '{': // we have an object
       os << '{';
       depth++;
-      inobject[depth] = true;
-      inobjectidx[depth] = 0;
+      in_object[depth] = true;
+      in_object_idx[depth] = 0;
       break;
     case '}': // we end an object
       depth--;
@@ -205,8 +205,8 @@ bool ParsedJson::printjson(std::ostream &os) {
     case '[': // we start an array
       os << '[';
       depth++;
-      inobject[depth] = false;
-      inobjectidx[depth] = 0;
+      in_object[depth] = false;
+      in_object_idx[depth] = 0;
       break;
     case ']': // we end an array
       depth--;
@@ -214,45 +214,45 @@ bool ParsedJson::printjson(std::ostream &os) {
       break;
     case 'r': // we start and end with the root node
       fprintf(stderr, "should we be hitting the root node?\n");
-      delete[] inobject;
-      delete[] inobjectidx;
+      delete[] in_object;
+      delete[] in_object_idx;
       return false;
     default:
       fprintf(stderr, "bug %c\n", type);
-      delete[] inobject;
-      delete[] inobjectidx;
+      delete[] in_object;
+      delete[] in_object_idx;
       return false;
     }
   }
-  delete[] inobject;
-  delete[] inobjectidx;
+  delete[] in_object;
+  delete[] in_object_idx;
   return true;
 }
 
 WARN_UNUSED
 bool ParsedJson::dump_raw_tape(std::ostream &os) {
-  if (!isvalid) {
+  if (!valid) {
     return false;
   }
   uint32_t string_length;
-  size_t tapeidx = 0;
-  uint64_t tape_val = tape[tapeidx];
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
   uint8_t type = (tape_val >> 56);
-  os << tapeidx << " : " << type;
-  tapeidx++;
-  size_t howmany = 0;
+  os << tape_idx << " : " << type;
+  tape_idx++;
+  size_t how_many = 0;
   if (type == 'r') {
-    howmany = tape_val & JSONVALUEMASK;
+    how_many = tape_val & JSON_VALUE_MASK;
   } else {
     fprintf(stderr, "Error: no starting root node?");
     return false;
   }
-  os << "\t// pointing to " << howmany << " (right after last node)\n";
+  os << "\t// pointing to " << how_many << " (right after last node)\n";
   uint64_t payload;
-  for (; tapeidx < howmany; tapeidx++) {
-    os << tapeidx << " : ";
-    tape_val = tape[tapeidx];
-    payload = tape_val & JSONVALUEMASK;
+  for (; tape_idx < how_many; tape_idx++) {
+    os << tape_idx << " : ";
+    tape_val = tape[tape_idx];
+    payload = tape_val & JSON_VALUE_MASK;
     type = (tape_val >> 56);
     switch (type) {
     case '"': // we have a string
@@ -265,18 +265,18 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
       os << '\n';
       break;
     case 'l': // we have a long int
-      if (tapeidx + 1 >= howmany) {
+      if (tape_idx + 1 >= how_many) {
         return false;
       }
-      os << "integer " << static_cast<int64_t>(tape[++tapeidx]) << "\n";
+      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
       break;
     case 'd': // we have a double
       os << "float ";
-      if (tapeidx + 1 >= howmany) {
+      if (tape_idx + 1 >= how_many) {
         return false;
       }
       double answer;
-      memcpy(&answer, &tape[++tapeidx], sizeof(answer));
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
       os << answer << '\n';
       break;
     case 'n': // we have a null
@@ -311,10 +311,10 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
       return false;
     }
   }
-  tape_val = tape[tapeidx];
-  payload = tape_val & JSONVALUEMASK;
+  tape_val = tape[tape_idx];
+  payload = tape_val & JSON_VALUE_MASK;
   type = (tape_val >> 56);
-  os << tapeidx << " : " << type << "\t// pointing to " << payload
+  os << tape_idx << " : " << type << "\t// pointing to " << payload
      << " (start root)\n";
   return true;
 }

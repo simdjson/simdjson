@@ -13,7 +13,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
-    out_ptr[0] = idx + trailingzeroes(bits);
+    out_ptr[0] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
     out_ptr++;
   }
@@ -38,41 +38,41 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   idx -= 64;
   base_ptr += base;
   {
-    base_ptr[0] = idx + trailingzeroes(bits);
+    base_ptr[0] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[1] = idx + trailingzeroes(bits);
+    base_ptr[1] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[2] = idx + trailingzeroes(bits);
+    base_ptr[2] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[3] = idx + trailingzeroes(bits);
+    base_ptr[3] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[4] = idx + trailingzeroes(bits);
+    base_ptr[4] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[5] = idx + trailingzeroes(bits);
+    base_ptr[5] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[6] = idx + trailingzeroes(bits);
+    base_ptr[6] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[7] = idx + trailingzeroes(bits);
+    base_ptr[7] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
     base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
   if (cnt > 8) {
-    base_ptr[0] = idx + trailingzeroes(bits);
+    base_ptr[0] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[1] = idx + trailingzeroes(bits);
+    base_ptr[1] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[2] = idx + trailingzeroes(bits);
+    base_ptr[2] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[3] = idx + trailingzeroes(bits);
+    base_ptr[3] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[4] = idx + trailingzeroes(bits);
+    base_ptr[4] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[5] = idx + trailingzeroes(bits);
+    base_ptr[5] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[6] = idx + trailingzeroes(bits);
+    base_ptr[6] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[7] = idx + trailingzeroes(bits);
+    base_ptr[7] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
     base_ptr += 8;
   }
@@ -80,7 +80,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     // since it means having one structural or pseudo-structral element
     // every 4 characters (possible with inputs like "","","",...).
     do {
-      base_ptr[0] = idx + trailingzeroes(bits);
+      base_ptr[0] = idx + trailing_zeroes(bits);
       bits = bits & (bits - 1);
       base_ptr++;
     } while (bits != 0);

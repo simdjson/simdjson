@@ -2,7 +2,7 @@
 #include "simdjson/jsonparser.h"
 #include <iostream>
 
-void compute_dump(simdjson::ParsedJson::iterator &pjh) {
+void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   simdjson::ParsedJson pj;
-  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  bool allocok = pj.allocate_capacity(p.size(), 1024);
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
@@ -68,14 +68,14 @@ int main(int argc, char *argv[]) {
   int res =
       simdjson::json_parse(p, pj); // do the parsing, return false on error
   if (res) {
-    std::cerr << " Parsing failed with error " << simdjson::errorMsg(res)
+    std::cerr << " Parsing failed with error " << simdjson::error_message(res)
               << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << "[" << std::endl;
   for (int idx = 2; idx < argc; idx++) {
     const char *jsonpath = argv[idx];
-    simdjson::ParsedJson::iterator it(pj);
+    simdjson::ParsedJson::Iterator it(pj);
     if (it.move_to(std::string(jsonpath))) {
       std::cout << "{\"jsonpath\": \"" << jsonpath << "\"," << std::endl;
       std::cout << "\"value\":";

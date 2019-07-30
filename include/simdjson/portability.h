@@ -68,11 +68,11 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2,
   return high;
 }
 
-static inline int trailingzeroes(uint64_t input_num) {
+static inline int trailing_zeroes(uint64_t input_num) {
   return static_cast<int>(_tzcnt_u64(input_num));
 }
 
-static inline int leadingzeroes(uint64_t input_num) {
+static inline int leading_zeroes(uint64_t input_num) {
   return static_cast<int>(_lzcnt_u64(input_num));
 }
 
@@ -102,7 +102,7 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2,
 }
 
 /* result might be undefined when input_num is zero */
-static inline int trailingzeroes(uint64_t input_num) {
+static inline int trailing_zeroes(uint64_t input_num) {
 #ifdef __BMI__ // tzcnt is BMI1
   return _tzcnt_u64(input_num);
 #else
@@ -111,7 +111,7 @@ static inline int trailingzeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-static inline int leadingzeroes(uint64_t input_num) {
+static inline int leading_zeroes(uint64_t input_num) {
 #ifdef __BMI2__
   return _lzcnt_u64(input_num);
 #else
@@ -152,21 +152,21 @@ static inline char *aligned_malloc_char(size_t alignment, size_t size) {
   return (char *)aligned_malloc(alignment, size);
 }
 
-static inline void aligned_free(void *memblock) {
-  if (memblock == nullptr) {
+static inline void aligned_free(void *mem_block) {
+  if (mem_block == nullptr) {
     return;
   }
 #ifdef _MSC_VER
-  _aligned_free(memblock);
+  _aligned_free(mem_block);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
-  __mingw_aligned_free(memblock);
+  __mingw_aligned_free(mem_block);
 #else
-  free(memblock);
+  free(mem_block);
 #endif
 }
 
-static inline void aligned_free_char(char *memblock) {
-  aligned_free((void *)memblock);
+static inline void aligned_free_char(char *mem_block) {
+  aligned_free((void *)mem_block);
 }
 } // namespace simdjson
 #endif // SIMDJSON_PORTABILITY_H

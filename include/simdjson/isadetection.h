@@ -62,7 +62,7 @@ constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      // bit 8 of EBX for EAX=0x7
 constexpr uint32_t cpuid_sse42_bit = 1 << 20;    // bit 20 of ECX for EAX=0x1
 constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; // bit  1 of ECX for EAX=0x1
 
-enum SIMDExtensions {
+enum instruction_set {
   DEFAULT = 0x0,
   NEON = 0x1,
   AVX2 = 0x4,
@@ -77,13 +77,13 @@ enum SIMDExtensions {
 #if defined(__NEON__)
 
 static inline uint32_t detect_supported_architectures() {
-  return SIMDExtensions::NEON;
+  return instruction_set::NEON;
 }
 
 #else // ARM without NEON
 
 static inline uint32_t detect_supported_architectures() {
-  return SIMDExtensions::DEFAULT;
+  return instruction_set::DEFAULT;
 }
 
 #endif
@@ -92,12 +92,12 @@ static inline uint32_t detect_supported_architectures() {
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 #if defined(_MSC_VER)
-  int cpuInfo[4];
-  __cpuid(cpuInfo, *eax);
-  *eax = cpuInfo[0];
-  *ebx = cpuInfo[1];
-  *ecx = cpuInfo[2];
-  *edx = cpuInfo[3];
+  int cpu_info[4];
+  __cpuid(cpu_info, *eax);
+  *eax = cpu_info[0];
+  *ebx = cpu_info[1];
+  *ecx = cpu_info[2];
+  *edx = cpu_info[3];
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
   uint32_t level = *eax;
   __get_cpuid(level, eax, ebx, ecx, edx);
@@ -113,7 +113,7 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 
 static inline uint32_t detect_supported_architectures() {
   uint32_t eax, ebx, ecx, edx;
-  uint32_t hostSimdExts = 0x0;
+  uint32_t host_isa = 0x0;
 
   // ECX for EAX=0x7
   eax = 0x7;
@@ -121,15 +121,15 @@ static inline uint32_t detect_supported_architectures() {
   cpuid(&eax, &ebx, &ecx, &edx);
 
   if (ebx & cpuid_avx2_bit) {
-    hostSimdExts |= SIMDExtensions::AVX2;
+    host_isa |= instruction_set::AVX2;
   }
 
   if (ebx & cpuid_bmi1_bit) {
-    hostSimdExts |= SIMDExtensions::BMI1;
+    host_isa |= instruction_set::BMI1;
   }
 
   if (ebx & cpuid_bmi2_bit) {
-    hostSimdExts |= SIMDExtensions::BMI2;
+    host_isa |= instruction_set::BMI2;
   }
 
   // EBX for EAX=0x1
@@ -137,14 +137,14 @@ static inline uint32_t detect_supported_architectures() {
   cpuid(&eax, &ebx, &ecx, &edx);
 
   if (ecx & cpuid_sse42_bit) {
-    hostSimdExts |= SIMDExtensions::SSE42;
+    host_isa |= instruction_set::SSE42;
   }
 
   if (ecx & cpuid_pclmulqdq_bit) {
-    hostSimdExts |= SIMDExtensions::PCLMULQDQ;
+    host_isa |= instruction_set::PCLMULQDQ;
   }
 
-  return hostSimdExts;
+  return host_isa;
 }
 
 #endif // end SIMD extension detection code

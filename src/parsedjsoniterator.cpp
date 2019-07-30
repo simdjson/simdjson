@@ -3,28 +3,28 @@
 #include <iterator>
 
 namespace simdjson {
-ParsedJson::iterator::iterator(ParsedJson &pj_)
-    : pj(pj_), depth(0), location(0), tape_length(0), depthindex(nullptr) {
-  if (!pj.isValid()) {
+ParsedJson::Iterator::Iterator(ParsedJson &pj_)
+    : pj(pj_), depth(0), location(0), tape_length(0), depth_index(nullptr) {
+  if (!pj.is_valid()) {
     throw InvalidJSON();
   }
-  depthindex = new scopeindex_t[pj.depthcapacity];
+  depth_index = new scopeindex_t[pj.depth_capacity];
   // memory allocation would throw
-  // if(depthindex == nullptr) {
+  // if(depth_index == nullptr) {
   //    return;
   //}
-  depthindex[0].start_of_scope = location;
+  depth_index[0].start_of_scope = location;
   current_val = pj.tape[location++];
   current_type = (current_val >> 56);
-  depthindex[0].scope_type = current_type;
+  depth_index[0].scope_type = current_type;
   if (current_type == 'r') {
-    tape_length = current_val & JSONVALUEMASK;
+    tape_length = current_val & JSON_VALUE_MASK;
     if (location < tape_length) {
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
       depth++;
-      depthindex[depth].start_of_scope = location;
-      depthindex[depth].scope_type = current_type;
+      depth_index[depth].start_of_scope = location;
+      depth_index[depth].scope_type = current_type;
     }
   } else {
     // should never happen
@@ -32,27 +32,27 @@ ParsedJson::iterator::iterator(ParsedJson &pj_)
   }
 }
 
-ParsedJson::iterator::~iterator() { delete[] depthindex; }
+ParsedJson::Iterator::~Iterator() { delete[] depth_index; }
 
-ParsedJson::iterator::iterator(const iterator &o)
+ParsedJson::Iterator::Iterator(const Iterator &o)
     : pj(o.pj), depth(o.depth), location(o.location), tape_length(0),
       current_type(o.current_type), current_val(o.current_val),
-      depthindex(nullptr) {
-  depthindex = new scopeindex_t[pj.depthcapacity];
+      depth_index(nullptr) {
+  depth_index = new scopeindex_t[pj.depth_capacity];
   // allocation might throw
-  memcpy(depthindex, o.depthindex, pj.depthcapacity * sizeof(depthindex[0]));
+  memcpy(depth_index, o.depth_index, pj.depth_capacity * sizeof(depth_index[0]));
   tape_length = o.tape_length;
 }
 
-ParsedJson::iterator::iterator(iterator &&o)
+ParsedJson::Iterator::Iterator(Iterator &&o)
     : pj(o.pj), depth(o.depth), location(o.location),
       tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val), depthindex(o.depthindex) {
-  o.depthindex = nullptr; // we take ownership
+      current_val(o.current_val), depth_index(o.depth_index) {
+  o.depth_index = nullptr; // we take ownership
 }
 
-bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
-  if (!isOk()) {
+bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
+  if (!is_ok()) {
     return false;
   }
   switch (current_type) {
@@ -95,7 +95,7 @@ bool ParsedJson::iterator::print(std::ostream &os, bool escape_strings) const {
   return true;
 }
 
-bool ParsedJson::iterator::move_to(const char *pointer, uint32_t length) {
+bool ParsedJson::Iterator::move_to(const char *pointer, uint32_t length) {
   char *new_pointer = nullptr;
   if (pointer[0] == '#') {
     // Converting fragment representation to string representation
@@ -131,7 +131,7 @@ bool ParsedJson::iterator::move_to(const char *pointer, uint32_t length) {
   size_t location_s = location;
   uint8_t current_type_s = current_type;
   uint64_t current_val_s = current_val;
-  scopeindex_t *depthindex_s = depthindex;
+  scopeindex_t *depth_index_s = depth_index;
 
   rewind(); // The json pointer is used from the root of the document.
 
@@ -145,13 +145,13 @@ bool ParsedJson::iterator::move_to(const char *pointer, uint32_t length) {
     location = location_s;
     current_type = current_type_s;
     current_val = current_val_s;
-    depthindex = depthindex_s;
+    depth_index = depth_index_s;
   }
 
   return found;
 }
 
-bool ParsedJson::iterator::relative_move_to(const char *pointer,
+bool ParsedJson::Iterator::relative_move_to(const char *pointer,
                                             uint32_t length) {
   if (length == 0) {
     // returns the whole document
@@ -236,7 +236,7 @@ bool ParsedJson::iterator::relative_move_to(const char *pointer,
         size_t npos;
         if ((current_type == '[') || (current_type == '{')) {
           // we need to jump
-          npos = (current_val & JSONVALUEMASK);
+          npos = (current_val & JSON_VALUE_MASK);
         } else {
           npos =
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);

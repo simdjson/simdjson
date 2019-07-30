@@ -71,11 +71,11 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
   return error == 0;
 }
 
-template <architecture T = architecture::native>
+template <Architecture T = Architecture::NATIVE>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
-template <architecture T = architecture::native>
+template <Architecture T = Architecture::NATIVE>
 int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
   return unified_machine<T>(reinterpret_cast<const uint8_t *>(buf), len, pj);
 }

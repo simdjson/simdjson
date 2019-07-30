@@ -9,9 +9,9 @@
 
 namespace simdjson {
 
-template <architecture> struct simd_input;
+template <Architecture> struct simd_input;
 
-template <architecture T> uint64_t compute_quote_mask(uint64_t quote_bits);
+template <Architecture T> uint64_t compute_quote_mask(uint64_t quote_bits);
 
 namespace {
 // for when clmul is unavailable
@@ -27,31 +27,31 @@ namespace {
 } // namespace
 
 // Holds the state required to perform check_utf8().
-template <architecture> struct utf8_checking_state;
+template <Architecture> struct utf8_checking_state;
 
-template <architecture T>
+template <Architecture T>
 void check_utf8(simd_input<T> in, utf8_checking_state<T> &state);
 
 // Checks if the utf8 validation has found any error.
-template <architecture T>
-errorValues check_utf8_errors(utf8_checking_state<T> &state);
+template <Architecture T>
+ErrorValues check_utf8_errors(utf8_checking_state<T> &state);
 
 // a straightforward comparison of a mask against input.
-template <architecture T>
+template <Architecture T>
 uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
 
-template <architecture T> simd_input<T> fill_input(const uint8_t *ptr);
+template <Architecture T> simd_input<T> fill_input(const uint8_t *ptr);
 
 // find all values less than or equal than the content of maxval (using unsigned
 // arithmetic)
-template <architecture T>
+template <Architecture T>
 uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
-template <architecture T>
+template <Architecture T>
 really_inline uint64_t find_odd_backslash_sequences(
     simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);
 
-template <architecture T>
+template <Architecture T>
 really_inline uint64_t find_quote_mask_and_bits(
     simd_input<T> in, uint64_t odd_ends, uint64_t &prev_iter_inside_quote,
     uint64_t &quote_bits, uint64_t &error_mask);
@@ -63,7 +63,7 @@ really_inline uint64_t find_quote_mask_and_bits(
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 // these go into the next 2 buckets of the comparison (8/16)
-template <architecture T>
+template <Architecture T>
 void find_whitespace_and_structurals(simd_input<T> in, uint64_t &whitespace,
                                      uint64_t &structurals);
 
@@ -78,7 +78,7 @@ really_inline uint64_t finalize_structurals(
     uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
   // mask off anything inside quotes
   structurals &= ~quote_mask;
-  // add the real quote bits back into our bitmask as well, so we can
+  // add the real quote bits back into our bit_mask as well, so we can
   // quickly traverse the strings we've spent all this trouble gathering
   structurals |= quote_bits;
   // Now, establish "pseudo-structural characters". These are non-whitespace
@@ -106,11 +106,11 @@ really_inline uint64_t finalize_structurals(
   return structurals;
 }
 
-template <architecture T = architecture::native>
+template <Architecture T = Architecture::NATIVE>
 int find_structural_bits(const uint8_t *buf, size_t len,
                          simdjson::ParsedJson &pj);
 
-template <architecture T = architecture::native>
+template <Architecture T = Architecture::NATIVE>
 int find_structural_bits(const char *buf, size_t len,
                          simdjson::ParsedJson &pj) {
   return find_structural_bits((const uint8_t *)buf, len, pj);

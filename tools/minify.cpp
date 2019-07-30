@@ -16,6 +16,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  simdjson::jsonminify(p, p.data());
+  simdjson::json_minify(p, p.data());
   printf("%s", p.data());
 }

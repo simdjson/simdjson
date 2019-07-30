@@ -6,9 +6,9 @@
 #include "simdjson/parsedjson.h"
 
 #ifdef JSON_TEST_STRINGS
-void foundString(const uint8_t *buf, const uint8_t *parsed_begin,
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
                  const uint8_t *parsed_end);
-void foundBadString(const uint8_t *buf);
+void found_bad_string(const uint8_t *buf);
 #endif
 
 namespace simdjson {
@@ -85,11 +85,11 @@ struct parse_string_helper {
 };
 
 // Finds where the backslashes and quotes are located.
-template <architecture>
+template <Architecture>
 parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src,
                                                 uint8_t *dst);
 
-template <architecture T>
+template <Architecture T>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
     really_inline bool
     parse_string(UNUSED const uint8_t *buf, UNUSED size_t len, ParsedJson &pj,

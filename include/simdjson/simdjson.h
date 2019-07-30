@@ -5,22 +5,22 @@
 
 namespace simdjson {
 // Represents the minimal architecture that would support an implementation
-enum class architecture {
-  westmere,
-  haswell,
-  arm64,
-  none,
+enum class Architecture {
+  WESTMERE,
+  HASWELL,
+  ARM64,
+  NONE,
 // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current
 // machine
 #ifdef IS_X86_64
-  native = westmere
+  NATIVE = WESTMERE
 #elif defined(IS_ARM64)
-  native = arm64
+  NATIVE = ARM64
 #endif
 };
 
-enum errorValues {
+enum ErrorValues {
   SUCCESS = 0,
   CAPACITY,    // This ParsedJson can't support a document that big
   MEMALLOC,    // Error allocating memory, most likely out of memory
@@ -39,6 +39,6 @@ enum errorValues {
   UNCLOSED_STRING, // missing quote at the end
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
-const std::string &errorMsg(const int);
+const std::string &error_message(const int);
 } // namespace simdjson
 #endif

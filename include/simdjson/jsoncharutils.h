@@ -92,7 +92,7 @@ really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
-const uint32_t digittoval32[886] = {
+const uint32_t digit_to_val32[886] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -249,10 +249,10 @@ const uint32_t digittoval32[886] = {
 // https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
 static inline uint32_t hex_to_u32_nocheck(
     const uint8_t *src) { // strictly speaking, static inline is a C-ism
-  uint32_t v1 = digittoval32[630 + src[0]];
-  uint32_t v2 = digittoval32[420 + src[1]];
-  uint32_t v3 = digittoval32[210 + src[2]];
-  uint32_t v4 = digittoval32[0 + src[3]];
+  uint32_t v1 = digit_to_val32[630 + src[0]];
+  uint32_t v2 = digit_to_val32[420 + src[1]];
+  uint32_t v3 = digit_to_val32[210 + src[2]];
+  uint32_t v4 = digit_to_val32[0 + src[3]];
   return v1 | v2 | v3 | v4;
 }
 

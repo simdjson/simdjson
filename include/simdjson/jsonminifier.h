@@ -12,19 +12,19 @@ namespace simdjson {
 // out can be the same pointer. Result is null terminated,
 // return the string length (minus the null termination).
 // The accelerated version of this function only runs on AVX2 hardware.
-size_t jsonminify(const uint8_t *buf, size_t len, uint8_t *out);
+size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out);
 
-static inline size_t jsonminify(const char *buf, size_t len, char *out) {
-  return jsonminify(reinterpret_cast<const uint8_t *>(buf), len,
+static inline size_t json_minify(const char *buf, size_t len, char *out) {
+  return json_minify(reinterpret_cast<const uint8_t *>(buf), len,
                     reinterpret_cast<uint8_t *>(out));
 }
 
-static inline size_t jsonminify(const std::string_view &p, char *out) {
-  return jsonminify(p.data(), p.size(), out);
+static inline size_t json_minify(const std::string_view &p, char *out) {
+  return json_minify(p.data(), p.size(), out);
 }
 
-static inline size_t jsonminify(const padded_string &p, char *out) {
-  return jsonminify(p.data(), p.size(), out);
+static inline size_t json_minify(const padded_string &p, char *out) {
+  return json_minify(p.data(), p.size(), out);
 }
 } // namespace simdjson
 #endif

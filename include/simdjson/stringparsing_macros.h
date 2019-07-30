@@ -4,7 +4,7 @@
 // We need to compile that code for multiple architectures. However, target
 // attributes can be used only once by function definition. Huge macro seemed
 // better than huge code duplication.ç
-// bool PARSE_STRING(architecture T, const uint8_t *buf, size_t len, ParsedJson
+// bool PARSE_STRING(Architecture T, const uint8_t *buf, size_t len, ParsedJson
 //                  &pj,const uint32_t depth, uint32_t offset)
 #define PARSE_STRING(T, buf, len, pj, depth, offset)                           \
   {                                                                            \
@@ -20,7 +20,7 @@
          */                                                                    \
                                                                                \
         /* find out where the quote is... */                                   \
-        uint32_t quote_dist = trailingzeroes(helper.quote_bits);               \
+        uint32_t quote_dist = trailing_zeroes(helper.quote_bits);              \
                                                                                \
         /* NULL termination is still handy if you expect all your strings to   \
          * be NULL terminated? */                                              \
@@ -45,7 +45,7 @@
       }                                                                        \
       if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {                   \
         /* find out where the backspace is */                                  \
-        uint32_t bs_dist = trailingzeroes(helper.bs_bits);                     \
+        uint32_t bs_dist = trailing_zeroes(helper.bs_bits);                    \
         uint8_t escape_char = src[bs_dist + 1];                                \
         /* we encountered backslash first. Handle backslash */                 \
         if (escape_char == 'u') {                                              \
@@ -72,7 +72,7 @@
       } else {                                                                 \
         /* they are the same. Since they can't co-occur, it means we           \
          * encountered neither. */                                             \
-        if constexpr (T == architecture::westmere) {                           \
+        if constexpr (T == Architecture::WESTMERE) {                           \
           src += 16;                                                           \
           dst += 16;                                                           \
         } else {                                                               \

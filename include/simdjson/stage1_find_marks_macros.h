@@ -13,7 +13,7 @@
 // We need to compile that code for multiple architectures. However, target
 // attributes can be used only once by function definition. Huge macro seemed
 // better than huge code duplication. uint64_t
-// FIND_ODD_BACKSLASH_SEQUENCES(architecture T, simd_input<T> in, uint64_t
+// FIND_ODD_BACKSLASH_SEQUENCES(Architecture T, simd_input<T> in, uint64_t
 // &prev_iter_ends_odd_backslash)
 #define FIND_ODD_BACKSLASH_SEQUENCES(T, in, prev_iter_ends_odd_backslash)      \
   {                                                                            \
@@ -64,7 +64,7 @@
 // We need to compile that code for multiple architectures. However, target
 // attributes can be used only once by function definition. Huge macro seemed
 // better than huge code duplication. uint64_t
-// FIND_QUOTE_MASK_AND_BITS(architecture T, simd_input<T> in, uint64_t odd_ends,
+// FIND_QUOTE_MASK_AND_BITS(Architecture T, simd_input<T> in, uint64_t odd_ends,
 //    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits, uint64_t
 //    &error_mask)
 #define FIND_QUOTE_MASK_AND_BITS(T, in, odd_ends, prev_iter_inside_quote,      \
@@ -93,7 +93,7 @@
 // We need to compile that code for multiple architectures. However, target
 // attributes can be used only once by function definition. Huge macro seemed
 // better than huge code duplication. void FIND_STRUCTURAL_BITS_64(
-//                              architecture T,
+//                              Architecture T,
 //                              const uint8_t *buf,
 //                              size_t idx,
 //                              uint32_t *base_ptr,
@@ -139,14 +139,14 @@
 
 // We need to compile that code for multiple architectures. However, target
 // attributes can be used only once by function definition. Huge macro seemed
-// better than huge code duplication. errorValues
-// FIND_STRUCTURAL_BITS(architecture T, const uint8_t *buf, size_t len,
-// ParsedJson &pj, flatten functio )
+// better than huge code duplication. ErrorValues
+// FIND_STRUCTURAL_BITS(Architecture T, const uint8_t *buf, size_t len,
+// ParsedJson &pj, flatten function)
 #define FIND_STRUCTURAL_BITS(T, buf, len, pj, flat)                            \
   {                                                                            \
-    if (len > pj.bytecapacity) {                                               \
+    if (len > pj.byte_capacity) {                                              \
       std::cerr << "Your ParsedJson object only supports documents up to "     \
-                << pj.bytecapacity << " bytes but you are trying to process "  \
+                << pj.byte_capacity << " bytes but you are trying to process " \
                 << len << " bytes" << std::endl;                               \
       return simdjson::CAPACITY;                                               \
     }                                                                          \
@@ -192,11 +192,11 @@
      * spaces  before processing it (otherwise, we risk invalidating the UTF-8 \
      * checks). */                                                             \
     if (idx < len) {                                                           \
-      uint8_t tmpbuf[64];                                                      \
-      memset(tmpbuf, 0x20, 64);                                                \
-      memcpy(tmpbuf, buf + idx, len - idx);                                    \
+      uint8_t tmp_buf[64];                                                     \
+      memset(tmp_buf, 0x20, 64);                                               \
+      memcpy(tmp_buf, buf + idx, len - idx);                                   \
       FIND_STRUCTURAL_BITS_64(                                                 \
-          T, &tmpbuf[0], idx, base_ptr, base, prev_iter_ends_odd_backslash,    \
+          T, &tmp_buf[0], idx, base_ptr, base, prev_iter_ends_odd_backslash,   \
           prev_iter_inside_quote, prev_iter_ends_pseudo_pred, structurals,     \
           error_mask, utf8_state, flat);                                       \
       idx += 64;                                                               \

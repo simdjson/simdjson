@@ -2,7 +2,7 @@
 #include <map>
 
 namespace simdjson {
-const std::map<int, const std::string> errorStrings = {
+const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No errors"},
     {CAPACITY, "This ParsedJson can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
@@ -24,7 +24,7 @@ const std::map<int, const std::string> errorStrings = {
                        "you may have found a bug in simdjson"},
 };
 
-const std::string &errorMsg(const int errorCode) {
-  return errorStrings.at(errorCode);
+const std::string &error_message(const int error_code) {
+  return error_strings.at(error_code);
 }
 } // namespace simdjson
