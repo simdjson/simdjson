@@ -35,7 +35,7 @@ void simdjson_scan(std::vector<int64_t> &answer,
   while (i.move_forward()) {
     if (i.get_scope_type() == '{') {
       bool found_user = (i.get_string_length() == 4) &&
-                       (memcmp(i.get_string(), "user", 4) == 0);
+                        (memcmp(i.get_string(), "user", 4) == 0);
       i.move_to_value();
       if (found_user) {
         if (i.is_object() && i.move_to_key("id", 2)) {
@@ -102,7 +102,8 @@ void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
             TYPE_OBJECT) { // the value should be an object
           // now we know that we only need one value
           auto user_value_length = user_value.get_length();
-          auto right_index = user_value.find_object_key(sajson::string("id", 2));
+          auto right_index =
+              user_value.find_object_key(sajson::string("id", 2));
           if (right_index < user_value_length) {
             auto v = user_value.get_object_value(right_index);
             if (v.get_type() == TYPE_INTEGER) { // check that it is an integer
@@ -171,7 +172,7 @@ void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
     for (Value::ConstMemberIterator m = v.MemberBegin(); m != v.MemberEnd();
          ++m) {
       bool found_user = (m->name.GetStringLength() == 4) &&
-                       (memcmp(m->name.GetString(), "user", 4) == 0);
+                        (memcmp(m->name.GetString(), "user", 4) == 0);
       if (found_user) {
         const rapidjson::Value &child = m->value;
         if (child.GetType() == kObjectType) {
@@ -324,13 +325,13 @@ int main(int argc, char *argv[]) {
             !just_data);
   BEST_TIME("simdjson (just parse)  ", simdjson_just_parse(p), false, , repeat,
             volume, !just_data);
-  BEST_TIME("rapid  (just parse) ", rapid_just_parse(p), false, , repeat, volume,
-            !just_data);
+  BEST_TIME("rapid  (just parse) ", rapid_just_parse(p), false, , repeat,
+            volume, !just_data);
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
   simdjson::ParsedJson dsimdjson = simdjson::build_parsed_json(p);
-  BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(dsimdjson).size(), size, ,
-            repeat, volume, !just_data);
+  BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(dsimdjson).size(), size,
+            , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
   rapidjson::Document drapid;

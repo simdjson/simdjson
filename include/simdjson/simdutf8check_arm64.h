@@ -34,7 +34,7 @@ namespace simdjson {
 
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(int8x16_t current_bytes,
-                                        int8x16_t *has_error) {
+                                           int8x16_t *has_error) {
   // unsigned, saturates to 0 below max
   *has_error = vorrq_s8(
       *has_error, vreinterpretq_s8_u8(vqsubq_u8(
@@ -54,7 +54,7 @@ static inline int8x16_t continuation_lengths(int8x16_t high_nibbles) {
 }
 
 static inline int8x16_t carry_continuations(int8x16_t initial_lengths,
-                                           int8x16_t previous_carries) {
+                                            int8x16_t previous_carries) {
 
   int8x16_t right1 = vreinterpretq_s8_u8(vqsubq_u8(
       vreinterpretq_u8_s8(vextq_s8(previous_carries, initial_lengths, 16 - 1)),
@@ -68,7 +68,8 @@ static inline int8x16_t carry_continuations(int8x16_t initial_lengths,
 }
 
 static inline void check_continuations(int8x16_t initial_lengths,
-                                      int8x16_t carries, int8x16_t *has_error) {
+                                       int8x16_t carries,
+                                       int8x16_t *has_error) {
 
   // overlap || underlap
   // carry > length && length > 0 || !(carry > length) && !(length > 0)
@@ -83,8 +84,8 @@ static inline void check_continuations(int8x16_t initial_lengths,
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
 static inline void check_first_continuation_max(int8x16_t current_bytes,
-                                             int8x16_t off1_current_bytes,
-                                             int8x16_t *has_error) {
+                                                int8x16_t off1_current_bytes,
+                                                int8x16_t *has_error) {
   uint8x16_t maskED = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xED));
   uint8x16_t maskF4 = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xF4));
 
@@ -120,9 +121,9 @@ static const int8_t _second_mins[] = {
 // F       => < F1 && < 90
 // else      false && false
 static inline void check_overlong(int8x16_t current_bytes,
-                                 int8x16_t off1_current_bytes, int8x16_t hibits,
-                                 int8x16_t previous_hibits,
-                                 int8x16_t *has_error) {
+                                  int8x16_t off1_current_bytes,
+                                  int8x16_t hibits, int8x16_t previous_hibits,
+                                  int8x16_t *has_error) {
   int8x16_t off1_hibits = vextq_s8(previous_hibits, hibits, 16 - 1);
   int8x16_t initial_mins =
       vqtbl1q_s8(vld1q_s8(_initial_mins), vreinterpretq_u8_s8(off1_hibits));
@@ -153,7 +154,7 @@ static inline void count_nibbles(int8x16_t bytes,
 // at the end of the function, previous gets updated
 static inline struct processed_utf_bytes
 check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
-               int8x16_t *has_error) {
+                 int8x16_t *has_error) {
   struct processed_utf_bytes pb;
   count_nibbles(current_bytes, &pb);
 
@@ -171,7 +172,7 @@ check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
   check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
 
   check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                previous->high_nibbles, has_error);
+                 previous->high_nibbles, has_error);
   return pb;
 }
 } // namespace simdjson

@@ -95,15 +95,16 @@ int main(int argc, char *argv[]) {
   if (verbose)
     std::cout << "input length is " << p.size() << " stringified length is "
               << strlength << std::endl;
-  BEST_TIME_NOCHECK("despacing with RapidJSON", rapid_stringme((char *)p.data()),
-                    , repeat, volume, !just_data);
+  BEST_TIME_NOCHECK("despacing with RapidJSON",
+                    rapid_stringme((char *)p.data()), , repeat, volume,
+                    !just_data);
   BEST_TIME_NOCHECK(
       "despacing with RapidJSON Insitu", rapid_stringme_insitu((char *)buffer),
       memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
   memcpy(buffer, p.data(), p.size());
 
   size_t outlength = simdjson::json_minify((const uint8_t *)buffer, p.size(),
-                                          (uint8_t *)buffer);
+                                           (uint8_t *)buffer);
   if (verbose)
     std::cout << "json_minify length is " << outlength << std::endl;
 
@@ -125,7 +126,7 @@ int main(int argc, char *argv[]) {
 
   char *mini_buffer = simdjson::allocate_padded_buffer(p.size() + 1);
   size_t minisize = simdjson::json_minify((const uint8_t *)p.data(), p.size(),
-                                         (uint8_t *)mini_buffer);
+                                          (uint8_t *)mini_buffer);
   mini_buffer[minisize] = '\0';
 
   BEST_TIME("RapidJSON Insitu despaced", d.ParseInsitu(buffer).HasParseError(),
@@ -135,19 +136,19 @@ int main(int argc, char *argv[]) {
   size_t ast_buffer_size = p.size() * 2;
   size_t *ast_buffer = (size_t *)malloc(ast_buffer_size * sizeof(size_t));
 
-  BEST_TIME("sajson orig",
-            sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
-                          sajson::mutable_string_view(p.size(), buffer))
-                .is_valid(),
-            true, memcpy(buffer, p.data(), p.size()), repeat, volume,
-            !just_data);
+  BEST_TIME(
+      "sajson orig",
+      sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
+                    sajson::mutable_string_view(p.size(), buffer))
+          .is_valid(),
+      true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
 
-  BEST_TIME("sajson despaced",
-            sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
-                          sajson::mutable_string_view(minisize, buffer))
-                .is_valid(),
-            true, memcpy(buffer, mini_buffer, p.size()), repeat, volume,
-            !just_data);
+  BEST_TIME(
+      "sajson despaced",
+      sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
+                    sajson::mutable_string_view(minisize, buffer))
+          .is_valid(),
+      true, memcpy(buffer, mini_buffer, p.size()), repeat, volume, !just_data);
 
   simdjson::ParsedJson pj;
   bool is_alloc_ok = pj.allocate_capacity(p.size(), 1024);

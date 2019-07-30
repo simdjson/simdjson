@@ -28,7 +28,7 @@ fill_input<Architecture::ARM64>(const uint8_t *ptr) {
 
 really_inline uint16_t neon_movemask(uint8x16_t input) {
   const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
   uint8x16_t minput = vandq_u8(input, bit_mask);
   uint8x16_t tmp = vpaddq_u8(minput, minput);
   tmp = vpaddq_u8(tmp, tmp);
@@ -37,9 +37,9 @@ really_inline uint16_t neon_movemask(uint8x16_t input) {
 }
 
 really_inline uint64_t neon_movemask_bulk(uint8x16_t p0, uint8x16_t p1,
-                                         uint8x16_t p2, uint8x16_t p3) {
+                                          uint8x16_t p2, uint8x16_t p3) {
   const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
   uint8x16_t t0 = vandq_u8(p0, bit_mask);
   uint8x16_t t1 = vandq_u8(p1, bit_mask);
   uint8x16_t t2 = vandq_u8(p2, bit_mask);
@@ -97,13 +97,13 @@ really_inline void check_utf8<Architecture::ARM64>(
   } else {
     // it is not ascii so we have to do heavy work
     state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i0),
-                                    &(state.previous), &(state.has_error));
+                                      &(state.previous), &(state.has_error));
     state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i1),
-                                    &(state.previous), &(state.has_error));
+                                      &(state.previous), &(state.has_error));
     state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i2),
-                                    &(state.previous), &(state.has_error));
+                                      &(state.previous), &(state.has_error));
     state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i3),
-                                    &(state.previous), &(state.has_error));
+                                      &(state.previous), &(state.has_error));
   }
 }
 

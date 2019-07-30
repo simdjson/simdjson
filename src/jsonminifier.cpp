@@ -39,7 +39,7 @@ static uint8_t jump_table[256 * 3] = {
 };
 
 size_t json_minify(const unsigned char *bytes, size_t how_many,
-                  unsigned char *out) {
+                   unsigned char *out) {
   size_t i = 0, pos = 0;
   uint8_t quote = 0;
   uint8_t nonescape = 1;

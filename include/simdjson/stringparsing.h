@@ -7,7 +7,7 @@
 
 #ifdef JSON_TEST_STRINGS
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                 const uint8_t *parsed_end);
+                  const uint8_t *parsed_end);
 void found_bad_string(const uint8_t *buf);
 #endif
 

@@ -38,7 +38,7 @@ static inline __m256i push_last_2bytes_of_a_to_b(__m256i a, __m256i b) {
 
 // all byte values must be no larger than 0xF4
 static inline void avx_check_smaller_than_0xF4(__m256i current_bytes,
-                                           __m256i *has_error) {
+                                               __m256i *has_error) {
   // unsigned, saturates to 0 below max
   *has_error = _mm256_or_si256(
       *has_error, _mm256_subs_epu8(current_bytes, _mm256_set1_epi8(0xF4)));
@@ -61,7 +61,7 @@ static inline __m256i avx_continuation_lengths(__m256i high_nibbles) {
 }
 
 static inline __m256i avx_carry_continuations(__m256i initial_lengths,
-                                            __m256i previous_carries) {
+                                              __m256i previous_carries) {
 
   __m256i right1 = _mm256_subs_epu8(
       push_last_byte_of_a_to_b(previous_carries, initial_lengths),
@@ -74,7 +74,8 @@ static inline __m256i avx_carry_continuations(__m256i initial_lengths,
 }
 
 static inline void avx_check_continuations(__m256i initial_lengths,
-                                         __m256i carries, __m256i *has_error) {
+                                           __m256i carries,
+                                           __m256i *has_error) {
 
   // overlap || underlap
   // carry > length && length > 0 || !(carry > length) && !(length > 0)
@@ -90,8 +91,8 @@ static inline void avx_check_continuations(__m256i initial_lengths,
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
 static inline void avx_check_first_continuation_max(__m256i current_bytes,
-                                                __m256i off1_current_bytes,
-                                                __m256i *has_error) {
+                                                    __m256i off1_current_bytes,
+                                                    __m256i *has_error) {
   __m256i maskED =
       _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xED));
   __m256i maskF4 =
@@ -113,9 +114,9 @@ static inline void avx_check_first_continuation_max(__m256i current_bytes,
 // F       => < F1 && < 90
 // else      false && false
 static inline void avx_check_overlong(__m256i current_bytes,
-                                    __m256i off1_current_bytes, __m256i hibits,
-                                    __m256i previous_hibits,
-                                    __m256i *has_error) {
+                                      __m256i off1_current_bytes,
+                                      __m256i hibits, __m256i previous_hibits,
+                                      __m256i *has_error) {
   __m256i off1_hibits = push_last_byte_of_a_to_b(previous_hibits, hibits);
   __m256i initial_mins = _mm256_shuffle_epi8(
       _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
@@ -166,8 +167,8 @@ static inline void avx_count_nibbles(__m256i bytes,
 // at the end of the function, previous gets updated
 static inline struct avx_processed_utf_bytes
 avx_check_utf8_bytes(__m256i current_bytes,
-                  struct avx_processed_utf_bytes *previous,
-                  __m256i *has_error) {
+                     struct avx_processed_utf_bytes *previous,
+                     __m256i *has_error) {
   struct avx_processed_utf_bytes pb {};
   avx_count_nibbles(current_bytes, &pb);
 
@@ -182,10 +183,11 @@ avx_check_utf8_bytes(__m256i current_bytes,
 
   __m256i off1_current_bytes =
       push_last_byte_of_a_to_b(previous->raw_bytes, pb.raw_bytes);
-  avx_check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
+  avx_check_first_continuation_max(current_bytes, off1_current_bytes,
+                                   has_error);
 
   avx_check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                   previous->high_nibbles, has_error);
+                     previous->high_nibbles, has_error);
   return pb;
 }
 } // namespace simdjson

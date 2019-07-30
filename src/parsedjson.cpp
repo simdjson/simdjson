@@ -88,7 +88,9 @@ bool ParsedJson::is_valid() const { return valid; }
 
 int ParsedJson::get_error_code() const { return error_code; }
 
-std::string ParsedJson::get_error_message() const { return error_message(error_code); }
+std::string ParsedJson::get_error_message() const {
+  return error_message(error_code);
+}
 
 void ParsedJson::deallocate() {
   byte_capacity = 0;

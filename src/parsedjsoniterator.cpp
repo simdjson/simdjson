@@ -40,7 +40,8 @@ ParsedJson::Iterator::Iterator(const Iterator &o)
       depth_index(nullptr) {
   depth_index = new scopeindex_t[pj.depth_capacity];
   // allocation might throw
-  memcpy(depth_index, o.depth_index, pj.depth_capacity * sizeof(depth_index[0]));
+  memcpy(depth_index, o.depth_index,
+         pj.depth_capacity * sizeof(depth_index[0]));
   tape_length = o.tape_length;
 }
 

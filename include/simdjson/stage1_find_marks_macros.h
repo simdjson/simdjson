@@ -161,12 +161,14 @@
     /* either 0 or 1, but a 64-bit value */                                    \
     uint64_t prev_iter_ends_odd_backslash = 0ULL;                              \
     /* does the previous iteration end inside a double-quote pair? */          \
-    uint64_t prev_iter_inside_quote = 0ULL; /* either all zeros or all ones    \
-     * does the previous iteration end on something that is a predecessor of a \
-     * pseudo-structural character - i.e. whitespace or a structural character \
-     * effectively the very first char is considered to follow "whitespace"    \
-     * for the purposes of pseudo-structural character detection so we         \
-     * initialize to 1 */                                                      \
+    uint64_t prev_iter_inside_quote =                                          \
+        0ULL; /* either all zeros or all ones                                  \
+               * does the previous iteration end on something that is a        \
+               * predecessor of a pseudo-structural character - i.e.           \
+               * whitespace or a structural character effectively the very     \
+               * first char is considered to follow "whitespace" for the       \
+               * purposes of pseudo-structural character detection so we       \
+               * initialize to 1 */                                            \
     uint64_t prev_iter_ends_pseudo_pred = 1ULL;                                \
                                                                                \
     /* structurals are persistent state across loop as we flatten them on the  \

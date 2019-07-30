@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
            "cycles_per_byte_err", "gb_per_s", "gb_per_s_err");
   }
   if (!just_data)
-    BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).is_valid(), true, ,
-              repeat, volume, !just_data);
+    BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).is_valid(), true,
+              , repeat, volume, !just_data);
   // (static alloc)
   BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat, volume,
             !just_data);
@@ -152,12 +152,12 @@ int main(int argc, char *argv[]) {
   size_t ast_buffer_size = p.size();
   size_t *ast_buffer = (size_t *)malloc(ast_buffer_size * sizeof(size_t));
   //  (static alloc, insitu)
-  BEST_TIME("sajson",
-            sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
-                          sajson::mutable_string_view(p.size(), buffer))
-                .is_valid(),
-            true, memcpy(buffer, p.data(), p.size()), repeat, volume,
-            !just_data);
+  BEST_TIME(
+      "sajson",
+      sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
+                    sajson::mutable_string_view(p.size(), buffer))
+          .is_valid(),
+      true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
 #ifdef ALLPARSER
   std::string json11err;
   BEST_TIME("dropbox (json11)     ",
@@ -203,8 +203,8 @@ int main(int argc, char *argv[]) {
   Json::Value root;
   Json::String errs;
   BEST_TIME("jsoncpp           ",
-            json_cpp_reader->parse(buffer, buffer + volume, &root, &errs), true, ,
-            repeat, volume, !just_data);
+            json_cpp_reader->parse(buffer, buffer + volume, &root, &errs), true,
+            , repeat, volume, !just_data);
   delete json_cpp_reader;
 #endif
   if (!just_data)

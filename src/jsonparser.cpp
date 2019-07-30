@@ -13,8 +13,8 @@ namespace simdjson {
 
 Architecture find_best_supported_implementation() {
   constexpr uint32_t haswell_flags =
-      instruction_set::AVX2 | instruction_set::PCLMULQDQ | instruction_set::BMI1 |
-      instruction_set::BMI2;
+      instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+      instruction_set::BMI1 | instruction_set::BMI2;
   constexpr uint32_t westmere_flags =
       instruction_set::SSE42 | instruction_set::PCLMULQDQ;
 

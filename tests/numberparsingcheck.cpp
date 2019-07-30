@@ -70,9 +70,9 @@ void found_invalid_number(const uint8_t *buf) {
   double expected = strtod((const char *)buf, &endptr);
   if (endptr != (const char *)buf) {
     if (!is_in_bad_list((const char *)buf)) {
-      printf(
-          "Warning: found_invalid_number %.32s whereas strtod parses it to %f, ",
-          buf, expected);
+      printf("Warning: found_invalid_number %.32s whereas strtod parses it to "
+             "%f, ",
+             buf, expected);
       printf(" while parsing %s \n", fullpath);
       parse_error |= PARSE_WARNING;
     }

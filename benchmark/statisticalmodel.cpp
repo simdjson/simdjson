@@ -160,9 +160,9 @@ int main(int argc, char *argv[]) {
 #endif
   printf("\n");
   printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu ", s.integer_count,
-         s.float_count, s.string_count, s.backslash_count, s.non_ascii_byte_count,
-         s.object_count, s.array_count, s.null_count, s.true_count,
-         s.false_count, s.byte_count, s.structural_indexes_count);
+         s.float_count, s.string_count, s.backslash_count,
+         s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
+         s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
   simdjson::ParsedJson pj;
   bool allocok = pj.allocate_capacity(p.size());

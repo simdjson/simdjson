@@ -235,7 +235,7 @@ void print_cmp_hex(const char *s1, const char *s2, size_t len) {
 }
 
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                 const uint8_t *parsed_end) {
+                  const uint8_t *parsed_end) {
   size_t this_len = parsed_end - parsed_begin;
   total_string_length += this_len;
   good_string++;

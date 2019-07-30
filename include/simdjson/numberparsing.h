@@ -227,8 +227,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
       ++p;
 
       fractional_weight--;
-      i = i +
-          digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight] : 0);
+      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
+                                              : 0);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
@@ -239,8 +239,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
       unsigned char digit = *p - '0';
       ++p;
       fractional_weight--;
-      i = i +
-          digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight] : 0);
+      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
+                                              : 0);
     }
   }
   if (('e' == *p) || ('E' == *p)) {
@@ -492,8 +492,9 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     }
     exponent = first_after_period - p;
   }
-  int digit_count = p - start_digits - 1; // used later to guard against overflows
-  int64_t exp_number = 0;                // exponential part
+  int digit_count =
+      p - start_digits - 1; // used later to guard against overflows
+  int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
@@ -525,7 +526,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     }
     while (is_integer(*p)) {
       if (exp_number > 0x100000000) { // we need to check for overflows
-                                     // we refuse to parse this
+                                      // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif

@@ -97,16 +97,17 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success
 // or an error code from simdjson/simdjson.h in case of failure such as
 // simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
-// the simdjson::error_message function converts these error codes into a string).
+// the simdjson::error_message function converts these error codes into a
+// string).
 //
 // You can also check validity by calling pj.is_valid(). The same ParsedJson can
 // be reused for other documents.
 //
-// If realloc_if_needed is true (default) then a temporary buffer is created when
-// needed during processing (a copy of the input string is made). The input buf
-// should be readable up to buf + len + SIMDJSON_PADDING if realloc_if_needed is
-// false, all bytes at and after buf + len  are ignored (can be garbage). The
-// ParsedJson object can be reused.
+// If realloc_if_needed is true (default) then a temporary buffer is created
+// when needed during processing (a copy of the input string is made). The input
+// buf should be readable up to buf + len + SIMDJSON_PADDING if
+// realloc_if_needed is false, all bytes at and after buf + len  are ignored
+// (can be garbage). The ParsedJson object can be reused.
 
 inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
                       bool realloc_if_needed = true) {
@@ -125,17 +126,18 @@ inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success
 // or an error code from simdjson/simdjson.h in case of failure such as
 // simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
-// the simdjson::error_message function converts these error codes into a string).
+// the simdjson::error_message function converts these error codes into a
+// string).
 //
 // You can also check validity
 // by calling pj.is_valid(). The same ParsedJson can be reused for other
 // documents.
 //
-// If realloc_if_needed is true (default) then a temporary buffer is created when
-// needed during processing (a copy of the input string is made). The input buf
-// should be readable up to buf + len + SIMDJSON_PADDING  if realloc_if_needed is
-// false, all bytes at and after buf + len  are ignored (can be garbage). The
-// ParsedJson object can be reused.
+// If realloc_if_needed is true (default) then a temporary buffer is created
+// when needed during processing (a copy of the input string is made). The input
+// buf should be readable up to buf + len + SIMDJSON_PADDING  if
+// realloc_if_needed is false, all bytes at and after buf + len  are ignored
+// (can be garbage). The ParsedJson object can be reused.
 inline int json_parse(const char *buf, size_t len, ParsedJson &pj,
                       bool realloc_if_needed = true) {
   return json_parse_ptr(reinterpret_cast<const uint8_t *>(buf), len, pj,
@@ -152,7 +154,8 @@ int json_parse(const char *buf, ParsedJson &pj) = delete;
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success
 // or an error code from simdjson/simdjson.h in case of failure such as
 // simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
-// the simdjson::error_message function converts these error codes into a string).
+// the simdjson::error_message function converts these error codes into a
+// string).
 //
 // A temporary buffer is created when needed during processing
 // (a copy of the input string is made).
@@ -172,7 +175,8 @@ inline int json_parse(const std::string &s, ParsedJson &pj) {
 // The function returns simdjson::SUCCESS (an integer = 0) in case of a success
 // or an error code from simdjson/simdjson.h in case of failure such as
 // simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
-// the simdjson::error_message function converts these error codes into a string).
+// the simdjson::error_message function converts these error codes into a
+// string).
 //
 // You can also check validity
 // by calling pj.is_valid(). The same ParsedJson can be reused for other
@@ -187,8 +191,8 @@ inline int json_parse(const padded_string &s, ParsedJson &pj) {
 // created when needed during processing (a copy of the input string is made).
 //
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING  if
-// realloc_if_needed is false, all bytes at and after buf + len  are ignored (can
-// be garbage).
+// realloc_if_needed is false, all bytes at and after buf + len  are ignored
+// (can be garbage).
 //
 // The content should be a valid JSON document encoded as UTF-8. If there is a
 // UTF-8 BOM, the caller is responsible for omitting it, UTF-8 BOM are
@@ -206,8 +210,8 @@ WARN_UNUSED
 // created when needed during processing (a copy of the input string is made).
 //
 // The input buf should be readable up to buf + len + SIMDJSON_PADDING if
-// realloc_if_needed is false, all bytes at and after buf + len  are ignored (can
-// be garbage).
+// realloc_if_needed is false, all bytes at and after buf + len  are ignored
+// (can be garbage).
 //
 //
 // The content should be a valid JSON document encoded as UTF-8. If there is a

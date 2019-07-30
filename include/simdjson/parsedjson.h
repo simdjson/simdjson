@@ -13,7 +13,7 @@
 
 #define JSON_VALUE_MASK 0xFFFFFFFFFFFFFF
 
-#define DEFAULT_MAX_DEPTH                                                        \
+#define DEFAULT_MAX_DEPTH                                                      \
   1024 // a JSON document with a depth exceeding 1024 is probably de facto
        // invalid
 
@@ -433,7 +433,7 @@ bool ParsedJson::Iterator::move_to_key(const char *key, uint32_t length) {
     do {
       assert(is_string());
       bool right_key = ((get_string_length() == length) &&
-                       (memcmp(get_string(), key, length) == 0));
+                        (memcmp(get_string(), key, length) == 0));
       move_to_value();
       if (right_key) {
         return true;

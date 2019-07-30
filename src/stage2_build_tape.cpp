@@ -356,7 +356,7 @@ namespace simdjson {
     depth--;                                                                   \
     pj.write_tape(pj.containing_scope_offset[depth], c);                       \
     pj.annotate_previous_loc(pj.containing_scope_offset[depth],                \
-                            pj.get_current_loc());                             \
+                             pj.get_current_loc());                            \
     /* goto saved_state */                                                     \
     GOTO_CONTINUE()                                                            \
                                                                                \
@@ -475,7 +475,7 @@ namespace simdjson {
       abort();                                                                 \
     }                                                                          \
     pj.annotate_previous_loc(pj.containing_scope_offset[depth],                \
-                            pj.get_current_loc());                             \
+                             pj.get_current_loc());                            \
     pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */     \
                                                                                \
     pj.valid = true;                                                           \

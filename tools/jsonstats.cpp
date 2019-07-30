@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
          "non_ascii_byte_count object_count array_count null_count true_count "
          "false_count byte_count structural_indexes_count\n");
   printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", s.integer_count,
-         s.float_count, s.string_count, s.backslash_count, s.non_ascii_byte_count,
-         s.object_count, s.array_count, s.null_count, s.true_count,
-         s.false_count, s.byte_count, s.structural_indexes_count);
+         s.float_count, s.string_count, s.backslash_count,
+         s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
+         s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
   return EXIT_SUCCESS;
 }

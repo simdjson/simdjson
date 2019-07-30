@@ -21,7 +21,7 @@ find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
   uint8x16_t bs_mask = vmovq_n_u8('\\');
   uint8x16_t qt_mask = vmovq_n_u8('"');
   const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
   uint8x16_t cmp_bs_0 = vceqq_u8(v0, bs_mask);
   uint8x16_t cmp_bs_1 = vceqq_u8(v1, bs_mask);
   uint8x16_t cmp_qt_0 = vceqq_u8(v0, qt_mask);
