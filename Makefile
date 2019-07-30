@@ -112,7 +112,7 @@ quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparsers
 
 amalgamate:
 	./amalgamation.sh
-
+	$(CXX) $(CXXFLAGS) -o singleheader/demo  ./singleheader/amalgamation_demo.cpp   -Isingleheader   
 
 submodules: 
 	-git submodule update --init --recursive

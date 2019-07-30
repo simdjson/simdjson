@@ -18,6 +18,7 @@ script:
    - make
    - make test 
    - make everything
+   - make amalgamate
    - make clean
    - make SANITIZEGOLD=1 test
    - make clean
