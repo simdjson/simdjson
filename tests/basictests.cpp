@@ -15,10 +15,10 @@ bool skyprophet_test() {
   std::vector<std::string> data;
   char buf[1024];
   for (size_t i = 0; i < n_records; ++i) {
-    auto n =
-        sprintf(buf, "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+    auto n = sprintf(buf,
+                     "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                      "\"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-                i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+                     i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
     data.emplace_back(std::string(buf, n));
   }
   for (size_t i = 0; i < n_records; ++i) {
@@ -40,7 +40,7 @@ bool skyprophet_test() {
       maxsize = s.size();
   }
   simdjson::ParsedJson pj;
-  if (!pj.allocateCapacity(maxsize)) {
+  if (!pj.allocate_capacity(maxsize)) {
     printf("allocation failure in skyprophet_test\n");
     return false;
   }
@@ -52,12 +52,12 @@ bool skyprophet_test() {
     }
     counter++;
     auto ok1 = json_parse(rec.c_str(), rec.length(), pj);
-    if (ok1 != 0 || !pj.isValid()) {
+    if (ok1 != 0 || !pj.is_valid()) {
       printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
       return false;
     }
     auto ok2 = json_parse(rec, pj);
-    if (ok2 != 0 || !pj.isValid()) {
+    if (ok2 != 0 || !pj.is_valid()) {
       printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
       return false;
     }

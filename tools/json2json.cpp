@@ -5,7 +5,7 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 
-void compute_dump(simdjson::ParsedJson::iterator &pjh) {
+void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -40,8 +40,8 @@ void compute_dump(simdjson::ParsedJson::iterator &pjh) {
 }
 
 int main(int argc, char *argv[]) {
-	bool rawdump = false;
-	bool apidump = false;
+  bool rawdump = false;
+  bool apidump = false;
 
 #ifndef _MSC_VER
   int c;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     default:
       abort();
     }
-}
+  }
 #else
   int optind = 1;
 #endif
@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
+              << std::endl;
   }
   simdjson::padded_string p;
   try {
@@ -80,25 +81,28 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   simdjson::ParsedJson pj;
-  bool allocok = pj.allocateCapacity(p.size(), 1024);
+  bool allocok = pj.allocate_capacity(p.size(), 1024);
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res = simdjson::json_parse(p, pj); // do the parsing, return false on error
+  int res =
+      simdjson::json_parse(p, pj); // do the parsing, return false on error
   if (res != simdjson::SUCCESS) {
-    std::cerr << " Parsing failed. Error is '" << simdjson::errorMsg(res) << "'." << std::endl;
+    std::cerr << " Parsing failed. Error is '" << simdjson::error_message(res)
+              << "'." << std::endl;
     return EXIT_FAILURE;
   }
   if (apidump) {
-    simdjson::ParsedJson::iterator pjh(pj);
-    if (!pjh.isOk()) {
+    simdjson::ParsedJson::Iterator pjh(pj);
+    if (!pjh.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
     }
     compute_dump(pjh);
   } else {
-    const bool is_ok = rawdump ? pj.dump_raw_tape(std::cout) : pj.printjson(std::cout);
+    const bool is_ok =
+        rawdump ? pj.dump_raw_tape(std::cout) : pj.print_json(std::cout);
     if (!is_ok) {
       std::cerr << " Could not print out parsed result. " << std::endl;
       return EXIT_FAILURE;

@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_PADDING_STRING_H
 #define SIMDJSON_PADDING_STRING_H
 #include "simdjson/portability.h"
-#include <memory>
 #include <cstring>
+#include <memory>
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
@@ -65,6 +65,6 @@ private:
   size_t viable_size;
   char *data_ptr;
 };
-}
+} // namespace simdjson
 
 #endif

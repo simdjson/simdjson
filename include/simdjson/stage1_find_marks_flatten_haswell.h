@@ -1,13 +1,15 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_HASWELL_H
 #define SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_HASWELL_H
 
-// This file provides the same function as 
+// This file provides the same function as
 // stage1_find_marks_flatten.h, but uses Intel intrinsics.
 // This should provide better performance on Visual Studio
 // and other compilers that do a conservative optimization.
 
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
+
+#ifdef IS_X86_64
 
 TARGET_HASWELL
 namespace simdjson {
@@ -20,15 +22,16 @@ namespace haswell {
 // needs to be large enough to handle this
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted. 
+  // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
-  if(bits == 0) return; 
+  if (bits == 0)
+    return;
   uint32_t cnt = _mm_popcnt_u64(bits);
   uint32_t next_base = base + cnt;
   idx -= 64;
   base_ptr += base;
-  { 
+  {
     base_ptr[0] = idx + _tzcnt_u64(bits);
     bits = _blsr_u64(bits);
     base_ptr[1] = idx + _tzcnt_u64(bits);
@@ -68,19 +71,18 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     base_ptr += 8;
   }
   if (cnt > 16) { // unluckly: we rarely get here
-    // since it means having one structural or pseudo-structral element 
+    // since it means having one structural or pseudo-structral element
     // every 4 characters (possible with inputs like "","","",...).
     do {
       base_ptr[0] = idx + _tzcnt_u64(bits);
       bits = _blsr_u64(bits);
       base_ptr++;
-    } while(bits != 0);
+    } while (bits != 0);
   }
   base = next_base;
 }
-} // haswell
-} // simdjson
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
-
-
+#endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H
