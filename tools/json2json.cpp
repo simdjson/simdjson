@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   simdjson::padded_string p;
   try {
     simdjson::get_corpus(filename).swap(p);
-  } catch (const std::exception &e) { // caught by reference to base
+  } catch (const std::exception &) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }

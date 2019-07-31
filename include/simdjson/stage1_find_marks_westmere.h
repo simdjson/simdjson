@@ -32,7 +32,7 @@ template <>
 really_inline uint64_t
 compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
 }
 
 template <> struct utf8_checking_state<Architecture::WESTMERE> {
@@ -48,7 +48,7 @@ template <>
 really_inline void check_utf8<Architecture::WESTMERE>(
     simd_input<Architecture::WESTMERE> in,
     utf8_checking_state<Architecture::WESTMERE> &state) {
-  __m128i high_bit = _mm_set1_epi8(0x80);
+  __m128i high_bit = _mm_set1_epi8(0x80u);
   if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error =
@@ -140,10 +140,10 @@ really_inline void find_whitespace_and_structurals<Architecture::WESTMERE>(
     simd_input<Architecture::WESTMERE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const __m128i structural_table =
-      _mm_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+      _mm_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
   const __m128i white_table = _mm_setr_epi8(32, 100, 100, 100, 17, 100, 113, 2,
                                             100, 9, 10, 112, 100, 13, 100, 100);
-  const __m128i struct_offset = _mm_set1_epi8(0xd4);
+  const __m128i struct_offset = _mm_set1_epi8(0xd4u);
   const __m128i struct_mask = _mm_set1_epi8(32);
 
   __m128i white0 = _mm_cmpeq_epi8(in.v0, _mm_shuffle_epi8(white_table, in.v0));

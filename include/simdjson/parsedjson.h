@@ -7,6 +7,7 @@
 #include "simdjson/simdjson.h"
 #include <cinttypes>
 #include <cmath>
+#include <limits>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -107,9 +108,9 @@ public:
     explicit Iterator(ParsedJson &pj_);
     ~Iterator();
 
-    Iterator(const Iterator &o);
+    Iterator(const Iterator &o) noexcept;
 
-    Iterator(Iterator &&o);
+    Iterator(Iterator &&o) noexcept;
 
     inline bool is_ok() const;
 
@@ -167,7 +168,7 @@ public:
     // we're at "d"
     inline double get_double() const {
       if (location + 1 >= tape_length) {
-        return NAN; // default value in case of error
+        return std::numeric_limits<double>::quiet_NaN(); // default value in case of error
       }
       double answer;
       memcpy(&answer, &pj.tape[location + 1], sizeof(answer));

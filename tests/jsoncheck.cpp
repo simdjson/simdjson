@@ -68,7 +68,7 @@ bool validate(const char *dirname) {
       simdjson::padded_string p;
       try {
         simdjson::get_corpus(fullpath).swap(p);
-      } catch (const std::exception &e) {
+      } catch (const std::exception &) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
