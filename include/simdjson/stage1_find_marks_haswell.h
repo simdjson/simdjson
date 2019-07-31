@@ -30,7 +30,7 @@ compute_quote_mask<Architecture::HASWELL>(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFF), 0));
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
   return quote_mask;
 }
 
@@ -49,7 +49,7 @@ template <>
 really_inline void check_utf8<Architecture::HASWELL>(
     simd_input<Architecture::HASWELL> in,
     utf8_checking_state<Architecture::HASWELL> &state) {
-  __m256i high_bit = _mm256_set1_epi8(0x80);
+  __m256i high_bit = _mm256_set1_epi8(0x80u);
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error = _mm256_or_si256(
@@ -170,12 +170,12 @@ really_inline void find_whitespace_and_structurals<Architecture::HASWELL>(
 
 #else  // SIMDJSON_NAIVE_STRUCTURAL
   const __m256i structural_table =
-      _mm256_setr_epi8(44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
-                       44, 125, 0, 0, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+      _mm256_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
+                       44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
   const __m256i white_table = _mm256_setr_epi8(
       32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100,
       32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100);
-  const __m256i struct_offset = _mm256_set1_epi8(0xd4);
+  const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
   const __m256i struct_mask = _mm256_set1_epi8(32);
 
   __m256i lo_white =

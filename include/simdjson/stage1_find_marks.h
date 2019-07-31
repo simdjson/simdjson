@@ -11,7 +11,7 @@ namespace simdjson {
 
 template <Architecture> struct simd_input;
 
-template <Architecture T> uint64_t compute_quote_mask(uint64_t quote_bits);
+template <Architecture> uint64_t compute_quote_mask(uint64_t quote_bits);
 
 namespace {
 // for when clmul is unavailable

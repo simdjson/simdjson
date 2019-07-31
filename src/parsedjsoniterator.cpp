@@ -34,7 +34,7 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
 
 ParsedJson::Iterator::~Iterator() { delete[] depth_index; }
 
-ParsedJson::Iterator::Iterator(const Iterator &o)
+ParsedJson::Iterator::Iterator(const Iterator &o) noexcept
     : pj(o.pj), depth(o.depth), location(o.location), tape_length(0),
       current_type(o.current_type), current_val(o.current_val),
       depth_index(nullptr) {
@@ -45,7 +45,7 @@ ParsedJson::Iterator::Iterator(const Iterator &o)
   tape_length = o.tape_length;
 }
 
-ParsedJson::Iterator::Iterator(Iterator &&o)
+ParsedJson::Iterator::Iterator(Iterator &&o) noexcept
     : pj(o.pj), depth(o.depth), location(o.location),
       tape_length(o.tape_length), current_type(o.current_type),
       current_val(o.current_val), depth_index(o.depth_index) {
@@ -114,7 +114,7 @@ bool ParsedJson::Iterator::move_to(const char *pointer, uint32_t length) {
           }
           new_pointer[new_length] = fragment;
           i += 3;
-        } catch (std::invalid_argument &e) {
+        } catch (std::invalid_argument &) {
           delete[] new_pointer;
           return false; // the fragment is invalid
         }
