@@ -8,7 +8,8 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
   if (!pj.is_valid()) {
     throw InvalidJSON();
   }
-  depth_index = new scopeindex_t[pj.depth_capacity];
+  // we overallocate by "1" to silence a warning in Visual Studio
+  depth_index = new scopeindex_t[pj.depth_capacity + 1];
   // memory allocation would throw
   // if(depth_index == nullptr) {
   //    return;
@@ -19,7 +20,9 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
   depth_index[0].scope_type = current_type;
   if (current_type == 'r') {
     tape_length = current_val & JSON_VALUE_MASK;
-    if (location < tape_length) {
+    if (location < tape_length) { 
+      // If we make it here, then depth_capacity must >=2, but the compiler
+      // may not know this.
       current_val = pj.tape[location];
       current_type = (current_val >> 56);
       depth++;
