@@ -8,8 +8,8 @@ if [ $? -ne 0 ]; then
 	echo "clang-format not installed. Unable to check source file format policy." >&2
 	exit 1
 fi
-OURSTYLE='--style=llvm'
-OURCONTENT="include benchmark tools tests"
+OURSTYLE='' # defer to .clang-format
+OURCONTENT="include benchmark tools tests src"
 RE=0
 ALLFILES=$(find $OURCONTENT -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.cc' -o -name '*.hh')
 for FILE in $ALLFILES; do
