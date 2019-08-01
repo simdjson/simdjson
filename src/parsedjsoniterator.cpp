@@ -20,7 +20,7 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
   depth_index[0].scope_type = current_type;
   if (current_type == 'r') {
     tape_length = current_val & JSON_VALUE_MASK;
-    if (location < tape_length) { 
+    if (location < tape_length) {
       // If we make it here, then depth_capacity must >=2, but the compiler
       // may not know this.
       current_val = pj.tape[location];
