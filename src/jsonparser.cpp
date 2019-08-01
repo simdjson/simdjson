@@ -1,5 +1,5 @@
-#include "simdjson/isadetection.h"
 #include "simdjson/jsonparser.h"
+#include "simdjson/isadetection.h"
 #include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
 
