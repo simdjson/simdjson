@@ -7,7 +7,7 @@ endif()
 
 # usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
 option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
-	
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
@@ -19,9 +19,9 @@ endif()
 project(simdjson)
 set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 1)
-set(PROJECT_VERSION_PATCH 2)
-set(SIMDJSON_LIB_VERSION "0.1.2" CACHE STRING "simdjson library version")
+set(PROJECT_VERSION_MINOR 2)
+set(PROJECT_VERSION_PATCH 0)
+set(SIMDJSON_LIB_VERSION "0.2.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
 if(NOT MSVC)
