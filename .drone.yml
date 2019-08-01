@@ -64,7 +64,6 @@ steps:
     - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest
-    - ./style/run-clang-format.py -r include/ benchmark/ src/ tests/
 ---
 kind: pipeline
 name: amd64_gcc_cmake
