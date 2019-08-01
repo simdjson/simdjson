@@ -98,23 +98,6 @@ really_inline uint64_t unsigned_lteq_against_input<Architecture::HASWELL>(
 }
 
 template <>
-really_inline uint64_t find_odd_backslash_sequences<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in,
-    uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(Architecture::HASWELL, in,
-                               prev_iter_ends_odd_backslash);
-}
-
-template <>
-really_inline uint64_t find_quote_mask_and_bits<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
-    uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(Architecture::HASWELL, in, odd_ends,
-                           prev_iter_inside_quote, quote_bits, error_mask)
-}
-
-template <>
 really_inline void find_whitespace_and_structurals<Architecture::HASWELL>(
     simd_input<Architecture::HASWELL> in, uint64_t &whitespace,
     uint64_t &structurals) {
