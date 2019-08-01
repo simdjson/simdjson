@@ -6,6 +6,13 @@
 // This should provide better performance on Visual Studio
 // and other compilers that do a conservative optimization.
 
+// Specifically, on x64 processors with BMI,
+// x & (x - 1) should be mapped to
+// the blsr instruction. By using the
+// _blsr_u64 intrinsic, we
+// ensure that this will happen.
+/////////
+
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 
@@ -32,41 +39,41 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   idx -= 64;
   base_ptr += base;
   {
-    base_ptr[0] = idx + _tzcnt_u64(bits);
+    base_ptr[0] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[1] = idx + _tzcnt_u64(bits);
+    base_ptr[1] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[2] = idx + _tzcnt_u64(bits);
+    base_ptr[2] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[3] = idx + _tzcnt_u64(bits);
+    base_ptr[3] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[4] = idx + _tzcnt_u64(bits);
+    base_ptr[4] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[5] = idx + _tzcnt_u64(bits);
+    base_ptr[5] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[6] = idx + _tzcnt_u64(bits);
+    base_ptr[6] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[7] = idx + _tzcnt_u64(bits);
+    base_ptr[7] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
     base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
   if (cnt > 8) {
-    base_ptr[0] = idx + _tzcnt_u64(bits);
+    base_ptr[0] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[1] = idx + _tzcnt_u64(bits);
+    base_ptr[1] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[2] = idx + _tzcnt_u64(bits);
+    base_ptr[2] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[3] = idx + _tzcnt_u64(bits);
+    base_ptr[3] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[4] = idx + _tzcnt_u64(bits);
+    base_ptr[4] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[5] = idx + _tzcnt_u64(bits);
+    base_ptr[5] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[6] = idx + _tzcnt_u64(bits);
+    base_ptr[6] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
-    base_ptr[7] = idx + _tzcnt_u64(bits);
+    base_ptr[7] = idx + trailing_zeroes(bits);
     bits = _blsr_u64(bits);
     base_ptr += 8;
   }
@@ -74,7 +81,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     // since it means having one structural or pseudo-structral element
     // every 4 characters (possible with inputs like "","","",...).
     do {
-      base_ptr[0] = idx + _tzcnt_u64(bits);
+      base_ptr[0] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
       base_ptr++;
     } while (bits != 0);
