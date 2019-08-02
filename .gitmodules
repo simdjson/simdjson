@@ -25,3 +25,6 @@
 [submodule "dependencies/jsoncpp"]
 	path = dependencies/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
+[submodule "dependencies/json"]
+	path = dependencies/json
+	url = https://github.com/nlohmann/json.git

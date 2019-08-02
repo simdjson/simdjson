@@ -5,7 +5,7 @@
 
 
 .PHONY: clean cleandist
-COREDEPSINCLUDE = -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
+COREDEPSINCLUDE = -Idependencies/json/single_include -Idependencies/rapidjson/include -Idependencies/sajson/include -Idependencies/cJSON  -Idependencies/jsmn
 EXTRADEPSINCLUDE =  -Idependencies/jsoncppdist -Idependencies/json11 -Idependencies/fastjson/src -Idependencies/fastjson/include -Idependencies/gason/src -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src
 # users can provide their own additional flags with make EXTRAFLAGS=something
 architecture:=$(shell arch)
@@ -76,9 +76,9 @@ GASON_INCLUDE:=dependencies/gason/src/gason.h
 UJSON4C_INCLUDE:=dependencies/ujson4c/src/ujdecode.c
 CJSON_INCLUDE:=dependencies/cJSON/cJSON.h
 JSMN_INCLUDE:=dependencies/jsmn/jsmn.h
+JSON_INCLUDE:=dependencies/json/single_include/nlohmann/json.hpp
 
-
-LIBS=$(RAPIDJSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE)
+LIBS=$(RAPIDJSON_INCLUDE) $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE)
 
 EXTRAOBJECTS=ujdecode.o
 all:  $(MAINEXECUTABLES)
@@ -118,7 +118,7 @@ submodules:
 	-git submodule update --init --recursive
 	-touch submodules
 
-$(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
+$(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
@@ -179,6 +179,7 @@ distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) submodules 
+	@echo "In case of build error due to missing files, try 'make clean'"
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
 allparsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) $(EXTRAOBJECTS) submodules
