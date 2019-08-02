@@ -18,7 +18,6 @@ $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/stage1_find_marks.cpp
-$SCRIPTPATH/src/stage1_find_marks_common.cpp
 $SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
 $SCRIPTPATH/src/parsedjsoniterator.cpp
@@ -63,20 +62,28 @@ for i in ${ALLCHEADERS} ${ALLCFILES}; do
     exit 127
 done
 
-
-function stripinc()
-{
-    sed -e '/# *include *"/d' -e '/# *include *<simdjson\//d'
-}
 function dofile()
 {
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
-    stripinc < $1
+    while IFS= read -r line
+    do
+        if [[ "${line}" == '#include "simdjson'* ]]; then
+            # we ignore lines with simdjson includes
+            # they won't be in the amalgation
+            :
+        elif [[ "${line}" == "#include "*"_common.cpp"* ]]; then
+            # we paste the contents of included files with names ending by _common.cpp
+            file=$(echo $line| cut -d'"' -f 2)
+            echo "$(<src/$file)" # we assume those files are always in src/
+        else
+            # Otherwise we simply copy the line
+            echo "$line"
+        fi;
+    done < "$1"
     echo "/* end file $RELFILE */"
 }
-
 timestamp=$(date)
 echo "Creating ${AMAL_H}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_H}"
