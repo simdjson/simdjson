@@ -13,7 +13,7 @@ TARGET_WESTMERE
 namespace simdjson {
 #define TARGETED_ARCHITECTURE Architecture::WESTMERE
 #include "simdjson/stage2_build_tape_common.h"
-#undef TARGETED_ARCHITECTURE 
+#undef TARGETED_ARCHITECTURE
 } // namespace simdjson
 UNTARGET_REGION
 #endif // IS_X86_64
