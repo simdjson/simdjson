@@ -8,7 +8,7 @@
 TARGET_HASWELL
 namespace simdjson {
 #define TARGETED_ARCHITECTURE Architecture::HASWELL
-#include "./stage1_find_marks_common.cpp"
+#include "simdjson/stage1_find_marks_common.h"
 #undef TARGETED_ARCHITECTURE
 } // namespace simdjson
 UNTARGET_REGION
@@ -16,7 +16,7 @@ UNTARGET_REGION
 TARGET_WESTMERE
 namespace simdjson {
 #define TARGETED_ARCHITECTURE Architecture::WESTMERE
-#include "./stage1_find_marks_common.cpp"
+#include "simdjson/stage1_find_marks_common.h"
 #undef TARGETED_ARCHITECTURE
 } // namespace simdjson
 UNTARGET_REGION
@@ -27,7 +27,7 @@ UNTARGET_REGION
 #include "simdjson/stage1_find_marks_arm64.h"
 namespace simdjson {
 #define TARGETED_ARCHITECTURE Architecture::NEON
-#include "./stage1_find_marks_common.cpp"
+#include "simdjson/stage1_find_marks_common.h"
 #undef TARGETED_ARCHITECTURE
 } // namespace simdjson
 #endif // IS_ARM64

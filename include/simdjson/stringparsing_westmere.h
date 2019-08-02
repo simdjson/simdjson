@@ -25,7 +25,7 @@ find_bs_bits_and_quote_bits<Architecture::WESTMERE>(const uint8_t *src,
 }
 
 #define TARGETED_ARCHITECTURE Architecture::WESTMERE
-#include "../../src/stringparsing_common.cpp"
+#include "simdjson/stringparsing_common.h"
 #undef TARGETED_ARCHITECTURE
 
 } // namespace simdjson

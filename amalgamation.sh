@@ -69,13 +69,12 @@ function dofile()
     while IFS= read -r line
     do
         if [[ "${line}" == '#include "simdjson'* ]]; then
-            # we ignore lines with simdjson includes
-            # they won't be in the amalgation
-            :
-        elif [[ "${line}" == "#include "*"_common.cpp"* ]]; then
-            # we paste the contents of included files with names ending by _common.cpp
-            file=$(echo $line| cut -d'"' -f 2)
-            echo "$(<src/$file)" # we assume those files are always in src/
+            # we paste the contents of included files with names ending by _common.h
+            # we ignore every other headers from simdjson
+            if [[ "${line}" == '#include "simdjson/'*'_common.h"'* ]]; then
+              file=$(echo $line| cut -d'"' -f 2)
+              echo "$(<include/$file)" # we assume those files are always in include/
+            fi
         else
             # Otherwise we simply copy the line
             echo "$line"
