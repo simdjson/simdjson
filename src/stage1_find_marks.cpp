@@ -26,7 +26,7 @@ UNTARGET_REGION
 #ifdef IS_ARM64
 #include "simdjson/stage1_find_marks_arm64.h"
 namespace simdjson {
-#define TARGETED_ARCHITECTURE Architecture::NEON
+#define TARGETED_ARCHITECTURE Architecture::ARM64
 #include "simdjson/stage1_find_marks_common.h"
 #undef TARGETED_ARCHITECTURE
 } // namespace simdjson

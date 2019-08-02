@@ -63,14 +63,15 @@ done
 
 function dofile()
 {
+    # Last lines are always ignored. Files should end by an empty lines.
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     while IFS= read -r line
     do
         if [[ "${line}" == '#include "simdjson'* ]]; then
-            # we paste the contents of included files with names ending by _common.h
-            # we ignore every other headers from simdjson
+            # we paste the contents of simdjson header files with names ending by _common.h
+            # we ignore every other simdjson headers
             if [[ "${line}" == '#include "simdjson/'*'_common.h"'* ]]; then
               file=$(echo $line| cut -d'"' -f 2)
               echo "$(<include/$file)" # we assume those files are always in include/
