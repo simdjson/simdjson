@@ -20,6 +20,9 @@
 
 #include "sajson.h"
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 #ifdef ALLPARSER
 
 #include "fastjson.cpp"
@@ -158,6 +161,11 @@ int main(int argc, char *argv[]) {
                     sajson::mutable_string_view(p.size(), buffer))
           .is_valid(),
       true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+  size_t expected = json::parse(p.data(), p.data() + p.size()).size();
+  BEST_TIME("nlohmann-json", json::parse(buffer, buffer + p.size()).size(),
+            expected, memcpy(buffer, p.data(), p.size()), repeat, volume,
+            !just_data);
+
 #ifdef ALLPARSER
   std::string json11err;
   BEST_TIME("dropbox (json11)     ",
