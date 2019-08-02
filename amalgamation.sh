@@ -47,7 +47,6 @@ $SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h
 $SCRIPTPATH/include/simdjson/stringparsing.h
-$SCRIPTPATH/include/simdjson/stringparsing_macros.h
 $SCRIPTPATH/include/simdjson/stringparsing_westmere.h
 $SCRIPTPATH/include/simdjson/stringparsing_haswell.h
 $SCRIPTPATH/include/simdjson/stringparsing_arm64.h
