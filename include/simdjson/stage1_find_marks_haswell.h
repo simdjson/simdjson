@@ -151,12 +151,14 @@ really_inline void find_whitespace_and_structurals<Architecture::HASWELL>(
   // end of naive approach
 
 #else  // SIMDJSON_NAIVE_STRUCTURAL
+  // clang-format off
   const __m256i structural_table =
       _mm256_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
                        44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
   const __m256i white_table = _mm256_setr_epi8(
       32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100,
       32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100);
+  // clang-format on
   const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
   const __m256i struct_mask = _mm256_set1_epi8(32);
 

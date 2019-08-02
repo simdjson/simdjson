@@ -48,6 +48,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 | ultrajson                             | 0.42 |
 | jsmn                                  | 0.28 |
 | cJSON                                 | 0.34 |
+| JSON for Modern C++ (nlohmann/json)   | 0.10 |
 
 ## Requirements
 

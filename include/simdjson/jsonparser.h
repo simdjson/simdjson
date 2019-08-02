@@ -10,7 +10,8 @@
 #include <string>
 #ifdef _MSC_VER
 #include <windows.h>
-#include <sysinfoapi.h> // must be included after windows.h
+// must be included after windows.h
+#include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #endif

@@ -547,6 +547,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       while ((*start == '0') || (*start == '.')) {
         start++;
       }
+      // we over-decrement by one when there is a '.'
       digit_count -= (start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
