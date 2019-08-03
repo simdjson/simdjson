@@ -189,6 +189,10 @@ sometimes called runtime dispatch).
 We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
 There is no runtime dispatch on ARM.
 
+## Thread safety
+
+The simdjson library is single-threaded and thread safety is the responsability of the caller. If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. For safety, you should always call json_parse at least once in a single-threaded context.
+
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
