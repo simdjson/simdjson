@@ -17,6 +17,6 @@ environment:
 build_script:
   - mkdir build
   - cd build
-  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC"  -DCMAKE_GENERATOR_PLATFORM=x64 ..
+  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR_PLATFORM=x64 ..
   - cmake --build .
   - ctest --verbose
