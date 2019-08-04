@@ -17,18 +17,6 @@
 #endif
 
 namespace simdjson {
-// The function that users are expected to call is json_parse.
-// We have more than one such function because we want to support several
-// instruction sets.
-
-// function pointer type for json_parse
-using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
-                                bool realloc_if_needed);
-
-// Pointer that holds the json_parse implementation corresponding to the
-// available SIMD instruction set
-extern json_parse_functype *json_parse_ptr;
-
 // json_parse_implementation is the generic function, it is specialized for
 // various architectures, e.g., as
 // json_parse_implementation<Architecture::HASWELL> or
@@ -42,7 +30,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
   bool reallocated = false;
   if (realloc_if_needed) {
 #if ALLOW_SAME_PAGE_BUFFER_OVERRUN
-    // realloc is needed if the end of the memory crosses a page
+// realloc is needed if the end of the memory crosses a page
 #ifdef _MSC_VER
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -110,10 +98,8 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
 // realloc_if_needed is false, all bytes at and after buf + len  are ignored
 // (can be garbage). The ParsedJson object can be reused.
 
-inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed = true) {
-  return json_parse_ptr(buf, len, pj, realloc_if_needed);
-}
+int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
+               bool realloc_if_needed = true);
 
 // Parse a document found in buf.
 //
@@ -139,11 +125,8 @@ inline int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
 // buf should be readable up to buf + len + SIMDJSON_PADDING  if
 // realloc_if_needed is false, all bytes at and after buf + len  are ignored
 // (can be garbage). The ParsedJson object can be reused.
-inline int json_parse(const char *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed = true) {
-  return json_parse_ptr(reinterpret_cast<const uint8_t *>(buf), len, pj,
-                        realloc_if_needed);
-}
+int json_parse(const char *buf, size_t len, ParsedJson &pj,
+               bool realloc_if_needed = true);
 
 // We do not want to allow implicit conversion from C string to std::string.
 int json_parse(const char *buf, ParsedJson &pj) = delete;
