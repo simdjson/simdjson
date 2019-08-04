@@ -11,12 +11,12 @@ platform:
 
 environment:
   matrix:
-    - AVXFLAG: "OFF"
-    - AVXFLAG: "ON"
-
+    - SIMDJSON_BUILD_STATIC: "OFF"
+    - SIMDJSON_BUILD_STATIC: "ON"
+      
 build_script:
   - mkdir build
   - cd build
-  - ps: cmake -DSIMDJSON_DISABLE_AVX="$env:AVXFLAG"  -DCMAKE_GENERATOR_PLATFORM=x64 ..
+  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC"  -DCMAKE_GENERATOR_PLATFORM=x64 ..
   - cmake --build .
   - ctest --verbose
