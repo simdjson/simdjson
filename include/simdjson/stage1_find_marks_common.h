@@ -4,6 +4,10 @@
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
 #ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
 
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
@@ -226,4 +230,12 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   return check_utf8_errors<TARGETED_ARCHITECTURE>(utf8_state);
 }
 
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
 #endif // TARGETED_ARCHITECTURE

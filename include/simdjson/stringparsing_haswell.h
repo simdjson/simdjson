@@ -24,13 +24,15 @@ find_bs_bits_and_quote_bits<Architecture::HASWELL>(const uint8_t *src,
       static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
   };
 }
-
-#define TARGETED_ARCHITECTURE Architecture::HASWELL
-#include "simdjson/stringparsing_common.h"
-#undef TARGETED_ARCHITECTURE
-
 } // namespace simdjson
 UNTARGET_REGION
-#endif
+
+#define TARGETED_ARCHITECTURE Architecture::HASWELL
+#define TARGETED_REGION TARGET_HASWELL
+#include "simdjson/stringparsing_common.h"
+#undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
+
+#endif // IS_X86_64
 
 #endif

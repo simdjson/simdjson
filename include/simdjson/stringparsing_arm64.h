@@ -41,10 +41,13 @@ find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
   };
 }
 
+} // namespace simdjson
+
 #define TARGETED_ARCHITECTURE Architecture::ARM64
+#define TARGETED_REGION TARGET_ARM64
 #include "simdjson/stringparsing_common.h"
 #undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
 
-} // namespace simdjson
-#endif
+#endif // IS_ARM64
 #endif

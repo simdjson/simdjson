@@ -23,13 +23,15 @@ find_bs_bits_and_quote_bits<Architecture::WESTMERE>(const uint8_t *src,
       static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
   };
 }
-
-#define TARGETED_ARCHITECTURE Architecture::WESTMERE
-#include "simdjson/stringparsing_common.h"
-#undef TARGETED_ARCHITECTURE
-
 } // namespace simdjson
 UNTARGET_REGION
-#endif
+
+#define TARGETED_ARCHITECTURE Architecture::WESTMERE
+#define TARGETED_REGION TARGET_WESTMERE
+#include "simdjson/stringparsing_common.h"
+#undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
+
+#endif // IS_X86_64
 
 #endif

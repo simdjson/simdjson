@@ -4,6 +4,11 @@
 // "simdjson/stringparsing.h" (this simplifies amalgation)
 
 #ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
+
 template <>
 WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
     really_inline bool
@@ -88,4 +93,12 @@ WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
   return true;
 }
 
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
 #endif // TARGETED_ARCHITECTURE
