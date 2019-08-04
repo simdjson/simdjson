@@ -10,8 +10,8 @@ namespace simdjson {
 // instruction sets.
 
 // function pointer type for json_parse
-using json_parse_functype =
-    int(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc_if_needed);
+using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
+ bool realloc_if_needed);
 
 // Pointer that holds the json_parse implementation corresponding to the
 // available SIMD instruction set
