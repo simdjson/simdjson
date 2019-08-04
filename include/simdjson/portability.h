@@ -27,16 +27,20 @@
 #define TARGET_REGION(T)                                                       \
   _Pragma("GCC push_options") _Pragma(STRINGIFY(GCC target(T)))
 #define UNTARGET_REGION _Pragma("GCC pop_options")
-#else
+#endif // clang then gcc
+
+#endif  // x86
+
+// Default target region macros don't do anything.
+#ifndef TARGET_REGION
 #define TARGET_REGION(T)
 #define UNTARGET_REGION
-#endif // clang then gcc
+#endif
 
 // under GCC and CLANG, we use these two macros
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul")
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
-
-#endif // x86
+#define TARGET_ARM64
 
 #ifdef _MSC_VER
 #include <intrin.h>

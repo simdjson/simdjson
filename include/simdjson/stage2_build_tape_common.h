@@ -4,6 +4,11 @@
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
 #ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
+
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
   {                                                                            \
@@ -522,4 +527,12 @@ fail:
   return pj.error_code;
 }
 
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
 #endif // TARGETED_ARCHITECTURE
