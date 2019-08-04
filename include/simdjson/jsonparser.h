@@ -30,7 +30,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
   bool reallocated = false;
   if (realloc_if_needed) {
 #if ALLOW_SAME_PAGE_BUFFER_OVERRUN
-    // realloc is needed if the end of the memory crosses a page
+// realloc is needed if the end of the memory crosses a page
 #ifdef _MSC_VER
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
@@ -99,7 +99,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
 // (can be garbage). The ParsedJson object can be reused.
 
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed = true);
+               bool realloc_if_needed = true);
 
 // Parse a document found in buf.
 //
@@ -126,7 +126,7 @@ int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
 // realloc_if_needed is false, all bytes at and after buf + len  are ignored
 // (can be garbage). The ParsedJson object can be reused.
 int json_parse(const char *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed = true);
+               bool realloc_if_needed = true);
 
 // We do not want to allow implicit conversion from C string to std::string.
 int json_parse(const char *buf, ParsedJson &pj) = delete;
