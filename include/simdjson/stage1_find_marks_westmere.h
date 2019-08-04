@@ -4,7 +4,6 @@
 #include "simdjson/simdutf8check_westmere.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage1_find_marks_flatten.h"
-#include "simdjson/stage1_find_marks_macros.h"
 
 #ifdef IS_X86_64
 
@@ -116,23 +115,6 @@ really_inline uint64_t unsigned_lteq_against_input<Architecture::WESTMERE>(
   __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v3), maxval);
   uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
   return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
-}
-
-template <>
-really_inline uint64_t find_odd_backslash_sequences<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in,
-    uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(Architecture::WESTMERE, in,
-                               prev_iter_ends_odd_backslash);
-}
-
-template <>
-really_inline uint64_t find_quote_mask_and_bits<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
-    uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(Architecture::WESTMERE, in, odd_ends,
-                           prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template <>

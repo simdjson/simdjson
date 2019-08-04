@@ -4,7 +4,6 @@
 #include "simdjson/simdutf8check_haswell.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage1_find_marks_flatten_haswell.h"
-#include "simdjson/stage1_find_marks_macros.h"
 
 #ifdef IS_X86_64
 
@@ -95,23 +94,6 @@ really_inline uint64_t unsigned_lteq_against_input<Architecture::HASWELL>(
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, in.hi), maxval);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
-}
-
-template <>
-really_inline uint64_t find_odd_backslash_sequences<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in,
-    uint64_t &prev_iter_ends_odd_backslash) {
-  FIND_ODD_BACKSLASH_SEQUENCES(Architecture::HASWELL, in,
-                               prev_iter_ends_odd_backslash);
-}
-
-template <>
-really_inline uint64_t find_quote_mask_and_bits<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
-    uint64_t &error_mask) {
-  FIND_QUOTE_MASK_AND_BITS(Architecture::HASWELL, in, odd_ends,
-                           prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template <>

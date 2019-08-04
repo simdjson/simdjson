@@ -2,7 +2,6 @@
 #define SIMDJSON_STRINGPARSING_HASWELL_H
 
 #include "simdjson/stringparsing.h"
-#include "simdjson/stringparsing_macros.h"
 
 #ifdef IS_X86_64
 TARGET_HASWELL
@@ -26,15 +25,9 @@ find_bs_bits_and_quote_bits<Architecture::HASWELL>(const uint8_t *src,
   };
 }
 
-template <>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-    really_inline bool
-    parse_string<Architecture::HASWELL>(UNUSED const uint8_t *buf,
-                                        UNUSED size_t len, ParsedJson &pj,
-                                        UNUSED const uint32_t depth,
-                                        UNUSED uint32_t offset) {
-  PARSE_STRING(Architecture::HASWELL, buf, len, pj, depth, offset);
-}
+#define TARGETED_ARCHITECTURE Architecture::HASWELL
+#include "simdjson/stringparsing_common.h"
+#undef TARGETED_ARCHITECTURE
 
 } // namespace simdjson
 UNTARGET_REGION

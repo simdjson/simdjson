@@ -2,7 +2,6 @@
 #define SIMDJSON_STRINGPARSING_ARM64_H
 
 #include "simdjson/stringparsing.h"
-#include "simdjson/stringparsing_macros.h"
 
 #ifdef IS_ARM64
 namespace simdjson {
@@ -42,15 +41,10 @@ find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
   };
 }
 
-template <>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
-    really_inline bool
-    parse_string<Architecture::ARM64>(UNUSED const uint8_t *buf,
-                                      UNUSED size_t len, ParsedJson &pj,
-                                      UNUSED const uint32_t depth,
-                                      UNUSED uint32_t offset) {
-  PARSE_STRING(Architecture::ARM64, buf, len, pj, depth, offset);
-}
+#define TARGETED_ARCHITECTURE Architecture::ARM64
+#include "simdjson/stringparsing_common.h"
+#undef TARGETED_ARCHITECTURE
+
 } // namespace simdjson
 #endif
 #endif

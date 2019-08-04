@@ -43,12 +43,10 @@ $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_flatten.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_flatten_haswell.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_macros.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h
 $SCRIPTPATH/include/simdjson/stringparsing.h
-$SCRIPTPATH/include/simdjson/stringparsing_macros.h
 $SCRIPTPATH/include/simdjson/stringparsing_westmere.h
 $SCRIPTPATH/include/simdjson/stringparsing_haswell.h
 $SCRIPTPATH/include/simdjson/stringparsing_arm64.h
@@ -63,20 +61,28 @@ for i in ${ALLCHEADERS} ${ALLCFILES}; do
     exit 127
 done
 
-
-function stripinc()
-{
-    sed -e '/# *include *"/d' -e '/# *include *<simdjson\//d'
-}
 function dofile()
 {
+    # Last lines are always ignored. Files should end by an empty lines.
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
-    stripinc < $1
+    while IFS= read -r line
+    do
+        if [[ "${line}" == '#include "simdjson'* ]]; then
+            # we paste the contents of simdjson header files with names ending by _common.h
+            # we ignore every other simdjson headers
+            if [[ "${line}" == '#include "simdjson/'*'_common.h"'* ]]; then
+              file=$(echo $line| cut -d'"' -f 2)
+              echo "$(<include/$file)" # we assume those files are always in include/
+            fi
+        else
+            # Otherwise we simply copy the line
+            echo "$line"
+        fi;
+    done < "$1"
     echo "/* end file $RELFILE */"
 }
-
 timestamp=$(date)
 echo "Creating ${AMAL_H}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_H}"

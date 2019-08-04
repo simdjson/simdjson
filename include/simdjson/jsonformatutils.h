@@ -198,5 +198,4 @@ static inline void print_with_escapes(const char *src, std::ostream &os,
 }
 } // namespace simdjson
 
-#
 #endif
