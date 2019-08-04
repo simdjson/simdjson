@@ -1,0 +1,14 @@
+*
+!Makefile
+!amalgamation.sh
+!benchmark
+!dependencies
+!include
+!jsonchecker
+!jsonexamples
+!scripts
+!singleheader
+!src
+!style
+!tests
+!tools
