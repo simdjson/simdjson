@@ -18,16 +18,15 @@ using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
 extern json_parse_functype *json_parse_ptr;
 
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed) {
+               bool realloc_if_needed) {
   return json_parse_ptr(buf, len, pj, realloc_if_needed);
 }
 
 int json_parse(const char *buf, size_t len, ParsedJson &pj,
-                      bool realloc_if_needed) {
+               bool realloc_if_needed) {
   return json_parse_ptr(reinterpret_cast<const uint8_t *>(buf), len, pj,
                         realloc_if_needed);
 }
-
 
 Architecture find_best_supported_implementation() {
   constexpr uint32_t haswell_flags =
