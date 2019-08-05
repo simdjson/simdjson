@@ -2,6 +2,7 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
+#include <atomic>
 
 namespace simdjson {
 
@@ -15,17 +16,17 @@ using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
 
 // Pointer that holds the json_parse implementation corresponding to the
 // available SIMD instruction set
-extern json_parse_functype *json_parse_ptr;
+extern std::atomic<json_parse_functype *> json_parse_ptr;
 
 int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
                bool realloc_if_needed) {
-  return json_parse_ptr(buf, len, pj, realloc_if_needed);
+  return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc_if_needed);
 }
 
 int json_parse(const char *buf, size_t len, ParsedJson &pj,
                bool realloc_if_needed) {
-  return json_parse_ptr(reinterpret_cast<const uint8_t *>(buf), len, pj,
-                        realloc_if_needed);
+  return json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
+                                                        realloc_if_needed);
 }
 
 Architecture find_best_supported_implementation() {
@@ -55,15 +56,15 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
   switch (best_implementation) {
 #ifdef IS_X86_64
   case Architecture::HASWELL:
-    json_parse_ptr = &json_parse_implementation<Architecture::HASWELL>;
+    json_parse_ptr.store(&json_parse_implementation<Architecture::HASWELL>, std::memory_order_relaxed);
     break;
   case Architecture::WESTMERE:
-    json_parse_ptr = &json_parse_implementation<Architecture::WESTMERE>;
+    json_parse_ptr.store(&json_parse_implementation<Architecture::WESTMERE>, std::memory_order_relaxed);
     break;
 #endif
 #ifdef IS_ARM64
   case Architecture::ARM64:
-    json_parse_ptr = &json_parse_implementation<Architecture::ARM64>;
+    json_parse_ptr.store(&json_parse_implementation<Architecture::ARM64>, std::memory_order_relaxed);
     break;
 #endif
   default:
@@ -71,10 +72,10 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
     return simdjson::UNEXPECTED_ERROR;
   }
 
-  return json_parse_ptr(buf, len, pj, realloc_if_needed);
+  return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc_if_needed);
 }
 
-json_parse_functype *json_parse_ptr = &json_parse_dispatch;
+std::atomic<json_parse_functype *> json_parse_ptr = &json_parse_dispatch;
 
 WARN_UNUSED
 ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
