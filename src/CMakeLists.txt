@@ -15,6 +15,9 @@ else()
 endif()
 
 MESSAGE( STATUS "SIMDJSON_LIB_TYPE: " ${SIMDJSON_LIB_TYPE})
+
+# Bring in include files
+include(../include/CMakeLists.txt)
 set(SIMDJSON_SRC
     jsonioutil.cpp
     jsonminifier.cpp
@@ -24,6 +27,7 @@ set(SIMDJSON_SRC
     parsedjson.cpp
     parsedjsoniterator.cpp
     simdjson.cpp
+    ${SIMDJSON_INCLUDE}
     )
 
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})
