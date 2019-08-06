@@ -43,6 +43,7 @@ $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_flatten.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_flatten_haswell.h
+$SCRIPTPATH/include/simdjson/stage1_find_marks_macros.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h

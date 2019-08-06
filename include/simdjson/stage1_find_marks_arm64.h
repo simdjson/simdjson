@@ -4,6 +4,7 @@
 #include "simdjson/simdutf8check_arm64.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage1_find_marks_flatten.h"
+#include "simdjson/stage1_find_marks_macros.h"
 
 #ifdef IS_ARM64
 namespace simdjson {
@@ -136,6 +137,23 @@ really_inline uint64_t unsigned_lteq_against_input<Architecture::ARM64>(
   uint8x16_t cmp_res_2 = vcleq_u8(in.i2, mask);
   uint8x16_t cmp_res_3 = vcleq_u8(in.i3, mask);
   return neon_movemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+}
+
+template <>
+really_inline uint64_t find_odd_backslash_sequences<Architecture::ARM64>(
+    simd_input<Architecture::ARM64> in,
+    uint64_t &prev_iter_ends_odd_backslash) {
+  FIND_ODD_BACKSLASH_SEQUENCES(Architecture::ARM64, in,
+                               prev_iter_ends_odd_backslash);
+}
+
+template <>
+really_inline uint64_t find_quote_mask_and_bits<Architecture::ARM64>(
+    simd_input<Architecture::ARM64> in, uint64_t odd_ends,
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
+    uint64_t &error_mask) {
+  FIND_QUOTE_MASK_AND_BITS(Architecture::ARM64, in, odd_ends,
+                           prev_iter_inside_quote, quote_bits, error_mask)
 }
 
 template <>
