@@ -3,7 +3,6 @@
 
 #include "simdjson/simdutf8check_westmere.h"
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_flatten.h"
 
 #ifdef IS_X86_64
 

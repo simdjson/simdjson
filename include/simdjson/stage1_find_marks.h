@@ -116,6 +116,15 @@ int find_structural_bits(const char *buf, size_t len,
   return find_structural_bits((const uint8_t *)buf, len, pj);
 }
 
+// flatten out values in 'bits' assuming that they are are to have values of idx
+// plus their position in the bitvector, and store these indexes at
+// base_ptr[base] incrementing base as we go
+// will potentially store extra values beyond end of valid bits, so base_ptr
+// needs to be large enough to handle this
+template <Architecture T = Architecture::NATIVE>
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
+                                uint32_t idx, uint64_t bits);
+
 } // namespace simdjson
 
 #endif

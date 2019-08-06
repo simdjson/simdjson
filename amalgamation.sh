@@ -17,6 +17,7 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/include/simdjson/stage1_find_marks_flatten_haswell.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
 $SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
@@ -41,8 +42,6 @@ $SCRIPTPATH/include/simdjson/simdutf8check_arm64.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_flatten.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_flatten_haswell.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h

@@ -3,7 +3,6 @@
 
 #include "simdjson/simdutf8check_arm64.h"
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_flatten.h"
 
 #ifdef IS_ARM64
 namespace simdjson {

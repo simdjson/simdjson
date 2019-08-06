@@ -3,7 +3,6 @@
 
 #include "simdjson/simdutf8check_haswell.h"
 #include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage1_find_marks_flatten_haswell.h"
 
 #ifdef IS_X86_64
 
