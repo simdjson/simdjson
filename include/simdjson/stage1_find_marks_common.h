@@ -92,7 +92,7 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
 }
 
 // Find structural bits in a 64-byte chunk.
-void find_structural_bits_64(
+really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
