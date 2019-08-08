@@ -92,7 +92,7 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
 }
 
 // Find structural bits in a 64-byte chunk.
-void find_structural_bits_64(
+really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
@@ -113,12 +113,7 @@ void find_structural_bits_64(
   /* take the previous iterations structural bits, not our current
    * iteration,
    * and flatten */
-#ifdef IS_X86_64
-  if (TARGETED_ARCHITECTURE == Architecture::HASWELL)
-    simdjson::haswell::flatten_bits(base_ptr, base, idx, structurals);
-  else
-#endif
-    simdjson::flatten_bits(base_ptr, base, idx, structurals);
+  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
 
   uint64_t whitespace;
   find_whitespace_and_structurals<TARGETED_ARCHITECTURE>(in, whitespace,
@@ -200,12 +195,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
 
   /* finally, flatten out the remaining structurals from the last iteration
    */
-#ifdef IS_X86_64
-  if (TARGETED_ARCHITECTURE == Architecture::HASWELL)
-    simdjson::haswell::flatten_bits(base_ptr, base, idx, structurals);
-  else
-#endif
-    simdjson::flatten_bits(base_ptr, base, idx, structurals);
+  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
 
   pj.n_structural_indexes = base;
   /* a valid JSON file cannot have zero structural indexes - we should have

@@ -1,6 +1,12 @@
-#ifndef SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H
-#define SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H
+// This file contains a non-architecture-specific version of "flatten" used in stage1.
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
+#ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
 namespace simdjson {
 
 #ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
@@ -8,8 +14,9 @@ namespace simdjson {
 // This is just a naive implementation. It should be normally
 // disable, but can be used for research purposes to compare
 // again our optimized version.
-really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
-                                uint32_t idx, uint64_t bits) {
+template <>
+really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
+                                                       uint32_t idx, uint64_t bits) {
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
@@ -26,8 +33,9 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
-                                uint32_t idx, uint64_t bits) {
+template<>
+really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
+                                                       uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
@@ -88,6 +96,13 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   base = next_base;
 }
 #endif // SIMDJSON_NAIVE_FLATTEN
-} // namespace simdjson
 
-#endif // SIMDJSON_STAGE1_FIND_MARKS_FLATTEN_H
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
+#endif // TARGETED_ARCHITECTURE

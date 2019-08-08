@@ -20,7 +20,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_arm64.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_common.h
-    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_flatten.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_flatten_common.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_flatten_haswell.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_haswell.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_westmere.h
