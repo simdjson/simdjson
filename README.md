@@ -191,7 +191,9 @@ There is no runtime dispatch on ARM.
 
 ## Thread safety
 
-The simdjson library is single-threaded and thread safety is the responsability of the caller. If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. For safety, you should always call json_parse at least once in a single-threaded context.
+The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads. 
+
+If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. The runtime dispatching is thread-safe.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
