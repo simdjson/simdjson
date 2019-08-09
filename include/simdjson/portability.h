@@ -52,6 +52,14 @@
 #endif
 #endif
 
+#if defined(__clang__)
+#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#elif defined(__GNUC__)
+#define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#else
+#define NO_SANITIZE_UNDEFINED
+#endif
+
 #ifdef _MSC_VER
 /* Microsoft C/C++-compatible compiler */
 #include <cstdint>
@@ -106,7 +114,7 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2,
 }
 
 /* result might be undefined when input_num is zero */
-static inline int trailing_zeroes(uint64_t input_num) {
+static inline NO_SANITIZE_UNDEFINED int trailing_zeroes(uint64_t input_num) {
 #ifdef __BMI__ // tzcnt is BMI1
   return _tzcnt_u64(input_num);
 #else
