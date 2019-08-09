@@ -228,7 +228,137 @@ steps:
     - make -j
     - ctest
 
+---
+kind: pipeline
+name: arm64_clang_cmake_sanitize
 
+platform:
+  os: linux
+  arch: arm64
 
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang
+    CXX: clang++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake 
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
+---
+kind: pipeline
+name: arm64_gcc_cmake_sanitize
 
+platform:
+  os: linux
+  arch: arm64
 
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
+
+---
+kind: pipeline
+name: amd64_clang_cmake_sanitize
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang
+    CXX: clang++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake 
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
+---
+kind: pipeline
+name: amd64_gcc_cmake_sanitize
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake 
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
+
+---
+kind: pipeline
+name: amd64_clang_cmake_sanitize_noavx
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang
+    CXX: clang++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake 
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON  -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
+---
+kind: pipeline
+name: amd64_gcc_cmake_sanitize_noavx
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -y
+    - apt-get install -y make $CC g++ cmake 
+    - $CC --version
+    - mkdir build && cd build
+    - cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
+    - make -j
+    - ctest
