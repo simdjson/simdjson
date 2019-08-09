@@ -90,7 +90,7 @@ parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src,
                                                 uint8_t *dst);
 
 template <Architecture T>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
+WARN_UNUSED 
     really_inline bool
     parse_string(UNUSED const uint8_t *buf, UNUSED size_t len, ParsedJson &pj,
                  UNUSED const uint32_t depth, UNUSED uint32_t offset);

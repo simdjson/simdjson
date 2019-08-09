@@ -29,38 +29,12 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
   }
   bool reallocated = false;
   if (realloc_if_needed) {
-#if ALLOW_SAME_PAGE_BUFFER_OVERRUN
-// realloc is needed if the end of the memory crosses a page
-#ifdef _MSC_VER
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    long page_size = sysInfo.dwPageSize;
-#else
-    long page_size = sysconf(_SC_PAGESIZE);
-#endif
-    //////////////
-    // We want to check that buf + len - 1 and buf + len - 1 + SIMDJSON_PADDING
-    // are in the same page.
-    // That is, we want to check that
-    // (buf + len - 1) / page_size == (buf + len - 1 + SIMDJSON_PADDING) /
-    // page_size That's true if (buf + len - 1) % page_size + SIMDJSON_PADDING <
-    // page_size.
-    ///////////
-    if ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size) +
-            SIMDJSON_PADDING <
-        static_cast<uintptr_t>(page_size)) {
-#else // SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN
-    if (true) { // if not SIMDJSON_SAFE_SAME_PAGE_READ_OVERRUN, we always
-                // reallocate
-#endif
       const uint8_t *tmp_buf = buf;
       buf = (uint8_t *)allocate_padded_buffer(len);
       if (buf == NULL)
         return simdjson::MEMALLOC;
       memcpy((void *)buf, tmp_buf, len);
       reallocated = true;
-    } // if (true) OR if ( (reinterpret_cast<uintptr_t>(buf + len - 1) %
-      // page_size ) + SIMDJSON_PADDING < static_cast<uintptr_t>(page_size) ) {
   }   // if(realloc_if_needed) {
   int stage1_is_ok = simdjson::find_structural_bits<T>(buf, len, pj);
   if (stage1_is_ok != simdjson::SUCCESS) {
