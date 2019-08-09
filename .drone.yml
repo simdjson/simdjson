@@ -249,7 +249,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_gcc_cmake_sanitize
@@ -271,7 +271,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 
 ---
 kind: pipeline
@@ -294,7 +294,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_sanitize
@@ -316,7 +316,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 
 ---
 kind: pipeline
@@ -339,7 +339,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON  -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_sanitize_noavx
@@ -361,4 +361,4 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest --output-on-failure
+    - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
