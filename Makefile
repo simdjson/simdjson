@@ -123,6 +123,9 @@ $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJ
 parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
 
+perfdiff: benchmark/perfdiff.cpp
+	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFLAGS)
+
 statisticalmodel: benchmark/statisticalmodel.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o statisticalmodel $(LIBFILES) benchmark/statisticalmodel.cpp $(LIBFLAGS)
 
