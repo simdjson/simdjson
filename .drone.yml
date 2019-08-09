@@ -63,7 +63,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_clang_cmake_static
@@ -85,7 +85,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_static
@@ -107,7 +107,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_dynamic
@@ -129,7 +129,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_clang_cmake_dynamic
@@ -151,7 +151,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_gcc_cmake_dynamic
@@ -173,7 +173,7 @@ steps:
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 
   commands:
     - apt-get update -y
@@ -182,7 +182,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_clang_cmake_static
@@ -204,7 +204,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_gcc_cmake_static
@@ -226,7 +226,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 
 ---
 kind: pipeline
@@ -249,7 +249,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: arm64_gcc_cmake_sanitize
@@ -271,7 +271,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 
 ---
 kind: pipeline
@@ -294,7 +294,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_sanitize
@@ -316,7 +316,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 
 ---
 kind: pipeline
@@ -339,7 +339,7 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON  -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
 ---
 kind: pipeline
 name: amd64_gcc_cmake_sanitize_noavx
@@ -361,4 +361,4 @@ steps:
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
     - make -j
-    - ctest
+    - ctest --output-on-failure
