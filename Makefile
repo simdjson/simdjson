@@ -126,6 +126,9 @@ parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 perfdiff: benchmark/perfdiff.cpp
 	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFLAGS)
 
+checkperf:
+	bash ./scripts/checkperf.sh
+
 statisticalmodel: benchmark/statisticalmodel.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o statisticalmodel $(LIBFILES) benchmark/statisticalmodel.cpp $(LIBFLAGS)
 
