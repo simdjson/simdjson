@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # Arguments: perfdiff.sh <branch> <test json files>
@@ -9,16 +9,16 @@ if [ -z "$*" ]; then perftests="jsonexamples/twitter.json"; else perftests=$*; f
 
 # Clone and build the reference branch's parse
 echo "Cloning and build the reference branch ($reference_branch) ..."
-current=$SCRIPTPATH/..
 reference=$current/benchbranch/$reference_branch
 rm -rf $reference
 mkdir -p $reference
-git clone --depth 1 -b $reference_branch $current/.git $reference
+git clone --depth 1 -b $reference_branch https://github.com/lemire/simdjson $reference
 cd $reference
 make parse
 
 # Build the current branch's parse
 echo "Building the current branch ..."
+current=$SCRIPTPATH/..
 cd $current
 make clean
 make parse
