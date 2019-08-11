@@ -1,0 +1,34 @@
+set(SIMDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include/simdjson)
+set(SIMDJSON_INCLUDE
+    ${SIMDJSON_INCLUDE_DIR}/common_defs.h
+    ${SIMDJSON_INCLUDE_DIR}/isadetection.h
+    ${SIMDJSON_INCLUDE_DIR}/jsoncharutils.h
+    ${SIMDJSON_INCLUDE_DIR}/jsonformatutils.h
+    ${SIMDJSON_INCLUDE_DIR}/jsonioutil.h
+    ${SIMDJSON_INCLUDE_DIR}/jsonminifier.h
+    ${SIMDJSON_INCLUDE_DIR}/jsonparser.h
+    ${SIMDJSON_INCLUDE_DIR}/numberparsing.h
+    ${SIMDJSON_INCLUDE_DIR}/padded_string.h
+    ${SIMDJSON_INCLUDE_DIR}/parsedjson.h
+    ${SIMDJSON_INCLUDE_DIR}/portability.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson_version.h
+    ${SIMDJSON_INCLUDE_DIR}/simdprune_tables.h
+    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_arm64.h
+    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_haswell.h
+    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_westmere.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_arm64.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_common.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_flatten_common.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_flatten_haswell.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_haswell.h
+    ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks_westmere.h
+    ${SIMDJSON_INCLUDE_DIR}/stage2_build_tape.h
+    ${SIMDJSON_INCLUDE_DIR}/stage2_build_tape_common.h
+    ${SIMDJSON_INCLUDE_DIR}/stringparsing.h
+    ${SIMDJSON_INCLUDE_DIR}/stringparsing_arm64.h
+    ${SIMDJSON_INCLUDE_DIR}/stringparsing_common.h
+    ${SIMDJSON_INCLUDE_DIR}/stringparsing_haswell.h
+    ${SIMDJSON_INCLUDE_DIR}/stringparsing_westmere.h
+)

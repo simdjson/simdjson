@@ -12,7 +12,7 @@
 #include "sajson.h"
 
 using namespace rapidjson;
-
+using namespace simdjson;
 struct stat_s {
   size_t number_count;
   size_t object_count;
@@ -43,11 +43,11 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
-__attribute__ ((noinline))
-stat_t simdjson_computestats(const padded_string &p) {
+__attribute__((noinline)) stat_t
+simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
-  ParsedJson pj = build_parsed_json(p);
-  answer.valid = pj.isValid();
+  simdjson::ParsedJson pj = build_parsed_json(p);
+  answer.valid = pj.is_valid();
   if (!answer.valid) {
     return answer;
   }
@@ -57,24 +57,24 @@ stat_t simdjson_computestats(const padded_string &p) {
   answer.null_count = 0;
   answer.true_count = 0;
   answer.false_count = 0;
-  size_t tapeidx = 0;
-  uint64_t tape_val = pj.tape[tapeidx++];
+  size_t tape_idx = 0;
+  uint64_t tape_val = pj.tape[tape_idx++];
   uint8_t type = (tape_val >> 56);
-  size_t howmany = 0;
+  size_t how_many = 0;
   assert(type == 'r');
-  howmany = tape_val & JSONVALUEMASK;
-  for (; tapeidx < howmany; tapeidx++) {
-    tape_val = pj.tape[tapeidx];
-    // uint64_t payload = tape_val & JSONVALUEMASK;
+  how_many = tape_val & JSON_VALUE_MASK;
+  for (; tape_idx < how_many; tape_idx++) {
+    tape_val = pj.tape[tape_idx];
+    // uint64_t payload = tape_val & JSON_VALUE_MASK;
     type = (tape_val >> 56);
     switch (type) {
     case 'l': // we have a long int
       answer.number_count++;
-      tapeidx++; // skipping the integer
+      tape_idx++; // skipping the integer
       break;
     case 'd': // we have a double
       answer.number_count++;
-      tapeidx++; // skipping the double
+      tape_idx++; // skipping the double
       break;
     case 'n': // we have a null
       answer.null_count++;
@@ -145,8 +145,8 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
-__attribute__ ((noinline))
-stat_t sasjon_computestats(const padded_string &p) {
+__attribute__((noinline)) stat_t
+sasjon_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -203,8 +203,8 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
   }
 }
 
-__attribute__ ((noinline))
-stat_t rapid_computestats(const padded_string &p) {
+__attribute__((noinline)) stat_t
+rapid_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
@@ -228,13 +228,13 @@ stat_t rapid_computestats(const padded_string &p) {
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
-  bool justdata = false;
+  bool just_data = false;
 
   int c;
   while ((c = getopt(argc, argv, "vt")) != -1)
     switch (c) {
     case 't':
-      justdata = true;
+      just_data = true;
       break;
     case 'v':
       verbose = true;
@@ -243,19 +243,22 @@ int main(int argc, char *argv[]) {
       abort();
     }
   if (optind >= argc) {
-    std::cerr << "Using different parsers, we compute the content statistics of "
-            "JSON documents." << std::endl;
+    std::cerr
+        << "Using different parsers, we compute the content statistics of "
+           "JSON documents."
+        << std::endl;
     std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1]  << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
+              << std::endl;
   }
-  padded_string p;
+  simdjson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -271,17 +274,17 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  stat_t s1 = simdjson_computestats(p);
+  stat_t s1 = simdjson_compute_stats(p);
   if (verbose) {
     printf("simdjson: ");
     print_stat(s1);
   }
-  stat_t s2 = rapid_computestats(p);
+  stat_t s2 = rapid_compute_stats(p);
   if (verbose) {
     printf("rapid:    ");
     print_stat(s2);
   }
-  stat_t s3 = sasjon_computestats(p);
+  stat_t s3 = sasjon_compute_stats(p);
   if (verbose) {
     printf("sasjon:   ");
     print_stat(s3);
@@ -290,13 +293,13 @@ int main(int argc, char *argv[]) {
   assert(stat_equal(s1, s3));
   int repeat = 50;
   int volume = p.size();
-  if(justdata) {
-    printf("name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
+  if (just_data) {
+    printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }
-  BEST_TIME("simdjson  ", simdjson_computestats(p).valid, true, , repeat,
-            volume, !justdata);
-  BEST_TIME("RapidJSON  ", rapid_computestats(p).valid, true, , repeat, volume,
-            !justdata);
-  BEST_TIME("sasjon  ", sasjon_computestats(p).valid, true, , repeat, volume,
-            !justdata);
+  BEST_TIME("simdjson  ", simdjson_compute_stats(p).valid, true, , repeat,
+            volume, !just_data);
+  BEST_TIME("RapidJSON  ", rapid_compute_stats(p).valid, true, , repeat, volume,
+            !just_data);
+  BEST_TIME("sasjon  ", sasjon_compute_stats(p).valid, true, , repeat, volume,
+            !just_data);
 }

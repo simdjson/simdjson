@@ -28,25 +28,109 @@
 #endif
 //#define DEBUG
 #include "simdjson/common_defs.h"
+#include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+namespace simdjson {
+Architecture _find_best_supported_implementation() {
+  constexpr uint32_t haswell_flags =
+      instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+      instruction_set::BMI1 | instruction_set::BMI2;
+  constexpr uint32_t westmere_flags =
+      instruction_set::SSE42 | instruction_set::PCLMULQDQ;
+  uint32_t supports = detect_supported_architectures();
+  // Order from best to worst (within architecture)
+  if ((haswell_flags & supports) == haswell_flags) {
+    return Architecture::HASWELL;
+  }
+  if ((westmere_flags & supports) == westmere_flags) {
+    return Architecture::WESTMERE;
+  }
+  if (instruction_set::NEON)
+    return Architecture::ARM64;
+
+  return Architecture::NONE;
+}
+
+using unified_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
+using stage1_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
+
+extern unified_functype *unified_ptr;
+
+extern stage1_functype *stage1_ptr;
+
+int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  Architecture best_implementation = _find_best_supported_implementation();
+  // Selecting the best implementation
+  switch (best_implementation) {
+#ifdef IS_X86_64
+  case Architecture::HASWELL:
+    unified_ptr = &unified_machine<Architecture::HASWELL>;
+    break;
+  case Architecture::WESTMERE:
+    unified_ptr = &unified_machine<Architecture::WESTMERE>;
+    break;
+#endif
+#ifdef IS_ARM64
+  case Architecture::ARM64:
+    unified_ptr = &unified_machine<Architecture::ARM64>;
+    break;
+#endif
+  default:
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return simdjson::UNEXPECTED_ERROR;
+  }
+
+  return unified_ptr(buf, len, pj);
+}
+
+// Responsible to select the best json_parse implementation
+int find_structural_bits_dispatch(const uint8_t *buf, size_t len,
+                                  ParsedJson &pj) {
+  Architecture best_implementation = _find_best_supported_implementation();
+  // Selecting the best implementation
+  switch (best_implementation) {
+#ifdef IS_X86_64
+  case Architecture::HASWELL:
+    stage1_ptr = &find_structural_bits<Architecture::HASWELL>;
+    break;
+  case Architecture::WESTMERE:
+    stage1_ptr = &find_structural_bits<Architecture::WESTMERE>;
+    break;
+#endif
+#ifdef IS_ARM64
+  case Architecture::ARM64:
+    stage1_ptr = &find_structural_bits<Architecture::ARM64>;
+    break;
+#endif
+  default:
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return simdjson::UNEXPECTED_ERROR;
+  }
+
+  return stage1_ptr(buf, len, pj);
+}
+
+stage1_functype *stage1_ptr = &find_structural_bits_dispatch;
+unified_functype *unified_ptr = &unified_machine_dispatch;
+} // namespace simdjson
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool dump = false;
-  bool jsonoutput = false;
-  bool forceoneiteration = false;
-  bool justdata = false;
+  bool json_output = false;
+  bool force_one_iteration = false;
+  bool just_data = false;
 #ifndef _MSC_VER
   int c;
 
   while ((c = getopt(argc, argv, "1vdt")) != -1) {
     switch (c) {
     case 't':
-      justdata = true;
+      just_data = true;
       break;
     case 'v':
       verbose = true;
@@ -55,15 +139,15 @@ int main(int argc, char *argv[]) {
       dump = true;
       break;
     case 'j':
-      jsonoutput = true;
+      json_output = true;
       break;
     case '1':
-      forceoneiteration = true;
+      force_one_iteration = true;
       break;
     default:
       abort();
     }
-}
+  }
 #else
   int optind = 1;
 #endif
@@ -73,38 +157,57 @@ int main(int argc, char *argv[]) {
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1] << std::endl;
+    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
+              << std::endl;
   }
   if (verbose) {
     std::cout << "[verbose] loading " << filename << std::endl;
   }
-  padded_string p;
+  simdjson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
-  } catch (const std::exception &e) { // caught by reference to base
+    simdjson::get_corpus(filename).swap(p);
+  } catch (const std::exception &) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
   if (verbose) {
-    std::cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)"
-         << std::endl;
-}
+    std::cout << "[verbose] loaded " << filename << " (" << p.size()
+              << " bytes)" << std::endl;
+  }
 #if defined(DEBUG)
   const uint32_t iterations = 1;
 #else
   const uint32_t iterations =
-      forceoneiteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
+      force_one_iteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
 #endif
   std::vector<double> res;
   res.resize(iterations);
-
+  if (!just_data)
+    printf("number of iterations %u \n", iterations);
 #if !defined(__linux__)
 #define SQUASH_COUNTERS
-  if (justdata) {
-    printf("justdata (-t) flag only works under linux.\n");
+  if (just_data) {
+    printf("just_data (-t) flag only works under linux.\n");
   }
 #endif
-
+  { // practice run
+    simdjson::ParsedJson pj;
+    bool allocok = pj.allocate_capacity(p.size());
+    if (allocok) {
+      simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj);
+      simdjson::unified_ptr(
+          (const uint8_t
+               *)(const uint8_t
+                      *)(const uint8_t
+                             *)(const uint8_t
+                                    *)(const uint8_t
+                                           *)(const uint8_t
+                                                  *)(const uint8_t
+                                                         *)(const uint8_t *)
+              p.data(),
+          p.size(), pj);
+    }
+  }
 #ifndef SQUASH_COUNTERS
   std::vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
@@ -122,38 +225,30 @@ int main(int argc, char *argv[]) {
   unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0;
 #endif
   bool isok = true;
-
+#ifndef SQUASH_COUNTERS
   for (uint32_t i = 0; i < iterations; i++) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }
-#ifndef SQUASH_COUNTERS
     unified.start();
-#endif
-    ParsedJson pj;
-    bool allocok = pj.allocateCapacity(p.size());
+    simdjson::ParsedJson pj;
+    bool allocok = pj.allocate_capacity(p.size());
     if (!allocok) {
       std::cerr << "failed to allocate memory" << std::endl;
       return EXIT_FAILURE;
     }
-#ifndef SQUASH_COUNTERS
     unified.end(results);
     cy0 += results[0];
     cl0 += results[1];
     mis0 += results[2];
     cref0 += results[3];
     cmis0 += results[4];
-#endif
     if (verbose) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
-}
-
-    auto start = std::chrono::steady_clock::now();
-#ifndef SQUASH_COUNTERS
+    }
     unified.start();
-#endif
-    isok = find_structural_bits(p.data(), p.size(), pj);
-#ifndef SQUASH_COUNTERS
+    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+            simdjson::SUCCESS);
     unified.end(results);
     cy1 += results[0];
     cl1 += results[1];
@@ -165,10 +260,9 @@ int main(int argc, char *argv[]) {
       break;
     }
     unified.start();
-#endif
-
-    isok = isok && !unified_machine(p.data(), p.size(), pj);
-#ifndef SQUASH_COUNTERS
+    isok = isok &&
+           (simdjson::SUCCESS ==
+            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
     unified.end(results);
     cy2 += results[0];
     cl2 += results[1];
@@ -179,20 +273,50 @@ int main(int argc, char *argv[]) {
       std::cout << "Failed during stage 2" << std::endl;
       break;
     }
+  }
 #endif
+  // we do it again, this time just measuring the elapsed time
+  for (uint32_t i = 0; i < iterations; i++) {
+    if (verbose) {
+      std::cout << "[verbose] iteration # " << i << std::endl;
+    }
+    simdjson::ParsedJson pj;
+    bool allocok = pj.allocate_capacity(p.size());
+    if (!allocok) {
+      std::cerr << "failed to allocate memory" << std::endl;
+      return EXIT_FAILURE;
+    }
+    if (verbose) {
+      std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
+    }
 
+    auto start = std::chrono::steady_clock::now();
+    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+            simdjson::SUCCESS);
+    isok = isok &&
+           (simdjson::SUCCESS ==
+            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
+    if (!isok) {
+      std::cerr << pj.get_error_message() << std::endl;
+      std::cerr << "Could not parse. " << std::endl;
+      return EXIT_FAILURE;
+    }
   }
-  ParsedJson pj = build_parsed_json(p); // do the parsing again to get the stats
-  if (!pj.isValid()) {
+  simdjson::ParsedJson pj =
+      build_parsed_json(p); // do the parsing again to get the stats
+  if (!pj.is_valid()) {
+    std::cerr << pj.get_error_message() << std::endl;
     std::cerr << "Could not parse. " << std::endl;
     return EXIT_FAILURE;
   }
+  double min_result = *min_element(res.begin(), res.end());
+  double speedinGBs = (p.size()) / (min_result * 1000000000.0);
 #ifndef SQUASH_COUNTERS
   unsigned long total = cy0 + cy1 + cy2;
-  if (justdata) {
+  if (just_data) {
     float cpb0 = (double)cy0 / (iterations * p.size());
     float cpb1 = (double)cy1 / (iterations * p.size());
     float cpb2 = (double)cy2 / (iterations * p.size());
@@ -210,8 +334,8 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    printf("\"%s\"\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2,
-           cpbtotal);
+    printf("\"%s\"\t%f\t%f\t%f\t%f\t%f\n", snewfile, cpb0, cpb1, cpb2, cpbtotal,
+           speedinGBs);
     free(newfile);
   } else {
     printf("number of bytes %ld number of structural chars %u ratio %.3f\n",
@@ -247,16 +371,16 @@ int main(int argc, char *argv[]) {
 
     printf(" all stages: %.2f cycles per input byte.\n",
            (double)total / (iterations * p.size()));
+    printf("Estimated average frequency: %.3f GHz.\n",
+           (double)total / (iterations * min_result * 1000000000.0));
   }
 #endif
-  double min_result = *min_element(res.begin(), res.end());
-  if (!justdata) {
+  if (!just_data) {
     std::cout << "Min:  " << min_result << " bytes read: " << p.size()
-         << " Gigabytes/second: " << (p.size()) / (min_result * 1000000000.0)
-         << std::endl;
-}
-  if (jsonoutput) {
-    isok = isok && pj.printjson(std::cout);
+              << " Gigabytes/second: " << speedinGBs << std::endl;
+  }
+  if (json_output) {
+    isok = isok && pj.print_json(std::cout);
   }
   if (dump) {
     isok = isok && pj.dump_raw_tape(std::cout);

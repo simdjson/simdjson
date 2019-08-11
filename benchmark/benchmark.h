@@ -18,7 +18,7 @@ const char *unitname = "cycles";
                    :                                                           \
                    :                              /* no read only */           \
                    "%rax", "%rbx", "%rcx", "%rdx" /* clobbers */               \
-                   );                                                          \
+    );                                                                         \
     (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                           \
   } while (0)
 
@@ -32,7 +32,7 @@ const char *unitname = "cycles";
                    : "=r"(cyc_high), "=r"(cyc_low)                             \
                    : /* no read only registers */                              \
                    : "%rax", "%rbx", "%rcx", "%rdx" /* clobbers */             \
-                   );                                                          \
+    );                                                                         \
     (cycles) = ((uint64_t)cyc_high << 32) | cyc_low;                           \
   } while (0)
 
@@ -92,7 +92,7 @@ double diff(timespec start, timespec end) {
     if (verbose)                                                               \
       printf("%-40s\t: ", name);                                               \
     else                                                                       \
-      printf("\"%s\"\t", name);                                                \
+      printf("\"%-40s\"", name);                                               \
     fflush(NULL);                                                              \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = (uint64_t)-1;                                          \
@@ -106,7 +106,7 @@ double diff(timespec start, timespec end) {
       clock_gettime(CLOCK_REALTIME, &time1);                                   \
       RDTSC_START(cycles_start);                                               \
       if (test != expected) {                                                  \
-        fprintf(stderr, "not expected (%d , %d )", (int)test, (int)expected);           \
+        fprintf(stderr, "not expected (%d , %d )", (int)test, (int)expected);  \
         break;                                                                 \
       }                                                                        \
       RDTSC_STOP(cycles_final);                                                \
@@ -128,11 +128,14 @@ double diff(timespec start, timespec end) {
     double max_gb_per_s =                                                      \
         ((double)S) / ((min_sumclockdiff)*1000.0 * 1000.0 * 1000.0);           \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);       \
+      printf(" %7.3f %s per input byte (best) ", cycle_per_op, unitname);      \
     if (verbose)                                                               \
-      printf(" %.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);    \
+      printf(" %7.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);   \
+    if (verbose)                                                               \
+      printf(" %7.3f GB/s (error margin: %.3f GB/s)", max_gb_per_s,            \
+             -avg_gb_per_s + max_gb_per_s);                                    \
     if (!verbose)                                                              \
-      printf(" %.3f %.3f %.3f %.3f ", cycle_per_op,                            \
+      printf(" %20.3f %20.3f %20.3f %20.3f ", cycle_per_op,                    \
              avg_cycle_per_op - cycle_per_op, max_gb_per_s,                    \
              -avg_gb_per_s + max_gb_per_s);                                    \
     printf("\n");                                                              \

@@ -12,15 +12,28 @@ if(SIMDJSON_SANITIZE)
   endif()
 endif()
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "(amd64)|(AMD64)|(x86_64)")
+    set (X64 TRUE)
+else ()
+    set (X64 FALSE)
+endif ()
 
-
-# some compilers like clang do not automagically define __AVX2__ and __BMI2__ even when the hardware supports it
-if(NOT MSVC)
-   set (OPT_FLAGS "${OPT_FLAGS} -mavx2 -mbmi -mbmi2 -mpclmul")
-else()
-   set (OPT_FLAGS "${OPT_FLAGS} /arch:AVX2 /std:c++latest")
+if(X64)
+  message(STATUS "Detected x64 processor: ${CMAKE_SYSTEM_PROCESSOR}")
+  if(SIMDJSON_DISABLE_AVX) 
+    message(STATUS "Disabling AVX. No runtime dispatch.")
+    if(NOT MSVC)
+     set (OPT_FLAGS "${OPT_FLAGS} -mno-avx -mno-bmi -mpclmul -msse4.2") #westmere
+    else()
+     set (OPT_FLAGS "${OPT_FLAGS}")
+    endif()
+  else() 
+    if(NOT MSVC)
+      message(STATUS "Assuming Westmere or better")
+      set (OPT_FLAGS "${OPT_FLAGS} -mpclmul -msse4.2")
+    endif()
+  endif()
 endif()
-
 
 if(NOT MSVC)
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")

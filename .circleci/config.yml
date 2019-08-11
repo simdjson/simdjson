@@ -25,19 +25,111 @@ jobs:
           command: make quiettest amalgamate
 
       - run:
-          name: Building (gcc, cmake)
+          name: Building (gcc, cmake, dynamic)
           command: |
             mkdir build
             cd build
-            cmake ..
+            cmake  -DSIMDJSON_BUILD_STATIC=OFF  ..
             make
 
       - run:
-          name: Running tests (gcc, cmake)
+          name: Running tests (gcc, cmake, dynamic)
           command: |
             cd build
             make test
 
+      - run:
+          name: Building (gcc, cmake, static)
+          command: |
+            mkdir buildstatic
+            cd buildstatic
+            cmake  -DSIMDJSON_BUILD_STATIC=ON  ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake, static)
+          command: |
+            cd buildstatic
+            make test
+      - run:
+          name: Building (gcc, cmake, sanitize)
+          command: |
+            mkdir buildsani
+            cd buildsani
+            cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_BUILD_STATIC=OFF ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake, sanitize)
+          command: |
+            cd buildsani
+            make test
+
+  "gccnoavx":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: g++-7
+    steps:
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          g++-7
+          git
+
+      - run:
+          name: Building (gcc)
+          command: ARCHFLAGS="-march=nehalem" make
+
+      - run:
+          name: Running tests (gcc)
+          command: ARCHFLAGS="-march=nehalem" make quiettest amalgamate
+
+      - run:
+          name: Building (gcc, cmake, dynamic)
+          command: |
+            mkdir build
+            cd build
+            cmake -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_BUILD_STATIC=OFF  ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake, dynamic)
+          command: |
+            cd build
+            make test
+
+      - run:
+          name: Building (gcc, cmake, static)
+          command: |
+            mkdir buildstatic
+            cd buildstatic
+            cmake -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_BUILD_STATIC=ON  ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake, static)
+          command: |
+            cd buildstatic
+            make test
+
+      - run:
+          name: Building (gcc, cmake, sanitize)
+          command: |
+            mkdir buildsani
+            cd buildsani
+            cmake   -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_SANITIZE=ON  ..
+            make
+
+      - run:
+          name: Running tests (gcc, cmake, sanitize)
+          command: |
+            cd buildsani
+            make test
   "clang":
     docker:
       - image: ubuntu:18.04
@@ -63,17 +155,113 @@ jobs:
           command: make quiettest amalgamate
 
       - run:
-          name: Building (clang, cmake)
+          name: Building (clang, cmake, dynamic)
           command: |
             mkdir build
             cd build
-            cmake ..
+            cmake  -DSIMDJSON_BUILD_STATIC=OFF ..
             make
 
       - run:
-          name: Running tests (clang, cmake)
+          name: Running tests (clang, cmake, dynamic)
           command: |
             cd build
+            make test
+
+      - run:
+          name: Building (clang, cmake, static)
+          command: |
+            mkdir buildstatic
+            cd buildstatic
+            cmake  -DSIMDJSON_BUILD_STATIC=ON ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake, static)
+          command: |
+            cd buildstatic
+            make test
+
+      - run:
+          name: Building (clang, cmake, sanitize)
+          command: |
+            mkdir buildsani
+            cd buildsani
+            cmake  -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_SANITIZE=ON ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake, sanitize)
+          command: |
+            cd buildsani
+            make test
+
+  "clangnoavx":
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: clang++-6.0
+    steps:
+      - checkout
+
+      - run: apt-get update -qq
+      - run: >
+          apt-get install -y
+          build-essential
+          cmake
+          clang-6.0
+          git
+
+      - run:
+          name: Building (clang)
+          command: ARCHFLAGS="-march=nehalem"  make
+
+      - run:
+          name: Running tests (clang)
+          command: ARCHFLAGS="-march=nehalem"  make quiettest amalgamate
+
+      - run:
+          name: Building (clang, cmake, dynamic)
+          command: |
+            mkdir build
+            cd build
+            cmake  -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_DISABLE_AVX=on ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake, dynamic)
+          command: |
+            cd build
+            make test
+
+
+      - run:
+          name: Building (clang, cmake, static)
+          command: |
+            mkdir buildstatic
+            cd buildstatic
+            cmake  -DSIMDJSON_BUILD_STATIC=ON  -DSIMDJSON_DISABLE_AVX=on ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake, static)
+          command: |
+            cd buildstatic
+            make test
+
+
+      - run:
+          name: Building (clang, cmake, sanitize)
+          command: |
+            mkdir buildsani
+            cd buildsani
+            cmake  -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_SANITIZE=ON ..
+            make
+
+      - run:
+          name: Running tests (clang, cmake, sanitize)
+          command: |
+            cd buildsani
             make test
 
 workflows:
@@ -82,3 +270,5 @@ workflows:
     jobs:
       - "clang"
       - "gcc"
+      - "clangnoavx"
+      - "gccnoavx"

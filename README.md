@@ -3,6 +3,7 @@
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
+[![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/lemire/simdjson.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/lemire/simdjson/context:cpp)
 
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
@@ -11,6 +12,11 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 <img src="images/logo.png" width="10%">
 
+
+## Real-world usage
+
+- [Microsoft FishStore](https://github.com/microsoft/FishStore)
+- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
 ## Paper
 
@@ -42,11 +48,15 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 | ultrajson                             | 0.42 |
 | jsmn                                  | 0.28 |
 | cJSON                                 | 0.34 |
+| JSON for Modern C++ (nlohmann/json)   | 0.10 |
 
 ## Requirements
 
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
-- A processor with AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017).
+- A processor with 
+  - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
+  - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
+  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going back as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
 
@@ -56,10 +66,13 @@ This code is made available under the Apache License 2.0.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
-## Code example
+## Code usage and example
+
+The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::Iterator pjh(pj)`, see 'Navigating the parsed document').
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
@@ -68,12 +81,12 @@ const char * filename = ... //
 // use whatever means you want to get a string (UTF-8) of your JSON document
 padded_string p = get_corpus(filename); 
 ParsedJson pj;
-pj.allocateCapacity(p.size()); // allocate memory for parsing up to p.size() bytes
+pj.allocate_capacity(p.size()); // allocate memory for parsing up to p.size() bytes
 const int res = json_parse(p, pj); // do the parsing, return 0 on success
 // parsing is done!
 if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
 }
 // the ParsedJson document can be used here
 // pj can be reused with other json_parse calls.
@@ -84,14 +97,16 @@ of memory allocation with each new JSON document:
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
 const char * filename = ... //
-padding_string p = get_corpus(filename);
+padded_string p = get_corpus(filename);
 ParsedJson pj = build_parsed_json(p); // do the parsing
-if( ! pj.isValid() ) {
+if( ! pj.is_valid() ) {
     // something went wrong
+    std::cout << pj.get_error_message() << std::endl;
 }
 ```
 
@@ -100,17 +115,18 @@ Though the `padded_string` class is recommended for best performance, you can ca
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 std::string mystring = ... //
 ParsedJson pj;
-pj.allocateCapacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
+pj.allocate_capacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
 // std::string may not overallocate so a copy will be needed
 const int res = json_parse(mystring, pj); // do the parsing, return 0 on success
 // parsing is done!
 if (res != 0) {
     // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::errorMsg(res) << std::endl;
+    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
 }
 // pj can be reused with other json_parse calls.
 ```
@@ -119,14 +135,16 @@ or
 
 ```C
 #include "simdjson/jsonparser.h"
+using namespace simdjson;
 
 /...
 
 std::string mystring = ... //
 // std::string may not overallocate so a copy will be needed
 ParsedJson pj = build_parsed_json(mystring); // do the parsing
-if( ! pj.isValid() ) {
+if( ! pj.is_valid() ) {
     // something went wrong
+    std::cout << pj.get_error_message() << std::endl;
 }
 ```
 
@@ -142,12 +160,14 @@ copy the files in your project in your include path. You can then include them q
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
+using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
   ParsedJson pj = build_parsed_json(p); // do the parsing
-  if( ! pj.isValid() ) {
+  if( ! pj.is_valid() ) {
     std::cout << "not valid" << std::endl;
+    std::cout << pj.get_error_message() << std::endl;
   } else {
     std::cout << "valid" << std::endl;
   }
@@ -155,16 +175,25 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-We require hardware support for AVX2 instructions. You have to make sure that you instruct your 
-compiler to use these instructions as needed. Under compilers such as GNU GCC or LLVM clang, the
-flag `-march=native` used on a recent Intel processor (Haswell or better) is sufficient. For portability
-of the binary files you can also specify directly the Haswell processor (`-march=haswell`). You may 
-also use the flags `-mavx2 -mbmi2`. Under Visual Studio, you need to target x64 and add the 
-flag `/arch:AVX2`. 
-
 
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
 
+## Runtime dispatch
+
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
+runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
+The code automatically detects the feature set of your processor and switches to the right function at runtime (a technical
+sometimes called runtime dispatch).
+
+
+We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
+There is no runtime dispatch on ARM.
+
+## Thread safety
+
+The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads. 
+
+If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. The runtime dispatching is thread-safe.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
@@ -247,14 +276,15 @@ make test
 
 ## Usage (CMake on Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later).
+We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later). 
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `VisualStudio`.
 - Using a shell, go to this newly created directory.
-- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
-- This last command created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.) 
+- This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+
 
 
 ## Usage (Using `vcpkg` on Windows, Linux and MacOS)
@@ -293,6 +323,7 @@ If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel 
 - `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
 - `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
 - `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
+- `jsonpointer mydoc.json <jsonpath> <jsonpath> ... <jsonpath>` parses the document, constructs a model and then processes a series of [JSON Pointer paths](https://tools.ietf.org/html/rfc6901). The result is itself a JSON document.
 
 ## Scope
 
@@ -301,10 +332,8 @@ The parser builds a useful immutable (read-only) DOM (document-object model) whi
 
 To simplify the engineering, we make some assumptions.
 
-- We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe this is a genuine limitation, because we do not think there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding.
+- We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe this is a genuine limitation, because we do not think there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding. If the UTF-8 contains a leading BOM, it should be omitted: the user is responsible for detecting and skipping the BOM; UTF-8 BOMs are discouraged.
 - All strings in the JSON document may have up to 4294967295 bytes in UTF-8 (4GB). To enforce this constraint, we refuse to parse a document that contains more than 4294967295 bytes (4GB). This should accommodate most JSON documents.
-- We assume AVX2 support, which is available in all recent mainstream x86 processors produced by AMD and Intel. No support for non-x86 processors is included, though it can be done. We plan to support ARM processors (help is invited).
-- In cases of failure, we report a failure without any indication to the nature of the problem. (This can be easily improved without affecting performance.)
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
 - Performance is optimized for JSON documents spanning at least a tens kilobytes up to many megabytes: the performance issues with having to parse many tiny JSON documents or one truly enormous JSON document are different.
 
@@ -314,9 +343,13 @@ _We do not aim to provide a general-purpose JSON library._ A library like RapidJ
 
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
 - We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
-- We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation.)
+- We support the full range of 64-bit floating-point numbers (binary64). The values range from ` std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document.
+- We test for accurate float parsing with a bound on the [unit of least precision (ULP)](https://en.wikipedia.org/wiki/Unit_in_the_last_place) of one. Practically speaking, this implies 15 digits of accuracy or better.
+- We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation. The sajson parser does incomplete UTF-8 validation, accepting code point
+sequences like 0xb1 0x87.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
 - We validate string content for unescaped characters. (Parsers like fastjson and ultrajson accept unescaped line breaks and tabs in strings.)
+- We fully validate the white-space characters outside of the strings. Parsers like RapidJSON will accept JSON documents with null characters outside of strings.
 
 ## Architecture
 
@@ -325,13 +358,27 @@ The parser works in two stages:
 - Stage 1. (Find marks) Identifies quickly structure elements, strings, and so forth. We validate UTF-8 encoding at that stage.
 - Stage 2. (Structure building) Involves constructing a "tree" of sort (materialized as a tape) to navigate through the data. Strings and numbers are parsed at this stage.
 
+## JSON Pointer
+
+We can navigate the parsed JSON using JSON Pointers as per the [RFC6901 standard](https://tools.ietf.org/html/rfc6901).
+
+You can build a tool (jsonpointer) to parse a JSON document and then issue an array of JSON Pointer queries:
+
+```
+make jsonpointer 
+ ./jsonpointer jsonexamples/small/demo.json /Image/Width /Image/Height /Image/IDs/2
+ ./jsonpointer jsonexamples/twitter.json /statuses/0/id /statuses/1/id /statuses/2/id /statuses/3/id /statuses/4/id /statuses/5/id
+```
+
+In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, passing a `std::string` representing the JSON Pointer query.
+
 ## Navigating the parsed document
 
 Here is a code sample to dump back the parsed JSON to a string:
 
 ```c
-    ParsedJson::iterator pjh(pj);
-    if (!pjh.isOk()) {
+    ParsedJson::Iterator pjh(pj);
+    if (!pjh.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
     }
@@ -339,7 +386,7 @@ Here is a code sample to dump back the parsed JSON to a string:
     //
     // where compute_dump is :
 
-void compute_dump(ParsedJson::iterator &pjh) {
+void compute_dump(ParsedJson::Iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -377,46 +424,21 @@ void compute_dump(ParsedJson::iterator &pjh) {
 The following function will find all user.id integers:
 
 ```C
-void simdjson_traverse(std::vector<int64_t> &answer, ParsedJson::iterator &i) {
-  switch (i.get_type()) {
-  case '{':
-    if (i.down()) {
-      do {
-        bool founduser = equals(i.get_string(), "user");
-        i.next(); // move to value
-        if (i.is_object()) {
-          if (founduser && i.move_to_key("id")) {
+void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::Iterator &i) {
+   while(i.move_forward()) {
+     if(i.get_scope_type() == '{') {
+       bool found_user = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);
+       i.move_to_value();
+       if(found_user) {
+          if(i.is_object() && i.move_to_key("id",2)) {
             if (i.is_integer()) {
               answer.push_back(i.get_integer());
             }
             i.up();
           }
-          simdjson_traverse(answer, i);
-        } else if (i.is_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case '[':
-    if (i.down()) {
-      do {
-        if (i.is_object_or_array()) {
-          simdjson_traverse(answer, i);
-        }
-      } while (i.next());
-      i.up();
-    }
-    break;
-  case 'l':
-  case 'd':
-  case 'n':
-  case 't':
-  case 'f':
-  default:
-    break;
-  }
+       }
+     }
+   }
 }
 ```
 
@@ -443,15 +465,32 @@ make allparsingcompetition
 ./allparsingcompetition myfile.json
 ```
 
+Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
+a table-oriented output that can be conventiently parsed by other tools.
+
+
+## Docker
+
+One can run tests and benchmarks using docker. It especially makes sense under Linux. A privileged access may be needed to get performance counters.
+
+```
+git clone https://github.com/lemire/simdjson.git
+cd simdjson
+docker build -t simdjson . 
+docker run --privileged -t simdjson
+```
+
 ## Other programming languages
 
 We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
 
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
+- [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings)
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port)
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
+- [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
 
 ## Various References
 
@@ -534,6 +573,12 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 - Lin, Dan. Bits filter: a high-performance multiple string pattern matching algorithm for malware detection. Diss. School of Computing Science-Simon Fraser University, 2010.
 - Yang, Shiyang. Validation of XML Document Based on Parallel Bit Stream Technology. Diss. Applied Sciences: School of Computing Science, 2013.
 - N. Nakasato, "Implementation of a parallel tree method on a GPU", Journal of Computational Science, vol. 3, no. 3, pp. 132-141, 2012.
+
+
+## Funding
+
+The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant number RGPIN-2017-03910. 
+
 
 [license]: LICENSE
 [license img]: https://img.shields.io/badge/License-Apache%202-blue.svg

@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_SIMDPRUNE_TABLES_H
 #define SIMDJSON_SIMDPRUNE_TABLES_H
+#include <cstdint>
 
 #include "simdjson/portability.h"
 
-#ifdef __AVX__
-
+namespace simdjson {
 static const unsigned char mask128_epi8[] = {
     0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe,
     0xf, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe,
@@ -34984,13 +34984,9 @@ static const unsigned char mask128_epi32[] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff,
 };
+} // namespace simdjson
 
-#endif //__SSE3__
-
-#ifdef __AVX2__
-
-#include <cstdint>
-
+namespace simdjson {
 static const uint32_t mask256_epi32[] = {
     0, 1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5, 6, 7, 7, 0, 2, 3, 4, 5, 6, 7, 7, 2,
     3, 4, 5, 6, 7, 7, 7, 0, 1, 3, 4, 5, 6, 7, 7, 1, 3, 4, 5, 6, 7, 7, 7, 0, 3,
@@ -35074,6 +35070,5 @@ static const uint32_t mask256_epi32[] = {
     3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2,
     0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-#endif //__AVX2__
-
+}
 #endif

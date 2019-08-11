@@ -40,7 +40,7 @@ using namespace rapidjson;
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
-  bool justfavorites = false;
+  bool just_favorites = false;
   int c;
   while ((c = getopt(argc, argv, "vm")) != -1)
     switch (c) {
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
       verbose = true;
       break;
     case 'm':
-      justfavorites = true;
+      just_favorites = true;
       break;
     default:
       abort();
@@ -59,9 +59,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   const char *filename = argv[optind];
-  padded_string p;
+  simdjson::padded_string p;
   try {
-    get_corpus(filename).swap(p);
+    simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -76,9 +76,9 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  ParsedJson pj;
-  size_t maxdepth = 1024 * 4;
-  bool allocok = pj.allocateCapacity(p.size(), maxdepth);
+  simdjson::ParsedJson pj;
+  size_t max_depth = 1024 * 4;
+  bool allocok = pj.allocate_capacity(p.size(), max_depth);
   if (!allocok) {
     std::cerr << "can't allocate memory" << std::endl;
     return EXIT_FAILURE;
@@ -98,15 +98,17 @@ int main(int argc, char *argv[]) {
       sajson::parse(sajson::dynamic_allocation(),
                     sajson::mutable_string_view(p.size(), buffer))
           .is_valid();
-  if (justfavorites) {
+  if (just_favorites) {
     printf("our parser                 : %s \n",
            ours_correct ? "correct" : "invalid");
     printf("rapid (check encoding)     : %s \n",
            rapid_correct_checkencoding ? "correct" : "invalid");
     printf("sajson                     : %s \n",
            sajson_correct ? "correct" : "invalid");
-    if(oursreturn == simdjson::DEPTH_ERROR) {
-       printf("simdjson encountered a DEPTH_ERROR, it was parametrized to reject documents with depth exceeding %zu.\n", maxdepth);
+    if (oursreturn == simdjson::DEPTH_ERROR) {
+      printf("simdjson encountered a DEPTH_ERROR, it was parametrized to "
+             "reject documents with depth exceeding %zu.\n",
+             max_depth);
     }
     if ((ours_correct != rapid_correct_checkencoding) ||
         (rapid_correct_checkencoding != sajson_correct) ||
@@ -155,12 +157,12 @@ int main(int argc, char *argv[]) {
   }
 
   Json::CharReaderBuilder b;
-  Json::CharReader *jsoncppreader = b.newCharReader();
+  Json::CharReader *json_cpp_reader = b.newCharReader();
   Json::Value root;
   Json::String errs;
-  bool isjsoncppok =
-      jsoncppreader->parse(buffer, buffer + p.size(), &root, &errs);
-  delete jsoncppreader;
+  bool is_json_cpp_ok =
+      json_cpp_reader->parse(buffer, buffer + p.size(), &root, &errs);
+  delete json_cpp_reader;
 
   printf("our parser                 : %s \n",
          ours_correct ? "correct" : "invalid");
@@ -183,7 +185,7 @@ int main(int argc, char *argv[]) {
   printf("cjson                      : %s \n",
          cjson_correct ? "correct" : "invalid");
   printf("jsoncpp                    : %s \n",
-         isjsoncppok ? "correct" : "invalid");
+         is_json_cpp_ok ? "correct" : "invalid");
 
   free(buffer);
   return EXIT_SUCCESS;

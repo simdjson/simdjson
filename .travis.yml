@@ -7,7 +7,8 @@ addons:
     packages:
       - gcc-7
       - g++-7
-
+      - clang-format
+      - python
 branches:
   only:
     - master
@@ -17,5 +18,13 @@ script:
    - export CC=gcc-7
    - make
    - make test 
+   - make everything
+   - make amalgamate
    - make clean
    - make SANITIZEGOLD=1 test
+   - make clean
+   - ARCHFLAGS="-march=nehalem" make 
+   - ARCHFLAGS="-march=nehalem" make test
+   - ARCHFLAGS="-march=nehalem" make everything
+   - ./style/run-clang-format.py -r include/ benchmark/ src/ tests/
+
