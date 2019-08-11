@@ -39450,6 +39450,7 @@ int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
 #define SIMDJSON_JSONPARSER_H
 #include <string>
 #ifdef _MSC_VER
+#define NOMINMAX
 #include <windows.h>
 // must be included after windows.h
 #include <sysinfoapi.h>

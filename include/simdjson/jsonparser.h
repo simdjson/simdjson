@@ -9,6 +9,7 @@
 #include "simdjson/stage2_build_tape.h"
 #include <string>
 #ifdef _MSC_VER
+#define NOMINMAX
 #include <windows.h>
 // must be included after windows.h
 #include <sysinfoapi.h>
