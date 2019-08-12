@@ -106,11 +106,8 @@ public:
     // might throw InvalidJSON if ParsedJson is invalid
   public:
     explicit Iterator(ParsedJson &pj_);
-    ~Iterator();
 
     Iterator(const Iterator &o) noexcept;
-
-    Iterator(Iterator &&o) noexcept;
 
     inline bool is_ok() const;
 
@@ -315,7 +312,7 @@ public:
     size_t tape_length;
     uint8_t current_type;
     uint64_t current_val;
-    scopeindex_t *depth_index;
+    scopeindex_t depth_index[DEFAULT_MAX_DEPTH];
   };
 
   size_t byte_capacity{0}; // indicates how many bits are meant to be supported

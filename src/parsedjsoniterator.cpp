@@ -4,16 +4,12 @@
 
 namespace simdjson {
 ParsedJson::Iterator::Iterator(ParsedJson &pj_)
-    : pj(pj_), depth(0), location(0), tape_length(0), depth_index(nullptr) {
+    : pj(pj_), depth(0), location(0), tape_length(0) {
   if (!pj.is_valid()) {
     throw InvalidJSON();
   }
-  // we overallocate by "1" to silence a warning in Visual Studio
-  depth_index = new scopeindex_t[pj.depth_capacity + 1];
-  // memory allocation would throw
-  // if(depth_index == nullptr) {
-  //    return;
-  //}
+  if (pj.depth_capacity > 1024)
+      assert(false);
   depth_index[0].start_of_scope = location;
   current_val = pj.tape[location++];
   current_type = (current_val >> 56);
@@ -35,24 +31,10 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
   }
 }
 
-ParsedJson::Iterator::~Iterator() { delete[] depth_index; }
-
 ParsedJson::Iterator::Iterator(const Iterator &o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location), tape_length(0),
-      current_type(o.current_type), current_val(o.current_val),
-      depth_index(nullptr) {
-  depth_index = new scopeindex_t[pj.depth_capacity];
-  // allocation might throw
-  memcpy(depth_index, o.depth_index,
-         pj.depth_capacity * sizeof(depth_index[0]));
-  tape_length = o.tape_length;
-}
-
-ParsedJson::Iterator::Iterator(Iterator &&o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location),
-      tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val), depth_index(o.depth_index) {
-  o.depth_index = nullptr; // we take ownership
+    : pj(o.pj), depth(o.depth), location(o.location), tape_length(o.tape_length),
+      current_type(o.current_type), current_val(o.current_val) {
+  memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
 
 bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
@@ -135,7 +117,6 @@ bool ParsedJson::Iterator::move_to(const char *pointer, uint32_t length) {
   size_t location_s = location;
   uint8_t current_type_s = current_type;
   uint64_t current_val_s = current_val;
-  scopeindex_t *depth_index_s = depth_index;
 
   rewind(); // The json pointer is used from the root of the document.
 
@@ -149,7 +130,6 @@ bool ParsedJson::Iterator::move_to(const char *pointer, uint32_t length) {
     location = location_s;
     current_type = current_type_s;
     current_val = current_val_s;
-    depth_index = depth_index_s;
   }
 
   return found;
