@@ -4,14 +4,14 @@
 
 namespace simdjson {
 ParsedJson::Iterator::Iterator(ParsedJson &pj_)
-    : pj(pj_), depth(0), location(0), tape_length(0) {
-  if (!pj.is_valid()) {
+    : pj(&pj_), depth(0), location(0), tape_length(0) {
+  if (!pj->is_valid()) {
     throw InvalidJSON();
   }
-  if (pj.depth_capacity > 1024)
+  if (pj->depth_capacity > 1024)
       assert(false);
   depth_index[0].start_of_scope = location;
-  current_val = pj.tape[location++];
+  current_val = pj->tape[location++];
   current_type = (current_val >> 56);
   depth_index[0].scope_type = current_type;
   if (current_type == 'r') {
@@ -19,7 +19,7 @@ ParsedJson::Iterator::Iterator(ParsedJson &pj_)
     if (location < tape_length) {
       // If we make it here, then depth_capacity must >=2, but the compiler
       // may not know this.
-      current_val = pj.tape[location];
+      current_val = pj->tape[location];
       current_type = (current_val >> 56);
       depth++;
       depth_index[depth].start_of_scope = location;
@@ -35,6 +35,17 @@ ParsedJson::Iterator::Iterator(const Iterator &o) noexcept
     : pj(o.pj), depth(o.depth), location(o.location), tape_length(o.tape_length),
       current_type(o.current_type), current_val(o.current_val) {
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
+}
+
+ParsedJson::Iterator &ParsedJson::Iterator::operator =(const Iterator &o) noexcept {
+  pj = o.pj;
+  depth = o.depth;
+  location = o.location;
+  tape_length = o.tape_length;
+  current_type = o.current_type;
+  current_val = o.current_val;
+  memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
+  return *this;
 }
 
 bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
@@ -226,7 +237,7 @@ bool ParsedJson::Iterator::relative_move_to(const char *pointer,
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
         }
         location = npos;
-        current_val = pj.tape[npos];
+        current_val = pj->tape[npos];
         current_type = (current_val >> 56);
         return true; // how could it fail ?
       }

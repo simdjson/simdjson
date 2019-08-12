@@ -108,6 +108,7 @@ public:
     explicit Iterator(ParsedJson &pj_);
 
     Iterator(const Iterator &o) noexcept;
+    Iterator &operator=(const Iterator &other) noexcept;
 
     inline bool is_ok() const;
 
@@ -139,7 +140,7 @@ public:
       if (location + 1 >= tape_length) {
         return 0; // default value in case of error
       }
-      return static_cast<int64_t>(pj.tape[location + 1]);
+      return static_cast<int64_t>(pj->tape[location + 1]);
     }
 
     // get the string value at this node (NULL ended); valid only if we're at "
@@ -148,14 +149,14 @@ public:
     // within the string: get_string_length determines the true string length.
     inline const char *get_string() const {
       return reinterpret_cast<const char *>(
-          pj.string_buf + (current_val & JSON_VALUE_MASK) + sizeof(uint32_t));
+          pj->string_buf + (current_val & JSON_VALUE_MASK) + sizeof(uint32_t));
     }
 
     // return the length of the string in bytes
     inline uint32_t get_string_length() const {
       uint32_t answer;
       memcpy(&answer,
-             reinterpret_cast<const char *>(pj.string_buf +
+             reinterpret_cast<const char *>(pj->string_buf +
                                             (current_val & JSON_VALUE_MASK)),
              sizeof(uint32_t));
       return answer;
@@ -169,7 +170,7 @@ public:
                                                          // case of error
       }
       double answer;
-      memcpy(&answer, &pj.tape[location + 1], sizeof(answer));
+      memcpy(&answer, &pj->tape[location + 1], sizeof(answer));
       return answer;
     }
 
@@ -304,9 +305,7 @@ public:
     } scopeindex_t;
 
   private:
-    Iterator &operator=(const Iterator &other) = delete;
-
-    ParsedJson &pj;
+    ParsedJson *pj;
     size_t depth;
     size_t location; // our current location on a tape
     size_t tape_length;
@@ -399,7 +398,7 @@ bool ParsedJson::Iterator::move_forward() {
   }
 
   location += 1;
-  current_val = pj.tape[location];
+  current_val = pj->tape[location];
   current_type = (current_val >> 56);
   return true;
 }
@@ -407,7 +406,7 @@ bool ParsedJson::Iterator::move_forward() {
 void ParsedJson::Iterator::move_to_value() {
   // assume that we are on a key, so move by 1.
   location += 1;
-  current_val = pj.tape[location];
+  current_val = pj->tape[location];
   current_type = (current_val >> 56);
 }
 
@@ -465,7 +464,7 @@ bool ParsedJson::Iterator::prev() {
     return false;
   }
   location -= 1;
-  current_val = pj.tape[location];
+  current_val = pj->tape[location];
   current_type = (current_val >> 56);
   if ((current_type == ']') || (current_type == '}')) {
     // we need to jump
@@ -474,7 +473,7 @@ bool ParsedJson::Iterator::prev() {
       return false; // shoud never happen
     }
     location = new_location;
-    current_val = pj.tape[location];
+    current_val = pj->tape[location];
     current_type = (current_val >> 56);
   }
   return true;
@@ -488,7 +487,7 @@ bool ParsedJson::Iterator::up() {
   // next we just move to the previous value
   depth--;
   location -= 1;
-  current_val = pj.tape[location];
+  current_val = pj->tape[location];
   current_type = (current_val >> 56);
   return true;
 }
@@ -506,7 +505,7 @@ bool ParsedJson::Iterator::down() {
     location = location + 1;
     depth_index[depth].start_of_scope = location;
     depth_index[depth].scope_type = current_type;
-    current_val = pj.tape[location];
+    current_val = pj->tape[location];
     current_type = (current_val >> 56);
     return true;
   }
@@ -515,7 +514,7 @@ bool ParsedJson::Iterator::down() {
 
 void ParsedJson::Iterator::to_start_scope() {
   location = depth_index[depth].start_of_scope;
-  current_val = pj.tape[location];
+  current_val = pj->tape[location];
   current_type = (current_val >> 56);
 }
 
@@ -527,7 +526,7 @@ bool ParsedJson::Iterator::next() {
   } else {
     npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
   }
-  uint64_t next_val = pj.tape[npos];
+  uint64_t next_val = pj->tape[npos];
   uint8_t next_type = (next_val >> 56);
   if ((next_type == ']') || (next_type == '}')) {
     return false; // we reached the end of the scope
