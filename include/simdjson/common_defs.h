@@ -43,38 +43,9 @@
 #define unlikely(x) x
 #endif
 
-// For Visual Studio compilers, same-page buffer overrun is not fine.
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
 
 #else
 
-// For non-Visual Studio compilers, we may assume that same-page buffer overrun
-// is fine. However, it will make it difficult to be "valgrind clean".
-//#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN
-//#define ALLOW_SAME_PAGE_BUFFER_OVERRUN true
-//#else
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
-//#endif
-
-// The following is likely unnecessarily complex.
-#ifdef __SANITIZE_ADDRESS__
-// we have GCC, stuck with https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN false
-#elif defined(__has_feature)
-// we have CLANG?
-// todo: if we're setting ALLOW_SAME_PAGE_BUFFER_OVERRUN to false, why do we
-// have a non-empty qualifier?
-#if (__has_feature(address_sanitizer))
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER                               \
-  __attribute__((no_sanitize("address")))
-#endif
-#endif
-
-#if defined(__has_feature)
-#if (__has_feature(memory_sanitizer))
-#define LENIENT_MEM_SANITIZER __attribute__((no_sanitize("memory")))
-#endif
-#endif
 
 #define really_inline inline __attribute__((always_inline, unused))
 #define never_inline inline __attribute__((noinline, unused))
@@ -90,13 +61,5 @@
 #endif
 
 #endif // MSC_VER
-
-// if it does not apply, make it an empty macro
-#ifndef ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
-#define ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER
-#endif
-#ifndef LENIENT_MEM_SANITIZER
-#define LENIENT_MEM_SANITIZER
-#endif
 
 #endif // SIMDJSON_COMMON_DEFS_H

@@ -72,7 +72,7 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
 }
 
 template <Architecture T = Architecture::NATIVE>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER int
+WARN_UNUSED int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj);
 
 template <Architecture T = Architecture::NATIVE>

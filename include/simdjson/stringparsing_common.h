@@ -10,7 +10,7 @@ TARGETED_REGION
 namespace simdjson {
 
 template <>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER
+WARN_UNUSED
     really_inline bool
     parse_string<TARGETED_ARCHITECTURE>(UNUSED const uint8_t *buf,
                                         UNUSED size_t len, ParsedJson &pj,

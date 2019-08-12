@@ -42,12 +42,9 @@ namespace simdjson {
  * for documentation.
  ***********/
 template <>
-WARN_UNUSED ALLOW_SAME_PAGE_BUFFER_OVERRUN_QUALIFIER LENIENT_MEM_SANITIZER int
+WARN_UNUSED  int
 unified_machine<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
                                        ParsedJson &pj) {
-  if (ALLOW_SAME_PAGE_BUFFER_OVERRUN) {
-    memset((uint8_t *)buf + len, 0, SIMDJSON_PADDING); /* to please valgrind */
-  }
   uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
   uint32_t idx; /* location of the structural character in the input (buf)   */
   uint8_t c;    /* used to track the (structural) character we are looking at,
