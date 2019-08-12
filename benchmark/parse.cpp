@@ -195,17 +195,7 @@ int main(int argc, char *argv[]) {
     bool allocok = pj.allocate_capacity(p.size());
     if (allocok) {
       simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj);
-      simdjson::unified_ptr(
-          (const uint8_t
-               *)(const uint8_t
-                      *)(const uint8_t
-                             *)(const uint8_t
-                                    *)(const uint8_t
-                                           *)(const uint8_t
-                                                  *)(const uint8_t
-                                                         *)(const uint8_t *)
-              p.data(),
-          p.size(), pj);
+      simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj);
     }
   }
 #ifndef SQUASH_COUNTERS
