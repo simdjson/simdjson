@@ -8,13 +8,6 @@
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include <string>
-#ifdef _MSC_VER
-#include <windows.h>
-// must be included after windows.h
-#include <sysinfoapi.h>
-#else
-#include <unistd.h>
-#endif
 
 namespace simdjson {
 // json_parse_implementation is the generic function, it is specialized for
