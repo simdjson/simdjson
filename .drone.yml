@@ -12,6 +12,10 @@ steps:
   - make
   - make quiettest
   - make amalgamate
+- name: checkperf
+  image: gcc:8
+  commands:
+  - make checkperf
 ---
 kind: pipeline
 name: arm64
@@ -27,6 +31,10 @@ steps:
   - make
   - make quiettest
   - make amalgamate
+- name: checkperf
+  image: gcc:8
+  commands:
+  - make checkperf
 ---
 kind: pipeline
 name: stylecheck
