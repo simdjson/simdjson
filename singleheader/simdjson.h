@@ -39449,13 +39449,6 @@ int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
 #ifndef SIMDJSON_JSONPARSER_H
 #define SIMDJSON_JSONPARSER_H
 #include <string>
-#ifdef _MSC_VER
-#include <windows.h>
-// must be included after windows.h
-#include <sysinfoapi.h>
-#else
-#include <unistd.h>
-#endif
 
 namespace simdjson {
 // json_parse_implementation is the generic function, it is specialized for
