@@ -44,30 +44,27 @@ double readThroughput(std::string parseOutput) {
     return result / numResults;
 }
 
-const double ERROR_MARGIN = 10; // 10%
-const double INTERLEAVED_ATTEMPTS = 4;
+const double INTERLEAVED_ATTEMPTS = 6;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         std::cerr << "Usage: " << argv[0] << " <new parse cmd> <reference parse cmd>";
         return 1;
     }
-    double newThroughput = 0;
-    double referenceThroughput = 0;
     for (int attempt=0; attempt < INTERLEAVED_ATTEMPTS; attempt++) {
-        newThroughput += readThroughput(exec(argv[1]));
-        referenceThroughput += readThroughput(exec(argv[2]));
+        std::cout << "Attempt #" << (attempt+1) << " of up to " << INTERLEAVED_ATTEMPTS << std::endl;
+        double newThroughput = readThroughput(exec(argv[1]));
+        std::cout << "New throughput: " << newThroughput << std::endl;
+        double referenceThroughput = readThroughput(exec(argv[2]));
+        std::cout << "Ref throughput: " << referenceThroughput << std::endl;
+        double percentDifference = ((newThroughput / referenceThroughput) - 1.0) * 100;
+        std::cout << "Difference: " << percentDifference << "%" << std::endl;
+        if (percentDifference >= 0) {
+            std::cout << "New throughput is same or better!" << std::endl;
+            return 0;
+        } else {
+            std::cout << "New throughput is lower! Running again to check whether it's a fluke ...";
+        }
     }
-    newThroughput /= INTERLEAVED_ATTEMPTS;
-    referenceThroughput /= INTERLEAVED_ATTEMPTS;
-
-    std::cout << "New throughput: " << newThroughput << std::endl;
-    std::cout << "Ref throughput: " << referenceThroughput << std::endl;
-    double percentDifference = ((newThroughput / referenceThroughput) - 1.0) * 100;
-    std::cout << "Difference: " << percentDifference << "%" << std::endl;
-    if (percentDifference < -ERROR_MARGIN) {
-        std::cerr << "New throughput is more than " << ERROR_MARGIN << "% degraded from reference throughput!" << std::endl;
-        return 1;
-    }
-    return 0;
+    return 1;
 }
