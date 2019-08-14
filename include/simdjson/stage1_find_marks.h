@@ -5,11 +5,10 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
+#include "simdjson/simd_input.h"
 #include <cassert>
 
 namespace simdjson {
-
-template <Architecture> struct simd_input;
 
 template <Architecture> uint64_t compute_quote_mask(uint64_t quote_bits);
 
@@ -35,17 +34,6 @@ void check_utf8(simd_input<T> in, utf8_checking_state<T> &state);
 // Checks if the utf8 validation has found any error.
 template <Architecture T>
 ErrorValues check_utf8_errors(utf8_checking_state<T> &state);
-
-// a straightforward comparison of a mask against input.
-template <Architecture T>
-uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
-
-template <Architecture T> simd_input<T> fill_input(const uint8_t *ptr);
-
-// find all values less than or equal than the content of maxval (using unsigned
-// arithmetic)
-template <Architecture T>
-uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
 
 template <Architecture T>
 really_inline uint64_t find_odd_backslash_sequences(

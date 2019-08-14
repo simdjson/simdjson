@@ -2,6 +2,7 @@
 #define SIMDJSON_SIMDUTF8CHECK_HASWELL_H
 
 #include "simdjson/portability.h"
+#include "simdjson/simdutf8check.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -190,6 +191,48 @@ avx_check_utf8_bytes(__m256i current_bytes,
                      previous->high_nibbles, has_error);
   return pb;
 }
+
+template <> struct utf8_checking_state<Architecture::HASWELL> {
+  __m256i has_error;
+  avx_processed_utf_bytes previous;
+  utf8_checking_state() {
+    has_error = _mm256_setzero_si256();
+    previous.raw_bytes = _mm256_setzero_si256();
+    previous.high_nibbles = _mm256_setzero_si256();
+    previous.carried_continuations = _mm256_setzero_si256();
+  }
+};
+
+template <>
+really_inline void check_utf8<Architecture::HASWELL>(
+    simd_input<Architecture::HASWELL> in,
+    utf8_checking_state<Architecture::HASWELL> &state) {
+  __m256i high_bit = _mm256_set1_epi8(0x80u);
+  if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
+    // it is ascii, we just check continuation
+    state.has_error = _mm256_or_si256(
+        _mm256_cmpgt_epi8(state.previous.carried_continuations,
+                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                           9, 9, 9, 9, 9, 9, 9, 1)),
+        state.has_error);
+  } else {
+    // it is not ascii so we have to do heavy work
+    state.previous =
+        avx_check_utf8_bytes(in.lo, &(state.previous), &(state.has_error));
+    state.previous =
+        avx_check_utf8_bytes(in.hi, &(state.previous), &(state.has_error));
+  }
+}
+
+template <>
+really_inline ErrorValues check_utf8_errors<Architecture::HASWELL>(
+    utf8_checking_state<Architecture::HASWELL> &state) {
+  return _mm256_testz_si256(state.has_error, state.has_error) == 0
+             ? simdjson::UTF8_ERROR
+             : simdjson::SUCCESS;
+}
+
 } // namespace simdjson
 UNTARGET_REGION // haswell
 

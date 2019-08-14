@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_ERR_H
-#define SIMDJSON_ERR_H
+#ifndef SIMDJSON_SIMDJSON_H
+#define SIMDJSON_SIMDJSON_H
 
 #include <string>
 
@@ -41,4 +41,4 @@ enum ErrorValues {
 };
 const std::string &error_message(const int);
 } // namespace simdjson
-#endif
+#endif // SIMDJSON_SIMDJSON_H

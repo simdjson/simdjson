@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 #define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 
+#include "simdjson/simd_input_westmere.h"
 #include "simdjson/simdutf8check_westmere.h"
 #include "simdjson/stage1_find_marks.h"
 
@@ -8,112 +9,12 @@
 
 TARGET_WESTMERE
 namespace simdjson {
-template <> struct simd_input<Architecture::WESTMERE> {
-  __m128i v0;
-  __m128i v1;
-  __m128i v2;
-  __m128i v3;
-};
-
-template <>
-really_inline simd_input<Architecture::WESTMERE>
-fill_input<Architecture::WESTMERE>(const uint8_t *ptr) {
-  struct simd_input<Architecture::WESTMERE> in;
-  in.v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
-  in.v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
-  in.v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
-  in.v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
-  return in;
-}
 
 template <>
 really_inline uint64_t
 compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
-}
-
-template <> struct utf8_checking_state<Architecture::WESTMERE> {
-  __m128i has_error = _mm_setzero_si128();
-  processed_utf_bytes previous{
-      _mm_setzero_si128(), // raw_bytes
-      _mm_setzero_si128(), // high_nibbles
-      _mm_setzero_si128()  // carried_continuations
-  };
-};
-
-template <>
-really_inline void check_utf8<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in,
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  __m128i high_bit = _mm_set1_epi8(0x80u);
-  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
-  }
-
-  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
-  }
-}
-
-template <>
-really_inline ErrorValues check_utf8_errors<Architecture::WESTMERE>(
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  return _mm_testz_si128(state.has_error, state.has_error) == 0
-             ? simdjson::UTF8_ERROR
-             : simdjson::SUCCESS;
-}
-
-template <>
-really_inline uint64_t cmp_mask_against_input<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in, uint8_t m) {
-  const __m128i mask = _mm_set1_epi8(m);
-  __m128i cmp_res_0 = _mm_cmpeq_epi8(in.v0, mask);
-  uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
-  __m128i cmp_res_1 = _mm_cmpeq_epi8(in.v1, mask);
-  uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
-  __m128i cmp_res_2 = _mm_cmpeq_epi8(in.v2, mask);
-  uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
-  __m128i cmp_res_3 = _mm_cmpeq_epi8(in.v3, mask);
-  uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
-  return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
-}
-
-template <>
-really_inline uint64_t unsigned_lteq_against_input<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in, uint8_t m) {
-  const __m128i maxval = _mm_set1_epi8(m);
-  __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v0), maxval);
-  uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
-  __m128i cmp_res_1 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v1), maxval);
-  uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
-  __m128i cmp_res_2 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v2), maxval);
-  uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
-  __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, in.v3), maxval);
-  uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
-  return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
 }
 
 template <>
