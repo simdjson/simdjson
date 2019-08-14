@@ -35,10 +35,9 @@ compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
 
 template <> struct utf8_checking_state<Architecture::WESTMERE> {
   __m128i has_error = _mm_setzero_si128();
-  processed_utf_bytes previous{
-      _mm_setzero_si128(), // raw_bytes
-      _mm_setzero_si128(), // high_nibbles
-      _mm_setzero_si128()  // carried_continuations
+  processed_utf_bytes previous {
+      _mm_setzero_si128(), // input
+      _mm_setzero_si128(), // first_len
   };
 };
 
@@ -50,31 +49,29 @@ really_inline void check_utf8<Architecture::WESTMERE>(
   if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
+        _mm_or_si128(_mm_cmpgt_epi8(state.previous.first_len,
                                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
+                                                  9, 9, 9, 3, 2, 1)),
                      state.has_error);
   } else {
-    // it is not ascii so we have to do heavy work
     state.previous =
-        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
+      check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
     state.previous =
-        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
+      check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
   }
 
   if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
+        _mm_or_si128(_mm_cmpgt_epi8(state.previous.first_len,
                                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
+                                                  9, 9, 9, 3, 2, 1)),
                      state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
+  } else { 
     state.previous =
-        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
+      check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
     state.previous =
-        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
+      check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
 

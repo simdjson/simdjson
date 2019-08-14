@@ -7,160 +7,153 @@
 #include <string.h>
 #ifdef IS_X86_64
 
-/*
- * legal utf-8 byte sequence
- * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
- *
- *  Code Points        1st       2s       3s       4s
- * U+0000..U+007F     00..7F
- * U+0080..U+07FF     C2..DF   80..BF
- * U+0800..U+0FFF     E0       A0..BF   80..BF
- * U+1000..U+CFFF     E1..EC   80..BF   80..BF
- * U+D000..U+D7FF     ED       80..9F   80..BF
- * U+E000..U+FFFF     EE..EF   80..BF   80..BF
- * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
- * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
- * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
- *
- */
-
-// all byte values must be no larger than 0xF4
-
-/********** sse code **********/
 TARGET_WESTMERE
 
 namespace simdjson {
-// all byte values must be no larger than 0xF4
-static inline void check_smaller_than_0xF4(__m128i current_bytes,
-                                           __m128i *has_error) {
-  // unsigned, saturates to 0 below max
-  *has_error = _mm_or_si128(*has_error,
-                            _mm_subs_epu8(current_bytes, _mm_set1_epi8(0xF4u)));
-}
 
-static inline __m128i continuation_lengths(__m128i high_nibbles) {
-  return _mm_shuffle_epi8(
-      _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                    0, 0, 0, 0,             // 10xx (continuation)
-                    2, 2,                   // 110x
-                    3,                      // 1110
-                    4), // 1111, next should be 0 (not checked here)
-      high_nibbles);
-}
-
-static inline __m128i carry_continuations(__m128i initial_lengths,
-                                          __m128i previous_carries) {
-
-  __m128i right1 =
-      _mm_subs_epu8(_mm_alignr_epi8(initial_lengths, previous_carries, 16 - 1),
-                    _mm_set1_epi8(1));
-  __m128i sum = _mm_add_epi8(initial_lengths, right1);
-
-  __m128i right2 = _mm_subs_epu8(_mm_alignr_epi8(sum, previous_carries, 16 - 2),
-                                 _mm_set1_epi8(2));
-  return _mm_add_epi8(sum, right2);
-}
-
-static inline void check_continuations(__m128i initial_lengths, __m128i carries,
-                                       __m128i *has_error) {
-
-  // overlap || underlap
-  // carry > length && length > 0 || !(carry > length) && !(length > 0)
-  // (carries > length) == (lengths > 0)
-  __m128i overunder =
-      _mm_cmpeq_epi8(_mm_cmpgt_epi8(carries, initial_lengths),
-                     _mm_cmpgt_epi8(initial_lengths, _mm_setzero_si128()));
-
-  *has_error = _mm_or_si128(*has_error, overunder);
-}
-
-// when 0xED is found, next byte must be no larger than 0x9F
-// when 0xF4 is found, next byte must be no larger than 0x8F
-// next byte must be continuation, ie sign bit is set, so signed < is ok
-static inline void check_first_continuation_max(__m128i current_bytes,
-                                                __m128i off1_current_bytes,
-                                                __m128i *has_error) {
-  __m128i maskED = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xEDu));
-  __m128i maskF4 = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xF4u));
-
-  __m128i badfollowED = _mm_and_si128(
-      _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x9Fu)), maskED);
-  __m128i badfollowF4 = _mm_and_si128(
-      _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x8Fu)), maskF4);
-
-  *has_error = _mm_or_si128(*has_error, _mm_or_si128(badfollowED, badfollowF4));
-}
-
-// map off1_hibits => error condition
-// hibits     off1    cur
-// C       => < C2 && true
-// E       => < E1 && < A0
-// F       => < F1 && < 90
-// else      false && false
-static inline void check_overlong(__m128i current_bytes,
-                                  __m128i off1_current_bytes, __m128i hibits,
-                                  __m128i previous_hibits, __m128i *has_error) {
-  __m128i off1_hibits = _mm_alignr_epi8(hibits, previous_hibits, 16 - 1);
-  __m128i initial_mins = _mm_shuffle_epi8(
-      _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                    -128, -128,  // 10xx => false
-                    0xC2u, -128, // 110x
-                    0xE1u,       // 1110
-                    0xF1u),
-      off1_hibits);
-
-  __m128i initial_under = _mm_cmpgt_epi8(initial_mins, off1_current_bytes);
-
-  __m128i second_mins = _mm_shuffle_epi8(
-      _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                    -128, -128, // 10xx => false
-                    127, 127,   // 110x => true
-                    0xA0u,      // 1110
-                    0x90u),
-      off1_hibits);
-  __m128i second_under = _mm_cmpgt_epi8(second_mins, current_bytes);
-  *has_error =
-      _mm_or_si128(*has_error, _mm_and_si128(initial_under, second_under));
-}
+#define RET_ERR_IDX 0   /* Define 1 to return index of first error char */
 
 struct processed_utf_bytes {
-  __m128i raw_bytes;
-  __m128i high_nibbles;
-  __m128i carried_continuations;
+    __m128i input;
+    __m128i first_len;
 };
 
-static inline void count_nibbles(__m128i bytes,
-                                 struct processed_utf_bytes *answer) {
-  answer->raw_bytes = bytes;
-  answer->high_nibbles =
-      _mm_and_si128(_mm_srli_epi16(bytes, 4), _mm_set1_epi8(0x0F));
+/* Cached tables */
+/*
+* Map high nibble of "First Byte" to legal character length minus 1
+* 0x00 ~ 0xBF --> 0
+* 0xC0 ~ 0xDF --> 1
+* 0xE0 ~ 0xEF --> 2
+* 0xF0 ~ 0xFF --> 3
+*/
+const __m128i first_len_tbl = _mm_setr_epi8(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3);
+/* Map "First Byte" to 8-th item of range table (0xC2 ~ 0xF4) */
+const __m128i first_range_tbl = _mm_setr_epi8(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8);
+/*
+* Range table, map range index to min and max values
+* Index 0    : 00 ~ 7F (First Byte, ascii)
+* Index 1,2,3: 80 ~ BF (Second, Third, Fourth Byte)
+* Index 4    : A0 ~ BF (Second Byte after E0)
+* Index 5    : 80 ~ 9F (Second Byte after ED)
+* Index 6    : 90 ~ BF (Second Byte after F0)
+* Index 7    : 80 ~ 8F (Second Byte after F4)
+* Index 8    : C2 ~ F4 (First Byte, non ascii)
+* Index 9~15 : illegal: i >= 127 && i <= -128
+*/
+const __m128i range_min_tbl = _mm_setr_epi8(0x00, 0x80, 0x80, 0x80, 0xA0, 0x80, 0x90, 0x80,
+0xC2, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F);
+const __m128i range_max_tbl = _mm_setr_epi8(0x7F, 0xBF, 0xBF, 0xBF, 0xBF, 0x9F, 0xBF, 0x8F,
+0xF4, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
+/*
+* Tables for fast handling of four special First Bytes(E0,ED,F0,F4), after
+* which the Second Byte are not 80~BF. It contains "range index adjustment".
+* +------------+---------------+------------------+----------------+
+* | First Byte | original range| range adjustment | adjusted range |
+* +------------+---------------+------------------+----------------+
+* | E0         | 2             | 2                | 4              |
+* +------------+---------------+------------------+----------------+
+* | ED         | 2             | 3                | 5              |
+* +------------+---------------+------------------+----------------+
+* | F0         | 3             | 3                | 6              |
+* +------------+---------------+------------------+----------------+
+* | F4         | 4             | 4                | 8              |
+* +------------+---------------+------------------+----------------+
+*/
+/* index1 -> E0, index14 -> ED */
+const __m128i df_ee_tbl = _mm_setr_epi8(0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
+/* index1 -> F0, index5 -> F4 */
+const __m128i ef_fe_tbl = _mm_setr_epi8(0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+/* 5x faster than naive method */
+/* Return 0 - success, -1 - error, >0 - first error char(if RET_ERR_IDX = 1) */
+static inline struct processed_utf_bytes
+check_utf8_bytes(__m128i input,
+                     struct processed_utf_bytes *previous,
+                     __m128i *has_error)
+{
+        /* high_nibbles = input >> 4 */
+    const __m128i high_nibbles =
+        _mm_and_si128(_mm_srli_epi16(input, 4), _mm_set1_epi8(0x0F));
+
+    /* first_len = legal character length minus 1 */
+    /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+    /* first_len = first_len_tbl[high_nibbles] */
+    __m128i first_len = _mm_shuffle_epi8(first_len_tbl, high_nibbles);
+
+    /* First Byte: set range index to 8 for bytes within 0xC0 ~ 0xFF */
+    /* range = first_range_tbl[high_nibbles] */
+    __m128i range = _mm_shuffle_epi8(first_range_tbl, high_nibbles);
+
+    /* Second Byte: set range index to first_len */
+    /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+    /* range |= (first_len, prev_first_len) << 1 byte */
+    range = _mm_or_si128(
+            range, _mm_alignr_epi8(first_len, previous->first_len, 15));
+
+    /* Third Byte: set range index to saturate_sub(first_len, 1) */
+    /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
+    __m128i tmp1, tmp2;
+    /* tmp1 = saturate_sub(first_len, 1) */
+    tmp1 = _mm_subs_epu8(first_len, _mm_set1_epi8(1));
+    /* tmp2 = saturate_sub(prev_first_len, 1) */
+    tmp2 = _mm_subs_epu8(previous->first_len, _mm_set1_epi8(1));
+    /* range |= (tmp1, tmp2) << 2 bytes */
+    range = _mm_or_si128(range, _mm_alignr_epi8(tmp1, tmp2, 14));
+
+    /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
+    /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
+    /* tmp1 = saturate_sub(first_len, 2) */
+    tmp1 = _mm_subs_epu8(first_len, _mm_set1_epi8(2));
+    /* tmp2 = saturate_sub(prev_first_len, 2) */
+    tmp2 = _mm_subs_epu8(previous->first_len, _mm_set1_epi8(2));
+    /* range |= (tmp1, tmp2) << 3 bytes */
+    range = _mm_or_si128(range, _mm_alignr_epi8(tmp1, tmp2, 13));
+
+    /*
+        * Now we have below range indices caluclated
+        * Correct cases:
+        * - 8 for C0~FF
+        * - 3 for 1st byte after F0~FF
+        * - 2 for 1st byte after E0~EF or 2nd byte after F0~FF
+        * - 1 for 1st byte after C0~DF or 2nd byte after E0~EF or
+        *         3rd byte after F0~FF
+        * - 0 for others
+        * Error cases:
+        *   9,10,11 if non ascii First Byte overlaps
+        *   E.g., F1 80 C2 90 --> 8 3 10 2, where 10 indicates error
+        */
+
+    /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
+    /* Overlaps lead to index 9~15, which are illegal in range table */
+    __m128i shift1, pos, range2;
+    /* shift1 = (input, prev_input) << 1 byte */
+    shift1 = _mm_alignr_epi8(input, previous->input, 15);
+    pos = _mm_sub_epi8(shift1, _mm_set1_epi8(0xEF));
+    /*
+        * shift1:  | EF  F0 ... FE | FF  00  ... ...  DE | DF  E0 ... EE |
+        * pos:     | 0   1      15 | 16  17           239| 240 241    255|
+        * pos-240: | 0   0      0  | 0   0            0  | 0   1      15 |
+        * pos+112: | 112 113    127|       >= 128        |     >= 128    |
+        */
+    tmp1 = _mm_subs_epu8(pos, _mm_set1_epi8(240));
+    range2 = _mm_shuffle_epi8(df_ee_tbl, tmp1);
+    tmp2 = _mm_adds_epu8(pos, _mm_set1_epi8(112));
+    range2 = _mm_add_epi8(range2, _mm_shuffle_epi8(ef_fe_tbl, tmp2));
+
+    range = _mm_add_epi8(range, range2);
+
+    /* Load min and max values per calculated range index */
+    __m128i minv = _mm_shuffle_epi8(range_min_tbl, range);
+    __m128i maxv = _mm_shuffle_epi8(range_max_tbl, range);
+
+    *has_error = _mm_or_si128(*has_error, _mm_cmplt_epi8(input, minv));
+    *has_error = _mm_or_si128(*has_error, _mm_cmpgt_epi8(input, maxv));
+    previous->input = input;
+    previous->first_len = first_len;
+
+    return *previous;
 }
 
-// check whether the current bytes are valid UTF-8
-// at the end of the function, previous gets updated
-static struct processed_utf_bytes
-check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
-                 __m128i *has_error) {
-  struct processed_utf_bytes pb;
-  count_nibbles(current_bytes, &pb);
-
-  check_smaller_than_0xF4(current_bytes, has_error);
-
-  __m128i initial_lengths = continuation_lengths(pb.high_nibbles);
-
-  pb.carried_continuations =
-      carry_continuations(initial_lengths, previous->carried_continuations);
-
-  check_continuations(initial_lengths, pb.carried_continuations, has_error);
-
-  __m128i off1_current_bytes =
-      _mm_alignr_epi8(pb.raw_bytes, previous->raw_bytes, 16 - 1);
-  check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
-
-  check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                 previous->high_nibbles, has_error);
-  return pb;
-}
 } // namespace simdjson
 UNTARGET_REGION // westmere
 
