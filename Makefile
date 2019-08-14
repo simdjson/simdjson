@@ -1,3 +1,4 @@
+REFERENCE_VERSION = v0.2.1
 
 .SUFFIXES:
 #
@@ -127,7 +128,7 @@ perfdiff: benchmark/perfdiff.cpp
 	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFLAGS)
 
 checkperf:
-	bash ./scripts/checkperf.sh v0.2.1
+	bash ./scripts/checkperf.sh $(REFERENCE_VERSION)
 
 statisticalmodel: benchmark/statisticalmodel.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o statisticalmodel $(LIBFILES) benchmark/statisticalmodel.cpp $(LIBFLAGS)

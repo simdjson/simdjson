@@ -45,25 +45,35 @@ double readThroughput(std::string parseOutput) {
 }
 
 const double INTERLEAVED_ATTEMPTS = 6;
+const double PERCENT_DIFFERENCE_THRESHOLD = -0.2;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <new parse cmd> <reference parse cmd>";
+        std::cerr << "Usage: " << argv[0] << " <new parse cmd> <reference parse cmd>" << std::endl;
         return 1;
     }
     for (int attempt=0; attempt < INTERLEAVED_ATTEMPTS; attempt++) {
+        if (attempt > 0) {
+            std::cout << "Running again to check whether it's a fluke ..." << std::endl;
+        }
         std::cout << "Attempt #" << (attempt+1) << " of up to " << INTERLEAVED_ATTEMPTS << std::endl;
+
+        // Read new throughput
         double newThroughput = readThroughput(exec(argv[1]));
         std::cout << "New throughput: " << newThroughput << std::endl;
+
+        // Read reference throughput
         double referenceThroughput = readThroughput(exec(argv[2]));
         std::cout << "Ref throughput: " << referenceThroughput << std::endl;
+
+        // Check if % difference > 0
         double percentDifference = ((newThroughput / referenceThroughput) - 1.0) * 100;
         std::cout << "Difference: " << percentDifference << "%" << std::endl;
-        if (percentDifference >= 0) {
-            std::cout << "New throughput is same or better!" << std::endl;
+        if (percentDifference >= PERCENT_DIFFERENCE_THRESHOLD) {
+            std::cout << "New throughput is same or better." << std::endl;
             return 0;
         } else {
-            std::cout << "New throughput is lower! Running again to check whether it's a fluke ...";
+            std::cout << "New throughput is lower!";
         }
     }
     return 1;
