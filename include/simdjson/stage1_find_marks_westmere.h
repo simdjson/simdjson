@@ -17,59 +17,6 @@ compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
 }
 
-template <> struct utf8_checking_state<Architecture::WESTMERE> {
-  __m128i has_error = _mm_setzero_si128();
-  processed_utf_bytes previous{
-      _mm_setzero_si128(), // raw_bytes
-      _mm_setzero_si128(), // high_nibbles
-      _mm_setzero_si128()  // carried_continuations
-  };
-};
-
-template <>
-really_inline void check_utf8<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in,
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  __m128i high_bit = _mm_set1_epi8(0x80u);
-  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
-  }
-
-  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
-  }
-}
-
-template <>
-really_inline ErrorValues check_utf8_errors<Architecture::WESTMERE>(
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  return _mm_testz_si128(state.has_error, state.has_error) == 0
-             ? simdjson::UTF8_ERROR
-             : simdjson::SUCCESS;
-}
-
 template <>
 really_inline void find_whitespace_and_structurals<Architecture::WESTMERE>(
     simd_input<Architecture::WESTMERE> in, uint64_t &whitespace,
