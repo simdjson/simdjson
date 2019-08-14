@@ -10,6 +10,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/numberparsing.h
     ${SIMDJSON_INCLUDE_DIR}/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/parsedjson.h
+    ${SIMDJSON_INCLUDE_DIR}/parsedjsoniterator.h
     ${SIMDJSON_INCLUDE_DIR}/portability.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson_version.h

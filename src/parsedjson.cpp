@@ -1,4 +1,5 @@
 #include "simdjson/parsedjson.h"
+#include "simdjson/jsonformatutils.h"
 
 namespace simdjson {
 ParsedJson::ParsedJson()
