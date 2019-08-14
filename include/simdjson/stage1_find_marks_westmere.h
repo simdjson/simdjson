@@ -35,7 +35,7 @@ compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
 
 template <> struct utf8_checking_state<Architecture::WESTMERE> {
   __m128i has_error = _mm_setzero_si128();
-  processed_utf_bytes previous {
+  processed_utf_bytes previous{
       _mm_setzero_si128(), // input
       _mm_setzero_si128(), // first_len
   };
@@ -55,9 +55,9 @@ really_inline void check_utf8<Architecture::WESTMERE>(
                      state.has_error);
   } else {
     state.previous =
-      check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
     state.previous =
-      check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
   }
 
   if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
@@ -67,11 +67,11 @@ really_inline void check_utf8<Architecture::WESTMERE>(
                                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                                   9, 9, 9, 3, 2, 1)),
                      state.has_error);
-  } else { 
+  } else {
     state.previous =
-      check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
     state.previous =
-      check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
+        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
   }
 }
 
