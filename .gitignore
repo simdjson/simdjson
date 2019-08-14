@@ -1,1 +1,62 @@
-build/
+.vscode/
+/VS/
+/build/
+/benchbranch/
+/submodules/
+
+# Build outputs (TODO build to a subdir so we can exclude that instead)
+/allparserscheckfile
+/basictests
+/json2json
+/jsoncheck
+/jsonpointer
+/jsonstats
+/minify
+/numberparsingcheck
+/parse
+/perfdiff
+/pointercheck
+/statisticalmodel
+/stringparsingcheck
+/submodules
+/ujdecode.o
+/amalgamation_demo.cpp
+/simdjson.cpp
+/simdjson.h
+/singleheader/amalgamation_demo
+/singleheader/demo
+
+# Generic from https://github.com/github/gitignore/blob/master/C%2B%2B.gitignore
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
