@@ -1,5 +1,6 @@
 version: 2.1
 
+# Reusable image / compiler definitions
 executors:
   gcc7:
     docker:
@@ -12,90 +13,132 @@ executors:
         environment:
           CXX: clang++-6.0
 
+# Reusable test commands (and initializer for clang 6)
 commands:
-  init_gcc7:
-    steps:
-      - run: echo true
   init_clang6:
     steps:
+      - run: apt-get update -qq
       - run: apt-get install -y clang build-essential git
-
-jobs:
-
-  # Parameterized job to run all tests with "make"
   make_test:
-    description: Build, run tests and check performance
-    parameters:
-      compiler:
-        description: Compiler 
-        type: string
-      archflags:
-        description: Architecture flags (ARCHFLAGS)
-        default: ""
-        type: string
-
-    executor: << parameters.compiler >>
-
-    environment:
-      ARCHFLAGS: << parameters.archflags >>
-
     steps:
       - checkout
-      - run: apt-get update -qq
-      - init_<< parameters.compiler >>
       - run: make
       - run: make amalgamate
       - run: make test
       - run: make checkperf
-
-  # Parameterized job to run all tests with "cmake"
   cmake_test:
-    description: Build, run tests and check performance
-
-    parameters:
-      compiler:
-        description: Compiler 
-        type: string
-      flags:
-        description: flags to pass to cmake
-        default: ""
-        type: string
-
-    executor: << parameters.compiler >>
-
     steps:
       - run: apt-get update -qq
-      - init_<< parameters.compiler >>
       - run: apt-get install -y cmake
       - checkout
-      - run: cmake << parameters.flags >>
+      - run: cmake $CMAKE_TEST_FLAGS
       - run: make
       - run: make test
+
+jobs:
+
+  gcc-avx:
+    description: Build, run tests and check performance on GCC 7 and AVX 2
+    executor: gcc7
+    steps: [ make_test ]
+  gcc-avx-dynamic:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake dynamic build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ cmake_test ]
+  gcc-avx-static:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake static build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ cmake_test ]
+  gcc-avx-sanitize:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake sanitize build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test ]
+
+  gcc-sse:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    executor: gcc7
+    environment: { ARCHFLAGS: -march=nehalem }
+    steps: [ make_test ]
+  gcc-sse-dynamic:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ cmake_test ]
+  gcc-sse-static:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ cmake_test ]
+  gcc-sse-sanitize:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test ]
+
+  clang-avx:
+    description: Build, run tests and check performance on clang 6 and AVX 2
+    executor: clang6
+    steps: [ init_clang6, make_test ]
+  clang-avx-dynamic:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake dynamic build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ init_clang6, cmake_test ]
+  clang-avx-static:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake static build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ init_clang6, cmake_test ]
+  clang-avx-sanitize:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake sanitize build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ init_clang6, cmake_test ]
+
+  clang-sse:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    executor: clang6
+    environment: { ARCHFLAGS: -march=nehalem }
+    steps: [ init_clang6, make_test ]
+  clang-sse-dynamic:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ init_clang6, cmake_test ]
+  clang-sse-static:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ init_clang6, cmake_test ]
+  clang-sse-sanitize:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ init_clang6, cmake_test ]
 
 workflows:
   version: 2.1
   build_and_test:
     jobs:
-      # gcc7
-      - make_test:  { compiler: gcc7 }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-      # gcc7 - no AVX
-      - make_test:  { compiler: gcc7, archflags: -march=nehalem }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: gcc7, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-      # clang6
-      - make_test:  { compiler: clang6 }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-      # clang6 - no AVX
-      - make_test:  { compiler: clang6, archflags: -march=nehalem }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=ON }
-      - cmake_test: { compiler: clang6, flags: -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+      - gcc-avx
+      - gcc-avx-dynamic
+      - gcc-avx-static
+      - gcc-avx-sanitize
+      - gcc-sse
+      - gcc-sse-dynamic
+      - gcc-sse-static
+      - gcc-sse-sanitize
+      - clang-avx
+      - clang-avx-dynamic
+      - clang-avx-static
+      - clang-avx-sanitize
+      - clang-sse
+      - clang-sse-dynamic
+      - clang-sse-static
+      - clang-sse-sanitize
 
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
