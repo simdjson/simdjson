@@ -5,6 +5,7 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
+#include <cmath>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);

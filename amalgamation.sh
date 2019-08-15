@@ -46,6 +46,7 @@ $SCRIPTPATH/include/simdjson/simdutf8check_westmere.h
 $SCRIPTPATH/include/simdjson/simdutf8check_arm64.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
+$SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
