@@ -102,7 +102,7 @@ test: jsoncheck numberparsingcheck stringparsingcheck basictests fastnumberpatht
 	./scripts/issue150.sh
 	@echo "It looks like the code is good!"
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests fastnumberpathtests  allparserscheckfile minify json2json pointercheck
 	./fastnumberpathtests
 	./basictests
 	./numberparsingcheck
