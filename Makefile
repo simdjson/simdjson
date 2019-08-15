@@ -91,7 +91,8 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+test: jsoncheck numberparsingcheck stringparsingcheck basictests fastnumberpathtests allparserscheckfile minify json2json pointercheck
+	./fastnumberpathtests
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
@@ -102,6 +103,7 @@ test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheck
 	@echo "It looks like the code is good!"
 
 quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+	./fastnumberpathtests
 	./basictests
 	./numberparsingcheck
 	./stringparsingcheck
@@ -145,6 +147,9 @@ parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
+
+fastnumberpathtests:tests/fastnumberpathtests.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o fastnumberpathtests $(LIBFILES) tests/fastnumberpathtests.cpp -I. $(LIBFLAGS)
 
 basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o basictests $(LIBFILES) tests/basictests.cpp -I. $(LIBFLAGS)
