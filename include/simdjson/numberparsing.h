@@ -187,26 +187,25 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   }
   if ('.' == *p) {
     ++p;
-    int fractional_weight = 308;
     if (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-
-      fractional_weight--;
-      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
-                                              : 0);
+      i = i + digit / 10.0;
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
       return false;
     }
+    int fractional_weight = 1;
+
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      fractional_weight--;
-      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
-                                              : 0);
+      fractional_weight++;
+      if(fractional_weight <= 308) {
+        i = i + digit / power_of_ten[fractional_weight];
+      }
     }
   }
   if (('e' == *p) || ('E' == *p)) {
@@ -290,6 +289,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 #endif
   return is_structural_or_whitespace(*p);
 }
+
 
 // called by parse_number when we know that the output is an integer,
 // but where there might be some integer overflow.
@@ -424,28 +424,22 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       ++p;
     }
   }
+  int digit_count = p - start_digits; // used later to guard against overflows
   int64_t exponent = 0;
-  bool is_float = false;
   if ('.' == *p) {
-    is_float = true; // At this point we know that we have a float
-    // we continue with the fiction that we have an integer. If the
-    // floating point number is representable as x * 10^z for some integer
-    // z that fits in 53 bits, then we will be able to convert back the
-    // the integer into a float in a lossless manner.
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
       unsigned char digit = *p - '0';
       ++p;
-      i = i * 10 + digit; // might overflow + multiplication by 10 is likely
-                          // cheaper than arbitrary mult.
-      // we will handle the overflow later
+      i = i * 10 + digit; 
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
       return false;
     }
+    
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
     // this turns out to be frequent enough.
@@ -460,15 +454,12 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
     }
-    exponent = first_after_period - p;
+    exponent = p - first_after_period;
   }
-  int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
+  bool neg_exp = false; // hiding this in the next if might be better
   if (('e' == *p) || ('E' == *p)) {
-    is_float = true;
     ++p;
-    bool neg_exp = false;
     if ('-' == *p) {
       neg_exp = true;
       ++p;
@@ -506,36 +497,37 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       exp_number = 10 * exp_number + digit;
       ++p;
     }
-    exponent += (neg_exp ? -exp_number : exp_number);
   }
-  if (is_float) {
-    if (unlikely((digit_count >= 19))) { // this is uncommon
-      // It is possible that the integer had an overflow.
-      // We have to handle the case where we have 0.0000somenumber.
-      const char *start = start_digits;
-      while ((*start == '0') || (*start == '.')) {
-        start++;
+  if ((exponent != 0) || (exp_number != 0)) {
+    uint64_t total_digit_count = digit_count + exponent;
+    if (unlikely((total_digit_count > 19) ) ) { // this is uncommon
+      // might have an  overflow
+      int64_t deduct = 0;
+      if((digit_count == 1) && (*start_digits=='0')) {
+        deduct ++;
+        if(start_digits[1]=='.') {
+          const char * fap = start_digits + 2;
+          while(*fap == '0') {
+            fap++;
+          }
+          deduct += fap - (start_digits + 2);
+        }
       }
-      // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
-      if (digit_count >= 19) {
-        // Ok, chances are good that we had an overflow!
-        // this is almost never going to get called!!!
-        // we start anew, going slowly!!!
+      total_digit_count -= deduct;
+      if(total_digit_count > 19) { // overflow
         return parse_float(buf, pj, offset, found_minus);
       }
     }
-    double d = i;
-    if(exponent < 0) {
-      if (unlikely((-exponent >  308))) {
+    int64_t total_exponent = -exponent + (neg_exp ? -exp_number : exp_number);
+    double d = i; // as long as i is in [0, 2^53), this is exact
+    if (unlikely((total_exponent >  308) || (total_exponent <  -308))) {
         return parse_float(buf, pj, offset, found_minus);
-      }
-      d /= power_of_ten[-exponent];
+    }
+    // as long as |total_exponent| < 22, this is exact
+    if(total_exponent < 0) {
+      d /= power_of_ten[-total_exponent];
     } else {
-      if (unlikely((exponent >  308))) {
-        return parse_float(buf, pj, offset, found_minus);
-      }
-      d *= power_of_ten[exponent];
+      d *= power_of_ten[total_exponent];
     }
     d = negative ? - d : d;
     pj.write_tape_double(d);

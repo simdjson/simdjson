@@ -40,6 +40,7 @@ inline uint64_t f64_ulp_dist(double a, double b) {
 }
 
 int parse_error;
+uint64_t max_ulp;
 char *fullpath;
 enum { PARSE_WARNING, PARSE_ERROR };
 
@@ -99,6 +100,7 @@ void found_float(double result, const uint8_t *buf) {
             "parsed %f from %.32s whereas strtod refuses to parse a float, ",
             result, buf);
     fprintf(stderr, " while parsing %s \n", fullpath);
+    max_ulp = 9999;
     parse_error |= PARSE_ERROR;
   }
   if (fpclassify(expected) != fpclassify(result)) {
@@ -111,7 +113,10 @@ void found_float(double result, const uint8_t *buf) {
   }
   // we want to get some reasonable relative accuracy
   uint64_t ULP = f64_ulp_dist(expected, result);
-  if (f64_ulp_dist(expected, result) > 1) {
+  if(ULP > max_ulp) {
+    max_ulp = ULP;
+  }
+  if (ULP > 1) {
     fprintf(stderr, "parsed %.128e from \n", result);
     fprintf(stderr, "       %.32s whereas strtod gives\n", buf);
     fprintf(stderr, "       %.128e,", expected);
@@ -177,14 +182,24 @@ bool validate(const char *dirname) {
       float_count = 0;
       int_count = 0;
       invalid_count = 0;
+      max_ulp = 0;
       total_count += float_count + int_count + invalid_count;
       bool isok = json_parse(p, pj);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "
-               "total numbers: %10zu \n",
+               "total numbers: %10zu ",
                name, isok ? " is valid     " : " is not valid ", int_count,
                float_count, invalid_count,
                int_count + float_count + invalid_count);
+        
+        if(float_count > 0) {
+          if(max_ulp == 0) {
+            printf("[Floats are perfectly rounded.]");
+          } else {
+            printf("[ULP of %d]",(int)max_ulp);
+          }
+        } 
+        printf("\n");
       }
       free(fullpath);
     }
