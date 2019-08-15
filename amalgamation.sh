@@ -36,6 +36,11 @@ $SCRIPTPATH/include/simdjson/jsoncharutils.h
 $SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/jsonioutil.h
 $SCRIPTPATH/include/simdjson/simdprune_tables.h
+$SCRIPTPATH/include/simdjson/simd_input.h
+$SCRIPTPATH/include/simdjson/simd_input_haswell.h
+$SCRIPTPATH/include/simdjson/simd_input_westmere.h
+$SCRIPTPATH/include/simdjson/simd_input_arm64.h
+$SCRIPTPATH/include/simdjson/simdutf8check.h
 $SCRIPTPATH/include/simdjson/simdutf8check_haswell.h
 $SCRIPTPATH/include/simdjson/simdutf8check_westmere.h
 $SCRIPTPATH/include/simdjson/simdutf8check_arm64.h

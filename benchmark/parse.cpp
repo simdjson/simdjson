@@ -124,11 +124,20 @@ int main(int argc, char *argv[]) {
   bool json_output = false;
   bool force_one_iteration = false;
   bool just_data = false;
+  int32_t iterations = -1;
+  int32_t warmup_iterations = -1;
+
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "1vdt")) != -1) {
+  while ((c = getopt(argc, argv, "1vdtn:w:")) != -1) {
     switch (c) {
+    case 'n':
+      iterations = atoi(optarg);
+      break;
+    case 'w':
+      warmup_iterations = atoi(optarg);
+      break;
     case 't':
       just_data = true;
       break;
@@ -174,12 +183,21 @@ int main(int argc, char *argv[]) {
     std::cout << "[verbose] loaded " << filename << " (" << p.size()
               << " bytes)" << std::endl;
   }
-#if defined(DEBUG)
-  const uint32_t iterations = 1;
-#else
-  const uint32_t iterations =
-      force_one_iteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
-#endif
+  if (iterations == -1) {
+    #if defined(DEBUG)
+      iterations = 1;
+    #else
+      iterations = force_one_iteration ? 1 : (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
+    #endif
+  }
+  if (warmup_iterations == -1) {
+    #if defined(DEBUG)
+      warmup_iterations = 0;
+    #else
+      warmup_iterations = (p.size() < 1 * 1000 * 1000) ? 10 : 1;
+    #endif
+  }
+
   std::vector<double> res;
   res.resize(iterations);
   if (!just_data)
@@ -195,17 +213,7 @@ int main(int argc, char *argv[]) {
     bool allocok = pj.allocate_capacity(p.size());
     if (allocok) {
       simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj);
-      simdjson::unified_ptr(
-          (const uint8_t
-               *)(const uint8_t
-                      *)(const uint8_t
-                             *)(const uint8_t
-                                    *)(const uint8_t
-                                           *)(const uint8_t
-                                                  *)(const uint8_t
-                                                         *)(const uint8_t *)
-              p.data(),
-          p.size(), pj);
+      simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj);
     }
   }
 #ifndef SQUASH_COUNTERS
@@ -224,9 +232,33 @@ int main(int argc, char *argv[]) {
   unsigned long cref0 = 0, cref1 = 0, cref2 = 0;
   unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0;
 #endif
+
+  // Do warmup iterations
   bool isok = true;
+  for (int32_t i = 0; i < warmup_iterations; i++) {
+    if (verbose) {
+      std::cout << "[verbose] warmup iteration # " << i << std::endl;
+    }
+    simdjson::ParsedJson pj;
+    bool allocok = pj.allocate_capacity(p.size());
+    if (!allocok) {
+      std::cerr << "failed to allocate memory" << std::endl;
+      return EXIT_FAILURE;
+    }
+    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+            simdjson::SUCCESS);
+    isok = isok &&
+           (simdjson::SUCCESS ==
+            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+    if (!isok) {
+      std::cerr << pj.get_error_message() << std::endl;
+      std::cerr << "Could not parse. " << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
 #ifndef SQUASH_COUNTERS
-  for (uint32_t i = 0; i < iterations; i++) {
+  for (int32_t i = 0; i < iterations; i++) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }
@@ -275,8 +307,9 @@ int main(int argc, char *argv[]) {
     }
   }
 #endif
+
   // we do it again, this time just measuring the elapsed time
-  for (uint32_t i = 0; i < iterations; i++) {
+  for (int32_t i = 0; i < iterations; i++) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
     }

@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
 #define SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
 
+#include "simdjson/simd_input_haswell.h"
 #include "simdjson/simdutf8check_haswell.h"
 #include "simdjson/stage1_find_marks.h"
 
@@ -8,19 +9,6 @@
 
 TARGET_HASWELL
 namespace simdjson {
-template <> struct simd_input<Architecture::HASWELL> {
-  __m256i lo;
-  __m256i hi;
-};
-
-template <>
-really_inline simd_input<Architecture::HASWELL>
-fill_input<Architecture::HASWELL>(const uint8_t *ptr) {
-  struct simd_input<Architecture::HASWELL> in;
-  in.lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
-  in.hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
-  return in;
-}
 
 template <>
 really_inline uint64_t
@@ -30,69 +18,6 @@ compute_quote_mask<Architecture::HASWELL>(uint64_t quote_bits) {
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
   return quote_mask;
-}
-
-template <> struct utf8_checking_state<Architecture::HASWELL> {
-  __m256i has_error;
-  avx_processed_utf_bytes previous;
-  utf8_checking_state() {
-    has_error = _mm256_setzero_si256();
-    previous.raw_bytes = _mm256_setzero_si256();
-    previous.high_nibbles = _mm256_setzero_si256();
-    previous.carried_continuations = _mm256_setzero_si256();
-  }
-};
-
-template <>
-really_inline void check_utf8<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in,
-    utf8_checking_state<Architecture::HASWELL> &state) {
-  __m256i high_bit = _mm256_set1_epi8(0x80u);
-  if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error = _mm256_or_si256(
-        _mm256_cmpgt_epi8(state.previous.carried_continuations,
-                          _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 1)),
-        state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        avx_check_utf8_bytes(in.lo, &(state.previous), &(state.has_error));
-    state.previous =
-        avx_check_utf8_bytes(in.hi, &(state.previous), &(state.has_error));
-  }
-}
-
-template <>
-really_inline ErrorValues check_utf8_errors<Architecture::HASWELL>(
-    utf8_checking_state<Architecture::HASWELL> &state) {
-  return _mm256_testz_si256(state.has_error, state.has_error) == 0
-             ? simdjson::UTF8_ERROR
-             : simdjson::SUCCESS;
-}
-
-template <>
-really_inline uint64_t cmp_mask_against_input<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in, uint8_t m) {
-  const __m256i mask = _mm256_set1_epi8(m);
-  __m256i cmp_res_0 = _mm256_cmpeq_epi8(in.lo, mask);
-  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
-  __m256i cmp_res_1 = _mm256_cmpeq_epi8(in.hi, mask);
-  uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
-  return res_0 | (res_1 << 32);
-}
-
-template <>
-really_inline uint64_t unsigned_lteq_against_input<Architecture::HASWELL>(
-    simd_input<Architecture::HASWELL> in, uint8_t m) {
-  const __m256i maxval = _mm256_set1_epi8(m);
-  __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, in.lo), maxval);
-  uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
-  __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, in.hi), maxval);
-  uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
-  return res_0 | (res_1 << 32);
 }
 
 template <>
