@@ -178,7 +178,7 @@ really_inline void check_utf8<Architecture::WESTMERE>(
     state.has_error =
         _mm_or_si128(_mm_cmpgt_epi8(state.previous.first_len,
                                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 3, 2, 1)),
+                                                  9, 9, 9, 2, 1, 0)),
                      state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
@@ -193,7 +193,7 @@ really_inline void check_utf8<Architecture::WESTMERE>(
     state.has_error =
         _mm_or_si128(_mm_cmpgt_epi8(state.previous.first_len,
                                     _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 3, 2, 1)),
+                                                  9, 9, 9, 2, 1, 0)),
                      state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
