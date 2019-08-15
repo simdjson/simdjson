@@ -424,9 +424,11 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       ++p;
     }
   }
+  bool is_float = false;
   int digit_count = p - start_digits; // used later to guard against overflows
   int64_t exponent = 0;
   if ('.' == *p) {
+    is_float = true;
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
@@ -457,9 +459,10 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     exponent = p - first_after_period;
   }
   int64_t exp_number = 0;   // exponential part
-  bool neg_exp = false; // hiding this in the next if might be better
   if (('e' == *p) || ('E' == *p)) {
+    is_float = true;
     ++p;
+    bool neg_exp = false;
     if ('-' == *p) {
       neg_exp = true;
       ++p;
@@ -497,8 +500,9 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       exp_number = 10 * exp_number + digit;
       ++p;
     }
+    exp_number = (neg_exp ? -exp_number : exp_number);
   }
-  if ((exponent != 0) || (exp_number != 0)) {
+  if (is_float) {
     uint64_t total_digit_count = digit_count + exponent;
     if (unlikely((total_digit_count > 19) ) ) { // this is uncommon
       // might have an  overflow
@@ -518,7 +522,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
         return parse_float(buf, pj, offset, found_minus);
       }
     }
-    int64_t total_exponent = -exponent + (neg_exp ? -exp_number : exp_number);
+    int64_t total_exponent = -exponent + exp_number;
     double d = i; // as long as i is in [0, 2^53), this is exact
     if (unlikely((total_exponent >  308) || (total_exponent <  -308))) {
         return parse_float(buf, pj, offset, found_minus);
