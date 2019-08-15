@@ -9,6 +9,7 @@
 
 #include "simdjson/jsonparser.h"
 
+// Stateless [0,2^64) splitmix64. Servers as a deterministic random number generator.
 static inline uint64_t splitmix64_stateless(uint64_t index) {
   uint64_t z = (index + UINT64_C(0x9E3779B97F4A7C15));
   z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
