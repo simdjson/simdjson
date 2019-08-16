@@ -36,7 +36,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (len > SIMDJSON_MAXSIZE_BYTES) {
     return false;
   }
-  if ((len <= byte_capacity) && (depth_capacity < max_depth)) {
+  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
     return true;
   }
   deallocate();
