@@ -9,6 +9,7 @@ if [ -z "$*" ]; then perftests="jsonexamples/twitter.json"; else perftests=$*; f
 
 # Clone and build the reference branch's parse
 echo "Cloning and build the reference branch ($reference_branch) ..."
+current=$SCRIPTPATH/..
 reference=$current/benchbranch/$reference_branch
 rm -rf $reference
 mkdir -p $reference
@@ -18,7 +19,6 @@ make parse
 
 # Build the current branch's parse
 echo "Building the current branch ..."
-current=$SCRIPTPATH/..
 cd $current
 make clean
 make parse
