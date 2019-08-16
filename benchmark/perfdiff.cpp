@@ -44,8 +44,8 @@ double readThroughput(std::string parseOutput) {
     return result / numResults;
 }
 
-const double INTERLEAVED_ATTEMPTS = 6;
-const double PERCENT_DIFFERENCE_THRESHOLD = -0.2;
+const double INTERLEAVED_ATTEMPTS = 7;
+const double PERCENT_DIFFERENCE_THRESHOLD = -0.5;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
