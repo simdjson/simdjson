@@ -1,291 +1,144 @@
-version: 2
+version: 2.1
+
+# Reusable image / compiler definitions
+executors:
+  gcc7:
+    docker:
+      - image: gcc:7
+        environment:
+          CXX: g++
+  clang6:
+    docker:
+      - image: ubuntu:18.04
+        environment:
+          CXX: clang++-6.0
+
+# Reusable test commands (and initializer for clang 6)
+commands:
+  init_clang6:
+    steps:
+      - run: apt-get update -qq
+      - run: apt-get install -y clang build-essential git
+  make_test:
+    steps:
+      - checkout
+      - run: make
+      - run: make amalgamate
+      - run: make test
+      - run: make checkperf
+  cmake_test:
+    steps:
+      - run: apt-get update -qq
+      - run: apt-get install -y cmake
+      - checkout
+      - run: cmake $CMAKE_TEST_FLAGS
+      - run: make
+      - run: make test
+
 jobs:
-  "gcc":
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: g++-7
-    steps:
-      - checkout
 
-      - run: apt-get update -qq
-      - run: >
-          apt-get install -y
-          build-essential
-          cmake
-          g++-7
-          git
+  gcc-avx:
+    description: Build, run tests and check performance on GCC 7 and AVX 2
+    executor: gcc7
+    steps: [ make_test ]
+  gcc-avx-dynamic:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake dynamic build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ cmake_test ]
+  gcc-avx-static:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake static build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ cmake_test ]
+  gcc-avx-sanitize:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake sanitize build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test ]
 
-      - run:
-          name: Building (gcc)
-          command: make
+  gcc-sse:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    executor: gcc7
+    environment: { ARCHFLAGS: -march=nehalem }
+    steps: [ make_test ]
+  gcc-sse-dynamic:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ cmake_test ]
+  gcc-sse-static:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ cmake_test ]
+  gcc-sse-sanitize:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test ]
 
-      - run:
-          name: Running tests (gcc)
-          command: make quiettest amalgamate
+  clang-avx:
+    description: Build, run tests and check performance on clang 6 and AVX 2
+    executor: clang6
+    steps: [ init_clang6, make_test ]
+  clang-avx-dynamic:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake dynamic build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ init_clang6, cmake_test ]
+  clang-avx-static:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake static build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ init_clang6, cmake_test ]
+  clang-avx-sanitize:
+    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake sanitize build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ init_clang6, cmake_test ]
 
-      - run:
-          name: Comparing perf against reference (gcc)
-          command: make checkperf
-
-      - run:
-          name: Building (gcc, cmake, dynamic)
-          command: |
-            mkdir build
-            cd build
-            cmake  -DSIMDJSON_BUILD_STATIC=OFF  ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, dynamic)
-          command: |
-            cd build
-            make test
-
-      - run:
-          name: Building (gcc, cmake, static)
-          command: |
-            mkdir buildstatic
-            cd buildstatic
-            cmake  -DSIMDJSON_BUILD_STATIC=ON  ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, static)
-          command: |
-            cd buildstatic
-            make test
-
-      - run:
-          name: Building (gcc, cmake, sanitize)
-          command: |
-            mkdir buildsani
-            cd buildsani
-            cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_BUILD_STATIC=OFF ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, sanitize)
-          command: |
-            cd buildsani
-            make test
-
-  "gccnoavx":
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: g++-7
-    steps:
-      - checkout
-
-      - run: apt-get update -qq
-      - run: >
-          apt-get install -y
-          build-essential
-          cmake
-          g++-7
-          git
-
-      - run:
-          name: Building (gcc)
-          command: ARCHFLAGS="-march=nehalem" make
-
-      - run:
-          name: Running tests (gcc)
-          command: ARCHFLAGS="-march=nehalem" make quiettest amalgamate
-          
-      - run:
-          name: Comparing perf against reference (gcc)
-          command: ARCHFLAGS="-march=nehalem" make checkperf
-
-      - run:
-          name: Building (gcc, cmake, dynamic)
-          command: |
-            mkdir build
-            cd build
-            cmake -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_BUILD_STATIC=OFF  ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, dynamic)
-          command: |
-            cd build
-            make test
-
-      - run:
-          name: Building (gcc, cmake, static)
-          command: |
-            mkdir buildstatic
-            cd buildstatic
-            cmake -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_BUILD_STATIC=ON  ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, static)
-          command: |
-            cd buildstatic
-            make test
-
-      - run:
-          name: Building (gcc, cmake, sanitize)
-          command: |
-            mkdir buildsani
-            cd buildsani
-            cmake   -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_SANITIZE=ON  ..
-            make
-
-      - run:
-          name: Running tests (gcc, cmake, sanitize)
-          command: |
-            cd buildsani
-            make test
-  "clang":
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: clang++-6.0
-    steps:
-      - checkout
-
-      - run: apt-get update -qq
-      - run: >
-          apt-get install -y
-          build-essential
-          cmake
-          clang-6.0
-          git
-
-      - run:
-          name: Building (clang)
-          command: make
-
-      - run:
-          name: Running tests (clang)
-          command: make quiettest amalgamate
-
-      - run:
-          name: Comparing perf against reference (clang)
-          command: make checkperf
-
-      - run:
-          name: Building (clang, cmake, dynamic)
-          command: |
-            mkdir build
-            cd build
-            cmake  -DSIMDJSON_BUILD_STATIC=OFF ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, dynamic)
-          command: |
-            cd build
-            make test
-
-      - run:
-          name: Building (clang, cmake, static)
-          command: |
-            mkdir buildstatic
-            cd buildstatic
-            cmake  -DSIMDJSON_BUILD_STATIC=ON ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, static)
-          command: |
-            cd buildstatic
-            make test
-
-      - run:
-          name: Building (clang, cmake, sanitize)
-          command: |
-            mkdir buildsani
-            cd buildsani
-            cmake  -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_SANITIZE=ON ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, sanitize)
-          command: |
-            cd buildsani
-            make test
-
-  "clangnoavx":
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: clang++-6.0
-    steps:
-      - checkout
-
-      - run: apt-get update -qq
-      - run: >
-          apt-get install -y
-          build-essential
-          cmake
-          clang-6.0
-          git
-
-      - run:
-          name: Building (clang)
-          command: ARCHFLAGS="-march=nehalem"  make
-
-      - run:
-          name: Running tests (clang)
-          command: ARCHFLAGS="-march=nehalem"  make quiettest amalgamate
-
-      - run:
-          name: Comparing perf against reference (clang)
-          command: ARCHFLAGS="-march=nehalem"  make checkperf
-
-      - run:
-          name: Building (clang, cmake, dynamic)
-          command: |
-            mkdir build
-            cd build
-            cmake  -DSIMDJSON_BUILD_STATIC=OFF  -DSIMDJSON_DISABLE_AVX=on ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, dynamic)
-          command: |
-            cd build
-            make test
-
-
-      - run:
-          name: Building (clang, cmake, static)
-          command: |
-            mkdir buildstatic
-            cd buildstatic
-            cmake  -DSIMDJSON_BUILD_STATIC=ON  -DSIMDJSON_DISABLE_AVX=on ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, static)
-          command: |
-            cd buildstatic
-            make test
-
-
-      - run:
-          name: Building (clang, cmake, sanitize)
-          command: |
-            mkdir buildsani
-            cd buildsani
-            cmake  -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_DISABLE_AVX=ON  -DSIMDJSON_SANITIZE=ON ..
-            make
-
-      - run:
-          name: Running tests (clang, cmake, sanitize)
-          command: |
-            cd buildsani
-            make test
+  clang-sse:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    executor: clang6
+    environment: { ARCHFLAGS: -march=nehalem }
+    steps: [ init_clang6, make_test ]
+  clang-sse-dynamic:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ init_clang6, cmake_test ]
+  clang-sse-static:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
+    steps: [ init_clang6, cmake_test ]
+  clang-sse-sanitize:
+    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ init_clang6, cmake_test ]
 
 workflows:
-  version: 2
+  version: 2.1
   build_and_test:
     jobs:
-      - "clang"
-      - "gcc"
-      - "clangnoavx"
-      - "gccnoavx"
+      - gcc-avx
+      - gcc-avx-dynamic
+      - gcc-avx-static
+      - gcc-avx-sanitize
+      - gcc-sse
+      - gcc-sse-dynamic
+      - gcc-sse-static
+      - gcc-sse-sanitize
+      - clang-avx
+      - clang-avx-dynamic
+      - clang-avx-static
+      - clang-avx-sanitize
+      - clang-sse
+      - clang-sse-dynamic
+      - clang-sse-static
+      - clang-sse-sanitize
+
+      # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
+
