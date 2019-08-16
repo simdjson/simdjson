@@ -23,6 +23,11 @@ set(SIMDJSON_SRC
     jsonminifier.cpp
     jsonparser.cpp
     stage1_find_marks.cpp
+    stage1_find_marks_arm64.h
+    stage1_find_marks_common.h
+    stage1_find_marks_flatten_common.h
+    stage1_find_marks_haswell.h
+    stage1_find_marks_westmere.h
     stage2_build_tape.cpp
     parsedjson.cpp
     parsedjsoniterator.cpp

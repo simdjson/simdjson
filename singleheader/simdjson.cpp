@@ -1,4 +1,4 @@
-/* auto-generated on Wed Aug 14 13:56:54 DST 2019. Do not edit! */
+/* auto-generated on Fri Aug 16 16:53:17 DST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -448,112 +448,618 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 }
 } // namespace simdjson
 /* end file src/jsonparser.cpp */
-/* begin file include/simdjson/stage1_find_marks_flatten_haswell.h */
-// This file provides the same function as
-// stage1_find_marks_flatten_common.h, but uses Intel intrinsics.
-// This should provide better performance on Visual Studio
-// and other compilers that do a conservative optimization.
-
-// Specifically, on x64 processors with BMI,
-// x & (x - 1) should be mapped to
-// the blsr instruction. By using the
-// _blsr_u64 intrinsic, we
-// ensure that this will happen.
-/////////
+/* begin file src/stage1_find_marks_westmere.h */
+#ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
+#define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 
 
 #ifdef IS_X86_64
 
-TARGET_HASWELL
+
 namespace simdjson {
+
+TARGET_WESTMERE
+namespace westmere {
+
+static const Architecture ARCHITECTURE = Architecture::WESTMERE;
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+  return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
+}
+
+static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+  uint64_t &whitespace, uint64_t &structurals) {
+
+  const __m128i structural_table =
+      _mm_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+  const __m128i white_table = _mm_setr_epi8(32, 100, 100, 100, 17, 100, 113, 2,
+                                              100, 9, 10, 112, 100, 13, 100, 100);
+  const __m128i struct_offset = _mm_set1_epi8(0xd4u);
+  const __m128i struct_mask = _mm_set1_epi8(32);
+
+  __m128i white0 = _mm_cmpeq_epi8(in.v0, _mm_shuffle_epi8(white_table, in.v0));
+  __m128i white1 = _mm_cmpeq_epi8(in.v1, _mm_shuffle_epi8(white_table, in.v1));
+  __m128i white2 = _mm_cmpeq_epi8(in.v2, _mm_shuffle_epi8(white_table, in.v2));
+  __m128i white3 = _mm_cmpeq_epi8(in.v3, _mm_shuffle_epi8(white_table, in.v3));
+  uint64_t ws_res_0 = _mm_movemask_epi8(white0);
+  uint64_t ws_res_1 = _mm_movemask_epi8(white1);
+  uint64_t ws_res_2 = _mm_movemask_epi8(white2);
+  uint64_t ws_res_3 = _mm_movemask_epi8(white3);
+
+  whitespace =
+      (ws_res_0 | (ws_res_1 << 16) | (ws_res_2 << 32) | (ws_res_3 << 48));
+
+  __m128i struct1_r1 = _mm_add_epi8(struct_offset, in.v0);
+  __m128i struct2_r1 = _mm_add_epi8(struct_offset, in.v1);
+  __m128i struct3_r1 = _mm_add_epi8(struct_offset, in.v2);
+  __m128i struct4_r1 = _mm_add_epi8(struct_offset, in.v3);
+
+  __m128i struct1_r2 = _mm_or_si128(in.v0, struct_mask);
+  __m128i struct2_r2 = _mm_or_si128(in.v1, struct_mask);
+  __m128i struct3_r2 = _mm_or_si128(in.v2, struct_mask);
+  __m128i struct4_r2 = _mm_or_si128(in.v3, struct_mask);
+
+  __m128i struct1_r3 = _mm_shuffle_epi8(structural_table, struct1_r1);
+  __m128i struct2_r3 = _mm_shuffle_epi8(structural_table, struct2_r1);
+  __m128i struct3_r3 = _mm_shuffle_epi8(structural_table, struct3_r1);
+  __m128i struct4_r3 = _mm_shuffle_epi8(structural_table, struct4_r1);
+
+  __m128i struct1 = _mm_cmpeq_epi8(struct1_r2, struct1_r3);
+  __m128i struct2 = _mm_cmpeq_epi8(struct2_r2, struct2_r3);
+  __m128i struct3 = _mm_cmpeq_epi8(struct3_r2, struct3_r3);
+  __m128i struct4 = _mm_cmpeq_epi8(struct4_r2, struct4_r3);
+
+  uint64_t structural_res_0 = _mm_movemask_epi8(struct1);
+  uint64_t structural_res_1 = _mm_movemask_epi8(struct2);
+  uint64_t structural_res_2 = _mm_movemask_epi8(struct3);
+  uint64_t structural_res_3 = _mm_movemask_epi8(struct4);
+
+  structurals = (structural_res_0 | (structural_res_1 << 16) |
+                  (structural_res_2 << 32) | (structural_res_3 << 48));
+}
+
+// This file contains a non-architecture-specific version of "flatten" used in stage1.
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
+
+#ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
+
+// This is just a naive implementation. It should be normally
+// disable, but can be used for research purposes to compare
+// again our optimized version.
+static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+  uint32_t *out_ptr = base_ptr + base;
+  idx -= 64;
+  while (bits != 0) {
+    out_ptr[0] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    out_ptr++;
+  }
+  base = (out_ptr - base_ptr);
+}
+
+#else // SIMDJSON_NAIVE_FLATTEN
 
 // flatten out values in 'bits' assuming that they are are to have values of idx
 // plus their position in the bitvector, and store these indexes at
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-template<>
-really_inline void flatten_bits<Architecture::HASWELL>(uint32_t *base_ptr, uint32_t &base,
-													   uint32_t idx, uint64_t bits) {
+static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
   if (bits == 0)
     return;
+  uint32_t cnt = hamming(bits);
+  uint32_t next_base = base + cnt;
+  idx -= 64;
+  base_ptr += base;
+  {
+    base_ptr[0] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[1] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[2] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[3] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[4] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[5] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[6] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[7] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr += 8;
+  }
+  // We hope that the next branch is easily predicted.
+  if (cnt > 8) {
+    base_ptr[0] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[1] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[2] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[3] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[4] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[5] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[6] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr[7] = idx + trailing_zeroes(bits);
+    bits = bits & (bits - 1);
+    base_ptr += 8;
+  }
+  if (cnt > 16) { // unluckly: we rarely get here
+    // since it means having one structural or pseudo-structral element
+    // every 4 characters (possible with inputs like "","","",...).
+    do {
+      base_ptr[0] = idx + trailing_zeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr++;
+    } while (bits != 0);
+  }
+  base = next_base;
+}
+#endif // SIMDJSON_NAIVE_FLATTEN
+// This file contains the common code every implementation uses in stage1
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
+
+namespace {
+// for when clmul is unavailable
+[[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+  quote_mask = quote_mask ^ (quote_mask << 2);
+  quote_mask = quote_mask ^ (quote_mask << 4);
+  quote_mask = quote_mask ^ (quote_mask << 8);
+  quote_mask = quote_mask ^ (quote_mask << 16);
+  quote_mask = quote_mask ^ (quote_mask << 32);
+  return quote_mask;
+}
+} // namespace
+
+// return a bitvector indicating where we have characters that end an odd-length
+// sequence of backslashes (and thus change the behavior of the next character
+// to follow). A even-length sequence of backslashes, and, for that matter, the
+// largest even-length prefix of our odd-length sequence of backslashes, simply
+// modify the behavior of the backslashes themselves.
+// We also update the prev_iter_ends_odd_backslash reference parameter to
+// indicate whether we end an iteration on an odd-length sequence of
+// backslashes, which modifies our subsequent search for odd-length
+// sequences of backslashes in an obvious way.
+static really_inline uint64_t find_odd_backslash_sequences(
+    simd_input<ARCHITECTURE> in,
+    uint64_t &prev_iter_ends_odd_backslash) {
+  const uint64_t even_bits = 0x5555555555555555ULL;
+  const uint64_t odd_bits = ~even_bits;
+  uint64_t bs_bits = in.eq('\\');
+  uint64_t start_edges = bs_bits & ~(bs_bits << 1);
+  /* flip lowest if we have an odd-length run at the end of the prior
+   * iteration */
+  uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
+  uint64_t even_starts = start_edges & even_start_mask;
+  uint64_t odd_starts = start_edges & ~even_start_mask;
+  uint64_t even_carries = bs_bits + even_starts;
+
+  uint64_t odd_carries;
+  /* must record the carry-out of our odd-carries out of bit 63; this
+   * indicates whether the sense of any edge going to the next iteration
+   * should be flipped */
+  bool iter_ends_odd_backslash =
+      add_overflow(bs_bits, odd_starts, &odd_carries);
+
+  odd_carries |= prev_iter_ends_odd_backslash; /* push in bit zero as a
+                                                * potential end if we had an
+                                                * odd-numbered run at the
+                                                * end of the previous
+                                                * iteration */
+  prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
+  uint64_t even_carry_ends = even_carries & ~bs_bits;
+  uint64_t odd_carry_ends = odd_carries & ~bs_bits;
+  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+  return odd_ends;
+}
+
+// return both the quote mask (which is a half-open mask that covers the first
+// quote
+// in an unescaped quote pair and everything in the quote pair) and the quote
+// bits, which are the simple
+// unescaped quoted bits. We also update the prev_iter_inside_quote value to
+// tell the next iteration
+// whether we finished the final iteration inside a quote pair; if so, this
+// inverts our behavior of
+// whether we're inside quotes for the next iteration.
+// Note that we don't do any error checking to see if we have backslash
+// sequences outside quotes; these
+// backslash sequences (of any length) will be detected elsewhere.
+static really_inline uint64_t find_quote_mask_and_bits(
+    simd_input<ARCHITECTURE> in, uint64_t odd_ends,
+    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
+    uint64_t &error_mask) {
+  quote_bits = in.eq('"');
+  quote_bits = quote_bits & ~odd_ends;
+  uint64_t quote_mask = compute_quote_mask(quote_bits);
+  quote_mask ^= prev_iter_inside_quote;
+  /* All Unicode characters may be placed within the
+   * quotation marks, except for the characters that MUST be escaped:
+   * quotation mark, reverse solidus, and the control characters (U+0000
+   * through U+001F).
+   * https://tools.ietf.org/html/rfc8259 */
+  uint64_t unescaped = in.lteq(0x1F);
+  error_mask |= quote_mask & unescaped;
+  /* right shift of a signed value expected to be well-defined and standard
+   * compliant as of C++20,
+   * John Regher from Utah U. says this is fine code */
+  prev_iter_inside_quote =
+      static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);
+  return quote_mask;
+}
+
+static really_inline uint64_t finalize_structurals(
+    uint64_t structurals, uint64_t whitespace, uint64_t quote_mask,
+    uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
+  // mask off anything inside quotes
+  structurals &= ~quote_mask;
+  // add the real quote bits back into our bit_mask as well, so we can
+  // quickly traverse the strings we've spent all this trouble gathering
+  structurals |= quote_bits;
+  // Now, establish "pseudo-structural characters". These are non-whitespace
+  // characters that are (a) outside quotes and (b) have a predecessor that's
+  // either whitespace or a structural character. This means that subsequent
+  // passes will get a chance to encounter the first character of every string
+  // of non-whitespace and, if we're parsing an atom like true/false/null or a
+  // number we can stop at the first whitespace or structural character
+  // following it.
+
+  // a qualified predecessor is something that can happen 1 position before an
+  // pseudo-structural character
+  uint64_t pseudo_pred = structurals | whitespace;
+
+  uint64_t shifted_pseudo_pred =
+      (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+  prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
+  uint64_t pseudo_structurals =
+      shifted_pseudo_pred & (~whitespace) & (~quote_mask);
+  structurals |= pseudo_structurals;
+
+  // now, we've used our close quotes all we need to. So let's switch them off
+  // they will be off in the quote mask and on in quote bits.
+  structurals &= ~(quote_bits & ~quote_mask);
+  return structurals;
+}
+
+// Find structural bits in a 64-byte chunk.
+static really_inline void find_structural_bits_64(
+    const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
+    uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
+    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
+    uint64_t &error_mask,
+    utf8_checker<ARCHITECTURE> &utf8_state) {
+  simd_input<ARCHITECTURE> in(buf);
+  utf8_state.check_next_input(in);
+  /* detect odd sequences of backslashes */
+  uint64_t odd_ends = find_odd_backslash_sequences(
+      in, prev_iter_ends_odd_backslash);
+
+  /* detect insides of quote pairs ("quote_mask") and also our quote_bits
+   * themselves */
+  uint64_t quote_bits;
+  uint64_t quote_mask = find_quote_mask_and_bits(
+      in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+
+  /* take the previous iterations structural bits, not our current
+   * iteration,
+   * and flatten */
+  flatten_bits(base_ptr, base, idx, structurals);
+
+  uint64_t whitespace;
+  find_whitespace_and_structurals(in, whitespace, structurals);
+
+  /* fixup structurals to reflect quotes and add pseudo-structural
+   * characters */
+  structurals = finalize_structurals(structurals, whitespace, quote_mask,
+                                     quote_bits, prev_iter_ends_pseudo_pred);
+}
+
+static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  if (len > pj.byte_capacity) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+  uint32_t *base_ptr = pj.structural_indexes;
+  uint32_t base = 0;
+  utf8_checker<ARCHITECTURE> utf8_state;
+
+  /* we have padded the input out to 64 byte multiple with the remainder
+   * being zeros persistent state across loop does the last iteration end
+   * with an odd-length sequence of backslashes? */
+
+  /* either 0 or 1, but a 64-bit value */
+  uint64_t prev_iter_ends_odd_backslash = 0ULL;
+  /* does the previous iteration end inside a double-quote pair? */
+  uint64_t prev_iter_inside_quote =
+      0ULL; /* either all zeros or all ones
+             * does the previous iteration end on something that is a
+             * predecessor of a pseudo-structural character - i.e.
+             * whitespace or a structural character effectively the very
+             * first char is considered to follow "whitespace" for the
+             * purposes of pseudo-structural character detection so we
+             * initialize to 1 */
+  uint64_t prev_iter_ends_pseudo_pred = 1ULL;
+
+  /* structurals are persistent state across loop as we flatten them on the
+   * subsequent iteration into our array pointed to be base_ptr.
+   * This is harmless on the first iteration as structurals==0
+   * and is done for performance reasons; we can hide some of the latency of
+   * the
+   * expensive carryless multiply in the previous step with this work */
+  uint64_t structurals = 0;
+
+  size_t lenminus64 = len < 64 ? 0 : len - 64;
+  size_t idx = 0;
+  uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII
+                              code points < 0x20) */
+
+  for (; idx < lenminus64; idx += 64) {
+    find_structural_bits_64(&buf[idx], idx, base_ptr, base,
+                            prev_iter_ends_odd_backslash,
+                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                            structurals, error_mask, utf8_state);
+  }
+  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
+   * checks). */
+  if (idx < len) {
+    uint8_t tmp_buf[64];
+    memset(tmp_buf, 0x20, 64);
+    memcpy(tmp_buf, buf + idx, len - idx);
+    find_structural_bits_64(&tmp_buf[0], idx, base_ptr, base,
+                            prev_iter_ends_odd_backslash,
+                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                            structurals, error_mask, utf8_state);
+    idx += 64;
+  }
+
+  /* is last string quote closed? */
+  if (prev_iter_inside_quote) {
+    return simdjson::UNCLOSED_STRING;
+  }
+
+  /* finally, flatten out the remaining structurals from the last iteration
+   */
+  flatten_bits(base_ptr, base, idx, structurals);
+
+  pj.n_structural_indexes = base;
+  /* a valid JSON file cannot have zero structural indexes - we should have
+   * found something */
+  if (pj.n_structural_indexes == 0u) {
+    return simdjson::EMPTY;
+  }
+  if (base_ptr[pj.n_structural_indexes - 1] > len) {
+    return simdjson::UNEXPECTED_ERROR;
+  }
+  if (len != base_ptr[pj.n_structural_indexes - 1]) {
+    /* the string might not be NULL terminated, but we add a virtual NULL
+     * ending character. */
+    base_ptr[pj.n_structural_indexes++] = len;
+  }
+  /* make it safe to dereference one beyond this array */
+  base_ptr[pj.n_structural_indexes] = 0;
+  if (error_mask) {
+    return simdjson::UNESCAPED_CHARS;
+  }
+  return utf8_state.errors();
+}
+
+} // namespace westmere
+
+template <>
+int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return westmere::find_structural_bits(buf, len, pj);
+}
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#endif // IS_X86_64
+#endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
+/* end file src/stage1_find_marks_westmere.h */
+/* begin file src/stage1_find_marks_haswell.h */
+#ifndef SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
+#define SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
+
+
+#ifdef IS_X86_64
+
+
+namespace simdjson {
+
+TARGET_HASWELL
+namespace haswell {
+
+static const Architecture ARCHITECTURE = Architecture::HASWELL;
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+  // There should be no such thing with a processing supporting avx2
+  // but not clmul.
+  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
+  return quote_mask;
+}
+
+static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+  uint64_t &whitespace, uint64_t &structurals) {
+
+  #ifdef SIMDJSON_NAIVE_STRUCTURAL
+  // You should never need this naive approach, but it can be useful
+  // for research purposes
+  const __m256i mask_open_brace = _mm256_set1_epi8(0x7b);
+  __m256i struct_lo = _mm256_cmpeq_epi8(in.lo, mask_open_brace);
+  __m256i struct_hi = _mm256_cmpeq_epi8(in.hi, mask_open_brace);
+  const __m256i mask_close_brace = _mm256_set1_epi8(0x7d);
+  struct_lo = _mm256_or_si256(struct_lo, _mm256_cmpeq_epi8(in.lo, mask_close_brace));
+  struct_hi = _mm256_or_si256(struct_hi, _mm256_cmpeq_epi8(in.hi, mask_close_brace));
+  const __m256i mask_open_bracket = _mm256_set1_epi8(0x5b);
+  struct_lo = _mm256_or_si256(struct_lo, _mm256_cmpeq_epi8(in.lo, mask_open_bracket));
+  struct_hi = _mm256_or_si256(struct_hi, _mm256_cmpeq_epi8(in.hi, mask_open_bracket));
+  const __m256i mask_close_bracket = _mm256_set1_epi8(0x5d);
+  struct_lo = _mm256_or_si256(struct_lo, _mm256_cmpeq_epi8(in.lo, mask_close_bracket));
+  struct_hi = _mm256_or_si256(struct_hi, _mm256_cmpeq_epi8(in.hi, mask_close_bracket));
+  const __m256i mask_column = _mm256_set1_epi8(0x3a);
+  struct_lo = _mm256_or_si256(struct_lo, _mm256_cmpeq_epi8(in.lo, mask_column));
+  struct_hi = _mm256_or_si256(struct_hi, _mm256_cmpeq_epi8(in.hi, mask_column));
+  const __m256i mask_comma = _mm256_set1_epi8(0x2c);
+  struct_lo = _mm256_or_si256(struct_lo, _mm256_cmpeq_epi8(in.lo, mask_comma));
+  struct_hi = _mm256_or_si256(struct_hi, _mm256_cmpeq_epi8(in.hi, mask_comma));
+  uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(struct_lo));
+  uint64_t structural_res_1 = _mm256_movemask_epi8(struct_hi);
+  structurals = (structural_res_0 | (structural_res_1 << 32));
+
+  const __m256i mask_space = _mm256_set1_epi8(0x20);
+  __m256i space_lo = _mm256_cmpeq_epi8(in.lo, mask_space);
+  __m256i space_hi = _mm256_cmpeq_epi8(in.hi, mask_space);
+  const __m256i mask_linefeed = _mm256_set1_epi8(0x0a);
+  space_lo = _mm256_or_si256(space_lo, _mm256_cmpeq_epi8(in.lo, mask_linefeed));
+  space_hi = _mm256_or_si256(space_hi, _mm256_cmpeq_epi8(in.hi, mask_linefeed));
+  const __m256i mask_tab = _mm256_set1_epi8(0x09);
+  space_lo = _mm256_or_si256(space_lo, _mm256_cmpeq_epi8(in.lo, mask_tab));
+  space_hi = _mm256_or_si256(space_hi, _mm256_cmpeq_epi8(in.hi, mask_tab));
+  const __m256i mask_carriage = _mm256_set1_epi8(0x0d);
+  space_lo = _mm256_or_si256(space_lo, _mm256_cmpeq_epi8(in.lo, mask_carriage));
+  space_hi = _mm256_or_si256(space_hi, _mm256_cmpeq_epi8(in.hi, mask_carriage));
+
+  uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(space_lo));
+  uint64_t ws_res_1 = _mm256_movemask_epi8(space_hi);
+  whitespace = (ws_res_0 | (ws_res_1 << 32));
+  // end of naive approach
+
+  #else  // SIMDJSON_NAIVE_STRUCTURAL
+  // clang-format off
+  const __m256i structural_table =
+      _mm256_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
+                        44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+  const __m256i white_table = _mm256_setr_epi8(
+      32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100,
+      32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100);
+  // clang-format on
+  const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
+  const __m256i struct_mask = _mm256_set1_epi8(32);
+
+  __m256i lo_white = _mm256_cmpeq_epi8(in.lo, _mm256_shuffle_epi8(white_table, in.lo));
+  __m256i hi_white = _mm256_cmpeq_epi8(in.hi, _mm256_shuffle_epi8(white_table, in.hi));
+  uint64_t ws_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(lo_white));
+  uint64_t ws_res_1 = _mm256_movemask_epi8(hi_white);
+  whitespace = (ws_res_0 | (ws_res_1 << 32));
+  __m256i lo_struct_r1 = _mm256_add_epi8(struct_offset, in.lo);
+  __m256i hi_struct_r1 = _mm256_add_epi8(struct_offset, in.hi);
+  __m256i lo_struct_r2 = _mm256_or_si256(in.lo, struct_mask);
+  __m256i hi_struct_r2 = _mm256_or_si256(in.hi, struct_mask);
+  __m256i lo_struct_r3 = _mm256_shuffle_epi8(structural_table, lo_struct_r1);
+  __m256i hi_struct_r3 = _mm256_shuffle_epi8(structural_table, hi_struct_r1);
+  __m256i lo_struct = _mm256_cmpeq_epi8(lo_struct_r2, lo_struct_r3);
+  __m256i hi_struct = _mm256_cmpeq_epi8(hi_struct_r2, hi_struct_r3);
+
+  uint64_t structural_res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(lo_struct));
+  uint64_t structural_res_1 = _mm256_movemask_epi8(hi_struct);
+  structurals = (structural_res_0 | (structural_res_1 << 32));
+  #endif // else SIMDJSON_NAIVE_STRUCTURAL
+}
+
+// flatten out values in 'bits' assuming that they are are to have values of idx
+// plus their position in the bitvector, and store these indexes at
+// base_ptr[base] incrementing base as we go
+// will potentially store extra values beyond end of valid bits, so base_ptr
+// needs to be large enough to handle this
+static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+  // In some instances, the next branch is expensive because it is mispredicted.
+  // Unfortunately, in other cases,
+  // it helps tremendously.
+  if (bits == 0)
+      return;
   uint32_t cnt = _mm_popcnt_u64(bits);
   uint32_t next_base = base + cnt;
   idx -= 64;
   base_ptr += base;
   {
-    base_ptr[0] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[1] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[2] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[3] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[4] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[5] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[6] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[7] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr += 8;
+      base_ptr[0] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[1] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[2] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[3] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[4] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[5] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[6] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[7] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
   if (cnt > 8) {
-    base_ptr[0] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[1] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[2] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[3] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[4] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[5] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[6] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr[7] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-    base_ptr += 8;
+      base_ptr[0] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[1] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[2] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[3] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[4] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[5] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[6] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr[7] = idx + trailing_zeroes(bits);
+      bits = _blsr_u64(bits);
+      base_ptr += 8;
   }
   if (cnt > 16) { // unluckly: we rarely get here
-    // since it means having one structural or pseudo-structral element
-    // every 4 characters (possible with inputs like "","","",...).
-    do {
+      // since it means having one structural or pseudo-structral element
+      // every 4 characters (possible with inputs like "","","",...).
+      do {
       base_ptr[0] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
       base_ptr++;
-    } while (bits != 0);
+      } while (bits != 0);
   }
   base = next_base;
 }
-} // namespace simdjson
-UNTARGET_REGION
-#endif // IS_X86_64
-/* end file include/simdjson/stage1_find_marks_flatten_haswell.h */
-/* begin file src/stage1_find_marks.cpp */
 
-#ifdef IS_X86_64
-
-#define TARGETED_ARCHITECTURE Architecture::HASWELL
-#define TARGETED_REGION TARGET_HASWELL
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
+namespace {
+// for when clmul is unavailable
+[[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+  quote_mask = quote_mask ^ (quote_mask << 2);
+  quote_mask = quote_mask ^ (quote_mask << 4);
+  quote_mask = quote_mask ^ (quote_mask << 8);
+  quote_mask = quote_mask ^ (quote_mask << 16);
+  quote_mask = quote_mask ^ (quote_mask << 32);
+  return quote_mask;
+}
+} // namespace
 
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
@@ -564,13 +1070,12 @@ namespace simdjson {
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-template <>
-really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in,
+static really_inline uint64_t find_odd_backslash_sequences(
+    simd_input<ARCHITECTURE> in,
     uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '\\');
+  uint64_t bs_bits = in.eq('\\');
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   /* flip lowest if we have an odd-length run at the end of the prior
    * iteration */
@@ -612,22 +1117,20 @@ really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-template <>
-really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in, uint64_t odd_ends,
+static really_inline uint64_t find_quote_mask_and_bits(
+    simd_input<ARCHITECTURE> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
     uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '"');
+  quote_bits = in.eq('"');
   quote_bits = quote_bits & ~odd_ends;
-  uint64_t quote_mask = compute_quote_mask<TARGETED_ARCHITECTURE>(quote_bits);
+  uint64_t quote_mask = compute_quote_mask(quote_bits);
   quote_mask ^= prev_iter_inside_quote;
   /* All Unicode characters may be placed within the
    * quotation marks, except for the characters that MUST be escaped:
    * quotation mark, reverse solidus, and the control characters (U+0000
    * through U+001F).
    * https://tools.ietf.org/html/rfc8259 */
-  uint64_t unescaped =
-      unsigned_lteq_against_input<TARGETED_ARCHITECTURE>(in, 0x1F);
+  uint64_t unescaped = in.lteq(0x1F);
   error_mask |= quote_mask & unescaped;
   /* right shift of a signed value expected to be well-defined and standard
    * compliant as of C++20,
@@ -637,33 +1140,65 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
   return quote_mask;
 }
 
+static really_inline uint64_t finalize_structurals(
+    uint64_t structurals, uint64_t whitespace, uint64_t quote_mask,
+    uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
+  // mask off anything inside quotes
+  structurals &= ~quote_mask;
+  // add the real quote bits back into our bit_mask as well, so we can
+  // quickly traverse the strings we've spent all this trouble gathering
+  structurals |= quote_bits;
+  // Now, establish "pseudo-structural characters". These are non-whitespace
+  // characters that are (a) outside quotes and (b) have a predecessor that's
+  // either whitespace or a structural character. This means that subsequent
+  // passes will get a chance to encounter the first character of every string
+  // of non-whitespace and, if we're parsing an atom like true/false/null or a
+  // number we can stop at the first whitespace or structural character
+  // following it.
+
+  // a qualified predecessor is something that can happen 1 position before an
+  // pseudo-structural character
+  uint64_t pseudo_pred = structurals | whitespace;
+
+  uint64_t shifted_pseudo_pred =
+      (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+  prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
+  uint64_t pseudo_structurals =
+      shifted_pseudo_pred & (~whitespace) & (~quote_mask);
+  structurals |= pseudo_structurals;
+
+  // now, we've used our close quotes all we need to. So let's switch them off
+  // they will be off in the quote mask and on in quote bits.
+  structurals &= ~(quote_bits & ~quote_mask);
+  return structurals;
+}
+
 // Find structural bits in a 64-byte chunk.
-really_inline void find_structural_bits_64(
+static really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
     uint64_t &error_mask,
-    utf8_checking_state<TARGETED_ARCHITECTURE> &utf8_state) {
-  simd_input<TARGETED_ARCHITECTURE> in = fill_input<TARGETED_ARCHITECTURE>(buf);
-  check_utf8<TARGETED_ARCHITECTURE>(in, utf8_state);
+    utf8_checker<ARCHITECTURE> &utf8_state) {
+  simd_input<ARCHITECTURE> in(buf);
+  utf8_state.check_next_input(in);
   /* detect odd sequences of backslashes */
-  uint64_t odd_ends = find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
+  uint64_t odd_ends = find_odd_backslash_sequences(
       in, prev_iter_ends_odd_backslash);
 
   /* detect insides of quote pairs ("quote_mask") and also our quote_bits
    * themselves */
   uint64_t quote_bits;
-  uint64_t quote_mask = find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
+  uint64_t quote_mask = find_quote_mask_and_bits(
       in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
   /* take the previous iterations structural bits, not our current
    * iteration,
    * and flatten */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
+  flatten_bits(base_ptr, base, idx, structurals);
 
   uint64_t whitespace;
-  find_whitespace_and_structurals<TARGETED_ARCHITECTURE>(in, whitespace,
-                                                         structurals);
+  find_whitespace_and_structurals(in, whitespace, structurals);
 
   /* fixup structurals to reflect quotes and add pseudo-structural
    * characters */
@@ -671,9 +1206,7 @@ really_inline void find_structural_bits_64(
                                      quote_bits, prev_iter_ends_pseudo_pred);
 }
 
-template <>
-int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
-                                                ParsedJson &pj) {
+static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   if (len > pj.byte_capacity) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
@@ -682,7 +1215,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
-  utf8_checking_state<TARGETED_ARCHITECTURE> utf8_state;
+  utf8_checker<ARCHITECTURE> utf8_state;
 
   /* we have padded the input out to 64 byte multiple with the remainder
    * being zeros persistent state across loop does the last iteration end
@@ -741,7 +1274,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
 
   /* finally, flatten out the remaining structurals from the last iteration
    */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
+  flatten_bits(base_ptr, base, idx, structurals);
 
   pj.n_structural_indexes = base;
   /* a valid JSON file cannot have zero structural indexes - we should have
@@ -754,8 +1287,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending
-     * character. */
+     * ending character. */
     base_ptr[pj.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
@@ -763,390 +1295,105 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   if (error_mask) {
     return simdjson::UNESCAPED_CHARS;
   }
-  return check_utf8_errors<TARGETED_ARCHITECTURE>(utf8_state);
+  return utf8_state.errors();
+}
+
+} // namespace haswell
+
+template <>
+int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return haswell::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
 UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
-#undef TARGETED_ARCHITECTURE
-#undef TARGETED_REGION
-
-#define TARGETED_ARCHITECTURE Architecture::WESTMERE
-#define TARGETED_REGION TARGET_WESTMERE
-// This file contains a non-architecture-specific version of "flatten" used in stage1.
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
-
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
-
-#ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
-//
-// This is just a naive implementation. It should be normally
-// disable, but can be used for research purposes to compare
-// again our optimized version.
-template <>
-really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
-                                                       uint32_t idx, uint64_t bits) {
-  uint32_t *out_ptr = base_ptr + base;
-  idx -= 64;
-  while (bits != 0) {
-    out_ptr[0] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    out_ptr++;
-  }
-  base = (out_ptr - base_ptr);
-}
-
-#else
-// flatten out values in 'bits' assuming that they are are to have values of idx
-// plus their position in the bitvector, and store these indexes at
-// base_ptr[base] incrementing base as we go
-// will potentially store extra values beyond end of valid bits, so base_ptr
-// needs to be large enough to handle this
-template<>
-really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
-                                                       uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted.
-  // Unfortunately, in other cases,
-  // it helps tremendously.
-  if (bits == 0)
-    return;
-  uint32_t cnt = hamming(bits);
-  uint32_t next_base = base + cnt;
-  idx -= 64;
-  base_ptr += base;
-  {
-    base_ptr[0] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[1] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[2] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[3] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[4] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[5] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[6] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[7] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr += 8;
-  }
-  // We hope that the next branch is easily predicted.
-  if (cnt > 8) {
-    base_ptr[0] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[1] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[2] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[3] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[4] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[5] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[6] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[7] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr += 8;
-  }
-  if (cnt > 16) { // unluckly: we rarely get here
-    // since it means having one structural or pseudo-structral element
-    // every 4 characters (possible with inputs like "","","",...).
-    do {
-      base_ptr[0] = idx + trailing_zeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr++;
-    } while (bits != 0);
-  }
-  base = next_base;
-}
-#endif // SIMDJSON_NAIVE_FLATTEN
-
-} // namespace simdjson
-UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
-// This file contains the common code every implementation uses in stage1
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
-
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
-
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-template <>
-really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in,
-    uint64_t &prev_iter_ends_odd_backslash) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '\\');
-  uint64_t start_edges = bs_bits & ~(bs_bits << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-   * iteration */
-  uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = bs_bits + even_starts;
-
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-   * indicates whether the sense of any edge going to the next iteration
-   * should be flipped */
-  bool iter_ends_odd_backslash =
-      add_overflow(bs_bits, odd_starts, &odd_carries);
-
-  odd_carries |= prev_iter_ends_odd_backslash; /* push in bit zero as a
-                                                * potential end if we had an
-                                                * odd-numbered run at the
-                                                * end of the previous
-                                                * iteration */
-  prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~bs_bits;
-  uint64_t odd_carry_ends = odd_carries & ~bs_bits;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
-}
-
-// return both the quote mask (which is a half-open mask that covers the first
-// quote
-// in an unescaped quote pair and everything in the quote pair) and the quote
-// bits, which are the simple
-// unescaped quoted bits. We also update the prev_iter_inside_quote value to
-// tell the next iteration
-// whether we finished the final iteration inside a quote pair; if so, this
-// inverts our behavior of
-// whether we're inside quotes for the next iteration.
-// Note that we don't do any error checking to see if we have backslash
-// sequences outside quotes; these
-// backslash sequences (of any length) will be detected elsewhere.
-template <>
-really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
-    uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '"');
-  quote_bits = quote_bits & ~odd_ends;
-  uint64_t quote_mask = compute_quote_mask<TARGETED_ARCHITECTURE>(quote_bits);
-  quote_mask ^= prev_iter_inside_quote;
-  /* All Unicode characters may be placed within the
-   * quotation marks, except for the characters that MUST be escaped:
-   * quotation mark, reverse solidus, and the control characters (U+0000
-   * through U+001F).
-   * https://tools.ietf.org/html/rfc8259 */
-  uint64_t unescaped =
-      unsigned_lteq_against_input<TARGETED_ARCHITECTURE>(in, 0x1F);
-  error_mask |= quote_mask & unescaped;
-  /* right shift of a signed value expected to be well-defined and standard
-   * compliant as of C++20,
-   * John Regher from Utah U. says this is fine code */
-  prev_iter_inside_quote =
-      static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);
-  return quote_mask;
-}
-
-// Find structural bits in a 64-byte chunk.
-really_inline void find_structural_bits_64(
-    const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
-    uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
-    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
-    uint64_t &error_mask,
-    utf8_checking_state<TARGETED_ARCHITECTURE> &utf8_state) {
-  simd_input<TARGETED_ARCHITECTURE> in = fill_input<TARGETED_ARCHITECTURE>(buf);
-  check_utf8<TARGETED_ARCHITECTURE>(in, utf8_state);
-  /* detect odd sequences of backslashes */
-  uint64_t odd_ends = find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
-      in, prev_iter_ends_odd_backslash);
-
-  /* detect insides of quote pairs ("quote_mask") and also our quote_bits
-   * themselves */
-  uint64_t quote_bits;
-  uint64_t quote_mask = find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
-      in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
-
-  /* take the previous iterations structural bits, not our current
-   * iteration,
-   * and flatten */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
-
-  uint64_t whitespace;
-  find_whitespace_and_structurals<TARGETED_ARCHITECTURE>(in, whitespace,
-                                                         structurals);
-
-  /* fixup structurals to reflect quotes and add pseudo-structural
-   * characters */
-  structurals = finalize_structurals(structurals, whitespace, quote_mask,
-                                     quote_bits, prev_iter_ends_pseudo_pred);
-}
-
-template <>
-int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
-                                                ParsedJson &pj) {
-  if (len > pj.byte_capacity) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
-  }
-  uint32_t *base_ptr = pj.structural_indexes;
-  uint32_t base = 0;
-  utf8_checking_state<TARGETED_ARCHITECTURE> utf8_state;
-
-  /* we have padded the input out to 64 byte multiple with the remainder
-   * being zeros persistent state across loop does the last iteration end
-   * with an odd-length sequence of backslashes? */
-
-  /* either 0 or 1, but a 64-bit value */
-  uint64_t prev_iter_ends_odd_backslash = 0ULL;
-  /* does the previous iteration end inside a double-quote pair? */
-  uint64_t prev_iter_inside_quote =
-      0ULL; /* either all zeros or all ones
-             * does the previous iteration end on something that is a
-             * predecessor of a pseudo-structural character - i.e.
-             * whitespace or a structural character effectively the very
-             * first char is considered to follow "whitespace" for the
-             * purposes of pseudo-structural character detection so we
-             * initialize to 1 */
-  uint64_t prev_iter_ends_pseudo_pred = 1ULL;
-
-  /* structurals are persistent state across loop as we flatten them on the
-   * subsequent iteration into our array pointed to be base_ptr.
-   * This is harmless on the first iteration as structurals==0
-   * and is done for performance reasons; we can hide some of the latency of
-   * the
-   * expensive carryless multiply in the previous step with this work */
-  uint64_t structurals = 0;
-
-  size_t lenminus64 = len < 64 ? 0 : len - 64;
-  size_t idx = 0;
-  uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII
-                              code points < 0x20) */
-
-  for (; idx < lenminus64; idx += 64) {
-    find_structural_bits_64(&buf[idx], idx, base_ptr, base,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
-  }
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-   * checks). */
-  if (idx < len) {
-    uint8_t tmp_buf[64];
-    memset(tmp_buf, 0x20, 64);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_64(&tmp_buf[0], idx, base_ptr, base,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
-    idx += 64;
-  }
-
-  /* is last string quote closed? */
-  if (prev_iter_inside_quote) {
-    return simdjson::UNCLOSED_STRING;
-  }
-
-  /* finally, flatten out the remaining structurals from the last iteration
-   */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
-
-  pj.n_structural_indexes = base;
-  /* a valid JSON file cannot have zero structural indexes - we should have
-   * found something */
-  if (pj.n_structural_indexes == 0u) {
-    return simdjson::EMPTY;
-  }
-  if (base_ptr[pj.n_structural_indexes - 1] > len) {
-    return simdjson::UNEXPECTED_ERROR;
-  }
-  if (len != base_ptr[pj.n_structural_indexes - 1]) {
-    /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending
-     * character. */
-    base_ptr[pj.n_structural_indexes++] = len;
-  }
-  /* make it safe to dereference one beyond this array */
-  base_ptr[pj.n_structural_indexes] = 0;
-  if (error_mask) {
-    return simdjson::UNESCAPED_CHARS;
-  }
-  return check_utf8_errors<TARGETED_ARCHITECTURE>(utf8_state);
-}
-
-} // namespace simdjson
-UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
-#undef TARGETED_ARCHITECTURE
-#undef TARGETED_REGION
 
 #endif // IS_X86_64
+#endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
+/* end file src/stage1_find_marks_haswell.h */
+/* begin file src/stage1_find_marks_arm64.h */
+#ifndef SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+#define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+
 
 #ifdef IS_ARM64
 
-#define TARGETED_ARCHITECTURE Architecture::ARM64
-#define TARGETED_REGION TARGET_ARM64
+
+namespace simdjson {
+
+TARGET_WESTMERE
+namespace arm64 {
+
+static const Architecture ARCHITECTURE = Architecture::ARM64;
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+
+#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
+  return vmull_p64(-1ULL, quote_bits);
+#else
+  return portable_compute_quote_mask(quote_bits);
+#endif
+}
+
+static really_inline void find_whitespace_and_structurals(
+    simd_input<ARCHITECTURE> in, uint64_t &whitespace,
+    uint64_t &structurals) {
+  const uint8x16_t low_nibble_mask =
+      (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
+  const uint8x16_t high_nibble_mask =
+      (uint8x16_t){8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0};
+  const uint8x16_t structural_shufti_mask = vmovq_n_u8(0x7);
+  const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);
+  const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf);
+
+  uint8x16_t nib_0_lo = vandq_u8(in.i0, low_nib_and_mask);
+  uint8x16_t nib_0_hi = vshrq_n_u8(in.i0, 4);
+  uint8x16_t shuf_0_lo = vqtbl1q_u8(low_nibble_mask, nib_0_lo);
+  uint8x16_t shuf_0_hi = vqtbl1q_u8(high_nibble_mask, nib_0_hi);
+  uint8x16_t v_0 = vandq_u8(shuf_0_lo, shuf_0_hi);
+
+  uint8x16_t nib_1_lo = vandq_u8(in.i1, low_nib_and_mask);
+  uint8x16_t nib_1_hi = vshrq_n_u8(in.i1, 4);
+  uint8x16_t shuf_1_lo = vqtbl1q_u8(low_nibble_mask, nib_1_lo);
+  uint8x16_t shuf_1_hi = vqtbl1q_u8(high_nibble_mask, nib_1_hi);
+  uint8x16_t v_1 = vandq_u8(shuf_1_lo, shuf_1_hi);
+
+  uint8x16_t nib_2_lo = vandq_u8(in.i2, low_nib_and_mask);
+  uint8x16_t nib_2_hi = vshrq_n_u8(in.i2, 4);
+  uint8x16_t shuf_2_lo = vqtbl1q_u8(low_nibble_mask, nib_2_lo);
+  uint8x16_t shuf_2_hi = vqtbl1q_u8(high_nibble_mask, nib_2_hi);
+  uint8x16_t v_2 = vandq_u8(shuf_2_lo, shuf_2_hi);
+
+  uint8x16_t nib_3_lo = vandq_u8(in.i3, low_nib_and_mask);
+  uint8x16_t nib_3_hi = vshrq_n_u8(in.i3, 4);
+  uint8x16_t shuf_3_lo = vqtbl1q_u8(low_nibble_mask, nib_3_lo);
+  uint8x16_t shuf_3_hi = vqtbl1q_u8(high_nibble_mask, nib_3_hi);
+  uint8x16_t v_3 = vandq_u8(shuf_3_lo, shuf_3_hi);
+
+  uint8x16_t tmp_0 = vtstq_u8(v_0, structural_shufti_mask);
+  uint8x16_t tmp_1 = vtstq_u8(v_1, structural_shufti_mask);
+  uint8x16_t tmp_2 = vtstq_u8(v_2, structural_shufti_mask);
+  uint8x16_t tmp_3 = vtstq_u8(v_3, structural_shufti_mask);
+  structurals = neon_movemask_bulk(tmp_0, tmp_1, tmp_2, tmp_3);
+
+  uint8x16_t tmp_ws_0 = vtstq_u8(v_0, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_1 = vtstq_u8(v_1, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_2 = vtstq_u8(v_2, whitespace_shufti_mask);
+  uint8x16_t tmp_ws_3 = vtstq_u8(v_3, whitespace_shufti_mask);
+  whitespace = neon_movemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
+}
+
 // This file contains a non-architecture-specific version of "flatten" used in stage1.
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
-
 #ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
-//
+
 // This is just a naive implementation. It should be normally
 // disable, but can be used for research purposes to compare
 // again our optimized version.
-template <>
-really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
-                                                       uint32_t idx, uint64_t bits) {
+static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
@@ -1157,15 +1404,14 @@ really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint3
   base = (out_ptr - base_ptr);
 }
 
-#else
+#else // SIMDJSON_NAIVE_FLATTEN
+
 // flatten out values in 'bits' assuming that they are are to have values of idx
 // plus their position in the bitvector, and store these indexes at
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-template<>
-really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint32_t &base,
-                                                       uint32_t idx, uint64_t bits) {
+static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
@@ -1226,26 +1472,23 @@ really_inline void flatten_bits<TARGETED_ARCHITECTURE>(uint32_t *base_ptr, uint3
   base = next_base;
 }
 #endif // SIMDJSON_NAIVE_FLATTEN
-
-} // namespace simdjson
-UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
+namespace {
+// for when clmul is unavailable
+[[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
+  quote_mask = quote_mask ^ (quote_mask << 2);
+  quote_mask = quote_mask ^ (quote_mask << 4);
+  quote_mask = quote_mask ^ (quote_mask << 8);
+  quote_mask = quote_mask ^ (quote_mask << 16);
+  quote_mask = quote_mask ^ (quote_mask << 32);
+  return quote_mask;
+}
+} // namespace
 
 // return a bitvector indicating where we have characters that end an odd-length
 // sequence of backslashes (and thus change the behavior of the next character
@@ -1256,13 +1499,12 @@ namespace simdjson {
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-template <>
-really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in,
+static really_inline uint64_t find_odd_backslash_sequences(
+    simd_input<ARCHITECTURE> in,
     uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '\\');
+  uint64_t bs_bits = in.eq('\\');
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   /* flip lowest if we have an odd-length run at the end of the prior
    * iteration */
@@ -1304,22 +1546,20 @@ really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-template <>
-really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
-    simd_input<TARGETED_ARCHITECTURE> in, uint64_t odd_ends,
+static really_inline uint64_t find_quote_mask_and_bits(
+    simd_input<ARCHITECTURE> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
     uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '"');
+  quote_bits = in.eq('"');
   quote_bits = quote_bits & ~odd_ends;
-  uint64_t quote_mask = compute_quote_mask<TARGETED_ARCHITECTURE>(quote_bits);
+  uint64_t quote_mask = compute_quote_mask(quote_bits);
   quote_mask ^= prev_iter_inside_quote;
   /* All Unicode characters may be placed within the
    * quotation marks, except for the characters that MUST be escaped:
    * quotation mark, reverse solidus, and the control characters (U+0000
    * through U+001F).
    * https://tools.ietf.org/html/rfc8259 */
-  uint64_t unescaped =
-      unsigned_lteq_against_input<TARGETED_ARCHITECTURE>(in, 0x1F);
+  uint64_t unescaped = in.lteq(0x1F);
   error_mask |= quote_mask & unescaped;
   /* right shift of a signed value expected to be well-defined and standard
    * compliant as of C++20,
@@ -1329,33 +1569,65 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
   return quote_mask;
 }
 
+static really_inline uint64_t finalize_structurals(
+    uint64_t structurals, uint64_t whitespace, uint64_t quote_mask,
+    uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
+  // mask off anything inside quotes
+  structurals &= ~quote_mask;
+  // add the real quote bits back into our bit_mask as well, so we can
+  // quickly traverse the strings we've spent all this trouble gathering
+  structurals |= quote_bits;
+  // Now, establish "pseudo-structural characters". These are non-whitespace
+  // characters that are (a) outside quotes and (b) have a predecessor that's
+  // either whitespace or a structural character. This means that subsequent
+  // passes will get a chance to encounter the first character of every string
+  // of non-whitespace and, if we're parsing an atom like true/false/null or a
+  // number we can stop at the first whitespace or structural character
+  // following it.
+
+  // a qualified predecessor is something that can happen 1 position before an
+  // pseudo-structural character
+  uint64_t pseudo_pred = structurals | whitespace;
+
+  uint64_t shifted_pseudo_pred =
+      (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
+  prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
+  uint64_t pseudo_structurals =
+      shifted_pseudo_pred & (~whitespace) & (~quote_mask);
+  structurals |= pseudo_structurals;
+
+  // now, we've used our close quotes all we need to. So let's switch them off
+  // they will be off in the quote mask and on in quote bits.
+  structurals &= ~(quote_bits & ~quote_mask);
+  return structurals;
+}
+
 // Find structural bits in a 64-byte chunk.
-really_inline void find_structural_bits_64(
+static really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
     uint64_t &error_mask,
-    utf8_checking_state<TARGETED_ARCHITECTURE> &utf8_state) {
-  simd_input<TARGETED_ARCHITECTURE> in = fill_input<TARGETED_ARCHITECTURE>(buf);
-  check_utf8<TARGETED_ARCHITECTURE>(in, utf8_state);
+    utf8_checker<ARCHITECTURE> &utf8_state) {
+  simd_input<ARCHITECTURE> in(buf);
+  utf8_state.check_next_input(in);
   /* detect odd sequences of backslashes */
-  uint64_t odd_ends = find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
+  uint64_t odd_ends = find_odd_backslash_sequences(
       in, prev_iter_ends_odd_backslash);
 
   /* detect insides of quote pairs ("quote_mask") and also our quote_bits
    * themselves */
   uint64_t quote_bits;
-  uint64_t quote_mask = find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
+  uint64_t quote_mask = find_quote_mask_and_bits(
       in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
   /* take the previous iterations structural bits, not our current
    * iteration,
    * and flatten */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
+  flatten_bits(base_ptr, base, idx, structurals);
 
   uint64_t whitespace;
-  find_whitespace_and_structurals<TARGETED_ARCHITECTURE>(in, whitespace,
-                                                         structurals);
+  find_whitespace_and_structurals(in, whitespace, structurals);
 
   /* fixup structurals to reflect quotes and add pseudo-structural
    * characters */
@@ -1363,9 +1635,7 @@ really_inline void find_structural_bits_64(
                                      quote_bits, prev_iter_ends_pseudo_pred);
 }
 
-template <>
-int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
-                                                ParsedJson &pj) {
+static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   if (len > pj.byte_capacity) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
@@ -1374,7 +1644,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
-  utf8_checking_state<TARGETED_ARCHITECTURE> utf8_state;
+  utf8_checker<ARCHITECTURE> utf8_state;
 
   /* we have padded the input out to 64 byte multiple with the remainder
    * being zeros persistent state across loop does the last iteration end
@@ -1433,7 +1703,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
 
   /* finally, flatten out the remaining structurals from the last iteration
    */
-  flatten_bits<TARGETED_ARCHITECTURE>(base_ptr, base, idx, structurals);
+  flatten_bits(base_ptr, base, idx, structurals);
 
   pj.n_structural_indexes = base;
   /* a valid JSON file cannot have zero structural indexes - we should have
@@ -1446,8 +1716,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending
-     * character. */
+     * ending character. */
     base_ptr[pj.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
@@ -1455,21 +1724,27 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   if (error_mask) {
     return simdjson::UNESCAPED_CHARS;
   }
-  return check_utf8_errors<TARGETED_ARCHITECTURE>(utf8_state);
+  return utf8_state.errors();
+}
+
+} // namespace arm64
+
+template <>
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return arm64::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
-UNTARGET_REGION
 
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
-#undef TARGETED_ARCHITECTURE
-#undef TARGETED_REGION
+#endif // IS_ARM64
+#endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+/* end file src/stage1_find_marks_arm64.h */
+/* begin file src/stage1_find_marks.cpp */
 
+#ifdef IS_X86_64
+#endif // IS_X86_64
+
+#ifdef IS_ARM64
 #endif // IS_ARM64
 /* end file src/stage1_find_marks.cpp */
 /* begin file src/stage2_build_tape.cpp */
@@ -3135,7 +3410,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (len > SIMDJSON_MAXSIZE_BYTES) {
     return false;
   }
-  if ((len <= byte_capacity) && (depth_capacity < max_depth)) {
+  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
     return true;
   }
   deallocate();
@@ -3423,274 +3698,8 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
 } // namespace simdjson
 /* end file src/parsedjson.cpp */
 /* begin file src/parsedjsoniterator.cpp */
-#include <iterator>
 
 namespace simdjson {
-ParsedJson::Iterator::Iterator(ParsedJson &pj_)
-    : pj(pj_), depth(0), location(0), tape_length(0), depth_index(nullptr) {
-  if (!pj.is_valid()) {
-    throw InvalidJSON();
-  }
-  // we overallocate by "1" to silence a warning in Visual Studio
-  depth_index = new scopeindex_t[pj.depth_capacity + 1];
-  // memory allocation would throw
-  // if(depth_index == nullptr) {
-  //    return;
-  //}
-  depth_index[0].start_of_scope = location;
-  current_val = pj.tape[location++];
-  current_type = (current_val >> 56);
-  depth_index[0].scope_type = current_type;
-  if (current_type == 'r') {
-    tape_length = current_val & JSON_VALUE_MASK;
-    if (location < tape_length) {
-      // If we make it here, then depth_capacity must >=2, but the compiler
-      // may not know this.
-      current_val = pj.tape[location];
-      current_type = (current_val >> 56);
-      depth++;
-      depth_index[depth].start_of_scope = location;
-      depth_index[depth].scope_type = current_type;
-    }
-  } else {
-    // should never happen
-    throw InvalidJSON();
-  }
-}
-
-ParsedJson::Iterator::~Iterator() { delete[] depth_index; }
-
-ParsedJson::Iterator::Iterator(const Iterator &o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location), tape_length(0),
-      current_type(o.current_type), current_val(o.current_val),
-      depth_index(nullptr) {
-  depth_index = new scopeindex_t[pj.depth_capacity];
-  // allocation might throw
-  memcpy(depth_index, o.depth_index,
-         pj.depth_capacity * sizeof(depth_index[0]));
-  tape_length = o.tape_length;
-}
-
-ParsedJson::Iterator::Iterator(Iterator &&o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location),
-      tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val), depth_index(o.depth_index) {
-  o.depth_index = nullptr; // we take ownership
-}
-
-bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
-  if (!is_ok()) {
-    return false;
-  }
-  switch (current_type) {
-  case '"': // we have a string
-    os << '"';
-    if (escape_strings) {
-      print_with_escapes(get_string(), os, get_string_length());
-    } else {
-      // was: os << get_string();, but given that we can include null chars, we
-      // have to do something crazier:
-      std::copy(get_string(), get_string() + get_string_length(),
-                std::ostream_iterator<char>(os));
-    }
-    os << '"';
-    break;
-  case 'l': // we have a long int
-    os << get_integer();
-    break;
-  case 'd':
-    os << get_double();
-    break;
-  case 'n': // we have a null
-    os << "null";
-    break;
-  case 't': // we have a true
-    os << "true";
-    break;
-  case 'f': // we have a false
-    os << "false";
-    break;
-  case '{': // we have an object
-  case '}': // we end an object
-  case '[': // we start an array
-  case ']': // we end an array
-    os << static_cast<char>(current_type);
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
-bool ParsedJson::Iterator::move_to(const char *pointer, uint32_t length) {
-  char *new_pointer = nullptr;
-  if (pointer[0] == '#') {
-    // Converting fragment representation to string representation
-    new_pointer = new char[length];
-    uint32_t new_length = 0;
-    for (uint32_t i = 1; i < length; i++) {
-      if (pointer[i] == '%' && pointer[i + 1] == 'x') {
-        try {
-          int fragment =
-              std::stoi(std::string(&pointer[i + 2], 2), nullptr, 16);
-          if (fragment == '\\' || fragment == '"' || (fragment <= 0x1F)) {
-            // escaping the character
-            new_pointer[new_length] = '\\';
-            new_length++;
-          }
-          new_pointer[new_length] = fragment;
-          i += 3;
-        } catch (std::invalid_argument &) {
-          delete[] new_pointer;
-          return false; // the fragment is invalid
-        }
-      } else {
-        new_pointer[new_length] = pointer[i];
-      }
-      new_length++;
-    }
-    length = new_length;
-    pointer = new_pointer;
-  }
-
-  // saving the current state
-  size_t depth_s = depth;
-  size_t location_s = location;
-  uint8_t current_type_s = current_type;
-  uint64_t current_val_s = current_val;
-  scopeindex_t *depth_index_s = depth_index;
-
-  rewind(); // The json pointer is used from the root of the document.
-
-  bool found = relative_move_to(pointer, length);
-  delete[] new_pointer;
-
-  if (!found) {
-    // since the pointer has found nothing, we get back to the original
-    // position.
-    depth = depth_s;
-    location = location_s;
-    current_type = current_type_s;
-    current_val = current_val_s;
-    depth_index = depth_index_s;
-  }
-
-  return found;
-}
-
-bool ParsedJson::Iterator::relative_move_to(const char *pointer,
-                                            uint32_t length) {
-  if (length == 0) {
-    // returns the whole document
-    return true;
-  }
-
-  if (pointer[0] != '/') {
-    // '/' must be the first character
-    return false;
-  }
-
-  // finding the key in an object or the index in an array
-  std::string key_or_index;
-  uint32_t offset = 1;
-
-  // checking for the "-" case
-  if (is_array() && pointer[1] == '-') {
-    if (length != 2) {
-      // the pointer must be exactly "/-"
-      // there can't be anything more after '-' as an index
-      return false;
-    }
-    key_or_index = '-';
-    offset = length; // will skip the loop coming right after
-  }
-
-  // We either transform the first reference token to a valid json key
-  // or we make sure it is a valid index in an array.
-  for (; offset < length; offset++) {
-    if (pointer[offset] == '/') {
-      // beginning of the next key or index
-      break;
-    }
-    if (is_array() && (pointer[offset] < '0' || pointer[offset] > '9')) {
-      // the index of an array must be an integer
-      // we also make sure std::stoi won't discard whitespaces later
-      return false;
-    }
-    if (pointer[offset] == '~') {
-      // "~1" represents "/"
-      if (pointer[offset + 1] == '1') {
-        key_or_index += '/';
-        offset++;
-        continue;
-      }
-      // "~0" represents "~"
-      if (pointer[offset + 1] == '0') {
-        key_or_index += '~';
-        offset++;
-        continue;
-      }
-    }
-    if (pointer[offset] == '\\') {
-      if (pointer[offset + 1] == '\\' || pointer[offset + 1] == '"' ||
-          (pointer[offset + 1] <= 0x1F)) {
-        key_or_index += pointer[offset + 1];
-        offset++;
-        continue;
-      }
-      return false; // invalid escaped character
-    }
-    if (pointer[offset] == '\"') {
-      // unescaped quote character. this is an invalid case.
-      // lets do nothing and assume most pointers will be valid.
-      // it won't find any corresponding json key anyway.
-      // return false;
-    }
-    key_or_index += pointer[offset];
-  }
-
-  bool found = false;
-  if (is_object()) {
-    if (move_to_key(key_or_index.c_str(), key_or_index.length())) {
-      found = relative_move_to(pointer + offset, length - offset);
-    }
-  } else if (is_array()) {
-    if (key_or_index == "-") { // handling "-" case first
-      if (down()) {
-        while (next())
-          ; // moving to the end of the array
-        // moving to the nonexistent value right after...
-        size_t npos;
-        if ((current_type == '[') || (current_type == '{')) {
-          // we need to jump
-          npos = (current_val & JSON_VALUE_MASK);
-        } else {
-          npos =
-              location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
-        }
-        location = npos;
-        current_val = pj.tape[npos];
-        current_type = (current_val >> 56);
-        return true; // how could it fail ?
-      }
-    } else { // regular numeric index
-      // The index can't have a leading '0'
-      if (key_or_index[0] == '0' && key_or_index.length() > 1) {
-        return false;
-      }
-      // it cannot be empty
-      if (key_or_index.length() == 0) {
-        return false;
-      }
-      // we already checked the index contains only valid digits
-      uint32_t index = std::stoi(key_or_index);
-      if (move_to_index(index)) {
-        found = relative_move_to(pointer + offset, length - offset);
-      }
-    }
-  }
-
-  return found;
-}
+template class ParsedJson::BasicIterator<DEFAULT_MAX_DEPTH>;
 } // namespace simdjson
 /* end file src/parsedjsoniterator.cpp */

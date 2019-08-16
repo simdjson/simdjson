@@ -72,13 +72,13 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
                   (structural_res_2 << 32) | (structural_res_3 << 48));
 }
 
-#include "simdjson/stage1_find_marks_flatten_common.h"
-#include "simdjson/stage1_find_marks_common.h"
+#include "stage1_find_marks_flatten_common.h"
+#include "stage1_find_marks_common.h"
 
 } // namespace westmere
 
 template <>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   return westmere::find_structural_bits(buf, len, pj);
 }
 

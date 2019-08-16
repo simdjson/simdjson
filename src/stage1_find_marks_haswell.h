@@ -168,7 +168,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
   base = next_base;
 }
 
-#include "simdjson/stage1_find_marks_common.h"
+#include "stage1_find_marks_common.h"
 
 } // namespace haswell
 

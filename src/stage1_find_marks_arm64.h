@@ -73,10 +73,15 @@ static really_inline void find_whitespace_and_structurals(
   whitespace = neon_movemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
 
-#include "simdjson/stage1_find_marks_flatten_common.h"
-#include "simdjson/stage1_find_marks_common.h"
+#include "stage1_find_marks_flatten_common.h"
+#include "stage1_find_marks_common.h"
 
 } // namespace arm64
+
+template <>
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return arm64::find_structural_bits(buf, len, pj);
+}
 
 } // namespace simdjson
 

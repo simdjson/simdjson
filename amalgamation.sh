@@ -17,6 +17,9 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/src/stage1_find_marks_westmere.h
+$SCRIPTPATH/src/stage1_find_marks_haswell.h
+$SCRIPTPATH/src/stage1_find_marks_arm64.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
 $SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
@@ -47,9 +50,6 @@ $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h
 $SCRIPTPATH/include/simdjson/stringparsing.h
 $SCRIPTPATH/include/simdjson/stringparsing_westmere.h
 $SCRIPTPATH/include/simdjson/stringparsing_haswell.h
@@ -73,17 +73,26 @@ function dofile()
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     while IFS= read -r line
     do
-        if [[ "${line}" == '#include "simdjson'* ]]; then
+        if [[ "${line}" == '#include "'*'"'* ]]; then
+            file=$(echo $line| cut -d'"' -f 2)
+
             # we paste the contents of simdjson header files with names ending by _common.h
-            # we ignore every other simdjson headers
-            if [[ "${line}" == '#include "simdjson/'*'_common.h"'* ]]; then
-              file=$(echo $line| cut -d'"' -f 2)
-              echo "$(<include/$file)" # we assume those files are always in include/
-            fi
-        else
-            # Otherwise we simply copy the line
-            echo "$line"
+            # we ignore every other simdjson header
+            if [ -f include/$file ]; then
+              if [[ "${file}" == *'_common.h' ]]; then
+                echo "$(<include/$file)"
+              fi;
+              continue;
+            elif [ -f src/$file ]; then
+              if [[ "${file}" == *'_common.h' ]]; then
+                echo "$(<src/$file)"
+              fi;
+              continue;
+            fi;
         fi;
+
+        # Otherwise we simply copy the line
+        echo "$line"
     done < "$1"
     echo "/* end file $RELFILE */"
 }
