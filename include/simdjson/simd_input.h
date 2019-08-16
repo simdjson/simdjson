@@ -8,19 +8,14 @@
 
 namespace simdjson {
 
-template <Architecture> struct simd_input;
-
-template <Architecture T>
-simd_input<T> fill_input(const uint8_t *ptr);
-
-// a straightforward comparison of a mask against input.
-template <Architecture T>
-uint64_t cmp_mask_against_input(simd_input<T> in, uint8_t m);
-
-// find all values less than or equal than the content of maxval (using unsigned
-// arithmetic)
-template <Architecture T>
-uint64_t unsigned_lteq_against_input(simd_input<T> in, uint8_t m);
+template <Architecture>
+struct simd_input {
+    simd_input(const uint8_t *ptr);
+    // a straightforward comparison of a mask against input.
+    uint64_t eq(uint8_t m);
+    // find all values less than or equal than the content of maxval (using unsigned arithmetic)
+    uint64_t lteq(uint8_t m);
+}; // struct simd_input
 
 } // namespace simdjson
 

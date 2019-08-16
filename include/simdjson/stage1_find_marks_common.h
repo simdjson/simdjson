@@ -24,7 +24,7 @@ really_inline uint64_t find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
     uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '\\');
+  uint64_t bs_bits = in.eq('\\');
   uint64_t start_edges = bs_bits & ~(bs_bits << 1);
   /* flip lowest if we have an odd-length run at the end of the prior
    * iteration */
@@ -71,7 +71,7 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
     simd_input<TARGETED_ARCHITECTURE> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
     uint64_t &error_mask) {
-  quote_bits = cmp_mask_against_input<TARGETED_ARCHITECTURE>(in, '"');
+  quote_bits = in.eq('"');
   quote_bits = quote_bits & ~odd_ends;
   uint64_t quote_mask = compute_quote_mask<TARGETED_ARCHITECTURE>(quote_bits);
   quote_mask ^= prev_iter_inside_quote;
@@ -80,8 +80,7 @@ really_inline uint64_t find_quote_mask_and_bits<TARGETED_ARCHITECTURE>(
    * quotation mark, reverse solidus, and the control characters (U+0000
    * through U+001F).
    * https://tools.ietf.org/html/rfc8259 */
-  uint64_t unescaped =
-      unsigned_lteq_against_input<TARGETED_ARCHITECTURE>(in, 0x1F);
+  uint64_t unescaped = in.lteq(0x1F);
   error_mask |= quote_mask & unescaped;
   /* right shift of a signed value expected to be well-defined and standard
    * compliant as of C++20,
@@ -98,7 +97,7 @@ really_inline void find_structural_bits_64(
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
     uint64_t &error_mask,
     utf8_checking_state<TARGETED_ARCHITECTURE> &utf8_state) {
-  simd_input<TARGETED_ARCHITECTURE> in = fill_input<TARGETED_ARCHITECTURE>(buf);
+  simd_input<TARGETED_ARCHITECTURE> in(buf);
   check_utf8<TARGETED_ARCHITECTURE>(in, utf8_state);
   /* detect odd sequences of backslashes */
   uint64_t odd_ends = find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
