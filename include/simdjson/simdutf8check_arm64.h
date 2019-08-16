@@ -217,7 +217,7 @@ really_inline void check_utf8<Architecture::ARM64>(
     utf8_checking_state<Architecture::ARM64> &state) {
   if (check_ascii_neon(in)) {
     const uint8x16_t verror =
-        (uint8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 3, 2, 1};
+        (uint8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 2, 1, 0};
     state.has_error =
         vorrq_u8(vcgtq_u8(state.previous.first_len, verror),
                  state.has_error);
