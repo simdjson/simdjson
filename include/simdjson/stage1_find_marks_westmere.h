@@ -1,30 +1,33 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 #define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 
+#include "simdjson/portability.h"
+
+#ifdef IS_X86_64
+
 #include "simdjson/simd_input_westmere.h"
 #include "simdjson/simdutf8check_westmere.h"
 #include "simdjson/stage1_find_marks.h"
 
-#ifdef IS_X86_64
-
-TARGET_WESTMERE
 namespace simdjson {
 
-template <>
-really_inline uint64_t
-compute_quote_mask<Architecture::WESTMERE>(uint64_t quote_bits) {
+TARGET_WESTMERE
+namespace westmere {
+
+static const Architecture ARCHITECTURE = Architecture::WESTMERE;
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
 }
 
-template <>
-really_inline void find_whitespace_and_structurals<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in, uint64_t &whitespace,
-    uint64_t &structurals) {
+static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+  uint64_t &whitespace, uint64_t &structurals) {
+
   const __m128i structural_table =
       _mm_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
   const __m128i white_table = _mm_setr_epi8(32, 100, 100, 100, 17, 100, 113, 2,
-                                            100, 9, 10, 112, 100, 13, 100, 100);
+                                              100, 9, 10, 112, 100, 13, 100, 100);
   const __m128i struct_offset = _mm_set1_epi8(0xd4u);
   const __m128i struct_mask = _mm_set1_epi8(32);
 
@@ -66,7 +69,17 @@ really_inline void find_whitespace_and_structurals<Architecture::WESTMERE>(
   uint64_t structural_res_3 = _mm_movemask_epi8(struct4);
 
   structurals = (structural_res_0 | (structural_res_1 << 16) |
-                 (structural_res_2 << 32) | (structural_res_3 << 48));
+                  (structural_res_2 << 32) | (structural_res_3 << 48));
+}
+
+#include "simdjson/stage1_find_marks_flatten_common.h"
+#include "simdjson/stage1_find_marks_common.h"
+
+} // namespace westmere
+
+template <>
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return westmere::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson

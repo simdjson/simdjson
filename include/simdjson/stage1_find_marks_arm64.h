@@ -1,16 +1,23 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
 #define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
 
+#include "simdjson/portability.h"
+
+#ifdef IS_ARM64
+
 #include "simdjson/simd_input_arm64.h"
 #include "simdjson/simdutf8check_arm64.h"
 #include "simdjson/stage1_find_marks.h"
 
-#ifdef IS_ARM64
 namespace simdjson {
 
-template <>
-really_inline uint64_t
-compute_quote_mask<Architecture::ARM64>(uint64_t quote_bits) {
+TARGET_WESTMERE
+namespace arm64 {
+
+static const Architecture ARCHITECTURE = Architecture::ARM64;
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64(-1ULL, quote_bits);
 #else
@@ -18,9 +25,8 @@ compute_quote_mask<Architecture::ARM64>(uint64_t quote_bits) {
 #endif
 }
 
-template <>
-really_inline void find_whitespace_and_structurals<Architecture::ARM64>(
-    simd_input<Architecture::ARM64> in, uint64_t &whitespace,
+static really_inline void find_whitespace_and_structurals(
+    simd_input<ARCHITECTURE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const uint8x16_t low_nibble_mask =
       (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
@@ -66,6 +72,12 @@ really_inline void find_whitespace_and_structurals<Architecture::ARM64>(
   uint8x16_t tmp_ws_3 = vtstq_u8(v_3, whitespace_shufti_mask);
   whitespace = neon_movemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
+
+#include "simdjson/stage1_find_marks_flatten_common.h"
+#include "simdjson/stage1_find_marks_common.h"
+
+} // namespace arm64
+
 } // namespace simdjson
 
 #endif // IS_ARM64

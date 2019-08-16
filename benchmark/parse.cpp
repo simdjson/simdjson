@@ -88,8 +88,7 @@ int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
 }
 
 // Responsible to select the best json_parse implementation
-int find_structural_bits_dispatch(const uint8_t *buf, size_t len,
-                                  ParsedJson &pj) {
+int find_structural_bits_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
   Architecture best_implementation = _find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
