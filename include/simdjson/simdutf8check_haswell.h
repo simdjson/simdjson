@@ -37,159 +37,172 @@ static inline __m256i push_last_2bytes_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 14);
 }
 
-// all byte values must be no larger than 0xF4
-static inline void avx_check_smaller_than_0xF4(__m256i current_bytes,
-                                               __m256i *has_error) {
-  // unsigned, saturates to 0 below max
-  *has_error = _mm256_or_si256(
-      *has_error, _mm256_subs_epu8(current_bytes, _mm256_set1_epi8(0xF4u)));
-}
-
-static inline __m256i avx_continuation_lengths(__m256i high_nibbles) {
-  return _mm256_shuffle_epi8(
-      _mm256_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                       0, 0, 0, 0,             // 10xx (continuation)
-                       2, 2,                   // 110x
-                       3,                      // 1110
-                       4, // 1111, next should be 0 (not checked here)
-                       1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                       0, 0, 0, 0,             // 10xx (continuation)
-                       2, 2,                   // 110x
-                       3,                      // 1110
-                       4 // 1111, next should be 0 (not checked here)
-                       ),
-      high_nibbles);
-}
-
-static inline __m256i avx_carry_continuations(__m256i initial_lengths,
-                                              __m256i previous_carries) {
-
-  __m256i right1 = _mm256_subs_epu8(
-      push_last_byte_of_a_to_b(previous_carries, initial_lengths),
-      _mm256_set1_epi8(1));
-  __m256i sum = _mm256_add_epi8(initial_lengths, right1);
-
-  __m256i right2 = _mm256_subs_epu8(
-      push_last_2bytes_of_a_to_b(previous_carries, sum), _mm256_set1_epi8(2));
-  return _mm256_add_epi8(sum, right2);
-}
-
-static inline void avx_check_continuations(__m256i initial_lengths,
-                                           __m256i carries,
-                                           __m256i *has_error) {
-
-  // overlap || underlap
-  // carry > length && length > 0 || !(carry > length) && !(length > 0)
-  // (carries > length) == (lengths > 0)
-  __m256i overunder = _mm256_cmpeq_epi8(
-      _mm256_cmpgt_epi8(carries, initial_lengths),
-      _mm256_cmpgt_epi8(initial_lengths, _mm256_setzero_si256()));
-
-  *has_error = _mm256_or_si256(*has_error, overunder);
-}
-
-// when 0xED is found, next byte must be no larger than 0x9F
-// when 0xF4 is found, next byte must be no larger than 0x8F
-// next byte must be continuation, ie sign bit is set, so signed < is ok
-static inline void avx_check_first_continuation_max(__m256i current_bytes,
-                                                    __m256i off1_current_bytes,
-                                                    __m256i *has_error) {
-  __m256i maskED =
-      _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xEDu));
-  __m256i maskF4 =
-      _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xF4u));
-
-  __m256i badfollowED = _mm256_and_si256(
-      _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x9Fu)), maskED);
-  __m256i badfollowF4 = _mm256_and_si256(
-      _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x8Fu)), maskF4);
-
-  *has_error =
-      _mm256_or_si256(*has_error, _mm256_or_si256(badfollowED, badfollowF4));
-}
-
-// map off1_hibits => error condition
-// hibits     off1    cur
-// C       => < C2 && true
-// E       => < E1 && < A0
-// F       => < F1 && < 90
-// else      false && false
-static inline void avx_check_overlong(__m256i current_bytes,
-                                      __m256i off1_current_bytes,
-                                      __m256i hibits, __m256i previous_hibits,
-                                      __m256i *has_error) {
-  __m256i off1_hibits = push_last_byte_of_a_to_b(previous_hibits, hibits);
-  __m256i initial_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       0xC2u, -128,      // 110x
-                       0xE1u,            // 1110
-                       0xF1u,            // 1111
-                       -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       0xC2u, -128,      // 110x
-                       0xE1u,            // 1110
-                       0xF1u),           // 1111
-      off1_hibits);
-
-  __m256i initial_under = _mm256_cmpgt_epi8(initial_mins, off1_current_bytes);
-
-  __m256i second_mins = _mm256_shuffle_epi8(
-      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       127, 127,         // 110x => true
-                       0xA0u,            // 1110
-                       0x90u,            // 1111
-                       -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                       -128, -128, -128, // 10xx => false
-                       127, 127,         // 110x => true
-                       0xA0u,            // 1110
-                       0x90u),           // 1111
-      off1_hibits);
-  __m256i second_under = _mm256_cmpgt_epi8(second_mins, current_bytes);
-  *has_error = _mm256_or_si256(*has_error,
-                               _mm256_and_si256(initial_under, second_under));
+static inline __m256i push_last_3bytes_of_a_to_b(__m256i a, __m256i b) {
+  return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 13);
 }
 
 struct avx_processed_utf_bytes {
-  __m256i raw_bytes;
-  __m256i high_nibbles;
-  __m256i carried_continuations;
+  __m256i input;
+  __m256i first_len;
 };
-
-static inline void avx_count_nibbles(__m256i bytes,
-                                     struct avx_processed_utf_bytes *answer) {
-  answer->raw_bytes = bytes;
-  answer->high_nibbles =
-      _mm256_and_si256(_mm256_srli_epi16(bytes, 4), _mm256_set1_epi8(0x0F));
-}
 
 // check whether the current bytes are valid UTF-8
 // at the end of the function, previous gets updated
 static inline struct avx_processed_utf_bytes
-avx_check_utf8_bytes(__m256i current_bytes,
+avx_check_utf8_bytes(__m256i input,
                      struct avx_processed_utf_bytes *previous,
                      __m256i *has_error) {
-  struct avx_processed_utf_bytes pb {};
-  avx_count_nibbles(current_bytes, &pb);
+  /*
+  * Map high nibble of "First Byte" to legal character length minus 1
+  * 0x00 ~ 0xBF --> 0
+  * 0xC0 ~ 0xDF --> 1
+  * 0xE0 ~ 0xEF --> 2
+  * 0xF0 ~ 0xFF --> 3
+  */
+  const __m256i first_len_tbl =
+        _mm256_setr_epi8(
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3);
 
-  avx_check_smaller_than_0xF4(current_bytes, has_error);
+  /* Map "First Byte" to 8-th item of range table (0xC2 ~ 0xF4) */
+  const __m256i first_range_tbl =
+        _mm256_setr_epi8(
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8);
 
-  __m256i initial_lengths = avx_continuation_lengths(pb.high_nibbles);
+  /*
+  * Range table, map range index to min and max values
+  * Index 0    : 00 ~ 7F (First Byte, ascii)
+  * Index 1,2,3: 80 ~ BF (Second, Third, Fourth Byte)
+  * Index 4    : A0 ~ BF (Second Byte after E0)
+  * Index 5    : 80 ~ 9F (Second Byte after ED)
+  * Index 6    : 90 ~ BF (Second Byte after F0)
+  * Index 7    : 80 ~ 8F (Second Byte after F4)
+  * Index 8    : C2 ~ F4 (First Byte, non ascii)
+  * Index 9~15 : illegal: i >= 127 && i <= -128
+  */
+  const __m256i range_min_tbl = 
+        _mm256_setr_epi8(
+          0x00, 0x80, 0x80, 0x80, 0xA0, 0x80, 0x90, 0x80,
+          0xC2, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F,
+          0x00, 0x80, 0x80, 0x80, 0xA0, 0x80, 0x90, 0x80,
+          0xC2, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F);
+  const __m256i range_max_tbl = 
+        _mm256_setr_epi8(
+          0x7F, 0xBF, 0xBF, 0xBF, 0xBF, 0x9F, 0xBF, 0x8F,
+          0xF4, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+          0x7F, 0xBF, 0xBF, 0xBF, 0xBF, 0x9F, 0xBF, 0x8F,
+          0xF4, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
 
-  pb.carried_continuations =
-      avx_carry_continuations(initial_lengths, previous->carried_continuations);
+  /*
+  * Tables for fast handling of four special First Bytes(E0,ED,F0,F4), after
+  * which the Second Byte are not 80~BF. It contains "range index adjustment".
+  * +------------+---------------+------------------+----------------+
+  * | First Byte | original range| range adjustment | adjusted range |
+  * +------------+---------------+------------------+----------------+
+  * | E0         | 2             | 2                | 4              |
+  * +------------+---------------+------------------+----------------+
+  * | ED         | 2             | 3                | 5              |
+  * +------------+---------------+------------------+----------------+
+  * | F0         | 3             | 3                | 6              |
+  * +------------+---------------+------------------+----------------+
+  * | F4         | 4             | 4                | 8              |
+  * +------------+---------------+------------------+----------------+
+  */
+  /* index1 -> E0, index14 -> ED */
+  const __m256i df_ee_tbl = 
+        _mm256_setr_epi8(
+          0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
+          0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
+  /* index1 -> F0, index5 -> F4 */
+  const __m256i ef_fe_tbl = 
+        _mm256_setr_epi8(
+          0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  /* high_nibbles = input >> 4 */
+  const __m256i high_nibbles =
+      _mm256_and_si256(_mm256_srli_epi16(input, 4), _mm256_set1_epi8(0x0F));
 
-  avx_check_continuations(initial_lengths, pb.carried_continuations, has_error);
+  /* first_len = legal character length minus 1 */
+  /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+  /* first_len = first_len_tbl[high_nibbles] */
+  __m256i first_len = _mm256_shuffle_epi8(first_len_tbl, high_nibbles);
 
-  __m256i off1_current_bytes =
-      push_last_byte_of_a_to_b(previous->raw_bytes, pb.raw_bytes);
-  avx_check_first_continuation_max(current_bytes, off1_current_bytes,
-                                   has_error);
+  /* First Byte: set range index to 8 for bytes within 0xC0 ~ 0xFF */
+  /* range = first_range_tbl[high_nibbles] */
+  __m256i range = _mm256_shuffle_epi8(first_range_tbl, high_nibbles);
 
-  avx_check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
-                     previous->high_nibbles, has_error);
-  return pb;
+  /* Second Byte: set range index to first_len */
+  /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+  /* range |= (first_len, previous->first_len) << 1 byte */
+  range = _mm256_or_si256(
+          range, push_last_byte_of_a_to_b(previous->first_len, first_len));
+
+  /* Third Byte: set range index to saturate_sub(first_len, 1) */
+  /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
+  __m256i tmp1, tmp2;
+
+  /* tmp1 = saturate_sub(first_len, 1) */
+  tmp1 = _mm256_subs_epu8(first_len, _mm256_set1_epi8(1));
+  /* tmp2 = saturate_sub(previous->first_len, 1) */
+  tmp2 = _mm256_subs_epu8(previous->first_len, _mm256_set1_epi8(1));
+
+  /* range |= (tmp1, tmp2) << 2 bytes */
+  range = _mm256_or_si256(range, push_last_2bytes_of_a_to_b(tmp2, tmp1));
+
+  /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
+  /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
+  /* tmp1 = saturate_sub(first_len, 2) */
+  tmp1 = _mm256_subs_epu8(first_len, _mm256_set1_epi8(2));
+  /* tmp2 = saturate_sub(previous->first_len, 2) */
+  tmp2 = _mm256_subs_epu8(previous->first_len, _mm256_set1_epi8(2));
+  /* range |= (tmp1, tmp2) << 3 bytes */
+  range = _mm256_or_si256(range, push_last_3bytes_of_a_to_b(tmp2, tmp1));
+
+  /*
+    * Now we have below range indices caluclated
+    * Correct cases:
+    * - 8 for C0~FF
+    * - 3 for 1st byte after F0~FF
+    * - 2 for 1st byte after E0~EF or 2nd byte after F0~FF
+    * - 1 for 1st byte after C0~DF or 2nd byte after E0~EF or
+    *         3rd byte after F0~FF
+    * - 0 for others
+    * Error cases:
+    *   9,10,11 if non ascii First Byte overlaps
+    *   E.g., F1 80 C2 90 --> 8 3 10 2, where 10 indicates error
+    */
+
+  /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
+  /* Overlaps lead to index 9~15, which are illegal in range table */
+  __m256i shift1, pos, range2;
+  /* shift1 = (input, previous->input) << 1 byte */
+  shift1 = push_last_byte_of_a_to_b(previous->input, input);
+  pos = _mm256_sub_epi8(shift1, _mm256_set1_epi8(0xEF));
+  /*
+    * shift1:  | EF  F0 ... FE | FF  00  ... ...  DE | DF  E0 ... EE |
+    * pos:     | 0   1      15 | 16  17           239| 240 241    255|
+    * pos-240: | 0   0      0  | 0   0            0  | 0   1      15 |
+    * pos+112: | 112 113    127|       >= 128        |     >= 128    |
+    */
+  tmp1 = _mm256_subs_epu8(pos, _mm256_set1_epi8(240));
+  range2 = _mm256_shuffle_epi8(df_ee_tbl, tmp1);
+  tmp2 = _mm256_adds_epu8(pos, _mm256_set1_epi8(112));
+  range2 = _mm256_add_epi8(range2, _mm256_shuffle_epi8(ef_fe_tbl, tmp2));
+
+  range = _mm256_add_epi8(range, range2);
+
+  /* Load min and max values per calculated range index */
+  __m256i minv = _mm256_shuffle_epi8(range_min_tbl, range);
+  __m256i maxv = _mm256_shuffle_epi8(range_max_tbl, range);
+
+  *has_error = _mm256_or_si256(*has_error, _mm256_cmpgt_epi8(minv, input));
+  *has_error = _mm256_or_si256(*has_error, _mm256_cmpgt_epi8(input, maxv));
+
+  previous->input = input;
+  previous->first_len = first_len;
+
+  return *previous;
 }
 
 template <> struct utf8_checking_state<Architecture::HASWELL> {
@@ -197,9 +210,8 @@ template <> struct utf8_checking_state<Architecture::HASWELL> {
   avx_processed_utf_bytes previous;
   utf8_checking_state() {
     has_error = _mm256_setzero_si256();
-    previous.raw_bytes = _mm256_setzero_si256();
-    previous.high_nibbles = _mm256_setzero_si256();
-    previous.carried_continuations = _mm256_setzero_si256();
+    previous.input = _mm256_setzero_si256();
+    previous.first_len = _mm256_setzero_si256();
   }
 };
 
@@ -211,10 +223,10 @@ really_inline void check_utf8<Architecture::HASWELL>(
   if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
     // it is ascii, we just check continuation
     state.has_error = _mm256_or_si256(
-        _mm256_cmpgt_epi8(state.previous.carried_continuations,
+        _mm256_cmpgt_epi8(state.previous.first_len,
                           _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                                            9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                           9, 9, 9, 9, 9, 9, 9, 1)),
+                                           9, 9, 9, 9, 9, 2, 1, 0)),
         state.has_error);
   } else {
     // it is not ascii so we have to do heavy work
