@@ -177,12 +177,6 @@ check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
   return pb;
 }
 
-template <>
-struct utf8_checking_state<Architecture::ARM64> {
-  int8x16_t has_error{};
-  processed_utf_bytes previous{};
-};
-
 // Checks that all bytes are ascii
 really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   // checking if the most significant bit is always equal to 0.
@@ -198,41 +192,43 @@ really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
 }
 
 template <>
-really_inline void check_utf8<Architecture::ARM64>(
-    simd_input<Architecture::ARM64> in,
-    utf8_checking_state<Architecture::ARM64> &state) {
-  if (check_ascii_neon(in)) {
-    // All bytes are ascii. Therefore the byte that was just before must be
-    // ascii too. We only check the byte that was just before simd_input. Nines
-    // are arbitrary values.
-    const int8x16_t verror =
-        (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
-    state.has_error =
-        vorrq_s8(vreinterpretq_s8_u8(
-                     vcgtq_s8(state.previous.carried_continuations, verror)),
-                 state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i0),
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i1),
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i2),
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i3),
-                                      &(state.previous), &(state.has_error));
-  }
-}
+struct utf8_checker<Architecture::ARM64> {
+  int8x16_t has_error{};
+  processed_utf_bytes previous{};
 
-template <>
-really_inline ErrorValues check_utf8_errors<Architecture::ARM64>(
-    utf8_checking_state<Architecture::ARM64> &state) {
-  uint64x2_t v64 = vreinterpretq_u64_s8(state.has_error);
-  uint32x2_t v32 = vqmovn_u64(v64);
-  uint64x1_t result = vreinterpret_u64_u32(v32);
-  return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
-                                       : simdjson::SUCCESS;
-}
+  really_inline void check_next_input(simd_input<Architecture::ARM64> in) {
+    if (check_ascii_neon(in)) {
+      // All bytes are ascii. Therefore the byte that was just before must be
+      // ascii too. We only check the byte that was just before simd_input. Nines
+      // are arbitrary values.
+      const int8x16_t verror =
+          (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
+      this->has_error =
+          vorrq_s8(vreinterpretq_s8_u8(
+                      vcgtq_s8(this->previous.carried_continuations, verror)),
+                  this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i0),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i1),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i2),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i3),
+                                        &(this->previous), &(this->has_error));
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    uint64x2_t v64 = vreinterpretq_u64_s8(this->has_error);
+    uint32x2_t v32 = vqmovn_u64(v64);
+    uint64x1_t result = vreinterpret_u64_u32(v32);
+    return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
+                                        : simdjson::SUCCESS;
+  }
+
+}; // struct utf8_checker
 
 } // namespace simdjson
 #endif

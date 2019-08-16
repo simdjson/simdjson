@@ -6,15 +6,14 @@
 
 namespace simdjson {
 
-// Holds the state required to perform check_utf8().
-template <Architecture> struct utf8_checking_state;
-
+// Checks UTF8, chunk by chunk.
 template <Architecture T>
-void check_utf8(simd_input<T> in, utf8_checking_state<T> &state);
-
-// Checks if the utf8 validation has found any error.
-template <Architecture T>
-ErrorValues check_utf8_errors(utf8_checking_state<T> &state);
+struct utf8_checker {
+    // Process the next chunk of input.
+    void check_next_input(simd_input<T> in);
+    // Find out what (if any) errors have occurred
+    ErrorValues errors();
+};
 
 } // namespace simdjson
 

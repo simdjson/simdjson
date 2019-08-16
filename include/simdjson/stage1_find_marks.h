@@ -25,16 +25,6 @@ namespace {
 }
 } // namespace
 
-// Holds the state required to perform check_utf8().
-template <Architecture> struct utf8_checking_state;
-
-template <Architecture T>
-void check_utf8(simd_input<T> in, utf8_checking_state<T> &state);
-
-// Checks if the utf8 validation has found any error.
-template <Architecture T>
-ErrorValues check_utf8_errors(utf8_checking_state<T> &state);
-
 template <Architecture T>
 really_inline uint64_t find_odd_backslash_sequences(
     simd_input<T> in, uint64_t &prev_iter_ends_odd_backslash);

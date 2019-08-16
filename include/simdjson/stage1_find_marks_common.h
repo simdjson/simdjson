@@ -96,9 +96,9 @@ really_inline void find_structural_bits_64(
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
     uint64_t &error_mask,
-    utf8_checking_state<TARGETED_ARCHITECTURE> &utf8_state) {
+    utf8_checker<TARGETED_ARCHITECTURE> &utf8_state) {
   simd_input<TARGETED_ARCHITECTURE> in(buf);
-  check_utf8<TARGETED_ARCHITECTURE>(in, utf8_state);
+  utf8_state.check_next_input(in);
   /* detect odd sequences of backslashes */
   uint64_t odd_ends = find_odd_backslash_sequences<TARGETED_ARCHITECTURE>(
       in, prev_iter_ends_odd_backslash);
@@ -135,7 +135,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   uint32_t *base_ptr = pj.structural_indexes;
   uint32_t base = 0;
-  utf8_checking_state<TARGETED_ARCHITECTURE> utf8_state;
+  utf8_checker<TARGETED_ARCHITECTURE> utf8_state;
 
   /* we have padded the input out to 64 byte multiple with the remainder
    * being zeros persistent state across loop does the last iteration end
@@ -207,8 +207,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   }
   if (len != base_ptr[pj.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending
-     * character. */
+     * ending character. */
     base_ptr[pj.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
@@ -216,7 +215,7 @@ int find_structural_bits<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
   if (error_mask) {
     return simdjson::UNESCAPED_CHARS;
   }
-  return check_utf8_errors<TARGETED_ARCHITECTURE>(utf8_state);
+  return utf8_state.errors();
 }
 
 } // namespace simdjson
