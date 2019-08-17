@@ -9,9 +9,7 @@
 #include "arm64/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
-namespace simdjson {
-
-namespace arm64 {
+namespace simdjson::arm64 {
 
 static const Architecture ARCHITECTURE = Architecture::ARM64;
 
@@ -75,7 +73,9 @@ static really_inline void find_whitespace_and_structurals(
 #include "generic/stage1_find_marks_flatten.h"
 #include "generic/stage1_find_marks.h"
 
-} // namespace arm64
+} // namespace simdjson::arm64
+
+namespace simdjson {
 
 template <>
 int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {

@@ -9,10 +9,8 @@
 #include "haswell/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
-namespace simdjson {
-
 TARGET_HASWELL
-namespace haswell {
+namespace simdjson::haswell {
 
 static const Architecture ARCHITECTURE = Architecture::HASWELL;
 
@@ -173,12 +171,16 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
 } // namespace haswell
 UNTARGET_REGION
 
+TARGET_HASWELL
+namespace simdjson {
+
 template <>
 int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   return haswell::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
+UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H

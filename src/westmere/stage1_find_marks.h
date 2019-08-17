@@ -9,10 +9,8 @@
 #include "westmere/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
-namespace simdjson {
-
 TARGET_WESTMERE
-namespace westmere {
+namespace simdjson::westmere {
 
 static const Architecture ARCHITECTURE = Architecture::WESTMERE;
 
@@ -78,12 +76,16 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
 } // namespace westmere
 UNTARGET_REGION
 
+TARGET_WESTMERE
+namespace simdjson {
+
 template <>
 int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   return westmere::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
+UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
