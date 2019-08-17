@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_SIMD_INPUT_ARM64_H
 #define SIMDJSON_SIMD_INPUT_ARM64_H
 
-#include "simd_input.h"
+#include "../simd_input.h"
 
 #ifdef IS_ARM64
 namespace simdjson {

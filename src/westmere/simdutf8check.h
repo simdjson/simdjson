@@ -29,8 +29,7 @@
 
 /********** sse code **********/
 TARGET_WESTMERE
-
-namespace simdjson {
+namespace simdjson::westmere {
 
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(__m128i current_bytes,
@@ -163,6 +162,14 @@ check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
                  previous->high_nibbles, has_error);
   return pb;
 }
+
+} // namespace simdjson::westmere
+UNTARGET_REGION // westmere
+
+TARGET_WESTMERE
+namespace simdjson {
+
+using namespace simdjson::westmere;
 
 template <>
 struct utf8_checker<Architecture::WESTMERE> {

@@ -5,8 +5,8 @@
 
 #ifdef IS_X86_64
 
-#include "simd_input_westmere.h"
-#include "simdutf8check_westmere.h"
+#include "westmere/simd_input.h"
+#include "westmere/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {
@@ -72,8 +72,8 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
                   (structural_res_2 << 32) | (structural_res_3 << 48));
 }
 
-#include "stage1_find_marks_flatten_common.h"
-#include "stage1_find_marks_common.h"
+#include "generic/stage1_find_marks_flatten.h"
+#include "generic/stage1_find_marks.h"
 
 } // namespace westmere
 UNTARGET_REGION

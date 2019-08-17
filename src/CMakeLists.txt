@@ -18,42 +18,49 @@ MESSAGE( STATUS "SIMDJSON_LIB_TYPE: " ${SIMDJSON_LIB_TYPE})
 
 # Bring in include files
 include(../include/CMakeLists.txt)
-set(SIMDJSON_SRC
-    jsonioutil.cpp
-    jsonminifier.cpp
-    jsonparser.cpp
-    simd_input_arm64.h
-    simd_input_haswell.h
-    simd_input_westmere.h
-    simd_input.h
-    simdutf8check_arm64.h
-    simdutf8check_haswell.h
-    simdutf8check_westmere.h
-    simdutf8check.h
-    stage1_find_marks.cpp
-    stage1_find_marks_arm64.h
-    stage1_find_marks_common.h
-    stage1_find_marks_flatten_common.h
-    stage1_find_marks_haswell.h
-    stage1_find_marks_westmere.h
-    stage2_build_tape_common.h
-    stringparsing_arm64.h
-    stringparsing_common.h
-    stringparsing_haswell.h
-    stringparsing_westmere.h
-    stringparsing.h
-    stage2_build_tape.cpp
-    parsedjson.cpp
-    parsedjsoniterator.cpp
-    simdjson.cpp
-    ${SIMDJSON_INCLUDE}
-    )
 
-add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC})
+set(SIMDJSON_SRC_DIR $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+
+set(SIMDJSON_SRC
+  jsonioutil.cpp
+  jsonminifier.cpp
+  jsonparser.cpp
+  stage1_find_marks.cpp
+  stage2_build_tape.cpp
+  parsedjson.cpp
+  parsedjsoniterator.cpp
+  simdjson.cpp
+)
+
+# Load headers and sources
+set(SIMDJSON_SRC_HEADERS
+  arm64/simd_input.h
+  arm64/simdutf8check.h
+  arm64/stage1_find_marks.h
+  arm64/stringparsing.h
+  generic/stage1_find_marks_flatten.h
+  generic/stage1_find_marks.h
+  generic/stage2_build_tape.h
+  generic/stringparsing.h
+  haswell/simd_input.h
+  haswell/simdutf8check.h
+  haswell/stage1_find_marks.h
+  haswell/stringparsing.h
+  westmere/simd_input.h
+  westmere/simdutf8check.h
+  westmere/stage1_find_marks.h
+  westmere/stringparsing.h
+  simd_input.h
+  simdutf8check.h
+  stringparsing.h
+)
+
+add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC} ${SIMDJSON_INCLUDE} ${SIMDJSON_SRC_HEADERS})
 
 target_include_directories(${SIMDJSON_LIB_NAME}
   PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${SIMDJSON_SRC_DIR}>
+  $<BUILD_INTERFACE:${SIMDJSON_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 

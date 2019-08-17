@@ -5,8 +5,8 @@
 
 #ifdef IS_X86_64
 
-#include "simd_input_haswell.h"
-#include "simdutf8check_haswell.h"
+#include "haswell/simd_input.h"
+#include "haswell/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {
@@ -168,7 +168,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
   base = next_base;
 }
 
-#include "stage1_find_marks_common.h"
+#include "generic/stage1_find_marks.h"
 
 } // namespace haswell
 UNTARGET_REGION

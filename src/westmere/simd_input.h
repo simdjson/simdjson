@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_SIMD_INPUT_WESTMERE_H
 #define SIMDJSON_SIMD_INPUT_WESTMERE_H
 
-#include "simd_input.h"
+#include "../simd_input.h"
 
 #ifdef IS_X86_64
 

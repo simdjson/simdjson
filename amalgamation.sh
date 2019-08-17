@@ -76,16 +76,13 @@ function dofile()
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)
 
-            # we paste the contents of simdjson header files with names ending by _common.h
-            # we ignore every other simdjson header
+            # we ignore simdjson headers (except src/generic/*.h); they are handled in the above list
             if [ -f include/$file ]; then
-              if [[ "${file}" == *'_common.h' ]]; then
-                echo "$(<include/$file)"
-              fi;
               continue;
             elif [ -f src/$file ]; then
-              if [[ "${file}" == *'_common.h' ]]; then
-                echo "$(<src/$file)"
+              # we paste the contents of src/generic/*.h
+              if [[ "${file}" == *'generic/'*'.h' ]]; then
+                echo "$(<include/$file)"
               fi;
               continue;
             fi;

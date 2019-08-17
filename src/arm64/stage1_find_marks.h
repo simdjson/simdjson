@@ -5,13 +5,12 @@
 
 #ifdef IS_ARM64
 
-#include "simd_input_arm64.h"
-#include "simdutf8check_arm64.h"
+#include "arm64/simd_input.h"
+#include "arm64/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {
 
-TARGET_WESTMERE
 namespace arm64 {
 
 static const Architecture ARCHITECTURE = Architecture::ARM64;
@@ -73,11 +72,10 @@ static really_inline void find_whitespace_and_structurals(
   whitespace = neon_movemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
 
-#include "stage1_find_marks_flatten_common.h"
-#include "stage1_find_marks_common.h"
+#include "generic/stage1_find_marks_flatten.h"
+#include "generic/stage1_find_marks.h"
 
 } // namespace arm64
-UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
