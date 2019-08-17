@@ -1,4 +1,4 @@
-/* auto-generated on Fri Aug 16 18:03:36 DST 2019. Do not edit! */
+/* auto-generated on Sat Aug 17 12:40:20 DST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -469,7 +469,7 @@ struct simd_input {
 
 #endif
 /* end file src/simd_input.h */
-/* begin file src/simd_input_haswell.h */
+/* begin file src/haswell/simd_input.h */
 #ifndef SIMDJSON_SIMD_INPUT_HASWELL_H
 #define SIMDJSON_SIMD_INPUT_HASWELL_H
 
@@ -514,8 +514,8 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_SIMD_INPUT_HASWELL_H
-/* end file src/simd_input_haswell.h */
-/* begin file src/simd_input_westmere.h */
+/* end file src/haswell/simd_input.h */
+/* begin file src/westmere/simd_input.h */
 #ifndef SIMDJSON_SIMD_INPUT_WESTMERE_H
 #define SIMDJSON_SIMD_INPUT_WESTMERE_H
 
@@ -572,8 +572,8 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_SIMD_INPUT_WESTMERE_H
-/* end file src/simd_input_westmere.h */
-/* begin file src/simd_input_arm64.h */
+/* end file src/westmere/simd_input.h */
+/* begin file src/arm64/simd_input.h */
 #ifndef SIMDJSON_SIMD_INPUT_ARM64_H
 #define SIMDJSON_SIMD_INPUT_ARM64_H
 
@@ -644,7 +644,7 @@ struct simd_input<Architecture::ARM64> {
 
 #endif // IS_ARM64
 #endif // SIMDJSON_SIMD_INPUT_ARM64_H
-/* end file src/simd_input_arm64.h */
+/* end file src/arm64/simd_input.h */
 /* begin file src/simdutf8check.h */
 #ifndef SIMDJSON_SIMDUTF8CHECK_H
 #define SIMDJSON_SIMDUTF8CHECK_H
@@ -665,7 +665,7 @@ struct utf8_checker {
 
 #endif // SIMDJSON_SIMDUTF8CHECK_H
 /* end file src/simdutf8check.h */
-/* begin file src/simdutf8check_haswell.h */
+/* begin file src/haswell/simdutf8check.h */
 #ifndef SIMDJSON_SIMDUTF8CHECK_HASWELL_H
 #define SIMDJSON_SIMDUTF8CHECK_HASWELL_H
 
@@ -694,7 +694,8 @@ struct utf8_checker {
 // all byte values must be no larger than 0xF4
 
 TARGET_HASWELL
-namespace simdjson {
+namespace simdjson::haswell {
+
 static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
   return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
 }
@@ -858,6 +859,14 @@ avx_check_utf8_bytes(__m256i current_bytes,
   return pb;
 }
 
+}; // namespace simdjson::haswell
+UNTARGET_REGION // haswell
+
+TARGET_HASWELL
+namespace simdjson {
+
+using namespace simdjson::haswell;
+
 template <>
 struct utf8_checker<Architecture::HASWELL> {
   __m256i has_error;
@@ -896,14 +905,14 @@ struct utf8_checker<Architecture::HASWELL> {
   }
 }; // struct utf8_checker
 
-} // namespace simdjson
+}; // namespace simdjson
 UNTARGET_REGION // haswell
 
 #endif // IS_X86_64
 
 #endif
-/* end file src/simdutf8check_haswell.h */
-/* begin file src/simdutf8check_westmere.h */
+/* end file src/haswell/simdutf8check.h */
+/* begin file src/westmere/simdutf8check.h */
 #ifndef SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 #define SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
 
@@ -933,8 +942,7 @@ UNTARGET_REGION // haswell
 
 /********** sse code **********/
 TARGET_WESTMERE
-
-namespace simdjson {
+namespace simdjson::westmere {
 
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(__m128i current_bytes,
@@ -1068,6 +1076,14 @@ check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
   return pb;
 }
 
+} // namespace simdjson::westmere
+UNTARGET_REGION // westmere
+
+TARGET_WESTMERE
+namespace simdjson {
+
+using namespace simdjson::westmere;
+
 template <>
 struct utf8_checker<Architecture::WESTMERE> {
   __m128i has_error = _mm_setzero_si128();
@@ -1124,8 +1140,8 @@ UNTARGET_REGION // westmere
 #endif // IS_X86_64
 
 #endif
-/* end file src/simdutf8check_westmere.h */
-/* begin file src/simdutf8check_arm64.h */
+/* end file src/westmere/simdutf8check.h */
+/* begin file src/arm64/simdutf8check.h */
 // From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
 // Adapted from https://github.com/lemire/fastvalidate-utf-8
 
@@ -1158,7 +1174,7 @@ UNTARGET_REGION // westmere
  * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
  *
  */
-namespace simdjson {
+namespace simdjson::arm64 {
 
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(int8x16_t current_bytes,
@@ -1318,6 +1334,12 @@ really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   return vget_lane_u64(result, 0) == 0;
 }
 
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+using namespace simdjson::arm64;
+
 template <>
 struct utf8_checker<Architecture::ARM64> {
   int8x16_t has_error{};
@@ -1360,8 +1382,8 @@ struct utf8_checker<Architecture::ARM64> {
 } // namespace simdjson
 #endif
 #endif
-/* end file src/simdutf8check_arm64.h */
-/* begin file src/stage1_find_marks_westmere.h */
+/* end file src/arm64/simdutf8check.h */
+/* begin file src/westmere/stage1_find_marks.h */
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 #define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 
@@ -1369,10 +1391,8 @@ struct utf8_checker<Architecture::ARM64> {
 #ifdef IS_X86_64
 
 
-namespace simdjson {
-
 TARGET_WESTMERE
-namespace westmere {
+namespace simdjson::westmere {
 
 static const Architecture ARCHITECTURE = Architecture::WESTMERE;
 
@@ -1779,17 +1799,21 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
 } // namespace westmere
 UNTARGET_REGION
 
+TARGET_WESTMERE
+namespace simdjson {
+
 template <>
 int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   return westmere::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
+UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
-/* end file src/stage1_find_marks_westmere.h */
-/* begin file src/stage1_find_marks_haswell.h */
+/* end file src/westmere/stage1_find_marks.h */
+/* begin file src/haswell/stage1_find_marks.h */
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
 #define SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
 
@@ -1797,10 +1821,8 @@ int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len,
 #ifdef IS_X86_64
 
 
-namespace simdjson {
-
 TARGET_HASWELL
-namespace haswell {
+namespace simdjson::haswell {
 
 static const Architecture ARCHITECTURE = Architecture::HASWELL;
 
@@ -2214,17 +2236,21 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
 } // namespace haswell
 UNTARGET_REGION
 
+TARGET_HASWELL
+namespace simdjson {
+
 template <>
 int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   return haswell::find_structural_bits(buf, len, pj);
 }
 
 } // namespace simdjson
+UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
-/* end file src/stage1_find_marks_haswell.h */
-/* begin file src/stage1_find_marks_arm64.h */
+/* end file src/haswell/stage1_find_marks.h */
+/* begin file src/arm64/stage1_find_marks.h */
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
 #define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
 
@@ -2232,10 +2258,7 @@ int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, 
 #ifdef IS_ARM64
 
 
-namespace simdjson {
-
-TARGET_WESTMERE
-namespace arm64 {
+namespace simdjson::arm64 {
 
 static const Architecture ARCHITECTURE = Architecture::ARM64;
 
@@ -2640,8 +2663,9 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
   return utf8_state.errors();
 }
 
-} // namespace arm64
-UNTARGET_REGION
+} // namespace simdjson::arm64
+
+namespace simdjson {
 
 template <>
 int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -2652,7 +2676,7 @@ int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, si
 
 #endif // IS_ARM64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
-/* end file src/stage1_find_marks_arm64.h */
+/* end file src/arm64/stage1_find_marks.h */
 /* begin file src/stage1_find_marks.cpp */
 
 #ifdef IS_X86_64
@@ -2760,7 +2784,7 @@ WARN_UNUSED
 
 #endif
 /* end file src/stringparsing.h */
-/* begin file src/stringparsing_westmere.h */
+/* begin file src/westmere/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_WESTMERE_H
 #define SIMDJSON_STRINGPARSING_WESTMERE_H
 
@@ -2900,8 +2924,8 @@ UNTARGET_REGION
 #endif // IS_X86_64
 
 #endif
-/* end file src/stringparsing_westmere.h */
-/* begin file src/stringparsing_haswell.h */
+/* end file src/westmere/stringparsing.h */
+/* begin file src/haswell/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_HASWELL_H
 #define SIMDJSON_STRINGPARSING_HASWELL_H
 
@@ -3042,8 +3066,8 @@ UNTARGET_REGION
 #endif // IS_X86_64
 
 #endif
-/* end file src/stringparsing_haswell.h */
-/* begin file src/stringparsing_arm64.h */
+/* end file src/haswell/stringparsing.h */
+/* begin file src/arm64/stringparsing.h */
 #ifndef SIMDJSON_STRINGPARSING_ARM64_H
 #define SIMDJSON_STRINGPARSING_ARM64_H
 
@@ -3199,7 +3223,7 @@ UNTARGET_REGION
 
 #endif // IS_ARM64
 #endif
-/* end file src/stringparsing_arm64.h */
+/* end file src/arm64/stringparsing.h */
 /* begin file src/stage2_build_tape.cpp */
 
 #ifdef IS_X86_64

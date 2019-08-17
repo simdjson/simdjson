@@ -2,7 +2,7 @@
 #define SIMDJSON_SIMDUTF8CHECK_HASWELL_H
 
 #include "simdjson/portability.h"
-#include <simdutf8check.h>
+#include "../simdutf8check.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>

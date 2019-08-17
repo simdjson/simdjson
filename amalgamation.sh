@@ -18,21 +18,21 @@ $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/simd_input.h
-$SCRIPTPATH/src/simd_input_haswell.h
-$SCRIPTPATH/src/simd_input_westmere.h
-$SCRIPTPATH/src/simd_input_arm64.h
+$SCRIPTPATH/src/haswell/simd_input.h
+$SCRIPTPATH/src/westmere/simd_input.h
+$SCRIPTPATH/src/arm64/simd_input.h
 $SCRIPTPATH/src/simdutf8check.h
-$SCRIPTPATH/src/simdutf8check_haswell.h
-$SCRIPTPATH/src/simdutf8check_westmere.h
-$SCRIPTPATH/src/simdutf8check_arm64.h
-$SCRIPTPATH/src/stage1_find_marks_westmere.h
-$SCRIPTPATH/src/stage1_find_marks_haswell.h
-$SCRIPTPATH/src/stage1_find_marks_arm64.h
+$SCRIPTPATH/src/haswell/simdutf8check.h
+$SCRIPTPATH/src/westmere/simdutf8check.h
+$SCRIPTPATH/src/arm64/simdutf8check.h
+$SCRIPTPATH/src/westmere/stage1_find_marks.h
+$SCRIPTPATH/src/haswell/stage1_find_marks.h
+$SCRIPTPATH/src/arm64/stage1_find_marks.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
 $SCRIPTPATH/src/stringparsing.h
-$SCRIPTPATH/src/stringparsing_westmere.h
-$SCRIPTPATH/src/stringparsing_haswell.h
-$SCRIPTPATH/src/stringparsing_arm64.h
+$SCRIPTPATH/src/westmere/stringparsing.h
+$SCRIPTPATH/src/haswell/stringparsing.h
+$SCRIPTPATH/src/arm64/stringparsing.h
 $SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
 $SCRIPTPATH/src/parsedjsoniterator.cpp
@@ -76,13 +76,17 @@ function dofile()
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)
 
+            if [[ "${file}" == '../'* ]]; then
+              file=$(echo $file| cut -d'/' -f 2-)
+            fi;
+
             # we ignore simdjson headers (except src/generic/*.h); they are handled in the above list
             if [ -f include/$file ]; then
               continue;
             elif [ -f src/$file ]; then
               # we paste the contents of src/generic/*.h
               if [[ "${file}" == *'generic/'*'.h' ]]; then
-                echo "$(<include/$file)"
+                echo "$(<src/$file)"
               fi;
               continue;
             fi;
