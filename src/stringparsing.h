@@ -97,9 +97,4 @@ WARN_UNUSED
 
 } // namespace simdjson
 
-/// Now include the specializations:
-#include "simdjson/stringparsing_arm64.h"
-#include "simdjson/stringparsing_haswell.h"
-#include "simdjson/stringparsing_westmere.h"
-
 #endif

@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_STRINGPARSING_WESTMERE_H
 #define SIMDJSON_STRINGPARSING_WESTMERE_H
 
-#include "simdjson/stringparsing.h"
+#include "stringparsing.h"
 
 #ifdef IS_X86_64
 TARGET_WESTMERE
@@ -28,7 +28,7 @@ UNTARGET_REGION
 
 #define TARGETED_ARCHITECTURE Architecture::WESTMERE
 #define TARGETED_REGION TARGET_WESTMERE
-#include "simdjson/stringparsing_common.h"
+#include "stringparsing_common.h"
 #undef TARGETED_ARCHITECTURE
 #undef TARGETED_REGION
 

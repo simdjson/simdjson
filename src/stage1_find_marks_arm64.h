@@ -5,8 +5,8 @@
 
 #ifdef IS_ARM64
 
-#include "simdjson/simd_input_arm64.h"
-#include "simdjson/simdutf8check_arm64.h"
+#include "simd_input_arm64.h"
+#include "simdutf8check_arm64.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {

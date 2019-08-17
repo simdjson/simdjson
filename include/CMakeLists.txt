@@ -15,15 +15,6 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson_version.h
     ${SIMDJSON_INCLUDE_DIR}/simdprune_tables.h
-    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_arm64.h
-    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_haswell.h
-    ${SIMDJSON_INCLUDE_DIR}/simdutf8check_westmere.h
     ${SIMDJSON_INCLUDE_DIR}/stage1_find_marks.h
     ${SIMDJSON_INCLUDE_DIR}/stage2_build_tape.h
-    ${SIMDJSON_INCLUDE_DIR}/stage2_build_tape_common.h
-    ${SIMDJSON_INCLUDE_DIR}/stringparsing.h
-    ${SIMDJSON_INCLUDE_DIR}/stringparsing_arm64.h
-    ${SIMDJSON_INCLUDE_DIR}/stringparsing_common.h
-    ${SIMDJSON_INCLUDE_DIR}/stringparsing_haswell.h
-    ${SIMDJSON_INCLUDE_DIR}/stringparsing_westmere.h
 )

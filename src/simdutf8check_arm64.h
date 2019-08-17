@@ -7,7 +7,7 @@
 #if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
     (defined(_MSC_VER) && defined(_M_ARM64))
 
-#include "simdjson/simdutf8check.h"
+#include "simdutf8check.h"
 #include <arm_neon.h>
 #include <cinttypes>
 #include <cstddef>

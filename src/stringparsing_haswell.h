@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_STRINGPARSING_HASWELL_H
 #define SIMDJSON_STRINGPARSING_HASWELL_H
 
-#include "simdjson/stringparsing.h"
+#include "stringparsing.h"
 
 #ifdef IS_X86_64
 TARGET_HASWELL
@@ -29,7 +29,7 @@ UNTARGET_REGION
 
 #define TARGETED_ARCHITECTURE Architecture::HASWELL
 #define TARGETED_REGION TARGET_HASWELL
-#include "simdjson/stringparsing_common.h"
+#include "stringparsing_common.h"
 #undef TARGETED_ARCHITECTURE
 #undef TARGETED_REGION
 

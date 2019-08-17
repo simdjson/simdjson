@@ -1,12 +1,8 @@
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_H
 #define SIMDJSON_STAGE1_FIND_MARKS_H
 
-#include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
-#include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
-#include "simdjson/simd_input.h"
-#include <cassert>
 
 namespace simdjson {
 

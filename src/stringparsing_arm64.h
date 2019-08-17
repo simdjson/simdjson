@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_STRINGPARSING_ARM64_H
 #define SIMDJSON_STRINGPARSING_ARM64_H
 
-#include "simdjson/stringparsing.h"
+#include "stringparsing.h"
 
 #ifdef IS_ARM64
 namespace simdjson {
@@ -45,7 +45,7 @@ find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
 
 #define TARGETED_ARCHITECTURE Architecture::ARM64
 #define TARGETED_REGION TARGET_ARM64
-#include "simdjson/stringparsing_common.h"
+#include "stringparsing_common.h"
 #undef TARGETED_ARCHITECTURE
 #undef TARGETED_REGION
 

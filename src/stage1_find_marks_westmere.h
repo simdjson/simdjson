@@ -5,8 +5,8 @@
 
 #ifdef IS_X86_64
 
-#include "simdjson/simd_input_westmere.h"
-#include "simdjson/simdutf8check_westmere.h"
+#include "simd_input_westmere.h"
+#include "simdutf8check_westmere.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {

@@ -22,12 +22,26 @@ set(SIMDJSON_SRC
     jsonioutil.cpp
     jsonminifier.cpp
     jsonparser.cpp
+    simd_input_arm64.h
+    simd_input_haswell.h
+    simd_input_westmere.h
+    simd_input.h
+    simdutf8check_arm64.h
+    simdutf8check_haswell.h
+    simdutf8check_westmere.h
+    simdutf8check.h
     stage1_find_marks.cpp
     stage1_find_marks_arm64.h
     stage1_find_marks_common.h
     stage1_find_marks_flatten_common.h
     stage1_find_marks_haswell.h
     stage1_find_marks_westmere.h
+    stage2_build_tape_common.h
+    stringparsing_arm64.h
+    stringparsing_common.h
+    stringparsing_haswell.h
+    stringparsing_westmere.h
+    stringparsing.h
     stage2_build_tape.cpp
     parsedjson.cpp
     parsedjsoniterator.cpp

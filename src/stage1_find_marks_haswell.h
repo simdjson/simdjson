@@ -5,8 +5,8 @@
 
 #ifdef IS_X86_64
 
-#include "simdjson/simd_input_haswell.h"
-#include "simdjson/simdutf8check_haswell.h"
+#include "simd_input_haswell.h"
+#include "simdutf8check_haswell.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson {

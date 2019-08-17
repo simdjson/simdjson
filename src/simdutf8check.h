@@ -2,7 +2,7 @@
 #define SIMDJSON_SIMDUTF8CHECK_H
 
 #include "simdjson/simdjson.h"
-#include "simdjson/simd_input.h"
+#include "simd_input.h"
 
 namespace simdjson {
 
