@@ -171,6 +171,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
 #include "stage1_find_marks_common.h"
 
 } // namespace haswell
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -178,7 +179,6 @@ int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, 
 }
 
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H

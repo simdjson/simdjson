@@ -76,6 +76,7 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
 #include "stage1_find_marks_common.h"
 
 } // namespace westmere
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -83,7 +84,6 @@ int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len,
 }
 
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H

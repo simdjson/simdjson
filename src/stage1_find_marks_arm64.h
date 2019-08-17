@@ -77,6 +77,7 @@ static really_inline void find_whitespace_and_structurals(
 #include "stage1_find_marks_common.h"
 
 } // namespace arm64
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
