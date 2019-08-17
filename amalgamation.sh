@@ -29,11 +29,11 @@ $SCRIPTPATH/src/stage1_find_marks_westmere.h
 $SCRIPTPATH/src/stage1_find_marks_haswell.h
 $SCRIPTPATH/src/stage1_find_marks_arm64.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
-$SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/stringparsing.h
 $SCRIPTPATH/src/stringparsing_westmere.h
 $SCRIPTPATH/src/stringparsing_haswell.h
 $SCRIPTPATH/src/stringparsing_arm64.h
+$SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
 $SCRIPTPATH/src/parsedjsoniterator.cpp
 "

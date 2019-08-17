@@ -1,4 +1,4 @@
-/* auto-generated on Fri Aug 16 16:53:17 DST 2019. Do not edit! */
+/* auto-generated on Fri Aug 16 18:03:36 DST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -448,6 +448,919 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 }
 } // namespace simdjson
 /* end file src/jsonparser.cpp */
+/* begin file src/simd_input.h */
+#ifndef SIMDJSON_SIMD_INPUT_H
+#define SIMDJSON_SIMD_INPUT_H
+
+#include <cassert>
+
+namespace simdjson {
+
+template <Architecture>
+struct simd_input {
+    simd_input(const uint8_t *ptr);
+    // a straightforward comparison of a mask against input.
+    uint64_t eq(uint8_t m);
+    // find all values less than or equal than the content of maxval (using unsigned arithmetic)
+    uint64_t lteq(uint8_t m);
+}; // struct simd_input
+
+} // namespace simdjson
+
+#endif
+/* end file src/simd_input.h */
+/* begin file src/simd_input_haswell.h */
+#ifndef SIMDJSON_SIMD_INPUT_HASWELL_H
+#define SIMDJSON_SIMD_INPUT_HASWELL_H
+
+
+#ifdef IS_X86_64
+
+TARGET_HASWELL
+namespace simdjson {
+
+template <>
+struct simd_input<Architecture::HASWELL> {
+  __m256i lo;
+  __m256i hi;
+
+  really_inline simd_input(const uint8_t *ptr) {
+    this->lo = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0));
+    this->hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
+  }
+
+  really_inline uint64_t eq(uint8_t m) {
+    const __m256i mask = _mm256_set1_epi8(m);
+    __m256i cmp_res_0 = _mm256_cmpeq_epi8(this->lo, mask);
+    uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
+    __m256i cmp_res_1 = _mm256_cmpeq_epi8(this->hi, mask);
+    uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
+    return res_0 | (res_1 << 32);
+  }
+
+  really_inline uint64_t lteq(uint8_t m) {
+    const __m256i maxval = _mm256_set1_epi8(m);
+    __m256i cmp_res_0 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, this->lo), maxval);
+    uint64_t res_0 = static_cast<uint32_t>(_mm256_movemask_epi8(cmp_res_0));
+    __m256i cmp_res_1 = _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, this->hi), maxval);
+    uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
+    return res_0 | (res_1 << 32);
+  }
+
+}; // struct simd_input
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#endif // IS_X86_64
+#endif // SIMDJSON_SIMD_INPUT_HASWELL_H
+/* end file src/simd_input_haswell.h */
+/* begin file src/simd_input_westmere.h */
+#ifndef SIMDJSON_SIMD_INPUT_WESTMERE_H
+#define SIMDJSON_SIMD_INPUT_WESTMERE_H
+
+
+#ifdef IS_X86_64
+
+TARGET_WESTMERE
+namespace simdjson {
+
+template <>
+struct simd_input<Architecture::WESTMERE> {
+  __m128i v0;
+  __m128i v1;
+  __m128i v2;
+  __m128i v3;
+
+  really_inline simd_input(const uint8_t *ptr) {
+    this->v0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
+    this->v1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
+    this->v2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
+    this->v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
+  }
+
+  really_inline uint64_t eq(uint8_t m) {
+    const __m128i mask = _mm_set1_epi8(m);
+    __m128i cmp_res_0 = _mm_cmpeq_epi8(this->v0, mask);
+    uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
+    __m128i cmp_res_1 = _mm_cmpeq_epi8(this->v1, mask);
+    uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
+    __m128i cmp_res_2 = _mm_cmpeq_epi8(this->v2, mask);
+    uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
+    __m128i cmp_res_3 = _mm_cmpeq_epi8(this->v3, mask);
+    uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
+    return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
+  }
+
+  really_inline uint64_t lteq(uint8_t m) {
+    const __m128i maxval = _mm_set1_epi8(m);
+    __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v0), maxval);
+    uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
+    __m128i cmp_res_1 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v1), maxval);
+    uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
+    __m128i cmp_res_2 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v2), maxval);
+    uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
+    __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v3), maxval);
+    uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
+    return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
+  }
+
+}; // struct simd_input
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#endif // IS_X86_64
+#endif // SIMDJSON_SIMD_INPUT_WESTMERE_H
+/* end file src/simd_input_westmere.h */
+/* begin file src/simd_input_arm64.h */
+#ifndef SIMDJSON_SIMD_INPUT_ARM64_H
+#define SIMDJSON_SIMD_INPUT_ARM64_H
+
+
+#ifdef IS_ARM64
+namespace simdjson {
+
+really_inline uint16_t neon_movemask(uint8x16_t input) {
+  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+  uint8x16_t minput = vandq_u8(input, bit_mask);
+  uint8x16_t tmp = vpaddq_u8(minput, minput);
+  tmp = vpaddq_u8(tmp, tmp);
+  tmp = vpaddq_u8(tmp, tmp);
+  return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
+}
+
+really_inline uint64_t neon_movemask_bulk(uint8x16_t p0, uint8x16_t p1,
+                                          uint8x16_t p2, uint8x16_t p3) {
+  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+  uint8x16_t t0 = vandq_u8(p0, bit_mask);
+  uint8x16_t t1 = vandq_u8(p1, bit_mask);
+  uint8x16_t t2 = vandq_u8(p2, bit_mask);
+  uint8x16_t t3 = vandq_u8(p3, bit_mask);
+  uint8x16_t sum0 = vpaddq_u8(t0, t1);
+  uint8x16_t sum1 = vpaddq_u8(t2, t3);
+  sum0 = vpaddq_u8(sum0, sum1);
+  sum0 = vpaddq_u8(sum0, sum0);
+  return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+}
+
+template <>
+struct simd_input<Architecture::ARM64> {
+  uint8x16_t i0;
+  uint8x16_t i1;
+  uint8x16_t i2;
+  uint8x16_t i3;
+
+  really_inline simd_input(const uint8_t *ptr) {
+    this->i0 = vld1q_u8(ptr + 0);
+    this->i1 = vld1q_u8(ptr + 16);
+    this->i2 = vld1q_u8(ptr + 32);
+    this->i3 = vld1q_u8(ptr + 48);
+  }
+
+  really_inline uint64_t eq(uint8_t m) {
+    const uint8x16_t mask = vmovq_n_u8(m);
+    uint8x16_t cmp_res_0 = vceqq_u8(this->i0, mask);
+    uint8x16_t cmp_res_1 = vceqq_u8(this->i1, mask);
+    uint8x16_t cmp_res_2 = vceqq_u8(this->i2, mask);
+    uint8x16_t cmp_res_3 = vceqq_u8(this->i3, mask);
+    return neon_movemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+  }
+
+  really_inline uint64_t lteq(uint8_t m) {
+    const uint8x16_t mask = vmovq_n_u8(m);
+    uint8x16_t cmp_res_0 = vcleq_u8(this->i0, mask);
+    uint8x16_t cmp_res_1 = vcleq_u8(this->i1, mask);
+    uint8x16_t cmp_res_2 = vcleq_u8(this->i2, mask);
+    uint8x16_t cmp_res_3 = vcleq_u8(this->i3, mask);
+    return neon_movemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+  }
+
+}; // struct simd_input
+
+} // namespace simdjson
+
+#endif // IS_ARM64
+#endif // SIMDJSON_SIMD_INPUT_ARM64_H
+/* end file src/simd_input_arm64.h */
+/* begin file src/simdutf8check.h */
+#ifndef SIMDJSON_SIMDUTF8CHECK_H
+#define SIMDJSON_SIMDUTF8CHECK_H
+
+
+namespace simdjson {
+
+// Checks UTF8, chunk by chunk.
+template <Architecture T>
+struct utf8_checker {
+    // Process the next chunk of input.
+    void check_next_input(simd_input<T> in);
+    // Find out what (if any) errors have occurred
+    ErrorValues errors();
+};
+
+} // namespace simdjson
+
+#endif // SIMDJSON_SIMDUTF8CHECK_H
+/* end file src/simdutf8check.h */
+/* begin file src/simdutf8check_haswell.h */
+#ifndef SIMDJSON_SIMDUTF8CHECK_HASWELL_H
+#define SIMDJSON_SIMDUTF8CHECK_HASWELL_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#ifdef IS_X86_64
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+
+// all byte values must be no larger than 0xF4
+
+TARGET_HASWELL
+namespace simdjson {
+static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
+  return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
+}
+
+static inline __m256i push_last_2bytes_of_a_to_b(__m256i a, __m256i b) {
+  return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 14);
+}
+
+// all byte values must be no larger than 0xF4
+static inline void avx_check_smaller_than_0xF4(__m256i current_bytes,
+                                               __m256i *has_error) {
+  // unsigned, saturates to 0 below max
+  *has_error = _mm256_or_si256(
+      *has_error, _mm256_subs_epu8(current_bytes, _mm256_set1_epi8(0xF4u)));
+}
+
+static inline __m256i avx_continuation_lengths(__m256i high_nibbles) {
+  return _mm256_shuffle_epi8(
+      _mm256_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+                       0, 0, 0, 0,             // 10xx (continuation)
+                       2, 2,                   // 110x
+                       3,                      // 1110
+                       4, // 1111, next should be 0 (not checked here)
+                       1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+                       0, 0, 0, 0,             // 10xx (continuation)
+                       2, 2,                   // 110x
+                       3,                      // 1110
+                       4 // 1111, next should be 0 (not checked here)
+                       ),
+      high_nibbles);
+}
+
+static inline __m256i avx_carry_continuations(__m256i initial_lengths,
+                                              __m256i previous_carries) {
+
+  __m256i right1 = _mm256_subs_epu8(
+      push_last_byte_of_a_to_b(previous_carries, initial_lengths),
+      _mm256_set1_epi8(1));
+  __m256i sum = _mm256_add_epi8(initial_lengths, right1);
+
+  __m256i right2 = _mm256_subs_epu8(
+      push_last_2bytes_of_a_to_b(previous_carries, sum), _mm256_set1_epi8(2));
+  return _mm256_add_epi8(sum, right2);
+}
+
+static inline void avx_check_continuations(__m256i initial_lengths,
+                                           __m256i carries,
+                                           __m256i *has_error) {
+
+  // overlap || underlap
+  // carry > length && length > 0 || !(carry > length) && !(length > 0)
+  // (carries > length) == (lengths > 0)
+  __m256i overunder = _mm256_cmpeq_epi8(
+      _mm256_cmpgt_epi8(carries, initial_lengths),
+      _mm256_cmpgt_epi8(initial_lengths, _mm256_setzero_si256()));
+
+  *has_error = _mm256_or_si256(*has_error, overunder);
+}
+
+// when 0xED is found, next byte must be no larger than 0x9F
+// when 0xF4 is found, next byte must be no larger than 0x8F
+// next byte must be continuation, ie sign bit is set, so signed < is ok
+static inline void avx_check_first_continuation_max(__m256i current_bytes,
+                                                    __m256i off1_current_bytes,
+                                                    __m256i *has_error) {
+  __m256i maskED =
+      _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xEDu));
+  __m256i maskF4 =
+      _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xF4u));
+
+  __m256i badfollowED = _mm256_and_si256(
+      _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x9Fu)), maskED);
+  __m256i badfollowF4 = _mm256_and_si256(
+      _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x8Fu)), maskF4);
+
+  *has_error =
+      _mm256_or_si256(*has_error, _mm256_or_si256(badfollowED, badfollowF4));
+}
+
+// map off1_hibits => error condition
+// hibits     off1    cur
+// C       => < C2 && true
+// E       => < E1 && < A0
+// F       => < F1 && < 90
+// else      false && false
+static inline void avx_check_overlong(__m256i current_bytes,
+                                      __m256i off1_current_bytes,
+                                      __m256i hibits, __m256i previous_hibits,
+                                      __m256i *has_error) {
+  __m256i off1_hibits = push_last_byte_of_a_to_b(previous_hibits, hibits);
+  __m256i initial_mins = _mm256_shuffle_epi8(
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, // 10xx => false
+                       0xC2u, -128,      // 110x
+                       0xE1u,            // 1110
+                       0xF1u,            // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, // 10xx => false
+                       0xC2u, -128,      // 110x
+                       0xE1u,            // 1110
+                       0xF1u),           // 1111
+      off1_hibits);
+
+  __m256i initial_under = _mm256_cmpgt_epi8(initial_mins, off1_current_bytes);
+
+  __m256i second_mins = _mm256_shuffle_epi8(
+      _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, // 10xx => false
+                       127, 127,         // 110x => true
+                       0xA0u,            // 1110
+                       0x90u,            // 1111
+                       -128, -128, -128, -128, -128, -128, -128, -128, -128,
+                       -128, -128, -128, // 10xx => false
+                       127, 127,         // 110x => true
+                       0xA0u,            // 1110
+                       0x90u),           // 1111
+      off1_hibits);
+  __m256i second_under = _mm256_cmpgt_epi8(second_mins, current_bytes);
+  *has_error = _mm256_or_si256(*has_error,
+                               _mm256_and_si256(initial_under, second_under));
+}
+
+struct avx_processed_utf_bytes {
+  __m256i raw_bytes;
+  __m256i high_nibbles;
+  __m256i carried_continuations;
+};
+
+static inline void avx_count_nibbles(__m256i bytes,
+                                     struct avx_processed_utf_bytes *answer) {
+  answer->raw_bytes = bytes;
+  answer->high_nibbles =
+      _mm256_and_si256(_mm256_srli_epi16(bytes, 4), _mm256_set1_epi8(0x0F));
+}
+
+// check whether the current bytes are valid UTF-8
+// at the end of the function, previous gets updated
+static inline struct avx_processed_utf_bytes
+avx_check_utf8_bytes(__m256i current_bytes,
+                     struct avx_processed_utf_bytes *previous,
+                     __m256i *has_error) {
+  struct avx_processed_utf_bytes pb {};
+  avx_count_nibbles(current_bytes, &pb);
+
+  avx_check_smaller_than_0xF4(current_bytes, has_error);
+
+  __m256i initial_lengths = avx_continuation_lengths(pb.high_nibbles);
+
+  pb.carried_continuations =
+      avx_carry_continuations(initial_lengths, previous->carried_continuations);
+
+  avx_check_continuations(initial_lengths, pb.carried_continuations, has_error);
+
+  __m256i off1_current_bytes =
+      push_last_byte_of_a_to_b(previous->raw_bytes, pb.raw_bytes);
+  avx_check_first_continuation_max(current_bytes, off1_current_bytes,
+                                   has_error);
+
+  avx_check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
+                     previous->high_nibbles, has_error);
+  return pb;
+}
+
+template <>
+struct utf8_checker<Architecture::HASWELL> {
+  __m256i has_error;
+  avx_processed_utf_bytes previous;
+
+  utf8_checker() {
+    has_error = _mm256_setzero_si256();
+    previous.raw_bytes = _mm256_setzero_si256();
+    previous.high_nibbles = _mm256_setzero_si256();
+    previous.carried_continuations = _mm256_setzero_si256();
+  }
+
+  really_inline void check_next_input(simd_input<Architecture::HASWELL> in) {
+    __m256i high_bit = _mm256_set1_epi8(0x80u);
+    if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
+      // it is ascii, we just check continuation
+      this->has_error = _mm256_or_si256(
+          _mm256_cmpgt_epi8(this->previous.carried_continuations,
+                            _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                            9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                            9, 9, 9, 9, 9, 9, 9, 1)),
+          this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->previous =
+          avx_check_utf8_bytes(in.lo, &(this->previous), &(this->has_error));
+      this->previous =
+          avx_check_utf8_bytes(in.hi, &(this->previous), &(this->has_error));
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    return _mm256_testz_si256(this->has_error, this->has_error) == 0
+              ? simdjson::UTF8_ERROR
+              : simdjson::SUCCESS;
+  }
+}; // struct utf8_checker
+
+} // namespace simdjson
+UNTARGET_REGION // haswell
+
+#endif // IS_X86_64
+
+#endif
+/* end file src/simdutf8check_haswell.h */
+/* begin file src/simdutf8check_westmere.h */
+#ifndef SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
+#define SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#ifdef IS_X86_64
+
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+
+// all byte values must be no larger than 0xF4
+
+/********** sse code **********/
+TARGET_WESTMERE
+
+namespace simdjson {
+
+// all byte values must be no larger than 0xF4
+static inline void check_smaller_than_0xF4(__m128i current_bytes,
+                                           __m128i *has_error) {
+  // unsigned, saturates to 0 below max
+  *has_error = _mm_or_si128(*has_error,
+                            _mm_subs_epu8(current_bytes, _mm_set1_epi8(0xF4u)));
+}
+
+static inline __m128i continuation_lengths(__m128i high_nibbles) {
+  return _mm_shuffle_epi8(
+      _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+                    0, 0, 0, 0,             // 10xx (continuation)
+                    2, 2,                   // 110x
+                    3,                      // 1110
+                    4), // 1111, next should be 0 (not checked here)
+      high_nibbles);
+}
+
+static inline __m128i carry_continuations(__m128i initial_lengths,
+                                          __m128i previous_carries) {
+
+  __m128i right1 =
+      _mm_subs_epu8(_mm_alignr_epi8(initial_lengths, previous_carries, 16 - 1),
+                    _mm_set1_epi8(1));
+  __m128i sum = _mm_add_epi8(initial_lengths, right1);
+
+  __m128i right2 = _mm_subs_epu8(_mm_alignr_epi8(sum, previous_carries, 16 - 2),
+                                 _mm_set1_epi8(2));
+  return _mm_add_epi8(sum, right2);
+}
+
+static inline void check_continuations(__m128i initial_lengths, __m128i carries,
+                                       __m128i *has_error) {
+
+  // overlap || underlap
+  // carry > length && length > 0 || !(carry > length) && !(length > 0)
+  // (carries > length) == (lengths > 0)
+  __m128i overunder =
+      _mm_cmpeq_epi8(_mm_cmpgt_epi8(carries, initial_lengths),
+                     _mm_cmpgt_epi8(initial_lengths, _mm_setzero_si128()));
+
+  *has_error = _mm_or_si128(*has_error, overunder);
+}
+
+// when 0xED is found, next byte must be no larger than 0x9F
+// when 0xF4 is found, next byte must be no larger than 0x8F
+// next byte must be continuation, ie sign bit is set, so signed < is ok
+static inline void check_first_continuation_max(__m128i current_bytes,
+                                                __m128i off1_current_bytes,
+                                                __m128i *has_error) {
+  __m128i maskED = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xEDu));
+  __m128i maskF4 = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xF4u));
+
+  __m128i badfollowED = _mm_and_si128(
+      _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x9Fu)), maskED);
+  __m128i badfollowF4 = _mm_and_si128(
+      _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x8Fu)), maskF4);
+
+  *has_error = _mm_or_si128(*has_error, _mm_or_si128(badfollowED, badfollowF4));
+}
+
+// map off1_hibits => error condition
+// hibits     off1    cur
+// C       => < C2 && true
+// E       => < E1 && < A0
+// F       => < F1 && < 90
+// else      false && false
+static inline void check_overlong(__m128i current_bytes,
+                                  __m128i off1_current_bytes, __m128i hibits,
+                                  __m128i previous_hibits, __m128i *has_error) {
+  __m128i off1_hibits = _mm_alignr_epi8(hibits, previous_hibits, 16 - 1);
+  __m128i initial_mins = _mm_shuffle_epi8(
+      _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
+                    -128, -128,  // 10xx => false
+                    0xC2u, -128, // 110x
+                    0xE1u,       // 1110
+                    0xF1u),
+      off1_hibits);
+
+  __m128i initial_under = _mm_cmpgt_epi8(initial_mins, off1_current_bytes);
+
+  __m128i second_mins = _mm_shuffle_epi8(
+      _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
+                    -128, -128, // 10xx => false
+                    127, 127,   // 110x => true
+                    0xA0u,      // 1110
+                    0x90u),
+      off1_hibits);
+  __m128i second_under = _mm_cmpgt_epi8(second_mins, current_bytes);
+  *has_error =
+      _mm_or_si128(*has_error, _mm_and_si128(initial_under, second_under));
+}
+
+struct processed_utf_bytes {
+  __m128i raw_bytes;
+  __m128i high_nibbles;
+  __m128i carried_continuations;
+};
+
+static inline void count_nibbles(__m128i bytes,
+                                 struct processed_utf_bytes *answer) {
+  answer->raw_bytes = bytes;
+  answer->high_nibbles =
+      _mm_and_si128(_mm_srli_epi16(bytes, 4), _mm_set1_epi8(0x0F));
+}
+
+// check whether the current bytes are valid UTF-8
+// at the end of the function, previous gets updated
+static struct processed_utf_bytes
+check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
+                 __m128i *has_error) {
+  struct processed_utf_bytes pb;
+  count_nibbles(current_bytes, &pb);
+
+  check_smaller_than_0xF4(current_bytes, has_error);
+
+  __m128i initial_lengths = continuation_lengths(pb.high_nibbles);
+
+  pb.carried_continuations =
+      carry_continuations(initial_lengths, previous->carried_continuations);
+
+  check_continuations(initial_lengths, pb.carried_continuations, has_error);
+
+  __m128i off1_current_bytes =
+      _mm_alignr_epi8(pb.raw_bytes, previous->raw_bytes, 16 - 1);
+  check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
+
+  check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
+                 previous->high_nibbles, has_error);
+  return pb;
+}
+
+template <>
+struct utf8_checker<Architecture::WESTMERE> {
+  __m128i has_error = _mm_setzero_si128();
+  processed_utf_bytes previous{
+      _mm_setzero_si128(), // raw_bytes
+      _mm_setzero_si128(), // high_nibbles
+      _mm_setzero_si128()  // carried_continuations
+  };
+
+  really_inline void check_next_input(simd_input<Architecture::WESTMERE> in) {
+    __m128i high_bit = _mm_set1_epi8(0x80u);
+    if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
+      // it is ascii, we just check continuation
+      this->has_error =
+          _mm_or_si128(_mm_cmpgt_epi8(this->previous.carried_continuations,
+                                      _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                                    9, 9, 9, 9, 9, 1)),
+                      this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->previous =
+          check_utf8_bytes(in.v0, &(this->previous), &(this->has_error));
+      this->previous =
+          check_utf8_bytes(in.v1, &(this->previous), &(this->has_error));
+    }
+
+    if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
+      // it is ascii, we just check continuation
+      this->has_error =
+          _mm_or_si128(_mm_cmpgt_epi8(this->previous.carried_continuations,
+                                      _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                                    9, 9, 9, 9, 9, 1)),
+                      this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->previous =
+          check_utf8_bytes(in.v2, &(this->previous), &(this->has_error));
+      this->previous =
+          check_utf8_bytes(in.v3, &(this->previous), &(this->has_error));
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    return _mm_testz_si128(this->has_error, this->has_error) == 0
+              ? simdjson::UTF8_ERROR
+              : simdjson::SUCCESS;
+  }
+
+}; // struct utf8_checker
+
+} // namespace simdjson
+UNTARGET_REGION // westmere
+
+#endif // IS_X86_64
+
+#endif
+/* end file src/simdutf8check_westmere.h */
+/* begin file src/simdutf8check_arm64.h */
+// From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
+// Adapted from https://github.com/lemire/fastvalidate-utf-8
+
+#ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
+#define SIMDJSON_SIMDUTF8CHECK_ARM64_H
+
+#if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
+    (defined(_MSC_VER) && defined(_M_ARM64))
+
+#include <arm_neon.h>
+#include <cinttypes>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+namespace simdjson {
+
+// all byte values must be no larger than 0xF4
+static inline void check_smaller_than_0xF4(int8x16_t current_bytes,
+                                           int8x16_t *has_error) {
+  // unsigned, saturates to 0 below max
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vqsubq_u8(
+                      vreinterpretq_u8_s8(current_bytes), vdupq_n_u8(0xF4))));
+}
+
+static const int8_t _nibbles[] = {
+    1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+    0, 0, 0, 0,             // 10xx (continuation)
+    2, 2,                   // 110x
+    3,                      // 1110
+    4,                      // 1111, next should be 0 (not checked here)
+};
+
+static inline int8x16_t continuation_lengths(int8x16_t high_nibbles) {
+  return vqtbl1q_s8(vld1q_s8(_nibbles), vreinterpretq_u8_s8(high_nibbles));
+}
+
+static inline int8x16_t carry_continuations(int8x16_t initial_lengths,
+                                            int8x16_t previous_carries) {
+
+  int8x16_t right1 = vreinterpretq_s8_u8(vqsubq_u8(
+      vreinterpretq_u8_s8(vextq_s8(previous_carries, initial_lengths, 16 - 1)),
+      vdupq_n_u8(1)));
+  int8x16_t sum = vaddq_s8(initial_lengths, right1);
+
+  int8x16_t right2 = vreinterpretq_s8_u8(
+      vqsubq_u8(vreinterpretq_u8_s8(vextq_s8(previous_carries, sum, 16 - 2)),
+                vdupq_n_u8(2)));
+  return vaddq_s8(sum, right2);
+}
+
+static inline void check_continuations(int8x16_t initial_lengths,
+                                       int8x16_t carries,
+                                       int8x16_t *has_error) {
+
+  // overlap || underlap
+  // carry > length && length > 0 || !(carry > length) && !(length > 0)
+  // (carries > length) == (lengths > 0)
+  uint8x16_t overunder = vceqq_u8(vcgtq_s8(carries, initial_lengths),
+                                  vcgtq_s8(initial_lengths, vdupq_n_s8(0)));
+
+  *has_error = vorrq_s8(*has_error, vreinterpretq_s8_u8(overunder));
+}
+
+// when 0xED is found, next byte must be no larger than 0x9F
+// when 0xF4 is found, next byte must be no larger than 0x8F
+// next byte must be continuation, ie sign bit is set, so signed < is ok
+static inline void check_first_continuation_max(int8x16_t current_bytes,
+                                                int8x16_t off1_current_bytes,
+                                                int8x16_t *has_error) {
+  uint8x16_t maskED = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xED));
+  uint8x16_t maskF4 = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xF4));
+
+  uint8x16_t badfollowED =
+      vandq_u8(vcgtq_s8(current_bytes, vdupq_n_s8(0x9F)), maskED);
+  uint8x16_t badfollowF4 =
+      vandq_u8(vcgtq_s8(current_bytes, vdupq_n_s8(0x8F)), maskF4);
+
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vorrq_u8(badfollowED, badfollowF4)));
+}
+
+static const int8_t _initial_mins[] = {
+    -128,         -128, -128, -128, -128, -128,
+    -128,         -128, -128, -128, -128, -128, // 10xx => false
+    (int8_t)0xC2, -128,                         // 110x
+    (int8_t)0xE1,                               // 1110
+    (int8_t)0xF1,
+};
+
+static const int8_t _second_mins[] = {
+    -128,         -128, -128, -128, -128, -128,
+    -128,         -128, -128, -128, -128, -128, // 10xx => false
+    127,          127,                          // 110x => true
+    (int8_t)0xA0,                               // 1110
+    (int8_t)0x90,
+};
+
+// map off1_hibits => error condition
+// hibits     off1    cur
+// C       => < C2 && true
+// E       => < E1 && < A0
+// F       => < F1 && < 90
+// else      false && false
+static inline void check_overlong(int8x16_t current_bytes,
+                                  int8x16_t off1_current_bytes,
+                                  int8x16_t hibits, int8x16_t previous_hibits,
+                                  int8x16_t *has_error) {
+  int8x16_t off1_hibits = vextq_s8(previous_hibits, hibits, 16 - 1);
+  int8x16_t initial_mins =
+      vqtbl1q_s8(vld1q_s8(_initial_mins), vreinterpretq_u8_s8(off1_hibits));
+
+  uint8x16_t initial_under = vcgtq_s8(initial_mins, off1_current_bytes);
+
+  int8x16_t second_mins =
+      vqtbl1q_s8(vld1q_s8(_second_mins), vreinterpretq_u8_s8(off1_hibits));
+  uint8x16_t second_under = vcgtq_s8(second_mins, current_bytes);
+  *has_error = vorrq_s8(
+      *has_error, vreinterpretq_s8_u8(vandq_u8(initial_under, second_under)));
+}
+
+struct processed_utf_bytes {
+  int8x16_t raw_bytes;
+  int8x16_t high_nibbles;
+  int8x16_t carried_continuations;
+};
+
+static inline void count_nibbles(int8x16_t bytes,
+                                 struct processed_utf_bytes *answer) {
+  answer->raw_bytes = bytes;
+  answer->high_nibbles =
+      vreinterpretq_s8_u8(vshrq_n_u8(vreinterpretq_u8_s8(bytes), 4));
+}
+
+// check whether the current bytes are valid UTF-8
+// at the end of the function, previous gets updated
+static inline struct processed_utf_bytes
+check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
+                 int8x16_t *has_error) {
+  struct processed_utf_bytes pb;
+  count_nibbles(current_bytes, &pb);
+
+  check_smaller_than_0xF4(current_bytes, has_error);
+
+  int8x16_t initial_lengths = continuation_lengths(pb.high_nibbles);
+
+  pb.carried_continuations =
+      carry_continuations(initial_lengths, previous->carried_continuations);
+
+  check_continuations(initial_lengths, pb.carried_continuations, has_error);
+
+  int8x16_t off1_current_bytes =
+      vextq_s8(previous->raw_bytes, pb.raw_bytes, 16 - 1);
+  check_first_continuation_max(current_bytes, off1_current_bytes, has_error);
+
+  check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles,
+                 previous->high_nibbles, has_error);
+  return pb;
+}
+
+// Checks that all bytes are ascii
+really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
+  // checking if the most significant bit is always equal to 0.
+  uint8x16_t high_bit = vdupq_n_u8(0x80);
+  uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
+  uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
+  uint8x16_t t3 = vorrq_u8(t0, t1);
+  uint8x16_t t4 = vandq_u8(t3, high_bit);
+  uint64x2_t v64 = vreinterpretq_u64_u8(t4);
+  uint32x2_t v32 = vqmovn_u64(v64);
+  uint64x1_t result = vreinterpret_u64_u32(v32);
+  return vget_lane_u64(result, 0) == 0;
+}
+
+template <>
+struct utf8_checker<Architecture::ARM64> {
+  int8x16_t has_error{};
+  processed_utf_bytes previous{};
+
+  really_inline void check_next_input(simd_input<Architecture::ARM64> in) {
+    if (check_ascii_neon(in)) {
+      // All bytes are ascii. Therefore the byte that was just before must be
+      // ascii too. We only check the byte that was just before simd_input. Nines
+      // are arbitrary values.
+      const int8x16_t verror =
+          (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
+      this->has_error =
+          vorrq_s8(vreinterpretq_s8_u8(
+                      vcgtq_s8(this->previous.carried_continuations, verror)),
+                  this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i0),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i1),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i2),
+                                        &(this->previous), &(this->has_error));
+      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i3),
+                                        &(this->previous), &(this->has_error));
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    uint64x2_t v64 = vreinterpretq_u64_s8(this->has_error);
+    uint32x2_t v32 = vqmovn_u64(v64);
+    uint64x1_t result = vreinterpret_u64_u32(v32);
+    return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
+                                        : simdjson::SUCCESS;
+  }
+
+}; // struct utf8_checker
+
+} // namespace simdjson
+#endif
+#endif
+/* end file src/simdutf8check_arm64.h */
 /* begin file src/stage1_find_marks_westmere.h */
 #ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
 #define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
@@ -864,6 +1777,7 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
 }
 
 } // namespace westmere
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -871,7 +1785,6 @@ int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len,
 }
 
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
@@ -1299,6 +2212,7 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
 }
 
 } // namespace haswell
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -1306,7 +2220,6 @@ int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, 
 }
 
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // IS_X86_64
 #endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
@@ -1728,6 +2641,7 @@ static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::Parsed
 }
 
 } // namespace arm64
+UNTARGET_REGION
 
 template <>
 int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -1747,9 +2661,549 @@ int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, si
 #ifdef IS_ARM64
 #endif // IS_ARM64
 /* end file src/stage1_find_marks.cpp */
+/* begin file src/stringparsing.h */
+#ifndef SIMDJSON_STRINGPARSING_H
+#define SIMDJSON_STRINGPARSING_H
+
+
+#ifdef JSON_TEST_STRINGS
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
+                  const uint8_t *parsed_end);
+void found_bad_string(const uint8_t *buf);
+#endif
+
+namespace simdjson {
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+WARN_UNUSED
+really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion isn't valid; we defer the check for this to inside the
+  // multilingual plane check
+  uint32_t code_point = hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // check for low surrogate for characters outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+      return false;
+    }
+    uint32_t code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
+
+    // if the first code point is invalid we will get here, as we will go past
+    // the check for being outside the Basic Multilingual plane. If we don't
+    // find a \u immediately afterwards we fail out anyhow, but if we do,
+    // this check catches both the case of the first code point being invalid
+    // or the second code point being invalid.
+    if ((code_point | code_point_2) >> 16) {
+      return false;
+    }
+
+    code_point =
+        (((code_point - 0xd800) << 10) | (code_point_2 - 0xdc00)) + 0x10000;
+    *src_ptr += 6;
+  }
+  size_t offset = codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+// Holds backslashes and quotes locations.
+struct parse_string_helper {
+  uint32_t bs_bits;
+  uint32_t quote_bits;
+};
+
+// Finds where the backslashes and quotes are located.
+template <Architecture>
+parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src,
+                                                uint8_t *dst);
+
+template <Architecture T>
+WARN_UNUSED 
+    really_inline bool
+    parse_string(UNUSED const uint8_t *buf, UNUSED size_t len, ParsedJson &pj,
+                 UNUSED const uint32_t depth, UNUSED uint32_t offset);
+
+} // namespace simdjson
+
+#endif
+/* end file src/stringparsing.h */
+/* begin file src/stringparsing_westmere.h */
+#ifndef SIMDJSON_STRINGPARSING_WESTMERE_H
+#define SIMDJSON_STRINGPARSING_WESTMERE_H
+
+
+#ifdef IS_X86_64
+TARGET_WESTMERE
+namespace simdjson {
+template <>
+really_inline parse_string_helper
+find_bs_bits_and_quote_bits<Architecture::WESTMERE>(const uint8_t *src,
+                                                    uint8_t *dst) {
+  // this can read up to 31 bytes beyond the buffer size, but we require
+  // SIMDJSON_PADDING of padding
+  __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
+  // store to dest unconditionally - we can overwrite the bits we don't like
+  // later
+  _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), v);
+  auto quote_mask = _mm_cmpeq_epi8(v, _mm_set1_epi8('"'));
+  return {
+      static_cast<uint32_t>(
+          _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8('\\')))), // bs_bits
+      static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
+  };
+}
+} // namespace simdjson
+UNTARGET_REGION
+
+#define TARGETED_ARCHITECTURE Architecture::WESTMERE
+#define TARGETED_REGION TARGET_WESTMERE
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "stringparsing.h" (this simplifies amalgation)
+
+#ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
+
+template <>
+WARN_UNUSED
+    really_inline bool
+    parse_string<TARGETED_ARCHITECTURE>(UNUSED const uint8_t *buf,
+                                        UNUSED size_t len, ParsedJson &pj,
+                                        UNUSED const uint32_t depth,
+                                        UNUSED uint32_t offset) {
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
+  const uint8_t *const start_of_string = dst;
+  while (1) {
+    parse_string_helper helper =
+        find_bs_bits_and_quote_bits<TARGETED_ARCHITECTURE>(src, dst);
+    if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
+      /* we encountered quotes first. Move dst to point to quotes and exit
+       */
+
+      /* find out where the quote is... */
+      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+
+      /* NULL termination is still handy if you expect all your strings to
+       * be NULL terminated? */
+      /* It comes at a small cost */
+      dst[quote_dist] = 0;
+
+      uint32_t str_length = (dst - start_of_string) + quote_dist;
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      /*****************************
+       * Above, check for overflow in case someone has a crazy string
+       * (>=4GB?)                 _
+       * But only add the overflow check when the document itself exceeds
+       * 4GB
+       * Currently unneeded because we refuse to parse docs larger or equal
+       * to 4GB.
+       ****************************/
+
+      /* we advance the point, accounting for the fact that we have a NULL
+       * termination         */
+      pj.current_string_buf_loc = dst + quote_dist + 1;
+      return true;
+    }
+    if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
+      /* find out where the backspace is */
+      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst)) {
+          return false;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return false; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      if constexpr (TARGETED_ARCHITECTURE == Architecture::WESTMERE) {
+        src += 16;
+        dst += 16;
+      } else {
+        src += 32;
+        dst += 32;
+      }
+    }
+  }
+  /* can't be reached */
+  return true;
+}
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
+#endif // TARGETED_ARCHITECTURE
+#undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
+
+#endif // IS_X86_64
+
+#endif
+/* end file src/stringparsing_westmere.h */
+/* begin file src/stringparsing_haswell.h */
+#ifndef SIMDJSON_STRINGPARSING_HASWELL_H
+#define SIMDJSON_STRINGPARSING_HASWELL_H
+
+
+#ifdef IS_X86_64
+TARGET_HASWELL
+namespace simdjson {
+template <>
+really_inline parse_string_helper
+find_bs_bits_and_quote_bits<Architecture::HASWELL>(const uint8_t *src,
+                                                   uint8_t *dst) {
+  // this can read up to 31 bytes beyond the buffer size, but we require
+  // SIMDJSON_PADDING of padding
+  static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
+  __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
+  // store to dest unconditionally - we can overwrite the bits we don't like
+  // later
+  _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
+  auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
+  return {
+      static_cast<uint32_t>(_mm256_movemask_epi8(
+          _mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')))),     // bs_bits
+      static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
+  };
+}
+} // namespace simdjson
+UNTARGET_REGION
+
+#define TARGETED_ARCHITECTURE Architecture::HASWELL
+#define TARGETED_REGION TARGET_HASWELL
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "stringparsing.h" (this simplifies amalgation)
+
+#ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
+
+template <>
+WARN_UNUSED
+    really_inline bool
+    parse_string<TARGETED_ARCHITECTURE>(UNUSED const uint8_t *buf,
+                                        UNUSED size_t len, ParsedJson &pj,
+                                        UNUSED const uint32_t depth,
+                                        UNUSED uint32_t offset) {
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
+  const uint8_t *const start_of_string = dst;
+  while (1) {
+    parse_string_helper helper =
+        find_bs_bits_and_quote_bits<TARGETED_ARCHITECTURE>(src, dst);
+    if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
+      /* we encountered quotes first. Move dst to point to quotes and exit
+       */
+
+      /* find out where the quote is... */
+      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+
+      /* NULL termination is still handy if you expect all your strings to
+       * be NULL terminated? */
+      /* It comes at a small cost */
+      dst[quote_dist] = 0;
+
+      uint32_t str_length = (dst - start_of_string) + quote_dist;
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      /*****************************
+       * Above, check for overflow in case someone has a crazy string
+       * (>=4GB?)                 _
+       * But only add the overflow check when the document itself exceeds
+       * 4GB
+       * Currently unneeded because we refuse to parse docs larger or equal
+       * to 4GB.
+       ****************************/
+
+      /* we advance the point, accounting for the fact that we have a NULL
+       * termination         */
+      pj.current_string_buf_loc = dst + quote_dist + 1;
+      return true;
+    }
+    if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
+      /* find out where the backspace is */
+      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst)) {
+          return false;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return false; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      if constexpr (TARGETED_ARCHITECTURE == Architecture::WESTMERE) {
+        src += 16;
+        dst += 16;
+      } else {
+        src += 32;
+        dst += 32;
+      }
+    }
+  }
+  /* can't be reached */
+  return true;
+}
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
+#endif // TARGETED_ARCHITECTURE
+#undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
+
+#endif // IS_X86_64
+
+#endif
+/* end file src/stringparsing_haswell.h */
+/* begin file src/stringparsing_arm64.h */
+#ifndef SIMDJSON_STRINGPARSING_ARM64_H
+#define SIMDJSON_STRINGPARSING_ARM64_H
+
+
+#ifdef IS_ARM64
+namespace simdjson {
+template <>
+really_inline parse_string_helper
+find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
+                                                 uint8_t *dst) {
+  // this can read up to 31 bytes beyond the buffer size, but we require
+  // SIMDJSON_PADDING of padding
+  static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
+  uint8x16_t v0 = vld1q_u8(src);
+  uint8x16_t v1 = vld1q_u8(src + 16);
+  vst1q_u8(dst, v0);
+  vst1q_u8(dst + 16, v1);
+
+  uint8x16_t bs_mask = vmovq_n_u8('\\');
+  uint8x16_t qt_mask = vmovq_n_u8('"');
+  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+  uint8x16_t cmp_bs_0 = vceqq_u8(v0, bs_mask);
+  uint8x16_t cmp_bs_1 = vceqq_u8(v1, bs_mask);
+  uint8x16_t cmp_qt_0 = vceqq_u8(v0, qt_mask);
+  uint8x16_t cmp_qt_1 = vceqq_u8(v1, qt_mask);
+
+  cmp_bs_0 = vandq_u8(cmp_bs_0, bit_mask);
+  cmp_bs_1 = vandq_u8(cmp_bs_1, bit_mask);
+  cmp_qt_0 = vandq_u8(cmp_qt_0, bit_mask);
+  cmp_qt_1 = vandq_u8(cmp_qt_1, bit_mask);
+
+  uint8x16_t sum0 = vpaddq_u8(cmp_bs_0, cmp_bs_1);
+  uint8x16_t sum1 = vpaddq_u8(cmp_qt_0, cmp_qt_1);
+  sum0 = vpaddq_u8(sum0, sum1);
+  sum0 = vpaddq_u8(sum0, sum0);
+  return {
+      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0), // bs_bits
+      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1)  // quote_bits
+  };
+}
+
+} // namespace simdjson
+
+#define TARGETED_ARCHITECTURE Architecture::ARM64
+#define TARGETED_REGION TARGET_ARM64
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is include already includes
+// "stringparsing.h" (this simplifies amalgation)
+
+#ifdef TARGETED_ARCHITECTURE
+#ifdef TARGETED_REGION
+
+TARGETED_REGION
+namespace simdjson {
+
+template <>
+WARN_UNUSED
+    really_inline bool
+    parse_string<TARGETED_ARCHITECTURE>(UNUSED const uint8_t *buf,
+                                        UNUSED size_t len, ParsedJson &pj,
+                                        UNUSED const uint32_t depth,
+                                        UNUSED uint32_t offset) {
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
+  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
+  const uint8_t *const start_of_string = dst;
+  while (1) {
+    parse_string_helper helper =
+        find_bs_bits_and_quote_bits<TARGETED_ARCHITECTURE>(src, dst);
+    if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
+      /* we encountered quotes first. Move dst to point to quotes and exit
+       */
+
+      /* find out where the quote is... */
+      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+
+      /* NULL termination is still handy if you expect all your strings to
+       * be NULL terminated? */
+      /* It comes at a small cost */
+      dst[quote_dist] = 0;
+
+      uint32_t str_length = (dst - start_of_string) + quote_dist;
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      /*****************************
+       * Above, check for overflow in case someone has a crazy string
+       * (>=4GB?)                 _
+       * But only add the overflow check when the document itself exceeds
+       * 4GB
+       * Currently unneeded because we refuse to parse docs larger or equal
+       * to 4GB.
+       ****************************/
+
+      /* we advance the point, accounting for the fact that we have a NULL
+       * termination         */
+      pj.current_string_buf_loc = dst + quote_dist + 1;
+      return true;
+    }
+    if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
+      /* find out where the backspace is */
+      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst)) {
+          return false;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return false; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      if constexpr (TARGETED_ARCHITECTURE == Architecture::WESTMERE) {
+        src += 16;
+        dst += 16;
+      } else {
+        src += 32;
+        dst += 32;
+      }
+    }
+  }
+  /* can't be reached */
+  return true;
+}
+
+} // namespace simdjson
+UNTARGET_REGION
+
+#else
+#error TARGETED_REGION must be specified before including.
+#endif // TARGETED_REGION
+#else
+#error TARGETED_ARCHITECTURE must be specified before including.
+#endif // TARGETED_ARCHITECTURE
+#undef TARGETED_ARCHITECTURE
+#undef TARGETED_REGION
+
+#endif // IS_ARM64
+#endif
+/* end file src/stringparsing_arm64.h */
 /* begin file src/stage2_build_tape.cpp */
 
 #ifdef IS_X86_64
+
 #define TARGETED_ARCHITECTURE Architecture::HASWELL
 #define TARGETED_REGION TARGET_HASWELL
 // This file contains the common code every implementation uses for stage2
@@ -2829,9 +4283,11 @@ UNTARGET_REGION
 #endif // TARGETED_ARCHITECTURE
 #undef TARGETED_ARCHITECTURE
 #undef TARGETED_REGION
+
 #endif // IS_X86_64
 
 #ifdef IS_ARM64
+
 #define TARGETED_ARCHITECTURE Architecture::ARM64
 #define TARGETED_REGION TARGET_ARM64
 // This file contains the common code every implementation uses for stage2
@@ -3371,6 +4827,7 @@ UNTARGET_REGION
 #endif // TARGETED_ARCHITECTURE
 #undef TARGETED_ARCHITECTURE
 #undef TARGETED_REGION
+
 #endif // IS_ARM64
 /* end file src/stage2_build_tape.cpp */
 /* begin file src/parsedjson.cpp */
