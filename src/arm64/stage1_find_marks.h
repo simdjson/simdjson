@@ -5,13 +5,12 @@
 
 #ifdef IS_ARM64
 
+#include "arm64/architecture.h"
 #include "arm64/simd_input.h"
 #include "arm64/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson::arm64 {
-
-static const Architecture ARCHITECTURE = Architecture::ARM64;
 
 static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 

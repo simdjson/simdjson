@@ -4,6 +4,7 @@
 #include "../simd_input.h"
 
 #ifdef IS_ARM64
+
 namespace simdjson {
 
 really_inline uint16_t neon_movemask(uint8x16_t input) {

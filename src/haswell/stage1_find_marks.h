@@ -5,14 +5,13 @@
 
 #ifdef IS_X86_64
 
+#include "haswell/architecture.h"
 #include "haswell/simd_input.h"
 #include "haswell/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell {
-
-static const Architecture ARCHITECTURE = Architecture::HASWELL;
 
 static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2

@@ -5,14 +5,13 @@
 
 #ifdef IS_X86_64
 
+#include "westmere/architecture.h"
 #include "westmere/simd_input.h"
 #include "westmere/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {
-
-static const Architecture ARCHITECTURE = Architecture::WESTMERE;
 
 static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(

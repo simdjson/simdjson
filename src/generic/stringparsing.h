@@ -3,26 +3,17 @@
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
 
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
-
-template <>
-WARN_UNUSED
-    really_inline bool
-    parse_string<TARGETED_ARCHITECTURE>(UNUSED const uint8_t *buf,
-                                        UNUSED size_t len, ParsedJson &pj,
-                                        UNUSED const uint32_t depth,
-                                        UNUSED uint32_t offset) {
+WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
+                                            UNUSED size_t len, ParsedJson &pj,
+                                            UNUSED const uint32_t depth,
+                                            UNUSED uint32_t offset) {
   pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
   while (1) {
     parse_string_helper helper =
-        find_bs_bits_and_quote_bits<TARGETED_ARCHITECTURE>(src, dst);
+        find_bs_bits_and_quote_bits(src, dst);
     if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
       /* we encountered quotes first. Move dst to point to quotes and exit
        */
@@ -80,7 +71,7 @@ WARN_UNUSED
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      if constexpr (TARGETED_ARCHITECTURE == Architecture::WESTMERE) {
+      if constexpr (ARCHITECTURE == Architecture::WESTMERE) {
         src += 16;
         dst += 16;
       } else {
@@ -92,13 +83,3 @@ WARN_UNUSED
   /* can't be reached */
   return true;
 }
-
-} // namespace simdjson
-UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE
