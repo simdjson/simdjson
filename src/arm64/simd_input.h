@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_SIMD_INPUT_ARM64_H
-#define SIMDJSON_SIMD_INPUT_ARM64_H
+#ifndef SIMDJSON_ARM64_SIMD_INPUT_H
+#define SIMDJSON_ARM64_SIMD_INPUT_H
 
 #include "../simd_input.h"
 
@@ -68,4 +68,4 @@ struct simd_input<Architecture::ARM64> {
 } // namespace simdjson
 
 #endif // IS_ARM64
-#endif // SIMDJSON_SIMD_INPUT_ARM64_H
+#endif // SIMDJSON_ARM64_SIMD_INPUT_H

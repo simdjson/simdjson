@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
-#define SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
+#ifndef SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
+#define SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
 
 #include "simdjson/portability.h"
 
@@ -183,4 +183,4 @@ int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, 
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_STAGE1_FIND_MARKS_HASWELL_H
+#endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H

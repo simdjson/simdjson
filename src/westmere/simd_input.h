@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_SIMD_INPUT_WESTMERE_H
-#define SIMDJSON_SIMD_INPUT_WESTMERE_H
+#ifndef SIMDJSON_WESTMERE_SIMD_INPUT_H
+#define SIMDJSON_WESTMERE_SIMD_INPUT_H
 
 #include "../simd_input.h"
 
@@ -54,4 +54,4 @@ struct simd_input<Architecture::WESTMERE> {
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_SIMD_INPUT_WESTMERE_H
+#endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

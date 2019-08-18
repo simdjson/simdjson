@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_SIMD_INPUT_HASWELL_H
-#define SIMDJSON_SIMD_INPUT_HASWELL_H
+#ifndef SIMDJSON_HASWELL_SIMD_INPUT_H
+#define SIMDJSON_HASWELL_SIMD_INPUT_H
 
 #include "../simd_input.h"
 
@@ -42,4 +42,4 @@ struct simd_input<Architecture::HASWELL> {
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_SIMD_INPUT_HASWELL_H
+#endif // SIMDJSON_HASWELL_SIMD_INPUT_H

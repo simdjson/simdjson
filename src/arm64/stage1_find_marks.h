@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
-#define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+#ifndef SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
+#define SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 
 #include "simdjson/portability.h"
 
@@ -85,4 +85,4 @@ int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, si
 } // namespace simdjson
 
 #endif // IS_ARM64
-#endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+#endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H

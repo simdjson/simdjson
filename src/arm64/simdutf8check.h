@@ -1,8 +1,8 @@
 // From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
 // Adapted from https://github.com/lemire/fastvalidate-utf-8
 
-#ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
-#define SIMDJSON_SIMDUTF8CHECK_ARM64_H
+#ifndef SIMDJSON_ARM64_SIMDUTF8CHECK_H
+#define SIMDJSON_ARM64_SIMDUTF8CHECK_H
 
 #if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
     (defined(_MSC_VER) && defined(_M_ARM64))

@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_SIMDUTF8CHECK_HASWELL_H
-#define SIMDJSON_SIMDUTF8CHECK_HASWELL_H
+#ifndef SIMDJSON_HASWELL_SIMDUTF8CHECK_H
+#define SIMDJSON_HASWELL_SIMDUTF8CHECK_H
 
 #include "simdjson/portability.h"
 #include "../simdutf8check.h"

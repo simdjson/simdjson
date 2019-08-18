@@ -1,9 +1,10 @@
-#ifndef SIMDJSON_STRINGPARSING_WESTMERE_H
-#define SIMDJSON_STRINGPARSING_WESTMERE_H
+#ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
+#define SIMDJSON_WESTMERE_STRINGPARSING_H
 
 #include "../stringparsing.h"
 
 #ifdef IS_X86_64
+
 TARGET_WESTMERE
 namespace simdjson {
 template <>

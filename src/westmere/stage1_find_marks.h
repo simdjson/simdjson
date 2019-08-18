@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
-#define SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
+#ifndef SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
+#define SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
 
 #include "simdjson/portability.h"
 
@@ -88,4 +88,4 @@ int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len,
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_STAGE1_FIND_MARKS_WESTMERE_H
+#endif // SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
