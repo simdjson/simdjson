@@ -99,7 +99,13 @@ public:
 
   inline bool is_integer() const { return get_type() == 'l'; }
 
+  inline bool is_unsigned_integer() const { return get_type() == 'u'; }
+
   inline bool is_double() const { return get_type() == 'd'; }
+
+  inline bool is_number() const {
+    return is_integer() || is_unsigned_integer() || is_double();
+  }
 
   inline bool is_true() const { return get_type() == 't'; }
 
@@ -282,8 +288,8 @@ bool ParsedJson::BasicIterator<max_depth>::move_forward() {
   } else if ((current_type == ']') || (current_type == '}')) {
     // Leaving a scope.
     depth--;
-  } else if ((current_type == 'd') || (current_type == 'l')) {
-    // d and l types use 2 locations on the tape, not just one.
+  } else if (is_number()) {
+    // these types use 2 locations on the tape, not just one.
     location += 1;
   }
 
@@ -425,7 +431,7 @@ template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::next() {
     // we need to jump
     npos = (current_val & JSON_VALUE_MASK);
   } else {
-    npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
+    npos = location + (is_number() ? 2 : 1);
   }
   uint64_t next_val = pj->tape[npos];
   uint8_t next_type = (next_val >> 56);
@@ -509,6 +515,9 @@ bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os,
     break;
   case 'l': // we have a long int
     os << get_integer();
+    break;
+  case 'u':
+    os << get_unsigned_integer();
     break;
   case 'd':
     os << get_double();
