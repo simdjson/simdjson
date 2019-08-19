@@ -377,13 +377,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       return false; // overflow
     }
   } else {
-    if (i >= 0x8000000000000000) {
-// overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+    // TODO fix type mismatch
+    found_integer(i, buf + offset);
 #endif
-      return false; // overflow
-    }
+    pj.write_tape_u64(i);
+    return is_structural_or_whitespace(*p);
   }
   int64_t signed_answer =
       negative ? -static_cast<int64_t>(i) : static_cast<int64_t>(i);
