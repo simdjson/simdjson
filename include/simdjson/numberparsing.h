@@ -378,7 +378,6 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
     }
   } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    // TODO fix type mismatch
     found_integer(i, buf + offset);
 #endif
     pj.write_tape_u64(i);
