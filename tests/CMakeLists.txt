@@ -7,6 +7,7 @@ endif()
 add_cpp_test(basictests)
 add_cpp_test(jsoncheck)
 add_cpp_test(pointercheck)
+add_cpp_test(integer_tests)
 
 ## This causes problems
 # add_executable(singleheader ./singleheadertest.cpp ${PROJECT_SOURCE_DIR}/singleheader/simdjson.cpp)
