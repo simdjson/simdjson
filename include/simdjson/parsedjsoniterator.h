@@ -110,13 +110,17 @@ public:
   // (in case of repeated keys, this only finds the first one).
   // We seek the key using C's strcmp so if your JSON strings contain
   // NULL chars, this would trigger a false positive: if you expect that
-  // to be the case, take extra precautions.
+  // to be the case, take extra precautions. 
+  // Furthermore, we do the comparison character-by-character
+  // without taking into account Unicode equivalence.
   inline bool move_to_key(const char *key);
   // when at {, go one level deep, looking for a given key
   // if successful, we are left pointing at the value,
   // if not, we are still pointing at the object ({)
   // (in case of repeated keys, this only finds the first one).
   // The string we search for can contain NULL values.
+  // Furthermore, we do the comparison character-by-character
+  // without taking into account Unicode equivalence.
   inline bool move_to_key(const char *key, uint32_t length);
 
   // when at a key location within an object, this moves to the accompanying
