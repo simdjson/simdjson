@@ -1,6 +1,6 @@
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
+// We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
 // return a bitvector indicating where we have characters that end an odd-length
