@@ -7,13 +7,12 @@
 
 #include "simdjson/simdjson.h"
 
-TARGET_WESTMERE
 namespace simdjson::westmere {
 
 static const Architecture ARCHITECTURE = Architecture::WESTMERE;
 
 } // namespace simdjson::westmere
-UNTARGET_REGION
+
 
 #endif // IS_X86_64
 

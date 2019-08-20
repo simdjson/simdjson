@@ -12,7 +12,7 @@
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-static really_inline uint64_t find_odd_backslash_sequences(
+really_inline uint64_t find_odd_backslash_sequences(
     simd_input<ARCHITECTURE> in,
     uint64_t &prev_iter_ends_odd_backslash) {
   const uint64_t even_bits = 0x5555555555555555ULL;
@@ -59,7 +59,7 @@ static really_inline uint64_t find_odd_backslash_sequences(
 // Note that we don't do any error checking to see if we have backslash
 // sequences outside quotes; these
 // backslash sequences (of any length) will be detected elsewhere.
-static really_inline uint64_t find_quote_mask_and_bits(
+really_inline uint64_t find_quote_mask_and_bits(
     simd_input<ARCHITECTURE> in, uint64_t odd_ends,
     uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
     uint64_t &error_mask) {
@@ -82,7 +82,7 @@ static really_inline uint64_t find_quote_mask_and_bits(
   return quote_mask;
 }
 
-static really_inline uint64_t finalize_structurals(
+really_inline uint64_t finalize_structurals(
     uint64_t structurals, uint64_t whitespace, uint64_t quote_mask,
     uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
   // mask off anything inside quotes
@@ -116,7 +116,7 @@ static really_inline uint64_t finalize_structurals(
 }
 
 // Find structural bits in a 64-byte chunk.
-static really_inline void find_structural_bits_64(
+really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
@@ -148,7 +148,7 @@ static really_inline void find_structural_bits_64(
                                      quote_bits, prev_iter_ends_pseudo_pred);
 }
 
-static int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
   if (len > pj.byte_capacity) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
