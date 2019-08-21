@@ -12,6 +12,7 @@ void found_bad_string(const uint8_t *buf);
 #endif
 
 namespace simdjson {
+
 // begin copypasta
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
@@ -84,22 +85,6 @@ struct parse_string_helper {
   uint32_t quote_bits;
 };
 
-// Finds where the backslashes and quotes are located.
-template <Architecture>
-parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src,
-                                                uint8_t *dst);
-
-template <Architecture T>
-WARN_UNUSED 
-    really_inline bool
-    parse_string(UNUSED const uint8_t *buf, UNUSED size_t len, ParsedJson &pj,
-                 UNUSED const uint32_t depth, UNUSED uint32_t offset);
-
 } // namespace simdjson
 
-/// Now include the specializations:
-#include "simdjson/stringparsing_arm64.h"
-#include "simdjson/stringparsing_haswell.h"
-#include "simdjson/stringparsing_westmere.h"
-
-#endif
+#endif // SIMDJSON_STRINGPARSING_H

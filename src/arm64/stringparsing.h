@@ -1,14 +1,15 @@
-#ifndef SIMDJSON_STRINGPARSING_ARM64_H
-#define SIMDJSON_STRINGPARSING_ARM64_H
+#ifndef SIMDJSON_ARM64_STRINGPARSING_H
+#define SIMDJSON_ARM64_STRINGPARSING_H
 
-#include "simdjson/stringparsing.h"
+#include "../stringparsing.h"
 
 #ifdef IS_ARM64
-namespace simdjson {
-template <>
-really_inline parse_string_helper
-find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
-                                                 uint8_t *dst) {
+
+#include "arm64/architecture.h"
+
+namespace simdjson::arm64 {
+
+really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
@@ -39,15 +40,13 @@ find_bs_bits_and_quote_bits<Architecture::ARM64>(const uint8_t *src,
       vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0), // bs_bits
       vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1)  // quote_bits
   };
+
 }
 
-} // namespace simdjson
+#include "generic/stringparsing.h"
 
-#define TARGETED_ARCHITECTURE Architecture::ARM64
-#define TARGETED_REGION TARGET_ARM64
-#include "simdjson/stringparsing_common.h"
-#undef TARGETED_ARCHITECTURE
-#undef TARGETED_REGION
+}
+// namespace simdjson::amd64
 
 #endif // IS_ARM64
 #endif

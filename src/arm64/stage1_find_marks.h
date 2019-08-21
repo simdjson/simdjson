@@ -1,16 +1,19 @@
-#ifndef SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
-#define SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+#ifndef SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
+#define SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 
-#include "simdjson/simd_input_arm64.h"
-#include "simdjson/simdutf8check_arm64.h"
-#include "simdjson/stage1_find_marks.h"
+#include "simdjson/portability.h"
 
 #ifdef IS_ARM64
-namespace simdjson {
 
-template <>
-really_inline uint64_t
-compute_quote_mask<Architecture::ARM64>(uint64_t quote_bits) {
+#include "arm64/architecture.h"
+#include "arm64/simd_input.h"
+#include "arm64/simdutf8check.h"
+#include "simdjson/stage1_find_marks.h"
+
+namespace simdjson::arm64 {
+
+static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64(-1ULL, quote_bits);
 #else
@@ -18,9 +21,8 @@ compute_quote_mask<Architecture::ARM64>(uint64_t quote_bits) {
 #endif
 }
 
-template <>
-really_inline void find_whitespace_and_structurals<Architecture::ARM64>(
-    simd_input<Architecture::ARM64> in, uint64_t &whitespace,
+static really_inline void find_whitespace_and_structurals(
+    simd_input<ARCHITECTURE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const uint8x16_t low_nibble_mask =
       (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
@@ -66,7 +68,20 @@ really_inline void find_whitespace_and_structurals<Architecture::ARM64>(
   uint8x16_t tmp_ws_3 = vtstq_u8(v_3, whitespace_shufti_mask);
   whitespace = neon_movemask_bulk(tmp_ws_0, tmp_ws_1, tmp_ws_2, tmp_ws_3);
 }
+
+#include "generic/stage1_find_marks_flatten.h"
+#include "generic/stage1_find_marks.h"
+
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+template <>
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+  return arm64::find_structural_bits(buf, len, pj);
+}
+
 } // namespace simdjson
 
 #endif // IS_ARM64
-#endif // SIMDJSON_STAGE1_FIND_MARKS_ARM64_H
+#endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H

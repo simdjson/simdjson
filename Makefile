@@ -22,7 +22,7 @@ else
 ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
-CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude  -Ibenchmark/linux $(EXTRAFLAGS)
+CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude -Isrc -Ibenchmark/linux $(EXTRAFLAGS)
 CFLAGS =  $(ARCHFLAGS)  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 
 
@@ -63,7 +63,11 @@ TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck pointercheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
-HEADERS= include/simdjson/simdutf8check_haswell.h include/simdjson/simdutf8check_westmere.h include/simdjson/simdutf8check_arm64.h include/simdjson/stringparsing.h include/simdjson/stringparsing_arm64.h  include/simdjson/stringparsing_haswell.h include/simdjson/stringparsing_westmere.h include/simdjson/numberparsing.h include/simdjson/jsonparser.h include/simdjson/common_defs.h include/simdjson/jsonioutil.h benchmark/benchmark.h benchmark/linux/linux-perf-events.h include/simdjson/parsedjson.h include/simdjson/stage1_find_marks.h  include/simdjson/stage1_find_marks_arm64.h  include/simdjson/stage1_find_marks_haswell.h   include/simdjson/stage1_find_marks_westmere.h include/simdjson/stage2_build_tape.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h include/simdjson/stage1_find_marks_flatten_common.h include/simdjson/stage1_find_marks_flatten_haswell.h
+# Load headers and sources
+LIBHEADERS=src/simd_input.h src/simdutf8check.h src/stringparsing.h src/arm64/architecture.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks_flatten.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/architecture.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/architecture.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/numberparsing.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/simdprune_tables.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
+HEADERS=$(PUBHEADERS) $(LIBHEADERS)
+
 LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h include/simdjson/simdprune_tables.h
 MINIFIERLIBFILES=src/jsonminifier.cpp

@@ -1,13 +1,13 @@
 // From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
 // Adapted from https://github.com/lemire/fastvalidate-utf-8
 
-#ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
-#define SIMDJSON_SIMDUTF8CHECK_ARM64_H
+#ifndef SIMDJSON_ARM64_SIMDUTF8CHECK_H
+#define SIMDJSON_ARM64_SIMDUTF8CHECK_H
 
 #if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
     (defined(_MSC_VER) && defined(_M_ARM64))
 
-#include "simdjson/simdutf8check.h"
+#include "../simdutf8check.h"
 #include <arm_neon.h>
 #include <cinttypes>
 #include <cstddef>
@@ -31,7 +31,7 @@
  * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
  *
  */
-namespace simdjson {
+namespace simdjson::arm64 {
 
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(int8x16_t current_bytes,
@@ -190,6 +190,12 @@ really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   uint64x1_t result = vreinterpret_u64_u32(v32);
   return vget_lane_u64(result, 0) == 0;
 }
+
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+using namespace simdjson::arm64;
 
 template <>
 struct utf8_checker<Architecture::ARM64> {

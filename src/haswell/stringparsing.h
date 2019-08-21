@@ -1,15 +1,16 @@
-#ifndef SIMDJSON_STRINGPARSING_HASWELL_H
-#define SIMDJSON_STRINGPARSING_HASWELL_H
+#ifndef SIMDJSON_HASWELL_STRINGPARSING_H
+#define SIMDJSON_HASWELL_STRINGPARSING_H
 
-#include "simdjson/stringparsing.h"
+#include "../stringparsing.h"
 
 #ifdef IS_X86_64
+
+#include "haswell/architecture.h"
+
 TARGET_HASWELL
-namespace simdjson {
-template <>
-really_inline parse_string_helper
-find_bs_bits_and_quote_bits<Architecture::HASWELL>(const uint8_t *src,
-                                                   uint8_t *dst) {
+namespace simdjson::haswell {
+
+really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
@@ -24,14 +25,11 @@ find_bs_bits_and_quote_bits<Architecture::HASWELL>(const uint8_t *src,
       static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
   };
 }
-} // namespace simdjson
-UNTARGET_REGION
 
-#define TARGETED_ARCHITECTURE Architecture::HASWELL
-#define TARGETED_REGION TARGET_HASWELL
-#include "simdjson/stringparsing_common.h"
-#undef TARGETED_ARCHITECTURE
-#undef TARGETED_REGION
+#include "generic/stringparsing.h"
+
+} // namespace simdjson::haswell
+UNTARGET_REGION
 
 #endif // IS_X86_64
 
