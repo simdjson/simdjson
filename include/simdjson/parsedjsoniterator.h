@@ -185,6 +185,9 @@ public:
   // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true
   // when starting at the end of the scope. At the object ({) or at the array
   // ([), you can issue a "down" to visit their content.
+  // Performance warning: This function is implemented by starting again
+  // from the beginning of the scope and scanning forward. You should expect
+  // it to be relatively slow.
   inline bool prev();
 
   // Moves back to either the containing array or object (type { or [) from
@@ -338,22 +341,26 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::prev() {
-  if (location - 1 < depth_index[depth].start_of_scope) {
-    return false;
+  size_t target_location = location;
+  to_start_scope();
+  size_t npos = location;
+  if(target_location == npos) {
+    return false; // we were already at the start
   }
-  location -= 1;
-  current_val = pj->tape[location];
-  current_type = (current_val >> 56);
-  if ((current_type == ']') || (current_type == '}')) {
+  size_t oldnpos;
+  // we have that npos < target_location here
+  do {
+    oldnpos = npos;
+    if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
-    size_t new_location = (current_val & JSON_VALUE_MASK);
-    if (new_location < depth_index[depth].start_of_scope) {
-      return false; // shoud never happen
+      npos = (current_val & JSON_VALUE_MASK);
+    } else {
+      npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
-    location = new_location;
-    current_val = pj->tape[location];
-    current_type = (current_val >> 56);
-  }
+  } while(npos < target_location);
+  location = oldnpos;
+  current_val = pj->tape[location];
+  current_type = current_val >> 56;
   return true;
 }
 
