@@ -30,7 +30,7 @@ really_inline void find_whitespace_and_structurals(
       (uint8x16_t){8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0};
   const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf);
 
-  simd_input<ARCHITECTURE> v = in.map([&](auto chunk) {
+  auto v = in.map([&](auto chunk) {
     uint8x16_t nib_lo = vandq_u8(chunk, low_nib_and_mask);
     uint8x16_t nib_hi = vshrq_n_u8(chunk, 4);
     uint8x16_t shuf_lo = vqtbl1q_u8(low_nibble_mask, nib_lo);
@@ -39,10 +39,10 @@ really_inline void find_whitespace_and_structurals(
   });
 
   const uint8x16_t structural_shufti_mask = vmovq_n_u8(0x7);
-  structurals = v.MAP_BITMASK( vtstq_u8(chunk, structural_shufti_mask) );
+  structurals = MAP_BITMASK( v, vtstq_u8(_v, structural_shufti_mask) );
 
   const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);
-  whitespace = v.MAP_BITMASK( vtstq_u8(chunk, whitespace_shufti_mask) );
+  whitespace = MAP_BITMASK( v, vtstq_u8(_v, whitespace_shufti_mask) );
 }
 
 #include "generic/stage1_find_marks_flatten.h"

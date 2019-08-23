@@ -40,6 +40,16 @@ struct simd_input<Architecture::WESTMERE> {
     );
   }
 
+  template <typename F>
+  really_inline simd_input<Architecture::WESTMERE> map(simd_input<Architecture::WESTMERE> b, F const& map_chunk) {
+    return simd_input<Architecture::WESTMERE>(
+      map_chunk(this->v0, b.v0),
+      map_chunk(this->v1, b.v1),
+      map_chunk(this->v2, b.v2),
+      map_chunk(this->v3, b.v3)
+    );
+  }
+
   really_inline uint64_t to_bitmask() {
     uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(this->v0));
     uint64_t r1 =                       _mm_movemask_epi8(this->v1);
@@ -50,12 +60,16 @@ struct simd_input<Architecture::WESTMERE> {
 
   really_inline uint64_t eq(uint8_t m) {
     const __m128i mask = _mm_set1_epi8(m);
-    return this->MAP_BITMASK( _mm_cmpeq_epi8(chunk, mask) );
+    return this->map( [&](auto a) {
+      return _mm_cmpeq_epi8(a, mask);
+    }).to_bitmask();
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const __m128i maxval = _mm_set1_epi8(m);
-    return this->MAP_BITMASK( _mm_cmpeq_epi8(_mm_max_epu8(maxval, chunk), maxval) );
+    return this->map( [&](auto a) {
+      return _mm_cmpeq_epi8(_mm_max_epu8(maxval, a), maxval);
+    }).to_bitmask();
   }
 
 }; // struct simd_input
