@@ -22,27 +22,44 @@ struct simd_input<Architecture::WESTMERE> {
     this->v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
   }
 
+  really_inline simd_input(__m128i i0, __m128i i1, __m128i i2, __m128i i3)
+  {
+    this->v0 = i0;
+    this->v1 = i1;
+    this->v2 = i2;
+    this->v3 = i3;
+  }
+
   template <typename F>
-  really_inline uint64_t build_bitmask(F const& chunk_to_mask) {
-    uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(chunk_to_mask(this->v0)));
-    uint64_t r1 =                       _mm_movemask_epi8(chunk_to_mask(this->v1));
-    uint64_t r2 =                       _mm_movemask_epi8(chunk_to_mask(this->v2));
-    uint64_t r3 =                       _mm_movemask_epi8(chunk_to_mask(this->v3));
+  really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) {
+    return simd_input<Architecture::WESTMERE>(
+      map_chunk(this->v0),
+      map_chunk(this->v1),
+      map_chunk(this->v2),
+      map_chunk(this->v3)
+    );
+  }
+
+  really_inline uint64_t to_bitmask() {
+    uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(this->v0));
+    uint64_t r1 =                       _mm_movemask_epi8(this->v0);
+    uint64_t r2 =                       _mm_movemask_epi8(this->v2);
+    uint64_t r3 =                       _mm_movemask_epi8(this->v3);
     return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
   }
 
   really_inline uint64_t eq(uint8_t m) {
     const __m128i mask = _mm_set1_epi8(m);
-    return this->build_bitmask([&](auto chunk) {
+    return this->map([&](auto chunk) {
       return _mm_cmpeq_epi8(chunk, mask);
-    });
+    }).to_bitmask();
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const __m128i maxval = _mm_set1_epi8(m);
-    return this->build_bitmask([&](auto chunk) {
+    return this->map([&](auto chunk) {
       return _mm_cmpeq_epi8(_mm_max_epu8(maxval, chunk), maxval);
-    });
+    }).to_bitmask();
   }
 
 }; // struct simd_input

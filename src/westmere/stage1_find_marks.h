@@ -28,16 +28,16 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   const __m128i struct_offset = _mm_set1_epi8(0xd4u);
   const __m128i struct_mask = _mm_set1_epi8(32);
 
-  whitespace = in.build_bitmask([&](auto chunk) {
+  whitespace = in.map([&](auto chunk) {
       return _mm_cmpeq_epi8(chunk, _mm_shuffle_epi8(white_table, chunk));
-  });
+  }).to_bitmask();
 
-  structurals = in.build_bitmask([&](auto chunk) {
+  structurals = in.map([&](auto chunk) {
     __m128i struct_r1 = _mm_add_epi8(struct_offset, chunk);
     __m128i struct_r2 = _mm_or_si128(chunk, struct_mask);
     __m128i struct_r3 = _mm_shuffle_epi8(structural_table, struct_r1);
     return _mm_cmpeq_epi8(struct_r2, struct_r3);
-  });
+  }).to_bitmask();
 }
 
 #include "generic/stage1_find_marks_flatten.h"

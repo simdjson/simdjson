@@ -46,45 +46,39 @@ struct simd_input<Architecture::ARM64> {
     this->i3 = vld1q_u8(ptr + 48);
   }
 
-  really_inline simd_input(uint8x16_t i0, uint8x16_t i1, uint8x16_t i2, uint8x16_t i3) {
-    this->i0 = i0;
-    this->i1 = i1;
-    this->i2 = i2;
-    this->i3 = i3;
-  }
-
-  template <typename F>
-  really_inline uint64_t build_bitmask(F const& chunk_to_mask) {
-    uint8x16_t r0 = chunk_to_mask(this->i0);
-    uint8x16_t r1 = chunk_to_mask(this->i1);
-    uint8x16_t r2 = chunk_to_mask(this->i2);
-    uint8x16_t r3 = chunk_to_mask(this->i3);
-    return neon_movemask_bulk(r0, r1, r2, r3);
+  really_inline simd_input(uint8x16_t a0, uint8x16_t a1, uint8x16_t a2, uint8x16_t a3) {
+    this->i0 = a0;
+    this->i1 = a1;
+    this->i2 = a2;
+    this->i3 = a3;
   }
 
   template <typename F>
   really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) {
-    simd_input<Architecture::ARM64> result = {
+    return simd_input<Architecture::ARM64>(
       map_chunk(this->i0),
       map_chunk(this->i1),
       map_chunk(this->i2),
       map_chunk(this->i3)
-    };
-    return result;
+    );
+  }
+
+  really_inline uint64_t to_bitmask() {
+    return neon_movemask_bulk(this->i0, this->i1, this->i2, this->i3);
   }
 
   really_inline uint64_t eq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    return this->build_bitmask([&](uint8x16_t chunk) {
+    return this->map([&](uint8x16_t chunk) {
       return vceqq_u8(chunk, mask);
-    });
+    }).to_bitmask();
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    return this->build_bitmask([&](uint8x16_t chunk) {
+    return this->map([&](uint8x16_t chunk) {
       return vcleq_u8(chunk, mask);
-    });
+    }).to_bitmask();
   }
 
 }; // struct simd_input

@@ -34,7 +34,7 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
     const __m256i mask_close_bracket = _mm256_set1_epi8(0x5d);
     const __m256i mask_column = _mm256_set1_epi8(0x3a);
     const __m256i mask_comma = _mm256_set1_epi8(0x2c);
-    structurals = in->build_bitmask([&](auto in) {
+    structurals = in.map([&](auto in) {
       __m256i structurals = _mm256_cmpeq_epi8(in, mask_open_brace);
       structurals = _mm256_or_si256(structurals, _mm256_cmpeq_epi8(in, mask_close_brace));
       structurals = _mm256_or_si256(structurals, _mm256_cmpeq_epi8(in, mask_open_bracket));
@@ -42,18 +42,18 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
       structurals = _mm256_or_si256(structurals, _mm256_cmpeq_epi8(in, mask_column));
       structurals = _mm256_or_si256(structurals, _mm256_cmpeq_epi8(in, mask_comma));
       return structurals;
-    });
+    }).to_bitmask();
 
     const __m256i mask_space = _mm256_set1_epi8(0x20);
     const __m256i mask_linefeed = _mm256_set1_epi8(0x0a);
     const __m256i mask_tab = _mm256_set1_epi8(0x09);
     const __m256i mask_carriage = _mm256_set1_epi8(0x0d);
-    whitespace = in->build_bitmask([&](auto in) {
+    whitespace = in.map([&](auto in) {
       __m256i space = _mm256_cmpeq_epi8(in, mask_space);
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_linefeed));
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_tab));
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_carriage));
-    });
+    }).to_bitmask();
     // end of naive approach
 
   #else  // SIMDJSON_NAIVE_STRUCTURAL
@@ -69,15 +69,15 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
     const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
     const __m256i struct_mask = _mm256_set1_epi8(32);
 
-    whitespace = in.build_bitmask([&](auto chunk) {
+    whitespace = in.map([&](auto chunk) {
         return _mm256_cmpeq_epi8(chunk, _mm256_shuffle_epi8(white_table, chunk));
-    });
-    structurals = in.build_bitmask([&](auto chunk) {
+    }).to_bitmask();
+    structurals = in.map([&](auto chunk) {
       __m256i struct_r1 = _mm256_add_epi8(struct_offset, chunk);
       __m256i struct_r2 = _mm256_or_si256(chunk, struct_mask);
       __m256i struct_r3 = _mm256_shuffle_epi8(structural_table, struct_r1);
       return _mm256_cmpeq_epi8(struct_r2, struct_r3);
-    });
+    }).to_bitmask();
 
   #endif // else SIMDJSON_NAIVE_STRUCTURAL
 }
