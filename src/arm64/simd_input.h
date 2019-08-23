@@ -46,22 +46,45 @@ struct simd_input<Architecture::ARM64> {
     this->i3 = vld1q_u8(ptr + 48);
   }
 
+  really_inline simd_input(uint8x16_t i0, uint8x16_t i1, uint8x16_t i2, uint8x16_t i3) {
+    this->i0 = i0;
+    this->i1 = i1;
+    this->i2 = i2;
+    this->i3 = i3;
+  }
+
+  template <typename F>
+  really_inline uint64_t build_bitmask(F const& chunk_to_mask) {
+    uint8x16_t r0 = chunk_to_mask(this->i0);
+    uint8x16_t r1 = chunk_to_mask(this->i1);
+    uint8x16_t r2 = chunk_to_mask(this->i2);
+    uint8x16_t r3 = chunk_to_mask(this->i3);
+    return neon_movemask_bulk(r0, r1, r2, r3);
+  }
+
+  template <typename F>
+  really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) {
+    simd_input<Architecture::ARM64> result = {
+      map_chunk(this->i0),
+      map_chunk(this->i1),
+      map_chunk(this->i2),
+      map_chunk(this->i3)
+    };
+    return result;
+  }
+
   really_inline uint64_t eq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    uint8x16_t cmp_res_0 = vceqq_u8(this->i0, mask);
-    uint8x16_t cmp_res_1 = vceqq_u8(this->i1, mask);
-    uint8x16_t cmp_res_2 = vceqq_u8(this->i2, mask);
-    uint8x16_t cmp_res_3 = vceqq_u8(this->i3, mask);
-    return neon_movemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+    return this->build_bitmask([&](uint8x16_t chunk) {
+      return vceqq_u8(chunk, mask);
+    });
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    uint8x16_t cmp_res_0 = vcleq_u8(this->i0, mask);
-    uint8x16_t cmp_res_1 = vcleq_u8(this->i1, mask);
-    uint8x16_t cmp_res_2 = vcleq_u8(this->i2, mask);
-    uint8x16_t cmp_res_3 = vcleq_u8(this->i3, mask);
-    return neon_movemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
+    return this->build_bitmask([&](uint8x16_t chunk) {
+      return vcleq_u8(chunk, mask);
+    });
   }
 
 }; // struct simd_input
