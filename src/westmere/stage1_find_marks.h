@@ -28,16 +28,17 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   const __m128i struct_offset = _mm_set1_epi8(0xd4u);
   const __m128i struct_mask = _mm_set1_epi8(32);
 
-  whitespace = in.map([&](auto chunk) {
-      return _mm_cmpeq_epi8(chunk, _mm_shuffle_epi8(white_table, chunk));
-  }).to_bitmask();
+  whitespace = in.MAP_BITMASK( _mm_cmpeq_epi8(chunk, _mm_shuffle_epi8(white_table, chunk)) );
 
-  structurals = in.map([&](auto chunk) {
-    __m128i struct_r1 = _mm_add_epi8(struct_offset, chunk);
-    __m128i struct_r2 = _mm_or_si128(chunk, struct_mask);
-    __m128i struct_r3 = _mm_shuffle_epi8(structural_table, struct_r1);
-    return _mm_cmpeq_epi8(struct_r2, struct_r3);
-  }).to_bitmask();
+  auto r1 = in.MAP_CHUNKS( _mm_add_epi8(struct_offset, chunk) );
+  auto r2 = in.MAP_CHUNKS( _mm_or_si128(chunk, struct_mask) );
+  auto r3 = r1.MAP_CHUNKS( _mm_shuffle_epi8(structural_table, chunk) );
+  structurals = simd_input<ARCHITECTURE>(
+    _mm_cmpeq_epi8(r2.v0, r3.v0),
+    _mm_cmpeq_epi8(r2.v1, r3.v1),
+    _mm_cmpeq_epi8(r2.v2, r3.v2),
+    _mm_cmpeq_epi8(r2.v3, r3.v3)
+  ).to_bitmask();
 }
 
 #include "generic/stage1_find_marks_flatten.h"

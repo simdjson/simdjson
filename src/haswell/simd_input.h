@@ -18,9 +18,9 @@ struct simd_input<Architecture::HASWELL> {
     this->hi = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 32));
   }
 
-  really_inline simd_input(__m256i i0, __m256i i1) {
-    this->lo = i0;
-    this->hi = i1;
+  really_inline simd_input(__m256i a_lo, __m256i a_hi) {
+    this->lo = a_lo;
+    this->hi = a_hi;
   }
 
   template <typename F>
@@ -32,23 +32,19 @@ struct simd_input<Architecture::HASWELL> {
   }
 
   really_inline uint64_t to_bitmask() {
-    uint64_t r0 = static_cast<uint32_t>(_mm256_movemask_epi8(this->lo));
-    uint64_t r1 =                       _mm256_movemask_epi8(this->hi);
-    return r0 | (r1 << 32);
+    uint64_t r_lo = static_cast<uint32_t>(_mm256_movemask_epi8(this->lo));
+    uint64_t r_hi =                       _mm256_movemask_epi8(this->hi);
+    return r_lo | (r_hi << 32);
   }
 
   really_inline uint64_t eq(uint8_t m) {
     const __m256i mask = _mm256_set1_epi8(m);
-    return this->map([&] (auto chunk) {
-      return _mm256_cmpeq_epi8(chunk, mask);
-    }).to_bitmask();
+    return this->MAP_BITMASK( _mm256_cmpeq_epi8(chunk, mask) );
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const __m256i maxval = _mm256_set1_epi8(m);
-    return this->map([&] (auto chunk) {
-      return _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, chunk), maxval);
-    }).to_bitmask();
+    return this->MAP_BITMASK( _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, chunk), maxval) );
   }
 
 }; // struct simd_input

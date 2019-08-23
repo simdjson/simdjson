@@ -53,6 +53,7 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_linefeed));
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_tab));
       space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_carriage));
+      return space;
     }).to_bitmask();
     // end of naive approach
 
@@ -69,15 +70,14 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
     const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
     const __m256i struct_mask = _mm256_set1_epi8(32);
 
-    whitespace = in.map([&](auto chunk) {
-        return _mm256_cmpeq_epi8(chunk, _mm256_shuffle_epi8(white_table, chunk));
-    }).to_bitmask();
-    structurals = in.map([&](auto chunk) {
-      __m256i struct_r1 = _mm256_add_epi8(struct_offset, chunk);
-      __m256i struct_r2 = _mm256_or_si256(chunk, struct_mask);
-      __m256i struct_r3 = _mm256_shuffle_epi8(structural_table, struct_r1);
-      return _mm256_cmpeq_epi8(struct_r2, struct_r3);
-    }).to_bitmask();
+    whitespace = in.MAP_BITMASK( _mm256_cmpeq_epi8(chunk, _mm256_shuffle_epi8(white_table, chunk)) );
+    auto struct_r1 = in.MAP_CHUNKS( _mm256_add_epi8(struct_offset, chunk) );
+    auto struct_r2 = in.MAP_CHUNKS( _mm256_or_si256(chunk, struct_mask) );
+    auto struct_r3 = struct_r1.MAP_CHUNKS( _mm256_shuffle_epi8(structural_table, chunk) );
+    structurals = simd_input<ARCHITECTURE>(
+      _mm256_cmpeq_epi8(struct_r2.lo, struct_r3.lo),
+      _mm256_cmpeq_epi8(struct_r2.hi, struct_r3.hi)
+    ).to_bitmask();
 
   #endif // else SIMDJSON_NAIVE_STRUCTURAL
 }

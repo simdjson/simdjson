@@ -69,16 +69,12 @@ struct simd_input<Architecture::ARM64> {
 
   really_inline uint64_t eq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    return this->map([&](uint8x16_t chunk) {
-      return vceqq_u8(chunk, mask);
-    }).to_bitmask();
+    return this->MAP_BITMASK( vceqq_u8(chunk, mask) );
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const uint8x16_t mask = vmovq_n_u8(m);
-    return this->map([&](uint8x16_t chunk) {
-      return vcleq_u8(chunk, mask);
-    }).to_bitmask();
+    return this->MAP_BITMASK( vcleq_u8(chunk, mask) );
   }
 
 }; // struct simd_input
