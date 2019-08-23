@@ -42,9 +42,9 @@ static void parse_and_validate(const std::string src, T expected) {
 int main() {
   using std::numeric_limits;
   constexpr auto int64_max = numeric_limits<int64_t>::max();
-  constexpr auto int64_min = numeric_limits<int64_t>::min();
+  constexpr auto int64_min = numeric_limits<int64_t>::lowest();
   constexpr auto uint64_max = numeric_limits<uint64_t>::max();
-  constexpr auto uint64_min = numeric_limits<uint64_t>::min();
+  constexpr auto uint64_min = numeric_limits<uint64_t>::lowest();
   parse_and_validate(make_json(int64_max), int64_max);
   parse_and_validate(make_json(int64_min), int64_min);
   parse_and_validate(make_json(uint64_max), uint64_max);
