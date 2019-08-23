@@ -12,7 +12,7 @@
 
 namespace simdjson::arm64 {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64(-1ULL, quote_bits);
@@ -21,7 +21,7 @@ static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 #endif
 }
 
-static really_inline void find_whitespace_and_structurals(
+really_inline void find_whitespace_and_structurals(
     simd_input<ARCHITECTURE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const uint8x16_t low_nibble_mask =

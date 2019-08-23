@@ -13,7 +13,7 @@
 TARGET_HASWELL
 namespace simdjson::haswell {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -21,7 +21,7 @@ static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return quote_mask;
 }
 
-static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   uint64_t &whitespace, uint64_t &structurals) {
 
   #ifdef SIMDJSON_NAIVE_STRUCTURAL
@@ -87,7 +87,7 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.

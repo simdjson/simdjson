@@ -1,4 +1,4 @@
-/* auto-generated on Fri Aug 23 09:54:21 DST 2019. Do not edit! */
+/* auto-generated on Fri Aug 23 10:23:28 DST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -1451,7 +1451,7 @@ UNTARGET_REGION // westmere
 
 namespace simdjson::arm64 {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64(-1ULL, quote_bits);
@@ -1460,7 +1460,7 @@ static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 #endif
 }
 
-static really_inline void find_whitespace_and_structurals(
+really_inline void find_whitespace_and_structurals(
     simd_input<ARCHITECTURE> in, uint64_t &whitespace,
     uint64_t &structurals) {
   const uint8x16_t low_nibble_mask =
@@ -1518,7 +1518,7 @@ static really_inline void find_whitespace_and_structurals(
 // This is just a naive implementation. It should be normally
 // disable, but can be used for research purposes to compare
 // again our optimized version.
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
@@ -1536,7 +1536,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
@@ -1864,7 +1864,7 @@ int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, si
 TARGET_HASWELL
 namespace simdjson::haswell {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
@@ -1872,7 +1872,7 @@ static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return quote_mask;
 }
 
-static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   uint64_t &whitespace, uint64_t &structurals) {
 
   #ifdef SIMDJSON_NAIVE_STRUCTURAL
@@ -1938,7 +1938,7 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
@@ -2269,12 +2269,12 @@ UNTARGET_REGION
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
 }
 
-static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   uint64_t &whitespace, uint64_t &structurals) {
 
   const __m128i structural_table =
@@ -2306,7 +2306,7 @@ static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTUR
 // This is just a naive implementation. It should be normally
 // disable, but can be used for research purposes to compare
 // again our optimized version.
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
@@ -2324,7 +2324,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.

@@ -13,12 +13,12 @@
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
-static really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
   return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
       _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
 }
 
-static really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
+really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
   uint64_t &whitespace, uint64_t &structurals) {
 
   const __m128i structural_table =
