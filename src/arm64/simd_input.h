@@ -5,7 +5,7 @@
 
 #ifdef IS_ARM64
 
-namespace simdjson {
+namespace simdjson::arm64 {
 
 really_inline uint16_t neon_movemask(uint8x16_t input) {
   const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
@@ -32,6 +32,12 @@ really_inline uint64_t neon_movemask_bulk(uint8x16_t p0, uint8x16_t p1,
   return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
 }
 
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+using namespace simdjson::arm64;
+
 template <>
 struct simd_input<Architecture::ARM64> {
   uint8x16_t i0;
@@ -54,6 +60,15 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
+  really_inline void each(F const& each_chunk)
+  {
+    each_chunk(this->i0);
+    each_chunk(this->i1);
+    each_chunk(this->i2);
+    each_chunk(this->i3);
+  }
+
+  template <typename F>
   really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) {
     return simd_input<Architecture::ARM64>(
       map_chunk(this->i0),
@@ -71,6 +86,13 @@ struct simd_input<Architecture::ARM64> {
       map_chunk(this->i2, b.i2),
       map_chunk(this->i3, b.i3)
     );
+  }
+
+  template <typename F>
+  really_inline uint8x16_t reduce(F const& reduce_pair) {
+    uint8x16_t r01 = reduce_pair(this->i0, this->i1);
+    uint8x16_t r23 = reduce_pair(this->i2, this->i3);
+    return reduce_pair(r01, r23);
   }
 
   really_inline uint64_t to_bitmask() {

@@ -31,6 +31,15 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
+  really_inline void each(F const& each_chunk)
+  {
+    each_chunk(this->v0);
+    each_chunk(this->v1);
+    each_chunk(this->v2);
+    each_chunk(this->v3);
+  }
+
+  template <typename F>
   really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) {
     return simd_input<Architecture::WESTMERE>(
       map_chunk(this->v0),
@@ -48,6 +57,13 @@ struct simd_input<Architecture::WESTMERE> {
       map_chunk(this->v2, b.v2),
       map_chunk(this->v3, b.v3)
     );
+  }
+
+  template <typename F>
+  really_inline __m128i reduce(F const& reduce_pair) {
+    __m128i r01 = reduce_pair(this->v0, this->v1);
+    __m128i r23 = reduce_pair(this->v2, this->v3);
+    return reduce_pair(r01, r23);
   }
 
   really_inline uint64_t to_bitmask() {

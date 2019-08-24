@@ -24,6 +24,13 @@ struct simd_input<Architecture::HASWELL> {
   }
 
   template <typename F>
+  really_inline void each(F const& each_chunk)
+  {
+    each_chunk(this->lo);
+    each_chunk(this->hi);
+  }
+
+  template <typename F>
   really_inline simd_input<Architecture::HASWELL> map(F const& map_chunk) {
     return simd_input<Architecture::HASWELL>(
       map_chunk(this->lo),
@@ -37,6 +44,11 @@ struct simd_input<Architecture::HASWELL> {
       map_chunk(this->lo, b.lo),
       map_chunk(this->hi, b.hi)
     );
+  }
+
+  template <typename F>
+  really_inline __m256i reduce(F const& reduce_pair) {
+    return reduce_pair(this->lo, this->hi);
   }
 
   really_inline uint64_t to_bitmask() {

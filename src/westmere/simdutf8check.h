@@ -164,7 +164,7 @@ check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
 }
 
 } // namespace simdjson::westmere
-UNTARGET_REGION // westmere
+UNTARGET_REGION
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -182,7 +182,8 @@ struct utf8_checker<Architecture::WESTMERE> {
 
   really_inline void check_next_input(simd_input<Architecture::WESTMERE> in) {
     __m128i high_bit = _mm_set1_epi8(0x80u);
-    if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
+    __m128i any_bits_on = REDUCE_CHUNKS( in, _mm_or_si128(_a, _b) );
+    if ((_mm_testz_si128( any_bits_on, high_bit)) == 1) {
       // it is ascii, we just check continuation
       this->has_error =
           _mm_or_si128(_mm_cmpgt_epi8(this->previous.carried_continuations,
@@ -191,25 +192,9 @@ struct utf8_checker<Architecture::WESTMERE> {
                       this->has_error);
     } else {
       // it is not ascii so we have to do heavy work
-      this->previous =
-          check_utf8_bytes(in.v0, &(this->previous), &(this->has_error));
-      this->previous =
-          check_utf8_bytes(in.v1, &(this->previous), &(this->has_error));
-    }
-
-    if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
-      // it is ascii, we just check continuation
-      this->has_error =
-          _mm_or_si128(_mm_cmpgt_epi8(this->previous.carried_continuations,
-                                      _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                    9, 9, 9, 9, 9, 1)),
-                      this->has_error);
-    } else {
-      // it is not ascii so we have to do heavy work
-      this->previous =
-          check_utf8_bytes(in.v2, &(this->previous), &(this->has_error));
-      this->previous =
-          check_utf8_bytes(in.v3, &(this->previous), &(this->has_error));
+      in.each([&](auto _in) {
+        this->previous = check_utf8_bytes(_in, &(this->previous), &(this->has_error));
+      });
     }
   }
 

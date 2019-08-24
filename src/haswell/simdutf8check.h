@@ -215,7 +215,8 @@ struct utf8_checker<Architecture::HASWELL> {
 
   really_inline void check_next_input(simd_input<Architecture::HASWELL> in) {
     __m256i high_bit = _mm256_set1_epi8(0x80u);
-    if ((_mm256_testz_si256(_mm256_or_si256(in.lo, in.hi), high_bit)) == 1) {
+    __m256i any_bits_on = REDUCE_CHUNKS( in, _mm256_or_si256(_a, _b) );
+    if ((_mm256_testz_si256(any_bits_on, high_bit)) == 1) {
       // it is ascii, we just check continuation
       this->has_error = _mm256_or_si256(
           _mm256_cmpgt_epi8(this->previous.carried_continuations,
@@ -225,10 +226,9 @@ struct utf8_checker<Architecture::HASWELL> {
           this->has_error);
     } else {
       // it is not ascii so we have to do heavy work
-      this->previous =
-          avx_check_utf8_bytes(in.lo, &(this->previous), &(this->has_error));
-      this->previous =
-          avx_check_utf8_bytes(in.hi, &(this->previous), &(this->has_error));
+      in.each([&](auto _in) {
+        this->previous = avx_check_utf8_bytes(_in, &(this->previous), &(this->has_error));
+      });
     }
   }
 

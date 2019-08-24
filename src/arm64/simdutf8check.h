@@ -181,11 +181,9 @@ check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
 really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   // checking if the most significant bit is always equal to 0.
   uint8x16_t high_bit = vdupq_n_u8(0x80);
-  uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
-  uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
-  uint8x16_t t3 = vorrq_u8(t0, t1);
-  uint8x16_t t4 = vandq_u8(t3, high_bit);
-  uint64x2_t v64 = vreinterpretq_u64_u8(t4);
+  uint8x16_t any_bits_on = REDUCE_CHUNKS(in, vorrq_u8(_a, _b));
+  uint8x16_t high_bit_on = vandq_u8(any_bits_on, high_bit);
+  uint64x2_t v64 = vreinterpretq_u64_u8(high_bit_on);
   uint32x2_t v32 = vqmovn_u64(v64);
   uint64x1_t result = vreinterpret_u64_u32(v32);
   return vget_lane_u64(result, 0) == 0;
@@ -215,14 +213,9 @@ struct utf8_checker<Architecture::ARM64> {
                   this->has_error);
     } else {
       // it is not ascii so we have to do heavy work
-      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i0),
-                                        &(this->previous), &(this->has_error));
-      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i1),
-                                        &(this->previous), &(this->has_error));
-      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i2),
-                                        &(this->previous), &(this->has_error));
-      this->previous = check_utf8_bytes(vreinterpretq_s8_u8(in.i3),
-                                        &(this->previous), &(this->has_error));
+      in.each([&](auto _in) {
+        this->previous = check_utf8_bytes(vreinterpretq_s8_u8(_in), &(this->previous), &(this->has_error));
+      });
     }
   }
 
