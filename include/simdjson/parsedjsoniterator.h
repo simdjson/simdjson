@@ -97,8 +97,18 @@ public:
 
   inline bool is_string() const { return get_type() == '"'; }
 
+  // Returns true if the current type of node is an signed integer.
+  // You can get its value with `get_integer()`.
   inline bool is_integer() const { return get_type() == 'l'; }
 
+  // Returns true if the current type of node is an unsigned integer.
+  // You can get its value with `get_unsigned_integer()`.
+  //
+  // NOTE:
+  // Only a large value, which is out of range of a 64-bit signed integer, is
+  // represented internally as an unsigned node. On the other hand, a typical
+  // positive integer, such as 1, 42, or 1000000, is as a signed node.
+  // Be aware this function returns false for a signed node.
   inline bool is_unsigned_integer() const { return get_type() == 'u'; }
 
   inline bool is_double() const { return get_type() == 'd'; }
