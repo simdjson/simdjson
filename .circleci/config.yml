@@ -19,6 +19,13 @@ commands:
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y clang build-essential git
+  make_checkperf:
+    steps:
+      - checkout
+      - run: make
+      - run: make amalgamate
+      - run: make test
+      - run: make checkperf
   make_test:
     steps:
       - checkout
@@ -36,109 +43,89 @@ commands:
       - run: make test
 
 jobs:
+  gcc-avx-01: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-02: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-03: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-04: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-05: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-06: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-07: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-08: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-09: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-10: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-11: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-12: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-13: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-14: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-15: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-16: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-17: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-18: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-19: { executor: gcc7, steps: [ make_checkperf ] }
+  gcc-avx-20: { executor: gcc7, steps: [ make_checkperf ] }
 
-  gcc-avx:
-    description: Build, run tests and check performance on GCC 7 and AVX 2
-    executor: gcc7
-    steps: [ make_test ]
-  gcc-avx-dynamic:
-    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake dynamic build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ cmake_test ]
-  gcc-avx-static:
-    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake static build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ cmake_test ]
-  gcc-avx-sanitize:
-    description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake sanitize build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_test ]
-
-  gcc-sse:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2
-    executor: gcc7
-    environment: { ARCHFLAGS: -march=nehalem }
-    steps: [ make_test ]
-  gcc-sse-dynamic:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ cmake_test ]
-  gcc-sse-static:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ cmake_test ]
-  gcc-sse-sanitize:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
-    executor: gcc7
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_test ]
-
-  clang-avx:
-    description: Build, run tests and check performance on clang 6 and AVX 2
-    executor: clang6
-    steps: [ init_clang6, make_test ]
-  clang-avx-dynamic:
-    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake dynamic build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ init_clang6, cmake_test ]
-  clang-avx-static:
-    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake static build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ init_clang6, cmake_test ]
-  clang-avx-sanitize:
-    description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake sanitize build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_test ]
-
-  clang-sse:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2
-    executor: clang6
-    environment: { ARCHFLAGS: -march=nehalem }
-    steps: [ init_clang6, make_test ]
-  clang-sse-dynamic:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ init_clang6, cmake_test ]
-  clang-sse-static:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ init_clang6, cmake_test ]
-  clang-sse-sanitize:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
-    executor: clang6
-    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_test ]
+  gcc-sse-01: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-02: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-03: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-04: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-05: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-06: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-07: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-08: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-09: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-10: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-11: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-12: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-13: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-14: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-15: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-16: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-17: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-18: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-19: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
+  gcc-sse-20: { executor: gcc7, steps: [ make_checkperf ], environment: { ARCHFLAGS: -march=nehalem } }
 
 workflows:
   version: 2.1
-  build_and_test:
+  perf:
     jobs:
-      - gcc-avx
-      - gcc-avx-dynamic
-      - gcc-avx-static
-      - gcc-avx-sanitize
-      - gcc-sse
-      - gcc-sse-dynamic
-      - gcc-sse-static
-      - gcc-sse-sanitize
-      - clang-avx
-      - clang-avx-dynamic
-      - clang-avx-static
-      - clang-avx-sanitize
-      - clang-sse
-      - clang-sse-dynamic
-      - clang-sse-static
-      - clang-sse-sanitize
-
-      # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
-
+      - gcc-avx-01
+      - gcc-avx-02
+      - gcc-avx-03
+      - gcc-avx-04
+      - gcc-avx-05
+      - gcc-avx-06
+      - gcc-avx-07
+      - gcc-avx-08
+      - gcc-avx-09
+      - gcc-avx-10
+      - gcc-avx-11
+      - gcc-avx-12
+      - gcc-avx-13
+      - gcc-avx-14
+      - gcc-avx-15
+      - gcc-avx-16
+      - gcc-avx-17
+      - gcc-avx-18
+      - gcc-avx-19
+      - gcc-avx-20
+      - gcc-sse-01
+      - gcc-sse-02
+      - gcc-sse-03
+      - gcc-sse-04
+      - gcc-sse-05
+      - gcc-sse-06
+      - gcc-sse-07
+      - gcc-sse-08
+      - gcc-sse-09
+      - gcc-sse-10
+      - gcc-sse-11
+      - gcc-sse-12
+      - gcc-sse-13
+      - gcc-sse-14
+      - gcc-sse-15
+      - gcc-sse-16
+      - gcc-sse-17
+      - gcc-sse-18
+      - gcc-sse-19
+      - gcc-sse-20
