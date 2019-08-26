@@ -3,7 +3,7 @@
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
-[![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/lemire/simdjson.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/lemire/simdjson/context:cpp)
+
 
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
@@ -18,9 +18,13 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
-## Paper
+## Research article (VLDB Journal) 
 
-A description of the design and implementation of simdjson appears at https://arxiv.org/abs/1902.08318 and an informal blog post providing some background and context is at https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/.
+A description of the design and implementation of simdjson is in our research article:
+
+* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal (to appear)
+
+We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
