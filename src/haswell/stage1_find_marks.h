@@ -72,10 +72,12 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
 
     whitespace = MAP_BITMASK( in, _mm256_cmpeq_epi8(_in, _mm256_shuffle_epi8(white_table, _in)) );
 
-    auto r1 = MAP_CHUNKS( in, _mm256_add_epi8(struct_offset, _in) );
-    auto r2 = MAP_CHUNKS( in, _mm256_or_si256(_in, struct_mask) );
-    auto r3 = MAP_CHUNKS( r1, _mm256_shuffle_epi8(structural_table, _r1) );
-    structurals = MAP_BITMASK2( r2, r3, _mm256_cmpeq_epi8(_r2, _r3) );
+    structurals = in.map([&](auto _in) {
+      const __m256i r1 = _mm256_add_epi8(struct_offset, _in);
+      const __m256i r2 = _mm256_or_si256(_in, struct_mask);
+      const __m256i r3 = _mm256_shuffle_epi8(structural_table, r1);
+      return _mm256_cmpeq_epi8(r2, r3);
+    }).to_bitmask();
 
   #endif // else SIMDJSON_NAIVE_STRUCTURAL
 }
