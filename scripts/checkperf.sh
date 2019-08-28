@@ -27,4 +27,5 @@ make parse
 make perfdiff
 
 echo "Running perfdiff:"
+echo ./perfdiff \"$current/parse -t $perftests\" \"$reference/parse -t $perftests\"
 ./perfdiff "$current/parse -t $perftests" "$reference/parse -t $perftests"

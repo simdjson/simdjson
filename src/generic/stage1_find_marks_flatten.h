@@ -8,7 +8,7 @@
 // This is just a naive implementation. It should be normally
 // disable, but can be used for research purposes to compare
 // again our optimized version.
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   uint32_t *out_ptr = base_ptr + base;
   idx -= 64;
   while (bits != 0) {
@@ -26,7 +26,7 @@ static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint3
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-static really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.

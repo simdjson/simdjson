@@ -22,30 +22,54 @@ struct simd_input<Architecture::WESTMERE> {
     this->v3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
   }
 
+  really_inline simd_input(__m128i i0, __m128i i1, __m128i i2, __m128i i3)
+  {
+    this->v0 = i0;
+    this->v1 = i1;
+    this->v2 = i2;
+    this->v3 = i3;
+  }
+
+  template <typename F>
+  really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) {
+    return simd_input<Architecture::WESTMERE>(
+      map_chunk(this->v0),
+      map_chunk(this->v1),
+      map_chunk(this->v2),
+      map_chunk(this->v3)
+    );
+  }
+
+  template <typename F>
+  really_inline simd_input<Architecture::WESTMERE> map(simd_input<Architecture::WESTMERE> b, F const& map_chunk) {
+    return simd_input<Architecture::WESTMERE>(
+      map_chunk(this->v0, b.v0),
+      map_chunk(this->v1, b.v1),
+      map_chunk(this->v2, b.v2),
+      map_chunk(this->v3, b.v3)
+    );
+  }
+
+  really_inline uint64_t to_bitmask() {
+    uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(this->v0));
+    uint64_t r1 =                       _mm_movemask_epi8(this->v1);
+    uint64_t r2 =                       _mm_movemask_epi8(this->v2);
+    uint64_t r3 =                       _mm_movemask_epi8(this->v3);
+    return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
+  }
+
   really_inline uint64_t eq(uint8_t m) {
     const __m128i mask = _mm_set1_epi8(m);
-    __m128i cmp_res_0 = _mm_cmpeq_epi8(this->v0, mask);
-    uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
-    __m128i cmp_res_1 = _mm_cmpeq_epi8(this->v1, mask);
-    uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
-    __m128i cmp_res_2 = _mm_cmpeq_epi8(this->v2, mask);
-    uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
-    __m128i cmp_res_3 = _mm_cmpeq_epi8(this->v3, mask);
-    uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
-    return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
+    return this->map( [&](auto a) {
+      return _mm_cmpeq_epi8(a, mask);
+    }).to_bitmask();
   }
 
   really_inline uint64_t lteq(uint8_t m) {
     const __m128i maxval = _mm_set1_epi8(m);
-    __m128i cmp_res_0 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v0), maxval);
-    uint64_t res_0 = _mm_movemask_epi8(cmp_res_0);
-    __m128i cmp_res_1 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v1), maxval);
-    uint64_t res_1 = _mm_movemask_epi8(cmp_res_1);
-    __m128i cmp_res_2 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v2), maxval);
-    uint64_t res_2 = _mm_movemask_epi8(cmp_res_2);
-    __m128i cmp_res_3 = _mm_cmpeq_epi8(_mm_max_epu8(maxval, this->v3), maxval);
-    uint64_t res_3 = _mm_movemask_epi8(cmp_res_3);
-    return res_0 | (res_1 << 16) | (res_2 << 32) | (res_3 << 48);
+    return this->map( [&](auto a) {
+      return _mm_cmpeq_epi8(_mm_max_epu8(maxval, a), maxval);
+    }).to_bitmask();
   }
 
 }; // struct simd_input
