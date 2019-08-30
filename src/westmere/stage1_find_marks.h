@@ -30,10 +30,12 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
 
   whitespace = MAP_BITMASK( in, _mm_cmpeq_epi8(_in, _mm_shuffle_epi8(white_table, _in)) );
 
-  auto r1 = MAP_CHUNKS( in, _mm_add_epi8(struct_offset, _in) );
-  auto r2 = MAP_CHUNKS( in, _mm_or_si128(_in, struct_mask) );
-  auto r3 = MAP_CHUNKS( r1, _mm_shuffle_epi8(structural_table, _r1) );
-  structurals = MAP_BITMASK2( r2, r3, _mm_cmpeq_epi8(_r2, _r3) );
+  structurals = in.map([&](auto _in) {
+    const __m128i r1 = _mm_add_epi8(struct_offset, _in);
+    const __m128i r2 = _mm_or_si128(_in, struct_mask);
+    const __m128i r3 = _mm_shuffle_epi8(structural_table, r1);
+    return _mm_cmpeq_epi8(r2, r3);
+  }).to_bitmask();
 }
 
 #include "generic/stage1_find_marks_flatten.h"
