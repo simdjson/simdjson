@@ -40,63 +40,60 @@ using namespace simdjson::arm64;
 
 template <>
 struct simd_input<Architecture::ARM64> {
-  uint8x16_t i0;
-  uint8x16_t i1;
-  uint8x16_t i2;
-  uint8x16_t i3;
+  uint8x16_t chunks[4];
 
   really_inline simd_input(const uint8_t *ptr) {
-    this->i0 = vld1q_u8(ptr + 0);
-    this->i1 = vld1q_u8(ptr + 16);
-    this->i2 = vld1q_u8(ptr + 32);
-    this->i3 = vld1q_u8(ptr + 48);
+    this->chunks[0] = vld1q_u8(ptr + 0*16);
+    this->chunks[1] = vld1q_u8(ptr + 1*16);
+    this->chunks[2] = vld1q_u8(ptr + 2*16);
+    this->chunks[3] = vld1q_u8(ptr + 3*16);
   }
 
-  really_inline simd_input(uint8x16_t a0, uint8x16_t a1, uint8x16_t a2, uint8x16_t a3) {
-    this->i0 = a0;
-    this->i1 = a1;
-    this->i2 = a2;
-    this->i3 = a3;
+  really_inline simd_input(uint8x16_t chunk0, uint8x16_t chunk1, uint8x16_t chunk2, uint8x16_t chunk3) {
+    this->chunks[0] = chunk0;
+    this->chunks[1] = chunk1;
+    this->chunks[2] = chunk2;
+    this->chunks[3] = chunk3;
   }
 
   template <typename F>
   really_inline void each(F const& each_chunk)
   {
-    each_chunk(this->i0);
-    each_chunk(this->i1);
-    each_chunk(this->i2);
-    each_chunk(this->i3);
+    each_chunk(this->chunks[0]);
+    each_chunk(this->chunks[1]);
+    each_chunk(this->chunks[2]);
+    each_chunk(this->chunks[3]);
   }
 
   template <typename F>
   really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) {
     return simd_input<Architecture::ARM64>(
-      map_chunk(this->i0),
-      map_chunk(this->i1),
-      map_chunk(this->i2),
-      map_chunk(this->i3)
+      map_chunk(this->chunks[0]),
+      map_chunk(this->chunks[1]),
+      map_chunk(this->chunks[2]),
+      map_chunk(this->chunks[3])
     );
   }
 
   template <typename F>
   really_inline simd_input<Architecture::ARM64> map(simd_input<Architecture::ARM64> b, F const& map_chunk) {
     return simd_input<Architecture::ARM64>(
-      map_chunk(this->i0, b.i0),
-      map_chunk(this->i1, b.i1),
-      map_chunk(this->i2, b.i2),
-      map_chunk(this->i3, b.i3)
+      map_chunk(this->chunks[0], b.chunks[0]),
+      map_chunk(this->chunks[1], b.chunks[1]),
+      map_chunk(this->chunks[2], b.chunks[2]),
+      map_chunk(this->chunks[3], b.chunks[3])
     );
   }
 
   template <typename F>
   really_inline uint8x16_t reduce(F const& reduce_pair) {
-    uint8x16_t r01 = reduce_pair(this->i0, this->i1);
-    uint8x16_t r23 = reduce_pair(this->i2, this->i3);
+    uint8x16_t r01 = reduce_pair(this->chunks[0], this->chunks[1]);
+    uint8x16_t r23 = reduce_pair(this->chunks[2], this->chunks[3]);
     return reduce_pair(r01, r23);
   }
 
   really_inline uint64_t to_bitmask() {
-    return neon_movemask_bulk(this->i0, this->i1, this->i2, this->i3);
+    return neon_movemask_bulk(this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3]);
   }
 
   really_inline uint64_t eq(uint8_t m) {
