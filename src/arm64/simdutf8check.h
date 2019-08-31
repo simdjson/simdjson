@@ -181,7 +181,9 @@ check_utf8_bytes(int8x16_t current_bytes, struct processed_utf_bytes *previous,
 really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   // checking if the most significant bit is always equal to 0.
   uint8x16_t high_bit = vdupq_n_u8(0x80);
-  uint8x16_t any_bits_on = REDUCE_CHUNKS(in, vorrq_u8(_a, _b));
+  uint8x16_t any_bits_on = in.reduce([&](auto a, auto b) {
+    return vorrq_u8(a, b);
+  });
   uint8x16_t high_bit_on = vandq_u8(any_bits_on, high_bit);
   uint64x2_t v64 = vreinterpretq_u64_u8(high_bit_on);
   uint32x2_t v32 = vqmovn_u64(v64);

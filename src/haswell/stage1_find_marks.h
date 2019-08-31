@@ -70,7 +70,9 @@ really_inline void find_whitespace_and_structurals(simd_input<ARCHITECTURE> in,
     const __m256i struct_offset = _mm256_set1_epi8(0xd4u);
     const __m256i struct_mask = _mm256_set1_epi8(32);
 
-    whitespace = MAP_BITMASK( in, _mm256_cmpeq_epi8(_in, _mm256_shuffle_epi8(white_table, _in)) );
+    whitespace = in.map([&](auto _in) {
+      return _mm256_cmpeq_epi8(_in, _mm256_shuffle_epi8(white_table, _in));
+    }).to_bitmask();
 
     structurals = in.map([&](auto _in) {
       const __m256i r1 = _mm256_add_epi8(struct_offset, _in);

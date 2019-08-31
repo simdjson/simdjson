@@ -215,7 +215,9 @@ struct utf8_checker<Architecture::HASWELL> {
 
   really_inline void check_next_input(simd_input<Architecture::HASWELL> in) {
     __m256i high_bit = _mm256_set1_epi8(0x80u);
-    __m256i any_bits_on = REDUCE_CHUNKS( in, _mm256_or_si256(_a, _b) );
+    __m256i any_bits_on = in.reduce([&](auto a, auto b) {
+      return _mm256_or_si256(a, b);
+    });
     if ((_mm256_testz_si256(any_bits_on, high_bit)) == 1) {
       // it is ascii, we just check continuation
       this->has_error = _mm256_or_si256(

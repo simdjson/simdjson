@@ -182,7 +182,9 @@ struct utf8_checker<Architecture::WESTMERE> {
 
   really_inline void check_next_input(simd_input<Architecture::WESTMERE> in) {
     __m128i high_bit = _mm_set1_epi8(0x80u);
-    __m128i any_bits_on = REDUCE_CHUNKS( in, _mm_or_si128(_a, _b) );
+    __m128i any_bits_on = in.reduce([&](auto a, auto b) {
+      return _mm_or_si128(a, b);
+    });
     if ((_mm_testz_si128( any_bits_on, high_bit)) == 1) {
       // it is ascii, we just check continuation
       this->has_error =
