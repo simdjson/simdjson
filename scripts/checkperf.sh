@@ -3,6 +3,8 @@
 set -e
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
+if [ -z "$CHECKPERF_REPOSITORY"]; then CHECKPERF_REPOSITORY=.; fi
+
 # Arguments: perfdiff.sh <branch> <test json files>
 if [ -z "$1" ]; then reference_branch="master"; else reference_branch=$1; shift; fi
 if [ -z "$*" ]; then perftests="jsonexamples/twitter.json"; else perftests=$*; fi
@@ -13,7 +15,7 @@ current=$SCRIPTPATH/..
 reference=$current/benchbranch/$reference_branch
 rm -rf $reference
 mkdir -p $reference
-git clone --depth 1 -b $reference_branch https://github.com/lemire/simdjson $reference
+git clone --depth 1 -b $reference_branch $CHECKPERF_REPOSITORY $reference
 cd $reference
 make parse
 
