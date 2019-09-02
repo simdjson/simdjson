@@ -385,14 +385,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
-      return is_structural_or_whitespace(*p);
-    }
-    int64_t signed_answer = -static_cast<int64_t>(i);
-    pj.write_tape_s64(signed_answer);
+    } else {
+      // we can negate safely
+      int64_t signed_answer = -static_cast<int64_t>(i);
+      pj.write_tape_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    found_integer(signed_answer, buf + offset);
+      found_integer(signed_answer, buf + offset);
 #endif
-    return is_structural_or_whitespace(*p);
+    }
   } else {
     // we have a positive integer, the contract is that
     // we try to represent it as a signed integer and only 
@@ -408,8 +408,8 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #endif
       pj.write_tape_u64(i);
     }
-    return is_structural_or_whitespace(*p);
   }
+  return is_structural_or_whitespace(*p);
 }
 
 // parse the number at buf + offset
