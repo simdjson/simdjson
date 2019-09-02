@@ -14,6 +14,8 @@ steps:
   - make amalgamate
 - name: checkperf
   image: gcc:8
+  environment:
+    CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
   commands:
   - make checkperf
 ---
@@ -33,6 +35,8 @@ steps:
   - make amalgamate
 - name: checkperf
   image: gcc:8
+  environment:
+    CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
   commands:
   - make checkperf
 ---

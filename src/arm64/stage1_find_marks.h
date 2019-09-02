@@ -39,10 +39,14 @@ really_inline void find_whitespace_and_structurals(
   });
 
   const uint8x16_t structural_shufti_mask = vmovq_n_u8(0x7);
-  structurals = MAP_BITMASK( v, vtstq_u8(_v, structural_shufti_mask) );
+  structurals = v.map([&](auto _v) {
+    return vtstq_u8(_v, structural_shufti_mask);
+  }).to_bitmask();
 
   const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);
-  whitespace = MAP_BITMASK( v, vtstq_u8(_v, whitespace_shufti_mask) );
+  whitespace = v.map([&](auto _v) {
+    return vtstq_u8(_v, whitespace_shufti_mask);
+  }).to_bitmask();
 }
 
 #include "generic/stage1_find_marks_flatten.h"
