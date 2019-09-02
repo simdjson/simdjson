@@ -375,15 +375,20 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       found_invalid_number(buf + offset);
 #endif
       return false; // overflow
+    } else if (i == 0x8000000000000000) {
+      constexpr int64_t signed_answer = INT64_MIN;
+      pj.write_tape_s64(signed_answer);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_integer(signed_answer, buf + offset);
+#endif
+      return is_structural_or_whitespace(*p);
     }
   } else {
-    if (i >= 0x8000000000000000) {
-// overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+    found_integer(i, buf + offset);
 #endif
-      return false; // overflow
-    }
+    pj.write_tape_u64(i);
+    return is_structural_or_whitespace(*p);
   }
   int64_t signed_answer =
       negative ? -static_cast<int64_t>(i) : static_cast<int64_t>(i);

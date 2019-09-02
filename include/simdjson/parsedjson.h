@@ -79,6 +79,11 @@ public:
     tape[current_loc++] = *(reinterpret_cast<uint64_t *>(&i));
   }
 
+  really_inline void write_tape_u64(uint64_t i) {
+    write_tape(0, 'u');
+    tape[current_loc++] = i;
+  }
+
   really_inline void write_tape_double(double d) {
     write_tape(0, 'd');
     static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
