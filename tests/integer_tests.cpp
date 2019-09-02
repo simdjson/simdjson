@@ -36,8 +36,37 @@ static void parse_and_validate(const std::string src, T expected) {
     result = expected == actual;
   }
   std::cout << std::boolalpha << "test: " << result << std::endl;
-  assert(result);
+  if(!result) {
+    std::cerr << "bug detected" << std::endl;   
+    throw std::runtime_error("bug");
+  }
 }
+
+static bool parse_and_check_signed(const std::string src) {
+  std::cout << "src: " << src << ", expecting signed" << std::endl;
+  const padded_string pstr{src};
+  auto json = build_parsed_json(pstr);
+
+  assert(json.is_valid());
+  ParsedJson::Iterator it{json};
+  assert(it.down());
+  assert(it.next());
+  return it.is_integer() && it.is_number();
+}
+
+static bool parse_and_check_unsigned(const std::string src) {
+  std::cout << "src: " << src << ", expecting unsigned" << std::endl;
+  const padded_string pstr{src};
+  auto json = build_parsed_json(pstr);
+
+  assert(json.is_valid());
+  ParsedJson::Iterator it{json};
+  assert(it.down());
+  assert(it.next());
+  return it.is_unsigned_integer() && it.is_number();
+}
+
+
 
 int main() {
   using std::numeric_limits;
@@ -49,8 +78,17 @@ int main() {
   parse_and_validate(make_json(int64_min), int64_min);
   parse_and_validate(make_json(uint64_max), uint64_max);
   parse_and_validate(make_json(uint64_min), uint64_min);
-
   constexpr auto int64_max_plus1 = static_cast<uint64_t>(int64_max) + 1;
   parse_and_validate(make_json(int64_max_plus1), int64_max_plus1);
+  if(!parse_and_check_signed(make_json(int64_max))) {
+    std::cerr << "bug: large signed integers should be represented as signed integers" << std::endl;
+    return EXIT_FAILURE;
+  }
+  if(!parse_and_check_unsigned(make_json(uint64_max))) {
+    std::cerr << "bug: a large unsigned integers is not represented as an unsigned integer" << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::cout << "All ok." << std::endl;
+  return EXIT_SUCCESS;
 }
 

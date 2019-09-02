@@ -66,7 +66,7 @@ $ ./json2json -d jsonexamples/small/demo.json
 
 ## General formal of the tape elements
 
-Most tape elements are written as `('c' << 56) + x` where `'c'` is some ASCII character determining the type of the element (out of 't', 'f', 'n', 'l', 'd', '"', '{', '}', '[', ']' ,'r') and where `x` is a 56-bit value called the payload. The payload is normally interpreted as an unsigned 56-bit integer. Note that 56-bit integers can be quite large.
+Most tape elements are written as `('c' << 56) + x` where `'c'` is some ASCII character determining the type of the element (out of 't', 'f', 'n', 'l', 'u', 'd', '"', '{', '}', '[', ']' ,'r') and where `x` is a 56-bit value called the payload. The payload is normally interpreted as an unsigned 56-bit integer. Note that 56-bit integers can be quite large.
 
 
 Performance consideration: We believe that accessing the tape in regular units of 64 bits is more important for performance than saving memory. 
@@ -84,6 +84,8 @@ Simple JSON nodes are represented with one tape element:
 
 Integer values are represented as two 64-bit tape elements:
 - The 64-bit value `('l' << 56)` followed by the 64-bit integer value litterally. Integer values are assumed to be signed 64-bit values, using two's complement notation.
+- The 64-bit value `('u' << 56)` followed by the 64-bit integer value litterally. Integer values are assumed to be unsigned 64-bit values.
+
 
 Float values are represented as two 64-bit tape elements:
 - The 64-bit value `('d' << 56)` followed by the 64-bit double value litterally in standard IEEE 754 notation.

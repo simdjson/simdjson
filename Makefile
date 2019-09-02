@@ -59,7 +59,7 @@ endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
-TESTEXECUTABLES=jsoncheck numberparsingcheck stringparsingcheck pointercheck
+TESTEXECUTABLES=jsoncheck integer_tests numberparsingcheck stringparsingcheck pointercheck
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -96,9 +96,10 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+test: jsoncheck integer_tests numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
+	./integer_tests
 	./stringparsingcheck
 	./jsoncheck
 	./pointercheck
@@ -106,9 +107,10 @@ test: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheck
 	./scripts/issue150.sh
 	@echo "It looks like the code is good!"
 
-quiettest: jsoncheck numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+quiettest: jsoncheck integer_tests numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
 	./basictests
 	./numberparsingcheck
+	./integer_tests
 	./stringparsingcheck
 	./jsoncheck
 	./pointercheck
@@ -157,6 +159,10 @@ basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
+
+integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o integer_tests tests/integer_tests.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp       -I. $(LIBFLAGS) 
+
 
 
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)

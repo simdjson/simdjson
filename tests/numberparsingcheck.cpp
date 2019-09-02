@@ -90,8 +90,7 @@ void found_integer(int64_t result, const uint8_t *buf) {
   }
 }
 
-// TODO fix duplicated overload
-void found_integer(uint64_t result, const uint8_t *buf) {
+void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
   int_count++;
   char *endptr;
   unsigned long long expected = strtoull((const char *)buf, &endptr, 10);
