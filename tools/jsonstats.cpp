@@ -74,6 +74,10 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
       answer.integer_count++;
       tape_idx++; // skipping the integer
       break;
+    case 'u': // we have a long uint
+      answer.integer_count++;
+      tape_idx++; // skipping the integer
+      break;
     case 'd': // we have a double
       answer.float_count++;
       tape_idx++; // skipping the double

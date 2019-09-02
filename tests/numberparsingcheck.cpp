@@ -90,6 +90,18 @@ void found_integer(int64_t result, const uint8_t *buf) {
   }
 }
 
+// TODO fix duplicated overload
+void found_integer(uint64_t result, const uint8_t *buf) {
+  int_count++;
+  char *endptr;
+  unsigned long long expected = strtoull((const char *)buf, &endptr, 10);
+  if ((endptr == (const char *)buf) || (expected != result)) {
+    fprintf(stderr, "Error: parsed %" PRIu64 " out of %.32s, ", result, buf);
+    fprintf(stderr, " while parsing %s \n", fullpath);
+    parse_error |= PARSE_ERROR;
+  }
+}
+
 void found_float(double result, const uint8_t *buf) {
   char *endptr;
   float_count++;

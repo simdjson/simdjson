@@ -1,16 +1,15 @@
 #ifndef SIMDJSON_PARSEDJSONITERATOR_H
 #define SIMDJSON_PARSEDJSONITERATOR_H
 
-#include "simdjson/parsedjson.h"
 #include "simdjson/jsonformatutils.h"
+#include "simdjson/parsedjson.h"
 #include <cstring>
 #include <iostream>
-#include <limits>
 #include <iterator>
+#include <limits>
 
 namespace simdjson {
-template <size_t max_depth>
-class ParsedJson::BasicIterator {
+template <size_t max_depth> class ParsedJson::BasicIterator {
   // might throw InvalidJSON if ParsedJson is invalid
 public:
   explicit BasicIterator(ParsedJson &pj_);
@@ -49,6 +48,14 @@ public:
       return 0; // default value in case of error
     }
     return static_cast<int64_t>(pj->tape[location + 1]);
+  }
+
+  // get the value as uint64
+  inline uint64_t get_unsigned_integer() const {
+    if (location + 1 >= tape_length) {
+      return 0; // default value in case of error
+    }
+    return pj->tape[location + 1];
   }
 
   // get the string value at this node (NULL ended); valid only if we're at "
@@ -90,9 +97,25 @@ public:
 
   inline bool is_string() const { return get_type() == '"'; }
 
+  // Returns true if the current type of node is an signed integer.
+  // You can get its value with `get_integer()`.
   inline bool is_integer() const { return get_type() == 'l'; }
 
+  // Returns true if the current type of node is an unsigned integer.
+  // You can get its value with `get_unsigned_integer()`.
+  //
+  // NOTE:
+  // Only a large value, which is out of range of a 64-bit signed integer, is
+  // represented internally as an unsigned node. On the other hand, a typical
+  // positive integer, such as 1, 42, or 1000000, is as a signed node.
+  // Be aware this function returns false for a signed node.
+  inline bool is_unsigned_integer() const { return get_type() == 'u'; }
+
   inline bool is_double() const { return get_type() == 'd'; }
+
+  inline bool is_number() const {
+    return is_integer() || is_unsigned_integer() || is_double();
+  }
 
   inline bool is_true() const { return get_type() == 't'; }
 
@@ -110,7 +133,7 @@ public:
   // (in case of repeated keys, this only finds the first one).
   // We seek the key using C's strcmp so if your JSON strings contain
   // NULL chars, this would trigger a false positive: if you expect that
-  // to be the case, take extra precautions. 
+  // to be the case, take extra precautions.
   // Furthermore, we do the comparison character-by-character
   // without taking into account Unicode equivalence.
   inline bool move_to_key(const char *key);
@@ -230,21 +253,28 @@ private:
 };
 
 template <size_t max_depth>
-WARN_UNUSED
-bool ParsedJson::BasicIterator<max_depth>::is_ok() const { return location < tape_length; }
+WARN_UNUSED bool ParsedJson::BasicIterator<max_depth>::is_ok() const {
+  return location < tape_length;
+}
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_tape_location() const { return location; }
+size_t ParsedJson::BasicIterator<max_depth>::get_tape_location() const {
+  return location;
+}
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_tape_length() const { return tape_length; }
+size_t ParsedJson::BasicIterator<max_depth>::get_tape_length() const {
+  return tape_length;
+}
 
 // returns the current depth (start at 1 with 0 reserved for the fictitious root
 // node)
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_depth() const { return depth; }
+size_t ParsedJson::BasicIterator<max_depth>::get_depth() const {
+  return depth;
+}
 
 // A scope is a series of nodes at the same depth, typically it is either an
 // object ({) or an array ([). The root node has type 'r'.
@@ -268,8 +298,8 @@ bool ParsedJson::BasicIterator<max_depth>::move_forward() {
   } else if ((current_type == ']') || (current_type == '}')) {
     // Leaving a scope.
     depth--;
-  } else if ((current_type == 'd') || (current_type == 'l')) {
-    // d and l types use 2 locations on the tape, not just one.
+  } else if (is_number()) {
+    // these types use 2 locations on the tape, not just one.
     location += 1;
   }
 
@@ -305,7 +335,8 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key, uint32_t length) {
+bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
+                                                       uint32_t length) {
   if (down()) {
     do {
       assert(is_string());
@@ -339,12 +370,11 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
   return false;
 }
 
-template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::prev() {
+template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::prev() {
   size_t target_location = location;
   to_start_scope();
   size_t npos = location;
-  if(target_location == npos) {
+  if (target_location == npos) {
     return false; // we were already at the start
   }
   size_t oldnpos;
@@ -352,20 +382,19 @@ bool ParsedJson::BasicIterator<max_depth>::prev() {
   do {
     oldnpos = npos;
     if ((current_type == '[') || (current_type == '{')) {
-    // we need to jump
+      // we need to jump
       npos = (current_val & JSON_VALUE_MASK);
     } else {
       npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
-  } while(npos < target_location);
+  } while (npos < target_location);
   location = oldnpos;
   current_val = pj->tape[location];
   current_type = current_val >> 56;
   return true;
 }
 
-template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::up() {
+template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::up() {
   if (depth == 1) {
     return false; // don't allow moving back to root
   }
@@ -378,8 +407,7 @@ bool ParsedJson::BasicIterator<max_depth>::up() {
   return true;
 }
 
-template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::down() {
+template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::down() {
   if (location + 1 >= tape_length) {
     return false;
   }
@@ -407,14 +435,13 @@ void ParsedJson::BasicIterator<max_depth>::to_start_scope() {
   current_type = (current_val >> 56);
 }
 
-template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::next() {
+template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
     npos = (current_val & JSON_VALUE_MASK);
   } else {
-    npos = location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
+    npos = location + (is_number() ? 2 : 1);
   }
   uint64_t next_val = pj->tape[npos];
   uint8_t next_type = (next_val >> 56);
@@ -456,14 +483,17 @@ ParsedJson::BasicIterator<max_depth>::BasicIterator(ParsedJson &pj_)
 }
 
 template <size_t max_depth>
-ParsedJson::BasicIterator<max_depth>::BasicIterator(const BasicIterator &o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location), tape_length(o.tape_length),
-      current_type(o.current_type), current_val(o.current_val) {
+ParsedJson::BasicIterator<max_depth>::BasicIterator(
+    const BasicIterator &o) noexcept
+    : pj(o.pj), depth(o.depth), location(o.location),
+      tape_length(o.tape_length), current_type(o.current_type),
+      current_val(o.current_val) {
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
 
 template <size_t max_depth>
-ParsedJson::BasicIterator<max_depth> &ParsedJson::BasicIterator<max_depth>::operator =(const BasicIterator &o) noexcept {
+ParsedJson::BasicIterator<max_depth> &ParsedJson::BasicIterator<max_depth>::
+operator=(const BasicIterator &o) noexcept {
   pj = o.pj;
   depth = o.depth;
   location = o.location;
@@ -475,7 +505,8 @@ ParsedJson::BasicIterator<max_depth> &ParsedJson::BasicIterator<max_depth>::oper
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os, bool escape_strings) const {
+bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os,
+                                                 bool escape_strings) const {
   if (!is_ok()) {
     return false;
   }
@@ -494,6 +525,9 @@ bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os, bool escape_s
     break;
   case 'l': // we have a long int
     os << get_integer();
+    break;
+  case 'u':
+    os << get_unsigned_integer();
     break;
   case 'd':
     os << get_double();
@@ -520,7 +554,8 @@ bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os, bool escape_s
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to(const char *pointer, uint32_t length) {
+bool ParsedJson::BasicIterator<max_depth>::move_to(const char *pointer,
+                                                   uint32_t length) {
   char *new_pointer = nullptr;
   if (pointer[0] == '#') {
     // Converting fragment representation to string representation
