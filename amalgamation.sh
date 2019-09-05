@@ -17,8 +17,28 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/include/simdjson/stage1_find_marks_flatten_haswell.h
+$SCRIPTPATH/src/simd_input.h
+$SCRIPTPATH/src/arm64/architecture.h
+$SCRIPTPATH/src/haswell/architecture.h
+$SCRIPTPATH/src/westmere/architecture.h
+$SCRIPTPATH/src/arm64/simd_input.h
+$SCRIPTPATH/src/haswell/simd_input.h
+$SCRIPTPATH/src/westmere/simd_input.h
+$SCRIPTPATH/src/simdutf8check.h
+$SCRIPTPATH/src/arm64/simdutf8check.h
+$SCRIPTPATH/src/haswell/simdutf8check.h
+$SCRIPTPATH/src/westmere/simdutf8check.h
+$SCRIPTPATH/src/arm64/stage1_find_marks.h
+$SCRIPTPATH/src/haswell/stage1_find_marks.h
+$SCRIPTPATH/src/westmere/stage1_find_marks.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
+$SCRIPTPATH/src/stringparsing.h
+$SCRIPTPATH/src/arm64/stringparsing.h
+$SCRIPTPATH/src/haswell/stringparsing.h
+$SCRIPTPATH/src/westmere/stringparsing.h
+$SCRIPTPATH/src/arm64/stage2_build_tape.h
+$SCRIPTPATH/src/haswell/stage2_build_tape.h
+$SCRIPTPATH/src/westmere/stage2_build_tape.h
 $SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
 $SCRIPTPATH/src/parsedjsoniterator.cpp
@@ -36,24 +56,10 @@ $SCRIPTPATH/include/simdjson/jsoncharutils.h
 $SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/jsonioutil.h
 $SCRIPTPATH/include/simdjson/simdprune_tables.h
-$SCRIPTPATH/include/simdjson/simd_input.h
-$SCRIPTPATH/include/simdjson/simd_input_haswell.h
-$SCRIPTPATH/include/simdjson/simd_input_westmere.h
-$SCRIPTPATH/include/simdjson/simd_input_arm64.h
-$SCRIPTPATH/include/simdjson/simdutf8check.h
-$SCRIPTPATH/include/simdjson/simdutf8check_haswell.h
-$SCRIPTPATH/include/simdjson/simdutf8check_westmere.h
-$SCRIPTPATH/include/simdjson/simdutf8check_arm64.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
+$SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_westmere.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_haswell.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks_arm64.h
-$SCRIPTPATH/include/simdjson/stringparsing.h
-$SCRIPTPATH/include/simdjson/stringparsing_westmere.h
-$SCRIPTPATH/include/simdjson/stringparsing_haswell.h
-$SCRIPTPATH/include/simdjson/stringparsing_arm64.h
 $SCRIPTPATH/include/simdjson/numberparsing.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
@@ -73,17 +79,27 @@ function dofile()
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     while IFS= read -r line
     do
-        if [[ "${line}" == '#include "simdjson'* ]]; then
-            # we paste the contents of simdjson header files with names ending by _common.h
-            # we ignore every other simdjson headers
-            if [[ "${line}" == '#include "simdjson/'*'_common.h"'* ]]; then
-              file=$(echo $line| cut -d'"' -f 2)
-              echo "$(<include/$file)" # we assume those files are always in include/
-            fi
-        else
-            # Otherwise we simply copy the line
-            echo "$line"
+        if [[ "${line}" == '#include "'*'"'* ]]; then
+            file=$(echo $line| cut -d'"' -f 2)
+
+            if [[ "${file}" == '../'* ]]; then
+              file=$(echo $file| cut -d'/' -f 2-)
+            fi;
+
+            # we ignore simdjson headers (except src/generic/*.h); they are handled in the above list
+            if [ -f include/$file ]; then
+              continue;
+            elif [ -f src/$file ]; then
+              # we paste the contents of src/generic/*.h
+              if [[ "${file}" == *'generic/'*'.h' ]]; then
+                echo "$(<src/$file)"
+              fi;
+              continue;
+            fi;
         fi;
+
+        # Otherwise we simply copy the line
+        echo "$line"
     done < "$1"
     echo "/* end file $RELFILE */"
 }

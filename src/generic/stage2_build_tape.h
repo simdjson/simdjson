@@ -3,12 +3,6 @@
 // We assume the file in which it is include already includes
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
-#ifdef TARGETED_ARCHITECTURE
-#ifdef TARGETED_REGION
-
-TARGETED_REGION
-namespace simdjson {
-
 // this macro reads the next structural character, updating idx, i and c.
 #define UPDATE_CHAR()                                                          \
   {                                                                            \
@@ -41,10 +35,8 @@ namespace simdjson {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-template <>
 WARN_UNUSED  int
-unified_machine<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
-                                       ParsedJson &pj) {
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
   uint32_t idx; /* location of the structural character in the input (buf)   */
   uint8_t c;    /* used to track the (structural) character we are looking at,
@@ -100,7 +92,7 @@ unified_machine<TARGETED_ARCHITECTURE>(const uint8_t *buf, size_t len,
      * https://tools.ietf.org/html/rfc8259
      * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
   case '"': {
-    if (!parse_string<TARGETED_ARCHITECTURE>(buf, len, pj, depth, idx)) {
+    if (!parse_string(buf, len, pj, depth, idx)) {
       goto fail;
     }
     break;
@@ -229,7 +221,7 @@ object_begin:
   UPDATE_CHAR();
   switch (c) {
   case '"': {
-    if (!parse_string<TARGETED_ARCHITECTURE>(buf, len, pj, depth, idx)) {
+    if (!parse_string(buf, len, pj, depth, idx)) {
       goto fail;
     }
     goto object_key_state;
@@ -248,7 +240,7 @@ object_key_state:
   UPDATE_CHAR();
   switch (c) {
   case '"': {
-    if (!parse_string<TARGETED_ARCHITECTURE>(buf, len, pj, depth, idx)) {
+    if (!parse_string(buf, len, pj, depth, idx)) {
       goto fail;
     }
     break;
@@ -333,7 +325,7 @@ object_continue:
     if (c != '"') {
       goto fail;
     } else {
-      if (!parse_string<TARGETED_ARCHITECTURE>(buf, len, pj, depth, idx)) {
+      if (!parse_string(buf, len, pj, depth, idx)) {
         goto fail;
       }
       goto object_key_state;
@@ -367,7 +359,7 @@ main_array_switch:
    * on paths that can accept a close square brace (post-, and at start) */
   switch (c) {
   case '"': {
-    if (!parse_string<TARGETED_ARCHITECTURE>(buf, len, pj, depth, idx)) {
+    if (!parse_string(buf, len, pj, depth, idx)) {
       goto fail;
     }
     break;
@@ -523,13 +515,3 @@ fail:
   pj.error_code = simdjson::TAPE_ERROR;
   return pj.error_code;
 }
-
-} // namespace simdjson
-UNTARGET_REGION
-
-#else
-#error TARGETED_REGION must be specified before including.
-#endif // TARGETED_REGION
-#else
-#error TARGETED_ARCHITECTURE must be specified before including.
-#endif // TARGETED_ARCHITECTURE

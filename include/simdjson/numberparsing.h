@@ -5,10 +5,12 @@
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
+#include <cmath>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);
+void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
@@ -369,27 +371,44 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
   }
   if (negative) {
     if (i > 0x8000000000000000) {
-// overflows!
+       // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
       return false; // overflow
+    } else if (i == 0x8000000000000000) {
+      // In two's complement, we cannot represent 0x8000000000000000
+      // as a positive signed integer, but the negative version is 
+      // possible.
+      constexpr int64_t signed_answer = INT64_MIN;
+      pj.write_tape_s64(signed_answer);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_integer(signed_answer, buf + offset);
+#endif
+    } else {
+      // we can negate safely
+      int64_t signed_answer = -static_cast<int64_t>(i);
+      pj.write_tape_s64(signed_answer);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_integer(signed_answer, buf + offset);
+#endif
     }
   } else {
-    if (i >= 0x8000000000000000) {
-// overflows!
+    // we have a positive integer, the contract is that
+    // we try to represent it as a signed integer and only 
+    // fallback on unsigned integers if absolutely necessary.
+    if(i < 0x8000000000000000) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_integer(i, buf + offset);
 #endif
-      return false; // overflow
+      pj.write_tape_s64(i);
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_unsigned_integer(i, buf + offset);
+#endif
+      pj.write_tape_u64(i);
     }
   }
-  int64_t signed_answer =
-      negative ? -static_cast<int64_t>(i) : static_cast<int64_t>(i);
-  pj.write_tape_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-  found_integer(signed_answer, buf + offset);
-#endif
   return is_structural_or_whitespace(*p);
 }
 

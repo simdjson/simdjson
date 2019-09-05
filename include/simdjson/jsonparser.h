@@ -4,6 +4,7 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/parsedjson.h"
+#include "simdjson/parsedjsoniterator.h"
 #include "simdjson/simdjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"

@@ -1,4 +1,5 @@
 #include "simdjson/parsedjson.h"
+#include "simdjson/jsonformatutils.h"
 
 namespace simdjson {
 ParsedJson::ParsedJson()
@@ -35,7 +36,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (len > SIMDJSON_MAXSIZE_BYTES) {
     return false;
   }
-  if ((len <= byte_capacity) && (depth_capacity < max_depth)) {
+  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
     return true;
   }
   deallocate();
@@ -175,6 +176,14 @@ bool ParsedJson::print_json(std::ostream &os) {
       }
       os << static_cast<int64_t>(tape[++tape_idx]);
       break;
+    case 'u':
+      if (tape_idx + 1 >= how_many) {
+        delete[] in_object;
+        delete[] in_object_idx;
+        return false;
+      }
+      os << tape[++tape_idx];
+      break;
     case 'd': // we have a double
       if (tape_idx + 1 >= how_many) {
         delete[] in_object;
@@ -271,6 +280,12 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) {
         return false;
       }
       os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
+      break;
+    case 'u': // we have a long uint
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "unsigned integer " << tape[++tape_idx] << "\n";
       break;
     case 'd': // we have a double
       os << "float ";

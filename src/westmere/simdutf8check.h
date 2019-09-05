@@ -1,8 +1,8 @@
-#ifndef SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
-#define SIMDJSON_SIMDUTF8CHECK_WESTMERE_H
+#ifndef SIMDJSON_WESTMERE_SIMDUTF8CHECK_H
+#define SIMDJSON_WESTMERE_SIMDUTF8CHECK_H
 
 #include "simdjson/portability.h"
-#include "simdjson/simdutf8check.h"
+#include "simdutf8check.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -29,8 +29,8 @@
 
 /********** sse code **********/
 TARGET_WESTMERE
+namespace simdjson::westmere {
 
-namespace simdjson {
 // all byte values must be no larger than 0xF4
 static inline void check_smaller_than_0xF4(__m128i current_bytes,
                                            __m128i *has_error) {
@@ -163,59 +163,50 @@ check_utf8_bytes(__m128i current_bytes, struct processed_utf_bytes *previous,
   return pb;
 }
 
+} // namespace simdjson::westmere
+UNTARGET_REGION
+
+TARGET_WESTMERE
+namespace simdjson {
+
+using namespace simdjson::westmere;
+
 template <>
-struct utf8_checking_state<Architecture::WESTMERE> {
+struct utf8_checker<Architecture::WESTMERE> {
   __m128i has_error = _mm_setzero_si128();
   processed_utf_bytes previous{
       _mm_setzero_si128(), // raw_bytes
       _mm_setzero_si128(), // high_nibbles
       _mm_setzero_si128()  // carried_continuations
   };
-};
 
-template <>
-really_inline void check_utf8<Architecture::WESTMERE>(
-    simd_input<Architecture::WESTMERE> in,
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  __m128i high_bit = _mm_set1_epi8(0x80u);
-  if ((_mm_testz_si128(_mm_or_si128(in.v0, in.v1), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v0, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v1, &(state.previous), &(state.has_error));
+  really_inline void check_next_input(simd_input<Architecture::WESTMERE> in) {
+    __m128i high_bit = _mm_set1_epi8(0x80u);
+    __m128i any_bits_on = in.reduce([&](auto a, auto b) {
+      return _mm_or_si128(a, b);
+    });
+    if ((_mm_testz_si128( any_bits_on, high_bit)) == 1) {
+      // it is ascii, we just check continuation
+      this->has_error =
+          _mm_or_si128(_mm_cmpgt_epi8(this->previous.carried_continuations,
+                                      _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                                    9, 9, 9, 9, 9, 1)),
+                      this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      in.each([&](auto _in) {
+        this->previous = check_utf8_bytes(_in, &(this->previous), &(this->has_error));
+      });
+    }
   }
 
-  if ((_mm_testz_si128(_mm_or_si128(in.v2, in.v3), high_bit)) == 1) {
-    // it is ascii, we just check continuation
-    state.has_error =
-        _mm_or_si128(_mm_cmpgt_epi8(state.previous.carried_continuations,
-                                    _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                  9, 9, 9, 9, 9, 1)),
-                     state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous =
-        check_utf8_bytes(in.v2, &(state.previous), &(state.has_error));
-    state.previous =
-        check_utf8_bytes(in.v3, &(state.previous), &(state.has_error));
+  really_inline ErrorValues errors() {
+    return _mm_testz_si128(this->has_error, this->has_error) == 0
+              ? simdjson::UTF8_ERROR
+              : simdjson::SUCCESS;
   }
-}
 
-template <>
-really_inline ErrorValues check_utf8_errors<Architecture::WESTMERE>(
-    utf8_checking_state<Architecture::WESTMERE> &state) {
-  return _mm_testz_si128(state.has_error, state.has_error) == 0
-             ? simdjson::UTF8_ERROR
-             : simdjson::SUCCESS;
-}
+}; // struct utf8_checker
 
 } // namespace simdjson
 UNTARGET_REGION // westmere

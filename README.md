@@ -1,9 +1,9 @@
 #  simdjson : Parsing gigabytes of JSON per second
 [![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
-[![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson.svg)](https://ci.appveyor.com/project/lemire/simdjson)
+[![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson/master.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
-[![Code Quality: Cpp](https://img.shields.io/lgtm/grade/cpp/g/lemire/simdjson.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/lemire/simdjson/context:cpp)
+
 
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
@@ -18,9 +18,13 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
-## Paper
+## Research article (VLDB Journal) 
 
-A description of the design and implementation of simdjson appears at https://arxiv.org/abs/1902.08318 and an informal blog post providing some background and context is at https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/.
+A description of the design and implementation of simdjson is in our research article:
+
+* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal (to appear)
+
+We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
@@ -56,7 +60,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 - A processor with 
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
   - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
-  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going back as far back as the iPhone 5s (2013).
+  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
 
@@ -342,7 +346,7 @@ _We do not aim to provide a general-purpose JSON library._ A library like RapidJ
 ## Features
 
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
-- We parse integers and floating-point numbers as separate types which allows us to support large 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long`. Among the parsers that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed 64-bit value, we reject the JSON document.
+- We parse integers and floating-point numbers as separate types which allows us to support large signed 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long` and large unsigned integers up to the value 18446744073709551615. Among the parsers that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
 - We support the full range of 64-bit floating-point numbers (binary64). The values range from ` std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document.
 - We test for accurate float parsing with a bound on the [unit of least precision (ULP)](https://en.wikipedia.org/wiki/Unit_in_the_last_place) of one. Practically speaking, this implies 15 digits of accuracy or better.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation. The sajson parser does incomplete UTF-8 validation, accepting code point
@@ -484,6 +488,8 @@ docker run --privileged -t simdjson
 
 We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
 
+
+- [ZippyJSON](https://github.com/michaeleisel/zippyjson): Swift bindings for the simdjson project.
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings)

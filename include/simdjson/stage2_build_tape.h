@@ -10,7 +10,6 @@
 #include "simdjson/numberparsing.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/simdjson.h"
-#include "simdjson/stringparsing.h"
 
 namespace simdjson {
 void init_state_machine();

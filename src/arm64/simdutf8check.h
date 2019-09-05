@@ -1,13 +1,13 @@
 // From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
 // Adapted from https://github.com/lemire/fastvalidate-utf-8
 
-#ifndef SIMDJSON_SIMDUTF8CHECK_ARM64_H
-#define SIMDJSON_SIMDUTF8CHECK_ARM64_H
+#ifndef SIMDJSON_ARM64_SIMDUTF8CHECK_H
+#define SIMDJSON_ARM64_SIMDUTF8CHECK_H
 
 #if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
     (defined(_MSC_VER) && defined(_M_ARM64))
 
-#include "simdjson/simdutf8check.h"
+#include "../simdutf8check.h"
 #include <arm_neon.h>
 #include <cinttypes>
 #include <cstddef>
@@ -15,7 +15,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace simdjson {
+namespace simdjson::arm64 {
 namespace { // private namespace
 /*
  * Map high nibble of "First Byte" to legal character length minus 1
@@ -93,7 +93,7 @@ static const uint8_t _range_adjust_tbl[] = {
                  0,     0,
                  0,     0,
 };
-}
+} // private namespace
 
 struct processed_utf_bytes {
   uint8x16_t input;
@@ -191,58 +191,58 @@ check_utf8_bytes(uint8x16_t input,
     return *previous;
 }
 
-template <>
-struct utf8_checking_state<Architecture::ARM64> {
-  uint8x16_t has_error{};
-  processed_utf_bytes previous{};
-};
-
 // Checks that all bytes are ascii
 really_inline bool check_ascii_neon(simd_input<Architecture::ARM64> in) {
   // checking if the most significant bit is always equal to 0.
   uint8x16_t high_bit = vdupq_n_u8(0x80);
-  uint8x16_t t0 = vorrq_u8(in.i0, in.i1);
-  uint8x16_t t1 = vorrq_u8(in.i2, in.i3);
-  uint8x16_t t3 = vorrq_u8(t0, t1);
-  uint8x16_t t4 = vandq_u8(t3, high_bit);
-  uint64x2_t v64 = vreinterpretq_u64_u8(t4);
+  uint8x16_t any_bits_on = in.reduce([&](auto a, auto b) {
+    return vorrq_u8(a, b);
+  });
+  uint8x16_t high_bit_on = vandq_u8(any_bits_on, high_bit);
+  uint64x2_t v64 = vreinterpretq_u64_u8(high_bit_on);
   uint32x2_t v32 = vqmovn_u64(v64);
   uint64x1_t result = vreinterpret_u64_u32(v32);
   return vget_lane_u64(result, 0) == 0;
 }
 
-template <>
-really_inline void check_utf8<Architecture::ARM64>(
-    simd_input<Architecture::ARM64> in,
-    utf8_checking_state<Architecture::ARM64> &state) {
-  if (check_ascii_neon(in)) {
-    const uint8x16_t verror =
-        (uint8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 2, 1, 0};
-    state.has_error =
-        vorrq_u8(vcgtq_u8(state.previous.first_len, verror),
-                 state.has_error);
-  } else {
-    // it is not ascii so we have to do heavy work
-    state.previous = check_utf8_bytes(in.i0,
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(in.i1,
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(in.i2,
-                                      &(state.previous), &(state.has_error));
-    state.previous = check_utf8_bytes(in.i3,
-                                      &(state.previous), &(state.has_error));
-  }
-}
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+using namespace simdjson::arm64;
 
 template <>
-really_inline ErrorValues check_utf8_errors<Architecture::ARM64>(
-    utf8_checking_state<Architecture::ARM64> &state) {
-  uint64x2_t v64 = vreinterpretq_u64_u8(state.has_error);
-  uint32x2_t v32 = vqmovn_u64(v64);
-  uint64x1_t result = vreinterpret_u64_u32(v32);
-  return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
-                                       : simdjson::SUCCESS;
-}
+struct utf8_checker<Architecture::ARM64> {
+  uint8x16_t has_error{};
+  processed_utf_bytes previous{};
+
+  really_inline void check_next_input(simd_input<Architecture::ARM64> in) {
+    if (check_ascii_neon(in)) {
+      // All bytes are ascii. Therefore the byte that was just before must be
+      // ascii too. We only check the byte that was just before simd_input. Nines
+      // are arbitrary values.
+      const uint8x16_t verror =
+          (uint8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 2, 1, 0};
+      this->has_error =
+          vorrq_u8(vcgtq_u8(this->previous.first_len, verror),
+                   this->has_error);
+    } else {
+      // it is not ascii so we have to do heavy work
+      in.each([&](auto _in) {
+        this->previous = check_utf8_bytes(_in, &(this->previous), &(this->has_error));
+      });
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    uint64x2_t v64 = vreinterpretq_u64_u8(this->has_error);
+    uint32x2_t v32 = vqmovn_u64(v64);
+    uint64x1_t result = vreinterpret_u64_u32(v32);
+    return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
+                                        : simdjson::SUCCESS;
+  }
+
+}; // struct utf8_checker
 
 } // namespace simdjson
 #endif
