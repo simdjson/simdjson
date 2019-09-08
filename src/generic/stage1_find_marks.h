@@ -119,7 +119,7 @@ really_inline uint64_t finalize_structurals(
 really_inline void find_structural_bits_64(
     const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
-    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
+    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &prev_structurals,
     uint64_t &error_mask,
     utf8_checker<ARCHITECTURE> &utf8_state) {
   simd_input<ARCHITECTURE> in(buf);
@@ -134,18 +134,19 @@ really_inline void find_structural_bits_64(
   uint64_t quote_mask = find_quote_mask_and_bits(
       in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
 
+  uint64_t whitespace;
+  uint64_t structurals;
+  find_whitespace_and_structurals(in, whitespace, structurals);
+
   /* take the previous iterations structural bits, not our current
    * iteration,
    * and flatten */
-  flatten_bits(base_ptr, base, idx, structurals);
-
-  uint64_t whitespace;
-  find_whitespace_and_structurals(in, whitespace, structurals);
+  flatten_bits(base_ptr, base, idx, prev_structurals);
 
   /* fixup structurals to reflect quotes and add pseudo-structural
    * characters */
-  structurals = finalize_structurals(structurals, whitespace, quote_mask,
-                                     quote_bits, prev_iter_ends_pseudo_pred);
+  prev_structurals = finalize_structurals(structurals, whitespace, quote_mask,
+                                          quote_bits, prev_iter_ends_pseudo_pred);
 }
 
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
