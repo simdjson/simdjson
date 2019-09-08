@@ -117,7 +117,7 @@ really_inline uint64_t finalize_structurals(
 
 // Find structural bits in a 64-byte chunk.
 really_inline void find_structural_bits_64(
-    const uint8_t *buf, size_t idx, uint32_t *base_ptr, uint32_t &base,
+    const uint8_t *buf, size_t &idx, uint32_t *base_ptr, uint32_t &base,
     uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &prev_structurals,
     uint64_t &error_mask,
@@ -147,6 +147,29 @@ really_inline void find_structural_bits_64(
    * characters */
   prev_structurals = finalize_structurals(structurals, whitespace, quote_mask,
                                           quote_bits, prev_iter_ends_pseudo_pred);
+
+  idx += 64;
+}
+
+static const int WALK_BYTES = 2*64;
+
+// Find structural bits in a chunk of input.
+really_inline void find_structural_bits(
+    const uint8_t *buf, size_t &idx, uint32_t *base_ptr, uint32_t &base,
+    uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
+    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &prev_structurals,
+    uint64_t &error_mask,
+    utf8_checker<ARCHITECTURE> &utf8_state) {
+  find_structural_bits_64(buf, idx, base_ptr, base,
+                          prev_iter_ends_odd_backslash,
+                          prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                          prev_structurals, error_mask, utf8_state);
+  buf += 64;
+  find_structural_bits_64(buf, idx, base_ptr, base,
+                          prev_iter_ends_odd_backslash,
+                          prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                          prev_structurals, error_mask, utf8_state);
+  buf += 64;
 }
 
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -176,38 +199,36 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
              * purposes of pseudo-structural character detection so we
              * initialize to 1 */
   uint64_t prev_iter_ends_pseudo_pred = 1ULL;
-
   /* structurals are persistent state across loop as we flatten them on the
    * subsequent iteration into our array pointed to be base_ptr.
    * This is harmless on the first iteration as structurals==0
    * and is done for performance reasons; we can hide some of the latency of
    * the
    * expensive carryless multiply in the previous step with this work */
-  uint64_t structurals = 0;
+  uint64_t prev_structurals = 0;
 
-  size_t lenminus64 = len < 64 ? 0 : len - 64;
+  size_t clean_len = len < WALK_BYTES ? 0 : len - WALK_BYTES;
   size_t idx = 0;
   uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII
                               code points < 0x20) */
 
-  for (; idx < lenminus64; idx += 64) {
-    find_structural_bits_64(&buf[idx], idx, base_ptr, base,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
+  while (idx < clean_len) {
+    find_structural_bits(&buf[idx], idx, base_ptr, base,
+                         prev_iter_ends_odd_backslash,
+                         prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                         prev_structurals, error_mask, utf8_state);
   }
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
    * checks). */
   if (idx < len) {
-    uint8_t tmp_buf[64];
-    memset(tmp_buf, 0x20, 64);
+    uint8_t tmp_buf[WALK_BYTES];
+    memset(tmp_buf, 0x20, WALK_BYTES);
     memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_64(&tmp_buf[0], idx, base_ptr, base,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
-    idx += 64;
+    find_structural_bits(&tmp_buf[0], idx, base_ptr, base,
+                         prev_iter_ends_odd_backslash,
+                         prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
+                         prev_structurals, error_mask, utf8_state);
   }
 
   /* is last string quote closed? */
@@ -217,7 +238,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
 
   /* finally, flatten out the remaining structurals from the last iteration
    */
-  flatten_bits(base_ptr, base, idx, structurals);
+  flatten_bits(base_ptr, base, idx, prev_structurals);
 
   pj.n_structural_indexes = base;
   /* a valid JSON file cannot have zero structural indexes - we should have
