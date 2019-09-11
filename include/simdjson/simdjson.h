@@ -6,10 +6,10 @@
 namespace simdjson {
 // Represents the minimal architecture that would support an implementation
 enum class Architecture {
+  UNSUPPORTED,
   WESTMERE,
   HASWELL,
   ARM64,
-  NONE,
 // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current
 // machine
@@ -19,6 +19,9 @@ enum class Architecture {
   NATIVE = ARM64
 #endif
 };
+
+Architecture find_best_supported_architecture();
+Architecture parse_architecture(char *architecture);
 
 enum ErrorValues {
   SUCCESS = 0,
