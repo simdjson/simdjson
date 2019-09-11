@@ -34,6 +34,10 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+
+// Global arguments
+static bool find_marks_only = false;
+
 namespace simdjson {
 Architecture _find_best_supported_implementation() {
   constexpr uint32_t haswell_flags =
@@ -63,6 +67,9 @@ extern unified_functype *unified_ptr;
 extern stage1_functype *stage1_ptr;
 
 int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  if (find_marks_only) {
+    return simdjson::SUCCESS;
+  }
   Architecture best_implementation = _find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
@@ -129,7 +136,7 @@ int main(int argc, char *argv[]) {
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "1vdtn:w:")) != -1) {
+  while ((c = getopt(argc, argv, "1vdtn:w:f")) != -1) {
     switch (c) {
     case 'n':
       iterations = atoi(optarg);
@@ -151,6 +158,9 @@ int main(int argc, char *argv[]) {
       break;
     case '1':
       force_one_iteration = true;
+      break;
+    case 'f':
+      find_marks_only = true;
       break;
     default:
       abort();
@@ -326,7 +336,7 @@ int main(int argc, char *argv[]) {
     isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
             simdjson::SUCCESS);
     isok = isok &&
-           (simdjson::SUCCESS ==
+          (simdjson::SUCCESS ==
             simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
