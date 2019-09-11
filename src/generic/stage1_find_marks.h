@@ -123,7 +123,6 @@ really_inline void find_structural_bits_64(
     uint64_t &error_mask,
     utf8_checker<ARCHITECTURE> &utf8_state) {
   simd_input<ARCHITECTURE> in(buf);
-  utf8_state.check_next_input(in);
   /* detect odd sequences of backslashes */
   uint64_t odd_ends = find_odd_backslash_sequences(
       in, prev_iter_ends_odd_backslash);
@@ -138,9 +137,19 @@ really_inline void find_structural_bits_64(
   uint64_t structurals;
   find_whitespace_and_structurals(in, whitespace, structurals);
 
-  /* take the previous iterations structural bits, not our current
-   * iteration,
-   * and flatten */
+  /* Do some unrelated work here to use the CPU while it waits!
+   *
+   * find_whitespace_and_structurals and find_quote_mask_and_bits both have high latency, so there
+   * would be a pipeline stall in finalize_structurals when it asks for the results.
+   * Thus, we run the UTF-8 check and flatten the structurals from the previous iteration here, to
+   * use the CPU while we're waiting. This makes a 6% performance difference on AVX-2:
+   *
+   * NOTE: the UTF-8 check needs to run before flatten_bits: this ordering accounts for 1.5% of the
+   * above difference. The reason for this part is unclear.
+   *
+   * See https://github.com/lemire/simdjson/pull/310 for details.
+   */ 
+  utf8_state.check_next_input(in);
   flatten_bits(base_ptr, base, idx, prev_structurals);
 
   /* fixup structurals to reflect quotes and add pseudo-structural
@@ -151,6 +160,8 @@ really_inline void find_structural_bits_64(
   idx += 64;
 }
 
+// The number of bytes we pull on each iteration of the loop.
+// find_structural_bits (below) must match this and actually consume the input!
 static const int WALK_BYTES = 2*64;
 
 // Find structural bits in a chunk of input.
@@ -160,6 +171,9 @@ really_inline void find_structural_bits(
     uint64_t &prev_iter_ends_pseudo_pred, uint64_t &prev_structurals,
     uint64_t &error_mask,
     utf8_checker<ARCHITECTURE> &utf8_state) {
+  /* We run two iterations of the 64-bit find_structural_bits per loop iteration; the optimizer
+   * likes this very much, giving us a 3% performance improvement in stage 1.
+   */
   find_structural_bits_64(buf, idx, base_ptr, base,
                           prev_iter_ends_odd_backslash,
                           prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
