@@ -53,6 +53,7 @@ objs
 # Build outputs (TODO build to a subdir so we can exclude that instead)
 /allparserscheckfile
 /basictests
+/benchfeatures
 /benchmark/parse
 /benchmark/perfdiff
 /benchmark/statisticalmodel
@@ -85,6 +86,9 @@ objs
 /tools/json2json
 /tools/jsonstats
 /tools/minify
+
+# Don't check in generated examples
+/jsonexamples/generated
 
 # C++ ignore from https://github.com/github/gitignore/blob/master/C%2B%2B.gitignore
 

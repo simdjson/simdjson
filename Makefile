@@ -126,6 +126,12 @@ run_issue150_sh: allparserscheckfile
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
+generate_featurejson:
+	ruby ./benchmark/genfeaturejson.rb
+
+run_benchfeatures: benchfeatures generate_featurejson
+	./benchfeatures -n 1000
+
 test: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 	@echo "It looks like the code is good!"
 
@@ -145,8 +151,11 @@ submodules:
 
 $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
-parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+parse: benchmark/parse.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+benchfeatures: benchmark/benchfeatures.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o benchfeatures $(LIBFILES) benchmark/benchfeatures.cpp $(LIBFLAGS)
 
 perfdiff: benchmark/perfdiff.cpp
 	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFLAGS)

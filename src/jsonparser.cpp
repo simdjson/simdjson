@@ -29,7 +29,7 @@ int json_parse(const char *buf, size_t len, ParsedJson &pj,
                                                         realloc);
 }
 
-Architecture find_best_supported_implementation() {
+Architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ |
       instruction_set::BMI1 | instruction_set::BMI2;
@@ -45,13 +45,20 @@ Architecture find_best_supported_implementation() {
   if (supports & instruction_set::NEON)
     return Architecture::ARM64;
 
-  return Architecture::NONE;
+  return Architecture::UNSUPPORTED;
+}
+
+Architecture parse_architecture(char *architecture) {
+  if (!strcmp(architecture, "HASWELL")) { return Architecture::HASWELL; }
+  if (!strcmp(architecture, "WESTMERE")) { return Architecture::WESTMERE; }
+  if (!strcmp(architecture, "ARM64")) { return Architecture::ARM64; }
+  return Architecture::UNSUPPORTED;
 }
 
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
                         bool realloc) {
-  Architecture best_implementation = find_best_supported_implementation();
+  Architecture best_implementation = find_best_supported_architecture();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_X86_64
