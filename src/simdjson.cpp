@@ -18,8 +18,8 @@ const std::map<int, const std::string> error_strings = {
     {UTF8_ERROR, "The input is not valid UTF-8"},
     {UNITIALIZED, "Unitialized"},
     {EMPTY, "Empty"},
-    {UNESCAPED_CHARS, "Within strings, some characters must be escapted, we "
-                      "found unescapted characters"},
+    {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
+                      "found unescaped characters"},
     {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as "
                        "you may have found a bug in simdjson"},
 };
