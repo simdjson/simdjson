@@ -626,13 +626,18 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       // this is almost never going to get called!!!
       return parse_float_strtod(buf, pj, offset, p);
     }
-    //double d = compute_float_double(i, exponent, power_index, negative);
-    double d = 0;
-    if (/*std::isnan(d) && */ true /*high-precision flag here*/) {
+    double d = compute_float_double(i, exponent, power_index, negative);
+    // double d = 0;
+    if (std::isnan(d) && true /*high-precision flag here*/) {
       bool success = true;
+      // d = compute_float_double(power_index, i, negative, &success);
       d = compute_float_64(power_index, i, negative, &success);
       if (!success) {
-        return parse_float_strtod(buf, pj, offset, p);
+        // return parse_float_strtod(buf, pj, offset, p);
+        d = compute_float_128(power_index, i, 0, 0, negative, true);
+	if (std::isnan(d)) {
+          return parse_float_strtod(buf, pj, offset, p);
+	}
       }
       //if (std::isnan(d)) {
         //d = compute_float_128(power_index, i, 0, 0, negative, true);
