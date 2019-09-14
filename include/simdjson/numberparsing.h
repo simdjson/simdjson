@@ -194,39 +194,31 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 
   // handle case where strtod finds an invalid number. won't we have a buffer overflow if it's just numbers past the end?
-  static really_inline double compute_float_64(uint64_t power_index, uint64_t i, bool negative, bool *success) {
-    double d = 0;
-    *success = true;
-    if (i != 0) {
-      components c = power_of_ten_components[power_index];
-      uint64_t factor_mantissa = c.mantissa;
-      int lz = leading_zeroes(i);
-      i <<= lz;
-      __uint128_t large_mantissa = (__uint128_t)i * factor_mantissa;
-      uint64_t upper = large_mantissa >> 64;
-      if (likely((upper & 0x1FF) != 0x1FF)) {
-        uint64_t mantissa = 0;
-        if (upper & (1ULL << 63)) {
-          mantissa = upper >> 10;
-        } else {
-          mantissa = upper >> 9;
-          lz++;
-        }
-        mantissa += mantissa & 1;
-        mantissa >>= 1;
-        mantissa &= ~(1ULL << 52);
-        uint64_t real_exponent = c.exp + 1023 + (127 - lz);
-        mantissa |= real_exponent << 52;
-        mantissa |= ((uint64_t)negative) << 63;
-        d = *((double *)&mantissa);
-	return d;
+  static really_inline double compute_float_64(uint64_t power_index, uint64_t i, bool negative) {
+    components c = power_of_ten_components[power_index];
+    uint64_t factor_mantissa = c.mantissa;
+    int lz = leading_zeroes(i);
+    i <<= lz;
+    __uint128_t large_mantissa = (__uint128_t)i * factor_mantissa;
+    uint64_t upper = large_mantissa >> 64;
+    if (likely((upper & 0x1FF) != 0x1FF)) {
+      uint64_t mantissa = 0;
+      if (upper & (1ULL << 63)) {
+	mantissa = upper >> 10;
       } else {
-        *success = false;
-        return 0;
+	mantissa = upper >> 9;
+	lz++;
       }
-    } else {
-      return 0;
+      mantissa += mantissa & 1;
+      mantissa >>= 1;
+      mantissa &= ~(1ULL << 52);
+      uint64_t real_exponent = c.exp + 1023 + (127 - lz);
+      mantissa |= real_exponent << 52;
+      mantissa |= ((uint64_t)negative) << 63;
+      double d = *((double *)&mantissa);
+      return d;
     }
+    return 0;
   }
 
   static const int powersOf10[] = {1, 10, 100, 1000};
@@ -261,7 +253,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     __uint128_t max_lower = lower + max_inaccuracy;
     __uint128_t unsafe_mask = (~((__uint128_t)0)) << safeBits;
     if ((max_lower & unsafe_mask) != (lower & unsafe_mask)) {
-      return NAN;
+      return 0;
     }
     uint64_t mantissa = upper << (128 - safeBits) | lower >> safeBits;
     mantissa += mantissa & 1;
@@ -278,7 +270,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   static double compute_float_double(uint64_t i, int64_t exponent, int64_t power_index, bool negative) {
     double double_threshold = 9007199254740991.0; // 2 ** 53 - 1
     if (i > (uint64_t)double_threshold) {
-      return NAN;
+      return 0;
     }
     double d = i;
     if (22 < exponent && exponent < 22 + 16) {
@@ -297,7 +289,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
       }
       return d;
     }
-    return NAN;
+    return 0;
   }
 
 
@@ -342,9 +334,8 @@ static never_inline uint32_t parse_long_float(const uint8_t *const buf, ParsedJs
   }
   int64_t exponent = first_after_period - p;
   int64_t power_index = 308 + exponent + exp_number;
-  bool b = false;
-  double d = compute_float_64(power_index, i, negative, &b);
-  if (std::isnan(d)) {
+  double d = compute_float_64(power_index, i, negative);
+  if (d == 0) {
     uint16_t i_end = 0;
     uint16_t i_end_cutoff = ((uint16_t)~0) / 10 - 1;
     int digits_in_i_end = 0;
@@ -357,7 +348,7 @@ static never_inline uint32_t parse_long_float(const uint8_t *const buf, ParsedJs
       p++;
     }
     d = compute_float_128(power_index - digits_in_i_end, i, i_end, digits_in_i_end, negative, false);
-    if (std::isnan(d)) {
+    if (d == 0) {
       return parse_float_strtod(buf, pj, offset, float_end);
     }
   }
@@ -626,18 +617,17 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       // this is almost never going to get called!!!
       return parse_float_strtod(buf, pj, offset, p);
     }
-    double d = compute_float_double(i, exponent, power_index, negative);
-    // double d = 0;
-    if (std::isnan(d) && true /*high-precision flag here*/) {
-      bool success = true;
-      // d = compute_float_double(power_index, i, negative, &success);
-      d = compute_float_64(power_index, i, negative, &success);
-      if (!success) {
-        // return parse_float_strtod(buf, pj, offset, p);
-        d = compute_float_128(power_index, i, 0, 0, negative, true);
-	if (std::isnan(d)) {
-          return parse_float_strtod(buf, pj, offset, p);
-	}
+    double d = 0;
+    if (likely(i != 0)) {
+      d = compute_float_double(i, exponent, power_index, negative);
+			if (d == 0) {
+				d = compute_float_64(power_index, i, negative);
+				if (d == 0) {
+					d = compute_float_128(power_index, i, 0, 0, negative, true);
+					if (d == 0) {
+						return parse_float_strtod(buf, pj, offset, p);
+					}
+				}
       }
       //if (std::isnan(d)) {
         //d = compute_float_128(power_index, i, 0, 0, negative, true);
