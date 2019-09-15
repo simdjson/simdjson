@@ -214,7 +214,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     mantissa += mantissa & 1;
     mantissa >>= 1;
     mantissa &= ~(1ULL << 52);
-    uint64_t real_exponent = c.exp + 1023 + (63 - lz);
+    uint64_t real_exponent = c.exp + 1023 + (127 - lz);
     mantissa |= real_exponent << 52;
     mantissa |= (((uint64_t)negative) << 63);
     double d;
