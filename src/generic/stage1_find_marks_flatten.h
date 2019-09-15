@@ -26,16 +26,14 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
-really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
+really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits) {
   // In some instances, the next branch is expensive because it is mispredicted.
   // Unfortunately, in other cases,
   // it helps tremendously.
   if (bits == 0)
     return;
   uint32_t cnt = hamming(bits);
-  uint32_t next_base = base + cnt;
   idx -= 64;
-  base_ptr += base;
   {
     base_ptr[0] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
@@ -53,37 +51,36 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx
     bits = bits & (bits - 1);
     base_ptr[7] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
   if (cnt > 8) {
-    base_ptr[0] = idx + trailing_zeroes(bits);
+    base_ptr[8] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[1] = idx + trailing_zeroes(bits);
+    base_ptr[9] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[2] = idx + trailing_zeroes(bits);
+    base_ptr[10] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[3] = idx + trailing_zeroes(bits);
+    base_ptr[11] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[4] = idx + trailing_zeroes(bits);
+    base_ptr[12] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[5] = idx + trailing_zeroes(bits);
+    base_ptr[13] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[6] = idx + trailing_zeroes(bits);
+    base_ptr[14] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[7] = idx + trailing_zeroes(bits);
+    base_ptr[15] = idx + trailing_zeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr += 8;
   }
   if (cnt > 16) { // unluckly: we rarely get here
     // since it means having one structural or pseudo-structral element
     // every 4 characters (possible with inputs like "","","",...).
+    uint32_t i = 16;
     do {
-      base_ptr[0] = idx + trailing_zeroes(bits);
+      base_ptr[i] = idx + trailing_zeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr++;
-    } while (bits != 0);
+      i++;
+    } while (i < cnt);
   }
-  base = next_base;
+  base_ptr += cnt;
 }
 #endif // SIMDJSON_NAIVE_FLATTEN
