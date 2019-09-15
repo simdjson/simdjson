@@ -194,7 +194,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 
   // handle case where strtod finds an invalid number. won't we have a buffer overflow if it's just numbers past the end?
-  static really_inline double compute_float_64(uint64_t power_index, uint64_t i, bool negative, bool *success) {
+  static really_inline bool compute_float_64(uint64_t power_index, uint64_t i, bool negative, double *dd) {
     components c = power_of_ten_components[power_index];
     uint64_t factor_mantissa = c.mantissa;
     int lz = leading_zeroes(i);
@@ -202,8 +202,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     __uint128_t large_mantissa = (__uint128_t)i * factor_mantissa;
     uint64_t upper = large_mantissa >> 64;
     if (unlikely((upper & 0x1FF) == 0x1FF)) {
-      *success = false;
-      return 0;
+      return false;
     }
     uint64_t mantissa = 0;
     if (upper & (1ULL << 63)) {
@@ -215,18 +214,18 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     mantissa += mantissa & 1;
     mantissa >>= 1;
     mantissa &= ~(1ULL << 52);
-    uint64_t real_exponent = c.exp + 1023 + (127 - lz);
+    uint64_t real_exponent = c.exp + 1023 + (63 - lz);
     mantissa |= real_exponent << 52;
-    mantissa |= ((uint64_t)negative) << 63;
+    mantissa |= (((uint64_t)negative) << 63);
     double d;
     memcpy(&d, &mantissa, sizeof(d));
-    *success = true;
-    return d;
+    *dd = d;
+    return true;
   }
 
   static const int powersOf10[] = {1, 10, 100, 1000};
 
-  static double never_inline compute_float_128(uint64_t power_index, uint64_t i_64, bool negative) {
+  static double never_inline compute_float_128(uint64_t power_index, uint64_t i_64, bool negative, bool *success) {
     components c = power_of_ten_components[power_index];
     uint64_t factor_mantissa = c.mantissa;
     __uint128_t i = i_64;
@@ -246,6 +245,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     __uint128_t max_lower = lower + i;
     __uint128_t unsafe_mask = (~((__uint128_t)0)) << safeBits;
     if ((max_lower & unsafe_mask) != (lower & unsafe_mask)) {
+      *success = false;
       return 0;
     }
     uint64_t mantissa = upper << (128 - safeBits) | lower >> safeBits;
@@ -257,15 +257,15 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     mantissa |= ((uint64_t)negative) << 63; // is this safe? is this bool in [0, 1]?
     double d;
     memcpy(&d, &mantissa, sizeof(d));
+    *success = true;
     return d;
   }
 
 
-  static double compute_float_double(int64_t power_index, uint64_t i, bool negative, bool *success) {
+  static really_inline bool compute_float_double(int64_t power_index, uint64_t i, bool negative, double *dd) {
     double double_threshold = 9007199254740991.0; // 2 ** 53 - 1
     if (i > (uint64_t)double_threshold) {
-      *success = false;
-      return 0;
+      return false;
     }
     double d = i;
     if (308 + 22 < power_index && power_index < 308 + 22 + 16) {
@@ -281,11 +281,9 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
       if (negative) {
         d = -d;
       }
-      *success = true;
-      return d;
+      *dd = d;
     }
-    *success = false;
-    return 0;
+    return false;
   }
 
 
@@ -555,13 +553,11 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     }
     double d = 0;
     if (likely(i != 0)) {
-      bool success = true;
-      d = compute_float_double(power_index, i, negative, &success);
-      if (!success) {
-        d = compute_float_64(power_index, i, negative, &success);
-        if (!success) {
-          d = compute_float_128(power_index, i, negative);
-          if (d == 0) {
+      if (!compute_float_double(power_index, i, negative, &d)) {
+        if (!compute_float_64(power_index, i, negative, &d)) {
+          bool success = true;
+          d = compute_float_128(power_index, i, negative, &success);
+          if (!success) {
             return parse_float_strtod(buf, pj, offset, p);
           }
         }
