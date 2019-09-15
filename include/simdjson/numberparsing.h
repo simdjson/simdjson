@@ -194,7 +194,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 
   // handle case where strtod finds an invalid number. won't we have a buffer overflow if it's just numbers past the end?
-  static really_inline bool compute_float_64(uint64_t power_index, uint64_t i, bool negative, double *dd) {
+  static really_inline double compute_float_64(uint64_t power_index, uint64_t i, bool negative, bool *success) {
     components c = power_of_ten_components[power_index];
     uint64_t factor_mantissa = c.mantissa;
     int lz = leading_zeroes(i);
@@ -202,7 +202,8 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     __uint128_t large_mantissa = (__uint128_t)i * factor_mantissa;
     uint64_t upper = large_mantissa >> 64;
     if (unlikely((upper & 0x1FF) == 0x1FF)) {
-      return false;
+      *success = false;
+      return 0;
     }
     uint64_t mantissa = 0;
     if (upper & (1ULL << 63)) {
@@ -219,8 +220,8 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     mantissa |= (((uint64_t)negative) << 63);
     double d;
     memcpy(&d, &mantissa, sizeof(d));
-    *dd = d;
-    return true;
+    *success = true;
+    return d;
   }
 
   static const int powersOf10[] = {1, 10, 100, 1000};
@@ -262,10 +263,11 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   }
 
 
-  static really_inline bool compute_float_double(int64_t power_index, uint64_t i, bool negative, double *dd) {
+  static really_inline double compute_float_double(int64_t power_index, uint64_t i, bool negative, bool *success) {
     double double_threshold = 9007199254740991.0; // 2 ** 53 - 1
     if (i > (uint64_t)double_threshold) {
-      return false;
+      *success = false;
+      return 0;
     }
     double d = i;
     if (308 + 22 < power_index && power_index < 308 + 22 + 16) {
@@ -281,9 +283,11 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
       if (negative) {
         d = -d;
       }
-      *dd = d;
+      *success = true;
+      return d;
     }
-    return false;
+    *success = false;
+    return 0;
   }
 
 
@@ -553,9 +557,11 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     }
     double d = 0;
     if (likely(i != 0)) {
-      if (!compute_float_double(power_index, i, negative, &d)) {
-        if (!compute_float_64(power_index, i, negative, &d)) {
-          bool success = true;
+      bool success = true;
+      d = compute_float_double(power_index, i, negative, &success);
+      if (!success) {
+        d = compute_float_64(power_index, i, negative, &success);
+        if (!success) {
           d = compute_float_128(power_index, i, negative, &success);
           if (!success) {
             return parse_float_strtod(buf, pj, offset, p);
