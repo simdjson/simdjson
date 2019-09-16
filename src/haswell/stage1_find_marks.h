@@ -112,18 +112,18 @@ really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits
       base_ptr[i] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
     }
-  }
 
-  // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-  // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-  // or the start of a value ("abc" true 123) every four characters.
-  if (unlikely(cnt > 16)) {
-    uint32_t i = 16;
-    do {
-      base_ptr[i] = idx + trailing_zeroes(bits);
-      bits = _blsr_u64(bits);
-      i++;
-    } while (i < cnt);
+    // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+    // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+    // or the start of a value ("abc" true 123) every four characters.
+    if (unlikely(cnt > 16)) {
+      uint32_t i = 16;
+      do {
+        base_ptr[i] = idx + trailing_zeroes(bits);
+        bits = _blsr_u64(bits);
+        i++;
+      } while (i < cnt);
+    }
   }
 
   base_ptr += cnt;
