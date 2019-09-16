@@ -36,7 +36,15 @@
 #include "simdjson/stage2_build_tape.h"
 
 // Global arguments
-static bool find_marks_only = false;
+bool find_marks_only = false;
+bool verbose = false;
+bool dump = false;
+bool json_output = false;
+bool force_one_iteration = false;
+bool just_data = false;
+bool force_sse = false;
+int32_t iterations = -1;
+int32_t warmup_iterations = -1;
 
 namespace simdjson {
 Architecture _find_best_supported_implementation() {
@@ -47,7 +55,7 @@ Architecture _find_best_supported_implementation() {
       instruction_set::SSE42 | instruction_set::PCLMULQDQ;
   uint32_t supports = detect_supported_architectures();
   // Order from best to worst (within architecture)
-  if ((haswell_flags & supports) == haswell_flags) {
+  if ((haswell_flags & supports) == haswell_flags && !force_sse) {
     return Architecture::HASWELL;
   }
   if ((westmere_flags & supports) == westmere_flags) {
@@ -125,24 +133,20 @@ unified_functype *unified_ptr = &unified_machine_dispatch;
 } // namespace simdjson
 
 int main(int argc, char *argv[]) {
-  bool verbose = false;
-  bool dump = false;
-  bool json_output = false;
-  bool force_one_iteration = false;
-  bool just_data = false;
-  int32_t iterations = -1;
-  int32_t warmup_iterations = -1;
 
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "1vdtn:w:f")) != -1) {
+  while ((c = getopt(argc, argv, "1vdtn:w:fs")) != -1) {
     switch (c) {
     case 'n':
       iterations = atoi(optarg);
       break;
     case 'w':
       warmup_iterations = atoi(optarg);
+      break;
+    case 's':
+      force_sse = true;
       break;
     case 't':
       just_data = true;
