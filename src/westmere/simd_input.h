@@ -28,8 +28,7 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline void each(F const& each_chunk)
-  {
+  really_inline void each(F const& each_chunk) const {
     each_chunk(this->chunks[0]);
     each_chunk(this->chunks[1]);
     each_chunk(this->chunks[2]);
@@ -37,7 +36,7 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) {
+  really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) const {
     return simd_input<Architecture::WESTMERE>(
       map_chunk(this->chunks[0]),
       map_chunk(this->chunks[1]),
@@ -47,7 +46,7 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::WESTMERE> map(simd_input<Architecture::WESTMERE> b, F const& map_chunk) {
+  really_inline simd_input<Architecture::WESTMERE> map(const simd_input<Architecture::WESTMERE> b, F const& map_chunk) const {
     return simd_input<Architecture::WESTMERE>(
       map_chunk(this->chunks[0], b.chunks[0]),
       map_chunk(this->chunks[1], b.chunks[1]),
@@ -57,13 +56,13 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline __m128i reduce(F const& reduce_pair) {
+  really_inline __m128i reduce(F const& reduce_pair) const {
     __m128i r01 = reduce_pair(this->chunks[0], this->chunks[1]);
     __m128i r23 = reduce_pair(this->chunks[2], this->chunks[3]);
     return reduce_pair(r01, r23);
   }
 
-  really_inline uint64_t to_bitmask() {
+  really_inline uint64_t to_bitmask() const {
     uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(this->chunks[0]));
     uint64_t r1 =                       _mm_movemask_epi8(this->chunks[1]);
     uint64_t r2 =                       _mm_movemask_epi8(this->chunks[2]);
@@ -71,14 +70,21 @@ struct simd_input<Architecture::WESTMERE> {
     return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
   }
 
-  really_inline uint64_t eq(uint8_t m) {
+  really_inline simd_input<Architecture::WESTMERE> bit_or(const uint8_t m) const {
+    const __m128i mask = _mm_set1_epi8(m);
+    return this->map( [&](auto a) {
+      return _mm_or_si128(a, mask);
+    });
+  }
+
+  really_inline uint64_t eq(const uint8_t m) const {
     const __m128i mask = _mm_set1_epi8(m);
     return this->map( [&](auto a) {
       return _mm_cmpeq_epi8(a, mask);
     }).to_bitmask();
   }
 
-  really_inline uint64_t lteq(uint8_t m) {
+  really_inline uint64_t lteq(const uint8_t m) const {
     const __m128i maxval = _mm_set1_epi8(m);
     return this->map( [&](auto a) {
       return _mm_cmpeq_epi8(_mm_max_epu8(maxval, a), maxval);
