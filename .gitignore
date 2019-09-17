@@ -14,6 +14,7 @@
 /jsoncheck
 /jsonpointer
 /jsonstats
+/integer_tests
 /libsimdjson.so*
 /minify
 /numberparsingcheck

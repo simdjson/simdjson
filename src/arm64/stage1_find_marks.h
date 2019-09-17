@@ -12,7 +12,7 @@
 
 namespace simdjson::arm64 {
 
-really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
+really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
 
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
   return vmull_p64(-1ULL, quote_bits);
@@ -21,9 +21,9 @@ really_inline uint64_t compute_quote_mask(uint64_t quote_bits) {
 #endif
 }
 
-really_inline void find_whitespace_and_structurals(
-    simd_input<ARCHITECTURE> in, uint64_t &whitespace,
-    uint64_t &structurals) {
+really_inline void find_whitespace_and_operators(
+    const simd_input<ARCHITECTURE> in,
+    uint64_t &whitespace, uint64_t &op) {
   const uint8x16_t low_nibble_mask =
       (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
   const uint8x16_t high_nibble_mask =
@@ -38,9 +38,9 @@ really_inline void find_whitespace_and_structurals(
     return vandq_u8(shuf_lo, shuf_hi);
   });
 
-  const uint8x16_t structural_shufti_mask = vmovq_n_u8(0x7);
-  structurals = v.map([&](auto _v) {
-    return vtstq_u8(_v, structural_shufti_mask);
+  const uint8x16_t operator_shufti_mask = vmovq_n_u8(0x7);
+  op = v.map([&](auto _v) {
+    return vtstq_u8(_v, operator_shufti_mask);
   }).to_bitmask();
 
   const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);

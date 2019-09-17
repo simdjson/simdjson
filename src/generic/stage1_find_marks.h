@@ -12,140 +12,160 @@
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-really_inline uint64_t find_odd_backslash_sequences(
-    simd_input<ARCHITECTURE> in,
-    uint64_t &prev_iter_ends_odd_backslash) {
+really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
-  uint64_t bs_bits = in.eq('\\');
-  uint64_t start_edges = bs_bits & ~(bs_bits << 1);
+  uint64_t start_edges = match & ~(match << 1);
   /* flip lowest if we have an odd-length run at the end of the prior
    * iteration */
-  uint64_t even_start_mask = even_bits ^ prev_iter_ends_odd_backslash;
+  uint64_t even_start_mask = even_bits ^ overflow;
   uint64_t even_starts = start_edges & even_start_mask;
   uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = bs_bits + even_starts;
+  uint64_t even_carries = match + even_starts;
 
   uint64_t odd_carries;
   /* must record the carry-out of our odd-carries out of bit 63; this
    * indicates whether the sense of any edge going to the next iteration
    * should be flipped */
-  bool iter_ends_odd_backslash =
-      add_overflow(bs_bits, odd_starts, &odd_carries);
+  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
 
-  odd_carries |= prev_iter_ends_odd_backslash; /* push in bit zero as a
-                                                * potential end if we had an
-                                                * odd-numbered run at the
-                                                * end of the previous
-                                                * iteration */
-  prev_iter_ends_odd_backslash = iter_ends_odd_backslash ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~bs_bits;
-  uint64_t odd_carry_ends = odd_carries & ~bs_bits;
+  odd_carries |= overflow; /* push in bit zero as a
+                              * potential end if we had an
+                              * odd-numbered run at the
+                              * end of the previous
+                              * iteration */
+  overflow = new_overflow ? 0x1ULL : 0x0ULL;
+  uint64_t even_carry_ends = even_carries & ~match;
+  uint64_t odd_carry_ends = odd_carries & ~match;
   uint64_t even_start_odd_end = even_carry_ends & odd_bits;
   uint64_t odd_start_even_end = odd_carry_ends & even_bits;
   uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
   return odd_ends;
 }
 
-// return both the quote mask (which is a half-open mask that covers the first
-// quote
-// in an unescaped quote pair and everything in the quote pair) and the quote
-// bits, which are the simple
-// unescaped quoted bits. We also update the prev_iter_inside_quote value to
-// tell the next iteration
-// whether we finished the final iteration inside a quote pair; if so, this
-// inverts our behavior of
-// whether we're inside quotes for the next iteration.
-// Note that we don't do any error checking to see if we have backslash
-// sequences outside quotes; these
-// backslash sequences (of any length) will be detected elsewhere.
-really_inline uint64_t find_quote_mask_and_bits(
-    simd_input<ARCHITECTURE> in, uint64_t odd_ends,
-    uint64_t &prev_iter_inside_quote, uint64_t &quote_bits,
-    uint64_t &error_mask) {
-  quote_bits = in.eq('"');
-  quote_bits = quote_bits & ~odd_ends;
-  uint64_t quote_mask = compute_quote_mask(quote_bits);
-  quote_mask ^= prev_iter_inside_quote;
+//
+// Check if the current character immediately follows a matching character.
+//
+// For example, this checks for quotes with backslashes in front of them:
+//
+//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+//
+really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+  const uint64_t result = match << 1 | overflow;
+  overflow = match >> 63;
+  return result;
+}
+
+//
+// Check if the current character follows a matching character, with possible "filler" between.
+// For example, this checks for empty curly braces, e.g. 
+//
+//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+//
+really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow ) {
+  uint64_t follows_match = follows(match, overflow);
+  uint64_t result;
+  overflow |= add_overflow(follows_match, filler, &result);
+  return result;
+}
+
+really_inline ErrorValues detect_errors_on_eof(
+  uint64_t &unescaped_chars_error,
+  const uint64_t prev_in_string) {
+  if (prev_in_string) {
+    return UNCLOSED_STRING;
+  }
+  if (unescaped_chars_error) {
+    return UNESCAPED_CHARS;
+  }
+  return SUCCESS;
+}
+
+//
+// Return a mask of all string characters plus end quotes.
+//
+// prev_escaped is overflow saying whether the next character is escaped.
+// prev_in_string is overflow saying whether we're still in a string.
+//
+// Backslash sequences outside of quotes will be detected in stage 2.
+//
+really_inline uint64_t find_in_string(const simd_input<ARCHITECTURE> in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
+  const uint64_t backslash = in.eq('\\');
+  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+  const uint64_t quote = in.eq('"') & ~escaped;
+  // compute_quote_mask returns start quote plus string contents.
+  const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+  /* right shift of a signed value expected to be well-defined and standard
+   * compliant as of C++20,
+   * John Regher from Utah U. says this is fine code */
+  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  // Use ^ to turn the beginning quote off, and the end quote on.
+  return in_string ^ quote;
+}
+
+really_inline uint64_t invalid_string_bytes(const simd_input<ARCHITECTURE> in, const uint64_t quote_mask) {
   /* All Unicode characters may be placed within the
    * quotation marks, except for the characters that MUST be escaped:
    * quotation mark, reverse solidus, and the control characters (U+0000
    * through U+001F).
    * https://tools.ietf.org/html/rfc8259 */
-  uint64_t unescaped = in.lteq(0x1F);
-  error_mask |= quote_mask & unescaped;
-  /* right shift of a signed value expected to be well-defined and standard
-   * compliant as of C++20,
-   * John Regher from Utah U. says this is fine code */
-  prev_iter_inside_quote =
-      static_cast<uint64_t>(static_cast<int64_t>(quote_mask) >> 63);
-  return quote_mask;
+  const uint64_t unescaped = in.lteq(0x1F);
+  return quote_mask & unescaped;
 }
 
-really_inline uint64_t finalize_structurals(
-    uint64_t structurals, uint64_t whitespace, uint64_t quote_mask,
-    uint64_t quote_bits, uint64_t &prev_iter_ends_pseudo_pred) {
-  // mask off anything inside quotes
-  structurals &= ~quote_mask;
-  // add the real quote bits back into our bit_mask as well, so we can
-  // quickly traverse the strings we've spent all this trouble gathering
-  structurals |= quote_bits;
-  // Now, establish "pseudo-structural characters". These are non-whitespace
-  // characters that are (a) outside quotes and (b) have a predecessor that's
-  // either whitespace or a structural character. This means that subsequent
-  // passes will get a chance to encounter the first character of every string
-  // of non-whitespace and, if we're parsing an atom like true/false/null or a
-  // number we can stop at the first whitespace or structural character
-  // following it.
+//
+// Determine which characters are *structural*:
+// - braces: [] and {}
+// - the start of primitives (123, true, false, null)
+// - the start of invalid non-whitespace (+, &, ture, UTF-8)
+//
+// Also detects value sequence errors:
+// - two values with no separator between ("hello" "world")
+// - separators with no values ([1,] [1,,]and [,2])
+//
+// This method will find all of the above whether it is in a string or not.
+//
+// To reduce dependency on the expensive "what is in a string" computation, this method treats the
+// contents of a string the same as content outside. Errors and structurals inside the string or on
+// the trailing quote will need to be removed later when the correct string information is known.
+//
+really_inline uint64_t find_structurals(const simd_input<ARCHITECTURE> in, uint64_t &prev_primitive) {
+  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
+  uint64_t whitespace, op;
+  find_whitespace_and_operators(in, whitespace, op);
 
-  // a qualified predecessor is something that can happen 1 position before an
-  // pseudo-structural character
-  uint64_t pseudo_pred = structurals | whitespace;
+  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
+  // Everything except whitespace, braces, colon and comma.
+  const uint64_t primitive = ~(op | whitespace);
+  const uint64_t follows_primitive = follows(primitive, prev_primitive);
+  const uint64_t start_primitive = primitive & ~follows_primitive;
 
-  uint64_t shifted_pseudo_pred =
-      (pseudo_pred << 1) | prev_iter_ends_pseudo_pred;
-  prev_iter_ends_pseudo_pred = pseudo_pred >> 63;
-  uint64_t pseudo_structurals =
-      shifted_pseudo_pred & (~whitespace) & (~quote_mask);
-  structurals |= pseudo_structurals;
-
-  // now, we've used our close quotes all we need to. So let's switch them off
-  // they will be off in the quote mask and on in quote bits.
-  structurals &= ~(quote_bits & ~quote_mask);
-  return structurals;
+  // Return final structurals
+  return op | start_primitive;
 }
 
 // Find structural bits in a 64-byte chunk.
 really_inline void find_structural_bits_64(
-    const uint8_t *buf, size_t idx, uint32_t *&base_ptr,
-    uint64_t &prev_iter_ends_odd_backslash, uint64_t &prev_iter_inside_quote,
-    uint64_t &prev_iter_ends_pseudo_pred, uint64_t &structurals,
-    uint64_t &error_mask,
+    const uint8_t *buf, const size_t idx, uint32_t *&base_ptr,
+    uint64_t &prev_escaped, uint64_t &prev_in_string,
+    uint64_t &prev_primitive,
+    uint64_t &structurals,
+    uint64_t &unescaped_chars_error,
     utf8_checker<ARCHITECTURE> &utf8_state) {
-  simd_input<ARCHITECTURE> in(buf);
+  // Validate UTF-8
+  const simd_input<ARCHITECTURE> in(buf);
   utf8_state.check_next_input(in);
-  /* detect odd sequences of backslashes */
-  uint64_t odd_ends = find_odd_backslash_sequences(
-      in, prev_iter_ends_odd_backslash);
 
-  /* detect insides of quote pairs ("quote_mask") and also our quote_bits
-   * themselves */
-  uint64_t quote_bits;
-  uint64_t quote_mask = find_quote_mask_and_bits(
-      in, odd_ends, prev_iter_inside_quote, quote_bits, error_mask);
+  // Detect values in strings
+  const uint64_t in_string = find_in_string(in, prev_escaped, prev_in_string);
+  unescaped_chars_error |= invalid_string_bytes(in, in_string);
 
   /* take the previous iterations structural bits, not our current
-   * iteration,
-   * and flatten */
+   * iteration, and flatten */
   flatten_bits(base_ptr, idx, structurals);
 
-  uint64_t whitespace;
-  find_whitespace_and_structurals(in, whitespace, structurals);
-
-  /* fixup structurals to reflect quotes and add pseudo-structural
-   * characters */
-  structurals = finalize_structurals(structurals, whitespace, quote_mask,
-                                     quote_bits, prev_iter_ends_pseudo_pred);
+  // find_structurals doesn't use in_string; we filter that out here.
+  structurals = find_structurals(in, prev_primitive) & ~in_string;
 }
 
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -162,37 +182,27 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
    * being zeros persistent state across loop does the last iteration end
    * with an odd-length sequence of backslashes? */
 
-  /* either 0 or 1, but a 64-bit value */
-  uint64_t prev_iter_ends_odd_backslash = 0ULL;
-  /* does the previous iteration end inside a double-quote pair? */
-  uint64_t prev_iter_inside_quote =
-      0ULL; /* either all zeros or all ones
-             * does the previous iteration end on something that is a
-             * predecessor of a pseudo-structural character - i.e.
-             * whitespace or a structural character effectively the very
-             * first char is considered to follow "whitespace" for the
-             * purposes of pseudo-structural character detection so we
-             * initialize to 1 */
-  uint64_t prev_iter_ends_pseudo_pred = 1ULL;
-
-  /* structurals are persistent state across loop as we flatten them on the
-   * subsequent iteration into our array pointed to be base_ptr.
-   * This is harmless on the first iteration as structurals==0
-   * and is done for performance reasons; we can hide some of the latency of
-   * the
-   * expensive carryless multiply in the previous step with this work */
+  // Whether the first character of the next iteration is escaped.
+  uint64_t prev_escaped = 0ULL;
+  // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
+  uint64_t prev_in_string = 0ULL;
+  // Whether the last character of the previous iteration is a primitive value character
+  // (anything except whitespace, braces, comma or colon).
+  uint64_t prev_primitive = 0ULL;
+  // Mask of structural characters from the last iteration.
+  // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
+  // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
   uint64_t structurals = 0;
 
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
-  uint64_t error_mask = 0; /* for unescaped characters within strings (ASCII
-                              code points < 0x20) */
+  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
+  uint64_t unescaped_chars_error = 0;
 
   for (; idx < lenminus64; idx += 64) {
     find_structural_bits_64(&buf[idx], idx, base_ptr,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
+                            prev_escaped, prev_in_string, prev_primitive,
+                            structurals, unescaped_chars_error, utf8_state);
   }
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
@@ -202,20 +212,19 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     memset(tmp_buf, 0x20, 64);
     memcpy(tmp_buf, buf + idx, len - idx);
     find_structural_bits_64(&tmp_buf[0], idx, base_ptr,
-                            prev_iter_ends_odd_backslash,
-                            prev_iter_inside_quote, prev_iter_ends_pseudo_pred,
-                            structurals, error_mask, utf8_state);
+                            prev_escaped, prev_in_string, prev_primitive,
+                            structurals, unescaped_chars_error, utf8_state);
     idx += 64;
-  }
-
-  /* is last string quote closed? */
-  if (prev_iter_inside_quote) {
-    return simdjson::UNCLOSED_STRING;
   }
 
   /* finally, flatten out the remaining structurals from the last iteration
    */
   flatten_bits(base_ptr, idx, structurals);
+
+  simdjson::ErrorValues error = detect_errors_on_eof(unescaped_chars_error, prev_in_string);
+  if (error != simdjson::SUCCESS) {
+    return error;
+  }
 
   pj.n_structural_indexes = base_ptr - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
@@ -233,8 +242,5 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  if (error_mask) {
-    return simdjson::UNESCAPED_CHARS;
-  }
   return utf8_state.errors();
 }

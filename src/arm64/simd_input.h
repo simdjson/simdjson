@@ -57,8 +57,7 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline void each(F const& each_chunk)
-  {
+  really_inline void each(F const& each_chunk) const {
     each_chunk(this->chunks[0]);
     each_chunk(this->chunks[1]);
     each_chunk(this->chunks[2]);
@@ -66,7 +65,7 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) {
+  really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) const {
     return simd_input<Architecture::ARM64>(
       map_chunk(this->chunks[0]),
       map_chunk(this->chunks[1]),
@@ -76,7 +75,7 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::ARM64> map(simd_input<Architecture::ARM64> b, F const& map_chunk) {
+  really_inline simd_input<Architecture::ARM64> map(simd_input<Architecture::ARM64> b, F const& map_chunk) const {
     return simd_input<Architecture::ARM64>(
       map_chunk(this->chunks[0], b.chunks[0]),
       map_chunk(this->chunks[1], b.chunks[1]),
@@ -86,24 +85,31 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline uint8x16_t reduce(F const& reduce_pair) {
+  really_inline uint8x16_t reduce(F const& reduce_pair) const {
     uint8x16_t r01 = reduce_pair(this->chunks[0], this->chunks[1]);
     uint8x16_t r23 = reduce_pair(this->chunks[2], this->chunks[3]);
     return reduce_pair(r01, r23);
   }
 
-  really_inline uint64_t to_bitmask() {
+  really_inline uint64_t to_bitmask() const {
     return neon_movemask_bulk(this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3]);
   }
 
-  really_inline uint64_t eq(uint8_t m) {
+  really_inline simd_input<Architecture::ARM64> bit_or(const uint8_t m) const {
+    const uint8x16_t mask = vmovq_n_u8(m);
+    return this->map( [&](auto a) {
+      return vorrq_u8(a, mask);
+    });
+  }
+
+  really_inline uint64_t eq(const uint8_t m) const {
     const uint8x16_t mask = vmovq_n_u8(m);
     return this->map( [&](auto a) {
       return vceqq_u8(a, mask);
     }).to_bitmask();
   }
 
-  really_inline uint64_t lteq(uint8_t m) {
+  really_inline uint64_t lteq(const uint8_t m) const {
     const uint8x16_t mask = vmovq_n_u8(m);
     return this->map( [&](auto a) {
       return vcleq_u8(a, mask);
