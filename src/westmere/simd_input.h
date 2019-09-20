@@ -10,22 +10,21 @@ namespace simdjson {
 
 template <>
 struct simd_input<Architecture::WESTMERE> {
-  __m128i chunks[4];
+  const __m128i chunks[4];
 
-  really_inline simd_input(const uint8_t *ptr) {
-    this->chunks[0] = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0));
-    this->chunks[1] = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16));
-    this->chunks[2] = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32));
-    this->chunks[3] = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48));
-  }
+  really_inline simd_input()
+      : chunks { __m128i(), __m128i(), __m128i(), __m128i() } {}
 
-  really_inline simd_input(__m128i i0, __m128i i1, __m128i i2, __m128i i3)
-  {
-    this->chunks[0] = i0;
-    this->chunks[1] = i1;
-    this->chunks[2] = i2;
-    this->chunks[3] = i3;
-  }
+  really_inline simd_input(const __m128i chunk0, const __m128i chunk1, const __m128i chunk2, const __m128i chunk3)
+      : chunks{chunk0, chunk1, chunk2, chunk3} {}
+
+  really_inline simd_input(const uint8_t *ptr)
+      : simd_input(
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0)),
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16)),
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32)),
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48))
+      ) {}
 
   template <typename F>
   really_inline void each(F const& each_chunk) const {

@@ -89,7 +89,7 @@ really_inline ErrorValues detect_errors_on_eof(
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline uint64_t find_in_string(const simd_input<ARCHITECTURE> in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
+really_inline uint64_t find_strings(const simd_input<ARCHITECTURE> in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -103,13 +103,12 @@ really_inline uint64_t find_in_string(const simd_input<ARCHITECTURE> in, uint64_
   return in_string ^ quote;
 }
 
-really_inline uint64_t invalid_string_bytes(const simd_input<ARCHITECTURE> in, const uint64_t quote_mask) {
+really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
   /* All Unicode characters may be placed within the
    * quotation marks, except for the characters that MUST be escaped:
    * quotation mark, reverse solidus, and the control characters (U+0000
    * through U+001F).
    * https://tools.ietf.org/html/rfc8259 */
-  const uint64_t unescaped = in.lteq(0x1F);
   return quote_mask & unescaped;
 }
 
@@ -129,7 +128,7 @@ really_inline uint64_t invalid_string_bytes(const simd_input<ARCHITECTURE> in, c
 // contents of a string the same as content outside. Errors and structurals inside the string or on
 // the trailing quote will need to be removed later when the correct string information is known.
 //
-really_inline uint64_t find_structurals(const simd_input<ARCHITECTURE> in, uint64_t &prev_primitive) {
+really_inline uint64_t find_potential_structurals(const simd_input<ARCHITECTURE> in, uint64_t &prev_primitive) {
   // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
   uint64_t whitespace, op;
   find_whitespace_and_operators(in, whitespace, op);
@@ -144,28 +143,69 @@ really_inline uint64_t find_structurals(const simd_input<ARCHITECTURE> in, uint6
   return op | start_primitive;
 }
 
-// Find structural bits in a 64-byte chunk.
-really_inline void find_structural_bits_64(
+static const size_t STEP_SIZE = 128;
+
+//
+// Find the important bits of JSON in a 128-byte chunk, and add them to :
+//
+//
+//
+// PERF NOTES:
+// We pipe 2 inputs through these stages:
+// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
+//    The output of step 1 depends entirely on this information. These functions don't quite use
+//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+//    at a time. The second input's scans has some dependency on the first ones finishing it, but
+//    they can make a lot of progress before they need that information.
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+//    to finish: utf-8 checks and generating the output from the last iteration.
+// 
+// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+// workout.
+//
+really_inline void find_structural_bits_128(
     const uint8_t *buf, const size_t idx, uint32_t *&base_ptr,
     uint64_t &prev_escaped, uint64_t &prev_in_string,
     uint64_t &prev_primitive,
-    uint64_t &structurals,
+    uint64_t &prev_structurals,
     uint64_t &unescaped_chars_error,
     utf8_checker<ARCHITECTURE> &utf8_state) {
-  // Validate UTF-8
-  const simd_input<ARCHITECTURE> in(buf);
-  utf8_state.check_next_input(in);
+  //
+  // Load up all 128 bytes into SIMD registers
+  //
+  simd_input<ARCHITECTURE> in_1(buf);
+  simd_input<ARCHITECTURE> in_2(buf+64);
 
-  // Detect values in strings
-  const uint64_t in_string = find_in_string(in, prev_escaped, prev_in_string);
-  unescaped_chars_error |= invalid_string_bytes(in, in_string);
+  //
+  // Find the strings and potential structurals (operators / primitives).
+  //
+  // This will include false structurals that are *inside* strings--we'll filter strings out
+  // before we return.
+  //
+  uint64_t string_1 = find_strings(in_1, prev_escaped, prev_in_string);
+  uint64_t structurals_1 = find_potential_structurals(in_1, prev_primitive);
+  uint64_t string_2 = find_strings(in_2, prev_escaped, prev_in_string);
+  uint64_t structurals_2 = find_potential_structurals(in_2, prev_primitive);
 
-  /* take the previous iterations structural bits, not our current
-   * iteration, and flatten */
-  flatten_bits(base_ptr, idx, structurals);
+  //
+  // Do miscellaneous work while the processor is busy calculating strings and structurals.
+  //
+  // After that, weed out structurals that are inside strings and find invalid string characters.
+  //
+  uint64_t unescaped_1 = in_1.lteq(0x1F);
+  utf8_state.check_next_input(in_1);
+  flatten_bits(base_ptr, idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  prev_structurals = structurals_1 & ~string_1;
+  unescaped_chars_error |= unescaped_1 & string_1;
 
-  // find_structurals doesn't use in_string; we filter that out here.
-  structurals = find_structurals(in, prev_primitive) & ~in_string;
+  uint64_t unescaped_2 = in_2.lteq(0x1F);
+  utf8_state.check_next_input(in_2);
+  flatten_bits(base_ptr, idx+64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  prev_structurals = structurals_2 & ~string_2;
+  unescaped_chars_error |= unescaped_2 & string_2;
 }
 
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
@@ -177,10 +217,6 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   uint32_t *base_ptr = pj.structural_indexes;
   utf8_checker<ARCHITECTURE> utf8_state;
-
-  /* we have padded the input out to 64 byte multiple with the remainder
-   * being zeros persistent state across loop does the last iteration end
-   * with an odd-length sequence of backslashes? */
 
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
@@ -194,27 +230,28 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
   uint64_t structurals = 0;
 
-  size_t lenminus64 = len < 64 ? 0 : len - 64;
+  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
   size_t idx = 0;
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
 
-  for (; idx < lenminus64; idx += 64) {
-    find_structural_bits_64(&buf[idx], idx, base_ptr,
-                            prev_escaped, prev_in_string, prev_primitive,
-                            structurals, unescaped_chars_error, utf8_state);
+  for (; idx < lenminusstep; idx += STEP_SIZE) {
+    find_structural_bits_128(&buf[idx], idx, base_ptr,
+                             prev_escaped, prev_in_string, prev_primitive,
+                             structurals, unescaped_chars_error, utf8_state);
   }
+
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
    * checks). */
   if (likely(idx < len)) {
-    uint8_t tmp_buf[64];
-    memset(tmp_buf, 0x20, 64);
+    uint8_t tmp_buf[STEP_SIZE];
+    memset(tmp_buf, 0x20, STEP_SIZE);
     memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_64(&tmp_buf[0], idx, base_ptr,
-                            prev_escaped, prev_in_string, prev_primitive,
-                            structurals, unescaped_chars_error, utf8_state);
-    idx += 64;
+    find_structural_bits_128(&tmp_buf[0], idx, base_ptr,
+                             prev_escaped, prev_in_string, prev_primitive,
+                             structurals, unescaped_chars_error, utf8_state);
+    idx += STEP_SIZE;
   }
 
   /* finally, flatten out the remaining structurals from the last iteration */
