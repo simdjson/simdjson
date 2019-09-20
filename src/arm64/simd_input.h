@@ -42,19 +42,16 @@ template <>
 struct simd_input<Architecture::ARM64> {
   uint8x16_t chunks[4];
 
-  really_inline simd_input(const uint8_t *ptr) {
-    this->chunks[0] = vld1q_u8(ptr + 0*16);
-    this->chunks[1] = vld1q_u8(ptr + 1*16);
-    this->chunks[2] = vld1q_u8(ptr + 2*16);
-    this->chunks[3] = vld1q_u8(ptr + 3*16);
-  }
+  really_inline simd_input(uint8x16_t chunk0, uint8x16_t chunk1, uint8x16_t chunk2, uint8x16_t chunk3)
+    : chunks{chunk0, chunk1, chunk2, chunk3 } {}
 
-  really_inline simd_input(uint8x16_t chunk0, uint8x16_t chunk1, uint8x16_t chunk2, uint8x16_t chunk3) {
-    this->chunks[0] = chunk0;
-    this->chunks[1] = chunk1;
-    this->chunks[2] = chunk2;
-    this->chunks[3] = chunk3;
-  }
+  really_inline simd_input(const uint8_t *ptr)
+      : simd_input(
+        vld1q_u8(ptr + 0*16),
+        vld1q_u8(ptr + 1*16),
+        vld1q_u8(ptr + 2*16),
+        vld1q_u8(ptr + 3*16)
+      ) {}
 
   template <typename F>
   really_inline void each(F const& each_chunk)

@@ -12,17 +12,14 @@ template <>
 struct simd_input<Architecture::HASWELL> {
   __m256i chunks[2];
 
-  really_inline simd_input(const uint8_t *ptr)
-  {
-    this->chunks[0] = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0*32));
-    this->chunks[1] = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 1*32));
-  }
-
   really_inline simd_input(__m256i chunk0, __m256i chunk1)
-  {
-    this->chunks[0] = chunk0;
-    this->chunks[1] = chunk1;
-  }
+      : chunks{chunk0, chunk1} {}
+
+  really_inline simd_input(const uint8_t *ptr)
+      : simd_input(
+        _mm256_load_si256(reinterpret_cast<const __m256i *>(ptr + 0*32)),
+        _mm256_load_si256(reinterpret_cast<const __m256i *>(ptr + 1*32))
+       ) {}
 
   template <typename F>
   really_inline void each(F const& each_chunk)
