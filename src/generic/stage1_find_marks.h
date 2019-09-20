@@ -169,7 +169,7 @@ really_inline void find_structural_bits_64(
 }
 
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  if (len > pj.byte_capacity) {
+  if (unlikely(len > pj.byte_capacity)) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
               << len << " bytes" << std::endl;
@@ -207,7 +207,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
    * checks). */
-  if (idx < len) {
+  if (likely(idx < len)) {
     uint8_t tmp_buf[64];
     memset(tmp_buf, 0x20, 64);
     memcpy(tmp_buf, buf + idx, len - idx);
@@ -217,22 +217,21 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     idx += 64;
   }
 
-  /* finally, flatten out the remaining structurals from the last iteration
-   */
+  /* finally, flatten out the remaining structurals from the last iteration */
   flatten_bits(base_ptr, idx, structurals);
 
   simdjson::ErrorValues error = detect_errors_on_eof(unescaped_chars_error, prev_in_string);
-  if (error != simdjson::SUCCESS) {
+  if (unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 
   pj.n_structural_indexes = base_ptr - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
-  if (pj.n_structural_indexes == 0u) {
+  if (unlikely(pj.n_structural_indexes == 0u)) {
     return simdjson::EMPTY;
   }
-  if (pj.structural_indexes[pj.n_structural_indexes - 1] > len) {
+  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
     return simdjson::UNEXPECTED_ERROR;
   }
   if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {

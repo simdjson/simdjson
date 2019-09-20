@@ -107,7 +107,7 @@ really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits
 
   // Do the next 8 all together (we hope in most cases it won't happen at all
   // and the branch is easily predicted).
-  if (cnt > 8) {
+  if (unlikely(cnt > 8)) {
     for (int i=8; i<16; i++) {
       base_ptr[i] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
@@ -117,7 +117,7 @@ really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits
   // Most files don't have 16+ structurals per block, so we take several basically guaranteed
   // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
   // or the start of a value ("abc" true 123) every four characters.
-  if (cnt > 16) {
+  if (unlikely(cnt > 16)) {
     uint32_t i = 16;
     do {
       base_ptr[i] = idx + trailing_zeroes(bits);
@@ -125,6 +125,7 @@ really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits
       i++;
     } while (i < cnt);
   }
+
   base_ptr += cnt;
 }
 
