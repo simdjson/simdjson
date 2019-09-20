@@ -119,7 +119,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx
       base_ptr += 8;
   }
   // We hope that the next branch is easily predicted.
-  if (cnt > 8) {
+  if (unlikely(cnt > 8)) {
       base_ptr[0] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
       base_ptr[1] = idx + trailing_zeroes(bits);
@@ -138,9 +138,10 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx
       bits = _blsr_u64(bits);
       base_ptr += 8;
   }
-  if (cnt > 16) { // unluckly: we rarely get here
+  if (unlikely(cnt > 16)) { // unluckly: we rarely get here
       // since it means having one structural or pseudo-structral element
-      // every 4 characters (possible with inputs like "","","",...).
+      // every 4 characters (the max possible is an array of integers: [1,2,3,4,5,6...] will have
+      // 64 elements in 64 bytes).
       do {
       base_ptr[0] = idx + trailing_zeroes(bits);
       bits = _blsr_u64(bits);
