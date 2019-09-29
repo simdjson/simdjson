@@ -20,11 +20,20 @@ const std::map<int, const std::string> error_strings = {
     {EMPTY, "Empty"},
     {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
                       "found unescaped characters"},
+    {UNCLOSED_STRING, "A string is opened, but never closed."},
     {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as "
                        "you may have found a bug in simdjson"},
 };
 
+// string returned when the error code is not recognized
+const std::string unexpected_error_msg {"Unexpected error"};
+
+// returns a string matching the error code
 const std::string &error_message(const int error_code) {
-  return error_strings.at(error_code);
+  auto keyvalue = error_strings.find(error_code);
+  if(keyvalue == error_strings.end()) {
+    return unexpected_error_msg;
+  }
+  return keyvalue->second;
 }
 } // namespace simdjson
