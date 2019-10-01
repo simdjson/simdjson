@@ -34,6 +34,18 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+
+// Global arguments
+bool find_marks_only = false;
+bool verbose = false;
+bool dump = false;
+bool json_output = false;
+bool force_one_iteration = false;
+bool just_data = false;
+bool force_sse = false;
+int32_t iterations = -1;
+int32_t warmup_iterations = -1;
+
 namespace simdjson {
 Architecture _find_best_supported_implementation() {
   constexpr uint32_t haswell_flags =
@@ -43,7 +55,7 @@ Architecture _find_best_supported_implementation() {
       instruction_set::SSE42 | instruction_set::PCLMULQDQ;
   uint32_t supports = detect_supported_architectures();
   // Order from best to worst (within architecture)
-  if ((haswell_flags & supports) == haswell_flags) {
+  if ((haswell_flags & supports) == haswell_flags && !force_sse) {
     return Architecture::HASWELL;
   }
   if ((westmere_flags & supports) == westmere_flags) {
@@ -63,6 +75,9 @@ extern unified_functype *unified_ptr;
 extern stage1_functype *stage1_ptr;
 
 int unified_machine_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  if (find_marks_only) {
+    return simdjson::SUCCESS;
+  }
   Architecture best_implementation = _find_best_supported_implementation();
   // Selecting the best implementation
   switch (best_implementation) {
@@ -118,24 +133,20 @@ unified_functype *unified_ptr = &unified_machine_dispatch;
 } // namespace simdjson
 
 int main(int argc, char *argv[]) {
-  bool verbose = false;
-  bool dump = false;
-  bool json_output = false;
-  bool force_one_iteration = false;
-  bool just_data = false;
-  int32_t iterations = -1;
-  int32_t warmup_iterations = -1;
 
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "1vdtn:w:")) != -1) {
+  while ((c = getopt(argc, argv, "1vdtn:w:fs")) != -1) {
     switch (c) {
     case 'n':
       iterations = atoi(optarg);
       break;
     case 'w':
       warmup_iterations = atoi(optarg);
+      break;
+    case 's':
+      force_sse = true;
       break;
     case 't':
       just_data = true;
@@ -151,6 +162,9 @@ int main(int argc, char *argv[]) {
       break;
     case '1':
       force_one_iteration = true;
+      break;
+    case 'f':
+      find_marks_only = true;
       break;
     default:
       abort();
@@ -326,7 +340,7 @@ int main(int argc, char *argv[]) {
     isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
             simdjson::SUCCESS);
     isok = isok &&
-           (simdjson::SUCCESS ==
+          (simdjson::SUCCESS ==
             simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;

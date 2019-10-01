@@ -218,7 +218,7 @@ struct utf8_checker<Architecture::HASWELL> {
     __m256i any_bits_on = in.reduce([&](auto a, auto b) {
       return _mm256_or_si256(a, b);
     });
-    if ((_mm256_testz_si256(any_bits_on, high_bit)) == 1) {
+    if (likely(_mm256_testz_si256(any_bits_on, high_bit) == 1)) {
       // it is ascii, we just check continuation
       this->has_error = _mm256_or_si256(
           _mm256_cmpgt_epi8(this->previous.carried_continuations,
