@@ -113,7 +113,7 @@ void ParsedJson::init() {
 }
 
 WARN_UNUSED
-bool ParsedJson::print_json(std::ostream &os) {
+bool ParsedJson::print_json(std::ostream &os) const {
   if (!valid) {
     return false;
   }
@@ -241,7 +241,7 @@ bool ParsedJson::print_json(std::ostream &os) {
 }
 
 WARN_UNUSED
-bool ParsedJson::dump_raw_tape(std::ostream &os) {
+bool ParsedJson::dump_raw_tape(std::ostream &os) const {
   if (!valid) {
     return false;
   }
