@@ -51,9 +51,9 @@ public:
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
   WARN_UNUSED
-  bool print_json(std::ostream &os);
+  bool print_json(std::ostream &os) const;
   WARN_UNUSED
-  bool dump_raw_tape(std::ostream &os);
+  bool dump_raw_tape(std::ostream &os) const;
 
   // all nodes are stored on the tape using a 64-bit word.
   //
@@ -91,7 +91,7 @@ public:
     // tape[current_loc++] = *((uint64_t *)&d);
   }
 
-  really_inline uint32_t get_current_loc() { return current_loc; }
+  really_inline uint32_t get_current_loc() const { return current_loc; }
 
   really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {
     tape[saved_loc] |= val;
