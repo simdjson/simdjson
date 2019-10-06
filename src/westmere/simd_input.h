@@ -1,15 +1,16 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_INPUT_H
 #define SIMDJSON_WESTMERE_SIMD_INPUT_H
 
-#include "../simd_input.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/portability.h"
+#include "simdjson/simdjson.h"
 
 #ifdef IS_X86_64
 
 TARGET_WESTMERE
-namespace simdjson {
+namespace simdjson::westmere {
 
-template <>
-struct simd_input<Architecture::WESTMERE> {
+struct simd_input {
   const __m128i chunks[4];
 
   really_inline simd_input()
@@ -35,8 +36,8 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::WESTMERE> map(F const& map_chunk) const {
-    return simd_input<Architecture::WESTMERE>(
+  really_inline simd_input map(F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0]),
       map_chunk(this->chunks[1]),
       map_chunk(this->chunks[2]),
@@ -45,8 +46,8 @@ struct simd_input<Architecture::WESTMERE> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::WESTMERE> map(const simd_input<Architecture::WESTMERE> b, F const& map_chunk) const {
-    return simd_input<Architecture::WESTMERE>(
+  really_inline simd_input map(const simd_input b, F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0], b.chunks[0]),
       map_chunk(this->chunks[1], b.chunks[1]),
       map_chunk(this->chunks[2], b.chunks[2]),
@@ -69,7 +70,7 @@ struct simd_input<Architecture::WESTMERE> {
     return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
   }
 
-  really_inline simd_input<Architecture::WESTMERE> bit_or(const uint8_t m) const {
+  really_inline simd_input bit_or(const uint8_t m) const {
     const __m128i mask = _mm_set1_epi8(m);
     return this->map( [&](auto a) {
       return _mm_or_si128(a, mask);
@@ -92,7 +93,7 @@ struct simd_input<Architecture::WESTMERE> {
 
 }; // struct simd_input
 
-} // namespace simdjson
+} // namespace simdjson::westmere
 UNTARGET_REGION
 
 #endif // IS_X86_64

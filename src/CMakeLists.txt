@@ -34,7 +34,6 @@ set(SIMDJSON_SRC
 
 # Load headers and sources
 set(SIMDJSON_SRC_HEADERS
-  arm64/architecture.h
   arm64/simd_input.h
   arm64/simdutf8check.h
   arm64/stage1_find_marks.h
@@ -44,21 +43,16 @@ set(SIMDJSON_SRC_HEADERS
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
   generic/stringparsing.h
-  haswell/architecture.h
   haswell/simd_input.h
   haswell/simdutf8check.h
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
-  westmere/architecture.h
   westmere/simd_input.h
   westmere/simdutf8check.h
   westmere/stage1_find_marks.h
   westmere/stage2_build_tape.h
   westmere/stringparsing.h
-  simd_input.h
-  simdutf8check.h
-  stringparsing.h
 )
 
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC} ${SIMDJSON_INCLUDE} ${SIMDJSON_SRC_HEADERS})

@@ -89,7 +89,7 @@ really_inline ErrorValues detect_errors_on_eof(
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline uint64_t find_strings(const simd_input<ARCHITECTURE> in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
+really_inline uint64_t find_strings(const simd_input in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -128,7 +128,7 @@ really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint
 // contents of a string the same as content outside. Errors and structurals inside the string or on
 // the trailing quote will need to be removed later when the correct string information is known.
 //
-really_inline uint64_t find_potential_structurals(const simd_input<ARCHITECTURE> in, uint64_t &prev_primitive) {
+really_inline uint64_t find_potential_structurals(const simd_input in, uint64_t &prev_primitive) {
   // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
   uint64_t whitespace, op;
   find_whitespace_and_operators(in, whitespace, op);
@@ -172,12 +172,12 @@ really_inline void find_structural_bits_128(
     uint64_t &prev_primitive,
     uint64_t &prev_structurals,
     uint64_t &unescaped_chars_error,
-    utf8_checker<ARCHITECTURE> &utf8_state) {
+    utf8_checker &utf8_state) {
   //
   // Load up all 128 bytes into SIMD registers
   //
-  simd_input<ARCHITECTURE> in_1(buf);
-  simd_input<ARCHITECTURE> in_2(buf+64);
+  simd_input in_1(buf);
+  simd_input in_2(buf+64);
 
   //
   // Find the strings and potential structurals (operators / primitives).
@@ -216,7 +216,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     return simdjson::CAPACITY;
   }
   uint32_t *base_ptr = pj.structural_indexes;
-  utf8_checker<ARCHITECTURE> utf8_state;
+  utf8_checker utf8_state;
 
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;

@@ -6,7 +6,6 @@
 #ifdef IS_X86_64
 
 #include "simdjson/stage2_build_tape.h"
-#include "westmere/architecture.h"
 #include "westmere/stringparsing.h"
 
 TARGET_WESTMERE
