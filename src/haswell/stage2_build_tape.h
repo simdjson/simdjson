@@ -6,7 +6,6 @@
 #ifdef IS_X86_64
 
 #include "simdjson/stage2_build_tape.h"
-#include "haswell/architecture.h"
 #include "haswell/stringparsing.h"
 
 TARGET_HASWELL

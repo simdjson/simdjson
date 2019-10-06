@@ -6,7 +6,6 @@
 #ifdef IS_ARM64
 
 #include "simdjson/stage2_build_tape.h"
-#include "arm64/architecture.h"
 #include "arm64/stringparsing.h"
 
 namespace simdjson::arm64 {
