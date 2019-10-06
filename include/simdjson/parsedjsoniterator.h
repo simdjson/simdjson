@@ -137,6 +137,10 @@ public:
   // Furthermore, we do the comparison character-by-character
   // without taking into account Unicode equivalence.
   inline bool move_to_key(const char *key);
+
+  // as above, but case insensitive lookup (strcmpi instead of strcmp)
+  inline bool move_to_key_insensitive(const char *key);
+
   // when at {, go one level deep, looking for a given key
   // if successful, we are left pointing at the value,
   // if not, we are still pointing at the object ({)
@@ -243,6 +247,22 @@ public:
   } scopeindex_t;
 
 private:
+  template <typename Comparator>
+  bool move_to_key_impl(const char *key, Comparator &&cmp) {
+    if (down()) {
+      do {
+        assert(is_string());
+        const bool right_key = cmp(get_string(), key);
+        move_to_value();
+        if (right_key) {
+          return true;
+        }
+      } while (next());
+      assert(up()); // not found
+    }
+    return false;
+  }
+
   ParsedJson *pj;
   size_t depth;
   size_t location; // our current location on a tape
@@ -319,19 +339,15 @@ void ParsedJson::BasicIterator<max_depth>::move_to_value() {
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
-  if (down()) {
-    do {
-      assert(is_string());
-      bool right_key =
-          (strcmp(get_string(), key) == 0); // null chars would fool this
-      move_to_value();
-      if (right_key) {
-        return true;
-      }
-    } while (next());
-    assert(up()); // not found
-  }
-  return false;
+  return move_to_key_impl(
+      key, [](const char *x, const char *y) { return strcmp(x, y) == 0; });
+}
+
+template <size_t max_depth>
+bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
+    const char *key) {
+  return move_to_key_impl(
+      key, [](const char *x, const char *y) { return strcmpi(x, y) == 0; });
 }
 
 template <size_t max_depth>
