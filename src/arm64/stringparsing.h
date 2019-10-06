@@ -6,6 +6,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
+#include "arm64/simdutf8check.h"
 
 #ifdef JSON_TEST_STRINGS
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
@@ -16,18 +17,36 @@ void found_bad_string(const uint8_t *buf);
 namespace simdjson::arm64 {
 
 // Holds backslashes and quotes locations.
-struct parse_string_helper {
+struct scanned_string {
   uint32_t bs_bits;
   uint32_t quote_bits;
   really_inline uint32_t bytes_processed() const { return sizeof(uint8x16_t)*2; }
 };
 
-really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
+really_inline __m128i load_with_padding(const uint8_t * src, const uint8_t *src_end, uint8x16_t &v0, uint8x16_t &v1) {
+  // If we're at the last bit of input, we only load part of it and pad the rest with spaces, so
+  // that the utf8 processor can do its magic.
+  size_t remaining_src = src_end - src;
+  if (unlikely(remaining_src < sizeof(uint8x16_t)*2)) {
+    uint8_t tmp_src[sizeof(uint8x16_t)*2];
+    memset(tmp_src, ' ', sizeof(uint8x16_t)*2);
+    memcpy(tmp_src, src, remaining_src);
+    v0 = vld1q_u8(tmp_src);
+    v1 = vld1q_u8(tmp_src + 16);
+    return;
+  }
+
+  // Otherwise, just load from the normal place.
+  v0 = vld1q_u8(src);
+  v1 = vld1q_u8(src + 16);
+}
+
+really_inline scanned_string scan_string(const uint8_t *src, uint8_t *dst, const uint8_t *src_end, utf8_checker &utf8) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
-  uint8x16_t v0 = vld1q_u8(src);
-  uint8x16_t v1 = vld1q_u8(src + 16);
+  uint8x16_t v0, v1;
+  load_with_padding(src, src_end, v0, v1);
   vst1q_u8(dst, v0);
   vst1q_u8(dst + 16, v1);
 
@@ -49,6 +68,8 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
   uint8x16_t sum1 = vpaddq_u8(cmp_qt_0, cmp_qt_1);
   sum0 = vpaddq_u8(sum0, sum1);
   sum0 = vpaddq_u8(sum0, sum0);
+  utf8.check_next_input(v0);
+  utf8.check_next_input(v1);
   return {
       vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0), // bs_bits
       vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1)  // quote_bits

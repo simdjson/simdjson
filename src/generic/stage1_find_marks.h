@@ -171,8 +171,7 @@ really_inline void find_structural_bits_128(
     uint64_t &prev_escaped, uint64_t &prev_in_string,
     uint64_t &prev_primitive,
     uint64_t &prev_structurals,
-    uint64_t &unescaped_chars_error,
-    utf8_checker &utf8_state) {
+    uint64_t &unescaped_chars_error) {
   //
   // Load up all 128 bytes into SIMD registers
   //
@@ -196,13 +195,11 @@ really_inline void find_structural_bits_128(
   // After that, weed out structurals that are inside strings and find invalid string characters.
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_state.check_next_input(in_1);
   flatten_bits(base_ptr, idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
   prev_structurals = structurals_1 & ~string_1;
   unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_state.check_next_input(in_2);
   flatten_bits(base_ptr, idx+64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
   prev_structurals = structurals_2 & ~string_2;
   unescaped_chars_error |= unescaped_2 & string_2;
@@ -216,7 +213,6 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     return simdjson::CAPACITY;
   }
   uint32_t *base_ptr = pj.structural_indexes;
-  utf8_checker utf8_state;
 
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
@@ -238,7 +234,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   for (; idx < lenminusstep; idx += STEP_SIZE) {
     find_structural_bits_128(&buf[idx], idx, base_ptr,
                              prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
+                             structurals, unescaped_chars_error);
   }
 
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
@@ -250,7 +246,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     memcpy(tmp_buf, buf + idx, len - idx);
     find_structural_bits_128(&tmp_buf[0], idx, base_ptr,
                              prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
+                             structurals, unescaped_chars_error);
     idx += STEP_SIZE;
   }
 
@@ -278,5 +274,5 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_state.errors();
+  return simdjson::SUCCESS;
 }

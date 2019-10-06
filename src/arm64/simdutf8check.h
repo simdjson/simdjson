@@ -63,6 +63,12 @@ struct processed_utf_bytes {
   int8x16_t raw_bytes;
   int8x16_t high_nibbles;
   int8x16_t carried_continuations;
+
+  really_inline void clear() {
+    this->raw_bytes = vdupq_n_u8(0);
+    this->high_nibbles = vdupq_n_u8(0);
+    this->carried_continuations = vdupq_n_u8(0);
+  }
 };
 
 struct utf8_checker {
@@ -173,17 +179,20 @@ struct utf8_checker {
   }
 
   // Checks that all bytes are ascii
-  really_inline bool check_ascii_neon(simd_input in) {
+  really_inline bool check_ascii_neon(uint8x16_t in) {
     // checking if the most significant bit is always equal to 0.
     uint8x16_t high_bit = vdupq_n_u8(0x80);
-    uint8x16_t any_bits_on = in.reduce([&](auto a, auto b) {
-      return vorrq_u8(a, b);
-    });
-    uint8x16_t high_bit_on = vandq_u8(any_bits_on, high_bit);
+    uint8x16_t high_bit_on = vandq_u8(in, high_bit);
     uint64x2_t v64 = vreinterpretq_u64_u8(high_bit_on);
     uint32x2_t v32 = vqmovn_u64(v64);
     uint64x1_t result = vreinterpret_u64_u32(v32);
     return vget_lane_u64(result, 0) == 0;
+  }
+
+  // Checks that all bytes are ascii
+  really_inline bool check_ascii_neon(simd_input in) {
+    uint8x16_t any_bits_on = in.reduce([&](auto a, auto b) { return vorrq_u8(a, b); });
+    return check_ascii_neon(any_bits_on);
   }
 
   really_inline void check_carried_continuations() {
@@ -192,6 +201,18 @@ struct utf8_checker {
       this->add_errors(
         vreinterpretq_s8_u8(vcgtq_s8(this->previous.carried_continuations, verror))
       );
+  }
+
+  really_inline void check_next_input(uint8x16_t in) {
+    if (this->check_ascii_neon(in)) {
+      // All bytes are ascii. Therefore the byte that was just before must be
+      // ascii too. We only check the byte that was just before simd_input. Nines
+      // are arbitrary values.
+      this->check_carried_continuations();
+    } else {
+      // it is not ascii so we have to do heavy work
+      this->check_utf8_bytes(vreinterpretq_s8_u8(in));
+    }
   }
 
   really_inline void check_next_input(simd_input in) {
@@ -206,12 +227,11 @@ struct utf8_checker {
     }
   }
 
-  really_inline ErrorValues errors() {
+  really_inline bool has_any_errors() {
     uint64x2_t v64 = vreinterpretq_u64_s8(this->has_error);
     uint32x2_t v32 = vqmovn_u64(v64);
     uint64x1_t result = vreinterpret_u64_u32(v32);
-    return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
-                                        : simdjson::SUCCESS;
+    return vget_lane_u64(result, 0) == 0;
   }
 
 }; // struct utf8_checker

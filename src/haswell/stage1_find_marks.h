@@ -6,7 +6,6 @@
 #ifdef IS_X86_64
 
 #include "haswell/simd_input.h"
-#include "haswell/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_HASWELL

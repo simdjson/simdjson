@@ -36,15 +36,22 @@ struct processed_utf_bytes {
   __m128i raw_bytes;
   __m128i high_nibbles;
   __m128i carried_continuations;
+
+  really_inline void clear() {
+    this->raw_bytes = _mm_setzero_si128();
+    this->high_nibbles = _mm_setzero_si128();
+    this->carried_continuations = _mm_setzero_si128();
+  }
 };
 
 struct utf8_checker {
   __m128i has_error = _mm_setzero_si128();
-  processed_utf_bytes previous{
-      _mm_setzero_si128(), // raw_bytes
-      _mm_setzero_si128(), // high_nibbles
-      _mm_setzero_si128()  // carried_continuations
-  };
+  processed_utf_bytes previous;
+
+  really_inline utf8_checker() {
+    this->has_error = _mm_setzero_si128();
+    this->previous.clear();
+  }
 
   really_inline void add_errors(__m128i errors) {
     this->has_error = _mm_or_si128(errors, this->has_error);
@@ -193,10 +200,8 @@ struct utf8_checker {
     }
   }
 
-  really_inline ErrorValues errors() {
-    return _mm_testz_si128(this->has_error, this->has_error) == 0
-              ? simdjson::UTF8_ERROR
-              : simdjson::SUCCESS;
+  really_inline bool has_any_errors() {
+    return _mm_testz_si128(this->has_error, this->has_error) != 0;
   }
 
 }; // struct utf8_checker

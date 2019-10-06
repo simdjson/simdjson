@@ -74,17 +74,17 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
                                             UNUSED const uint32_t depth,
                                             UNUSED uint32_t offset) {
   pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  utf8_checker utf8;
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
   while (1) {
-    parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
-    if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
-      /* we encountered quotes first. Move dst to point to quotes and exit
-       */
+    scanned_string scanned = scan_string(src, dst, buf+len, utf8);
+    if (((scanned.bs_bits - 1) & scanned.quote_bits) != 0) {
+      /* we encountered quotes first. Move dst to point to quotes and exit */
 
       /* find out where the quote is... */
-      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+      uint32_t quote_dist = trailing_zeroes(scanned.quote_bits);
 
       /* NULL termination is still handy if you expect all your strings to
        * be NULL terminated? */
@@ -105,11 +105,11 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       /* we advance the point, accounting for the fact that we have a NULL
        * termination         */
       pj.current_string_buf_loc = dst + quote_dist + 1;
-      return true;
+      return utf8.has_any_errors();
     }
-    if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
+    if (((scanned.quote_bits - 1) & scanned.bs_bits) != 0) {
       /* find out where the backspace is */
-      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      uint32_t bs_dist = trailing_zeroes(scanned.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -120,6 +120,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
         if (!handle_unicode_codepoint(&src, &dst)) {
           return false;
         }
+        utf8.previous.clear(); // We know the last character we looked at was ASCII
       } else {
         /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
          * write bs_dist+1 characters to output
@@ -132,12 +133,13 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
         dst[bs_dist] = escape_result;
         src += bs_dist + 2;
         dst += bs_dist + 1;
+        utf8.previous.clear(); // We know the last character we looked at was ASCII
       }
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += helper.bytes_processed();
-      dst += helper.bytes_processed();
+      src += scanned.bytes_scanned();
+      dst += scanned.bytes_scanned();
     }
   }
   /* can't be reached */

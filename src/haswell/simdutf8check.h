@@ -43,17 +43,21 @@ struct processed_utf_bytes {
   __m256i raw_bytes;
   __m256i high_nibbles;
   __m256i carried_continuations;
+
+  really_inline void clear() {
+    this->raw_bytes = _mm256_setzero_si256();
+    this->high_nibbles = _mm256_setzero_si256();
+    this->carried_continuations = _mm256_setzero_si256();
+  }
 };
 
 struct utf8_checker {
   __m256i has_error;
   processed_utf_bytes previous;
 
-  utf8_checker() {
-    has_error = _mm256_setzero_si256();
-    previous.raw_bytes = _mm256_setzero_si256();
-    previous.high_nibbles = _mm256_setzero_si256();
-    previous.carried_continuations = _mm256_setzero_si256();
+  really_inline utf8_checker() {
+    this->has_error = _mm256_setzero_si256();
+    this->previous.clear();
   }
 
   really_inline void add_errors(__m256i errors) {
@@ -93,18 +97,43 @@ struct utf8_checker {
     return _mm256_add_epi8(sum, right2);
   }
 
-  really_inline void check_continuations(__m256i initial_lengths,
-                                             __m256i carries) {
-
+  really_inline void check_continuations(__m256i initial_lengths, __m256i carries) {
     // overlap || underlap
     // carry > length && length > 0 || !(carry > length) && !(length > 0)
     // (carries > length) == (lengths > 0)
+    // (carries > current) == (current > 0)
     __m256i overunder = _mm256_cmpeq_epi8(
         _mm256_cmpgt_epi8(carries, initial_lengths),
         _mm256_cmpgt_epi8(initial_lengths, _mm256_setzero_si256()));
 
     this->add_errors( overunder );
   }
+
+  // void print_matches(const uint8_t *src, uint32_t offset, __m256i simd, const char *title) {
+  //     uint8_t matches[256/8];
+  //     _mm256_storeu_si256((__m256i*)matches, simd);
+  //     for (int i=0; i<256/8; i++) {
+  //       printf("%2x ", src[i]);
+  //     }
+  //     printf("\n");
+  //     for (int i=0; i<256/8; i++) {
+  //       if (src[i] < 128) {
+  //         printf("%c  ", src[i]);
+  //       } else {
+  //         printf("## ");
+  //       }
+  //     }
+  //     printf("\n");
+  //     for (int i=0; i<256/8; i++) {
+  //       if (matches[i]) {
+  //         printf("%s at %u (>%u): %x, %x, %x '%c'\n", title, offset+i, offset, src[i-2], src[i-1], src[i], src[i]);
+  //       }
+  //     }
+  // }
+
+  // void print_error(const uint8_t *src, uint32_t offset) {
+  //   print_matches(src, offset, this->has_error, "error");
+  // }
 
   really_inline void check_carried_continuations() {
     this->add_errors(
@@ -224,10 +253,8 @@ struct utf8_checker {
     }
   }
 
-  really_inline ErrorValues errors() {
-    return _mm256_testz_si256(this->has_error, this->has_error) == 0
-              ? simdjson::UTF8_ERROR
-              : simdjson::SUCCESS;
+  really_inline bool has_any_errors() {
+    return _mm256_testz_si256(this->has_error, this->has_error) != 0;
   }
 }; // struct utf8_checker
 
