@@ -64,7 +64,7 @@ COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompeti
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 # Load headers and sources
-LIBHEADERS=src/simd_input.h src/simdutf8check.h src/stringparsing.h src/arm64/architecture.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks_flatten.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/architecture.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/architecture.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+LIBHEADERS=src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks_flatten.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
 PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsoncharutils.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/numberparsing.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/simdprune_tables.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
@@ -96,26 +96,38 @@ benchmark:
 	bash ./scripts/parser.sh
 	bash ./scripts/parseandstat.sh
 
-test: jsoncheck integer_tests numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
+run_basictests: basictests
 	./basictests
+
+run_numberparsingcheck: numberparsingcheck
 	./numberparsingcheck
+
+run_integer_tests: integer_tests
 	./integer_tests
+
+run_stringparsingcheck: stringparsingcheck
 	./stringparsingcheck
+
+run_jsoncheck: jsoncheck
 	./jsoncheck
+
+run_pointercheck: pointercheck
 	./pointercheck
-	./scripts/testjson2json.sh
+
+run_issue150_sh: allparserscheckfile
 	./scripts/issue150.sh
+
+run_testjson2json_sh: minify json2json
+	./scripts/testjson2json.sh
+
+test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
 	@echo "It looks like the code is good!"
 
-quiettest: jsoncheck integer_tests numberparsingcheck stringparsingcheck basictests allparserscheckfile minify json2json pointercheck
-	./basictests
-	./numberparsingcheck
-	./integer_tests
-	./stringparsingcheck
-	./jsoncheck
-	./pointercheck
-	./scripts/testjson2json.sh
-	./scripts/issue150.sh
+quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
+
+quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck
+
+slowtests: run_testjson2json_sh run_issue150_sh
 
 amalgamate:
 	./amalgamation.sh

@@ -1,7 +1,9 @@
 #ifndef SIMDJSON_ARM64_SIMD_INPUT_H
 #define SIMDJSON_ARM64_SIMD_INPUT_H
 
-#include "../simd_input.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/portability.h"
+#include "simdjson/simdjson.h"
 
 #ifdef IS_ARM64
 
@@ -32,14 +34,7 @@ really_inline uint64_t neon_movemask_bulk(uint8x16_t p0, uint8x16_t p1,
   return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
 }
 
-} // namespace simdjson::arm64
-
-namespace simdjson {
-
-using namespace simdjson::arm64;
-
-template <>
-struct simd_input<Architecture::ARM64> {
+struct simd_input {
   const uint8x16_t chunks[4];
 
   really_inline simd_input()
@@ -65,8 +60,8 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::ARM64> map(F const& map_chunk) const {
-    return simd_input<Architecture::ARM64>(
+  really_inline simd_input map(F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0]),
       map_chunk(this->chunks[1]),
       map_chunk(this->chunks[2]),
@@ -75,8 +70,8 @@ struct simd_input<Architecture::ARM64> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::ARM64> map(simd_input<Architecture::ARM64> b, F const& map_chunk) const {
-    return simd_input<Architecture::ARM64>(
+  really_inline simd_input map(simd_input b, F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0], b.chunks[0]),
       map_chunk(this->chunks[1], b.chunks[1]),
       map_chunk(this->chunks[2], b.chunks[2]),
@@ -95,7 +90,7 @@ struct simd_input<Architecture::ARM64> {
     return neon_movemask_bulk(this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3]);
   }
 
-  really_inline simd_input<Architecture::ARM64> bit_or(const uint8_t m) const {
+  really_inline simd_input bit_or(const uint8_t m) const {
     const uint8x16_t mask = vmovq_n_u8(m);
     return this->map( [&](auto a) {
       return vorrq_u8(a, mask);
@@ -118,7 +113,7 @@ struct simd_input<Architecture::ARM64> {
 
 }; // struct simd_input
 
-} // namespace simdjson
+} // namespace simdjson::arm64
 
 #endif // IS_ARM64
 #endif // SIMDJSON_ARM64_SIMD_INPUT_H

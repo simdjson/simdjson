@@ -1,15 +1,16 @@
 #ifndef SIMDJSON_HASWELL_SIMD_INPUT_H
 #define SIMDJSON_HASWELL_SIMD_INPUT_H
 
-#include "../simd_input.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/portability.h"
+#include "simdjson/simdjson.h"
 
 #ifdef IS_X86_64
 
 TARGET_HASWELL
-namespace simdjson {
+namespace simdjson::haswell {
 
-template <>
-struct simd_input<Architecture::HASWELL> {
+struct simd_input {
   const __m256i chunks[2];
 
   really_inline simd_input() : chunks{__m256i(), __m256i()} {}
@@ -31,16 +32,16 @@ struct simd_input<Architecture::HASWELL> {
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::HASWELL> map(F const& map_chunk) const {
-    return simd_input<Architecture::HASWELL>(
+  really_inline simd_input map(F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0]),
       map_chunk(this->chunks[1])
     );
   }
 
   template <typename F>
-  really_inline simd_input<Architecture::HASWELL> map(const simd_input<Architecture::HASWELL> b, F const& map_chunk) const {
-    return simd_input<Architecture::HASWELL>(
+  really_inline simd_input map(const simd_input b, F const& map_chunk) const {
+    return simd_input(
       map_chunk(this->chunks[0], b.chunks[0]),
       map_chunk(this->chunks[1], b.chunks[1])
     );
@@ -57,7 +58,7 @@ struct simd_input<Architecture::HASWELL> {
     return r_lo | (r_hi << 32);
   }
 
-  really_inline simd_input<Architecture::HASWELL> bit_or(const uint8_t m) const {
+  really_inline simd_input bit_or(const uint8_t m) const {
     const __m256i mask = _mm256_set1_epi8(m);
     return this->map( [&](auto a) {
       return _mm256_or_si256(a, mask);
@@ -80,7 +81,7 @@ struct simd_input<Architecture::HASWELL> {
 
 }; // struct simd_input
 
-} // namespace simdjson
+} // namespace simdjson::haswell
 UNTARGET_REGION
 
 #endif // IS_X86_64

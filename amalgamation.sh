@@ -17,14 +17,9 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/src/simd_input.h
-$SCRIPTPATH/src/arm64/architecture.h
-$SCRIPTPATH/src/haswell/architecture.h
-$SCRIPTPATH/src/westmere/architecture.h
 $SCRIPTPATH/src/arm64/simd_input.h
 $SCRIPTPATH/src/haswell/simd_input.h
 $SCRIPTPATH/src/westmere/simd_input.h
-$SCRIPTPATH/src/simdutf8check.h
 $SCRIPTPATH/src/arm64/simdutf8check.h
 $SCRIPTPATH/src/haswell/simdutf8check.h
 $SCRIPTPATH/src/westmere/simdutf8check.h
@@ -32,7 +27,6 @@ $SCRIPTPATH/src/arm64/stage1_find_marks.h
 $SCRIPTPATH/src/haswell/stage1_find_marks.h
 $SCRIPTPATH/src/westmere/stage1_find_marks.h
 $SCRIPTPATH/src/stage1_find_marks.cpp
-$SCRIPTPATH/src/stringparsing.h
 $SCRIPTPATH/src/arm64/stringparsing.h
 $SCRIPTPATH/src/haswell/stringparsing.h
 $SCRIPTPATH/src/westmere/stringparsing.h

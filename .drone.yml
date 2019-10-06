@@ -1,44 +1,102 @@
 kind: pipeline
-name: x64
+name: x64-quicktests
 
 platform:
   os: linux
   arch: amd64
 
 steps:
-- name: test
+- name: quicktests
   image: gcc:8
-  commands:
-  - make
-  - make quiettest
-  - make amalgamate
+  commands: [ make quicktests ]
+---
+kind: pipeline
+name: x64-checkperf
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
 - name: checkperf
   image: gcc:8
   environment:
     CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands:
-  - make checkperf
+  commands: [ make checkperf ]
 ---
 kind: pipeline
-name: arm64
+name: x64-build
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: gcc:8
+  commands: [ make, make amalgamate ]
+---
+kind: pipeline
+name: x64-slowtests
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: slowtests
+  image: gcc:8
+  commands: [ make slowtests ]
+---
+kind: pipeline
+name: arm64-quicktests
 
 platform:
   os: linux
   arch: arm64
 
 steps:
-- name: test
+- name: quicktests
   image: gcc:8
-  commands:
-  - make
-  - make quiettest
-  - make amalgamate
+  commands: [ make quicktests ]
+---
+kind: pipeline
+name: arm64-checkperf
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
 - name: checkperf
   image: gcc:8
   environment:
     CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands:
-  - make checkperf
+  commands: [ make checkperf ]
+---
+kind: pipeline
+name: arm64-build
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  image: gcc:8
+  commands: [ make, make amalgamate ]
+---
+kind: pipeline
+name: arm64-slowtests
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: slowtests
+  image: gcc:8
+  commands: [ make slowtests ]
 ---
 kind: pipeline
 name: stylecheck
@@ -69,8 +127,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
@@ -91,8 +149,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
@@ -108,13 +166,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y cmake 
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
@@ -130,13 +188,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
@@ -157,8 +215,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
@@ -174,22 +232,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest --output-on-failure
-
-  commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
@@ -210,8 +259,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
@@ -227,13 +276,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
@@ -255,8 +304,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
@@ -272,13 +321,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
@@ -317,13 +366,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
@@ -345,8 +394,8 @@ steps:
     CC: clang
     CXX: clang++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON  -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
@@ -362,13 +411,13 @@ platform:
 
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: gcc:7
   environment:
     CC: gcc
     CXX: g++
   commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get update -qq
+    - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
     - cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
