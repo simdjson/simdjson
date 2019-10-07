@@ -143,7 +143,9 @@ static inline int hamming(uint64_t input_num) {
 #endif // _MSC_VER
 
 #ifdef _MSC_VER
-#define strcasecmp _stricmp
+#define simdjson_strcasecmp _stricmp
+#else
+#define simdjson_strcasecmp strcasecmp
 #endif
 
 namespace simdjson {
