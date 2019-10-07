@@ -142,6 +142,10 @@ static inline int hamming(uint64_t input_num) {
 } // namespace simdjson
 #endif // _MSC_VER
 
+#ifndef _MSC_VER
+#define strcasecmp _stricmp
+#endif
+
 namespace simdjson {
 // portable version of  posix_memalign
 static inline void *aligned_malloc(size_t alignment, size_t size) {

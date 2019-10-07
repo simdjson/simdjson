@@ -339,15 +339,15 @@ void ParsedJson::BasicIterator<max_depth>::move_to_value() {
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
-  return move_to_key_impl(
+  return this->move_to_key_impl(
       key, [](const char *x, const char *y) { return strcmp(x, y) == 0; });
 }
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
     const char *key) {
-  return move_to_key_impl(
-      key, [](const char *x, const char *y) { return strcmpi(x, y) == 0; });
+  return this->move_to_key_impl(
+      key, [](const char *x, const char *y) { return strcasecmp(x, y) == 0; });
 }
 
 template <size_t max_depth>
