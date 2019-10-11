@@ -5,7 +5,7 @@
 #define SIMDJSON_ARM64_SIMDUTF8CHECK_H
 
 // TODO this is different from IS_ARM64 in portability.h, which we use in other places ...
-#if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
+#if defined(_ARM_NEON) || defined(__ARM_NEON) || defined(__aarch64__) ||                              \
     (defined(_MSC_VER) && defined(_M_ARM64))
 
 #include "simdjson/simdjson.h"

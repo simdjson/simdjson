@@ -4,7 +4,7 @@
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define IS_X86_64 1
 #endif
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__ARM_NEON__) || defined(__ARM_NEON)
 #define IS_ARM64 1
 #endif
 
@@ -49,6 +49,46 @@
 #include <x86intrin.h>
 #elif IS_ARM64
 #include <arm_neon.h>
+// ARMv7-A can run the ARM64 version as long as we polyfill some newer Q-form instructions
+// with two D-forms.
+#  if !defined(__aarch64__) && !defined(_M_ARM64)
+#  undef vqtbl1q_u8
+// Emulate vqtbl1q_u8 with two vtbl2_u8 instructions.
+// u32 scale:
+// vqtbl1q([A][B][C][D], [1][2][0][3]) -> [B][C][A][D]
+//
+// vtbl2({[A][B], [C][D]}, [1][2]) -> [B][C]
+// vtbl2({[A][B], [C][D]}, [0][3]) -> [A][D]
+// vcombine([B][C], [A][D]) -> [B][C][A][D]
+static inline uint8x16_t vqtbl1q_u8(uint8x16_t t, uint8x16_t idx) {
+  // Because Q regisrers are unions of D-registers on ARMv7-A, this
+  // cast is well-defined.
+  // Don't try this on aarch64, though, as its registers are different.
+  // Trying to split manually here causes scalarization on GCC.
+  uint8x8x2_t split = *reinterpret_cast<const uint8x8x2_t *>(&t);
+  return vcombine_u8(
+    vtbl2_u8(split, vget_low_u8(idx)),
+    vtbl2_u8(split, vget_high_u8(idx))
+  );
+}
+
+
+#  undef vqtbl1q_s8
+// Don't reinvent the wheel for s8, the instructions are literally the same.
+static inline int8x16_t vqtbl1q_s8(int8x16_t t, uint8x16_t idx) {
+  return vreinterpretq_s8_u8(vqtbl1q_u8(vreinterpretq_u8_s8(t), idx));
+}
+
+# undef vpaddq_u8
+// Emulate vpqddq_u8 with two vpadd_u8 instructions.
+static inline uint8x16_t vpaddq_u8(uint8x16_t a, uint8x16_t b) {
+  return vcombine_u8(
+    vpadd_u8(vget_low_u8(a), vget_high_u8(a)),
+    vpadd_u8(vget_low_u8(b), vget_high_u8(b))
+  );
+}
+
+#  endif // not arm64
 #endif
 #endif
 
