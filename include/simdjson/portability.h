@@ -61,7 +61,7 @@
 // vtbl2({[A][B], [C][D]}, [0][3]) -> [A][D]
 // vcombine([B][C], [A][D]) -> [B][C][A][D]
 static inline uint8x16_t vqtbl1q_u8(uint8x16_t t, uint8x16_t idx) {
-  // Because Q regisrers are unions of D-registers on ARMv7-A, this
+  // Because Q-registers are unions of D-registers on ARMv7-A, this
   // cast is well-defined.
   // Don't try this on aarch64, though, as its registers are different.
   // Trying to split manually here causes scalarization on GCC.
@@ -71,7 +71,6 @@ static inline uint8x16_t vqtbl1q_u8(uint8x16_t t, uint8x16_t idx) {
     vtbl2_u8(split, vget_high_u8(idx))
   );
 }
-
 
 #  undef vqtbl1q_s8
 // Don't reinvent the wheel for s8, the instructions are literally the same.
