@@ -79,7 +79,7 @@ static inline int8x16_t vqtbl1q_s8(int8x16_t t, uint8x16_t idx) {
 }
 
 # undef vpaddq_u8
-// Emulate vpqddq_u8 with two vpadd_u8 instructions.
+// Emulate vpaddq_u8 with two vpadd_u8 instructions.
 static inline uint8x16_t vpaddq_u8(uint8x16_t a, uint8x16_t b) {
   return vcombine_u8(
     vpadd_u8(vget_low_u8(a), vget_high_u8(a)),
