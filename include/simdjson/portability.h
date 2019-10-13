@@ -84,6 +84,10 @@ static inline int trailing_zeroes(uint64_t input_num) {
   return static_cast<int>(_tzcnt_u64(input_num));
 }
 
+static inline uint64_t clear_lowest_bit(uint64_t input_num) {
+  return _blsr_u64(input_num);
+}
+
 static inline int leading_zeroes(uint64_t input_num) {
   return static_cast<int>(_lzcnt_u64(input_num));
 }
@@ -119,6 +123,15 @@ static inline NO_SANITIZE_UNDEFINED int trailing_zeroes(uint64_t input_num) {
   return _tzcnt_u64(input_num);
 #else
   return __builtin_ctzll(input_num);
+#endif
+}
+
+/* result might be undefined when input_num is zero */
+static inline uint64_t clear_lowest_bit(uint64_t input_num) {
+#ifdef __BMI__ // blsr is BMI1
+  return _blsr_u64(input_num);
+#else
+  return input_num & (input_num-1);
 #endif
 }
 

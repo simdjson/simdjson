@@ -42,7 +42,6 @@ set(SIMDJSON_SRC_HEADERS
   arm64/stage1_find_marks.h
   arm64/stage2_build_tape.h
   arm64/stringparsing.h
-  generic/stage1_find_marks_flatten.h
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
   generic/stringparsing.h
