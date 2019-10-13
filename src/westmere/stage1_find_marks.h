@@ -40,7 +40,6 @@ really_inline void find_whitespace_and_operators(
   }).to_bitmask();
 }
 
-#include "generic/stage1_find_marks_flatten.h"
 #include "generic/stage1_find_marks.h"
 
 } // namespace westmere
