@@ -1,8 +1,8 @@
 #ifndef SIMDJSON_PARSEDJSONITERATOR_H
 #define SIMDJSON_PARSEDJSONITERATOR_H
 
-#include "simdjson/jsonformatutils.h"
 #include "simdjson/parsedjson.h"
+#include "simdjson/jsonformatutils.h"
 #include <cstring>
 #include <iostream>
 #include <iterator>

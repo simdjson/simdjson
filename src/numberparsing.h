@@ -2,9 +2,9 @@
 #define SIMDJSON_NUMBERPARSING_H
 
 #include "simdjson/common_defs.h"
-#include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/portability.h"
+#include "jsoncharutils.h"
 #include <cmath>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing

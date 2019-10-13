@@ -4,8 +4,8 @@
 #ifdef IS_X86_64
 
 #include "simdjson/common_defs.h"
-#include "simdjson/jsoncharutils.h"
 #include "simdjson/parsedjson.h"
+#include "jsoncharutils.h"
 
 #ifdef JSON_TEST_STRINGS
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
