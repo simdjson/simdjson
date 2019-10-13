@@ -214,5 +214,6 @@ WARN_UNUSED
 inline ParsedJson build_parsed_json(const padded_string &s) {
   return build_parsed_json(s.data(), s.length(), false);
 }
+
 } // namespace simdjson
 #endif

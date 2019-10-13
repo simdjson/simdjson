@@ -13,6 +13,9 @@ AMAL_C="simdjson.cpp"
 
 # order does not matter
 ALLCFILES="
+$SCRIPTPATH/src/jsoncharutils.h
+$SCRIPTPATH/src/numberparsing.h
+$SCRIPTPATH/src/simdprune_tables.h
 $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
@@ -30,10 +33,10 @@ $SCRIPTPATH/src/stage1_find_marks.cpp
 $SCRIPTPATH/src/arm64/stringparsing.h
 $SCRIPTPATH/src/haswell/stringparsing.h
 $SCRIPTPATH/src/westmere/stringparsing.h
+$SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/arm64/stage2_build_tape.h
 $SCRIPTPATH/src/haswell/stage2_build_tape.h
 $SCRIPTPATH/src/westmere/stage2_build_tape.h
-$SCRIPTPATH/src/stage2_build_tape.cpp
 $SCRIPTPATH/src/parsedjson.cpp
 $SCRIPTPATH/src/parsedjsoniterator.cpp
 "
@@ -43,18 +46,15 @@ ALLCHEADERS="
 $SCRIPTPATH/include/simdjson/simdjson_version.h
 $SCRIPTPATH/include/simdjson/portability.h
 $SCRIPTPATH/include/simdjson/isadetection.h
+$SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/simdjson.h
 $SCRIPTPATH/include/simdjson/common_defs.h
 $SCRIPTPATH/include/simdjson/padded_string.h
-$SCRIPTPATH/include/simdjson/jsoncharutils.h
-$SCRIPTPATH/include/simdjson/jsonformatutils.h
 $SCRIPTPATH/include/simdjson/jsonioutil.h
-$SCRIPTPATH/include/simdjson/simdprune_tables.h
 $SCRIPTPATH/include/simdjson/jsonminifier.h
 $SCRIPTPATH/include/simdjson/parsedjson.h
 $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/numberparsing.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
 "

@@ -59,7 +59,7 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 }
 } // namespace simdjson
 #else
-#include "simdjson/simdprune_tables.h"
+#include "simdprune_tables.h"
 #include <cstring>
 
 namespace simdjson {
