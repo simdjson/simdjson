@@ -70,7 +70,7 @@ platform:
 steps:
 - name: quicktests
   image: gcc:8
-  commands: [ make quicktests ]
+  commands: [ arch, make quicktests ]
 ---
 kind: pipeline
 name: arm64-checkperf
@@ -108,7 +108,7 @@ platform:
 steps:
 - name: build
   image: gcc:8
-  commands: [ make, make amalgamate ]
+  commands: [ arch, make, make amalgamate ]
 ---
 kind: pipeline
 name: arm64-slowtests
