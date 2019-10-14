@@ -20,7 +20,7 @@ ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a+crc+crypto
 else 
 ifeq ($(architecture),armv8l)
-ARCHFLAGS ?= -march=armv8
+ARCHFLAGS ?= -march=armv7 # For testing?
 else
 ifeq ($(architecture),armv7l)
 ARCHFLAGS ?= -march=armv7
