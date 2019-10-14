@@ -18,6 +18,8 @@ architecture:=$(shell arch)
 ###
 ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a+crc+crypto
+else ifeq($(architecture),armv7l)
+ARCHFLAGS ?= -march=armv7
 else
 ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif

@@ -61,6 +61,18 @@ steps:
   commands: [ make quicktests ]
 ---
 kind: pipeline
+name: arm-quicktests
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: quicktests
+  image: gcc:8
+  commands: [ make quicktests ]
+---
+kind: pipeline
 name: arm64-checkperf
 
 platform:
@@ -87,11 +99,35 @@ steps:
   commands: [ make, make amalgamate ]
 ---
 kind: pipeline
+name: arm-build
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: build
+  image: gcc:8
+  commands: [ make, make amalgamate ]
+---
+kind: pipeline
 name: arm64-slowtests
 
 platform:
   os: linux
   arch: arm64
+
+steps:
+- name: slowtests
+  image: gcc:8
+  commands: [ make slowtests ]
+---
+kind: pipeline
+name: arm-slowtests
+
+platform:
+  os: linux
+  arch: arm
 
 steps:
 - name: slowtests
