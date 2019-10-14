@@ -137,6 +137,10 @@ public:
   // Furthermore, we do the comparison character-by-character
   // without taking into account Unicode equivalence.
   inline bool move_to_key(const char *key);
+
+  // as above, but case insensitive lookup (strcmpi instead of strcmp)
+  inline bool move_to_key_insensitive(const char *key);
+
   // when at {, go one level deep, looking for a given key
   // if successful, we are left pointing at the value,
   // if not, we are still pointing at the object ({)
@@ -319,19 +323,31 @@ void ParsedJson::BasicIterator<max_depth>::move_to_value() {
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
-  if (down()) {
-    do {
-      assert(is_string());
-      bool right_key =
-          (strcmp(get_string(), key) == 0); // null chars would fool this
-      move_to_value();
-      if (right_key) {
-        return true;
-      }
-    } while (next());
-    assert(up()); // not found
-  }
-  return false;
+    if (down()) {
+      do {
+        const bool right_key = (strcmp(get_string(), key) == 0);
+        move_to_value();
+        if (right_key) {
+          return true;
+        }
+      } while (next());
+    }
+    return false;
+}
+
+template <size_t max_depth>
+bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
+    const char *key) {
+    if (down()) {
+      do {
+        const bool right_key = (simdjson_strcasecmp(get_string(), key) == 0);
+        move_to_value();
+        if (right_key) {
+          return true;
+        }
+      } while (next());
+    }
+    return false;
 }
 
 template <size_t max_depth>
@@ -339,7 +355,6 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
                                                        uint32_t length) {
   if (down()) {
     do {
-      assert(is_string());
       bool right_key = ((get_string_length() == length) &&
                         (memcmp(get_string(), key, length) == 0));
       move_to_value();
@@ -347,14 +362,12 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
         return true;
       }
     } while (next());
-    assert(up()); // not found
   }
   return false;
 }
 
 template <size_t max_depth>
 bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
-  assert(is_array());
   if (down()) {
     uint32_t i = 0;
     for (; i < index; i++) {
@@ -365,7 +378,6 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
     if (i == index) {
       return true;
     }
-    assert(up());
   }
   return false;
 }

@@ -60,7 +60,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 - A processor with 
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
   - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
-  - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going as far back as the iPhone 5s (2013).
+  - or ARM NEON (ARMv7-A, ARMv8-A), supported on all iOS devices except the original iPhone, all 64-bit ARM chips, and almost all 32-bit Androids.
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
 
@@ -190,8 +190,13 @@ The code automatically detects the feature set of your processor and switches to
 sometimes called runtime dispatch).
 
 
-We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
+We also support ARM NEON, and if the cryptographic extension is available, we leverage it, at compile-time.
+
+The paths, namespaces, and macros reference ARM64, but ARMv7-A NEON is also supported with a polyfill.
+
 There is no runtime dispatch on ARM.
+
+
 
 ## Thread safety
 
@@ -491,12 +496,14 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 
 - [ZippyJSON](https://github.com/michaeleisel/zippyjson): Swift bindings for the simdjson project.
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
-- [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port
-- [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings)
-- [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port)
+- [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port.
+- [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
+- [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
+- [simdjson-go](https://github.com/fwessels/simdjson-go): Go port.
+
 
 ## Various References
 
