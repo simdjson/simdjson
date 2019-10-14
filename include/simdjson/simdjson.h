@@ -9,6 +9,7 @@ enum class Architecture {
   WESTMERE,
   HASWELL,
   ARM64,
+  ARM,
   NONE,
 // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current
@@ -17,6 +18,8 @@ enum class Architecture {
   NATIVE = WESTMERE
 #elif defined(IS_ARM64)
   NATIVE = ARM64
+#else 
+#warning "Unsupported hardware?"
 #endif
 };
 
