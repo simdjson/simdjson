@@ -5,6 +5,72 @@
 
 static const size_t STEP_SIZE = 128;
 
+// return a bitvector indicating where we have characters that end an odd-length
+// sequence of backslashes (and thus change the behavior of the next character
+// to follow). A even-length sequence of backslashes, and, for that matter, the
+// largest even-length prefix of our odd-length sequence of backslashes, simply
+// modify the behavior of the backslashes themselves.
+// We also update the prev_iter_ends_odd_backslash reference parameter to
+// indicate whether we end an iteration on an odd-length sequence of
+// backslashes, which modifies our subsequent search for odd-length
+// sequences of backslashes in an obvious way.
+really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+  const uint64_t even_bits = 0x5555555555555555ULL;
+  const uint64_t odd_bits = ~even_bits;
+  uint64_t start_edges = match & ~(match << 1);
+  /* flip lowest if we have an odd-length run at the end of the prior
+  * iteration */
+  uint64_t even_start_mask = even_bits ^ overflow;
+  uint64_t even_starts = start_edges & even_start_mask;
+  uint64_t odd_starts = start_edges & ~even_start_mask;
+  uint64_t even_carries = match + even_starts;
+
+  uint64_t odd_carries;
+  /* must record the carry-out of our odd-carries out of bit 63; this
+  * indicates whether the sense of any edge going to the next iteration
+  * should be flipped */
+  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
+
+  odd_carries |= overflow; /* push in bit zero as a
+                              * potential end if we had an
+                              * odd-numbered run at the
+                              * end of the previous
+                              * iteration */
+  overflow = new_overflow ? 0x1ULL : 0x0ULL;
+  uint64_t even_carry_ends = even_carries & ~match;
+  uint64_t odd_carry_ends = odd_carries & ~match;
+  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+  return odd_ends;
+}
+
+//
+// Check if the current character immediately follows a matching character.
+//
+// For example, this checks for quotes with backslashes in front of them:
+//
+//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+//
+really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+  const uint64_t result = match << 1 | overflow;
+  overflow = match >> 63;
+  return result;
+}
+
+//
+// Check if the current character follows a matching character, with possible "filler" between.
+// For example, this checks for empty curly braces, e.g. 
+//
+//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+//
+really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+  uint64_t follows_match = follows(match, overflow);
+  uint64_t result;
+  overflow |= add_overflow(follows_match, filler, &result);
+  return result;
+}
+
 class bit_indexer {
 public:
   uint32_t *tail;
@@ -72,74 +138,7 @@ public:
   uint64_t unescaped_chars_error = 0;
   bit_indexer structural_indexes;
 
-
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
-
-  // return a bitvector indicating where we have characters that end an odd-length
-  // sequence of backslashes (and thus change the behavior of the next character
-  // to follow). A even-length sequence of backslashes, and, for that matter, the
-  // largest even-length prefix of our odd-length sequence of backslashes, simply
-  // modify the behavior of the backslashes themselves.
-  // We also update the prev_iter_ends_odd_backslash reference parameter to
-  // indicate whether we end an iteration on an odd-length sequence of
-  // backslashes, which modifies our subsequent search for odd-length
-  // sequences of backslashes in an obvious way.
-  really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
-    const uint64_t even_bits = 0x5555555555555555ULL;
-    const uint64_t odd_bits = ~even_bits;
-    uint64_t start_edges = match & ~(match << 1);
-    /* flip lowest if we have an odd-length run at the end of the prior
-    * iteration */
-    uint64_t even_start_mask = even_bits ^ overflow;
-    uint64_t even_starts = start_edges & even_start_mask;
-    uint64_t odd_starts = start_edges & ~even_start_mask;
-    uint64_t even_carries = match + even_starts;
-
-    uint64_t odd_carries;
-    /* must record the carry-out of our odd-carries out of bit 63; this
-    * indicates whether the sense of any edge going to the next iteration
-    * should be flipped */
-    bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-    odd_carries |= overflow; /* push in bit zero as a
-                                * potential end if we had an
-                                * odd-numbered run at the
-                                * end of the previous
-                                * iteration */
-    overflow = new_overflow ? 0x1ULL : 0x0ULL;
-    uint64_t even_carry_ends = even_carries & ~match;
-    uint64_t odd_carry_ends = odd_carries & ~match;
-    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-    return odd_ends;
-  }
-
-  //
-  // Check if the current character immediately follows a matching character.
-  //
-  // For example, this checks for quotes with backslashes in front of them:
-  //
-  //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-  //
-  really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
-    const uint64_t result = match << 1 | overflow;
-    overflow = match >> 63;
-    return result;
-  }
-
-  //
-  // Check if the current character follows a matching character, with possible "filler" between.
-  // For example, this checks for empty curly braces, e.g. 
-  //
-  //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-  //
-  really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
-    uint64_t follows_match = follows(match, overflow);
-    uint64_t result;
-    overflow |= add_overflow(follows_match, filler, &result);
-    return result;
-  }
 
   really_inline ErrorValues detect_errors_on_eof() {
     if (prev_in_string) {
