@@ -224,8 +224,6 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
     return d;
   }
 
-  static const int powersOf10[] = {1, 10, 100, 1000};
-
   static double never_inline compute_float_128(uint64_t power_index, uint64_t i_64, bool negative, bool *success) {
     components c = power_of_ten_components[power_index];
     uint64_t factor_mantissa = c.mantissa;
