@@ -10,6 +10,86 @@
 
 #include "simdjson/jsonparser.h"
 
+// ulp distance
+// Marc B. Reynolds, 2016-2019
+// Public Domain under http://unlicense.org, see link for details.
+// adapted by D. Lemire
+inline uint64_t f64_ulp_dist(double a, double b) {
+  uint64_t ua, ub;
+  memcpy(&ua, &a, sizeof(ua));
+  memcpy(&ub, &b, sizeof(ub));
+  if ((int64_t)(ub ^ ua) >= 0)
+    return (int64_t)(ua - ub) >= 0 ? (ua - ub) : (ub - ua);
+  return ua + ub + 0x80000000;
+}
+
+bool number_test_powers_of_two() {
+  char buf[1024];
+  simdjson::ParsedJson pj;
+  if (!pj.allocate_capacity(1024)) {
+    printf("allocation failure in number_test\n");
+    return false;
+  }
+  int maxulp = 0;
+  for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
+    double expected = pow(2, i);
+    auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
+    buf[n] = '\0';
+    fflush(NULL);
+    auto ok1 = json_parse(buf, n, pj);
+    if (ok1 != 0 || !pj.is_valid()) {
+      printf("Could not parse: %s.\n", buf);
+      return false;
+    }
+    simdjson::ParsedJson::Iterator pjh(pj);
+    if(!pjh.is_number()) {
+      printf("Root should be number\n");
+      return false;
+    }
+    if(pjh.is_integer()) {
+      int64_t x = pjh.get_integer();
+      int power = 0;
+      while(x > 1) {
+         if((x % 2) != 0) {
+            printf("failed to parse %s. \n", buf);
+            return false;
+         }
+         x = x / 2;
+         power ++;
+      }
+      if(power != i)  {
+         printf("failed to parse %s. \n", buf);
+         return false;
+      }
+    } else if(pjh.is_unsigned_integer()) {
+      uint64_t x = pjh.get_unsigned_integer();
+      int power = 0;
+      while(x > 1) {
+         if((x % 2) != 0) {
+           printf("failed to parse %s. \n", buf);
+           return false;
+         }
+         x = x / 2;
+         power ++;
+      }
+      if(power != i) {
+         printf("failed to parse %s. \n", buf);
+         return false;
+      }
+    } else {
+      double x = pjh.get_double();
+      int ulp = f64_ulp_dist(x,expected);  
+      if(ulp > maxulp) maxulp = ulp;
+      if(ulp > 2) {
+         printf("failed to parse %s. ULP = %d i = %d \n", buf, ulp, i);
+         return false;
+      }
+    }
+  }
+  printf("Powers of 2 can be parsed, maxulp = %d.\n", maxulp);
+  return true;
+}
+
 bool number_test_powers_of_ten() {
   char buf[1024];
   simdjson::ParsedJson pj;
@@ -199,6 +279,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!number_test_powers_of_two())
+    return EXIT_FAILURE;
   if(!number_test_powers_of_ten())
     return EXIT_FAILURE;
   if (!navigate_test())
