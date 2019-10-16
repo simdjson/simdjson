@@ -134,21 +134,9 @@ public:
   // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
   uint64_t prev_structurals = 0;
-  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
-  uint64_t unescaped_chars_error = 0;
   bit_indexer structural_indexes;
 
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
-
-  really_inline ErrorValues detect_errors_on_eof() {
-    if (prev_in_string) {
-      return UNCLOSED_STRING;
-    }
-    if (unescaped_chars_error) {
-      return UNESCAPED_CHARS;
-    }
-    return SUCCESS;
-  }
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -231,7 +219,7 @@ public:
   // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
   // workout.
   //
-  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+  really_inline uint64_t scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
     //
     // Load up all 128 bytes into SIMD registers
     //
@@ -258,21 +246,22 @@ public:
     utf8_checker.check_next_input(in_1);
     this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
     this->prev_structurals = structurals_1 & ~string_1;
-    this->unescaped_chars_error |= unescaped_1 & string_1;
+    uint64_t unescaped_chars_error = unescaped_1 & string_1;
 
     uint64_t unescaped_2 = in_2.lteq(0x1F);
     utf8_checker.check_next_input(in_2);
     this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
     this->prev_structurals = structurals_2 & ~string_2;
-    this->unescaped_chars_error |= unescaped_2 & string_2;
+    return unescaped_chars_error | (unescaped_2 & string_2);
   }
 
-  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+  really_inline ErrorValues scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
     size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
     size_t idx = 0;
 
+    // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
     for (; idx < lenminusstep; idx += STEP_SIZE) {
-      this->scan_step(&buf[idx], idx, utf8_checker);
+      if (this->scan_step(&buf[idx], idx, utf8_checker)) { return UNESCAPED_CHARS; }
     }
 
     /* If we have a final chunk of less than 64 bytes, pad it to 64 with
@@ -282,29 +271,30 @@ public:
       uint8_t tmp_buf[STEP_SIZE];
       memset(tmp_buf, 0x20, STEP_SIZE);
       memcpy(tmp_buf, buf + idx, len - idx);
-      this->scan_step(&tmp_buf[0], idx, utf8_checker);
+      if (this->scan_step(&tmp_buf[0], idx, utf8_checker)) { return UNESCAPED_CHARS; }
       idx += STEP_SIZE;
     }
 
     /* finally, flatten out the remaining structurals from the last iteration */
     this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+
+    if (prev_in_string) { return UNCLOSED_STRING; }
+    return SUCCESS;
   }
 
 };
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+int find_structural_bits(const uint8_t *buf, size_t len, ParsedJson &pj) {
   if (unlikely(len > pj.byte_capacity)) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
               << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
+    return CAPACITY;
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
-
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (unlikely(error != simdjson::SUCCESS)) {
+  ErrorValues error = scanner.scan(buf, len, utf8_checker);
+  if (unlikely(error != SUCCESS)) {
     return error;
   }
 
@@ -312,10 +302,10 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+    return EMPTY;
   }
   if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+    return UNEXPECTED_ERROR;
   }
   if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
