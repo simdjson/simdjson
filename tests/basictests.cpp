@@ -6,9 +6,72 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "simdjson/jsonparser.h"
 
+bool number_test_powers_of_ten() {
+  char buf[1024];
+  simdjson::ParsedJson pj;
+  if (!pj.allocate_capacity(1024)) {
+    printf("allocation failure in number_test\n");
+    return false;
+  }
+  for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
+    auto n = sprintf(buf,"1e%d", i);
+    buf[n] = '\0';
+    fflush(NULL);
+    auto ok1 = json_parse(buf, n, pj);
+    if (ok1 != 0 || !pj.is_valid()) {
+      printf("Could not parse: %s.\n", buf);
+      return false;
+    }
+    simdjson::ParsedJson::Iterator pjh(pj);
+    if(!pjh.is_number()) {
+      printf("Root should be number\n");
+      return false;
+    }
+    if(pjh.is_integer()) {
+      int64_t x = pjh.get_integer();
+      int power = 0;
+      while(x > 1) {
+         if((x % 10) != 0) {
+            printf("failed to parse %s. \n", buf);
+            return false;
+         }
+         x = x / 10;
+         power ++;
+      }
+      if(power != i)  {
+         printf("failed to parse %s. \n", buf);
+         return false;
+      }
+    } else if(pjh.is_unsigned_integer()) {
+      uint64_t x = pjh.get_unsigned_integer();
+      int power = 0;
+      while(x > 1) {
+         if((x % 10) != 0) {
+           printf("failed to parse %s. \n", buf);
+           return false;
+         }
+         x = x / 10;
+         power ++;
+      }
+      if(power != i) {
+         printf("failed to parse %s. \n", buf);
+         return false;
+      }
+    } else {
+      double x = pjh.get_double();
+      if(x != std::pow(10, i)) {
+         printf("failed to parse %s. \n", buf);
+         return false;
+      }
+    }
+  }
+  printf("Powers of 10 can be parsed.\n");
+  return true;
+}
 
 // returns true if successful
 bool navigate_test() {
@@ -136,6 +199,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!number_test_powers_of_ten())
+    return EXIT_FAILURE;
   if (!navigate_test())
     return EXIT_FAILURE;
   if (!skyprophet_test())
