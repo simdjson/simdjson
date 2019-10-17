@@ -80,7 +80,7 @@ bool number_test_powers_of_two() {
       double x = pjh.get_double();
       int ulp = f64_ulp_dist(x,expected);  
       if(ulp > maxulp) maxulp = ulp;
-      if(ulp > 2) {
+      if(ulp > 0) {
          printf("failed to parse %s. ULP = %d i = %d \n", buf, ulp, i);
          return false;
       }
