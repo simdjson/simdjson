@@ -8,7 +8,7 @@
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
 
-JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding).
+JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding). This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
 
 <img src="images/logo.png" width="10%">
 
@@ -18,7 +18,7 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
-## Research article (VLDB Journal) 
+## Research article (VLDB Journal)
 
 A description of the design and implementation of simdjson is in our research article:
 
@@ -57,8 +57,8 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 ## Requirements
 
 - We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
-- A processor with 
-  - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017), 
+- A processor with
+  - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017),
   - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
   - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
@@ -83,7 +83,7 @@ using namespace simdjson;
 const char * filename = ... //
 
 // use whatever means you want to get a string (UTF-8) of your JSON document
-padded_string p = get_corpus(filename); 
+padded_string p = get_corpus(filename);
 ParsedJson pj;
 pj.allocate_capacity(p.size()); // allocate memory for parsing up to p.size() bytes
 const int res = json_parse(p, pj); // do the parsing, return 0 on success
@@ -152,7 +152,7 @@ if( ! pj.is_valid() ) {
 }
 ```
 
-As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data. 
+As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
 
 ## Usage: easy single-header version
 
@@ -195,7 +195,7 @@ There is no runtime dispatch on ARM.
 
 ## Thread safety
 
-The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads. 
+The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
 
 If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. The runtime dispatching is thread-safe.
 
@@ -280,13 +280,13 @@ make test
 
 ## Usage (CMake on Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later). 
+We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `VisualStudio`.
 - Using a shell, go to this newly created directory.
-- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.) 
+- Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
 - This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
 
 
@@ -369,7 +369,7 @@ We can navigate the parsed JSON using JSON Pointers as per the [RFC6901 standard
 You can build a tool (jsonpointer) to parse a JSON document and then issue an array of JSON Pointer queries:
 
 ```
-make jsonpointer 
+make jsonpointer
  ./jsonpointer jsonexamples/small/demo.json /Image/Width /Image/Height /Image/IDs/2
  ./jsonpointer jsonexamples/twitter.json /statuses/0/id /statuses/1/id /statuses/2/id /statuses/3/id /statuses/4/id /statuses/5/id
 ```
@@ -480,7 +480,7 @@ One can run tests and benchmarks using docker. It especially makes sense under L
 ```
 git clone https://github.com/lemire/simdjson.git
 cd simdjson
-docker build -t simdjson . 
+docker build -t simdjson .
 docker run --privileged -t simdjson
 ```
 
@@ -585,7 +585,7 @@ This helps as we redefine some new characters as pseudo-structural such as the c
 
 ## Funding
 
-The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant number RGPIN-2017-03910. 
+The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant number RGPIN-2017-03910.
 
 
 [license]: LICENSE
