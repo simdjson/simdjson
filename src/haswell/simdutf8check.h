@@ -206,7 +206,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline void check_next_input(simd_input in) {
+  really_inline ErrorValues check_next_input(simd_input in) {
     __m256i high_bit = _mm256_set1_epi8(0x80u);
     __m256i any_bits_on = in.reduce([&](auto a, auto b) {
       return _mm256_or_si256(a, b);
@@ -218,6 +218,7 @@ struct utf8_checker {
       // it is not ascii so we have to do heavy work
       in.each([&](auto _in) { check_utf8_bytes(_in); });
     }
+    return SUCCESS;
   }
 
   really_inline ErrorValues errors() {

@@ -219,7 +219,7 @@ public:
   // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
   // workout.
   //
-  really_inline uint64_t scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+  really_inline ErrorValues scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
     //
     // Load up all 128 bytes into SIMD registers
     //
@@ -246,13 +246,14 @@ public:
     utf8_checker.check_next_input(in_1);
     this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
     this->prev_structurals = structurals_1 & ~string_1;
-    uint64_t unescaped_chars_error = unescaped_1 & string_1;
+    if (unlikely(unescaped_1 & string_1)) { return UNESCAPED_CHARS; }
 
     uint64_t unescaped_2 = in_2.lteq(0x1F);
     utf8_checker.check_next_input(in_2);
     this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
     this->prev_structurals = structurals_2 & ~string_2;
-    return unescaped_chars_error | (unescaped_2 & string_2);
+    if (unlikely(unescaped_2 & string_2)) { return UNESCAPED_CHARS; }
+    return SUCCESS;
   }
 
   really_inline ErrorValues scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
@@ -261,7 +262,8 @@ public:
 
     // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
     for (; idx < lenminusstep; idx += STEP_SIZE) {
-      if (this->scan_step(&buf[idx], idx, utf8_checker)) { return UNESCAPED_CHARS; }
+      ErrorValues error = this->scan_step(&buf[idx], idx, utf8_checker);
+      if (error) { return error; }
     }
 
     /* If we have a final chunk of less than 64 bytes, pad it to 64 with
@@ -271,7 +273,8 @@ public:
       uint8_t tmp_buf[STEP_SIZE];
       memset(tmp_buf, 0x20, STEP_SIZE);
       memcpy(tmp_buf, buf + idx, len - idx);
-      if (this->scan_step(&tmp_buf[0], idx, utf8_checker)) { return UNESCAPED_CHARS; }
+      ErrorValues error = this->scan_step(&tmp_buf[0], idx, utf8_checker);
+      if (error) { return error; }
       idx += STEP_SIZE;
     }
 
