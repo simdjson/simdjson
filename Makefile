@@ -60,7 +60,7 @@ endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
 TESTEXECUTABLES=jsoncheck integer_tests numberparsingcheck stringparsingcheck pointercheck
-COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
+COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition kostyacompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 # Load headers and sources
@@ -206,6 +206,10 @@ parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBF
 
 distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES) submodules
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
+
+kostyacompetion: benchmark/kostyacompetition.cpp $(HEADERS) $(LIBFILES) submodules
+	$(CXX) $(CXXFLAGS)  -o kostyacompetition $(LIBFILES) benchmark/kostyacompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
+
 
 parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) submodules 
 	@echo "In case of build error due to missing files, try 'make clean'"

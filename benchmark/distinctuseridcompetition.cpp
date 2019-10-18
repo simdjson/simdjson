@@ -78,6 +78,13 @@ simdjson_just_parse(const simdjson::padded_string &p) {
   return answer;
 }
 
+__attribute__((noinline)) bool
+simdjson_just_parse_noalloc(const simdjson::padded_string &p, simdjson::ParsedJson & pj) {
+  json_parse(p, pj);
+  bool answer = !pj.is_valid();
+  return answer;
+}
+
 void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   using namespace sajson;
   switch (node.get_type()) {
@@ -265,6 +272,7 @@ int main(int argc, char *argv[]) {
         << "Using different parsers, we compute the content statistics of "
            "JSON documents."
         << std::endl;
+    std::cerr << "Try jsonexamples/twitter.json " << std::endl;
     std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
     std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
     exit(1);
@@ -343,5 +351,11 @@ int main(int argc, char *argv[]) {
                                sajson::mutable_string_view(p.size(), buffer));
   BEST_TIME("sasjon (just dom) ", sasjon_just_dom(dsasjon).size(), size, ,
             repeat, volume, !just_data);
+
+  simdjson::ParsedJson pj;
+  bool alloc = pj.allocate_capacity(volume);
+  if(!alloc) std::cerr << "allocation failure" << std::endl;
+  BEST_TIME("simdjson (just parse, no alloc)  ", simdjson_just_parse_noalloc(p, pj), false, , repeat,
+            volume, !just_data);
   free(buffer);
 }
