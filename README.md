@@ -186,7 +186,7 @@ Note: In some settings, it might be desirable to precompile `simdjson.cpp` inste
 
 On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
 runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
-The code automatically detects the feature set of your processor and switches to the right function at runtime (a technical
+The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique
 sometimes called runtime dispatch).
 
 
