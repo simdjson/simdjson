@@ -5,8 +5,7 @@
 
 #ifdef IS_X86_64
 
-#include "haswell/simd_input.h"
-#include "haswell/simdutf8check.h"
+#include "haswell/simd.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_HASWELL
@@ -16,12 +15,12 @@ really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
   // There should be no such thing with a processing supporting avx2
   // but not clmul.
   uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
+      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8('\xFF'), 0));
   return quote_mask;
 }
 
 really_inline void find_whitespace_and_operators(
-  const simd_input in,
+  const simd::simd8x64<uint8_t> in,
   uint64_t &whitespace, uint64_t &op) {
 
   #ifdef SIMDJSON_NAIVE_STRUCTURAL
@@ -61,11 +60,11 @@ really_inline void find_whitespace_and_operators(
 
     // clang-format off
     const __m256i operator_table =
-        _mm256_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
-                         44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
+        _mm256_setr_epi8(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{',
+                         ',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
     const __m256i white_table = _mm256_setr_epi8(
-        32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100,
-        32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100);
+        ' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100,
+        ' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
     // clang-format on
     const __m256i op_offset = _mm256_set1_epi8(0xd4u);
     const __m256i op_mask = _mm256_set1_epi8(32);
@@ -76,7 +75,7 @@ really_inline void find_whitespace_and_operators(
 
     op = in.map([&](auto _in) {
       const __m256i r1 = _mm256_add_epi8(op_offset, _in);
-      const __m256i r2 = _mm256_or_si256(_in, op_mask);
+      const __m256i r2 = _in | op_mask;
       const __m256i r3 = _mm256_shuffle_epi8(operator_table, r1);
       return _mm256_cmpeq_epi8(r2, r3);
     }).to_bitmask();
@@ -84,6 +83,7 @@ really_inline void find_whitespace_and_operators(
   #endif // else SIMDJSON_NAIVE_STRUCTURAL
 }
 
+#include "generic/simdutf8check.h"
 #include "generic/stage1_find_marks.h"
 
 } // namespace haswell
