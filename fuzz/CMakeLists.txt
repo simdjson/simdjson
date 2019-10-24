@@ -5,7 +5,9 @@
 # cd build-fuzzer
 # export LDFLAGS="-fsanitize=address,undefined"
 # export CXXFLAGS="-fsanitize=fuzzer-no-link,address,undefined"
+# export CFLAGS="-fsanitize=fuzzer-no-link,address,undefined"
 # export CXX=clang++
+# export CC=clang++
 # cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DENABLE_FUZZING=On
 # ninja
 
