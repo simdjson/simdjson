@@ -1,31 +1,29 @@
 #include "simdjson/jsonparser.h"
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <iostream>
+#include <string>
 
 // from https://stackoverflow.com/a/8244052
-class NulStreambuf : public std::streambuf
-{
-    char                dummyBuffer[ 64 ];
+class NulStreambuf : public std::streambuf {
+  char dummyBuffer[64];
+
 protected:
-    virtual int         overflow( int c )
-    {
-        setp( dummyBuffer, dummyBuffer + sizeof( dummyBuffer ) );
-        return (c == traits_type::eof()) ? '\0' : c;
-    }
+  virtual int overflow(int c) {
+    setp(dummyBuffer, dummyBuffer + sizeof(dummyBuffer));
+    return (c == traits_type::eof()) ? '\0' : c;
+  }
 };
 
-class NulOStream : private NulStreambuf, public std::ostream
-{
+class NulOStream : private NulStreambuf, public std::ostream {
 public:
-    NulOStream() : std::ostream( this ) {}
-    NulStreambuf* rdbuf() { return this; }
+  NulOStream() : std::ostream(this) {}
+  NulStreambuf *rdbuf() { return this; }
 };
 
 // from the README on the front page
 void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-    NulOStream os;
+  NulOStream os;
 
   if (pjh.is_object()) {
     os << "{";
@@ -62,12 +60,13 @@ void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
-    try {
-   auto pj= simdjson::build_parsed_json(Data,Size);
-simdjson::ParsedJson::Iterator pjh(pj);
-if(pjh.is_ok()) {
-        compute_dump(pjh);
-}
-    } catch(...) {}
+  try {
+    auto pj = simdjson::build_parsed_json(Data, Size);
+    simdjson::ParsedJson::Iterator pjh(pj);
+    if (pjh.is_ok()) {
+      compute_dump(pjh);
+    }
+  } catch (...) {
+  }
   return 0;
 }

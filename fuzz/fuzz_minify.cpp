@@ -1,5 +1,5 @@
-#include "simdjson/jsonparser.h"
 #include "simdjson/jsonminifier.h"
+#include "simdjson/jsonparser.h"
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -10,6 +10,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
   std::string str(begin, end);
 
-  simdjson::json_minify(str.data(),str.size(),str.data());
+  simdjson::json_minify(str.data(), str.size(), str.data());
   return 0;
 }
