@@ -9,6 +9,7 @@ char *allocate_padded_buffer(size_t length) {
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+  memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 }
 
