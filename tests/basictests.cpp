@@ -143,8 +143,12 @@ bool number_test_powers_of_ten() {
       }
     } else {
       double x = pjh.get_double();
+      double expected = std::pow(10, i);
       if(x != std::pow(10, i)) {
          printf("failed to parse %s. \n", buf);
+         int ulp = (int) f64_ulp_dist(x, expected);
+         printf("actual: %.20f expected: %.20f \n", x, expected);
+         printf("ULP: %d \n", ulp);
          return false;
       }
     }
