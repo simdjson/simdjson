@@ -32,6 +32,9 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
   }   // if(realloc_if_needed) {
   int stage1_is_ok = simdjson::find_structural_bits<T>(buf, len, pj);
   if (stage1_is_ok != simdjson::SUCCESS) {
+    if (reallocated) { // must free before we exit
+      aligned_free((void *)buf);
+    }
     pj.error_code = stage1_is_ok;
     return pj.error_code;
   }
