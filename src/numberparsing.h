@@ -315,6 +315,13 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   if (is_not_structural_or_whitespace(*p)) {
     return false;
   }
+  // check that we can go from long double to double safely.
+  if(i > std::numeric_limits<double>::max()) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+        found_invalid_number(buf + offset);
+#endif
+        return false;
+  }
   double d = negative ? -i : i;
   pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
