@@ -12,17 +12,16 @@
 # ninja
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
- add_executable(fuzzer fuzz.cpp)
- target_link_libraries(fuzzer PRIVATE  ${SIMDJSON_LIB_NAME} )
- target_link_libraries(fuzzer PRIVATE "-fsanitize=fuzzer")
-
- add_executable(fuzz_like_json2json fuzz_like_json2json.cpp)
- target_link_libraries(fuzz_like_json2json PRIVATE  ${SIMDJSON_LIB_NAME} )
- target_link_libraries(fuzz_like_json2json PRIVATE "-fsanitize=fuzzer")
+ add_executable(fuzz_parser fuzz_parser.cpp)
+ target_link_libraries(fuzz_parser PRIVATE  ${SIMDJSON_LIB_NAME} )
+ target_link_libraries(fuzz_parser PRIVATE "-fsanitize=fuzzer")
 
  add_executable(fuzz_minify fuzz_minify.cpp)
  target_link_libraries(fuzz_minify PRIVATE  ${SIMDJSON_LIB_NAME} )
  target_link_libraries(fuzz_minify PRIVATE "-fsanitize=fuzzer")
 
+ add_executable(fuzz_dump fuzz_dump.cpp)
+ target_link_libraries(fuzz_dump PRIVATE  ${SIMDJSON_LIB_NAME} )
+ target_link_libraries(fuzz_dump PRIVATE "-fsanitize=fuzzer")
 endif()
 
