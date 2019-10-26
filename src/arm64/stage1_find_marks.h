@@ -10,6 +10,8 @@
 
 namespace simdjson::arm64 {
 
+using namespace simd;
+
 really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
 
 #ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
@@ -20,31 +22,19 @@ really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
 }
 
 really_inline void find_whitespace_and_operators(
-    const simd::simd8x64<uint8_t> in,
-    uint64_t &whitespace, uint64_t &op) {
-  const uint8x16_t low_nibble_mask =
-      (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
-  const uint8x16_t high_nibble_mask =
-      (uint8x16_t){8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0};
-  const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf);
+  const simd::simd8x64<uint8_t> in,
+  uint64_t &whitespace, uint64_t &op) {
 
-  auto v = in.map([&](auto chunk) {
-    uint8x16_t nib_lo = vandq_u8(chunk, low_nib_and_mask);
-    uint8x16_t nib_hi = vshrq_n_u8(chunk, 4);
-    uint8x16_t shuf_lo = vqtbl1q_u8(low_nibble_mask, nib_lo);
-    uint8x16_t shuf_hi = vqtbl1q_u8(high_nibble_mask, nib_hi);
-    return vandq_u8(shuf_lo, shuf_hi);
+  auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
+    auto nib_lo = chunk & 0xf;
+    auto nib_hi = chunk.shr<4>();
+    auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+    auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+    return shuf_lo & shuf_hi;
   });
 
-  const uint8x16_t operator_shufti_mask = vmovq_n_u8(0x7);
-  op = v.map([&](auto _v) {
-    return vtstq_u8(_v, operator_shufti_mask);
-  }).to_bitmask();
-
-  const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);
-  whitespace = v.map([&](auto _v) {
-    return vtstq_u8(_v, whitespace_shufti_mask);
-  }).to_bitmask();
+  op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
+  whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
 }
 
 #include "generic/simdutf8check.h"

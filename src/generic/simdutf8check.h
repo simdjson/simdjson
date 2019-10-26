@@ -36,7 +36,7 @@ struct utf8_checker {
   }
 
   really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
-    return high_nibbles.lookup4<int8_t>(
+    return high_nibbles.lookup_16<int8_t>(
       1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
       0, 0, 0, 0,             // 10xx (continuation)
       2, 2,                   // 110x
@@ -102,7 +102,7 @@ struct utf8_checker {
     // Two-byte characters must start with at least C2
     // Three-byte characters must start with at least E1
     // Four-byte characters must start with at least F1
-    simd8<int8_t> initial_mins = off1_high_nibbles.lookup4<int8_t>(
+    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
       -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
       -128, -128, -128, -128,                         // 10xx -> false
       0xC2, -128,                                     // 1100 -> C2
@@ -114,7 +114,7 @@ struct utf8_checker {
     // Two-byte characters starting with at least C2 are always OK
     // Three-byte characters starting with at least E1 must be followed by at least A0
     // Four-byte characters starting with at least F1 must be followed by at least 90
-    simd8<int8_t> second_mins = off1_high_nibbles.lookup4<int8_t>(
+    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
       -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
       -128, -128, -128,                                     // 10xx => false
       127, 127,                                             // 110x => true
@@ -152,7 +152,7 @@ struct utf8_checker {
   }
 
   really_inline void check_next_input(simd8<uint8_t> in) {
-    if (likely(!in.any_bits_set(0x80u))) {
+    if (likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {
       this->check_utf8_bytes(in);
@@ -161,7 +161,7 @@ struct utf8_checker {
 
   really_inline void check_next_input(simd8x64<uint8_t> in) {
     simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
-    if (likely(!bits.any_bits_set(0x80u))) {
+    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
       // it is ascii, we just check carried continuations.
       this->check_carried_continuations();
     } else {
@@ -171,6 +171,6 @@ struct utf8_checker {
   }
 
   really_inline ErrorValues errors() {
-    return this->has_error.any_bits_set() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

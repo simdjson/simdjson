@@ -29,7 +29,7 @@ namespace simdjson::westmere::simd {
     really_inline Child operator&(const Child other) const { return _mm_and_si128(*this, other); }
     really_inline Child operator^(const Child other) const { return _mm_xor_si128(*this, other); }
     really_inline Child bit_andnot(const Child other) const { return _mm_andnot_si128(*this, other); }
-    really_inline Child operator~() const { return this ^ 0xFFu; }
+    really_inline Child operator~() const { return *this ^ 0xFFu; }
     really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
     really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
     really_inline Child& operator^=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast ^ other; return *this_cast; }
@@ -67,7 +67,7 @@ namespace simdjson::westmere::simd {
     really_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
 
     really_inline bitmask_t to_bitmask() const { return _mm_movemask_epi8(*this); }
-    really_inline bool any() const { return !_mm_testz_si128(*this, *this) == 0; }
+    really_inline bool any() const { return !_mm_testz_si128(*this, *this); }
   };
 
   template<typename T>
@@ -89,7 +89,7 @@ namespace simdjson::westmere::simd {
 
     // Perform a lookup of the lower 4 bits
     template<typename L>
-    really_inline simd8<L> lookup4(
+    really_inline simd8<L> lookup_lower_4_bits(
         L replace0,  L replace1,  L replace2,  L replace3,
         L replace4,  L replace5,  L replace6,  L replace7,
         L replace8,  L replace9,  L replace10, L replace11,
@@ -102,6 +102,21 @@ namespace simdjson::westmere::simd {
         replace12, replace13, replace14, replace15
       );
       return _mm_shuffle_epi8(lookup_table, *this);
+    }
+
+    // Perform a lookup assuming the value is between 0 and 16
+    template<typename L>
+    really_inline simd8<L> lookup_16(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      return lookup_lower_4_bits(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
     }
   };
 
@@ -157,8 +172,10 @@ namespace simdjson::westmere::simd {
     really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return this->max(other) == other; }
 
     // Bit-specific operations
-    really_inline bool any_bits_set(simd8<uint8_t> bits) const { return !_mm_testz_si128(*this, bits); }
-    really_inline bool any_bits_set() const { return !_mm_testz_si128(*this, *this); }
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
+    really_inline simd8<bool> any_bits_set() const { return ~(*this == u8'\0'); }
+    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm_testz_si128(*this, bits); }
+    really_inline bool any_bits_set_anywhere() const { return !_mm_testz_si128(*this, *this); }
     template<int N>
     really_inline simd8<uint8_t> shr() const { return simd8<uint8_t>(_mm_srli_epi16(*this, N)) & uint8_t(0xFFu >> N); }
     template<int N>
