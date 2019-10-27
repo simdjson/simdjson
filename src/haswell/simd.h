@@ -74,12 +74,15 @@ namespace simdjson::haswell::simd {
   struct base8_numeric: base8<T> {
     static really_inline simd8<T> splat(T _value) { return _mm256_set1_epi8(_value); }
     static really_inline simd8<T> zero() { return _mm256_setzero_si256(); }
-    static really_inline simd8<T> load(const T* values) {
+    static really_inline simd8<T> load(const T values[32]) {
       return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values));
     }
 
     really_inline base8_numeric() : base8<T>() {}
     really_inline base8_numeric(const __m256i _value) : base8<T>(_value) {}
+
+    // Store to array
+    really_inline void store(T dst[32]) { return _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), *this); }
 
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm256_add_epi8(*this, other); }
@@ -131,7 +134,7 @@ namespace simdjson::haswell::simd {
     // Splat constructor
     really_inline simd8(int8_t _value) : simd8(splat(_value)) {}
     // Array constructor
-    really_inline simd8(const int8_t* values) : simd8(load(values)) {}
+    really_inline simd8(const int8_t values[32]) : simd8(load(values)) {}
     // Member-by-member initialization
     really_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
@@ -159,7 +162,7 @@ namespace simdjson::haswell::simd {
     // Splat constructor
     really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Array constructor
-    really_inline simd8(const uint8_t* values) : simd8(load(values)) {}
+    really_inline simd8(const uint8_t values[32]) : simd8(load(values)) {}
     // Member-by-member initialization
     really_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
@@ -184,7 +187,7 @@ namespace simdjson::haswell::simd {
 
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
-    really_inline simd8<bool> any_bits_set() const { return ~(*this == u8'\0'); }
+    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
     really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm256_testz_si256(*this, bits); }
     really_inline bool any_bits_set_anywhere() const { return !_mm256_testz_si256(*this, *this); }
     template<int N>
@@ -198,10 +201,13 @@ namespace simdjson::haswell::simd {
     const simd8<T> chunks[2];
 
     really_inline simd8x64() : chunks{simd8<T>(), simd8<T>()} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
 
-    really_inline simd8x64(const __m256i chunk0, const __m256i chunk1) : chunks{chunk0, chunk1} {}
-
-    really_inline simd8x64(const T *ptr) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
+    really_inline void store(T *ptr) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+sizeof(simd8<T>));
+    }
 
     template <typename F>
     really_inline void each(F const& each_chunk) const

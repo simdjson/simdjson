@@ -60,7 +60,7 @@ namespace simdjson::arm64::simd {
     really_inline simd8<bool>::bitmask_t to_bitmask() const {
       const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
                                    0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
-      uint8x16_t minput = vandq_u8(*this, bit_mask);
+      auto minput = *this & bit_mask;
       uint8x16_t tmp = vpaddq_u8(minput, minput);
       tmp = vpaddq_u8(tmp, tmp);
       tmp = vpaddq_u8(tmp, tmp);
@@ -80,7 +80,7 @@ namespace simdjson::arm64::simd {
     // Zero constructor
     really_inline simd8() : simd8(zero()) {}
     // Array constructor
-    really_inline simd8(const uint8_t* values) : simd8(load(values)) {}
+    really_inline simd8(const uint8_t values[16]) : simd8(load(values)) {}
     // Splat constructor
     really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
@@ -91,6 +91,9 @@ namespace simdjson::arm64::simd {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     }) {}
+
+    // Store to array
+    really_inline void store(uint8_t dst[16]) { return vst1q_u8(dst, *this); }
 
     // Saturated math
     really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
@@ -159,7 +162,7 @@ namespace simdjson::arm64::simd {
 
     static really_inline simd8<int8_t> splat(int8_t _value) { return vmovq_n_s8(_value); }
     static really_inline simd8<int8_t> zero() { return vdupq_n_s8(0); }
-    static really_inline simd8<int8_t> load(const int8_t* values) { return vld1q_s8(values); }
+    static really_inline simd8<int8_t> load(const int8_t values[16]) { return vld1q_s8(values); }
 
     // Conversion from/to SIMD register
     really_inline simd8(const int8x16_t _value) : value{_value} {}
@@ -180,6 +183,9 @@ namespace simdjson::arm64::simd {
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
      }) {}
+
+    // Store to array
+    really_inline void store(int8_t dst[16]) { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
     really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
@@ -227,8 +233,15 @@ namespace simdjson::arm64::simd {
     const simd8<T> chunks[4];
 
     really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
-    really_inline simd8x64(const uint8x16_t chunk0, const uint8x16_t chunk1, const uint8x16_t chunk2, const uint8x16_t chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
-    really_inline simd8x64(const T *ptr) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+
+    really_inline void store(T ptr[64]) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+16);
+      this->chunks[0].store(ptr+32);
+      this->chunks[0].store(ptr+48);
+    }
 
     template <typename F>
     really_inline void each(F const& each_chunk) const
@@ -268,14 +281,13 @@ namespace simdjson::arm64::simd {
     }
 
     really_inline uint64_t to_bitmask() const {
-      const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
-      uint8x16_t t0 = vandq_u8(this->chunks[0], bit_mask);
-      uint8x16_t t1 = vandq_u8(this->chunks[1], bit_mask);
-      uint8x16_t t2 = vandq_u8(this->chunks[2], bit_mask);
-      uint8x16_t t3 = vandq_u8(this->chunks[3], bit_mask);
-      uint8x16_t sum0 = vpaddq_u8(t0, t1);
-      uint8x16_t sum1 = vpaddq_u8(t2, t3);
+      const uint8x16_t bit_mask = {
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      };
+      // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
+      uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
+      uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
       sum0 = vpaddq_u8(sum0, sum1);
       sum0 = vpaddq_u8(sum0, sum0);
       return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);

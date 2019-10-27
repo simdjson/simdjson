@@ -75,12 +75,15 @@ namespace simdjson::westmere::simd {
   struct base8_numeric: base8<T> {
     static really_inline simd8<T> splat(T _value) { return _mm_set1_epi8(_value); }
     static really_inline simd8<T> zero() { return _mm_setzero_si128(); }
-    static really_inline simd8<T> load(const T* values) {
+    static really_inline simd8<T> load(const T values[16]) {
       return _mm_loadu_si128(reinterpret_cast<const __m128i *>(values));
     }
 
     really_inline base8_numeric() : base8<T>() {}
     really_inline base8_numeric(const __m128i _value) : base8<T>(_value) {}
+
+    // Store to array
+    really_inline void store(T dst[16]) { return _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), *this); }
 
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm_add_epi8(*this, other); }
@@ -174,7 +177,7 @@ namespace simdjson::westmere::simd {
 
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
-    really_inline simd8<bool> any_bits_set() const { return ~(*this == u8'\0'); }
+    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
     really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm_testz_si128(*this, bits); }
     really_inline bool any_bits_set_anywhere() const { return !_mm_testz_si128(*this, *this); }
     template<int N>
@@ -188,8 +191,15 @@ namespace simdjson::westmere::simd {
     const simd8<T> chunks[4];
 
     really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
-    really_inline simd8x64(const __m128i chunk0, const __m128i chunk1, const __m128i chunk2, const __m128i chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
-    really_inline simd8x64(const T *ptr) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+
+    really_inline void store(T ptr[64]) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+16);
+      this->chunks[0].store(ptr+32);
+      this->chunks[0].store(ptr+48);
+    }
 
     template <typename F>
     really_inline void each(F const& each_chunk) const
