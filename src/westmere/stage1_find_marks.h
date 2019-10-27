@@ -5,6 +5,7 @@
 
 #ifdef IS_X86_64
 
+#include "westmere/bitmask.h"
 #include "westmere/simd.h"
 #include "simdjson/stage1_find_marks.h"
 
@@ -12,11 +13,6 @@ TARGET_WESTMERE
 namespace simdjson::westmere {
 
 using namespace simd;
-
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-  return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
-}
 
 really_inline void find_whitespace_and_operators(
   const simd8x64<uint8_t> in,

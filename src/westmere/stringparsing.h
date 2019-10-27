@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
+#include "simdjson/portability.h"
+
 #ifdef IS_X86_64
 
 #include "simdjson/common_defs.h"

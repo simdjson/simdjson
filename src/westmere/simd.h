@@ -1,11 +1,12 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-#include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
-#include "simdjson/simdjson.h"
 
 #ifdef IS_X86_64
+
+#include "simdjson/common_defs.h"
+#include "simdjson/simdjson.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere::simd {

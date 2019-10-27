@@ -5,6 +5,7 @@
 
 #ifdef IS_X86_64
 
+#include "haswell/bitmask.h"
 #include "haswell/simd.h"
 #include "simdjson/stage1_find_marks.h"
 
@@ -12,14 +13,6 @@ TARGET_HASWELL
 namespace simdjson::haswell {
 
 using namespace simd;
-
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-  // There should be no such thing with a processing supporting avx2
-  // but not clmul.
-  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8('\xFF'), 0));
-  return quote_mask;
-}
 
 really_inline void find_whitespace_and_operators(
   const simd::simd8x64<uint8_t> in,

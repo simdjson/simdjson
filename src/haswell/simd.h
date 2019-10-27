@@ -1,10 +1,11 @@
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-#include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 
 #ifdef IS_X86_64
+
+#include "simdjson/common_defs.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell::simd {

@@ -5,21 +5,13 @@
 
 #ifdef IS_ARM64
 
+#include "arm64/bitmask.h"
 #include "arm64/simd.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson::arm64 {
 
 using namespace simd;
-
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-
-#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
-  return vmull_p64(-1ULL, quote_bits);
-#else
-  return portable_compute_quote_mask(quote_bits);
-#endif
-}
 
 really_inline void find_whitespace_and_operators(
   const simd::simd8x64<uint8_t> in,

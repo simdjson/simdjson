@@ -20,6 +20,9 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/src/arm64/bitmask.h
+$SCRIPTPATH/src/haswell/bitmask.h
+$SCRIPTPATH/src/westmere/bitmask.h
 $SCRIPTPATH/src/arm64/simd.h
 $SCRIPTPATH/src/haswell/simd.h
 $SCRIPTPATH/src/westmere/simd.h

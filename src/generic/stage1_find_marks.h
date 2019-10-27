@@ -162,8 +162,8 @@ public:
     const uint64_t backslash = in.eq('\\');
     const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
     const uint64_t quote = in.eq('"') & ~escaped;
-    // compute_quote_mask returns start quote plus string contents.
-    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    // prefix_xor flips on bits inside the string (and flips off the end quote).
+    const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
     /* right shift of a signed value expected to be well-defined and standard
     * compliant as of C++20,
     * John Regher from Utah U. says this is fine code */

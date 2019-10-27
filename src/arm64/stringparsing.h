@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
+#include "simdjson/portability.h"
+
 #ifdef IS_ARM64
 
 #include "simdjson/common_defs.h"
