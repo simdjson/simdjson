@@ -25,9 +25,10 @@ set(SIMDJSON_SRC
   jsonioutil.cpp
   jsonminifier.cpp
   jsonparser.cpp
+  jsonstream.cpp
   stage1_find_marks.cpp
   stage2_build_tape.cpp
-  parsedjson.cpp
+        parsedjson.cpp
   parsedjsoniterator.cpp
   simdjson.cpp
 )
@@ -44,6 +45,7 @@ set(SIMDJSON_SRC_HEADERS
   arm64/stringparsing.h
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
+  generic/stage2_streaming_build_tape.h
   generic/stringparsing.h
   haswell/simd_input.h
   haswell/simdutf8check.h

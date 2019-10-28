@@ -59,12 +59,12 @@ endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
-TESTEXECUTABLES=jsoncheck integer_tests numberparsingcheck stringparsingcheck pointercheck
+TESTEXECUTABLES=jsoncheck integer_tests numberparsingcheck stringparsingcheck pointercheck jsonstream_test
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 # Load headers and sources
-LIBHEADERS=src/simdprune_tables.h src/numberparsing.h src/jsoncharutils.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+LIBHEADERS=src/simdprune_tables.h src/numberparsing.h src/jsoncharutils.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h src/generic/tage2_streaming_build_tape.h
 PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
@@ -111,6 +111,9 @@ run_stringparsingcheck: stringparsingcheck
 run_jsoncheck: jsoncheck
 	./jsoncheck
 
+run_jsonstream_test: jsonstream_test
+	./jsonstream_test
+
 run_pointercheck: pointercheck
 	./pointercheck
 
@@ -120,12 +123,12 @@ run_issue150_sh: allparserscheckfile
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
-test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
+test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
+quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh
 
-quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck
+quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsonstream_test run_pointercheck
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -164,6 +167,9 @@ parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
+
+jsonstream_test:tests/jsonstream_test.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsonstream_test $(LIBFILES) tests/jsonstream_test.cpp -I. $(LIBFLAGS)
 
 basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o basictests $(LIBFILES) tests/basictests.cpp -I. $(LIBFLAGS)
