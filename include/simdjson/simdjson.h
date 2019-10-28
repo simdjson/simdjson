@@ -22,6 +22,7 @@ enum class Architecture {
 
 enum ErrorValues {
   SUCCESS = 0,
+  SUCCESS_AND_HAS_MORE,
   CAPACITY,    // This ParsedJson can't support a document that big
   MEMALLOC,    // Error allocating memory, most likely out of memory
   TAPE_ERROR,  // Something went wrong while writing to the tape (stage 2), this

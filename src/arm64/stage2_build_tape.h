@@ -6,6 +6,7 @@
 #ifdef IS_ARM64
 
 #include "simdjson/stage2_build_tape.h"
+#include "simdjson/stage2_streamin_build_tape.h"
 #include "arm64/stringparsing.h"
 
 namespace simdjson::arm64 {
@@ -20,6 +21,12 @@ template <>
 WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return arm64::unified_machine(buf, len, pj);
+}
+
+template <>
+WARN_UNUSED int
+unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t &next_json) {
+    return haswell::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson

@@ -267,9 +267,9 @@ public:
     this->unescaped_chars_error |= unescaped_2 & string_2;
   }
 
-  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker, size_t offset) {
     size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-    size_t idx = 0;
+    size_t idx = 0 + offset;
 
     for (; idx < lenminusstep; idx += STEP_SIZE) {
       this->scan_step(&buf[idx], idx, utf8_checker);
@@ -292,8 +292,8 @@ public:
 
 };
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  if (unlikely(len > pj.byte_capacity)) {
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, size_t offset) {
+  if (unlikely(len - offset > pj.byte_capacity)) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
               << len << " bytes" << std::endl;
@@ -301,7 +301,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
+  scanner.scan(buf, len, utf8_checker, offset);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (unlikely(error != simdjson::SUCCESS)) {
