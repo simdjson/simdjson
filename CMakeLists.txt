@@ -48,6 +48,12 @@ add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
 
+# for fuzzing, read the comments in the fuzz/CMakeLists.txt file
+option(ENABLE_FUZZING "enable fuzzing (experimental, requires clang)" OFF)
+if(ENABLE_FUZZING)
+add_subdirectory(fuzz)
+endif()
+
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
 set(CPACK_PACKAGE_CONTACT "lemire@gmail.com")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Parsing gigabytes of JSON per second")
@@ -62,3 +68,5 @@ set(CPACK_RPM_PACKAGE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 
 include(CPack)
+
+
