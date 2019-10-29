@@ -53,40 +53,53 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
     }
 
     if(next_json > 0){
-        std::fill_n(pj.tape, sizeof(pj.tape)/sizeof(pj.tape[0]), 0);
-        pj.current_loc = 0;
+        //std::fill_n(pj.tape, sizeof(pj.tape)/sizeof(pj.tape[0]), 0);
+        //pj.current_loc = 0;
     }
     if (load_next_batch){
-        auto current_buffer_loc{0};
-        if(next_json > 0){
-            current_buffer_loc = pj.structural_indexes[next_json];
-        }
 
         auto remaining_len = len - current_buffer_loc;
         size_t next_batch_size = std::min(batch_size, remaining_len);
 //        pj.structural_indexes = nullptr;
 //        pj.n_structural_indexes = 0;
         int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(buf, next_batch_size + current_buffer_loc, pj, current_buffer_loc);
-
-//        if (stage1_is_ok != simdjson::SUCCESS) {
-//            pj.error_code = stage1_is_ok;
-//            return pj.error_code;
+//        printf("\n\n New buffer loc: %u\n", current_buffer_loc);
+//        for(int i = current_buffer_loc ; i < next_batch_size+current_buffer_loc; i++){
+//            printf("%c", buf[i]);
 //        }
+
+        if (stage1_is_ok != simdjson::SUCCESS) {
+            pj.error_code = stage1_is_ok;
+            return pj.error_code;
+        }
         load_next_batch = false;
-        next_json = 0;
+        next_json = next_json == 1 ? 1 : 0;
     }
 
 
 
     int res = unified_machine<Architecture::HASWELL>(buf, len, pj, next_json);
 
+    if (res == 1) {
+        error_on_last_attempt = false;
+
+        //check if we loaded a perfect amount of json documents and
+        if(next_json > 0 && pj.structural_indexes[next_json] == 0) {
+            current_buffer_loc = pj.structural_indexes[next_json - 1];
+            next_json = 1;
+            load_next_batch = true;
+        }
+
+        else current_buffer_loc = pj.structural_indexes[next_json];
+    }
     //have a more precise error check
-    if ( res > 1 && error_count < 1 ) {
+    else if ( res > 1 && !error_on_last_attempt) {
         load_next_batch = true;
-        error_count++;
+        error_on_last_attempt = true;
         res = json_parse(pj);
     }
-    if (res <= 1) error_count = 0;
+
+
 
     return res;
 }

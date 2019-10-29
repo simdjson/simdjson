@@ -29,11 +29,12 @@ namespace simdjson {
 
         Architecture best_implementation;
         const char *buf;
-        uint32_t next_json{0};
+        size_t next_json{0};
         size_t batch_size;
         size_t len{0};
-        size_t error_count{0};
+        bool error_on_last_attempt{false};
         bool load_next_batch{true};
+        size_t current_buffer_loc{0};
     };
 
 }

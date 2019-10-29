@@ -37,13 +37,13 @@
  * for documentation.
  ***********/
 WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t &next_json) {
-    uint32_t i{next_json}; /* index of the structural character (0,1,2,3...) */
-    uint32_t idx; /* location of the structural character in the input (buf)   */
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
+    size_t idx; /* location of the structural character in the input (buf)   */
     uint8_t c;    /* used to track the (structural) character we are looking at,
                    updated */
     /* by UPDATE_CHAR macro */
-    uint32_t depth = 0; /* could have an arbitrary starting depth */
+    size_t depth = 0; /* could have an arbitrary starting depth */
     pj.init();          /* sets is_valid to false          */
 //    if (pj.byte_capacity < len) {
 //        pj.error_code = simdjson::CAPACITY;
