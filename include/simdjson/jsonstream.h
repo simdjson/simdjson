@@ -35,6 +35,8 @@ namespace simdjson {
         bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};
+        size_t n_parsed_docs{0};
+        size_t n_bytes_parsed{0};
     };
 
 }

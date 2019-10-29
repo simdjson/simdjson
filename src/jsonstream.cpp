@@ -35,6 +35,13 @@ JsonStream::JsonStream(const char *buf, size_t len, size_t batch_size) {
 
 JsonStream::~JsonStream() {
     batch_size = 0;
+    len = 0;
+    batch_size = 0;
+    next_json = 0;
+    current_buffer_loc = 0;
+    n_parsed_docs = 0;
+    error_on_last_attempt= false;
+    load_next_batch = true;
 }
 
 
@@ -52,38 +59,47 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
         return simdjson::CAPACITY;
     }
 
-    if(next_json > 0){
-        //std::fill_n(pj.tape, sizeof(pj.tape)/sizeof(pj.tape[0]), 0);
-        //pj.current_loc = 0;
+    //Quick heuristic to see if it's worth parsing the remaining data in the batch
+    if(!load_next_batch && n_bytes_parsed > 0) {
+        auto remaining_data = batch_size - current_buffer_loc;
+        auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
+
+        if(remaining_data < avg_doc_len)
+            load_next_batch = true;
     }
+
     if (load_next_batch){
 
-        auto remaining_len = len - current_buffer_loc;
-        size_t next_batch_size = std::min(batch_size, remaining_len);
-//        pj.structural_indexes = nullptr;
-//        pj.n_structural_indexes = 0;
-        int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(buf, next_batch_size + current_buffer_loc, pj, current_buffer_loc);
-//        printf("\n\n New buffer loc: %u\n", current_buffer_loc);
-//        for(int i = current_buffer_loc ; i < next_batch_size+current_buffer_loc; i++){
-//            printf("%c", buf[i]);
-//        }
+        buf = &buf[current_buffer_loc];
+        len -= current_buffer_loc;
+        n_bytes_parsed += current_buffer_loc;
+
+        batch_size = std::min(batch_size, len);
+
+        int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(buf, batch_size, pj, true);
 
         if (stage1_is_ok != simdjson::SUCCESS) {
             pj.error_code = stage1_is_ok;
             return pj.error_code;
         }
+
         load_next_batch = false;
+
+        //If we loaded a perfect amount of documents last time, we need to skip the first element,
+        // because it represents the end of the last document
         next_json = next_json == 1 ? 1 : 0;
     }
-
 
 
     int res = unified_machine<Architecture::HASWELL>(buf, len, pj, next_json);
 
     if (res == 1) {
         error_on_last_attempt = false;
-
-        //check if we loaded a perfect amount of json documents and
+        n_parsed_docs++;
+        //Check if we loaded a perfect amount of json documents and we are done parsing them.
+        //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
+        //of the last loaded document and start parsing at structural_index[1] for the next batch.
+        // It should be the start of the first document in the new batch
         if(next_json > 0 && pj.structural_indexes[next_json] == 0) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
@@ -92,14 +108,14 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
 
         else current_buffer_loc = pj.structural_indexes[next_json];
     }
-    //have a more precise error check
+    //TODO: have a more precise error check
+    //Give it two chances for now.  We assume the error is because the json was not loaded completely in this batch.
+    //Load a new batch and if the error persists, it's a genuine error.
     else if ( res > 1 && !error_on_last_attempt) {
         load_next_batch = true;
         error_on_last_attempt = true;
         res = json_parse(pj);
     }
-
-
 
     return res;
 }
