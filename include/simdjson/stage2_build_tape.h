@@ -23,10 +23,10 @@ int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
 // Streaming
 template <Architecture T = Architecture::NATIVE>
 WARN_UNUSED int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t &next_json);
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
 template <Architecture T = Architecture::NATIVE>
-int unified_machine(const char *buf, size_t len, ParsedJson &pj, uint32_t &next_json) {
+int unified_machine(const char *buf, size_t len, ParsedJson &pj, size_t &next_json) {
     return unified_machine<T>(reinterpret_cast<const uint8_t *>(buf), len, pj, next_json);
 }
 
