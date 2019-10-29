@@ -84,20 +84,35 @@ bool validate(const char *dirname) {
             }
 
             simdjson::ParsedJson pj;
-            simdjson::JsonStream js{p.data(), p.size(), 128};
+            simdjson::JsonStream js{p.data(), p.size(), 4000000};
 
             ++how_many;
             int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+            int count = 0;
             while(parse_res == simdjson::SUCCESS_AND_HAS_MORE){
                 parse_res = js.json_parse(pj);
-                printf("ok\n");
-                pj.dump_raw_tape(std::cout);
+//                count++;
+//                printf("ok\n");
+//                pj.dump_raw_tape(std::cout);
+//                printf("******************************* %d **********************************", count);
 //                for(int i = 0; i < 32; i++){
 //                    std::cout << i << " : " << pj.tape[i] << std::endl;
 //                }
             }
 
-            //printf("%s\n", parse_res == 0 ? "ok" : "invalid");
+
+//            std::ifstream inFile;
+//            inFile.open(fullpath);
+//            int longestLine = 0;
+//            for (std::string line; std::getline(inFile, line, '\n'); ) {
+//                auto size = line.size();
+//                if(longestLine < size)
+//                longestLine = size;
+//            }
+//            std::cout << "longest line is: " << longestLine << std::endl;
+
+
+            printf("%s\n", parse_res == 0 ? "ok" : "invalid");
 
 
 

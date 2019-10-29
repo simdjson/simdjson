@@ -305,9 +305,9 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   scanner.scan(buf, len, utf8_checker, offset);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (unlikely(error != simdjson::SUCCESS)) {
-    return error;
-  }
+//  if (unlikely(error != simdjson::SUCCESS)) {
+//    return error;
+//  }
 
   pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
