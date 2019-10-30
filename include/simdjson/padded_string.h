@@ -3,6 +3,7 @@
 #include "simdjson/portability.h"
 #include <cstring>
 #include <memory>
+#include <string>
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
