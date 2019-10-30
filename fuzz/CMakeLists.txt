@@ -8,7 +8,7 @@
 # export CFLAGS="-fsanitize=fuzzer-no-link,address,undefined"
 # export CXX=clang++
 # export CC=clang++
-# cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DENABLE_FUZZING=On
+# cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DENABLE_FUZZING=On -DSIMDJSON_FUZZ_LINKMAIN=Off -DSIMDJSON_FUZZ_LDFLAGS=-fsanitize=fuzzer
 # ninja
 
 

@@ -12,7 +12,6 @@ cmake .. \
 -GNinja \
 -DCMAKE_BUILD_TYPE=Debug \
 -DSIMDJSON_BUILD_STATIC=On \
--DCMAKE_CXX_STANDARD=14 \
 -DENABLE_FUZZING=On \
 -DSIMDJSON_FUZZ_LINKMAIN=On
 
@@ -22,6 +21,7 @@ cd ..
 
 export CC=clang
 export CXX="clang++"
+export CFLAGS="-fsanitize=fuzzer-no-link"
 export CXXFLAGS="-fsanitize=fuzzer-no-link"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 
@@ -32,7 +32,6 @@ cmake .. \
 -GNinja \
 -DCMAKE_BUILD_TYPE=Debug \
 -DSIMDJSON_BUILD_STATIC=On \
--DCMAKE_CXX_STANDARD=14 \
 -DENABLE_FUZZING=On \
 -DSIMDJSON_FUZZ_LINKMAIN=Off \
 -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
