@@ -93,13 +93,13 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
 
     int res = unified_machine<Architecture::HASWELL>(buf, len, pj, next_json);
 
-    if (res == 1) {
+    if (res == simdjson::SUCCESS_AND_HAS_MORE) {
         error_on_last_attempt = false;
         n_parsed_docs++;
         //Check if we loaded a perfect amount of json documents and we are done parsing them.
         //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
         //of the last loaded document and start parsing at structural_index[1] for the next batch.
-        // It should be the start of the first document in the new batch
+        // It should point to the start of the first document in the new batch
         if(next_json > 0 && pj.structural_indexes[next_json] == 0) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
