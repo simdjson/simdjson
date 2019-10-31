@@ -7,7 +7,7 @@
 #include <chrono>
 #include <vector>
 #include <sys/wait.h>
-#include <simdjson/jsonstream.h>
+#include "simdjson/jsonstream.h"
 #include <map>
 
 #include "simdjson/isadetection.h"
