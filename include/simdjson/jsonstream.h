@@ -16,9 +16,9 @@ namespace simdjson {
 
     class JsonStream {
     public:
-        JsonStream(const char *buf, size_t len, size_t batch_size = 4096);
+        JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
 
-        JsonStream(const std::string &s, size_t len, size_t batch_size = 4096) : JsonStream(s.data(), len, batch_size) {};
+        JsonStream(const std::string &s, size_t len, size_t batch_size = 1000000) : JsonStream(s.data(), len, batch_size) {};
 
         virtual ~JsonStream();
 

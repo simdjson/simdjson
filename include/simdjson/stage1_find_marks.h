@@ -7,12 +7,23 @@
 namespace simdjson {
 
 template <Architecture T = Architecture::NATIVE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming = false);
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming);
 
 template <Architecture T = Architecture::NATIVE>
-int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj, bool streaming = false) {
+int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   return find_structural_bits((const uint8_t *)buf, len, pj, streaming);
 }
+
+template <Architecture T = Architecture::NATIVE>
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj){
+    return find_structural_bits((const uint8_t *)buf, len, pj, false);
+}
+
+template <Architecture T = Architecture::NATIVE>
+int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj) {
+    return find_structural_bits((const uint8_t *)buf, len, pj, false);
+}
+
 
 }; // namespace simdjson
 
