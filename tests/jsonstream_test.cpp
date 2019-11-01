@@ -88,7 +88,6 @@ bool validate(const char *dirname) {
 
             ++how_many;
             int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-            int count = 0;
             while(parse_res == simdjson::SUCCESS_AND_HAS_MORE){
                 parse_res = js.json_parse(pj);
             }

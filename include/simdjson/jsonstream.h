@@ -16,11 +16,11 @@ namespace simdjson {
 
     class JsonStream {
     public:
-        JsonStream(const char *buf, size_t len, size_t batch_size = 1000000): buf(buf), len(len), batch_size(batch_size) {};
+        JsonStream(const char *buf, size_t len, size_t batch_size = 1000000): _buf(buf), _len(len), _batch_size(batch_size) {};
 
         JsonStream(const std::string &s, size_t batch_size = 1000000) : JsonStream(s.data(), s.size(), batch_size) {};
 
-        int json_parse(ParsedJson &pj,bool realloc_if_needed = true);
+        int json_parse(ParsedJson &pj);
 
         void set_new_buffer(const char *buf, size_t len);
 
@@ -34,10 +34,10 @@ namespace simdjson {
 
     private:
         Architecture best_implementation;
-        const char *buf;
+        const char *_buf;
+        size_t _len;
+        size_t _batch_size;
         size_t next_json{0};
-        size_t batch_size;
-        size_t len{0};
         bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};

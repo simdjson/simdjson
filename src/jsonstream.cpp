@@ -23,10 +23,10 @@ using namespace simdjson;
 
 
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
-    this->buf = buf;
-    this->len = len;
-    batch_size = 0;
-    batch_size = 0;
+    this->_buf = buf;
+    this->_len = len;
+    _batch_size = 0;
+    _batch_size = 0;
     next_json = 0;
     current_buffer_loc = 0;
     n_parsed_docs = 0;
@@ -35,23 +35,23 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 }
 
 
-int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
+int JsonStream::json_parse(ParsedJson &pj) {
     //return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc_if_needed);
 
     if (pj.byte_capacity == 0) {
-        const bool allocok = pj.allocate_capacity(batch_size, batch_size);
+        const bool allocok = pj.allocate_capacity(_batch_size, _batch_size);
         if (!allocok) {
             std::cerr << "can't allocate memory" << std::endl;
             return false;
         }
     }
-    else if (pj.byte_capacity < batch_size) {
+    else if (pj.byte_capacity < _batch_size) {
         return simdjson::CAPACITY;
     }
 
     //Quick heuristic to see if it's worth parsing the remaining data in the batch
     if(!load_next_batch && n_bytes_parsed > 0) {
-        const auto remaining_data = batch_size - current_buffer_loc;
+        const auto remaining_data = _batch_size - current_buffer_loc;
         const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
 
         if(remaining_data < avg_doc_len)
@@ -60,13 +60,13 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
 
     if (load_next_batch){
 
-        buf = &buf[current_buffer_loc];
-        len -= current_buffer_loc;
+        _buf = &_buf[current_buffer_loc];
+        _len -= current_buffer_loc;
         n_bytes_parsed += current_buffer_loc;
 
-        batch_size = std::min(batch_size, len);
+        _batch_size = std::min(_batch_size, _len);
 
-        int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(buf, batch_size, pj, true);
+        int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(_buf, _batch_size, pj, true);
 
         if (stage1_is_ok != simdjson::SUCCESS) {
             pj.error_code = stage1_is_ok;
@@ -81,7 +81,7 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
     }
 
 
-    int res = unified_machine<Architecture::HASWELL>(buf, len, pj, next_json);
+    int res = unified_machine<Architecture::HASWELL>(_buf, _len, pj, next_json);
 
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
         error_on_last_attempt = false;
