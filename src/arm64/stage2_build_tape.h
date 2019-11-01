@@ -6,12 +6,12 @@
 #ifdef IS_ARM64
 
 #include "simdjson/stage2_build_tape.h"
-#include "simdjson/stage2_streamin_build_tape.h"
 #include "arm64/stringparsing.h"
 
 namespace simdjson::arm64 {
 
 #include "generic/stage2_build_tape.h"
+#include "generic/stage2_streaming_build_tape.h"
 
 } // namespace simdjson::arm64
 
