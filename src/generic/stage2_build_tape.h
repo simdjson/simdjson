@@ -178,7 +178,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
                       false)) {
       free(copy);
@@ -197,7 +197,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
