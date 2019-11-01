@@ -126,9 +126,9 @@ run_testjson2json_sh: minify json2json
 test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh
+quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh
 
-quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsonstream_test run_pointercheck
+quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
