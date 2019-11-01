@@ -1,36 +1,3 @@
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2_build_tape.h" (this simplifies amalgation)
-
-// this macro reads the next structural character, updating idx, i and c.
-#define UPDATE_CHAR()                                                          \
-  {                                                                            \
-    if(i>pj.n_structural_indexes) goto fail;                                   \
-    idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
-  }
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
-#else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
-#define GOTO_CONTINUE()                                                        \
-  {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
-      goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
-      goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
-    }                                                                          \
-  }
-#endif
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
