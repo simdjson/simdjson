@@ -107,7 +107,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -127,7 +127,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -146,7 +146,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
