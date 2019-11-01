@@ -31,7 +31,6 @@
     }                                                                          \
   }
 #endif
-
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.

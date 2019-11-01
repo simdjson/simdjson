@@ -301,7 +301,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-    scanner.scan(buf, len, utf8_checker);
+  scanner.scan(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (!streaming && unlikely(error != simdjson::SUCCESS)) {

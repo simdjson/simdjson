@@ -22,20 +22,10 @@ using namespace simdjson;
 //
 
 
-
-
-
-
-JsonStream::JsonStream(const char *buf, size_t len, size_t batch_size) {
-//    this->best_implementation = find_best_supported_implementation();
+void JsonStream::set_new_buffer(const char *buf, size_t len) {
     this->buf = buf;
     this->len = len;
-    this->batch_size = batch_size;
-}
-
-JsonStream::~JsonStream() {
     batch_size = 0;
-    len = 0;
     batch_size = 0;
     next_json = 0;
     current_buffer_loc = 0;
@@ -49,7 +39,7 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
     //return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc_if_needed);
 
     if (pj.byte_capacity == 0) {
-        bool allocok = pj.allocate_capacity(batch_size, batch_size);
+        const bool allocok = pj.allocate_capacity(batch_size, batch_size);
         if (!allocok) {
             std::cerr << "can't allocate memory" << std::endl;
             return false;
@@ -61,8 +51,8 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
 
     //Quick heuristic to see if it's worth parsing the remaining data in the batch
     if(!load_next_batch && n_bytes_parsed > 0) {
-        auto remaining_data = batch_size - current_buffer_loc;
-        auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
+        const auto remaining_data = batch_size - current_buffer_loc;
+        const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
 
         if(remaining_data < avg_doc_len)
             load_next_batch = true;
@@ -87,7 +77,7 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
 
         //If we loaded a perfect amount of documents last time, we need to skip the first element,
         // because it represents the end of the last document
-        next_json = next_json == 1 ? 1 : 0;
+        next_json = next_json == 1;
     }
 
 
@@ -120,6 +110,17 @@ int JsonStream::json_parse(ParsedJson &pj, bool realloc_if_needed) {
     return res;
 }
 
+size_t JsonStream::get_current_buffer_loc() const {
+    return current_buffer_loc;
+}
+
+size_t JsonStream::get_n_parsed_docs() const {
+    return n_parsed_docs;
+}
+
+size_t JsonStream::get_n_bytes_parsed() const {
+    return n_bytes_parsed;
+}
 
 
 
