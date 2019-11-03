@@ -6,6 +6,7 @@
 #include "simdjson/portability.h"
 #include "jsoncharutils.h"
 #include <cmath>
+#include <limits>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -15,7 +16,7 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
-// Allowable floating-point values range from
+// Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
 // so from -1.7976e308 all the way to 1.7975e308 in binary64. The lowest
 // non-zero normal values is std::numeric_limits<double>::min() or

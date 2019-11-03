@@ -75,7 +75,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
   return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
 }
 
-std::atomic<json_parse_functype *> json_parse_ptr = &json_parse_dispatch;
+std::atomic<json_parse_functype *> json_parse_ptr{&json_parse_dispatch};
 
 WARN_UNUSED
 ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
