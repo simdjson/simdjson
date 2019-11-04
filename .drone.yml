@@ -22,7 +22,7 @@ steps:
   image: gcc:8
   environment:
     CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands: [ make checkperf ]
+  commands: [ cat /proc/cpuinfo, make checkperf ]
 ---
 kind: pipeline
 name: x64-build
@@ -72,7 +72,7 @@ steps:
   image: gcc:8
   environment:
     CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands: [ make checkperf ]
+  commands: [ cat /proc/cpuinfo, make checkperf ]
 ---
 kind: pipeline
 name: arm64-build
