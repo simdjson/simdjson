@@ -21,134 +21,136 @@ using namespace simd;
 
 struct processed_utf_bytes {
   simd8<uint8_t> raw_bytes;
-  simd8<int8_t> high_nibbles;
-  simd8<int8_t> carried_continuations;
+  simd8<uint8_t> first_len;
 };
 
 struct utf8_checker {
-  simd8<uint8_t> has_error;
+  simd8<bool> has_error;
   processed_utf_bytes previous;
 
-  // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
-    // unsigned, saturates to 0 below max
-    this->has_error |= current_bytes.saturating_sub(0xF4u);
-  }
-
-  really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
-    return high_nibbles.lookup_16<int8_t>(
-      1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-      0, 0, 0, 0,             // 10xx (continuation)
-      2, 2,                   // 110x
-      3,                      // 1110
-      4);                     // 1111, next should be 0 (not checked here)
-  }
-
-  really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
-    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
-    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
-    simd8<int8_t> sum = initial_lengths + right1;
-
-    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
-    simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
-    return sum + right2;
-  }
-
-  really_inline void check_continuations(simd8<int8_t> initial_lengths, simd8<int8_t> carries) {
-    // overlap || underlap
-    // carry > length && length > 0 || !(carry > length) && !(length > 0)
-    // (carries > length) == (lengths > 0)
-    // (carries > current) == (current > 0)
-    this->has_error |= simd8<uint8_t>(
-      (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
-  }
-
   really_inline void check_carried_continuations() {
-    static const int8_t last_1[32] = {
+    static const int8_t last_len[32] = {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
-      9, 9, 9, 9, 9, 9, 9, 1
+      9, 9, 9, 9, 9, 2, 1, 0
     };
-    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
-  }
-
-  // when 0xED is found, next byte must be no larger than 0x9F
-  // when 0xF4 is found, next byte must be no larger than 0x8F
-  // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(simd8<uint8_t> current_bytes,
-                                                  simd8<uint8_t> off1_current_bytes) {
-    simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
-    simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
-    // Check if ED is followed by A0 or greater
-    simd8<bool> ED_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x9Fu)) & prev_ED;
-    // Check if F4 is followed by 90 or greater
-    simd8<bool> F4_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x8Fu)) & prev_F4;
-    // These will also error if ED or F4 is followed by ASCII, but that's an error anyway
-    this->has_error |= simd8<uint8_t>(ED_too_large | F4_too_large);
-  }
-
-  // map off1_hibits => error condition
-  // hibits     off1    cur
-  // C       => < C2 && true
-  // E       => < E1 && < A0
-  // F       => < F1 && < 90
-  // else      false && false
-  really_inline void check_overlong(simd8<uint8_t> current_bytes,
-                                    simd8<uint8_t> off1_current_bytes,
-                                    simd8<int8_t> high_nibbles) {
-    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
-
-    // Two-byte characters must start with at least C2
-    // Three-byte characters must start with at least E1
-    // Four-byte characters must start with at least F1
-    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
-      -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
-      -128, -128, -128, -128,                         // 10xx -> false
-      0xC2, -128,                                     // 1100 -> C2
-      0xE1,                                           // 1110
-      0xF1                                            // 1111
-    );
-    simd8<bool> initial_under = initial_mins > simd8<int8_t>(off1_current_bytes);
-
-    // Two-byte characters starting with at least C2 are always OK
-    // Three-byte characters starting with at least E1 must be followed by at least A0
-    // Four-byte characters starting with at least F1 must be followed by at least 90
-    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
-      -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
-      -128, -128, -128,                                     // 10xx => false
-      127, 127,                                             // 110x => true
-      0xA0,                                                 // 1110
-      0x90                                                  // 1111
-    );
-    simd8<bool> second_under = second_mins > simd8<int8_t>(current_bytes);
-    this->has_error |= simd8<uint8_t>(initial_under & second_under);
-  }
-
-  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
-    answer->raw_bytes = bytes;
-    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
+    this->has_error |= simd8<int8_t>(this->previous.first_len) > simd8<int8_t>(last_len);
   }
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
   really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
-    struct processed_utf_bytes pb {};
-    this->count_nibbles(current_bytes, &pb);
 
-    this->check_smaller_than_0xF4(current_bytes);
+    /* high_nibbles = input >> 4 */
+    const simd8<uint8_t> high_nibbles = current_bytes.shr<4>();
 
-    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
+    /*
+    * Map high nibble of "First Byte" to legal character length minus 1
+    * 0x00 ~ 0xBF --> 0
+    * 0xC0 ~ 0xDF --> 1
+    * 0xE0 ~ 0xEF --> 2
+    * 0xF0 ~ 0xFF --> 3
+    */
+    /* first_len = legal character length minus 1 */
+    /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+    /* first_len = first_len_tbl[high_nibbles] */
+    simd8<uint8_t> first_len = high_nibbles.lookup_16<uint8_t>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3);
 
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
+    /* Map "First Byte" to 8-th item of range table (0xC2 ~ 0xF4) */
+    /* First Byte: set range index to 8 for bytes within 0xC0 ~ 0xFF */
+    /* range = first_range_tbl[high_nibbles] */
+    simd8<uint8_t> range     = high_nibbles.lookup_16<uint8_t>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8);
 
-    this->check_continuations(initial_lengths, pb.carried_continuations);
+    /* Second Byte: set range index to first_len */
+    /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
+    /* range |= (first_len, previous->first_len) << 1 byte */
+    range |= first_len.prev(this->previous.first_len);
 
-    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
+    /* Third Byte: set range index to saturate_sub(first_len, 1) */
+    /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
+    /* range |= (first_len - 1) << 2 bytes */
+    range |= first_len.saturating_sub(1).prev<2>(this->previous.first_len.saturating_sub(1));
 
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
+    /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
+    /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
+    /* range |= (first_len - 2) << 3 bytes */
+    range |= first_len.saturating_sub(2).prev<3>(this->previous.first_len.saturating_sub(2));
+
+    /*
+      * Now we have below range indices caluclated
+      * Correct cases:
+      * - 8 for C0~FF
+      * - 3 for 1st byte after F0~FF
+      * - 2 for 1st byte after E0~EF or 2nd byte after F0~FF
+      * - 1 for 1st byte after C0~DF or 2nd byte after E0~EF or
+      *         3rd byte after F0~FF
+      * - 0 for others
+      * Error cases:
+      *   9,10,11 if non ascii First Byte overlaps
+      *   E.g., F1 80 C2 90 --> 8 3 10 2, where 10 indicates error
+      */
+
+    /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
+    /* Overlaps lead to index 9~15, which are illegal in range table */
+    /* shift1 = (input, previous->input) << 1 byte */
+    simd8<uint8_t> shift1 = current_bytes.prev(this->previous.raw_bytes);
+    /*
+      * shift1:  | EF  F0 ... FE | FF  00  ... ...  DE | DF  E0 ... EE |
+      * pos:     | 0   1      15 | 16  17           239| 240 241    255|
+      * pos-240: | 0   0      0  | 0   0            0  | 0   1      15 |
+      * pos+112: | 112 113    127|       >= 128        |     >= 128    |
+      */
+    simd8<uint8_t> pos = shift1 - 0xEF;
+
+    /*
+    * Tables for fast handling of four special First Bytes(E0,ED,F0,F4), after
+    * which the Second Byte are not 80~BF. It contains "range index adjustment".
+    * +------------+---------------+------------------+----------------+
+    * | First Byte | original range| range adjustment | adjusted range |
+    * +------------+---------------+------------------+----------------+
+    * | E0         | 2             | 2                | 4              |
+    * +------------+---------------+------------------+----------------+
+    * | ED         | 2             | 3                | 5              |
+    * +------------+---------------+------------------+----------------+
+    * | F0         | 3             | 3                | 6              |
+    * +------------+---------------+------------------+----------------+
+    * | F4         | 4             | 4                | 8              |
+    * +------------+---------------+------------------+----------------+
+    */
+    /* index1 -> E0, index14 -> ED */
+    simd8<uint8_t> range2 = pos.saturating_sub(240).lookup_16<uint8_t>(0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0);
+    /* index1 -> F0, index5 -> F4 */
+    range2 += pos.saturating_add(112).lookup_16<uint8_t>(0, 3, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    range += range2;
+
+    /* Load min and max values per calculated range index */
+    /*
+    * Range table, map range index to min and max values
+    * Index 0    : 00 ~ 7F (First Byte, ascii)
+    * Index 1,2,3: 80 ~ BF (Second, Third, Fourth Byte)
+    * Index 4    : A0 ~ BF (Second Byte after E0)
+    * Index 5    : 80 ~ 9F (Second Byte after ED)
+    * Index 6    : 90 ~ BF (Second Byte after F0)
+    * Index 7    : 80 ~ 8F (Second Byte after F4)
+    * Index 8    : C2 ~ F4 (First Byte, non ascii)
+    * Index 9~15 : illegal: i >= 127 && i <= -128
+    */
+    simd8<uint8_t> minv = range.lookup_16<uint8_t>(
+      0x00, 0x80, 0x80, 0x80, 0xA0, 0x80, 0x90, 0x80,
+      0xC2, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F
+    );
+    simd8<uint8_t> maxv = range.lookup_16<uint8_t>(
+      0x7F, 0xBF, 0xBF, 0xBF, 0xBF, 0x9F, 0xBF, 0x8F,
+      0xF4, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
+    );
+
+    // We're fine with high-bit wraparound here, so we use int comparison since it's faster on Intel
+    this->has_error |= simd8<int8_t>(minv) > simd8<int8_t>(current_bytes);
+    this->has_error |= simd8<int8_t>(current_bytes) > simd8<int8_t>(maxv);
+
+    this->previous.raw_bytes = current_bytes;
+    this->previous.first_len = first_len;
   }
 
   really_inline void check_next_input(simd8<uint8_t> in) {
@@ -171,6 +173,6 @@ struct utf8_checker {
   }
 
   really_inline ErrorValues errors() {
-    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    return this->has_error.any() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

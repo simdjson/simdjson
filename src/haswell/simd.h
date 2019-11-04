@@ -87,8 +87,8 @@ namespace simdjson::haswell::simd {
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm256_add_epi8(*this, other); }
     really_inline simd8<T> operator-(const simd8<T> other) const { return _mm256_sub_epi8(*this, other); }
-    really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *this; }
-    really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *this; }
+    really_inline simd8<T>& operator+=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast + other; return *this_cast; }
+    really_inline simd8<T>& operator-=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast - other; return *this_cast; }
 
     // Perform a lookup of the lower 4 bits
     template<typename L>
