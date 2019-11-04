@@ -58,7 +58,7 @@ namespace simdjson::haswell::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    typedef uint32_t bitmask_t;
+    typedef int bitmask_t;
     static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(-(!!_value)); }
 
     really_inline simd8<bool>() : base8() {}
@@ -183,7 +183,7 @@ namespace simdjson::haswell::simd {
     // Order-specific operations
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm256_max_epu8(*this, other); }
     really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm256_min_epu8(*this, other); }
-    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return this->max(other) == other; }
+    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
 
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }

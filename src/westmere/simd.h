@@ -42,7 +42,7 @@ namespace simdjson::westmere::simd {
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {
-    typedef uint32_t bitmask_t;
+    typedef int bitmask_t;
 
     really_inline base8() : base<simd8<T>>() {}
     really_inline base8(const __m128i _value) : base<simd8<T>>(_value) {}
@@ -173,7 +173,7 @@ namespace simdjson::westmere::simd {
     // Order-specific operations
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm_max_epu8(*this, other); }
     really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm_min_epu8(*this, other); }
-    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return this->max(other) == other; }
+    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
 
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }

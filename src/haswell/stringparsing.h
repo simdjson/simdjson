@@ -30,8 +30,8 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
   // store to dest unconditionally - we can overwrite the bits we don't like later
   v.store(dst);
   return {
-      (v == '\\').to_bitmask(),     // bs_bits
-      (v == '"').to_bitmask(), // quote_bits
+      (uint32_t)(v == '\\').to_bitmask(),     // bs_bits
+      (uint32_t)(v == '"').to_bitmask(), // quote_bits
   };
 }
 
