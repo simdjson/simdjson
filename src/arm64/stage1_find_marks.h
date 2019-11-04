@@ -55,8 +55,8 @@ really_inline void find_whitespace_and_operators(
 namespace simdjson {
 
 template <>
-int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  return arm64::find_structural_bits(buf, len, pj);
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  return arm64::find_structural_bits(buf, len, pj, streaming);
 }
 
 } // namespace simdjson
