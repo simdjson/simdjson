@@ -16,7 +16,7 @@
 #include "simdjson/parsedjson.h"
 
 #define NB_ITERATION 5
-#define MIN_BATCH_SIZE 150
+#define MIN_BATCH_SIZE 150000
 #define MAX_BATCH_SIZE 5000000
 
 bool test_baseline = false;
@@ -78,7 +78,7 @@ if(test_per_batch) {
     std::wclog << "Jsonstream: Speed per batch_size... from " << MIN_BATCH_SIZE
                << " bytes to " << MAX_BATCH_SIZE << " bytes..." << std::endl;
     std::cout << "Batch Size\t" << "Gigabytes/second\t" << "Nb of documents parsed" << std::endl;
-    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE)/ 10000) {
+    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE)/ 100) {
         batch_size_res.insert(std::pair<size_t, double>(i, 0));
         int count;
         for (size_t j = 0; j < 5; j++) {
