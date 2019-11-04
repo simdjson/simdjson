@@ -25,7 +25,7 @@ unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson 
 
 template <>
 WARN_UNUSED int
-unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t &next_json) {
+unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
     return arm64::unified_machine(buf, len, pj, next_json);
 }
 

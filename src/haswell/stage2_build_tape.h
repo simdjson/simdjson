@@ -29,7 +29,6 @@ unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJso
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-
     return haswell::unified_machine(buf, len, pj, next_json);
 }
 
