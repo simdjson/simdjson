@@ -1,11 +1,8 @@
-//
-// Created by jpiotte on 10/23/19.
-//
-
 #ifndef SIMDJSON_JSONSTREAM_H
 #define SIMDJSON_JSONSTREAM_H
 
 
+#include <algorithm>
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
