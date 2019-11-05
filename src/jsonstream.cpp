@@ -5,11 +5,20 @@
 #include <simdjson/isadetection.h>
 #include <atomic>
 #include <simdjson/padded_string.h>
+#include <map>
 #include "simdjson/jsonstream.h"
 
 using namespace simdjson;
 
-//Architecture find_best_supported_implementation();
+void find_best_supported_implementation();
+typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
+typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
+//std::map<Architecture, stage1_functype> stage1_map;
+//std::map<Architecture, stage1_functype> stage2_map;
+
+stage1_functype best_stage1;
+stage2_functype best_stage2;
+
 //int json_parse_implementation(ParsedJson &pj, bool realloc_if_needed);
 //
 //
@@ -22,6 +31,13 @@ using namespace simdjson;
 //
 
 
+
+
+JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
+        : _buf(buf), _len(len), _batch_size(batchSize) {
+    find_best_supported_implementation();
+}
+
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
     this->_buf = buf;
     this->_len = len;
@@ -33,7 +49,6 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
     error_on_last_attempt= false;
     load_next_batch = true;
 }
-
 
 int JsonStream::json_parse(ParsedJson &pj) {
     //return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc_if_needed);
@@ -66,7 +81,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
 
         _batch_size = std::min(_batch_size, _len);
 
-        int stage1_is_ok = simdjson::find_structural_bits<Architecture::HASWELL>(_buf, _batch_size, pj, true);
+        int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
 
         if (stage1_is_ok != simdjson::SUCCESS) {
             pj.error_code = stage1_is_ok;
@@ -81,7 +96,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
     }
 
 
-    int res = unified_machine<Architecture::HASWELL>(_buf, _len, pj, next_json);
+    int res = (*best_stage2)(_buf, _len, pj, next_json);
 
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
         error_on_last_attempt = false;
@@ -123,27 +138,38 @@ size_t JsonStream::get_n_bytes_parsed() const {
 }
 
 
-
 //// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
-//Architecture find_best_supported_implementation() {
-//    constexpr uint32_t haswell_flags =
-//            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
-//            instruction_set::BMI1 | instruction_set::BMI2;
-//    constexpr uint32_t westmere_flags =
-//            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
-//
-//    uint32_t supports = detect_supported_architectures();
-//    // Order from best to worst (within architecture)
-//    if ((haswell_flags & supports) == haswell_flags)
-//        return Architecture::HASWELL;
-//    if ((westmere_flags & supports) == westmere_flags)
-//        return Architecture::WESTMERE;
-//    if (instruction_set::NEON)
-//        return Architecture::ARM64;
-//
-//    std::cerr << "The processor is not supported by simdjson." << std::endl;
-//    return Architecture::NONE;
-//}
+void find_best_supported_implementation() {
+    constexpr uint32_t haswell_flags =
+            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+            instruction_set::BMI1 | instruction_set::BMI2;
+    constexpr uint32_t westmere_flags =
+            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
+
+    uint32_t supports = detect_supported_architectures();
+    // Order from best to worst (within architecture)
+#ifdef IS_X86_64
+    if ((haswell_flags & supports) == haswell_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
+        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
+        return;
+    }
+    if ((westmere_flags & supports) == westmere_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
+        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
+        return;
+    }
+#endif
+#ifdef IS_ARM64
+    if (instruction_set::NEON) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
+        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
+        return;
+    }
+#endif
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return;
+}
 
 
 
