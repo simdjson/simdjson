@@ -1,17 +1,9 @@
-//
-// Created by root on 10/30/19.
-//
-
 #include <iostream>
 #include <algorithm>
 #include <chrono>
 #include <vector>
-#include <sys/wait.h>
 #include "simdjson/jsonstream.h"
 #include <map>
-
-#include "simdjson/isadetection.h"
-#include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 #include "simdjson/parsedjson.h"
 
