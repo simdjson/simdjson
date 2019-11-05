@@ -1,36 +1,15 @@
-//
-// Created by jpiotte on 10/23/19.
-//
-
-#include <simdjson/isadetection.h>
-#include <atomic>
-#include <simdjson/padded_string.h>
-#include <map>
 #include "simdjson/jsonstream.h"
+#include <simdjson/isadetection.h>
+#include <map>
 
 using namespace simdjson;
 
 void find_best_supported_implementation();
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
-//std::map<Architecture, stage1_functype> stage1_map;
-//std::map<Architecture, stage1_functype> stage2_map;
 
 stage1_functype best_stage1;
 stage2_functype best_stage2;
-
-//int json_parse_implementation(ParsedJson &pj, bool realloc_if_needed);
-//
-//
-//// function pointer type for json_parse
-//using json_parse_functype = int(const char *buf, size_t len, size_t batch_size, ParsedJson &pj, bool realloc_if_needed);
-//
-//// Pointer that holds the json_parse implementation corresponding to the
-//// available SIMD instruction set
-//extern std::atomic<json_parse_functype *> json_parse_ptr;
-//
-
-
 
 
 JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
@@ -168,61 +147,4 @@ void find_best_supported_implementation() {
     }
 #endif
     std::cerr << "The processor is not supported by simdjson." << std::endl;
-    return;
 }
-
-
-
-
-
-//template <Architecture T>
-//int json_parse_implementation(const char *buf, size_t len, size_t batch_size, ParsedJson &pj, bool realloc_if_needed = true) {
-//    //pj.reset()   have a function that resets pj without creating a new one
-//    if (pj.byte_capacity < batch_size) {
-//        return simdjson::CAPACITY;
-//    }
-//
-//    size_t next_batch_size = std::min(batch_size, len);
-//
-//    int stage1_is_ok = simdjson::find_structural_bits<T>(buf, next_batch_size, pj);
-//
-//    if (stage1_is_ok != simdjson::SUCCESS) {
-//        pj.error_code = stage1_is_ok;
-//        return pj.error_code;
-//    }
-//
-//
-//    int res = unified_machine<T>(buf, len, pj);
-//
-//
-//
-//    return res;
-//}
-//
-//// Responsible to select the best json_parse implementation
-//int json_parse_dispatch(const char *buf, size_t len, size_t batch_size, ParsedJson &pj, bool realloc) {
-//    Architecture best_implementation = find_best_supported_implementation();
-//    // Selecting the best implementation
-//    switch (best_implementation) {
-//#ifdef IS_X86_64
-//        case Architecture::HASWELL:
-//            json_parse_ptr.store(&json_parse_implementation<Architecture::HASWELL>, std::memory_order_relaxed);
-//            break;
-//        case Architecture::WESTMERE:
-//            json_parse_ptr.store(&json_parse_implementation<Architecture::WESTMERE>, std::memory_order_relaxed);
-//            break;
-//#endif
-//#ifdef IS_ARM64
-//        case Architecture::ARM64:
-//    json_parse_ptr.store(&json_parse_implementation<Architecture::ARM64>, std::memory_order_relaxed);
-//    break;
-//#endif
-//        default:
-//            std::cerr << "The processor is not supported by simdjson." << std::endl;
-//            return simdjson::UNEXPECTED_ERROR;
-//    }
-//
-//    return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc);
-//}
-//
-//std::atomic<json_parse_functype *> json_parse_ptr = &json_parse_dispatch;
