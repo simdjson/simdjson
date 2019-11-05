@@ -6,11 +6,9 @@
 #define SIMDJSON_JSONSTREAM_H
 
 
-#include <string>
-#include <vector>
-#include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+#include "simdjson/simdjson.h"
 
 namespace simdjson {
 
