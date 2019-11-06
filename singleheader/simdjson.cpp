@@ -1,4 +1,4 @@
-/* auto-generated on Sun Oct 13 11:11:50 DST 2019. Do not edit! */
+/* auto-generated on Tue Nov  5 15:06:10 EST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -35992,6 +35992,7 @@ static const uint32_t mask256_epi32[] = {
 namespace simdjson {
 const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No errors"},
+    {SUCCESS_AND_HAS_MORE, "No errors and buffer still has more data"},
     {CAPACITY, "This ParsedJson can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
@@ -36437,6 +36438,156 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 }
 } // namespace simdjson
 /* end file src/jsonparser.cpp */
+/* begin file src/jsonstream.cpp */
+#include <map>
+
+using namespace simdjson;
+
+void find_best_supported_implementation();
+typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
+typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
+
+stage1_functype best_stage1;
+stage2_functype best_stage2;
+
+
+JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
+        : _buf(buf), _len(len), _batch_size(batchSize) {
+    find_best_supported_implementation();
+}
+
+void JsonStream::set_new_buffer(const char *buf, size_t len) {
+    this->_buf = buf;
+    this->_len = len;
+    _batch_size = 0;
+    _batch_size = 0;
+    next_json = 0;
+    current_buffer_loc = 0;
+    n_parsed_docs = 0;
+    error_on_last_attempt= false;
+    load_next_batch = true;
+}
+
+int JsonStream::json_parse(ParsedJson &pj) {
+    //return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc_if_needed);
+
+    if (pj.byte_capacity == 0) {
+        const bool allocok = pj.allocate_capacity(_batch_size, _batch_size);
+        if (!allocok) {
+            std::cerr << "can't allocate memory" << std::endl;
+            return false;
+        }
+    }
+    else if (pj.byte_capacity < _batch_size) {
+        return simdjson::CAPACITY;
+    }
+
+    //Quick heuristic to see if it's worth parsing the remaining data in the batch
+    if(!load_next_batch && n_bytes_parsed > 0) {
+        const auto remaining_data = _batch_size - current_buffer_loc;
+        const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
+
+        if(remaining_data < avg_doc_len)
+            load_next_batch = true;
+    }
+
+    if (load_next_batch){
+
+        _buf = &_buf[current_buffer_loc];
+        _len -= current_buffer_loc;
+        n_bytes_parsed += current_buffer_loc;
+
+        _batch_size = std::min(_batch_size, _len);
+
+        int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
+
+        if (stage1_is_ok != simdjson::SUCCESS) {
+            pj.error_code = stage1_is_ok;
+            return pj.error_code;
+        }
+
+        load_next_batch = false;
+
+        //If we loaded a perfect amount of documents last time, we need to skip the first element,
+        // because it represents the end of the last document
+        next_json = next_json == 1;
+    }
+
+
+    int res = (*best_stage2)(_buf, _len, pj, next_json);
+
+    if (res == simdjson::SUCCESS_AND_HAS_MORE) {
+        error_on_last_attempt = false;
+        n_parsed_docs++;
+        //Check if we loaded a perfect amount of json documents and we are done parsing them.
+        //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
+        //of the last loaded document and start parsing at structural_index[1] for the next batch.
+        // It should point to the start of the first document in the new batch
+        if(next_json > 0 && pj.structural_indexes[next_json] == 0) {
+            current_buffer_loc = pj.structural_indexes[next_json - 1];
+            next_json = 1;
+            load_next_batch = true;
+        }
+
+        else current_buffer_loc = pj.structural_indexes[next_json];
+    }
+    //TODO: have a more precise error check
+    //Give it two chances for now.  We assume the error is because the json was not loaded completely in this batch.
+    //Load a new batch and if the error persists, it's a genuine error.
+    else if ( res > 1 && !error_on_last_attempt) {
+        load_next_batch = true;
+        error_on_last_attempt = true;
+        res = json_parse(pj);
+    }
+
+    return res;
+}
+
+size_t JsonStream::get_current_buffer_loc() const {
+    return current_buffer_loc;
+}
+
+size_t JsonStream::get_n_parsed_docs() const {
+    return n_parsed_docs;
+}
+
+size_t JsonStream::get_n_bytes_parsed() const {
+    return n_bytes_parsed;
+}
+
+
+//// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
+void find_best_supported_implementation() {
+    constexpr uint32_t haswell_flags =
+            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+            instruction_set::BMI1 | instruction_set::BMI2;
+    constexpr uint32_t westmere_flags =
+            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
+
+    uint32_t supports = detect_supported_architectures();
+    // Order from best to worst (within architecture)
+#ifdef IS_X86_64
+    if ((haswell_flags & supports) == haswell_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
+        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
+        return;
+    }
+    if ((westmere_flags & supports) == westmere_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
+        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
+        return;
+    }
+#endif
+#ifdef IS_ARM64
+    if (instruction_set::NEON) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
+        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
+        return;
+    }
+#endif
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+}
+/* end file src/jsonstream.cpp */
 /* begin file src/arm64/simd_input.h */
 #ifndef SIMDJSON_ARM64_SIMD_INPUT_H
 #define SIMDJSON_ARM64_SIMD_INPUT_H
@@ -37434,293 +37585,65 @@ really_inline void find_whitespace_and_operators(
   }).to_bitmask();
 }
 
-// This file contains a non-architecture-specific version of "flatten" used in stage1.
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
-
-#ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
-
-// This is just a naive implementation. It should be normally
-// disable, but can be used for research purposes to compare
-// again our optimized version.
-really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
-  uint32_t *out_ptr = base_ptr + base;
-  idx -= 64;
-  while (bits != 0) {
-    out_ptr[0] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    out_ptr++;
-  }
-  base = (out_ptr - base_ptr);
-}
-
-#else // SIMDJSON_NAIVE_FLATTEN
-
-// flatten out values in 'bits' assuming that they are are to have values of idx
-// plus their position in the bitvector, and store these indexes at
-// base_ptr[base] incrementing base as we go
-// will potentially store extra values beyond end of valid bits, so base_ptr
-// needs to be large enough to handle this
-really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted.
-  // Unfortunately, in other cases,
-  // it helps tremendously.
-  if (bits == 0)
-    return;
-  uint32_t cnt = hamming(bits);
-  idx -= 64;
-
-  // Do the first 8 all together
-  for (int i=0; i<8; i++) {
-    base_ptr[i] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-  }
-
-  // Do the next 8 all together (we hope in most cases it won't happen at all
-  // and the branch is easily predicted).
-  if (unlikely(cnt > 8)) {
-    for (int i=8; i<16; i++) {
-      base_ptr[i] = idx + trailing_zeroes(bits);
-      bits = bits & (bits - 1);
-    }
-
-    // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-    // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-    // or the start of a value ("abc" true 123) every 4 characters.
-    if (unlikely(cnt > 16)) {
-      uint32_t i = 16;
-      do {
-        base_ptr[i] = idx + trailing_zeroes(bits);
-        bits = bits & (bits - 1);
-        i++;
-      } while (i < cnt);
-    }
-  }
-
-  base_ptr += cnt;
-}
-#endif // SIMDJSON_NAIVE_FLATTEN
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-   * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
-
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-   * indicates whether the sense of any edge going to the next iteration
-   * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
-}
-
-//
-// Check if the current character immediately follows a matching character.
-//
-// For example, this checks for quotes with backslashes in front of them:
-//
-//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-//
-really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
-  const uint64_t result = match << 1 | overflow;
-  overflow = match >> 63;
-  return result;
-}
-
-//
-// Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
-//
-//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-//
-really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow ) {
-  uint64_t follows_match = follows(match, overflow);
-  uint64_t result;
-  overflow |= add_overflow(follows_match, filler, &result);
-  return result;
-}
-
-really_inline ErrorValues detect_errors_on_eof(
-  uint64_t &unescaped_chars_error,
-  const uint64_t prev_in_string) {
-  if (prev_in_string) {
-    return UNCLOSED_STRING;
-  }
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
-  return SUCCESS;
-}
-
-//
-// Return a mask of all string characters plus end quotes.
-//
-// prev_escaped is overflow saying whether the next character is escaped.
-// prev_in_string is overflow saying whether we're still in a string.
-//
-// Backslash sequences outside of quotes will be detected in stage 2.
-//
-really_inline uint64_t find_strings(const simd_input in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
-  const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
-  const uint64_t quote = in.eq('"') & ~escaped;
-  // compute_quote_mask returns start quote plus string contents.
-  const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
-  /* right shift of a signed value expected to be well-defined and standard
-   * compliant as of C++20,
-   * John Regher from Utah U. says this is fine code */
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
-  // Use ^ to turn the beginning quote off, and the end quote on.
-  return in_string ^ quote;
-}
-
-really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
-  /* All Unicode characters may be placed within the
-   * quotation marks, except for the characters that MUST be escaped:
-   * quotation mark, reverse solidus, and the control characters (U+0000
-   * through U+001F).
-   * https://tools.ietf.org/html/rfc8259 */
-  return quote_mask & unescaped;
-}
-
-//
-// Determine which characters are *structural*:
-// - braces: [] and {}
-// - the start of primitives (123, true, false, null)
-// - the start of invalid non-whitespace (+, &, ture, UTF-8)
-//
-// Also detects value sequence errors:
-// - two values with no separator between ("hello" "world")
-// - separators with no values ([1,] [1,,]and [,2])
-//
-// This method will find all of the above whether it is in a string or not.
-//
-// To reduce dependency on the expensive "what is in a string" computation, this method treats the
-// contents of a string the same as content outside. Errors and structurals inside the string or on
-// the trailing quote will need to be removed later when the correct string information is known.
-//
-really_inline uint64_t find_potential_structurals(const simd_input in, uint64_t &prev_primitive) {
-  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
-  uint64_t whitespace, op;
-  find_whitespace_and_operators(in, whitespace, op);
-
-  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
-  // Everything except whitespace, braces, colon and comma.
-  const uint64_t primitive = ~(op | whitespace);
-  const uint64_t follows_primitive = follows(primitive, prev_primitive);
-  const uint64_t start_primitive = primitive & ~follows_primitive;
-
-  // Return final structurals
-  return op | start_primitive;
-}
-
 static const size_t STEP_SIZE = 128;
 
-//
-// Find the important bits of JSON in a 128-byte chunk, and add them to :
-//
-//
-//
-// PERF NOTES:
-// We pipe 2 inputs through these stages:
-// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
-//    The output of step 1 depends entirely on this information. These functions don't quite use
-//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-//    at a time. The second input's scans has some dependency on the first ones finishing it, but
-//    they can make a lot of progress before they need that information.
-// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-//    to finish: utf-8 checks and generating the output from the last iteration.
-// 
-// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-// workout.
-//
-really_inline void find_structural_bits_128(
-    const uint8_t *buf, const size_t idx, uint32_t *&base_ptr,
-    uint64_t &prev_escaped, uint64_t &prev_in_string,
-    uint64_t &prev_primitive,
-    uint64_t &prev_structurals,
-    uint64_t &unescaped_chars_error,
-    utf8_checker &utf8_state) {
-  //
-  // Load up all 128 bytes into SIMD registers
-  //
-  simd_input in_1(buf);
-  simd_input in_2(buf+64);
+class bit_indexer {
+public:
+  uint32_t *tail;
 
-  //
-  // Find the strings and potential structurals (operators / primitives).
-  //
-  // This will include false structurals that are *inside* strings--we'll filter strings out
-  // before we return.
-  //
-  uint64_t string_1 = find_strings(in_1, prev_escaped, prev_in_string);
-  uint64_t structurals_1 = find_potential_structurals(in_1, prev_primitive);
-  uint64_t string_2 = find_strings(in_2, prev_escaped, prev_in_string);
-  uint64_t structurals_2 = find_potential_structurals(in_2, prev_primitive);
+  bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
-  //
-  // Do miscellaneous work while the processor is busy calculating strings and structurals.
-  //
-  // After that, weed out structurals that are inside strings and find invalid string characters.
-  //
-  uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_state.check_next_input(in_1);
-  flatten_bits(base_ptr, idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_1 & ~string_1;
-  unescaped_chars_error |= unescaped_1 & string_1;
+  // flatten out values in 'bits' assuming that they are are to have values of idx
+  // plus their position in the bitvector, and store these indexes at
+  // base_ptr[base] incrementing base as we go
+  // will potentially store extra values beyond end of valid bits, so base_ptr
+  // needs to be large enough to handle this
+  really_inline void write_indexes(uint32_t idx, uint64_t bits) {
+    // In some instances, the next branch is expensive because it is mispredicted.
+    // Unfortunately, in other cases,
+    // it helps tremendously.
+    if (bits == 0)
+        return;
+    uint32_t cnt = hamming(bits);
 
-  uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_state.check_next_input(in_2);
-  flatten_bits(base_ptr, idx+64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_2 & ~string_2;
-  unescaped_chars_error |= unescaped_2 & string_2;
-}
+    // Do the first 8 all together
+    for (int i=0; i<8; i++) {
+      this->tail[i] = idx + trailing_zeroes(bits);
+      bits = clear_lowest_bit(bits);
+    }
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
+    // Do the next 8 all together (we hope in most cases it won't happen at all
+    // and the branch is easily predicted).
+    if (unlikely(cnt > 8)) {
+      for (int i=8; i<16; i++) {
+        this->tail[i] = idx + trailing_zeroes(bits);
+        bits = clear_lowest_bit(bits);
+      }
+
+      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+      // or the start of a value ("abc" true 123) every four characters.
+      if (unlikely(cnt > 16)) {
+        uint32_t i = 16;
+        do {
+          this->tail[i] = idx + trailing_zeroes(bits);
+          bits = clear_lowest_bit(bits);
+          i++;
+        } while (i < cnt);
+      }
+    }
+
+    this->tail += cnt;
   }
-  uint32_t *base_ptr = pj.structural_indexes;
-  utf8_checker utf8_state;
+};
 
+class json_structural_scanner {
+public:
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
@@ -37731,41 +37654,249 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   // Mask of structural characters from the last iteration.
   // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
-  uint64_t structurals = 0;
-
-  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-  size_t idx = 0;
+  uint64_t prev_structurals = 0;
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
+  bit_indexer structural_indexes;
 
-  for (; idx < lenminusstep; idx += STEP_SIZE) {
-    find_structural_bits_128(&buf[idx], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
+
+  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
+
+  // return a bitvector indicating where we have characters that end an odd-length
+  // sequence of backslashes (and thus change the behavior of the next character
+  // to follow). A even-length sequence of backslashes, and, for that matter, the
+  // largest even-length prefix of our odd-length sequence of backslashes, simply
+  // modify the behavior of the backslashes themselves.
+  // We also update the prev_iter_ends_odd_backslash reference parameter to
+  // indicate whether we end an iteration on an odd-length sequence of
+  // backslashes, which modifies our subsequent search for odd-length
+  // sequences of backslashes in an obvious way.
+  really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+    const uint64_t even_bits = 0x5555555555555555ULL;
+    const uint64_t odd_bits = ~even_bits;
+    uint64_t start_edges = match & ~(match << 1);
+    /* flip lowest if we have an odd-length run at the end of the prior
+    * iteration */
+    uint64_t even_start_mask = even_bits ^ overflow;
+    uint64_t even_starts = start_edges & even_start_mask;
+    uint64_t odd_starts = start_edges & ~even_start_mask;
+    uint64_t even_carries = match + even_starts;
+
+    uint64_t odd_carries;
+    /* must record the carry-out of our odd-carries out of bit 63; this
+    * indicates whether the sense of any edge going to the next iteration
+    * should be flipped */
+    bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
+
+    odd_carries |= overflow; /* push in bit zero as a
+                                * potential end if we had an
+                                * odd-numbered run at the
+                                * end of the previous
+                                * iteration */
+    overflow = new_overflow ? 0x1ULL : 0x0ULL;
+    uint64_t even_carry_ends = even_carries & ~match;
+    uint64_t odd_carry_ends = odd_carries & ~match;
+    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+    return odd_ends;
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-   * checks). */
-  if (likely(idx < len)) {
-    uint8_t tmp_buf[STEP_SIZE];
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_128(&tmp_buf[0], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
-    idx += STEP_SIZE;
+  //
+  // Check if the current character immediately follows a matching character.
+  //
+  // For example, this checks for quotes with backslashes in front of them:
+  //
+  //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+  //
+  really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+    const uint64_t result = match << 1 | overflow;
+    overflow = match >> 63;
+    return result;
   }
 
-  /* finally, flatten out the remaining structurals from the last iteration */
-  flatten_bits(base_ptr, idx, structurals);
+  //
+  // Check if the current character follows a matching character, with possible "filler" between.
+  // For example, this checks for empty curly braces, e.g. 
+  //
+  //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+  //
+  really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+    uint64_t follows_match = follows(match, overflow);
+    uint64_t result;
+    overflow |= add_overflow(follows_match, filler, &result);
+    return result;
+  }
 
-  simdjson::ErrorValues error = detect_errors_on_eof(unescaped_chars_error, prev_in_string);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  really_inline ErrorValues detect_errors_on_eof() {
+    if (prev_in_string) {
+      return UNCLOSED_STRING;
+    }
+    if (unescaped_chars_error) {
+      return UNESCAPED_CHARS;
+    }
+    return SUCCESS;
+  }
+
+  //
+  // Return a mask of all string characters plus end quotes.
+  //
+  // prev_escaped is overflow saying whether the next character is escaped.
+  // prev_in_string is overflow saying whether we're still in a string.
+  //
+  // Backslash sequences outside of quotes will be detected in stage 2.
+  //
+  really_inline uint64_t find_strings(const simd_input in) {
+    const uint64_t backslash = in.eq('\\');
+    const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+    const uint64_t quote = in.eq('"') & ~escaped;
+    // compute_quote_mask returns start quote plus string contents.
+    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    /* right shift of a signed value expected to be well-defined and standard
+    * compliant as of C++20,
+    * John Regher from Utah U. says this is fine code */
+    prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+    // Use ^ to turn the beginning quote off, and the end quote on.
+    return in_string ^ quote;
+  }
+
+  really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
+    /* All Unicode characters may be placed within the
+    * quotation marks, except for the characters that MUST be escaped:
+    * quotation mark, reverse solidus, and the control characters (U+0000
+    * through U+001F).
+    * https://tools.ietf.org/html/rfc8259 */
+    return quote_mask & unescaped;
+  }
+
+  //
+  // Determine which characters are *structural*:
+  // - braces: [] and {}
+  // - the start of primitives (123, true, false, null)
+  // - the start of invalid non-whitespace (+, &, ture, UTF-8)
+  //
+  // Also detects value sequence errors:
+  // - two values with no separator between ("hello" "world")
+  // - separators with no values ([1,] [1,,]and [,2])
+  //
+  // This method will find all of the above whether it is in a string or not.
+  //
+  // To reduce dependency on the expensive "what is in a string" computation, this method treats the
+  // contents of a string the same as content outside. Errors and structurals inside the string or on
+  // the trailing quote will need to be removed later when the correct string information is known.
+  //
+  really_inline uint64_t find_potential_structurals(const simd_input in) {
+    // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
+    uint64_t whitespace, op;
+    find_whitespace_and_operators(in, whitespace, op);
+
+    // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
+    // Everything except whitespace, braces, colon and comma.
+    const uint64_t primitive = ~(op | whitespace);
+    const uint64_t follows_primitive = follows(primitive, prev_primitive);
+    const uint64_t start_primitive = primitive & ~follows_primitive;
+
+    // Return final structurals
+    return op | start_primitive;
+  }
+
+  //
+  // Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+  //
+  // PERF NOTES:
+  // We pipe 2 inputs through these stages:
+  // 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+  //    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+  // 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
+  //    The output of step 1 depends entirely on this information. These functions don't quite use
+  //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+  //    at a time. The second input's scans has some dependency on the first ones finishing it, but
+  //    they can make a lot of progress before they need that information.
+  // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+  //    to finish: utf-8 checks and generating the output from the last iteration.
+  // 
+  // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+  // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+  // workout.
+  //
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+    //
+    // Load up all 128 bytes into SIMD registers
+    //
+    simd_input in_1(buf);
+    simd_input in_2(buf+64);
+
+    //
+    // Find the strings and potential structurals (operators / primitives).
+    //
+    // This will include false structurals that are *inside* strings--we'll filter strings out
+    // before we return.
+    //
+    uint64_t string_1 = this->find_strings(in_1);
+    uint64_t structurals_1 = this->find_potential_structurals(in_1);
+    uint64_t string_2 = this->find_strings(in_2);
+    uint64_t structurals_2 = this->find_potential_structurals(in_2);
+
+    //
+    // Do miscellaneous work while the processor is busy calculating strings and structurals.
+    //
+    // After that, weed out structurals that are inside strings and find invalid string characters.
+    //
+    uint64_t unescaped_1 = in_1.lteq(0x1F);
+    utf8_checker.check_next_input(in_1);
+    this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_1 & ~string_1;
+    this->unescaped_chars_error |= unescaped_1 & string_1;
+
+    uint64_t unescaped_2 = in_2.lteq(0x1F);
+    utf8_checker.check_next_input(in_2);
+    this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_2 & ~string_2;
+    this->unescaped_chars_error |= unescaped_2 & string_2;
+  }
+
+  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+    size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
+    size_t idx = 0;
+
+    for (; idx < lenminusstep; idx += STEP_SIZE) {
+      this->scan_step(&buf[idx], idx, utf8_checker);
+    }
+
+    /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
+    * checks). */
+    if (likely(idx < len)) {
+      uint8_t tmp_buf[STEP_SIZE];
+      memset(tmp_buf, 0x20, STEP_SIZE);
+      memcpy(tmp_buf, buf + idx, len - idx);
+      this->scan_step(&tmp_buf[0], idx, utf8_checker);
+      idx += STEP_SIZE;
+    }
+
+    /* finally, flatten out the remaining structurals from the last iteration */
+    this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+  }
+
+};
+
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  if (unlikely(len > pj.byte_capacity)) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+  utf8_checker utf8_checker{};
+  json_structural_scanner scanner{pj.structural_indexes};
+  scanner.scan(buf, len, utf8_checker);
+
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
+  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 
-  pj.n_structural_indexes = base_ptr - pj.structural_indexes;
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
@@ -37781,7 +37912,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_state.errors();
+  return utf8_checker.errors();
 }
 
 } // namespace simdjson::arm64
@@ -37789,8 +37920,8 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
 namespace simdjson {
 
 template <>
-int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  return arm64::find_structural_bits(buf, len, pj);
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  return arm64::find_structural_bits(buf, len, pj, streaming);
 }
 
 } // namespace simdjson
@@ -37881,270 +38012,65 @@ really_inline void find_whitespace_and_operators(
   #endif // else SIMDJSON_NAIVE_STRUCTURAL
 }
 
-// flatten out values in 'bits' assuming that they are are to have values of idx
-// plus their position in the bitvector, and store these indexes at
-// base_ptr[base] incrementing base as we go
-// will potentially store extra values beyond end of valid bits, so base_ptr
-// needs to be large enough to handle this
-really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted.
-  // Unfortunately, in other cases,
-  // it helps tremendously.
-  if (bits == 0)
-      return;
-  uint32_t cnt = _mm_popcnt_u64(bits);
-  idx -= 64;
-
-  // Do the first 8 all together
-  for (int i=0; i<8; i++) {
-    base_ptr[i] = idx + trailing_zeroes(bits);
-    bits = _blsr_u64(bits);
-  }
-
-  // Do the next 8 all together (we hope in most cases it won't happen at all
-  // and the branch is easily predicted).
-  if (unlikely(cnt > 8)) {
-    for (int i=8; i<16; i++) {
-      base_ptr[i] = idx + trailing_zeroes(bits);
-      bits = _blsr_u64(bits);
-    }
-
-    // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-    // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-    // or the start of a value ("abc" true 123) every four characters.
-    if (unlikely(cnt > 16)) {
-      uint32_t i = 16;
-      do {
-        base_ptr[i] = idx + trailing_zeroes(bits);
-        bits = _blsr_u64(bits);
-        i++;
-      } while (i < cnt);
-    }
-  }
-
-  base_ptr += cnt;
-}
-
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-   * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
-
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-   * indicates whether the sense of any edge going to the next iteration
-   * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
-}
-
-//
-// Check if the current character immediately follows a matching character.
-//
-// For example, this checks for quotes with backslashes in front of them:
-//
-//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-//
-really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
-  const uint64_t result = match << 1 | overflow;
-  overflow = match >> 63;
-  return result;
-}
-
-//
-// Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
-//
-//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-//
-really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow ) {
-  uint64_t follows_match = follows(match, overflow);
-  uint64_t result;
-  overflow |= add_overflow(follows_match, filler, &result);
-  return result;
-}
-
-really_inline ErrorValues detect_errors_on_eof(
-  uint64_t &unescaped_chars_error,
-  const uint64_t prev_in_string) {
-  if (prev_in_string) {
-    return UNCLOSED_STRING;
-  }
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
-  return SUCCESS;
-}
-
-//
-// Return a mask of all string characters plus end quotes.
-//
-// prev_escaped is overflow saying whether the next character is escaped.
-// prev_in_string is overflow saying whether we're still in a string.
-//
-// Backslash sequences outside of quotes will be detected in stage 2.
-//
-really_inline uint64_t find_strings(const simd_input in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
-  const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
-  const uint64_t quote = in.eq('"') & ~escaped;
-  // compute_quote_mask returns start quote plus string contents.
-  const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
-  /* right shift of a signed value expected to be well-defined and standard
-   * compliant as of C++20,
-   * John Regher from Utah U. says this is fine code */
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
-  // Use ^ to turn the beginning quote off, and the end quote on.
-  return in_string ^ quote;
-}
-
-really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
-  /* All Unicode characters may be placed within the
-   * quotation marks, except for the characters that MUST be escaped:
-   * quotation mark, reverse solidus, and the control characters (U+0000
-   * through U+001F).
-   * https://tools.ietf.org/html/rfc8259 */
-  return quote_mask & unescaped;
-}
-
-//
-// Determine which characters are *structural*:
-// - braces: [] and {}
-// - the start of primitives (123, true, false, null)
-// - the start of invalid non-whitespace (+, &, ture, UTF-8)
-//
-// Also detects value sequence errors:
-// - two values with no separator between ("hello" "world")
-// - separators with no values ([1,] [1,,]and [,2])
-//
-// This method will find all of the above whether it is in a string or not.
-//
-// To reduce dependency on the expensive "what is in a string" computation, this method treats the
-// contents of a string the same as content outside. Errors and structurals inside the string or on
-// the trailing quote will need to be removed later when the correct string information is known.
-//
-really_inline uint64_t find_potential_structurals(const simd_input in, uint64_t &prev_primitive) {
-  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
-  uint64_t whitespace, op;
-  find_whitespace_and_operators(in, whitespace, op);
-
-  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
-  // Everything except whitespace, braces, colon and comma.
-  const uint64_t primitive = ~(op | whitespace);
-  const uint64_t follows_primitive = follows(primitive, prev_primitive);
-  const uint64_t start_primitive = primitive & ~follows_primitive;
-
-  // Return final structurals
-  return op | start_primitive;
-}
-
 static const size_t STEP_SIZE = 128;
 
-//
-// Find the important bits of JSON in a 128-byte chunk, and add them to :
-//
-//
-//
-// PERF NOTES:
-// We pipe 2 inputs through these stages:
-// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
-//    The output of step 1 depends entirely on this information. These functions don't quite use
-//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-//    at a time. The second input's scans has some dependency on the first ones finishing it, but
-//    they can make a lot of progress before they need that information.
-// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-//    to finish: utf-8 checks and generating the output from the last iteration.
-// 
-// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-// workout.
-//
-really_inline void find_structural_bits_128(
-    const uint8_t *buf, const size_t idx, uint32_t *&base_ptr,
-    uint64_t &prev_escaped, uint64_t &prev_in_string,
-    uint64_t &prev_primitive,
-    uint64_t &prev_structurals,
-    uint64_t &unescaped_chars_error,
-    utf8_checker &utf8_state) {
-  //
-  // Load up all 128 bytes into SIMD registers
-  //
-  simd_input in_1(buf);
-  simd_input in_2(buf+64);
+class bit_indexer {
+public:
+  uint32_t *tail;
 
-  //
-  // Find the strings and potential structurals (operators / primitives).
-  //
-  // This will include false structurals that are *inside* strings--we'll filter strings out
-  // before we return.
-  //
-  uint64_t string_1 = find_strings(in_1, prev_escaped, prev_in_string);
-  uint64_t structurals_1 = find_potential_structurals(in_1, prev_primitive);
-  uint64_t string_2 = find_strings(in_2, prev_escaped, prev_in_string);
-  uint64_t structurals_2 = find_potential_structurals(in_2, prev_primitive);
+  bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
-  //
-  // Do miscellaneous work while the processor is busy calculating strings and structurals.
-  //
-  // After that, weed out structurals that are inside strings and find invalid string characters.
-  //
-  uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_state.check_next_input(in_1);
-  flatten_bits(base_ptr, idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_1 & ~string_1;
-  unescaped_chars_error |= unescaped_1 & string_1;
+  // flatten out values in 'bits' assuming that they are are to have values of idx
+  // plus their position in the bitvector, and store these indexes at
+  // base_ptr[base] incrementing base as we go
+  // will potentially store extra values beyond end of valid bits, so base_ptr
+  // needs to be large enough to handle this
+  really_inline void write_indexes(uint32_t idx, uint64_t bits) {
+    // In some instances, the next branch is expensive because it is mispredicted.
+    // Unfortunately, in other cases,
+    // it helps tremendously.
+    if (bits == 0)
+        return;
+    uint32_t cnt = hamming(bits);
 
-  uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_state.check_next_input(in_2);
-  flatten_bits(base_ptr, idx+64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_2 & ~string_2;
-  unescaped_chars_error |= unescaped_2 & string_2;
-}
+    // Do the first 8 all together
+    for (int i=0; i<8; i++) {
+      this->tail[i] = idx + trailing_zeroes(bits);
+      bits = clear_lowest_bit(bits);
+    }
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
+    // Do the next 8 all together (we hope in most cases it won't happen at all
+    // and the branch is easily predicted).
+    if (unlikely(cnt > 8)) {
+      for (int i=8; i<16; i++) {
+        this->tail[i] = idx + trailing_zeroes(bits);
+        bits = clear_lowest_bit(bits);
+      }
+
+      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+      // or the start of a value ("abc" true 123) every four characters.
+      if (unlikely(cnt > 16)) {
+        uint32_t i = 16;
+        do {
+          this->tail[i] = idx + trailing_zeroes(bits);
+          bits = clear_lowest_bit(bits);
+          i++;
+        } while (i < cnt);
+      }
+    }
+
+    this->tail += cnt;
   }
-  uint32_t *base_ptr = pj.structural_indexes;
-  utf8_checker utf8_state;
+};
 
+class json_structural_scanner {
+public:
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
@@ -38155,41 +38081,249 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   // Mask of structural characters from the last iteration.
   // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
-  uint64_t structurals = 0;
-
-  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-  size_t idx = 0;
+  uint64_t prev_structurals = 0;
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
+  bit_indexer structural_indexes;
 
-  for (; idx < lenminusstep; idx += STEP_SIZE) {
-    find_structural_bits_128(&buf[idx], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
+
+  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
+
+  // return a bitvector indicating where we have characters that end an odd-length
+  // sequence of backslashes (and thus change the behavior of the next character
+  // to follow). A even-length sequence of backslashes, and, for that matter, the
+  // largest even-length prefix of our odd-length sequence of backslashes, simply
+  // modify the behavior of the backslashes themselves.
+  // We also update the prev_iter_ends_odd_backslash reference parameter to
+  // indicate whether we end an iteration on an odd-length sequence of
+  // backslashes, which modifies our subsequent search for odd-length
+  // sequences of backslashes in an obvious way.
+  really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+    const uint64_t even_bits = 0x5555555555555555ULL;
+    const uint64_t odd_bits = ~even_bits;
+    uint64_t start_edges = match & ~(match << 1);
+    /* flip lowest if we have an odd-length run at the end of the prior
+    * iteration */
+    uint64_t even_start_mask = even_bits ^ overflow;
+    uint64_t even_starts = start_edges & even_start_mask;
+    uint64_t odd_starts = start_edges & ~even_start_mask;
+    uint64_t even_carries = match + even_starts;
+
+    uint64_t odd_carries;
+    /* must record the carry-out of our odd-carries out of bit 63; this
+    * indicates whether the sense of any edge going to the next iteration
+    * should be flipped */
+    bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
+
+    odd_carries |= overflow; /* push in bit zero as a
+                                * potential end if we had an
+                                * odd-numbered run at the
+                                * end of the previous
+                                * iteration */
+    overflow = new_overflow ? 0x1ULL : 0x0ULL;
+    uint64_t even_carry_ends = even_carries & ~match;
+    uint64_t odd_carry_ends = odd_carries & ~match;
+    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+    return odd_ends;
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-   * checks). */
-  if (likely(idx < len)) {
-    uint8_t tmp_buf[STEP_SIZE];
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_128(&tmp_buf[0], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
-    idx += STEP_SIZE;
+  //
+  // Check if the current character immediately follows a matching character.
+  //
+  // For example, this checks for quotes with backslashes in front of them:
+  //
+  //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+  //
+  really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+    const uint64_t result = match << 1 | overflow;
+    overflow = match >> 63;
+    return result;
   }
 
-  /* finally, flatten out the remaining structurals from the last iteration */
-  flatten_bits(base_ptr, idx, structurals);
+  //
+  // Check if the current character follows a matching character, with possible "filler" between.
+  // For example, this checks for empty curly braces, e.g. 
+  //
+  //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+  //
+  really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+    uint64_t follows_match = follows(match, overflow);
+    uint64_t result;
+    overflow |= add_overflow(follows_match, filler, &result);
+    return result;
+  }
 
-  simdjson::ErrorValues error = detect_errors_on_eof(unescaped_chars_error, prev_in_string);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  really_inline ErrorValues detect_errors_on_eof() {
+    if (prev_in_string) {
+      return UNCLOSED_STRING;
+    }
+    if (unescaped_chars_error) {
+      return UNESCAPED_CHARS;
+    }
+    return SUCCESS;
+  }
+
+  //
+  // Return a mask of all string characters plus end quotes.
+  //
+  // prev_escaped is overflow saying whether the next character is escaped.
+  // prev_in_string is overflow saying whether we're still in a string.
+  //
+  // Backslash sequences outside of quotes will be detected in stage 2.
+  //
+  really_inline uint64_t find_strings(const simd_input in) {
+    const uint64_t backslash = in.eq('\\');
+    const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+    const uint64_t quote = in.eq('"') & ~escaped;
+    // compute_quote_mask returns start quote plus string contents.
+    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    /* right shift of a signed value expected to be well-defined and standard
+    * compliant as of C++20,
+    * John Regher from Utah U. says this is fine code */
+    prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+    // Use ^ to turn the beginning quote off, and the end quote on.
+    return in_string ^ quote;
+  }
+
+  really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
+    /* All Unicode characters may be placed within the
+    * quotation marks, except for the characters that MUST be escaped:
+    * quotation mark, reverse solidus, and the control characters (U+0000
+    * through U+001F).
+    * https://tools.ietf.org/html/rfc8259 */
+    return quote_mask & unescaped;
+  }
+
+  //
+  // Determine which characters are *structural*:
+  // - braces: [] and {}
+  // - the start of primitives (123, true, false, null)
+  // - the start of invalid non-whitespace (+, &, ture, UTF-8)
+  //
+  // Also detects value sequence errors:
+  // - two values with no separator between ("hello" "world")
+  // - separators with no values ([1,] [1,,]and [,2])
+  //
+  // This method will find all of the above whether it is in a string or not.
+  //
+  // To reduce dependency on the expensive "what is in a string" computation, this method treats the
+  // contents of a string the same as content outside. Errors and structurals inside the string or on
+  // the trailing quote will need to be removed later when the correct string information is known.
+  //
+  really_inline uint64_t find_potential_structurals(const simd_input in) {
+    // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
+    uint64_t whitespace, op;
+    find_whitespace_and_operators(in, whitespace, op);
+
+    // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
+    // Everything except whitespace, braces, colon and comma.
+    const uint64_t primitive = ~(op | whitespace);
+    const uint64_t follows_primitive = follows(primitive, prev_primitive);
+    const uint64_t start_primitive = primitive & ~follows_primitive;
+
+    // Return final structurals
+    return op | start_primitive;
+  }
+
+  //
+  // Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+  //
+  // PERF NOTES:
+  // We pipe 2 inputs through these stages:
+  // 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+  //    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+  // 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
+  //    The output of step 1 depends entirely on this information. These functions don't quite use
+  //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+  //    at a time. The second input's scans has some dependency on the first ones finishing it, but
+  //    they can make a lot of progress before they need that information.
+  // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+  //    to finish: utf-8 checks and generating the output from the last iteration.
+  // 
+  // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+  // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+  // workout.
+  //
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+    //
+    // Load up all 128 bytes into SIMD registers
+    //
+    simd_input in_1(buf);
+    simd_input in_2(buf+64);
+
+    //
+    // Find the strings and potential structurals (operators / primitives).
+    //
+    // This will include false structurals that are *inside* strings--we'll filter strings out
+    // before we return.
+    //
+    uint64_t string_1 = this->find_strings(in_1);
+    uint64_t structurals_1 = this->find_potential_structurals(in_1);
+    uint64_t string_2 = this->find_strings(in_2);
+    uint64_t structurals_2 = this->find_potential_structurals(in_2);
+
+    //
+    // Do miscellaneous work while the processor is busy calculating strings and structurals.
+    //
+    // After that, weed out structurals that are inside strings and find invalid string characters.
+    //
+    uint64_t unescaped_1 = in_1.lteq(0x1F);
+    utf8_checker.check_next_input(in_1);
+    this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_1 & ~string_1;
+    this->unescaped_chars_error |= unescaped_1 & string_1;
+
+    uint64_t unescaped_2 = in_2.lteq(0x1F);
+    utf8_checker.check_next_input(in_2);
+    this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_2 & ~string_2;
+    this->unescaped_chars_error |= unescaped_2 & string_2;
+  }
+
+  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+    size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
+    size_t idx = 0;
+
+    for (; idx < lenminusstep; idx += STEP_SIZE) {
+      this->scan_step(&buf[idx], idx, utf8_checker);
+    }
+
+    /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
+    * checks). */
+    if (likely(idx < len)) {
+      uint8_t tmp_buf[STEP_SIZE];
+      memset(tmp_buf, 0x20, STEP_SIZE);
+      memcpy(tmp_buf, buf + idx, len - idx);
+      this->scan_step(&tmp_buf[0], idx, utf8_checker);
+      idx += STEP_SIZE;
+    }
+
+    /* finally, flatten out the remaining structurals from the last iteration */
+    this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+  }
+
+};
+
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  if (unlikely(len > pj.byte_capacity)) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+  utf8_checker utf8_checker{};
+  json_structural_scanner scanner{pj.structural_indexes};
+  scanner.scan(buf, len, utf8_checker);
+
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
+  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 
-  pj.n_structural_indexes = base_ptr - pj.structural_indexes;
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
@@ -38205,7 +38339,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_state.errors();
+  return utf8_checker.errors();
 }
 
 } // namespace haswell
@@ -38215,8 +38349,8 @@ TARGET_HASWELL
 namespace simdjson {
 
 template <>
-int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  return haswell::find_structural_bits(buf, len, pj);
+int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  return haswell::find_structural_bits(buf, len, pj, streaming);
 }
 
 } // namespace simdjson
@@ -38264,293 +38398,65 @@ really_inline void find_whitespace_and_operators(
   }).to_bitmask();
 }
 
-// This file contains a non-architecture-specific version of "flatten" used in stage1.
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
-
-#ifdef SIMDJSON_NAIVE_FLATTEN // useful for benchmarking
-
-// This is just a naive implementation. It should be normally
-// disable, but can be used for research purposes to compare
-// again our optimized version.
-really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base, uint32_t idx, uint64_t bits) {
-  uint32_t *out_ptr = base_ptr + base;
-  idx -= 64;
-  while (bits != 0) {
-    out_ptr[0] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-    out_ptr++;
-  }
-  base = (out_ptr - base_ptr);
-}
-
-#else // SIMDJSON_NAIVE_FLATTEN
-
-// flatten out values in 'bits' assuming that they are are to have values of idx
-// plus their position in the bitvector, and store these indexes at
-// base_ptr[base] incrementing base as we go
-// will potentially store extra values beyond end of valid bits, so base_ptr
-// needs to be large enough to handle this
-really_inline void flatten_bits(uint32_t *&base_ptr, uint32_t idx, uint64_t bits) {
-  // In some instances, the next branch is expensive because it is mispredicted.
-  // Unfortunately, in other cases,
-  // it helps tremendously.
-  if (bits == 0)
-    return;
-  uint32_t cnt = hamming(bits);
-  idx -= 64;
-
-  // Do the first 8 all together
-  for (int i=0; i<8; i++) {
-    base_ptr[i] = idx + trailing_zeroes(bits);
-    bits = bits & (bits - 1);
-  }
-
-  // Do the next 8 all together (we hope in most cases it won't happen at all
-  // and the branch is easily predicted).
-  if (unlikely(cnt > 8)) {
-    for (int i=8; i<16; i++) {
-      base_ptr[i] = idx + trailing_zeroes(bits);
-      bits = bits & (bits - 1);
-    }
-
-    // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-    // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-    // or the start of a value ("abc" true 123) every 4 characters.
-    if (unlikely(cnt > 16)) {
-      uint32_t i = 16;
-      do {
-        base_ptr[i] = idx + trailing_zeroes(bits);
-        bits = bits & (bits - 1);
-        i++;
-      } while (i < cnt);
-    }
-  }
-
-  base_ptr += cnt;
-}
-#endif // SIMDJSON_NAIVE_FLATTEN
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-   * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
-
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-   * indicates whether the sense of any edge going to the next iteration
-   * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
-}
-
-//
-// Check if the current character immediately follows a matching character.
-//
-// For example, this checks for quotes with backslashes in front of them:
-//
-//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-//
-really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
-  const uint64_t result = match << 1 | overflow;
-  overflow = match >> 63;
-  return result;
-}
-
-//
-// Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
-//
-//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-//
-really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow ) {
-  uint64_t follows_match = follows(match, overflow);
-  uint64_t result;
-  overflow |= add_overflow(follows_match, filler, &result);
-  return result;
-}
-
-really_inline ErrorValues detect_errors_on_eof(
-  uint64_t &unescaped_chars_error,
-  const uint64_t prev_in_string) {
-  if (prev_in_string) {
-    return UNCLOSED_STRING;
-  }
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
-  return SUCCESS;
-}
-
-//
-// Return a mask of all string characters plus end quotes.
-//
-// prev_escaped is overflow saying whether the next character is escaped.
-// prev_in_string is overflow saying whether we're still in a string.
-//
-// Backslash sequences outside of quotes will be detected in stage 2.
-//
-really_inline uint64_t find_strings(const simd_input in, uint64_t &prev_escaped, uint64_t &prev_in_string) {
-  const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
-  const uint64_t quote = in.eq('"') & ~escaped;
-  // compute_quote_mask returns start quote plus string contents.
-  const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
-  /* right shift of a signed value expected to be well-defined and standard
-   * compliant as of C++20,
-   * John Regher from Utah U. says this is fine code */
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
-  // Use ^ to turn the beginning quote off, and the end quote on.
-  return in_string ^ quote;
-}
-
-really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
-  /* All Unicode characters may be placed within the
-   * quotation marks, except for the characters that MUST be escaped:
-   * quotation mark, reverse solidus, and the control characters (U+0000
-   * through U+001F).
-   * https://tools.ietf.org/html/rfc8259 */
-  return quote_mask & unescaped;
-}
-
-//
-// Determine which characters are *structural*:
-// - braces: [] and {}
-// - the start of primitives (123, true, false, null)
-// - the start of invalid non-whitespace (+, &, ture, UTF-8)
-//
-// Also detects value sequence errors:
-// - two values with no separator between ("hello" "world")
-// - separators with no values ([1,] [1,,]and [,2])
-//
-// This method will find all of the above whether it is in a string or not.
-//
-// To reduce dependency on the expensive "what is in a string" computation, this method treats the
-// contents of a string the same as content outside. Errors and structurals inside the string or on
-// the trailing quote will need to be removed later when the correct string information is known.
-//
-really_inline uint64_t find_potential_structurals(const simd_input in, uint64_t &prev_primitive) {
-  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
-  uint64_t whitespace, op;
-  find_whitespace_and_operators(in, whitespace, op);
-
-  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
-  // Everything except whitespace, braces, colon and comma.
-  const uint64_t primitive = ~(op | whitespace);
-  const uint64_t follows_primitive = follows(primitive, prev_primitive);
-  const uint64_t start_primitive = primitive & ~follows_primitive;
-
-  // Return final structurals
-  return op | start_primitive;
-}
-
 static const size_t STEP_SIZE = 128;
 
-//
-// Find the important bits of JSON in a 128-byte chunk, and add them to :
-//
-//
-//
-// PERF NOTES:
-// We pipe 2 inputs through these stages:
-// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
-//    The output of step 1 depends entirely on this information. These functions don't quite use
-//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-//    at a time. The second input's scans has some dependency on the first ones finishing it, but
-//    they can make a lot of progress before they need that information.
-// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-//    to finish: utf-8 checks and generating the output from the last iteration.
-// 
-// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-// workout.
-//
-really_inline void find_structural_bits_128(
-    const uint8_t *buf, const size_t idx, uint32_t *&base_ptr,
-    uint64_t &prev_escaped, uint64_t &prev_in_string,
-    uint64_t &prev_primitive,
-    uint64_t &prev_structurals,
-    uint64_t &unescaped_chars_error,
-    utf8_checker &utf8_state) {
-  //
-  // Load up all 128 bytes into SIMD registers
-  //
-  simd_input in_1(buf);
-  simd_input in_2(buf+64);
+class bit_indexer {
+public:
+  uint32_t *tail;
 
-  //
-  // Find the strings and potential structurals (operators / primitives).
-  //
-  // This will include false structurals that are *inside* strings--we'll filter strings out
-  // before we return.
-  //
-  uint64_t string_1 = find_strings(in_1, prev_escaped, prev_in_string);
-  uint64_t structurals_1 = find_potential_structurals(in_1, prev_primitive);
-  uint64_t string_2 = find_strings(in_2, prev_escaped, prev_in_string);
-  uint64_t structurals_2 = find_potential_structurals(in_2, prev_primitive);
+  bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
 
-  //
-  // Do miscellaneous work while the processor is busy calculating strings and structurals.
-  //
-  // After that, weed out structurals that are inside strings and find invalid string characters.
-  //
-  uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_state.check_next_input(in_1);
-  flatten_bits(base_ptr, idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_1 & ~string_1;
-  unescaped_chars_error |= unescaped_1 & string_1;
+  // flatten out values in 'bits' assuming that they are are to have values of idx
+  // plus their position in the bitvector, and store these indexes at
+  // base_ptr[base] incrementing base as we go
+  // will potentially store extra values beyond end of valid bits, so base_ptr
+  // needs to be large enough to handle this
+  really_inline void write_indexes(uint32_t idx, uint64_t bits) {
+    // In some instances, the next branch is expensive because it is mispredicted.
+    // Unfortunately, in other cases,
+    // it helps tremendously.
+    if (bits == 0)
+        return;
+    uint32_t cnt = hamming(bits);
 
-  uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_state.check_next_input(in_2);
-  flatten_bits(base_ptr, idx+64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  prev_structurals = structurals_2 & ~string_2;
-  unescaped_chars_error |= unescaped_2 & string_2;
-}
+    // Do the first 8 all together
+    for (int i=0; i<8; i++) {
+      this->tail[i] = idx + trailing_zeroes(bits);
+      bits = clear_lowest_bit(bits);
+    }
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
+    // Do the next 8 all together (we hope in most cases it won't happen at all
+    // and the branch is easily predicted).
+    if (unlikely(cnt > 8)) {
+      for (int i=8; i<16; i++) {
+        this->tail[i] = idx + trailing_zeroes(bits);
+        bits = clear_lowest_bit(bits);
+      }
+
+      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+      // or the start of a value ("abc" true 123) every four characters.
+      if (unlikely(cnt > 16)) {
+        uint32_t i = 16;
+        do {
+          this->tail[i] = idx + trailing_zeroes(bits);
+          bits = clear_lowest_bit(bits);
+          i++;
+        } while (i < cnt);
+      }
+    }
+
+    this->tail += cnt;
   }
-  uint32_t *base_ptr = pj.structural_indexes;
-  utf8_checker utf8_state;
+};
 
+class json_structural_scanner {
+public:
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
@@ -38561,41 +38467,249 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   // Mask of structural characters from the last iteration.
   // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
-  uint64_t structurals = 0;
-
-  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-  size_t idx = 0;
+  uint64_t prev_structurals = 0;
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
+  bit_indexer structural_indexes;
 
-  for (; idx < lenminusstep; idx += STEP_SIZE) {
-    find_structural_bits_128(&buf[idx], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
+
+  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
+
+  // return a bitvector indicating where we have characters that end an odd-length
+  // sequence of backslashes (and thus change the behavior of the next character
+  // to follow). A even-length sequence of backslashes, and, for that matter, the
+  // largest even-length prefix of our odd-length sequence of backslashes, simply
+  // modify the behavior of the backslashes themselves.
+  // We also update the prev_iter_ends_odd_backslash reference parameter to
+  // indicate whether we end an iteration on an odd-length sequence of
+  // backslashes, which modifies our subsequent search for odd-length
+  // sequences of backslashes in an obvious way.
+  really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+    const uint64_t even_bits = 0x5555555555555555ULL;
+    const uint64_t odd_bits = ~even_bits;
+    uint64_t start_edges = match & ~(match << 1);
+    /* flip lowest if we have an odd-length run at the end of the prior
+    * iteration */
+    uint64_t even_start_mask = even_bits ^ overflow;
+    uint64_t even_starts = start_edges & even_start_mask;
+    uint64_t odd_starts = start_edges & ~even_start_mask;
+    uint64_t even_carries = match + even_starts;
+
+    uint64_t odd_carries;
+    /* must record the carry-out of our odd-carries out of bit 63; this
+    * indicates whether the sense of any edge going to the next iteration
+    * should be flipped */
+    bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
+
+    odd_carries |= overflow; /* push in bit zero as a
+                                * potential end if we had an
+                                * odd-numbered run at the
+                                * end of the previous
+                                * iteration */
+    overflow = new_overflow ? 0x1ULL : 0x0ULL;
+    uint64_t even_carry_ends = even_carries & ~match;
+    uint64_t odd_carry_ends = odd_carries & ~match;
+    uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+    uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+    uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+    return odd_ends;
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-   * checks). */
-  if (likely(idx < len)) {
-    uint8_t tmp_buf[STEP_SIZE];
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    find_structural_bits_128(&tmp_buf[0], idx, base_ptr,
-                             prev_escaped, prev_in_string, prev_primitive,
-                             structurals, unescaped_chars_error, utf8_state);
-    idx += STEP_SIZE;
+  //
+  // Check if the current character immediately follows a matching character.
+  //
+  // For example, this checks for quotes with backslashes in front of them:
+  //
+  //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+  //
+  really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+    const uint64_t result = match << 1 | overflow;
+    overflow = match >> 63;
+    return result;
   }
 
-  /* finally, flatten out the remaining structurals from the last iteration */
-  flatten_bits(base_ptr, idx, structurals);
+  //
+  // Check if the current character follows a matching character, with possible "filler" between.
+  // For example, this checks for empty curly braces, e.g. 
+  //
+  //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+  //
+  really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+    uint64_t follows_match = follows(match, overflow);
+    uint64_t result;
+    overflow |= add_overflow(follows_match, filler, &result);
+    return result;
+  }
 
-  simdjson::ErrorValues error = detect_errors_on_eof(unescaped_chars_error, prev_in_string);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  really_inline ErrorValues detect_errors_on_eof() {
+    if (prev_in_string) {
+      return UNCLOSED_STRING;
+    }
+    if (unescaped_chars_error) {
+      return UNESCAPED_CHARS;
+    }
+    return SUCCESS;
+  }
+
+  //
+  // Return a mask of all string characters plus end quotes.
+  //
+  // prev_escaped is overflow saying whether the next character is escaped.
+  // prev_in_string is overflow saying whether we're still in a string.
+  //
+  // Backslash sequences outside of quotes will be detected in stage 2.
+  //
+  really_inline uint64_t find_strings(const simd_input in) {
+    const uint64_t backslash = in.eq('\\');
+    const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+    const uint64_t quote = in.eq('"') & ~escaped;
+    // compute_quote_mask returns start quote plus string contents.
+    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    /* right shift of a signed value expected to be well-defined and standard
+    * compliant as of C++20,
+    * John Regher from Utah U. says this is fine code */
+    prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+    // Use ^ to turn the beginning quote off, and the end quote on.
+    return in_string ^ quote;
+  }
+
+  really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
+    /* All Unicode characters may be placed within the
+    * quotation marks, except for the characters that MUST be escaped:
+    * quotation mark, reverse solidus, and the control characters (U+0000
+    * through U+001F).
+    * https://tools.ietf.org/html/rfc8259 */
+    return quote_mask & unescaped;
+  }
+
+  //
+  // Determine which characters are *structural*:
+  // - braces: [] and {}
+  // - the start of primitives (123, true, false, null)
+  // - the start of invalid non-whitespace (+, &, ture, UTF-8)
+  //
+  // Also detects value sequence errors:
+  // - two values with no separator between ("hello" "world")
+  // - separators with no values ([1,] [1,,]and [,2])
+  //
+  // This method will find all of the above whether it is in a string or not.
+  //
+  // To reduce dependency on the expensive "what is in a string" computation, this method treats the
+  // contents of a string the same as content outside. Errors and structurals inside the string or on
+  // the trailing quote will need to be removed later when the correct string information is known.
+  //
+  really_inline uint64_t find_potential_structurals(const simd_input in) {
+    // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
+    uint64_t whitespace, op;
+    find_whitespace_and_operators(in, whitespace, op);
+
+    // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
+    // Everything except whitespace, braces, colon and comma.
+    const uint64_t primitive = ~(op | whitespace);
+    const uint64_t follows_primitive = follows(primitive, prev_primitive);
+    const uint64_t start_primitive = primitive & ~follows_primitive;
+
+    // Return final structurals
+    return op | start_primitive;
+  }
+
+  //
+  // Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+  //
+  // PERF NOTES:
+  // We pipe 2 inputs through these stages:
+  // 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+  //    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+  // 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
+  //    The output of step 1 depends entirely on this information. These functions don't quite use
+  //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+  //    at a time. The second input's scans has some dependency on the first ones finishing it, but
+  //    they can make a lot of progress before they need that information.
+  // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+  //    to finish: utf-8 checks and generating the output from the last iteration.
+  // 
+  // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+  // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+  // workout.
+  //
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+    //
+    // Load up all 128 bytes into SIMD registers
+    //
+    simd_input in_1(buf);
+    simd_input in_2(buf+64);
+
+    //
+    // Find the strings and potential structurals (operators / primitives).
+    //
+    // This will include false structurals that are *inside* strings--we'll filter strings out
+    // before we return.
+    //
+    uint64_t string_1 = this->find_strings(in_1);
+    uint64_t structurals_1 = this->find_potential_structurals(in_1);
+    uint64_t string_2 = this->find_strings(in_2);
+    uint64_t structurals_2 = this->find_potential_structurals(in_2);
+
+    //
+    // Do miscellaneous work while the processor is busy calculating strings and structurals.
+    //
+    // After that, weed out structurals that are inside strings and find invalid string characters.
+    //
+    uint64_t unescaped_1 = in_1.lteq(0x1F);
+    utf8_checker.check_next_input(in_1);
+    this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_1 & ~string_1;
+    this->unescaped_chars_error |= unescaped_1 & string_1;
+
+    uint64_t unescaped_2 = in_2.lteq(0x1F);
+    utf8_checker.check_next_input(in_2);
+    this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+    this->prev_structurals = structurals_2 & ~string_2;
+    this->unescaped_chars_error |= unescaped_2 & string_2;
+  }
+
+  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+    size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
+    size_t idx = 0;
+
+    for (; idx < lenminusstep; idx += STEP_SIZE) {
+      this->scan_step(&buf[idx], idx, utf8_checker);
+    }
+
+    /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+    * spaces  before processing it (otherwise, we risk invalidating the UTF-8
+    * checks). */
+    if (likely(idx < len)) {
+      uint8_t tmp_buf[STEP_SIZE];
+      memset(tmp_buf, 0x20, STEP_SIZE);
+      memcpy(tmp_buf, buf + idx, len - idx);
+      this->scan_step(&tmp_buf[0], idx, utf8_checker);
+      idx += STEP_SIZE;
+    }
+
+    /* finally, flatten out the remaining structurals from the last iteration */
+    this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+  }
+
+};
+
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  if (unlikely(len > pj.byte_capacity)) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+  utf8_checker utf8_checker{};
+  json_structural_scanner scanner{pj.structural_indexes};
+  scanner.scan(buf, len, utf8_checker);
+
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
+  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 
-  pj.n_structural_indexes = base_ptr - pj.structural_indexes;
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
@@ -38611,7 +38725,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_state.errors();
+  return utf8_checker.errors();
 }
 
 } // namespace westmere
@@ -38621,8 +38735,8 @@ TARGET_WESTMERE
 namespace simdjson {
 
 template <>
-int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
-  return westmere::find_structural_bits(buf, len, pj);
+int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  return westmere::find_structural_bits(buf, len, pj, streaming);
 }
 
 } // namespace simdjson
@@ -38635,7 +38749,7 @@ UNTARGET_REGION
 
 namespace {
 // for when clmul is unavailable
-[[maybe_unused]] uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
+[[maybe_unused]] really_inline uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
   uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
   quote_mask = quote_mask ^ (quote_mask << 2);
   quote_mask = quote_mask ^ (quote_mask << 4);
@@ -39830,6 +39944,507 @@ fail:
   pj.error_code = simdjson::TAPE_ERROR;
   return pj.error_code;
 }
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED  int
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
+    size_t idx; /* location of the structural character in the input (buf)   */
+    uint8_t c;    /* used to track the (structural) character we are looking at,
+                   updated */
+    /* by UPDATE_CHAR macro */
+    size_t depth = 0; /* could have an arbitrary starting depth */
+    pj.init();          /* sets is_valid to false          */
+//    if (pj.byte_capacity < len) {
+//        pj.error_code = simdjson::CAPACITY;
+//        return pj.error_code;
+//    }
+
+    /*//////////////////////////// START STATE /////////////////////////////
+     */
+    SET_GOTO_START_CONTINUE()
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
+    /* the root is used, if nothing else, to capture the size of the tape */
+    depth++; /* everything starts at depth = 1, depth = 0 is just for the
+              root, the root may contain an object, an array or something
+              else. */
+    if (depth >= pj.depth_capacity) {
+        goto fail;
+    }
+
+    UPDATE_CHAR();
+    switch (c) {
+        case '{':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(
+                    0, c); /* strangely, moving this to object_begin slows things down */
+            goto object_begin;
+        case '[':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            goto array_begin;
+            /* #define SIMDJSON_ALLOWANYTHINGINROOT
+             * A JSON text is a serialized value.  Note that certain previous
+             * specifications of JSON constrained a JSON text to be an object or an
+             * array.  Implementations that generate only objects or arrays where a
+             * JSON text is called for will be interoperable in the sense that all
+             * implementations will accept these as conforming JSON texts.
+             * https://tools.ietf.org/html/rfc8259
+             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the true value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'f': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the false
+             * value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'n': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the null value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice. We terminate with a
+             * space
+             * because we do not want to allow NULLs in the middle of a number
+             * (whereas a
+             * space in the middle of a number would be identified in stage 1). */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
+                              false)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        case '-': {
+            /* we need to make a copy to make sure that the string is NULL
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        default:
+            goto fail;
+    }
+    start_continue:
+    /* the string might not be NULL terminated. */
+    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
+        goto succeed;
+    } else if(depth == 1) {
+        goto succeedAndHasMore;
+    } else {
+        goto fail;
+    }
+    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+
+    object_begin:
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            goto object_key_state;
+        }
+        case '}':
+            goto scope_end; /* could also go to object_continue */
+        default:
+            goto fail;
+    }
+
+    object_key_state:
+    UPDATE_CHAR();
+    if (c != ':') {
+        goto fail;
+    }
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break;
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break;
+        }
+        case '{': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an object inside an object, so we need to increment the
+             * depth                                                             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an array inside an object, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    object_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            if (c != '"') {
+                goto fail;
+            } else {
+                if (!parse_string(buf, len, pj, depth, idx)) {
+                    goto fail;
+                }
+                goto object_key_state;
+            }
+        case '}':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+
+    scope_end:
+    /* write our tape location to the header scope */
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    /* goto saved_state */
+    GOTO_CONTINUE()
+
+    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+    array_begin:
+    UPDATE_CHAR();
+    if (c == ']') {
+        goto scope_end; /* could also go to array_continue */
+    }
+
+    main_array_switch:
+    /* we call update char on all paths in, so we can peek at c on the
+     * on paths that can accept a close square brace (post-, and at start) */
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break; /* goto array_continue; */
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '{': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an object inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an array inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    array_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            goto main_array_switch;
+        case ']':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// FINAL STATES ///////////////////////////*/
+    succeedAndHasMore:
+        depth--;
+        if (pj.containing_scope_offset[depth] != 0) {
+            fprintf(stderr, "internal bug\n");
+            abort();
+        }
+        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                                 pj.get_current_loc());
+        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+        next_json = i ;
+
+        pj.valid = true;
+        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
+        return pj.error_code;
+
+    succeed:
+    depth--;
+    if (depth != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+    pj.valid = true;
+    pj.error_code = simdjson::SUCCESS;
+    return pj.error_code;
+    fail:
+    /* we do not need the next line because this is done by pj.init(),
+     * pessimistically.
+     * pj.is_valid  = false;
+     * At this point in the code, we have all the time in the world.
+     * Note that we know exactly where we are in the document so we could,
+     * without any overhead on the processing code, report a specific
+     * location.
+     * We could even trigger special code paths to assess what happened
+     * carefully,
+     * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+        pj.error_code = simdjson::DEPTH_ERROR;
+        return pj.error_code;
+    }
+    switch (c) {
+        case '"':
+            pj.error_code = simdjson::STRING_ERROR;
+            return pj.error_code;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '-':
+            pj.error_code = simdjson::NUMBER_ERROR;
+            return pj.error_code;
+        case 't':
+            pj.error_code = simdjson::T_ATOM_ERROR;
+            return pj.error_code;
+        case 'n':
+            pj.error_code = simdjson::N_ATOM_ERROR;
+            return pj.error_code;
+        case 'f':
+            pj.error_code = simdjson::F_ATOM_ERROR;
+            return pj.error_code;
+        default:
+            break;
+    }
+    pj.error_code = simdjson::TAPE_ERROR;
+    return pj.error_code;
+}
 
 } // namespace simdjson::arm64
 
@@ -39839,6 +40454,12 @@ template <>
 WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return arm64::unified_machine(buf, len, pj);
+}
+
+template <>
+WARN_UNUSED int
+unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    return arm64::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson
@@ -40375,6 +40996,507 @@ fail:
   pj.error_code = simdjson::TAPE_ERROR;
   return pj.error_code;
 }
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED  int
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
+    size_t idx; /* location of the structural character in the input (buf)   */
+    uint8_t c;    /* used to track the (structural) character we are looking at,
+                   updated */
+    /* by UPDATE_CHAR macro */
+    size_t depth = 0; /* could have an arbitrary starting depth */
+    pj.init();          /* sets is_valid to false          */
+//    if (pj.byte_capacity < len) {
+//        pj.error_code = simdjson::CAPACITY;
+//        return pj.error_code;
+//    }
+
+    /*//////////////////////////// START STATE /////////////////////////////
+     */
+    SET_GOTO_START_CONTINUE()
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
+    /* the root is used, if nothing else, to capture the size of the tape */
+    depth++; /* everything starts at depth = 1, depth = 0 is just for the
+              root, the root may contain an object, an array or something
+              else. */
+    if (depth >= pj.depth_capacity) {
+        goto fail;
+    }
+
+    UPDATE_CHAR();
+    switch (c) {
+        case '{':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(
+                    0, c); /* strangely, moving this to object_begin slows things down */
+            goto object_begin;
+        case '[':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            goto array_begin;
+            /* #define SIMDJSON_ALLOWANYTHINGINROOT
+             * A JSON text is a serialized value.  Note that certain previous
+             * specifications of JSON constrained a JSON text to be an object or an
+             * array.  Implementations that generate only objects or arrays where a
+             * JSON text is called for will be interoperable in the sense that all
+             * implementations will accept these as conforming JSON texts.
+             * https://tools.ietf.org/html/rfc8259
+             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the true value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'f': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the false
+             * value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'n': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the null value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice. We terminate with a
+             * space
+             * because we do not want to allow NULLs in the middle of a number
+             * (whereas a
+             * space in the middle of a number would be identified in stage 1). */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
+                              false)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        case '-': {
+            /* we need to make a copy to make sure that the string is NULL
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        default:
+            goto fail;
+    }
+    start_continue:
+    /* the string might not be NULL terminated. */
+    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
+        goto succeed;
+    } else if(depth == 1) {
+        goto succeedAndHasMore;
+    } else {
+        goto fail;
+    }
+    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+
+    object_begin:
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            goto object_key_state;
+        }
+        case '}':
+            goto scope_end; /* could also go to object_continue */
+        default:
+            goto fail;
+    }
+
+    object_key_state:
+    UPDATE_CHAR();
+    if (c != ':') {
+        goto fail;
+    }
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break;
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break;
+        }
+        case '{': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an object inside an object, so we need to increment the
+             * depth                                                             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an array inside an object, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    object_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            if (c != '"') {
+                goto fail;
+            } else {
+                if (!parse_string(buf, len, pj, depth, idx)) {
+                    goto fail;
+                }
+                goto object_key_state;
+            }
+        case '}':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+
+    scope_end:
+    /* write our tape location to the header scope */
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    /* goto saved_state */
+    GOTO_CONTINUE()
+
+    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+    array_begin:
+    UPDATE_CHAR();
+    if (c == ']') {
+        goto scope_end; /* could also go to array_continue */
+    }
+
+    main_array_switch:
+    /* we call update char on all paths in, so we can peek at c on the
+     * on paths that can accept a close square brace (post-, and at start) */
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break; /* goto array_continue; */
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '{': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an object inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an array inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    array_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            goto main_array_switch;
+        case ']':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// FINAL STATES ///////////////////////////*/
+    succeedAndHasMore:
+        depth--;
+        if (pj.containing_scope_offset[depth] != 0) {
+            fprintf(stderr, "internal bug\n");
+            abort();
+        }
+        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                                 pj.get_current_loc());
+        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+        next_json = i ;
+
+        pj.valid = true;
+        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
+        return pj.error_code;
+
+    succeed:
+    depth--;
+    if (depth != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+    pj.valid = true;
+    pj.error_code = simdjson::SUCCESS;
+    return pj.error_code;
+    fail:
+    /* we do not need the next line because this is done by pj.init(),
+     * pessimistically.
+     * pj.is_valid  = false;
+     * At this point in the code, we have all the time in the world.
+     * Note that we know exactly where we are in the document so we could,
+     * without any overhead on the processing code, report a specific
+     * location.
+     * We could even trigger special code paths to assess what happened
+     * carefully,
+     * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+        pj.error_code = simdjson::DEPTH_ERROR;
+        return pj.error_code;
+    }
+    switch (c) {
+        case '"':
+            pj.error_code = simdjson::STRING_ERROR;
+            return pj.error_code;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '-':
+            pj.error_code = simdjson::NUMBER_ERROR;
+            return pj.error_code;
+        case 't':
+            pj.error_code = simdjson::T_ATOM_ERROR;
+            return pj.error_code;
+        case 'n':
+            pj.error_code = simdjson::N_ATOM_ERROR;
+            return pj.error_code;
+        case 'f':
+            pj.error_code = simdjson::F_ATOM_ERROR;
+            return pj.error_code;
+        default:
+            break;
+    }
+    pj.error_code = simdjson::TAPE_ERROR;
+    return pj.error_code;
+}
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
@@ -40386,6 +41508,12 @@ template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return haswell::unified_machine(buf, len, pj);
+}
+
+template <>
+WARN_UNUSED int
+unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    return haswell::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson
@@ -40923,6 +42051,507 @@ fail:
   pj.error_code = simdjson::TAPE_ERROR;
   return pj.error_code;
 }
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED  int
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
+    size_t idx; /* location of the structural character in the input (buf)   */
+    uint8_t c;    /* used to track the (structural) character we are looking at,
+                   updated */
+    /* by UPDATE_CHAR macro */
+    size_t depth = 0; /* could have an arbitrary starting depth */
+    pj.init();          /* sets is_valid to false          */
+//    if (pj.byte_capacity < len) {
+//        pj.error_code = simdjson::CAPACITY;
+//        return pj.error_code;
+//    }
+
+    /*//////////////////////////// START STATE /////////////////////////////
+     */
+    SET_GOTO_START_CONTINUE()
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
+    /* the root is used, if nothing else, to capture the size of the tape */
+    depth++; /* everything starts at depth = 1, depth = 0 is just for the
+              root, the root may contain an object, an array or something
+              else. */
+    if (depth >= pj.depth_capacity) {
+        goto fail;
+    }
+
+    UPDATE_CHAR();
+    switch (c) {
+        case '{':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(
+                    0, c); /* strangely, moving this to object_begin slows things down */
+            goto object_begin;
+        case '[':
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            goto array_begin;
+            /* #define SIMDJSON_ALLOWANYTHINGINROOT
+             * A JSON text is a serialized value.  Note that certain previous
+             * specifications of JSON constrained a JSON text to be an object or an
+             * array.  Implementations that generate only objects or arrays where a
+             * JSON text is called for will be interoperable in the sense that all
+             * implementations will accept these as conforming JSON texts.
+             * https://tools.ietf.org/html/rfc8259
+             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the true value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'f': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the false
+             * value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case 'n': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this only applies to the JSON document made solely of the null value.
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            pj.write_tape(0, c);
+            break;
+        }
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            /* we need to make a copy to make sure that the string is space
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice. We terminate with a
+             * space
+             * because we do not want to allow NULLs in the middle of a number
+             * (whereas a
+             * space in the middle of a number would be identified in stage 1). */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
+                              false)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        case '-': {
+            /* we need to make a copy to make sure that the string is NULL
+             * terminated.
+             * this is done only for JSON documents made of a sole number
+             * this will almost never be called in practice */
+            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+            if (copy == nullptr) {
+                goto fail;
+            }
+            memcpy(copy, buf, len);
+            copy[len] = ' ';
+            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
+                free(copy);
+                goto fail;
+            }
+            free(copy);
+            break;
+        }
+        default:
+            goto fail;
+    }
+    start_continue:
+    /* the string might not be NULL terminated. */
+    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
+        goto succeed;
+    } else if(depth == 1) {
+        goto succeedAndHasMore;
+    } else {
+        goto fail;
+    }
+    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+
+    object_begin:
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            goto object_key_state;
+        }
+        case '}':
+            goto scope_end; /* could also go to object_continue */
+        default:
+            goto fail;
+    }
+
+    object_key_state:
+    UPDATE_CHAR();
+    if (c != ':') {
+        goto fail;
+    }
+    UPDATE_CHAR();
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break;
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break;
+        }
+        case '{': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an object inside an object, so we need to increment the
+             * depth                                                             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            /* we have not yet encountered } so we need to come back for it */
+            SET_GOTO_OBJECT_CONTINUE()
+            /* we found an array inside an object, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    object_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            if (c != '"') {
+                goto fail;
+            } else {
+                if (!parse_string(buf, len, pj, depth, idx)) {
+                    goto fail;
+                }
+                goto object_key_state;
+            }
+        case '}':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+
+    scope_end:
+    /* write our tape location to the header scope */
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    /* goto saved_state */
+    GOTO_CONTINUE()
+
+    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+    array_begin:
+    UPDATE_CHAR();
+    if (c == ']') {
+        goto scope_end; /* could also go to array_continue */
+    }
+
+    main_array_switch:
+    /* we call update char on all paths in, so we can peek at c on the
+     * on paths that can accept a close square brace (post-, and at start) */
+    switch (c) {
+        case '"': {
+            if (!parse_string(buf, len, pj, depth, idx)) {
+                goto fail;
+            }
+            break;
+        }
+        case 't':
+            if (!is_valid_true_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'f':
+            if (!is_valid_false_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break;
+        case 'n':
+            if (!is_valid_null_atom(buf + idx)) {
+                goto fail;
+            }
+            pj.write_tape(0, c);
+            break; /* goto array_continue; */
+
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+            if (!parse_number(buf, pj, idx, false)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '-': {
+            if (!parse_number(buf, pj, idx, true)) {
+                goto fail;
+            }
+            break; /* goto array_continue; */
+        }
+        case '{': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an object inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+
+            goto object_begin;
+        }
+        case '[': {
+            /* we have not yet encountered ] so we need to come back for it */
+            pj.containing_scope_offset[depth] = pj.get_current_loc();
+            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+            SET_GOTO_ARRAY_CONTINUE()
+            /* we found an array inside an array, so we need to increment the depth
+             */
+            depth++;
+            if (depth >= pj.depth_capacity) {
+                goto fail;
+            }
+            goto array_begin;
+        }
+        default:
+            goto fail;
+    }
+
+    array_continue:
+    UPDATE_CHAR();
+    switch (c) {
+        case ',':
+        UPDATE_CHAR();
+            goto main_array_switch;
+        case ']':
+            goto scope_end;
+        default:
+            goto fail;
+    }
+
+    /*//////////////////////////// FINAL STATES ///////////////////////////*/
+    succeedAndHasMore:
+        depth--;
+        if (pj.containing_scope_offset[depth] != 0) {
+            fprintf(stderr, "internal bug\n");
+            abort();
+        }
+        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                                 pj.get_current_loc());
+        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+        next_json = i ;
+
+        pj.valid = true;
+        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
+        return pj.error_code;
+
+    succeed:
+    depth--;
+    if (depth != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+        fprintf(stderr, "internal bug\n");
+        abort();
+    }
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                             pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+    pj.valid = true;
+    pj.error_code = simdjson::SUCCESS;
+    return pj.error_code;
+    fail:
+    /* we do not need the next line because this is done by pj.init(),
+     * pessimistically.
+     * pj.is_valid  = false;
+     * At this point in the code, we have all the time in the world.
+     * Note that we know exactly where we are in the document so we could,
+     * without any overhead on the processing code, report a specific
+     * location.
+     * We could even trigger special code paths to assess what happened
+     * carefully,
+     * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+        pj.error_code = simdjson::DEPTH_ERROR;
+        return pj.error_code;
+    }
+    switch (c) {
+        case '"':
+            pj.error_code = simdjson::STRING_ERROR;
+            return pj.error_code;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+        case '-':
+            pj.error_code = simdjson::NUMBER_ERROR;
+            return pj.error_code;
+        case 't':
+            pj.error_code = simdjson::T_ATOM_ERROR;
+            return pj.error_code;
+        case 'n':
+            pj.error_code = simdjson::N_ATOM_ERROR;
+            return pj.error_code;
+        case 'f':
+            pj.error_code = simdjson::F_ATOM_ERROR;
+            return pj.error_code;
+        default:
+            break;
+    }
+    pj.error_code = simdjson::TAPE_ERROR;
+    return pj.error_code;
+}
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
@@ -40935,6 +42564,13 @@ WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return westmere::unified_machine(buf, len, pj);
 }
+
+template <>
+WARN_UNUSED int
+unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    return westmere::unified_machine(buf, len, pj, next_json);
+}
+
 
 } // namespace simdjson
 UNTARGET_REGION

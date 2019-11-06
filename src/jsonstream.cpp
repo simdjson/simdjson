@@ -1,5 +1,5 @@
 #include "simdjson/jsonstream.h"
-#include <simdjson/isadetection.h>
+#include "simdjson/isadetection.h"
 #include <map>
 
 using namespace simdjson;
