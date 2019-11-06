@@ -20,6 +20,7 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/src/jsonstream.cpp
 $SCRIPTPATH/src/arm64/simd_input.h
 $SCRIPTPATH/src/haswell/simd_input.h
 $SCRIPTPATH/src/westmere/simd_input.h
@@ -57,6 +58,7 @@ $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
+$SCRIPTPATH/include/simdjson/jsonstream.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do
