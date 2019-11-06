@@ -65,6 +65,12 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
   return error == 0;
 }
 
+#ifdef JSON_TEST_STRINGS
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
+                  const uint8_t *parsed_end);
+void found_bad_string(const uint8_t *buf);
+#endif
+
 #include "arm64/stage2_build_tape.h"
 #include "haswell/stage2_build_tape.h"
 #include "westmere/stage2_build_tape.h"

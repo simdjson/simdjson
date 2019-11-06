@@ -1,6 +1,7 @@
 #include "simdjson/jsonioutil.h"
 #include <cstdlib>
 #include <cstring>
+#include <climits>
 
 namespace simdjson {
 char *allocate_padded_buffer(size_t length) {
@@ -9,14 +10,23 @@ char *allocate_padded_buffer(size_t length) {
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+  memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 }
 
 padded_string get_corpus(const std::string &filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
   if (fp != nullptr) {
-    std::fseek(fp, 0, SEEK_END);
-    size_t len = std::ftell(fp);
+    if(std::fseek(fp, 0, SEEK_END) < 0) {
+      std::fclose(fp);
+      throw std::runtime_error("cannot seek in the file");
+    }
+    long llen = std::ftell(fp);
+    if((llen < 0) || (llen == LONG_MAX)) {
+      std::fclose(fp);
+      throw std::runtime_error("cannot tell where we are in the file");
+    }
+    size_t len = (size_t) llen;
     padded_string s(len);
     if (s.data() == nullptr) {
       std::fclose(fp);

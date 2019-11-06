@@ -143,13 +143,29 @@ bool number_test_powers_of_ten() {
       }
     } else {
       double x = pjh.get_double();
-      if(x != std::pow(10, i)) {
+      double expected = std::pow(10, i);
+      int ulp = (int) f64_ulp_dist(x, expected);
+      if(ulp > 1) {
          printf("failed to parse %s. \n", buf);
+         printf("actual: %.20g expected: %.20g \n", x, expected);
+         printf("ULP: %d \n", ulp);
          return false;
       }
     }
   }
   printf("Powers of 10 can be parsed.\n");
+  return true;
+}
+
+
+// adversarial example that once triggred overruns, see https://github.com/lemire/simdjson/issues/345
+bool bad_example() {
+  std::string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6";
+  simdjson::ParsedJson pj = simdjson::build_parsed_json(badjson);
+  if(pj.is_valid()) {
+    printf("This json should not be valid %s.\n", badjson.c_str());
+    return false;
+  }
   return true;
 }
 
@@ -279,6 +295,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!bad_example())
+    return EXIT_FAILURE;
   if(!number_test_powers_of_two())
     return EXIT_FAILURE;
   if(!number_test_powers_of_ten())
