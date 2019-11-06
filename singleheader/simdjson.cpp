@@ -1,4 +1,4 @@
-/* auto-generated on Tue Nov  5 15:06:10 EST 2019. Do not edit! */
+/* auto-generated on Tue Nov  5 19:39:01 EST 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -312,6 +312,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
 #define SIMDJSON_NUMBERPARSING_H
 
 #include <cmath>
+#include <limits>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -321,7 +322,7 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
-// Allowable floating-point values range from
+// Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
 // so from -1.7976e308 all the way to 1.7975e308 in binary64. The lowest
 // non-zero normal values is std::numeric_limits<double>::min() or
@@ -490,7 +491,13 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int negative_exponent) {
+static double subnormal_power10(double base, int64_t negative_exponent) {
+    // avoid integer overflows in the pow expression, those values would
+    // become zero anyway.
+    if(negative_exponent < -1000) {
+        return 0;
+    }
+
   // this is probably not going to be fast
   return base * 1e-308 * pow(10, negative_exponent + 308);
 }
@@ -620,6 +627,13 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   }
   if (is_not_structural_or_whitespace(*p)) {
     return false;
+  }
+  // check that we can go from long double to double safely.
+  if(i > std::numeric_limits<double>::max()) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+        found_invalid_number(buf + offset);
+#endif
+        return false;
   }
   double d = negative ? -i : i;
   pj.write_tape_double(d);
@@ -36038,6 +36052,7 @@ char *allocate_padded_buffer(size_t length) {
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+  memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 }
 
@@ -36422,7 +36437,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
   return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
 }
 
-std::atomic<json_parse_functype *> json_parse_ptr = &json_parse_dispatch;
+std::atomic<json_parse_functype *> json_parse_ptr{&json_parse_dispatch};
 
 WARN_UNUSED
 ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
@@ -39536,7 +39551,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -39556,7 +39571,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -39575,7 +39590,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -39607,7 +39622,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
                       false)) {
       free(copy);
@@ -39626,7 +39641,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
@@ -40588,7 +40603,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -40608,7 +40623,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -40627,7 +40642,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -40659,7 +40674,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
                       false)) {
       free(copy);
@@ -40678,7 +40693,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
@@ -41643,7 +41658,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -41663,7 +41678,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -41682,7 +41697,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', sizeof(uint64_t));
     if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
       free(copy);
       goto fail;
@@ -41714,7 +41729,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
                       false)) {
       free(copy);
@@ -41733,7 +41748,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
       goto fail;
     }
     memcpy(copy, buf, len);
-    copy[len] = ' ';
+    memset(copy + len, ' ', SIMDJSON_PADDING);
     if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
       free(copy);
       goto fail;
@@ -42626,8 +42641,11 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
   structural_indexes = new (std::nothrow) uint32_t[max_structures];
   // a pathological input like "[[[[..." would generate len tape elements, so
-  // need a capacity of len + 1
-  size_t local_tape_capacity = ROUNDUP_N(len + 1, 64);
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t local_tape_capacity = ROUNDUP_N(len + 2, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
   size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
