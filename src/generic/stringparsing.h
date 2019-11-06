@@ -84,7 +84,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
        */
 
       /* find out where the quote is... */
-      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+      auto quote_dist = trailing_zeroes(helper.quote_bits);
 
       /* NULL termination is still handy if you expect all your strings to
        * be NULL terminated? */
@@ -92,7 +92,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       dst[quote_dist] = 0;
 
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
       /*****************************
        * Above, check for overflow in case someone has a crazy string
        * (>=4GB?)                 _
@@ -109,7 +109,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
-      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      auto bs_dist = trailing_zeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -136,8 +136,8 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += helper.bytes_processed();
-      dst += helper.bytes_processed();
+      src += parse_string_helper::BYTES_PROCESSED;
+      dst += parse_string_helper::BYTES_PROCESSED;
     }
   }
   /* can't be reached */

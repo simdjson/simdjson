@@ -1,41 +1,37 @@
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
+#include "simdjson/portability.h"
+
 #ifdef IS_X86_64
 
+#include "haswell/simd.h"
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
 
-#ifdef JSON_TEST_STRINGS
-void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                  const uint8_t *parsed_end);
-void found_bad_string(const uint8_t *buf);
-#endif
-
 TARGET_HASWELL
 namespace simdjson::haswell {
+
+using namespace simd;
 
 // Holds backslashes and quotes locations.
 struct parse_string_helper {
   uint32_t bs_bits;
   uint32_t quote_bits;
-  really_inline uint32_t bytes_processed() const { return sizeof(__m256i); }
+  static const uint32_t BYTES_PROCESSED = 32;
 };
 
 really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
-  // this can read up to 31 bytes beyond the buffer size, but we require
+  // this can read up to 15 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
-  __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
-  // store to dest unconditionally - we can overwrite the bits we don't like
-  // later
-  _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
-  auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v(src);
+  // store to dest unconditionally - we can overwrite the bits we don't like later
+  v.store(dst);
   return {
-      static_cast<uint32_t>(_mm256_movemask_epi8(
-          _mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')))),     // bs_bits
-      static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
+      (uint32_t)(v == '\\').to_bitmask(),     // bs_bits
+      (uint32_t)(v == '"').to_bitmask(), // quote_bits
   };
 }
 
