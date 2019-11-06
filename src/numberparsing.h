@@ -185,7 +185,13 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int negative_exponent) {
+static double subnormal_power10(double base, int64_t negative_exponent) {
+    // avoid integer overflows in the pow expression, those values would
+    // become zero anyway.
+    if(negative_exponent < -1000) {
+        return 0;
+    }
+
   // this is probably not going to be fast
   return base * 1e-308 * pow(10, negative_exponent + 308);
 }

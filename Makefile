@@ -64,7 +64,7 @@ COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompeti
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 # Load headers and sources
-LIBHEADERS=src/simdprune_tables.h src/numberparsing.h src/jsoncharutils.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+LIBHEADERS=src/simdprune_tables.h src/numberparsing.h src/jsoncharutils.h src/arm64/bitmask.h src/arm64/simd.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/bitmask.h src/haswell/simd.h src/generic/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/bitmask.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
 PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
@@ -123,12 +123,12 @@ run_issue150_sh: allparserscheckfile
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
-test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsoncheck_noavx run_pointercheck run_testjson2json_sh run_issue150_sh
+test: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsoncheck_noavx run_pointercheck run_testjson2json_sh run_issue150_sh
+quiettest: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 
-quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck  run_jsoncheck_noavx run_pointercheck
+quicktests: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_pointercheck run_jsoncheck_noavx
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
