@@ -5,37 +5,16 @@
 
 set -eu
 
-mkdir build-plain
-cd build-plain
+ossfuzz=$(readlink -f $(dirname $0))/ossfuzz.sh
 
-cmake .. \
--GNinja \
--DCMAKE_BUILD_TYPE=Debug \
--DSIMDJSON_BUILD_STATIC=On \
--DENABLE_FUZZING=On \
--DSIMDJSON_FUZZ_LINKMAIN=On
-
-ninja
-
-cd ..
-
+mkdir -p ossfuzz-out
+export OUT=$(pwd)/ossfuzz-out
 export CC=clang
 export CXX="clang++"
 export CFLAGS="-fsanitize=fuzzer-no-link"
 export CXXFLAGS="-fsanitize=fuzzer-no-link"
 export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
 
-mkdir build-ossfuzz
-cd build-ossfuzz
+$ossfuzz
 
-cmake .. \
--GNinja \
--DCMAKE_BUILD_TYPE=Debug \
--DSIMDJSON_BUILD_STATIC=On \
--DENABLE_FUZZING=On \
--DSIMDJSON_FUZZ_LINKMAIN=Off \
--DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
-
-ninja
-
-
+echo "look at the results in $OUT"
