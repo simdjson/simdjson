@@ -36,5 +36,5 @@ cp fuzz/fuzz_* $OUT
 
 # all corpora are equal, they all take json as input
 for f in $OUT/fuzz* ; do
-   cp ../corpus.zip $(basename $f).zip
+   cp ../corpus.zip $OUT/$(basename $f).zip
 done
