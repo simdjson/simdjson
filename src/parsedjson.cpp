@@ -46,8 +46,11 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
   structural_indexes = new (std::nothrow) uint32_t[max_structures];
   // a pathological input like "[[[[..." would generate len tape elements, so
-  // need a capacity of len + 1
-  size_t local_tape_capacity = ROUNDUP_N(len + 1, 64);
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t local_tape_capacity = ROUNDUP_N(len + 2, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
   size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);

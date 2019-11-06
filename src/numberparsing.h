@@ -6,6 +6,7 @@
 #include "simdjson/portability.h"
 #include "jsoncharutils.h"
 #include <cmath>
+#include <limits>
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -15,7 +16,7 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
-// Allowable floating-point values range from
+// Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
 // so from -1.7976e308 all the way to 1.7975e308 in binary64. The lowest
 // non-zero normal values is std::numeric_limits<double>::min() or
@@ -184,7 +185,13 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int negative_exponent) {
+static double subnormal_power10(double base, int64_t negative_exponent) {
+    // avoid integer overflows in the pow expression, those values would
+    // become zero anyway.
+    if(negative_exponent < -1000) {
+        return 0;
+    }
+
   // this is probably not going to be fast
   return base * 1e-308 * pow(10, negative_exponent + 308);
 }
@@ -314,6 +321,13 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
   }
   if (is_not_structural_or_whitespace(*p)) {
     return false;
+  }
+  // check that we can go from long double to double safely.
+  if(i > std::numeric_limits<double>::max()) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+        found_invalid_number(buf + offset);
+#endif
+        return false;
   }
   double d = negative ? -i : i;
   pj.write_tape_double(d);
