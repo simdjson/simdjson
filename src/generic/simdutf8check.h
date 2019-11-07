@@ -35,7 +35,7 @@ struct utf8_checker {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 2, 1, 0
     };
-    this->has_error |= simd8<int8_t>(this->previous.first_len) > simd8<int8_t>(last_len);
+    this->has_error |= simd8<int8_t>(this->previous.first_len) > simd8<int8_t>(last_len + 32 - sizeof(simd8<int8_t>));
   }
 
   // check whether the current bytes are valid UTF-8
