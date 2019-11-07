@@ -8,12 +8,16 @@
 #include "simdjson/parsedjson.h"
 
 #define NB_ITERATION 5
-#define MIN_BATCH_SIZE 150000
-#define MAX_BATCH_SIZE 5000000
+#define MIN_BATCH_SIZE 100000
+#define MAX_BATCH_SIZE 10000000
 
 bool test_baseline = false;
 bool test_per_batch = true;
 bool test_best_batch = true;
+
+bool compare(std::pair<size_t, double> i, std::pair<size_t, double> j){
+    return i.second > j.second;
+}
 
 int main (int argc, char *argv[]){
 
@@ -70,7 +74,7 @@ if(test_per_batch) {
     std::wclog << "Jsonstream: Speed per batch_size... from " << MIN_BATCH_SIZE
                << " bytes to " << MAX_BATCH_SIZE << " bytes..." << std::endl;
     std::cout << "Batch Size\t" << "Gigabytes/second\t" << "Nb of documents parsed" << std::endl;
-    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 100) {
+    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 200) {
         batch_size_res.insert(std::pair<size_t, double>(i, 0));
         int count;
         for (size_t j = 0; j < 5; j++) {
@@ -94,7 +98,7 @@ if(test_per_batch) {
                 batch_size_res[i] = speedinGBs;
 
             if (parse_res != simdjson::SUCCESS) {
-                std::cerr << "Parsing failed" << std::endl;
+                std::wcerr << "Parsing failed with: " << simdjson::error_message(parse_res).c_str() << std::endl;
                 exit(1);
             }
         }
@@ -105,7 +109,7 @@ if(test_per_batch) {
 if(test_best_batch) {
     size_t optimal_batch_size;
     if(test_per_batch)
-        optimal_batch_size = (*max_element(batch_size_res.begin(), batch_size_res.end())).first;
+        optimal_batch_size = (*min_element(batch_size_res.begin(), batch_size_res.end(), compare)).first;
     else
         optimal_batch_size = MIN_BATCH_SIZE;
     std::wclog << "Starting speed test... Best of " << NB_ITERATION << " iterations..." << std::endl;

@@ -179,7 +179,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     /* the string might not be NULL terminated. */
     if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
         goto succeed;
-    } else if(depth == 1) {
+    } else if(depth == 1 && i<=pj.n_structural_indexes) {
         goto succeedAndHasMore;
     } else {
         goto fail;
@@ -429,7 +429,8 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
                                  pj.get_current_loc());
         pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
 
-        next_json = i ;
+
+        next_json = i;
 
         pj.valid = true;
         pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
@@ -463,6 +464,12 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
      * We could even trigger special code paths to assess what happened
      * carefully,
      * all without any added cost. */
+//    if(i <= pj.n_structural_indexes) {
+//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
+//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
+//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
+//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
+//    }
     if (depth >= pj.depth_capacity) {
         pj.error_code = simdjson::DEPTH_ERROR;
         return pj.error_code;
