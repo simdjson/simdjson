@@ -3,6 +3,8 @@
 # entry point for oss-fuzz, so that fuzzers
 # and build invocation can be changed without having
 # to modify the oss-fuzz repo.
+#
+# invoke it from the git root.
 
 # make sure to exit on problems
 set -e

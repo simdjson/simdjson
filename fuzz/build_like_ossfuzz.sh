@@ -1,7 +1,9 @@
 #!/bin/sh
 #
-# this file is not meant to be merged, just used during developement to avoid
-# having to do the full clone/docker/init step for debugging the cmake conf
+# This script emulates how oss fuzz invokes the build
+# process, handy for trouble shooting cmake issues and possibly
+# recreating testcases. For proper debugging of the oss fuzz
+# build, follow the procedure at https://google.github.io/oss-fuzz/getting-started/new-project-guide/#testing-locally
 
 set -eu
 
