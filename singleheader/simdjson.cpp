@@ -1,4 +1,4 @@
-/* auto-generated on Thu 07 Nov 2019 04:38:19 PM EST. Do not edit! */
+/* auto-generated on Thu 07 Nov 2019 05:05:37 PM EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -36044,6 +36044,7 @@ const std::string &error_message(const int error_code) {
 /* begin file src/jsonioutil.cpp */
 #include <cstdlib>
 #include <cstring>
+#include <climits>
 
 namespace simdjson {
 char *allocate_padded_buffer(size_t length) {
@@ -36059,8 +36060,16 @@ char *allocate_padded_buffer(size_t length) {
 padded_string get_corpus(const std::string &filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
   if (fp != nullptr) {
-    std::fseek(fp, 0, SEEK_END);
-    size_t len = std::ftell(fp);
+    if(std::fseek(fp, 0, SEEK_END) < 0) {
+      std::fclose(fp);
+      throw std::runtime_error("cannot seek in the file");
+    }
+    long llen = std::ftell(fp);
+    if((llen < 0) || (llen == LONG_MAX)) {
+      std::fclose(fp);
+      throw std::runtime_error("cannot tell where we are in the file");
+    }
+    size_t len = (size_t) llen;
     padded_string s(len);
     if (s.data() == nullptr) {
       std::fclose(fp);
@@ -36602,956 +36611,954 @@ void find_the_best_supported_implementation() {
     std::cerr << "The processor is not supported by simdjson." << std::endl;
 }
 /* end file src/jsonstream.cpp */
-/* begin file src/arm64/simd_input.h */
-#ifndef SIMDJSON_ARM64_SIMD_INPUT_H
-#define SIMDJSON_ARM64_SIMD_INPUT_H
+/* begin file src/arm64/bitmask.h */
+#ifndef SIMDJSON_ARM64_BITMASK_H
+#define SIMDJSON_ARM64_BITMASK_H
 
 
 #ifdef IS_ARM64
 
+
 namespace simdjson::arm64 {
 
-really_inline uint16_t neon_movemask(uint8x16_t input) {
-  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
-  uint8x16_t minput = vandq_u8(input, bit_mask);
-  uint8x16_t tmp = vpaddq_u8(minput, minput);
-  tmp = vpaddq_u8(tmp, tmp);
-  tmp = vpaddq_u8(tmp, tmp);
-  return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
+//
+// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
+//
+// For example, prefix_xor(00100100) == 00011100
+//
+really_inline uint64_t prefix_xor(uint64_t bitmask) {
+
+#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
+  return vmull_p64(-1ULL, bitmask);
+#else
+  bitmask ^= bitmask << 1;
+  bitmask ^= bitmask << 2;
+  bitmask ^= bitmask << 4;
+  bitmask ^= bitmask << 8;
+  bitmask ^= bitmask << 16;
+  bitmask ^= bitmask << 32;
+  return bitmask;
+#endif
+
 }
-
-really_inline uint64_t neon_movemask_bulk(uint8x16_t p0, uint8x16_t p1,
-                                          uint8x16_t p2, uint8x16_t p3) {
-  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                              0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
-  uint8x16_t t0 = vandq_u8(p0, bit_mask);
-  uint8x16_t t1 = vandq_u8(p1, bit_mask);
-  uint8x16_t t2 = vandq_u8(p2, bit_mask);
-  uint8x16_t t3 = vandq_u8(p3, bit_mask);
-  uint8x16_t sum0 = vpaddq_u8(t0, t1);
-  uint8x16_t sum1 = vpaddq_u8(t2, t3);
-  sum0 = vpaddq_u8(sum0, sum1);
-  sum0 = vpaddq_u8(sum0, sum0);
-  return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
-}
-
-struct simd_input {
-  const uint8x16_t chunks[4];
-
-  really_inline simd_input()
-    : chunks{uint8x16_t(), uint8x16_t(), uint8x16_t(), uint8x16_t() } {}
-
-  really_inline simd_input(const uint8x16_t chunk0, const uint8x16_t chunk1, const uint8x16_t chunk2, const uint8x16_t chunk3)
-    : chunks{chunk0, chunk1, chunk2, chunk3 } {}
-
-  really_inline simd_input(const uint8_t *ptr)
-      : chunks{
-        vld1q_u8(ptr + 0*16),
-        vld1q_u8(ptr + 1*16),
-        vld1q_u8(ptr + 2*16),
-        vld1q_u8(ptr + 3*16)
-       } {}
-
-  template <typename F>
-  really_inline void each(F const& each_chunk) const {
-    each_chunk(this->chunks[0]);
-    each_chunk(this->chunks[1]);
-    each_chunk(this->chunks[2]);
-    each_chunk(this->chunks[3]);
-  }
-
-  template <typename F>
-  really_inline simd_input map(F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0]),
-      map_chunk(this->chunks[1]),
-      map_chunk(this->chunks[2]),
-      map_chunk(this->chunks[3])
-    );
-  }
-
-  template <typename F>
-  really_inline simd_input map(simd_input b, F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0], b.chunks[0]),
-      map_chunk(this->chunks[1], b.chunks[1]),
-      map_chunk(this->chunks[2], b.chunks[2]),
-      map_chunk(this->chunks[3], b.chunks[3])
-    );
-  }
-
-  template <typename F>
-  really_inline uint8x16_t reduce(F const& reduce_pair) const {
-    uint8x16_t r01 = reduce_pair(this->chunks[0], this->chunks[1]);
-    uint8x16_t r23 = reduce_pair(this->chunks[2], this->chunks[3]);
-    return reduce_pair(r01, r23);
-  }
-
-  really_inline uint64_t to_bitmask() const {
-    return neon_movemask_bulk(this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3]);
-  }
-
-  really_inline simd_input bit_or(const uint8_t m) const {
-    const uint8x16_t mask = vmovq_n_u8(m);
-    return this->map( [&](auto a) {
-      return vorrq_u8(a, mask);
-    });
-  }
-
-  really_inline uint64_t eq(const uint8_t m) const {
-    const uint8x16_t mask = vmovq_n_u8(m);
-    return this->map( [&](auto a) {
-      return vceqq_u8(a, mask);
-    }).to_bitmask();
-  }
-
-  really_inline uint64_t lteq(const uint8_t m) const {
-    const uint8x16_t mask = vmovq_n_u8(m);
-    return this->map( [&](auto a) {
-      return vcleq_u8(a, mask);
-    }).to_bitmask();
-  }
-
-}; // struct simd_input
 
 } // namespace simdjson::arm64
+UNTARGET_REGION
 
 #endif // IS_ARM64
-#endif // SIMDJSON_ARM64_SIMD_INPUT_H
-/* end file src/arm64/simd_input.h */
-/* begin file src/haswell/simd_input.h */
-#ifndef SIMDJSON_HASWELL_SIMD_INPUT_H
-#define SIMDJSON_HASWELL_SIMD_INPUT_H
+#endif
+/* end file src/arm64/bitmask.h */
+/* begin file src/haswell/bitmask.h */
+#ifndef SIMDJSON_HASWELL_BITMASK_H
+#define SIMDJSON_HASWELL_BITMASK_H
 
 
 #ifdef IS_X86_64
 
+
 TARGET_HASWELL
 namespace simdjson::haswell {
 
-struct simd_input {
-  const __m256i chunks[2];
-
-  really_inline simd_input() : chunks{__m256i(), __m256i()} {}
-
-  really_inline simd_input(const __m256i chunk0, const __m256i chunk1)
-      : chunks{chunk0, chunk1} {}
-
-  really_inline simd_input(const uint8_t *ptr)
-      : chunks{
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 0*32)),
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(ptr + 1*32))
-      } {}
-
-  template <typename F>
-  really_inline void each(F const& each_chunk) const
-  {
-    each_chunk(this->chunks[0]);
-    each_chunk(this->chunks[1]);
-  }
-
-  template <typename F>
-  really_inline simd_input map(F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0]),
-      map_chunk(this->chunks[1])
-    );
-  }
-
-  template <typename F>
-  really_inline simd_input map(const simd_input b, F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0], b.chunks[0]),
-      map_chunk(this->chunks[1], b.chunks[1])
-    );
-  }
-
-  template <typename F>
-  really_inline __m256i reduce(F const& reduce_pair) const {
-    return reduce_pair(this->chunks[0], this->chunks[1]);
-  }
-
-  really_inline uint64_t to_bitmask() const {
-    uint64_t r_lo = static_cast<uint32_t>(_mm256_movemask_epi8(this->chunks[0]));
-    uint64_t r_hi =                       _mm256_movemask_epi8(this->chunks[1]);
-    return r_lo | (r_hi << 32);
-  }
-
-  really_inline simd_input bit_or(const uint8_t m) const {
-    const __m256i mask = _mm256_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm256_or_si256(a, mask);
-    });
-  }
-
-  really_inline uint64_t eq(const uint8_t m) const {
-    const __m256i mask = _mm256_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm256_cmpeq_epi8(a, mask);
-    }).to_bitmask();
-  }
-
-  really_inline uint64_t lteq(const uint8_t m) const {
-    const __m256i maxval = _mm256_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm256_cmpeq_epi8(_mm256_max_epu8(maxval, a), maxval);
-    }).to_bitmask();
-  }
-
-}; // struct simd_input
+//
+// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
+//
+// For example, prefix_xor(00100100) == 00011100
+//
+really_inline uint64_t prefix_xor(const uint64_t bitmask) {
+  // There should be no such thing with a processing supporting avx2
+  // but not clmul.
+  __m128i all_ones = _mm_set1_epi8('\xFF');
+  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+  return _mm_cvtsi128_si64(result);
+}
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_HASWELL_SIMD_INPUT_H
-/* end file src/haswell/simd_input.h */
-/* begin file src/westmere/simd_input.h */
-#ifndef SIMDJSON_WESTMERE_SIMD_INPUT_H
-#define SIMDJSON_WESTMERE_SIMD_INPUT_H
+#endif
+/* end file src/haswell/bitmask.h */
+/* begin file src/westmere/bitmask.h */
+#ifndef SIMDJSON_WESTMERE_BITMASK_H
+#define SIMDJSON_WESTMERE_BITMASK_H
 
 
 #ifdef IS_X86_64
 
+
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
-struct simd_input {
-  const __m128i chunks[4];
-
-  really_inline simd_input()
-      : chunks { __m128i(), __m128i(), __m128i(), __m128i() } {}
-
-  really_inline simd_input(const __m128i chunk0, const __m128i chunk1, const __m128i chunk2, const __m128i chunk3)
-      : chunks{chunk0, chunk1, chunk2, chunk3} {}
-
-  really_inline simd_input(const uint8_t *ptr)
-      : simd_input(
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 0)),
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 16)),
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 32)),
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + 48))
-      ) {}
-
-  template <typename F>
-  really_inline void each(F const& each_chunk) const {
-    each_chunk(this->chunks[0]);
-    each_chunk(this->chunks[1]);
-    each_chunk(this->chunks[2]);
-    each_chunk(this->chunks[3]);
-  }
-
-  template <typename F>
-  really_inline simd_input map(F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0]),
-      map_chunk(this->chunks[1]),
-      map_chunk(this->chunks[2]),
-      map_chunk(this->chunks[3])
-    );
-  }
-
-  template <typename F>
-  really_inline simd_input map(const simd_input b, F const& map_chunk) const {
-    return simd_input(
-      map_chunk(this->chunks[0], b.chunks[0]),
-      map_chunk(this->chunks[1], b.chunks[1]),
-      map_chunk(this->chunks[2], b.chunks[2]),
-      map_chunk(this->chunks[3], b.chunks[3])
-    );
-  }
-
-  template <typename F>
-  really_inline __m128i reduce(F const& reduce_pair) const {
-    __m128i r01 = reduce_pair(this->chunks[0], this->chunks[1]);
-    __m128i r23 = reduce_pair(this->chunks[2], this->chunks[3]);
-    return reduce_pair(r01, r23);
-  }
-
-  really_inline uint64_t to_bitmask() const {
-    uint64_t r0 = static_cast<uint32_t>(_mm_movemask_epi8(this->chunks[0]));
-    uint64_t r1 =                       _mm_movemask_epi8(this->chunks[1]);
-    uint64_t r2 =                       _mm_movemask_epi8(this->chunks[2]);
-    uint64_t r3 =                       _mm_movemask_epi8(this->chunks[3]);
-    return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
-  }
-
-  really_inline simd_input bit_or(const uint8_t m) const {
-    const __m128i mask = _mm_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm_or_si128(a, mask);
-    });
-  }
-
-  really_inline uint64_t eq(const uint8_t m) const {
-    const __m128i mask = _mm_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm_cmpeq_epi8(a, mask);
-    }).to_bitmask();
-  }
-
-  really_inline uint64_t lteq(const uint8_t m) const {
-    const __m128i maxval = _mm_set1_epi8(m);
-    return this->map( [&](auto a) {
-      return _mm_cmpeq_epi8(_mm_max_epu8(maxval, a), maxval);
-    }).to_bitmask();
-  }
-
-}; // struct simd_input
+//
+// Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
+//
+// For example, prefix_xor(00100100) == 00011100
+//
+really_inline uint64_t prefix_xor(const uint64_t bitmask) {
+  // There should be no such thing with a processing supporting avx2
+  // but not clmul.
+  __m128i all_ones = _mm_set1_epi8('\xFF');
+  __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);
+  return _mm_cvtsi128_si64(result);
+}
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
-/* end file src/westmere/simd_input.h */
-/* begin file src/arm64/simdutf8check.h */
-// From https://github.com/cyb70289/utf8/blob/master/lemire-neon.c
-// Adapted from https://github.com/lemire/fastvalidate-utf-8
+#endif
+/* end file src/westmere/bitmask.h */
+/* begin file src/arm64/simd.h */
+#ifndef SIMDJSON_ARM64_SIMD_H
+#define SIMDJSON_ARM64_SIMD_H
 
-#ifndef SIMDJSON_ARM64_SIMDUTF8CHECK_H
-#define SIMDJSON_ARM64_SIMDUTF8CHECK_H
 
-// TODO this is different from IS_ARM64 in portability.h, which we use in other places ...
-#if defined(_ARM_NEON) || defined(__aarch64__) ||                              \
-    (defined(_MSC_VER) && defined(_M_ARM64))
+#ifdef IS_ARM64
 
-#include <arm_neon.h>
-#include <cinttypes>
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
 
-/*
- * legal utf-8 byte sequence
- * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
- *
- *  Code Points        1st       2s       3s       4s
- * U+0000..U+007F     00..7F
- * U+0080..U+07FF     C2..DF   80..BF
- * U+0800..U+0FFF     E0       A0..BF   80..BF
- * U+1000..U+CFFF     E1..EC   80..BF   80..BF
- * U+D000..U+D7FF     ED       80..9F   80..BF
- * U+E000..U+FFFF     EE..EF   80..BF   80..BF
- * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
- * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
- * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
- *
- */
-namespace simdjson::arm64 {
+namespace simdjson::arm64::simd {
 
-static const int8_t _nibbles[] = {
-    1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-    0, 0, 0, 0,             // 10xx (continuation)
-    2, 2,                   // 110x
-    3,                      // 1110
-    4,                      // 1111, next should be 0 (not checked here)
-};
+  template<typename T>
+  struct simd8;
 
-static const int8_t _initial_mins[] = {
-    -128,         -128, -128, -128, -128, -128,
-    -128,         -128, -128, -128, -128, -128, // 10xx => false
-    (int8_t)0xC2, -128,                         // 110x
-    (int8_t)0xE1,                               // 1110
-    (int8_t)0xF1,
-};
+  //
+  // Base class of simd8<uint8_t> and simd8<bool>, both of which use uint8x16_t internally.
+  //
+  template<typename T, typename Mask=simd8<bool>>
+  struct base_u8 {
+    uint8x16_t value;
+    static const int SIZE = sizeof(value);
 
-static const int8_t _second_mins[] = {
-    -128,         -128, -128, -128, -128, -128,
-    -128,         -128, -128, -128, -128, -128, // 10xx => false
-    127,          127,                          // 110x => true
-    (int8_t)0xA0,                               // 1110
-    (int8_t)0x90,
-};
+    // Conversion from/to SIMD register
+    really_inline base_u8(const uint8x16_t _value) : value(_value) {}
+    really_inline operator const uint8x16_t&() const { return this->value; }
+    really_inline operator uint8x16_t&() { return this->value; }
 
-struct processed_utf_bytes {
-  int8x16_t raw_bytes;
-  int8x16_t high_nibbles;
-  int8x16_t carried_continuations;
-};
+    // Bit operations
+    really_inline simd8<T> operator|(const simd8<T> other) const { return vorrq_u8(*this, other); }
+    really_inline simd8<T> operator&(const simd8<T> other) const { return vandq_u8(*this, other); }
+    really_inline simd8<T> operator^(const simd8<T> other) const { return veorq_u8(*this, other); }
+    really_inline simd8<T> bit_andnot(const simd8<T> other) const { return vbicq_u8(*this, other); }
+    really_inline simd8<T> operator~() const { return *this ^ 0xFFu; }
+    really_inline simd8<T>& operator|=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast | other; return *this_cast; }
+    really_inline simd8<T>& operator&=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast & other; return *this_cast; }
+    really_inline simd8<T>& operator^=(const simd8<T> other) { auto this_cast = (simd8<T>*)this; *this_cast = *this_cast ^ other; return *this_cast; }
 
-struct utf8_checker {
-  int8x16_t has_error{vdupq_n_s8(0)};
-  processed_utf_bytes previous{vdupq_n_s8(0), vdupq_n_s8(0), vdupq_n_s8(0)};
+    really_inline Mask operator==(const simd8<T> other) const { return vceqq_u8(*this, other); }
 
-  really_inline void add_errors(int8x16_t errors) {
-    this->has_error = vorrq_s8(this->has_error, errors);
-  }
-
-  // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(int8x16_t current_bytes) {
-    // unsigned, saturates to 0 below max
-    this->add_errors( vreinterpretq_s8_u8(vqsubq_u8(
-                        vreinterpretq_u8_s8(current_bytes), vdupq_n_u8(0xF4))) );
-  }
-
-  really_inline int8x16_t continuation_lengths(int8x16_t high_nibbles) {
-    return vqtbl1q_s8(vld1q_s8(_nibbles), vreinterpretq_u8_s8(high_nibbles));
-  }
-
-  really_inline int8x16_t carry_continuations(int8x16_t initial_lengths) {
-    int8x16_t right1 = vreinterpretq_s8_u8(vqsubq_u8(
-        vreinterpretq_u8_s8(vextq_s8(this->previous.carried_continuations, initial_lengths, 16 - 1)),
-        vdupq_n_u8(1)));
-    int8x16_t sum = vaddq_s8(initial_lengths, right1);
-
-    int8x16_t right2 = vreinterpretq_s8_u8(
-        vqsubq_u8(vreinterpretq_u8_s8(vextq_s8(this->previous.carried_continuations, sum, 16 - 2)),
-                  vdupq_n_u8(2)));
-    return vaddq_s8(sum, right2);
-  }
-
-  really_inline void check_continuations(int8x16_t initial_lengths, int8x16_t carries) {
-
-    // overlap || underlap
-    // carry > length && length > 0 || !(carry > length) && !(length > 0)
-    // (carries > length) == (lengths > 0)
-    uint8x16_t overunder = vceqq_u8(vcgtq_s8(carries, initial_lengths),
-                                    vcgtq_s8(initial_lengths, vdupq_n_s8(0)));
-
-    this->add_errors( vreinterpretq_s8_u8(overunder) );
-  }
-
-  // when 0xED is found, next byte must be no larger than 0x9F
-  // when 0xF4 is found, next byte must be no larger than 0x8F
-  // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(int8x16_t current_bytes, int8x16_t off1_current_bytes) {
-    uint8x16_t maskED = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xED));
-    uint8x16_t maskF4 = vceqq_s8(off1_current_bytes, vdupq_n_s8(0xF4));
-
-    uint8x16_t badfollowED = vandq_u8(vcgtq_s8(current_bytes, vdupq_n_s8(0x9F)), maskED);
-    uint8x16_t badfollowF4 = vandq_u8(vcgtq_s8(current_bytes, vdupq_n_s8(0x8F)), maskF4);
-
-    this->add_errors( vreinterpretq_s8_u8(vorrq_u8(badfollowED, badfollowF4)) );
-  }
-
-  // map off1_hibits => error condition
-  // hibits     off1    cur
-  // C       => < C2 && true
-  // E       => < E1 && < A0
-  // F       => < F1 && < 90
-  // else      false && false
-  really_inline void check_overlong(int8x16_t current_bytes,
-                                    int8x16_t off1_current_bytes,
-                                    int8x16_t high_nibbles) {
-    int8x16_t off1_high_nibbles = vextq_s8(this->previous.high_nibbles, high_nibbles, 16 - 1);
-    int8x16_t initial_mins =
-        vqtbl1q_s8(vld1q_s8(_initial_mins), vreinterpretq_u8_s8(off1_high_nibbles));
-
-    uint8x16_t initial_under = vcgtq_s8(initial_mins, off1_current_bytes);
-
-    int8x16_t second_mins = vqtbl1q_s8(vld1q_s8(_second_mins), vreinterpretq_u8_s8(off1_high_nibbles));
-    uint8x16_t second_under = vcgtq_s8(second_mins, current_bytes);
-    this->add_errors( vreinterpretq_s8_u8(vandq_u8(initial_under, second_under)) );
-  }
-
-  really_inline int8x16_t count_nibbles(int8x16_t bytes) {
-    return vreinterpretq_s8_u8(vshrq_n_u8(vreinterpretq_u8_s8(bytes), 4));
-  }
-
-  // check whether the current bytes are valid UTF-8
-  // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(int8x16_t current_bytes) {
-    struct processed_utf_bytes pb;
-    pb.raw_bytes = current_bytes;
-    pb.high_nibbles = this->count_nibbles(current_bytes);
-
-    this->check_smaller_than_0xF4(current_bytes);
-
-    int8x16_t initial_lengths = this->continuation_lengths(pb.high_nibbles);
-
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
-
-    this->check_continuations(initial_lengths, pb.carried_continuations);
-
-    int8x16_t off1_current_bytes = vextq_s8(this->previous.raw_bytes, pb.raw_bytes, 16 - 1);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
-
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
-  }
-
-  // Checks that all bytes are ascii
-  really_inline bool check_ascii_neon(simd_input in) {
-    // checking if the most significant bit is always equal to 0.
-    uint8x16_t high_bit = vdupq_n_u8(0x80);
-    uint8x16_t any_bits_on = in.reduce([&](auto a, auto b) {
-      return vorrq_u8(a, b);
-    });
-    uint8x16_t high_bit_on = vandq_u8(any_bits_on, high_bit);
-    uint64x2_t v64 = vreinterpretq_u64_u8(high_bit_on);
-    uint32x2_t v32 = vqmovn_u64(v64);
-    uint64x1_t result = vreinterpret_u64_u32(v32);
-    return vget_lane_u64(result, 0) == 0;
-  }
-
-  really_inline void check_next_input(simd_input in) {
-    if (check_ascii_neon(in)) {
-      // All bytes are ascii. Therefore the byte that was just before must be
-      // ascii too. We only check the byte that was just before simd_input. Nines
-      // are arbitrary values.
-      const int8x16_t verror =
-          (int8x16_t){9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1};
-      this->add_errors(vreinterpretq_s8_u8(
-                         vcgtq_s8(this->previous.carried_continuations, verror)));
-    } else {
-      // it is not ascii so we have to do heavy work
-      in.each([&](auto _in) {
-        this->check_utf8_bytes(vreinterpretq_s8_u8(_in));
-      });
+    template<int N=1>
+    really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
+      return vextq_u8(prev_chunk, *this, 16 - N);
     }
-  }
+  };
 
-  really_inline ErrorValues errors() {
-    uint64x2_t v64 = vreinterpretq_u64_s8(this->has_error);
-    uint32x2_t v32 = vqmovn_u64(v64);
-    uint64x1_t result = vreinterpret_u64_u32(v32);
-    return vget_lane_u64(result, 0) != 0 ? simdjson::UTF8_ERROR
-                                        : simdjson::SUCCESS;
-  }
+  // SIMD byte mask type (returned by things like eq and gt)
+  template<>
+  struct simd8<bool>: base_u8<bool> {
+    typedef uint32_t bitmask_t;
 
-}; // struct utf8_checker
+    static really_inline simd8<bool> splat(bool _value) { return vmovq_n_u8(-(!!_value)); }
 
-} // namespace simdjson::arm64
-#endif
-#endif
-/* end file src/arm64/simdutf8check.h */
-/* begin file src/haswell/simdutf8check.h */
-#ifndef SIMDJSON_HASWELL_SIMDUTF8CHECK_H
-#define SIMDJSON_HASWELL_SIMDUTF8CHECK_H
+    really_inline simd8(const uint8x16_t _value) : base_u8<bool>(_value) {}
+    // False constructor
+    really_inline simd8() : simd8(vdupq_n_u8(0)) {}
+    // Splat constructor
+    really_inline simd8(bool _value) : simd8(splat(_value)) {}
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+    really_inline simd8<bool>::bitmask_t to_bitmask() const {
+      const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+      auto minput = *this & bit_mask;
+      uint8x16_t tmp = vpaddq_u8(minput, minput);
+      tmp = vpaddq_u8(tmp, tmp);
+      tmp = vpaddq_u8(tmp, tmp);
+      return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
+    }
+    really_inline bool any() const { return vmaxvq_u8(*this) != 0; }
+  };
+
+  // Unsigned bytes
+  template<>
+  struct simd8<uint8_t>: base_u8<uint8_t> {
+    static really_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
+    static really_inline uint8x16_t zero() { return vdupq_n_u8(0); }
+    static really_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+
+    really_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
+    // Zero constructor
+    really_inline simd8() : simd8(zero()) {}
+    // Array constructor
+    really_inline simd8(const uint8_t values[16]) : simd8(load(values)) {}
+    // Splat constructor
+    really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
+      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
+    ) : simd8(uint8x16_t{
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    }) {}
+
+    // Store to array
+    really_inline void store(uint8_t dst[16]) { return vst1q_u8(dst, *this); }
+
+    // Saturated math
+    really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
+    really_inline simd8<uint8_t> saturating_sub(const simd8<uint8_t> other) const { return vqsubq_u8(*this, other); }
+
+    // Addition/subtraction are the same for signed and unsigned
+    really_inline simd8<uint8_t> operator+(const simd8<uint8_t> other) const { return vaddq_u8(*this, other); }
+    really_inline simd8<uint8_t> operator-(const simd8<uint8_t> other) const { return vsubq_u8(*this, other); }
+    really_inline simd8<uint8_t>& operator+=(const simd8<uint8_t> other) { *this = *this + other; return *this; }
+    really_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { *this = *this - other; return *this; }
+
+    // Order-specific operations
+    really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return vmaxq_u8(*this, other); }
+    really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return vminq_u8(*this, other); }
+    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return vcleq_u8(*this, other); }
+
+    // Bit-specific operations
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
+    really_inline bool any_bits_set_anywhere() const { return vmaxvq_u8(*this) != 0; }
+    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    template<int N>
+    really_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
+    template<int N>
+    really_inline simd8<uint8_t> shl() const { return vshlq_n_u8(*this, N); }
+
+    // Perform a lookup assuming no value is larger than 16
+    template<typename L>
+    really_inline simd8<L> lookup_16(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      simd8<L> lookup_table(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+      return lookup_table.apply_lookup_16_to(*this);
+    }
+
+    // Perform a lookup of the lower 4 bits
+    template<typename L>
+    really_inline simd8<L> lookup_lower_4_bits(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      return (*this & 0xF).lookup_16(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+    }
+
+    really_inline simd8<uint8_t> apply_lookup_16_to(const simd8<uint8_t> original) {
+      return vqtbl1q_u8(*this, original);
+    }
+  };
+
+  // Signed bytes
+  template<>
+  struct simd8<int8_t> {
+    int8x16_t value;
+
+    static really_inline simd8<int8_t> splat(int8_t _value) { return vmovq_n_s8(_value); }
+    static really_inline simd8<int8_t> zero() { return vdupq_n_s8(0); }
+    static really_inline simd8<int8_t> load(const int8_t values[16]) { return vld1q_s8(values); }
+
+    // Conversion from/to SIMD register
+    really_inline simd8(const int8x16_t _value) : value{_value} {}
+    really_inline operator const int8x16_t&() const { return this->value; }
+    really_inline operator int8x16_t&() { return this->value; }
+
+    // Zero constructor
+    really_inline simd8() : simd8(zero()) {}
+    // Splat constructor
+    really_inline simd8(int8_t _value) : simd8(splat(_value)) {}
+    // Array constructor
+    really_inline simd8(const int8_t* values) : simd8(load(values)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
+      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
+    ) : simd8(int8x16_t{
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+     }) {}
+
+    // Store to array
+    really_inline void store(int8_t dst[16]) { return vst1q_s8(dst, *this); }
+
+    // Explicit conversion to/from unsigned
+    really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
+    really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(*this); }
+
+    // Math
+    really_inline simd8<int8_t> operator+(const simd8<int8_t> other) const { return vaddq_s8(*this, other); }
+    really_inline simd8<int8_t> operator-(const simd8<int8_t> other) const { return vsubq_s8(*this, other); }
+    really_inline simd8<int8_t>& operator+=(const simd8<int8_t> other) { *this = *this + other; return *this; }
+    really_inline simd8<int8_t>& operator-=(const simd8<int8_t> other) { *this = *this - other; return *this; }
+
+    // Order-sensitive comparisons
+    really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return vmaxq_s8(*this, other); }
+    really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return vminq_s8(*this, other); }
+    really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return vcgtq_s8(*this, other); }
+    really_inline simd8<bool> operator==(const simd8<int8_t> other) const { return vceqq_s8(*this, other); }
+
+    template<int N=1>
+    really_inline simd8<int8_t> prev(const simd8<int8_t> prev_chunk) const {
+      return vextq_s8(prev_chunk, *this, 16 - N);
+    }
+
+    // Perform a lookup of the lower 4 bits
+    template<typename L>
+    really_inline simd8<L> lookup_16(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      return simd8<uint8_t>(*this).lookup_16(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+    }
+
+    really_inline simd8<int8_t> apply_lookup_16_to(const simd8<uint8_t> original) {
+      return vqtbl1q_s8(*this, original);
+    }
+  };
+
+  template<typename T>
+  struct simd8x64 {
+    const simd8<T> chunks[4];
+
+    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+
+    really_inline void store(T ptr[64]) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+16);
+      this->chunks[0].store(ptr+32);
+      this->chunks[0].store(ptr+48);
+    }
+
+    template <typename F>
+    really_inline void each(F const& each_chunk) const
+    {
+      each_chunk(this->chunks[0]);
+      each_chunk(this->chunks[1]);
+      each_chunk(this->chunks[2]);
+      each_chunk(this->chunks[3]);
+    }
+
+    template <typename R=bool, typename F>
+    really_inline simd8x64<R> map(F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0]),
+        map_chunk(this->chunks[1]),
+        map_chunk(this->chunks[2]),
+        map_chunk(this->chunks[3])
+      );
+    }
+
+    template <typename R=bool, typename F>
+    really_inline simd8x64<R> map(const simd8x64<T> b, F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0], b.chunks[0]),
+        map_chunk(this->chunks[1], b.chunks[1]),
+        map_chunk(this->chunks[2], b.chunks[2]),
+        map_chunk(this->chunks[3], b.chunks[3])
+      );
+    }
+
+    template <typename F>
+    really_inline simd8<T> reduce(F const& reduce_pair) const {
+      return reduce_pair(
+        reduce_pair(this->chunks[0], this->chunks[1]),
+        reduce_pair(this->chunks[2], this->chunks[3])
+      );
+    }
+
+    really_inline uint64_t to_bitmask() const {
+      const uint8x16_t bit_mask = {
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      };
+      // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
+      uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
+      uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
+      sum0 = vpaddq_u8(sum0, sum1);
+      sum0 = vpaddq_u8(sum0, sum0);
+      return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+    }
+
+    really_inline simd8x64<T> bit_or(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a | mask; } );
+    }
+
+    really_inline uint64_t eq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+    }
+
+    really_inline uint64_t lteq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+    }
+
+  }; // struct simd8x64<T>
+
+} // namespace simdjson::arm64::simd
+
+#endif // IS_ARM64
+#endif // SIMDJSON_ARM64_SIMD_H
+/* end file src/arm64/simd.h */
+/* begin file src/haswell/simd.h */
+#ifndef SIMDJSON_HASWELL_SIMD_H
+#define SIMDJSON_HASWELL_SIMD_H
+
 
 #ifdef IS_X86_64
-/*
- * legal utf-8 byte sequence
- * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
- *
- *  Code Points        1st       2s       3s       4s
- * U+0000..U+007F     00..7F
- * U+0080..U+07FF     C2..DF   80..BF
- * U+0800..U+0FFF     E0       A0..BF   80..BF
- * U+1000..U+CFFF     E1..EC   80..BF   80..BF
- * U+D000..U+D7FF     ED       80..9F   80..BF
- * U+E000..U+FFFF     EE..EF   80..BF   80..BF
- * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
- * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
- * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
- *
- */
 
-// all byte values must be no larger than 0xF4
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson::haswell::simd {
 
-static inline __m256i push_last_byte_of_a_to_b(__m256i a, __m256i b) {
-  return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 15);
-}
+  // Forward-declared so they can be used by splat and friends.
+  template<typename Child>
+  struct base {
+    __m256i value;
 
-static inline __m256i push_last_2bytes_of_a_to_b(__m256i a, __m256i b) {
-  return _mm256_alignr_epi8(b, _mm256_permute2x128_si256(a, b, 0x21), 14);
-}
+    // Zero constructor
+    really_inline base() : value{__m256i()} {}
 
-struct processed_utf_bytes {
-  __m256i raw_bytes;
-  __m256i high_nibbles;
-  __m256i carried_continuations;
-};
+    // Conversion from SIMD register
+    really_inline base(const __m256i _value) : value(_value) {}
 
-struct utf8_checker {
-  __m256i has_error;
-  processed_utf_bytes previous;
+    // Conversion to SIMD register
+    really_inline operator const __m256i&() const { return this->value; }
+    really_inline operator __m256i&() { return this->value; }
 
-  utf8_checker() :
-      has_error{_mm256_setzero_si256()},
-      previous{_mm256_setzero_si256(), _mm256_setzero_si256(), _mm256_setzero_si256()} {}
+    // Bit operations
+    really_inline Child operator|(const Child other) const { return _mm256_or_si256(*this, other); }
+    really_inline Child operator&(const Child other) const { return _mm256_and_si256(*this, other); }
+    really_inline Child operator^(const Child other) const { return _mm256_xor_si256(*this, other); }
+    really_inline Child bit_andnot(const Child other) const { return _mm256_andnot_si256(*this, other); }
+    really_inline Child operator~() const { return *this ^ 0xFFu; }
+    really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
+    really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
+    really_inline Child& operator^=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast ^ other; return *this_cast; }
+  };
 
-  really_inline void add_errors(__m256i errors) {
-    this->has_error = _mm256_or_si256(this->has_error, errors);
-  }
+  // Forward-declared so they can be used by splat and friends.
+  template<typename T>
+  struct simd8;
 
-  // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(__m256i current_bytes) {
-    // unsigned, saturates to 0 below max
-    this->add_errors( _mm256_subs_epu8(current_bytes, _mm256_set1_epi8(0xF4u)) );
-  }
+  template<typename T, typename Mask=simd8<bool>>
+  struct base8: base<simd8<T>> {
+    really_inline base8() : base<simd8<T>>() {}
+    really_inline base8(const __m256i _value) : base<simd8<T>>(_value) {}
 
-  really_inline __m256i continuation_lengths(__m256i high_nibbles) {
-    return _mm256_shuffle_epi8(
-        _mm256_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                         0, 0, 0, 0,             // 10xx (continuation)
-                         2, 2,                   // 110x
-                         3,                      // 1110
-                         4, // 1111, next should be 0 (not checked here)
-                         1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                         0, 0, 0, 0,             // 10xx (continuation)
-                         2, 2,                   // 110x
-                         3,                      // 1110
-                         4), // 1111, next should be 0 (not checked here)
-                         
-        high_nibbles);
-  }
+    really_inline Mask operator==(const simd8<T> other) const { return _mm256_cmpeq_epi8(*this, other); }
 
-  really_inline __m256i carry_continuations(__m256i initial_lengths) {
-    __m256i right1 = _mm256_subs_epu8(
-        push_last_byte_of_a_to_b(this->previous.carried_continuations, initial_lengths),
-        _mm256_set1_epi8(1));
-    __m256i sum = _mm256_add_epi8(initial_lengths, right1);
+    static const int SIZE = sizeof(base<T>::value);
 
-    __m256i right2 = _mm256_subs_epu8(
-        push_last_2bytes_of_a_to_b(this->previous.carried_continuations, sum), _mm256_set1_epi8(2));
-    return _mm256_add_epi8(sum, right2);
-  }
-
-  really_inline void check_continuations(__m256i initial_lengths, __m256i carries) {
-    // overlap || underlap
-    // carry > length && length > 0 || !(carry > length) && !(length > 0)
-    // (carries > length) == (lengths > 0)
-    // (carries > current) == (current > 0)
-    __m256i overunder = _mm256_cmpeq_epi8(
-        _mm256_cmpgt_epi8(carries, initial_lengths),
-        _mm256_cmpgt_epi8(initial_lengths, _mm256_setzero_si256()));
-
-    this->add_errors( overunder );
-  }
-
-  really_inline void check_carried_continuations() {
-    this->add_errors(
-      _mm256_cmpgt_epi8(this->previous.carried_continuations,
-      _mm256_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                       9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                       9, 9, 9, 9, 9, 9, 9, 1))
-    );
-  }
-
-  // when 0xED is found, next byte must be no larger than 0x9F
-  // when 0xF4 is found, next byte must be no larger than 0x8F
-  // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(__m256i current_bytes,
-                                                      __m256i off1_current_bytes) {
-    __m256i maskED =
-        _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xEDu));
-    __m256i maskF4 =
-        _mm256_cmpeq_epi8(off1_current_bytes, _mm256_set1_epi8(0xF4u));
-
-    __m256i badfollowED = _mm256_and_si256(
-        _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x9Fu)), maskED);
-    __m256i badfollowF4 = _mm256_and_si256(
-        _mm256_cmpgt_epi8(current_bytes, _mm256_set1_epi8(0x8Fu)), maskF4);
-
-    this->add_errors( _mm256_or_si256(badfollowED, badfollowF4) );
-  }
-
-  // map off1_hibits => error condition
-  // hibits     off1    cur
-  // C       => < C2 && true
-  // E       => < E1 && < A0
-  // F       => < F1 && < 90
-  // else      false && false
-  really_inline void check_overlong(__m256i current_bytes,
-                                        __m256i off1_current_bytes,
-                                        __m256i high_nibbles) {
-    __m256i off1_high_nibbles = push_last_byte_of_a_to_b(this->previous.high_nibbles, high_nibbles);
-    __m256i initial_mins = _mm256_shuffle_epi8(
-        _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                         -128, -128, -128, // 10xx => false
-                         0xC2u, -128,      // 110x
-                         0xE1u,            // 1110
-                         0xF1u,            // 1111
-                         -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                         -128, -128, -128, // 10xx => false
-                         0xC2u, -128,      // 110x
-                         0xE1u,            // 1110
-                         0xF1u),           // 1111
-        off1_high_nibbles);
-
-    __m256i initial_under = _mm256_cmpgt_epi8(initial_mins, off1_current_bytes);
-
-    __m256i second_mins = _mm256_shuffle_epi8(
-        _mm256_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128,
-                         -128, -128, -128, // 10xx => false
-                         127, 127,         // 110x => true
-                         0xA0u,            // 1110
-                         0x90u,            // 1111
-                         -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                         -128, -128, -128, // 10xx => false
-                         127, 127,         // 110x => true
-                         0xA0u,            // 1110
-                         0x90u),           // 1111
-        off1_high_nibbles);
-    __m256i second_under = _mm256_cmpgt_epi8(second_mins, current_bytes);
-    this->add_errors( _mm256_and_si256(initial_under, second_under) );
-  }
-
-  really_inline void count_nibbles(__m256i bytes, struct processed_utf_bytes *answer) {
-    answer->raw_bytes = bytes;
-    answer->high_nibbles = _mm256_and_si256(_mm256_srli_epi16(bytes, 4), _mm256_set1_epi8(0x0F));
-  }
-
-  // check whether the current bytes are valid UTF-8
-  // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(__m256i current_bytes) {
-    struct processed_utf_bytes pb {};
-    this->count_nibbles(current_bytes, &pb);
-
-    this->check_smaller_than_0xF4(current_bytes);
-
-    __m256i initial_lengths = this->continuation_lengths(pb.high_nibbles);
-
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
-
-    this->check_continuations(initial_lengths, pb.carried_continuations);
-
-    __m256i off1_current_bytes =
-        push_last_byte_of_a_to_b(this->previous.raw_bytes, pb.raw_bytes);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
-
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
-  }
-
-  really_inline void check_next_input(__m256i in) {
-    __m256i high_bit = _mm256_set1_epi8(0x80u);
-    if (likely(_mm256_testz_si256(in, high_bit) == 1)) {
-      this->check_carried_continuations();
-    } else {
-      this->check_utf8_bytes(in);
+    template<int N=1>
+    really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
+      return _mm256_alignr_epi8(*this, _mm256_permute2x128_si256(prev_chunk, *this, 0x21), 16 - N);
     }
-  }
+  };
 
-  really_inline void check_next_input(simd_input in) {
-    __m256i high_bit = _mm256_set1_epi8(0x80u);
-    __m256i any_bits_on = in.reduce([&](auto a, auto b) {
-      return _mm256_or_si256(a, b);
-    });
-    if (likely(_mm256_testz_si256(any_bits_on, high_bit) == 1)) {
-      // it is ascii, we just check carried continuations.
-      this->check_carried_continuations();
-    } else {
-      // it is not ascii so we have to do heavy work
-      in.each([&](auto _in) { check_utf8_bytes(_in); });
+  // SIMD byte mask type (returned by things like eq and gt)
+  template<>
+  struct simd8<bool>: base8<bool> {
+    typedef int bitmask_t;
+    static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(-(!!_value)); }
+
+    really_inline simd8<bool>() : base8() {}
+    really_inline simd8<bool>(const __m256i _value) : base8<bool>(_value) {}
+    // Splat constructor
+    really_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
+
+    really_inline bitmask_t to_bitmask() const { return _mm256_movemask_epi8(*this); }
+    really_inline bool any() const { return !_mm256_testz_si256(*this, *this); }
+  };
+
+  template<typename T>
+  struct base8_numeric: base8<T> {
+    static really_inline simd8<T> splat(T _value) { return _mm256_set1_epi8(_value); }
+    static really_inline simd8<T> zero() { return _mm256_setzero_si256(); }
+    static really_inline simd8<T> load(const T values[32]) {
+      return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values));
     }
-  }
 
-  really_inline ErrorValues errors() {
-    return _mm256_testz_si256(this->has_error, this->has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
-  }
-}; // struct utf8_checker
+    really_inline base8_numeric() : base8<T>() {}
+    really_inline base8_numeric(const __m256i _value) : base8<T>(_value) {}
 
-}; // namespace simdjson::haswell
-UNTARGET_REGION // haswell
+    // Store to array
+    really_inline void store(T dst[32]) { return _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), *this); }
+
+    // Addition/subtraction are the same for signed and unsigned
+    really_inline simd8<T> operator+(const simd8<T> other) const { return _mm256_add_epi8(*this, other); }
+    really_inline simd8<T> operator-(const simd8<T> other) const { return _mm256_sub_epi8(*this, other); }
+    really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *this; }
+    really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *this; }
+
+    // Perform a lookup of the lower 4 bits
+    template<typename L>
+    really_inline simd8<L> lookup_lower_4_bits(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      simd8<L> lookup_table(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15,
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+      return _mm256_shuffle_epi8(lookup_table, *this);
+    }
+
+    // Perform a lookup assuming the value is between 0 and 16
+    template<typename L>
+    really_inline simd8<L> lookup_16(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      return lookup_lower_4_bits(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+    }
+  };
+
+  // Signed bytes
+  template<>
+  struct simd8<int8_t> : base8_numeric<int8_t> {
+    really_inline simd8() : base8_numeric<int8_t>() {}
+    really_inline simd8(const __m256i _value) : base8_numeric<int8_t>(_value) {}
+    // Splat constructor
+    really_inline simd8(int8_t _value) : simd8(splat(_value)) {}
+    // Array constructor
+    really_inline simd8(const int8_t values[32]) : simd8(load(values)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
+      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15,
+      int8_t v16, int8_t v17, int8_t v18, int8_t v19, int8_t v20, int8_t v21, int8_t v22, int8_t v23,
+      int8_t v24, int8_t v25, int8_t v26, int8_t v27, int8_t v28, int8_t v29, int8_t v30, int8_t v31
+    ) : simd8(_mm256_setr_epi8(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15,
+      v16,v17,v18,v19,v20,v21,v22,v23,
+      v24,v25,v26,v27,v28,v29,v30,v31
+    )) {}
+
+    // Order-sensitive comparisons
+    really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return _mm256_max_epi8(*this, other); }
+    really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return _mm256_min_epi8(*this, other); }
+    really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm256_cmpgt_epi8(*this, other); }
+  };
+
+  // Unsigned bytes
+  template<>
+  struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    really_inline simd8() : base8_numeric<uint8_t>() {}
+    really_inline simd8(const __m256i _value) : base8_numeric<uint8_t>(_value) {}
+    // Splat constructor
+    really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // Array constructor
+    really_inline simd8(const uint8_t values[32]) : simd8(load(values)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
+      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15,
+      uint8_t v16, uint8_t v17, uint8_t v18, uint8_t v19, uint8_t v20, uint8_t v21, uint8_t v22, uint8_t v23,
+      uint8_t v24, uint8_t v25, uint8_t v26, uint8_t v27, uint8_t v28, uint8_t v29, uint8_t v30, uint8_t v31
+    ) : simd8(_mm256_setr_epi8(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15,
+      v16,v17,v18,v19,v20,v21,v22,v23,
+      v24,v25,v26,v27,v28,v29,v30,v31
+    )) {}
+
+    // Saturated math
+    really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return _mm256_adds_epu8(*this, other); }
+    really_inline simd8<uint8_t> saturating_sub(const simd8<uint8_t> other) const { return _mm256_subs_epu8(*this, other); }
+
+    // Order-specific operations
+    really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm256_max_epu8(*this, other); }
+    really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm256_min_epu8(*this, other); }
+    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
+
+    // Bit-specific operations
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
+    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
+    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm256_testz_si256(*this, bits); }
+    really_inline bool any_bits_set_anywhere() const { return !_mm256_testz_si256(*this, *this); }
+    template<int N>
+    really_inline simd8<uint8_t> shr() const { return simd8<uint8_t>(_mm256_srli_epi16(*this, N)) & uint8_t(0xFFu >> N); }
+    template<int N>
+    really_inline simd8<uint8_t> shl() const { return simd8<uint8_t>(_mm256_slli_epi16(*this, N)) & uint8_t(0xFFu << N); }
+  };
+
+  template<typename T>
+  struct simd8x64 {
+    const simd8<T> chunks[2];
+
+    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>()} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
+
+    really_inline void store(T *ptr) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+sizeof(simd8<T>));
+    }
+
+    template <typename F>
+    really_inline void each(F const& each_chunk) const
+    {
+      each_chunk(this->chunks[0]);
+      each_chunk(this->chunks[1]);
+    }
+
+    template <typename R=bool, typename F>
+    really_inline simd8x64<R> map(F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0]),
+        map_chunk(this->chunks[1])
+      );
+    }
+
+    template <typename R=bool, typename F>
+    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0], b.chunks[0]),
+        map_chunk(this->chunks[1], b.chunks[1])
+      );
+    }
+
+    template <typename F>
+    really_inline simd8<T> reduce(F const& reduce_pair) const {
+      return reduce_pair(this->chunks[0], this->chunks[1]);
+    }
+
+    really_inline uint64_t to_bitmask() const {
+      uint64_t r_lo = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r_hi =                       this->chunks[1].to_bitmask();
+      return r_lo | (r_hi << 32);
+    }
+
+    really_inline simd8x64<T> bit_or(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a | mask; } );
+    }
+
+    really_inline uint64_t eq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+    }
+
+    really_inline uint64_t lteq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+    }
+
+  }; // struct simd8x64<T>
+
+} // namespace simdjson::haswell::simd
+UNTARGET_REGION
 
 #endif // IS_X86_64
+#endif // SIMDJSON_HASWELL_SIMD_H
+/* end file src/haswell/simd.h */
+/* begin file src/westmere/simd.h */
+#ifndef SIMDJSON_WESTMERE_SIMD_H
+#define SIMDJSON_WESTMERE_SIMD_H
 
-#endif // SIMDJSON_HASWELL_SIMDUTF8CHECK_H
-/* end file src/haswell/simdutf8check.h */
-/* begin file src/westmere/simdutf8check.h */
-#ifndef SIMDJSON_WESTMERE_SIMDUTF8CHECK_H
-#define SIMDJSON_WESTMERE_SIMDUTF8CHECK_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
 #ifdef IS_X86_64
 
-/*
- * legal utf-8 byte sequence
- * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
- *
- *  Code Points        1st       2s       3s       4s
- * U+0000..U+007F     00..7F
- * U+0080..U+07FF     C2..DF   80..BF
- * U+0800..U+0FFF     E0       A0..BF   80..BF
- * U+1000..U+CFFF     E1..EC   80..BF   80..BF
- * U+D000..U+D7FF     ED       80..9F   80..BF
- * U+E000..U+FFFF     EE..EF   80..BF   80..BF
- * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
- * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
- * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
- *
- */
 
-// all byte values must be no larger than 0xF4
-
-/********** sse code **********/
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson::westmere::simd {
 
-struct processed_utf_bytes {
-  __m128i raw_bytes;
-  __m128i high_nibbles;
-  __m128i carried_continuations;
-};
+  template<typename Child>
+  struct base {
+    __m128i value;
 
-struct utf8_checker {
-  __m128i has_error{_mm_setzero_si128()};
-  processed_utf_bytes previous{_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()};
+    // Zero constructor
+    really_inline base() : value{__m128i()} {}
 
-  really_inline void add_errors(__m128i errors) {
-    this->has_error = _mm_or_si128(errors, this->has_error);
-  }
+    // Conversion from SIMD register
+    really_inline base(const __m128i _value) : value(_value) {}
 
-  // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(__m128i current_bytes) {
-    // unsigned, saturates to 0 below max
-    this->add_errors( _mm_subs_epu8(current_bytes, _mm_set1_epi8(0xF4u)) );
-  }
+    // Conversion to SIMD register
+    really_inline operator const __m128i&() const { return this->value; }
+    really_inline operator __m128i&() { return this->value; }
 
-  really_inline __m128i continuation_lengths(__m128i high_nibbles) {
-    return _mm_shuffle_epi8(
-        _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-                      0, 0, 0, 0,             // 10xx (continuation)
-                      2, 2,                   // 110x
-                      3,                      // 1110
-                      4), // 1111, next should be 0 (not checked here)
-        high_nibbles);
-  }
+    // Bit operations
+    really_inline Child operator|(const Child other) const { return _mm_or_si128(*this, other); }
+    really_inline Child operator&(const Child other) const { return _mm_and_si128(*this, other); }
+    really_inline Child operator^(const Child other) const { return _mm_xor_si128(*this, other); }
+    really_inline Child bit_andnot(const Child other) const { return _mm_andnot_si128(*this, other); }
+    really_inline Child operator~() const { return *this ^ 0xFFu; }
+    really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
+    really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
+    really_inline Child& operator^=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast ^ other; return *this_cast; }
+  };
 
-  really_inline __m128i carry_continuations(__m128i initial_lengths) {
+  // Forward-declared so they can be used by splat and friends.
+  template<typename T>
+  struct simd8;
 
-    __m128i right1 =
-        _mm_subs_epu8(_mm_alignr_epi8(initial_lengths, this->previous.carried_continuations, 16 - 1),
-                      _mm_set1_epi8(1));
-    __m128i sum = _mm_add_epi8(initial_lengths, right1);
+  template<typename T, typename Mask=simd8<bool>>
+  struct base8: base<simd8<T>> {
+    typedef int bitmask_t;
 
-    __m128i right2 = _mm_subs_epu8(_mm_alignr_epi8(sum, this->previous.carried_continuations, 16 - 2),
-                                  _mm_set1_epi8(2));
-    return _mm_add_epi8(sum, right2);
-  }
+    really_inline base8() : base<simd8<T>>() {}
+    really_inline base8(const __m128i _value) : base<simd8<T>>(_value) {}
 
-  really_inline void check_continuations(__m128i initial_lengths, __m128i carries) {
+    really_inline Mask operator==(const simd8<T> other) const { return _mm_cmpeq_epi8(*this, other); }
 
-    // overlap || underlap
-    // carry > length && length > 0 || !(carry > length) && !(length > 0)
-    // (carries > length) == (lengths > 0)
-    __m128i overunder =
-        _mm_cmpeq_epi8(_mm_cmpgt_epi8(carries, initial_lengths),
-                      _mm_cmpgt_epi8(initial_lengths, _mm_setzero_si128()));
+    static const int SIZE = sizeof(base<simd8<T>>::value);
 
-    this->add_errors( overunder );
-  }
-
-  // when 0xED is found, next byte must be no larger than 0x9F
-  // when 0xF4 is found, next byte must be no larger than 0x8F
-  // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(__m128i current_bytes, __m128i off1_current_bytes) {
-    __m128i maskED = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xEDu));
-    __m128i maskF4 = _mm_cmpeq_epi8(off1_current_bytes, _mm_set1_epi8(0xF4u));
-
-    __m128i badfollowED = _mm_and_si128(
-        _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x9Fu)), maskED);
-    __m128i badfollowF4 = _mm_and_si128(
-        _mm_cmpgt_epi8(current_bytes, _mm_set1_epi8(0x8Fu)), maskF4);
-
-    this->add_errors( _mm_or_si128(badfollowED, badfollowF4) );
-  }
-
-  // map off1_hibits => error condition
-  // hibits     off1    cur
-  // C       => < C2 && true
-  // E       => < E1 && < A0
-  // F       => < F1 && < 90
-  // else      false && false
-  really_inline void check_overlong(__m128i current_bytes,
-                                    __m128i off1_current_bytes, __m128i high_nibbles) {
-    __m128i off1_hibits = _mm_alignr_epi8(high_nibbles, this->previous.high_nibbles, 16 - 1);
-    __m128i initial_mins = _mm_shuffle_epi8(
-        _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                      -128, -128,  // 10xx => false
-                      0xC2u, -128, // 110x
-                      0xE1u,       // 1110
-                      0xF1u),
-        off1_hibits);
-
-    __m128i initial_under = _mm_cmpgt_epi8(initial_mins, off1_current_bytes);
-
-    __m128i second_mins = _mm_shuffle_epi8(
-        _mm_setr_epi8(-128, -128, -128, -128, -128, -128, -128, -128, -128, -128,
-                      -128, -128, // 10xx => false
-                      127, 127,   // 110x => true
-                      0xA0u,      // 1110
-                      0x90u),
-        off1_hibits);
-    __m128i second_under = _mm_cmpgt_epi8(second_mins, current_bytes);
-    this->add_errors( _mm_and_si128(initial_under, second_under) );
-  }
-
-  really_inline void count_nibbles(__m128i bytes, struct processed_utf_bytes *answer) {
-    answer->raw_bytes = bytes;
-    answer->high_nibbles = _mm_and_si128(_mm_srli_epi16(bytes, 4), _mm_set1_epi8(0x0F));
-  }
-
-  // check whether the current bytes are valid UTF-8
-  // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(__m128i current_bytes) {
-    struct processed_utf_bytes pb;
-    this->count_nibbles(current_bytes, &pb);
-
-    this->check_smaller_than_0xF4(current_bytes);
-
-    __m128i initial_lengths = this->continuation_lengths(pb.high_nibbles);
-
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
-
-    this->check_continuations(initial_lengths, pb.carried_continuations);
-
-    __m128i off1_current_bytes =
-        _mm_alignr_epi8(pb.raw_bytes, this->previous.raw_bytes, 16 - 1);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
-
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
-  }
-
-  really_inline void check_carried_continuations() {
-      this->has_error = _mm_cmpgt_epi8(this->previous.carried_continuations,
-                                       _mm_setr_epi8(9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                                     9, 9, 9, 9, 9, 1));
-  }
-
-  really_inline void check_next_input(__m128i in) {
-    __m128i high_bit = _mm_set1_epi8(0x80u);
-    if (_mm_testz_si128( in, high_bit) == 1) {
-      // it is ascii, we just check continuations
-      this->check_carried_continuations();
-    } else {
-      // it is not ascii so we have to do heavy work
-      this->check_utf8_bytes(in);
+    template<int N=1>
+    really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
+      return _mm_alignr_epi8(*this, prev_chunk, 16 - N);
     }
-  }
+  };
 
-  really_inline void check_next_input(simd_input in) {
-    __m128i high_bit = _mm_set1_epi8(0x80u);
-    __m128i any_bits_on = in.reduce([&](auto a, auto b) {
-      return _mm_or_si128(a, b);
-    });
-    if (_mm_testz_si128(any_bits_on, high_bit) == 1) {
-      // it is ascii, we just check continuations
-      this->check_carried_continuations();
-    } else {
-      // it is not ascii so we have to do heavy work
-      in.each([&](auto _in) { this->check_utf8_bytes(_in); });
+  // SIMD byte mask type (returned by things like eq and gt)
+  template<>
+  struct simd8<bool>: base8<bool> {
+    static really_inline simd8<bool> splat(bool _value) { return _mm_set1_epi8(-(!!_value)); }
+
+    really_inline simd8<bool>() : base8() {}
+    really_inline simd8<bool>(const __m128i _value) : base8<bool>(_value) {}
+    // Splat constructor
+    really_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
+
+    really_inline bitmask_t to_bitmask() const { return _mm_movemask_epi8(*this); }
+    really_inline bool any() const { return !_mm_testz_si128(*this, *this); }
+  };
+
+  template<typename T>
+  struct base8_numeric: base8<T> {
+    static really_inline simd8<T> splat(T _value) { return _mm_set1_epi8(_value); }
+    static really_inline simd8<T> zero() { return _mm_setzero_si128(); }
+    static really_inline simd8<T> load(const T values[16]) {
+      return _mm_loadu_si128(reinterpret_cast<const __m128i *>(values));
     }
-  }
 
-  really_inline ErrorValues errors() {
-    return _mm_testz_si128(this->has_error, this->has_error) == 0 ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
-  }
+    really_inline base8_numeric() : base8<T>() {}
+    really_inline base8_numeric(const __m128i _value) : base8<T>(_value) {}
 
-}; // struct utf8_checker
+    // Store to array
+    really_inline void store(T dst[16]) { return _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), *this); }
 
-} // namespace simdjson::westmere
-UNTARGET_REGION // westmere
+    // Addition/subtraction are the same for signed and unsigned
+    really_inline simd8<T> operator+(const simd8<T> other) const { return _mm_add_epi8(*this, other); }
+    really_inline simd8<T> operator-(const simd8<T> other) const { return _mm_sub_epi8(*this, other); }
+    really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *this; }
+    really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *this; }
+
+    // Perform a lookup of the lower 4 bits
+    template<typename L>
+    really_inline simd8<L> lookup_lower_4_bits(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+
+      simd8<L> lookup_table(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+      return _mm_shuffle_epi8(lookup_table, *this);
+    }
+
+    // Perform a lookup assuming the value is between 0 and 16
+    template<typename L>
+    really_inline simd8<L> lookup_16(
+        L replace0,  L replace1,  L replace2,  L replace3,
+        L replace4,  L replace5,  L replace6,  L replace7,
+        L replace8,  L replace9,  L replace10, L replace11,
+        L replace12, L replace13, L replace14, L replace15) const {
+      return lookup_lower_4_bits(
+        replace0,  replace1,  replace2,  replace3,
+        replace4,  replace5,  replace6,  replace7,
+        replace8,  replace9,  replace10, replace11,
+        replace12, replace13, replace14, replace15
+      );
+    }
+  };
+
+  // Signed bytes
+  template<>
+  struct simd8<int8_t> : base8_numeric<int8_t> {
+    really_inline simd8() : base8_numeric<int8_t>() {}
+    really_inline simd8(const __m128i _value) : base8_numeric<int8_t>(_value) {}
+    // Splat constructor
+    really_inline simd8(int8_t _value) : simd8(splat(_value)) {}
+    // Array constructor
+    really_inline simd8(const int8_t* values) : simd8(load(values)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
+      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
+    ) : simd8(_mm_setr_epi8(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    )) {}
+
+    // Order-sensitive comparisons
+    really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return _mm_max_epi8(*this, other); }
+    really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return _mm_min_epi8(*this, other); }
+    really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm_cmpgt_epi8(*this, other); }
+  };
+
+  // Unsigned bytes
+  template<>
+  struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    really_inline simd8() : base8_numeric<uint8_t>() {}
+    really_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
+    // Splat constructor
+    really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // Array constructor
+    really_inline simd8(const uint8_t* values) : simd8(load(values)) {}
+    // Member-by-member initialization
+    really_inline simd8(
+      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
+      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
+    ) : simd8(_mm_setr_epi8(
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    )) {}
+
+    // Saturated math
+    really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return _mm_adds_epu8(*this, other); }
+    really_inline simd8<uint8_t> saturating_sub(const simd8<uint8_t> other) const { return _mm_subs_epu8(*this, other); }
+
+    // Order-specific operations
+    really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm_max_epu8(*this, other); }
+    really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm_min_epu8(*this, other); }
+    really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
+
+    // Bit-specific operations
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
+    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
+    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm_testz_si128(*this, bits); }
+    really_inline bool any_bits_set_anywhere() const { return !_mm_testz_si128(*this, *this); }
+    template<int N>
+    really_inline simd8<uint8_t> shr() const { return simd8<uint8_t>(_mm_srli_epi16(*this, N)) & uint8_t(0xFFu >> N); }
+    template<int N>
+    really_inline simd8<uint8_t> shl() const { return simd8<uint8_t>(_mm_slli_epi16(*this, N)) & uint8_t(0xFFu << N); }
+  };
+
+  template<typename T>
+  struct simd8x64 {
+    const simd8<T> chunks[4];
+
+    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
+    really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+    really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+
+    really_inline void store(T ptr[64]) {
+      this->chunks[0].store(ptr);
+      this->chunks[0].store(ptr+16);
+      this->chunks[0].store(ptr+32);
+      this->chunks[0].store(ptr+48);
+    }
+
+    template <typename F>
+    really_inline void each(F const& each_chunk) const
+    {
+      each_chunk(this->chunks[0]);
+      each_chunk(this->chunks[1]);
+      each_chunk(this->chunks[2]);
+      each_chunk(this->chunks[3]);
+    }
+
+    template <typename F, typename R=bool>
+    really_inline simd8x64<R> map(F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0]),
+        map_chunk(this->chunks[1]),
+        map_chunk(this->chunks[2]),
+        map_chunk(this->chunks[3])
+      );
+    }
+
+    template <typename F, typename R=bool>
+    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
+      return simd8x64<R>(
+        map_chunk(this->chunks[0], b.chunks[0]),
+        map_chunk(this->chunks[1], b.chunks[1]),
+        map_chunk(this->chunks[2], b.chunks[2]),
+        map_chunk(this->chunks[3], b.chunks[3])
+      );
+    }
+
+    template <typename F>
+    really_inline simd8<T> reduce(F const& reduce_pair) const {
+      return reduce_pair(
+        reduce_pair(this->chunks[0], this->chunks[1]),
+        reduce_pair(this->chunks[2], this->chunks[3])
+      );
+    }
+
+    really_inline uint64_t to_bitmask() const {
+      uint64_t r0 = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r1 =                       this->chunks[1].to_bitmask();
+      uint64_t r2 =                       this->chunks[2].to_bitmask();
+      uint64_t r3 =                       this->chunks[3].to_bitmask();
+      return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
+    }
+
+    really_inline simd8x64<T> bit_or(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a | mask; } );
+    }
+
+    really_inline uint64_t eq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+    }
+
+    really_inline uint64_t lteq(const T m) const {
+      const simd8<T> mask = simd8<T>::splat(m);
+      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+    }
+
+  }; // struct simd8x64<T>
+
+} // namespace simdjson::westmere::simd
+UNTARGET_REGION
 
 #endif // IS_X86_64
-
-#endif
-/* end file src/westmere/simdutf8check.h */
+#endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
+/* end file src/westmere/simd.h */
 /* begin file src/arm64/stage1_find_marks.h */
 #ifndef SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 #define SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
@@ -37562,43 +37569,200 @@ UNTARGET_REGION // westmere
 
 namespace simdjson::arm64 {
 
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-
-#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
-  return vmull_p64(-1ULL, quote_bits);
-#else
-  return portable_compute_quote_mask(quote_bits);
-#endif
-}
+using namespace simd;
 
 really_inline void find_whitespace_and_operators(
-    const simd_input in,
-    uint64_t &whitespace, uint64_t &op) {
-  const uint8x16_t low_nibble_mask =
-      (uint8x16_t){16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0};
-  const uint8x16_t high_nibble_mask =
-      (uint8x16_t){8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0};
-  const uint8x16_t low_nib_and_mask = vmovq_n_u8(0xf);
+  const simd::simd8x64<uint8_t> in,
+  uint64_t &whitespace, uint64_t &op) {
 
-  auto v = in.map([&](auto chunk) {
-    uint8x16_t nib_lo = vandq_u8(chunk, low_nib_and_mask);
-    uint8x16_t nib_hi = vshrq_n_u8(chunk, 4);
-    uint8x16_t shuf_lo = vqtbl1q_u8(low_nibble_mask, nib_lo);
-    uint8x16_t shuf_hi = vqtbl1q_u8(high_nibble_mask, nib_hi);
-    return vandq_u8(shuf_lo, shuf_hi);
+  auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
+    auto nib_lo = chunk & 0xf;
+    auto nib_hi = chunk.shr<4>();
+    auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+    auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+    return shuf_lo & shuf_hi;
   });
 
-  const uint8x16_t operator_shufti_mask = vmovq_n_u8(0x7);
-  op = v.map([&](auto _v) {
-    return vtstq_u8(_v, operator_shufti_mask);
-  }).to_bitmask();
-
-  const uint8x16_t whitespace_shufti_mask = vmovq_n_u8(0x18);
-  whitespace = v.map([&](auto _v) {
-    return vtstq_u8(_v, whitespace_shufti_mask);
-  }).to_bitmask();
+  op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
+  whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
 }
 
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+
+// all byte values must be no larger than 0xF4
+
+using namespace simd;
+
+struct processed_utf_bytes {
+  simd8<uint8_t> raw_bytes;
+  simd8<int8_t> high_nibbles;
+  simd8<int8_t> carried_continuations;
+};
+
+struct utf8_checker {
+  simd8<uint8_t> has_error;
+  processed_utf_bytes previous;
+
+  // all byte values must be no larger than 0xF4
+  really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
+    // unsigned, saturates to 0 below max
+    this->has_error |= current_bytes.saturating_sub(0xF4u);
+  }
+
+  really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
+    return high_nibbles.lookup_16<int8_t>(
+      1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+      0, 0, 0, 0,             // 10xx (continuation)
+      2, 2,                   // 110x
+      3,                      // 1110
+      4);                     // 1111, next should be 0 (not checked here)
+  }
+
+  really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
+    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
+    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
+    simd8<int8_t> sum = initial_lengths + right1;
+
+    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
+    simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
+    return sum + right2;
+  }
+
+  really_inline void check_continuations(simd8<int8_t> initial_lengths, simd8<int8_t> carries) {
+    // overlap || underlap
+    // carry > length && length > 0 || !(carry > length) && !(length > 0)
+    // (carries > length) == (lengths > 0)
+    // (carries > current) == (current > 0)
+    this->has_error |= simd8<uint8_t>(
+      (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
+  }
+
+  really_inline void check_carried_continuations() {
+    static const int8_t last_1[32] = {
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 1
+    };
+    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
+  }
+
+  // when 0xED is found, next byte must be no larger than 0x9F
+  // when 0xF4 is found, next byte must be no larger than 0x8F
+  // next byte must be continuation, ie sign bit is set, so signed < is ok
+  really_inline void check_first_continuation_max(simd8<uint8_t> current_bytes,
+                                                  simd8<uint8_t> off1_current_bytes) {
+    simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
+    simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
+    // Check if ED is followed by A0 or greater
+    simd8<bool> ED_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x9Fu)) & prev_ED;
+    // Check if F4 is followed by 90 or greater
+    simd8<bool> F4_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x8Fu)) & prev_F4;
+    // These will also error if ED or F4 is followed by ASCII, but that's an error anyway
+    this->has_error |= simd8<uint8_t>(ED_too_large | F4_too_large);
+  }
+
+  // map off1_hibits => error condition
+  // hibits     off1    cur
+  // C       => < C2 && true
+  // E       => < E1 && < A0
+  // F       => < F1 && < 90
+  // else      false && false
+  really_inline void check_overlong(simd8<uint8_t> current_bytes,
+                                    simd8<uint8_t> off1_current_bytes,
+                                    simd8<int8_t> high_nibbles) {
+    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
+
+    // Two-byte characters must start with at least C2
+    // Three-byte characters must start with at least E1
+    // Four-byte characters must start with at least F1
+    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
+      -128, -128, -128, -128,                         // 10xx -> false
+      0xC2, -128,                                     // 1100 -> C2
+      0xE1,                                           // 1110
+      0xF1                                            // 1111
+    );
+    simd8<bool> initial_under = initial_mins > simd8<int8_t>(off1_current_bytes);
+
+    // Two-byte characters starting with at least C2 are always OK
+    // Three-byte characters starting with at least E1 must be followed by at least A0
+    // Four-byte characters starting with at least F1 must be followed by at least 90
+    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
+      -128, -128, -128,                                     // 10xx => false
+      127, 127,                                             // 110x => true
+      0xA0,                                                 // 1110
+      0x90                                                  // 1111
+    );
+    simd8<bool> second_under = second_mins > simd8<int8_t>(current_bytes);
+    this->has_error |= simd8<uint8_t>(initial_under & second_under);
+  }
+
+  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
+    answer->raw_bytes = bytes;
+    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
+  }
+
+  // check whether the current bytes are valid UTF-8
+  // at the end of the function, previous gets updated
+  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
+    struct processed_utf_bytes pb {};
+    this->count_nibbles(current_bytes, &pb);
+
+    this->check_smaller_than_0xF4(current_bytes);
+
+    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
+
+    pb.carried_continuations = this->carry_continuations(initial_lengths);
+
+    this->check_continuations(initial_lengths, pb.carried_continuations);
+
+    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
+    this->check_first_continuation_max(current_bytes, off1_current_bytes);
+
+    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
+    this->previous = pb;
+  }
+
+  really_inline void check_next_input(simd8<uint8_t> in) {
+    if (likely(!in.any_bits_set_anywhere(0x80u))) {
+      this->check_carried_continuations();
+    } else {
+      this->check_utf8_bytes(in);
+    }
+  }
+
+  really_inline void check_next_input(simd8x64<uint8_t> in) {
+    simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
+    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
+      // it is ascii, we just check carried continuations.
+      this->check_carried_continuations();
+    } else {
+      // it is not ascii so we have to do heavy work
+      in.each([&](auto _in) { this->check_utf8_bytes(_in); });
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  }
+}; // struct utf8_checker
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -37672,7 +37836,6 @@ public:
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
   bit_indexer structural_indexes;
-
 
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
 
@@ -37760,12 +37923,12 @@ public:
   //
   // Backslash sequences outside of quotes will be detected in stage 2.
   //
-  really_inline uint64_t find_strings(const simd_input in) {
+  really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in) {
     const uint64_t backslash = in.eq('\\');
     const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
     const uint64_t quote = in.eq('"') & ~escaped;
-    // compute_quote_mask returns start quote plus string contents.
-    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    // prefix_xor flips on bits inside the string (and flips off the end quote).
+    const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
     /* right shift of a signed value expected to be well-defined and standard
     * compliant as of C++20,
     * John Regher from Utah U. says this is fine code */
@@ -37799,7 +37962,7 @@ public:
   // contents of a string the same as content outside. Errors and structurals inside the string or on
   // the trailing quote will need to be removed later when the correct string information is known.
   //
-  really_inline uint64_t find_potential_structurals(const simd_input in) {
+  really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in) {
     // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
     uint64_t whitespace, op;
     find_whitespace_and_operators(in, whitespace, op);
@@ -37837,8 +38000,8 @@ public:
     //
     // Load up all 128 bytes into SIMD registers
     //
-    simd_input in_1(buf);
-    simd_input in_2(buf+64);
+    simd::simd8x64<uint8_t> in_1(buf);
+    simd::simd8x64<uint8_t> in_2(buf+64);
 
     //
     // Find the strings and potential structurals (operators / primitives).
@@ -37954,78 +38117,197 @@ int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, si
 TARGET_HASWELL
 namespace simdjson::haswell {
 
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-  // There should be no such thing with a processing supporting avx2
-  // but not clmul.
-  uint64_t quote_mask = _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
-  return quote_mask;
-}
+using namespace simd;
 
 really_inline void find_whitespace_and_operators(
-  const simd_input in,
+  const simd::simd8x64<uint8_t> in,
   uint64_t &whitespace, uint64_t &op) {
 
-  #ifdef SIMDJSON_NAIVE_STRUCTURAL
+  whitespace = in.map([&](simd8<uint8_t> _in) {
+    return _in == _in.lookup_lower_4_bits<uint8_t>(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
+  }).to_bitmask();
 
-    // You should never need this naive approach, but it can be useful
-    // for research purposes
-    const __m256i mask_open_brace = _mm256_set1_epi8(0x7b);
-    const __m256i mask_close_brace = _mm256_set1_epi8(0x7d);
-    const __m256i mask_open_bracket = _mm256_set1_epi8(0x5b);
-    const __m256i mask_close_bracket = _mm256_set1_epi8(0x5d);
-    const __m256i mask_column = _mm256_set1_epi8(0x3a);
-    const __m256i mask_comma = _mm256_set1_epi8(0x2c);
-    op = in.map([&](auto in) {
-      __m256i op = _mm256_cmpeq_epi8(in, mask_open_brace);
-      op = _mm256_or_si256(op, _mm256_cmpeq_epi8(in, mask_close_brace));
-      op = _mm256_or_si256(op, _mm256_cmpeq_epi8(in, mask_open_bracket));
-      op = _mm256_or_si256(op, _mm256_cmpeq_epi8(in, mask_close_bracket));
-      op = _mm256_or_si256(op, _mm256_cmpeq_epi8(in, mask_column));
-      op = _mm256_or_si256(op, _mm256_cmpeq_epi8(in, mask_comma));
-      return op;
-    }).to_bitmask();
-
-    const __m256i mask_space = _mm256_set1_epi8(0x20);
-    const __m256i mask_linefeed = _mm256_set1_epi8(0x0a);
-    const __m256i mask_tab = _mm256_set1_epi8(0x09);
-    const __m256i mask_carriage = _mm256_set1_epi8(0x0d);
-    whitespace = in.map([&](auto in) {
-      __m256i space = _mm256_cmpeq_epi8(in, mask_space);
-      space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_linefeed));
-      space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_tab));
-      space = _mm256_or_si256(space, _mm256_cmpeq_epi8(in, mask_carriage));
-      return space;
-    }).to_bitmask();
-    // end of naive approach
-
-  #else  // SIMDJSON_NAIVE_STRUCTURAL
-
-    // clang-format off
-    const __m256i operator_table =
-        _mm256_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123,
-                         44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
-    const __m256i white_table = _mm256_setr_epi8(
-        32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100,
-        32, 100, 100, 100, 17, 100, 113, 2, 100, 9, 10, 112, 100, 13, 100, 100);
-    // clang-format on
-    const __m256i op_offset = _mm256_set1_epi8(0xd4u);
-    const __m256i op_mask = _mm256_set1_epi8(32);
-
-    whitespace = in.map([&](auto _in) {
-      return _mm256_cmpeq_epi8(_in, _mm256_shuffle_epi8(white_table, _in));
-    }).to_bitmask();
-
-    op = in.map([&](auto _in) {
-      const __m256i r1 = _mm256_add_epi8(op_offset, _in);
-      const __m256i r2 = _mm256_or_si256(_in, op_mask);
-      const __m256i r3 = _mm256_shuffle_epi8(operator_table, r1);
-      return _mm256_cmpeq_epi8(r2, r3);
-    }).to_bitmask();
-
-  #endif // else SIMDJSON_NAIVE_STRUCTURAL
+  op = in.map([&](simd8<uint8_t> _in) {
+    return (_in | 32) == (_in+0xd4u).lookup_lower_4_bits<uint8_t>(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
+  }).to_bitmask();
 }
 
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+
+// all byte values must be no larger than 0xF4
+
+using namespace simd;
+
+struct processed_utf_bytes {
+  simd8<uint8_t> raw_bytes;
+  simd8<int8_t> high_nibbles;
+  simd8<int8_t> carried_continuations;
+};
+
+struct utf8_checker {
+  simd8<uint8_t> has_error;
+  processed_utf_bytes previous;
+
+  // all byte values must be no larger than 0xF4
+  really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
+    // unsigned, saturates to 0 below max
+    this->has_error |= current_bytes.saturating_sub(0xF4u);
+  }
+
+  really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
+    return high_nibbles.lookup_16<int8_t>(
+      1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+      0, 0, 0, 0,             // 10xx (continuation)
+      2, 2,                   // 110x
+      3,                      // 1110
+      4);                     // 1111, next should be 0 (not checked here)
+  }
+
+  really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
+    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
+    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
+    simd8<int8_t> sum = initial_lengths + right1;
+
+    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
+    simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
+    return sum + right2;
+  }
+
+  really_inline void check_continuations(simd8<int8_t> initial_lengths, simd8<int8_t> carries) {
+    // overlap || underlap
+    // carry > length && length > 0 || !(carry > length) && !(length > 0)
+    // (carries > length) == (lengths > 0)
+    // (carries > current) == (current > 0)
+    this->has_error |= simd8<uint8_t>(
+      (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
+  }
+
+  really_inline void check_carried_continuations() {
+    static const int8_t last_1[32] = {
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 1
+    };
+    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
+  }
+
+  // when 0xED is found, next byte must be no larger than 0x9F
+  // when 0xF4 is found, next byte must be no larger than 0x8F
+  // next byte must be continuation, ie sign bit is set, so signed < is ok
+  really_inline void check_first_continuation_max(simd8<uint8_t> current_bytes,
+                                                  simd8<uint8_t> off1_current_bytes) {
+    simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
+    simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
+    // Check if ED is followed by A0 or greater
+    simd8<bool> ED_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x9Fu)) & prev_ED;
+    // Check if F4 is followed by 90 or greater
+    simd8<bool> F4_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x8Fu)) & prev_F4;
+    // These will also error if ED or F4 is followed by ASCII, but that's an error anyway
+    this->has_error |= simd8<uint8_t>(ED_too_large | F4_too_large);
+  }
+
+  // map off1_hibits => error condition
+  // hibits     off1    cur
+  // C       => < C2 && true
+  // E       => < E1 && < A0
+  // F       => < F1 && < 90
+  // else      false && false
+  really_inline void check_overlong(simd8<uint8_t> current_bytes,
+                                    simd8<uint8_t> off1_current_bytes,
+                                    simd8<int8_t> high_nibbles) {
+    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
+
+    // Two-byte characters must start with at least C2
+    // Three-byte characters must start with at least E1
+    // Four-byte characters must start with at least F1
+    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
+      -128, -128, -128, -128,                         // 10xx -> false
+      0xC2, -128,                                     // 1100 -> C2
+      0xE1,                                           // 1110
+      0xF1                                            // 1111
+    );
+    simd8<bool> initial_under = initial_mins > simd8<int8_t>(off1_current_bytes);
+
+    // Two-byte characters starting with at least C2 are always OK
+    // Three-byte characters starting with at least E1 must be followed by at least A0
+    // Four-byte characters starting with at least F1 must be followed by at least 90
+    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
+      -128, -128, -128,                                     // 10xx => false
+      127, 127,                                             // 110x => true
+      0xA0,                                                 // 1110
+      0x90                                                  // 1111
+    );
+    simd8<bool> second_under = second_mins > simd8<int8_t>(current_bytes);
+    this->has_error |= simd8<uint8_t>(initial_under & second_under);
+  }
+
+  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
+    answer->raw_bytes = bytes;
+    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
+  }
+
+  // check whether the current bytes are valid UTF-8
+  // at the end of the function, previous gets updated
+  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
+    struct processed_utf_bytes pb {};
+    this->count_nibbles(current_bytes, &pb);
+
+    this->check_smaller_than_0xF4(current_bytes);
+
+    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
+
+    pb.carried_continuations = this->carry_continuations(initial_lengths);
+
+    this->check_continuations(initial_lengths, pb.carried_continuations);
+
+    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
+    this->check_first_continuation_max(current_bytes, off1_current_bytes);
+
+    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
+    this->previous = pb;
+  }
+
+  really_inline void check_next_input(simd8<uint8_t> in) {
+    if (likely(!in.any_bits_set_anywhere(0x80u))) {
+      this->check_carried_continuations();
+    } else {
+      this->check_utf8_bytes(in);
+    }
+  }
+
+  really_inline void check_next_input(simd8x64<uint8_t> in) {
+    simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
+    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
+      // it is ascii, we just check carried continuations.
+      this->check_carried_continuations();
+    } else {
+      // it is not ascii so we have to do heavy work
+      in.each([&](auto _in) { this->check_utf8_bytes(_in); });
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  }
+}; // struct utf8_checker
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -38099,7 +38381,6 @@ public:
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
   bit_indexer structural_indexes;
-
 
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
 
@@ -38187,12 +38468,12 @@ public:
   //
   // Backslash sequences outside of quotes will be detected in stage 2.
   //
-  really_inline uint64_t find_strings(const simd_input in) {
+  really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in) {
     const uint64_t backslash = in.eq('\\');
     const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
     const uint64_t quote = in.eq('"') & ~escaped;
-    // compute_quote_mask returns start quote plus string contents.
-    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    // prefix_xor flips on bits inside the string (and flips off the end quote).
+    const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
     /* right shift of a signed value expected to be well-defined and standard
     * compliant as of C++20,
     * John Regher from Utah U. says this is fine code */
@@ -38226,7 +38507,7 @@ public:
   // contents of a string the same as content outside. Errors and structurals inside the string or on
   // the trailing quote will need to be removed later when the correct string information is known.
   //
-  really_inline uint64_t find_potential_structurals(const simd_input in) {
+  really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in) {
     // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
     uint64_t whitespace, op;
     find_whitespace_and_operators(in, whitespace, op);
@@ -38264,8 +38545,8 @@ public:
     //
     // Load up all 128 bytes into SIMD registers
     //
-    simd_input in_1(buf);
-    simd_input in_2(buf+64);
+    simd::simd8x64<uint8_t> in_1(buf);
+    simd::simd8x64<uint8_t> in_2(buf+64);
 
     //
     // Find the strings and potential structurals (operators / primitives).
@@ -38384,34 +38665,197 @@ UNTARGET_REGION
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
-really_inline uint64_t compute_quote_mask(const uint64_t quote_bits) {
-  return _mm_cvtsi128_si64(_mm_clmulepi64_si128(
-      _mm_set_epi64x(0ULL, quote_bits), _mm_set1_epi8(0xFFu), 0));
-}
+using namespace simd;
 
 really_inline void find_whitespace_and_operators(
-  const simd_input in,
+  const simd8x64<uint8_t> in,
   uint64_t &whitespace, uint64_t &op) {
 
-  const __m128i operator_table =
-      _mm_setr_epi8(44, 125, 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 123);
-  const __m128i white_table = _mm_setr_epi8(32, 100, 100, 100,  17, 100, 113,   2,
-                                           100,   9,  10, 112, 100,  13, 100, 100);
-  const __m128i op_offset = _mm_set1_epi8(0xd4u);
-  const __m128i op_mask = _mm_set1_epi8(32);
-
-  whitespace = in.map([&](auto _in) {
-    return _mm_cmpeq_epi8(_in, _mm_shuffle_epi8(white_table, _in));
+  whitespace = in.map([&](simd8<uint8_t> _in) {
+    return _in == _in.lookup_lower_4_bits<uint8_t>(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
   }).to_bitmask();
 
-  op = in.map([&](auto _in) {
-    const __m128i r1 = _mm_add_epi8(op_offset, _in);
-    const __m128i r2 = _mm_or_si128(_in, op_mask);
-    const __m128i r3 = _mm_shuffle_epi8(operator_table, r1);
-    return _mm_cmpeq_epi8(r2, r3);
+  op = in.map([&](simd8<uint8_t> _in) {
+    return (_in | 32) == (_in+0xd4u).lookup_lower_4_bits<uint8_t>(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
   }).to_bitmask();
 }
 
+/*
+ * legal utf-8 byte sequence
+ * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
+ *
+ *  Code Points        1st       2s       3s       4s
+ * U+0000..U+007F     00..7F
+ * U+0080..U+07FF     C2..DF   80..BF
+ * U+0800..U+0FFF     E0       A0..BF   80..BF
+ * U+1000..U+CFFF     E1..EC   80..BF   80..BF
+ * U+D000..U+D7FF     ED       80..9F   80..BF
+ * U+E000..U+FFFF     EE..EF   80..BF   80..BF
+ * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+ * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+ * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+ *
+ */
+
+// all byte values must be no larger than 0xF4
+
+using namespace simd;
+
+struct processed_utf_bytes {
+  simd8<uint8_t> raw_bytes;
+  simd8<int8_t> high_nibbles;
+  simd8<int8_t> carried_continuations;
+};
+
+struct utf8_checker {
+  simd8<uint8_t> has_error;
+  processed_utf_bytes previous;
+
+  // all byte values must be no larger than 0xF4
+  really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
+    // unsigned, saturates to 0 below max
+    this->has_error |= current_bytes.saturating_sub(0xF4u);
+  }
+
+  really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
+    return high_nibbles.lookup_16<int8_t>(
+      1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
+      0, 0, 0, 0,             // 10xx (continuation)
+      2, 2,                   // 110x
+      3,                      // 1110
+      4);                     // 1111, next should be 0 (not checked here)
+  }
+
+  really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
+    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
+    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
+    simd8<int8_t> sum = initial_lengths + right1;
+
+    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
+    simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
+    return sum + right2;
+  }
+
+  really_inline void check_continuations(simd8<int8_t> initial_lengths, simd8<int8_t> carries) {
+    // overlap || underlap
+    // carry > length && length > 0 || !(carry > length) && !(length > 0)
+    // (carries > length) == (lengths > 0)
+    // (carries > current) == (current > 0)
+    this->has_error |= simd8<uint8_t>(
+      (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
+  }
+
+  really_inline void check_carried_continuations() {
+    static const int8_t last_1[32] = {
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 9,
+      9, 9, 9, 9, 9, 9, 9, 1
+    };
+    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
+  }
+
+  // when 0xED is found, next byte must be no larger than 0x9F
+  // when 0xF4 is found, next byte must be no larger than 0x8F
+  // next byte must be continuation, ie sign bit is set, so signed < is ok
+  really_inline void check_first_continuation_max(simd8<uint8_t> current_bytes,
+                                                  simd8<uint8_t> off1_current_bytes) {
+    simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
+    simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
+    // Check if ED is followed by A0 or greater
+    simd8<bool> ED_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x9Fu)) & prev_ED;
+    // Check if F4 is followed by 90 or greater
+    simd8<bool> F4_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x8Fu)) & prev_F4;
+    // These will also error if ED or F4 is followed by ASCII, but that's an error anyway
+    this->has_error |= simd8<uint8_t>(ED_too_large | F4_too_large);
+  }
+
+  // map off1_hibits => error condition
+  // hibits     off1    cur
+  // C       => < C2 && true
+  // E       => < E1 && < A0
+  // F       => < F1 && < 90
+  // else      false && false
+  really_inline void check_overlong(simd8<uint8_t> current_bytes,
+                                    simd8<uint8_t> off1_current_bytes,
+                                    simd8<int8_t> high_nibbles) {
+    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
+
+    // Two-byte characters must start with at least C2
+    // Three-byte characters must start with at least E1
+    // Four-byte characters must start with at least F1
+    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
+      -128, -128, -128, -128,                         // 10xx -> false
+      0xC2, -128,                                     // 1100 -> C2
+      0xE1,                                           // 1110
+      0xF1                                            // 1111
+    );
+    simd8<bool> initial_under = initial_mins > simd8<int8_t>(off1_current_bytes);
+
+    // Two-byte characters starting with at least C2 are always OK
+    // Three-byte characters starting with at least E1 must be followed by at least A0
+    // Four-byte characters starting with at least F1 must be followed by at least 90
+    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
+      -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
+      -128, -128, -128,                                     // 10xx => false
+      127, 127,                                             // 110x => true
+      0xA0,                                                 // 1110
+      0x90                                                  // 1111
+    );
+    simd8<bool> second_under = second_mins > simd8<int8_t>(current_bytes);
+    this->has_error |= simd8<uint8_t>(initial_under & second_under);
+  }
+
+  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
+    answer->raw_bytes = bytes;
+    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
+  }
+
+  // check whether the current bytes are valid UTF-8
+  // at the end of the function, previous gets updated
+  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
+    struct processed_utf_bytes pb {};
+    this->count_nibbles(current_bytes, &pb);
+
+    this->check_smaller_than_0xF4(current_bytes);
+
+    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
+
+    pb.carried_continuations = this->carry_continuations(initial_lengths);
+
+    this->check_continuations(initial_lengths, pb.carried_continuations);
+
+    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
+    this->check_first_continuation_max(current_bytes, off1_current_bytes);
+
+    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
+    this->previous = pb;
+  }
+
+  really_inline void check_next_input(simd8<uint8_t> in) {
+    if (likely(!in.any_bits_set_anywhere(0x80u))) {
+      this->check_carried_continuations();
+    } else {
+      this->check_utf8_bytes(in);
+    }
+  }
+
+  really_inline void check_next_input(simd8x64<uint8_t> in) {
+    simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
+    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
+      // it is ascii, we just check carried continuations.
+      this->check_carried_continuations();
+    } else {
+      // it is not ascii so we have to do heavy work
+      in.each([&](auto _in) { this->check_utf8_bytes(_in); });
+    }
+  }
+
+  really_inline ErrorValues errors() {
+    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  }
+}; // struct utf8_checker
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -38485,7 +38929,6 @@ public:
   // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
   uint64_t unescaped_chars_error = 0;
   bit_indexer structural_indexes;
-
 
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
 
@@ -38573,12 +39016,12 @@ public:
   //
   // Backslash sequences outside of quotes will be detected in stage 2.
   //
-  really_inline uint64_t find_strings(const simd_input in) {
+  really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in) {
     const uint64_t backslash = in.eq('\\');
     const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
     const uint64_t quote = in.eq('"') & ~escaped;
-    // compute_quote_mask returns start quote plus string contents.
-    const uint64_t in_string = compute_quote_mask(quote) ^ prev_in_string;
+    // prefix_xor flips on bits inside the string (and flips off the end quote).
+    const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
     /* right shift of a signed value expected to be well-defined and standard
     * compliant as of C++20,
     * John Regher from Utah U. says this is fine code */
@@ -38612,7 +39055,7 @@ public:
   // contents of a string the same as content outside. Errors and structurals inside the string or on
   // the trailing quote will need to be removed later when the correct string information is known.
   //
-  really_inline uint64_t find_potential_structurals(const simd_input in) {
+  really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in) {
     // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
     uint64_t whitespace, op;
     find_whitespace_and_operators(in, whitespace, op);
@@ -38650,8 +39093,8 @@ public:
     //
     // Load up all 128 bytes into SIMD registers
     //
-    simd_input in_1(buf);
-    simd_input in_2(buf+64);
+    simd::simd8x64<uint8_t> in_1(buf);
+    simd::simd8x64<uint8_t> in_2(buf+64);
 
     //
     // Find the strings and potential structurals (operators / primitives).
@@ -38760,75 +39203,42 @@ UNTARGET_REGION
 #endif // SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
 /* end file src/westmere/stage1_find_marks.h */
 /* begin file src/stage1_find_marks.cpp */
-
-namespace {
-// for when clmul is unavailable
-[[maybe_unused]] really_inline uint64_t portable_compute_quote_mask(uint64_t quote_bits) {
-  uint64_t quote_mask = quote_bits ^ (quote_bits << 1);
-  quote_mask = quote_mask ^ (quote_mask << 2);
-  quote_mask = quote_mask ^ (quote_mask << 4);
-  quote_mask = quote_mask ^ (quote_mask << 8);
-  quote_mask = quote_mask ^ (quote_mask << 16);
-  quote_mask = quote_mask ^ (quote_mask << 32);
-  return quote_mask;
-}
-} // namespace
-
 /* end file src/stage1_find_marks.cpp */
 /* begin file src/arm64/stringparsing.h */
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
+
 #ifdef IS_ARM64
 
 
-#ifdef JSON_TEST_STRINGS
-void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                  const uint8_t *parsed_end);
-void found_bad_string(const uint8_t *buf);
-#endif
-
 namespace simdjson::arm64 {
+
+using namespace simd;
 
 // Holds backslashes and quotes locations.
 struct parse_string_helper {
   uint32_t bs_bits;
   uint32_t quote_bits;
-  really_inline uint32_t bytes_processed() const { return sizeof(uint8x16_t)*2; }
+  static const uint32_t BYTES_PROCESSED = 32;
 };
 
 really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(2 * sizeof(uint8x16_t) - 1 <= SIMDJSON_PADDING);
-  uint8x16_t v0 = vld1q_u8(src);
-  uint8x16_t v1 = vld1q_u8(src + 16);
-  vst1q_u8(dst, v0);
-  vst1q_u8(dst + 16, v1);
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v0(src);
+  simd8<uint8_t> v1(src + sizeof(v0));
+  v0.store(dst);
+  v1.store(dst + sizeof(v0));
 
-  uint8x16_t bs_mask = vmovq_n_u8('\\');
-  uint8x16_t qt_mask = vmovq_n_u8('"');
-  const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                               0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
-  uint8x16_t cmp_bs_0 = vceqq_u8(v0, bs_mask);
-  uint8x16_t cmp_bs_1 = vceqq_u8(v1, bs_mask);
-  uint8x16_t cmp_qt_0 = vceqq_u8(v0, qt_mask);
-  uint8x16_t cmp_qt_1 = vceqq_u8(v1, qt_mask);
-
-  cmp_bs_0 = vandq_u8(cmp_bs_0, bit_mask);
-  cmp_bs_1 = vandq_u8(cmp_bs_1, bit_mask);
-  cmp_qt_0 = vandq_u8(cmp_qt_0, bit_mask);
-  cmp_qt_1 = vandq_u8(cmp_qt_1, bit_mask);
-
-  uint8x16_t sum0 = vpaddq_u8(cmp_bs_0, cmp_bs_1);
-  uint8x16_t sum1 = vpaddq_u8(cmp_qt_0, cmp_qt_1);
-  sum0 = vpaddq_u8(sum0, sum1);
-  sum0 = vpaddq_u8(sum0, sum0);
+  // Getting a 64-bit bitmask is much cheaper than multiple 16-bit bitmasks on ARM; therefore, we
+  // smash them together into a 64-byte mask and get the bitmask from there.
+  uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
   return {
-      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 0), // bs_bits
-      vgetq_lane_u32(vreinterpretq_u32_u8(sum0), 1)  // quote_bits
+    static_cast<uint32_t>(bs_and_quote),      // bs_bits
+    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
   };
-
 }
 
 // This file contains the common code every implementation uses
@@ -38917,7 +39327,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
        */
 
       /* find out where the quote is... */
-      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+      auto quote_dist = trailing_zeroes(helper.quote_bits);
 
       /* NULL termination is still handy if you expect all your strings to
        * be NULL terminated? */
@@ -38925,7 +39335,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       dst[quote_dist] = 0;
 
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
       /*****************************
        * Above, check for overflow in case someone has a crazy string
        * (>=4GB?)                 _
@@ -38942,7 +39352,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
-      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      auto bs_dist = trailing_zeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -38969,8 +39379,8 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += helper.bytes_processed();
-      dst += helper.bytes_processed();
+      src += parse_string_helper::BYTES_PROCESSED;
+      dst += parse_string_helper::BYTES_PROCESSED;
     }
   }
   /* can't be reached */
@@ -38987,38 +39397,32 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
+
 #ifdef IS_X86_64
 
 
-#ifdef JSON_TEST_STRINGS
-void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                  const uint8_t *parsed_end);
-void found_bad_string(const uint8_t *buf);
-#endif
-
 TARGET_HASWELL
 namespace simdjson::haswell {
+
+using namespace simd;
 
 // Holds backslashes and quotes locations.
 struct parse_string_helper {
   uint32_t bs_bits;
   uint32_t quote_bits;
-  really_inline uint32_t bytes_processed() const { return sizeof(__m256i); }
+  static const uint32_t BYTES_PROCESSED = 32;
 };
 
 really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
-  // this can read up to 31 bytes beyond the buffer size, but we require
+  // this can read up to 15 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(sizeof(__m256i) - 1 <= SIMDJSON_PADDING);
-  __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src));
-  // store to dest unconditionally - we can overwrite the bits we don't like
-  // later
-  _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), v);
-  auto quote_mask = _mm256_cmpeq_epi8(v, _mm256_set1_epi8('"'));
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v(src);
+  // store to dest unconditionally - we can overwrite the bits we don't like later
+  v.store(dst);
   return {
-      static_cast<uint32_t>(_mm256_movemask_epi8(
-          _mm256_cmpeq_epi8(v, _mm256_set1_epi8('\\')))),     // bs_bits
-      static_cast<uint32_t>(_mm256_movemask_epi8(quote_mask)) // quote_bits
+      (uint32_t)(v == '\\').to_bitmask(),     // bs_bits
+      (uint32_t)(v == '"').to_bitmask(), // quote_bits
   };
 }
 
@@ -39108,7 +39512,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
        */
 
       /* find out where the quote is... */
-      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+      auto quote_dist = trailing_zeroes(helper.quote_bits);
 
       /* NULL termination is still handy if you expect all your strings to
        * be NULL terminated? */
@@ -39116,7 +39520,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       dst[quote_dist] = 0;
 
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
       /*****************************
        * Above, check for overflow in case someone has a crazy string
        * (>=4GB?)                 _
@@ -39133,7 +39537,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
-      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      auto bs_dist = trailing_zeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -39160,8 +39564,8 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += helper.bytes_processed();
-      dst += helper.bytes_processed();
+      src += parse_string_helper::BYTES_PROCESSED;
+      dst += parse_string_helper::BYTES_PROCESSED;
     }
   }
   /* can't be reached */
@@ -39179,37 +39583,34 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
+
 #ifdef IS_X86_64
 
 
-#ifdef JSON_TEST_STRINGS
-void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
-                  const uint8_t *parsed_end);
-void found_bad_string(const uint8_t *buf);
-#endif
-
 TARGET_WESTMERE
 namespace simdjson::westmere {
+
+using namespace simd;
 
 // Holds backslashes and quotes locations.
 struct parse_string_helper {
   uint32_t bs_bits;
   uint32_t quote_bits;
-  really_inline uint32_t bytes_processed() const { return sizeof(__m128i); }
+  static const uint32_t BYTES_PROCESSED = 32;
 };
 
 really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(src));
-  // store to dest unconditionally - we can overwrite the bits we don't like
-  // later
-  _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), v);
-  auto quote_mask = _mm_cmpeq_epi8(v, _mm_set1_epi8('"'));
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v0(src);
+  simd8<uint8_t> v1(src + 16);
+  v0.store(dst);
+  v1.store(dst + 16);
+  uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
   return {
-      static_cast<uint32_t>(
-          _mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_set1_epi8('\\')))), // bs_bits
-      static_cast<uint32_t>(_mm_movemask_epi8(quote_mask)) // quote_bits
+    static_cast<uint32_t>(bs_and_quote),      // bs_bits
+    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
   };
 }
 
@@ -39299,7 +39700,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
        */
 
       /* find out where the quote is... */
-      uint32_t quote_dist = trailing_zeroes(helper.quote_bits);
+      auto quote_dist = trailing_zeroes(helper.quote_bits);
 
       /* NULL termination is still handy if you expect all your strings to
        * be NULL terminated? */
@@ -39307,7 +39708,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       dst[quote_dist] = 0;
 
       uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
       /*****************************
        * Above, check for overflow in case someone has a crazy string
        * (>=4GB?)                 _
@@ -39324,7 +39725,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
-      uint32_t bs_dist = trailing_zeroes(helper.bs_bits);
+      auto bs_dist = trailing_zeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -39351,8 +39752,8 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += helper.bytes_processed();
-      dst += helper.bytes_processed();
+      src += parse_string_helper::BYTES_PROCESSED;
+      dst += parse_string_helper::BYTES_PROCESSED;
     }
   }
   /* can't be reached */
@@ -39429,6 +39830,12 @@ really_inline bool is_valid_null_atom(const uint8_t *loc) {
   error |= is_not_structural_or_whitespace(loc[4]);
   return error == 0;
 }
+
+#ifdef JSON_TEST_STRINGS
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
+                  const uint8_t *parsed_end);
+void found_bad_string(const uint8_t *buf);
+#endif
 
 /* end file src/stage2_build_tape.cpp */
 /* begin file src/arm64/stage2_build_tape.h */
