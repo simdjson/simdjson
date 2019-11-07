@@ -20,6 +20,7 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
+$SCRIPTPATH/src/jsonstream.cpp
 $SCRIPTPATH/src/arm64/bitmask.h
 $SCRIPTPATH/src/haswell/bitmask.h
 $SCRIPTPATH/src/westmere/bitmask.h
@@ -57,6 +58,7 @@ $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
+$SCRIPTPATH/include/simdjson/jsonstream.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do
@@ -134,17 +136,36 @@ cat <<< '
 #include "simdjson.h"
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
-  if(argc < 2) {
-    std::cerr << "Please specify a filename " << std::endl;
+  if(argc < 3) {
+    std::cerr << "Please specify filenames " << std::endl;
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
   simdjson::ParsedJson pj = simdjson::build_parsed_json(p); // do the parsing
   if( ! pj.is_valid() ) {
-    std::cout << "not valid" << std::endl;
+    std::cout << "build_parsed_json not valid" << std::endl;
   } else {
-    std::cout << "valid" << std::endl;
+    std::cout << "build_parsed_json valid" << std::endl;
   }
+
+  //JsonStream
+  const char * filename2 = argv[2];
+  simdjson::padded_string p2 = simdjson::get_corpus(filename2);
+  simdjson::ParsedJson pj2;
+  simdjson::JsonStream js{p2.data(), p2.size()};
+  int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+
+  while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+            parse_res = js.json_parse(pj2);
+        }
+
+  if( ! pj2.is_valid()) {
+    std::cout << "JsonStream not valid" << std::endl;
+  } else {
+    std::cout << "JsonStream valid" << std::endl;
+  }
+
+
   return EXIT_SUCCESS;
 }
 ' >>  "${DEMOCPP}"
@@ -160,16 +181,16 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
+echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson"
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
 mkdir -p $SINGLEHDR
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
+echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson" > $SINGLEHDR/README.md
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
-cd $SINGLEHDR && c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
+cd $SINGLEHDR && c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'
