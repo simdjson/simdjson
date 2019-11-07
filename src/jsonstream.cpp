@@ -4,7 +4,7 @@
 
 using namespace simdjson;
 
-void find_best_supported_implementation();
+void find_the_best_supported_implementation();
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
@@ -14,7 +14,7 @@ stage2_functype best_stage2;
 
 JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
         : _buf(buf), _len(len), _batch_size(batchSize) {
-    find_best_supported_implementation();
+    find_the_best_supported_implementation();
 }
 
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
@@ -74,7 +74,6 @@ int JsonStream::json_parse(ParsedJson &pj) {
         next_json = next_json == 1;
     }
 
-
     int res = (*best_stage2)(_buf, _len, pj, next_json);
 
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
@@ -84,7 +83,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
         //of the last loaded document and start parsing at structural_index[1] for the next batch.
         // It should point to the start of the first document in the new batch
-        if(next_json > 0 && pj.structural_indexes[next_json] == 0) {
+        if(next_json == pj.n_structural_indexes) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
             load_next_batch = true;
@@ -118,7 +117,7 @@ size_t JsonStream::get_n_bytes_parsed() const {
 
 
 //// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
-void find_best_supported_implementation() {
+void find_the_best_supported_implementation() {
     constexpr uint32_t haswell_flags =
             instruction_set::AVX2 | instruction_set::PCLMULQDQ |
             instruction_set::BMI1 | instruction_set::BMI2;
