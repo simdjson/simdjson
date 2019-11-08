@@ -49,9 +49,9 @@ add_subdirectory(tests)
 add_subdirectory(benchmark)
 
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
-option(ENABLE_FUZZING "enable fuzzing (experimental, requires clang)" OFF)
+option(ENABLE_FUZZING "enable building the fuzzers" ON)
 if(ENABLE_FUZZING)
-add_subdirectory(fuzz)
+ add_subdirectory(fuzz)
 endif()
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
