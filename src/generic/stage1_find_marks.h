@@ -292,7 +292,7 @@ public:
 
 };
 
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj) {
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
     std::cerr << "Your ParsedJson object only supports documents up to "
               << pj.byte_capacity << " bytes but you are trying to process "
@@ -304,7 +304,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   scanner.scan(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (unlikely(error != simdjson::SUCCESS)) {
+  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 

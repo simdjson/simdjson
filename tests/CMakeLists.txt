@@ -6,6 +6,7 @@ endif()
 
 add_cpp_test(basictests)
 add_cpp_test(jsoncheck)
+add_cpp_test(jsonstream_test)
 add_cpp_test(pointercheck)
 add_cpp_test(integer_tests)
 

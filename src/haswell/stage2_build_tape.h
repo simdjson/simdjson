@@ -12,6 +12,7 @@ TARGET_HASWELL
 namespace simdjson::haswell {
 
 #include "generic/stage2_build_tape.h"
+#include "generic/stage2_streaming_build_tape.h"
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
@@ -23,6 +24,12 @@ template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return haswell::unified_machine(buf, len, pj);
+}
+
+template <>
+WARN_UNUSED int
+unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+    return haswell::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson

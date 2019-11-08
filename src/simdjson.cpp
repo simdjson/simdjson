@@ -4,6 +4,7 @@
 namespace simdjson {
 const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No errors"},
+    {SUCCESS_AND_HAS_MORE, "No errors and buffer still has more data"},
     {CAPACITY, "This ParsedJson can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
