@@ -25,6 +25,36 @@ ParsedJson::ParsedJson(ParsedJson &&p)
   p.current_string_buf_loc = nullptr;
 }
 
+ParsedJson &ParsedJson::operator=(ParsedJson &&p) {
+  byte_capacity = p.byte_capacity;
+  p.byte_capacity = 0;
+  depth_capacity = p.depth_capacity;
+  p.depth_capacity = 0;
+  tape_capacity = p.tape_capacity;
+  p.tape_capacity = 0;
+  string_capacity = p.string_capacity;
+  p.string_capacity = 0;
+  current_loc = p.current_loc;
+  p.current_loc = 0;
+  n_structural_indexes = p.n_structural_indexes;
+  p.n_structural_indexes = 0;
+  structural_indexes = p.structural_indexes;
+  p.structural_indexes = nullptr;
+  tape = p.tape;
+  p.tape = nullptr;
+  containing_scope_offset = p.containing_scope_offset;
+  p.containing_scope_offset = nullptr;
+  ret_address = p.ret_address;
+  p.ret_address = nullptr;
+  string_buf = p.string_buf;
+  p.string_buf = nullptr;
+  current_string_buf_loc = p.current_string_buf_loc;
+  p.current_string_buf_loc = nullptr;
+  valid = p.valid;
+  p.valid = false;
+  return *this;
+}
+
 WARN_UNUSED
 bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (max_depth <= 0) {
