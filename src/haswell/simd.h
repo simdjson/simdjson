@@ -42,6 +42,9 @@ namespace simdjson::haswell::simd {
 
   template<typename T, typename Mask=simd8<bool>>
   struct base8: base<simd8<T>> {
+    typedef uint32_t bitmask_t;
+    typedef uint64_t bitmask2_t;
+
     really_inline base8() : base<simd8<T>>() {}
     really_inline base8(const __m256i _value) : base<simd8<T>>(_value) {}
 
@@ -58,7 +61,6 @@ namespace simdjson::haswell::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    typedef int bitmask_t;
     static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(-(!!_value)); }
 
     really_inline simd8<bool>() : base8() {}
@@ -66,7 +68,7 @@ namespace simdjson::haswell::simd {
     // Splat constructor
     really_inline simd8<bool>(bool _value) : base8<bool>(splat(_value)) {}
 
-    really_inline bitmask_t to_bitmask() const { return _mm256_movemask_epi8(*this); }
+    really_inline int to_bitmask() const { return _mm256_movemask_epi8(*this); }
     really_inline bool any() const { return !_mm256_testz_si256(*this, *this); }
   };
 
@@ -76,6 +78,18 @@ namespace simdjson::haswell::simd {
     static really_inline simd8<T> zero() { return _mm256_setzero_si256(); }
     static really_inline simd8<T> load(const T values[32]) {
       return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(values));
+    }
+    // Repeat 16 values as many times as necessary (usually for lookup tables)
+    static really_inline simd8<T> repeat_16(
+      T v0,  T v1,  T v2,  T v3,  T v4,  T v5,  T v6,  T v7,
+      T v8,  T v9,  T v10, T v11, T v12, T v13, T v14, T v15
+    ) {
+      return simd8<T>(
+        v0, v1, v2, v3, v4, v5, v6, v7,
+        v8, v9, v10,v11,v12,v13,v14,v15,
+        v0, v1, v2, v3, v4, v5, v6, v7,
+        v8, v9, v10,v11,v12,v13,v14,v15
+      );
     }
 
     really_inline base8_numeric() : base8<T>() {}
@@ -87,8 +101,8 @@ namespace simdjson::haswell::simd {
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm256_add_epi8(*this, other); }
     really_inline simd8<T> operator-(const simd8<T> other) const { return _mm256_sub_epi8(*this, other); }
-    really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *this; }
-    really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *this; }
+    really_inline simd8<T>& operator+=(const simd8<T> other) { *this = *this + other; return *(simd8<T>*)this; }
+    really_inline simd8<T>& operator-=(const simd8<T> other) { *this = *this - other; return *(simd8<T>*)this; }
 
     // Perform a lookup assuming the value is between 0 and 16 (undefined behavior for out of range values)
     template<typename L>
@@ -192,16 +206,24 @@ namespace simdjson::haswell::simd {
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm256_max_epu8(*this, other); }
     really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm256_min_epu8(*this, other); }
     really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
+    really_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return other.min(*this) == other; }
+    really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return this->saturating_sub(other).any_bits_set(); }
 
     // Bit-specific operations
-    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
-    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !_mm256_testz_si256(*this, bits); }
-    really_inline bool any_bits_set_anywhere() const { return !_mm256_testz_si256(*this, *this); }
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
+    really_inline bool bits_not_set_anywhere() const { return _mm256_testz_si256(*this, *this); }
+    really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
+    really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm256_testz_si256(*this, bits); }
+    really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return !bits_not_set_anywhere(bits); }
     template<int N>
     really_inline simd8<uint8_t> shr() const { return simd8<uint8_t>(_mm256_srli_epi16(*this, N)) & uint8_t(0xFFu >> N); }
     template<int N>
     really_inline simd8<uint8_t> shl() const { return simd8<uint8_t>(_mm256_slli_epi16(*this, N)) & uint8_t(0xFFu << N); }
+    // Get one of the bits and make a bitmask out of it.
+    // e.g. value.get_bit<7>() gets the high bit
+    template<int N>
+    really_inline int get_bit() const { return _mm256_movemask_epi8(_mm256_slli_epi16(*this, 7-N)); }
   };
 
   template<typename T>

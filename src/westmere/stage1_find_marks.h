@@ -33,7 +33,7 @@ really_inline void find_whitespace_and_operators(
   }).to_bitmask();
 }
 
-#include "generic/simdutf8check.h"
+#include "generic/utf8_lookup_algorithm.h"
 #include "generic/stage1_find_marks.h"
 
 } // namespace westmere
