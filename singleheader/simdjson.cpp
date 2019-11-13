@@ -1,4 +1,4 @@
-/* auto-generated on Thu 07 Nov 2019 05:05:37 PM EST. Do not edit! */
+/* auto-generated on Wed 13 Nov 2019 05:50:07 PM EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -36466,10 +36466,13 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 #include <map>
 
 using namespace simdjson;
-
 void find_the_best_supported_implementation();
+size_t find_last_json(ParsedJson&, const char *);
+
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
+
+
 
 stage1_functype best_stage1;
 stage2_functype best_stage2;
@@ -36497,7 +36500,8 @@ int JsonStream::json_parse(ParsedJson &pj) {
 
     if (pj.byte_capacity == 0) {
         const bool allocok = pj.allocate_capacity(_batch_size, _batch_size);
-        if (!allocok) {
+        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size, _batch_size);
+        if (!allocok || !allocok_thread) {
             std::cerr << "can't allocate memory" << std::endl;
             return false;
         }
@@ -36506,29 +36510,41 @@ int JsonStream::json_parse(ParsedJson &pj) {
         return simdjson::CAPACITY;
     }
 
-    //Quick heuristic to see if it's worth parsing the remaining data in the batch
-    if(!load_next_batch && n_bytes_parsed > 0) {
-        const auto remaining_data = _batch_size - current_buffer_loc;
-        const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
+//    //Quick heuristic to see if it's worth parsing the remaining data in the batch
+//    if(!load_next_batch && n_bytes_parsed > 0) {
+//        const auto remaining_data = _batch_size - current_buffer_loc;
+//        const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
+//
+//        if(remaining_data < avg_doc_len)
+//            load_next_batch = true;
+//    }
 
-        if(remaining_data < avg_doc_len)
-            load_next_batch = true;
-    }
+    if (load_next_batch || current_buffer_loc == last_json){
 
-    if (load_next_batch){
+        //First time loading
+        if(!stage_1_thread.joinable()){
+            _batch_size = std::min(_batch_size, _len);
 
-        _buf = &_buf[current_buffer_loc];
-        _len -= current_buffer_loc;
-        n_bytes_parsed += current_buffer_loc;
+            int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
 
-        _batch_size = std::min(_batch_size, _len);
-
-        int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
-
-        if (stage1_is_ok != simdjson::SUCCESS) {
-            pj.error_code = stage1_is_ok;
-            return pj.error_code;
+            if (stage1_is_ok != simdjson::SUCCESS) {
+                pj.error_code = stage1_is_ok;
+                return pj.error_code;
+            }
         }
+        //the second thread is running or done.
+        else{
+            stage_1_thread.join();
+            std::swap(pj.structural_indexes, pj_thread.structural_indexes);
+            pj.n_structural_indexes = pj_thread.n_structural_indexes;
+
+            _buf = &_buf[last_json];
+            _len -= last_json;
+            n_bytes_parsed += last_json;
+            last_json = 0; //because we want to use it in the if above.
+        }
+        if(_len-_batch_size > 0)
+            stage_1_thread = std::thread(&JsonStream::stage_1_thread_func, this, std::ref(pj));
 
         load_next_batch = false;
 
@@ -36552,7 +36568,9 @@ int JsonStream::json_parse(ParsedJson &pj) {
             load_next_batch = true;
         }
 
-        else current_buffer_loc = pj.structural_indexes[next_json];
+        else {
+            current_buffer_loc = pj.structural_indexes[next_json];
+        }
     }
     //TODO: have a more precise error check
     //Give it two chances for now.  We assume the error is because the json was not loaded completely in this batch.
@@ -36562,9 +36580,45 @@ int JsonStream::json_parse(ParsedJson &pj) {
         error_on_last_attempt = true;
         res = json_parse(pj);
     }
-
     return res;
 }
+
+
+void JsonStream::stage_1_thread_func(ParsedJson &pj){
+    last_json = find_last_json(pj, _buf);
+    _batch_size = std::min(_batch_size, _len-last_json);
+    if(_batch_size>0)
+        (*best_stage1)(&_buf[last_json],_batch_size, pj_thread, true);
+}
+
+size_t find_last_json(ParsedJson &pj, const char *buf){
+    int arr_cnt = 0;
+    int obj_cnt = 0;
+    size_t lj{0};
+    uint32_t i = (buf[0] == ']') || (buf[0] == '}');
+
+    for(i; i<pj.n_structural_indexes; i++){
+        auto idx = pj.structural_indexes[i];
+        switch (buf[idx]){
+            case '{': obj_cnt++;
+                break;
+            case '}': obj_cnt--;
+                break;
+            case '[': arr_cnt++;
+                break;
+            case ']': arr_cnt--;
+                break;
+            default:
+                continue;
+        }
+        if (!arr_cnt && !obj_cnt) {
+            lj = pj.structural_indexes[i+1];
+            if(lj==0) return pj.structural_indexes[i];
+        }
+    }
+    return lj;
+}
+
 
 size_t JsonStream::get_current_buffer_loc() const {
     return current_buffer_loc;
@@ -36577,7 +36631,6 @@ size_t JsonStream::get_n_parsed_docs() const {
 size_t JsonStream::get_n_bytes_parsed() const {
     return n_bytes_parsed;
 }
-
 
 //// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
 void find_the_best_supported_implementation() {
