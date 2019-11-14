@@ -38,7 +38,7 @@ namespace simdjson {
 
 template <>
 int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return haswell::find_structural_bits(buf, len, pj, streaming);
+  return haswell::stage1::find_structural_bits<128>(buf, len, pj, streaming);
 }
 
 } // namespace simdjson

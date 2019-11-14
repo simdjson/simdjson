@@ -12,6 +12,8 @@
 /benchmark/statisticalmodel
 /json2json
 /jsoncheck
+/jsoncheck_noavx
+/jsonstream_test
 /jsonpointer
 /jsonstats
 /integer_tests

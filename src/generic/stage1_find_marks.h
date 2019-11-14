@@ -3,7 +3,7 @@
 // We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
-static const size_t STEP_SIZE = 128;
+namespace stage1 {
 
 class bit_indexer {
 public:
@@ -74,34 +74,11 @@ public:
 
   json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
 
-  // return a bitvector indicating where we have characters that end an odd-length
-  // sequence of backslashes (and thus change the behavior of the next character
-  // to follow). A even-length sequence of backslashes, and, for that matter, the
-  // largest even-length prefix of our odd-length sequence of backslashes, simply
-  // modify the behavior of the backslashes themselves.
-  // We also update the prev_iter_ends_odd_backslash reference parameter to
-  // indicate whether we end an iteration on an odd-length sequence of
-  // backslashes, which modifies our subsequent search for odd-length
-  // sequences of backslashes in an obvious way.
-  really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow);
-
   //
-  // Check if the current character immediately follows a matching character.
+  // Finish the scan and return any errors.
   //
-  // For example, this checks for quotes with backslashes in front of them:
+  // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
   //
-  //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-  //
-  really_inline uint64_t follows(const uint64_t match, uint64_t &overflow);
-
-  //
-  // Check if the current character follows a matching character, with possible "filler" between.
-  // For example, this checks for empty curly braces, e.g. 
-  //
-  //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-  //
-  really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow);
-
   really_inline ErrorValues detect_errors_on_eof();
 
   //
@@ -113,8 +90,6 @@ public:
   // Backslash sequences outside of quotes will be detected in stage 2.
   //
   really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in);
-
-  really_inline uint64_t invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask);
 
   //
   // Determine which characters are *structural*:
@@ -135,26 +110,15 @@ public:
   really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in);
 
   //
-  // Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+  // Find the important bits of JSON in a STEP_SIZE-byte chunk, and add them to structural_indexes.
   //
-  // PERF NOTES:
-  // We pipe 2 inputs through these stages:
-  // 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-  //    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-  // 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
-  //    The output of step 1 depends entirely on this information. These functions don't quite use
-  //    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-  //    at a time. The second input's scans has some dependency on the first ones finishing it, but
-  //    they can make a lot of progress before they need that information.
-  // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-  //    to finish: utf-8 checks and generating the output from the last iteration.
-  // 
-  // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-  // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-  // workout.
-  //
+  template<size_t STEP_SIZE>
   really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker);
 
+  //
+  // Parse the entire input in STEP_SIZE-byte chunks.
+  //
+  template<size_t STEP_SIZE>
   really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
 };
 
@@ -167,7 +131,7 @@ public:
 // indicate whether we end an iteration on an odd-length sequence of
 // backslashes, which modifies our subsequent search for odd-length
 // sequences of backslashes in an obvious way.
-really_inline uint64_t json_structural_scanner::follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
   const uint64_t even_bits = 0x5555555555555555ULL;
   const uint64_t odd_bits = ~even_bits;
   uint64_t start_edges = match & ~(match << 1);
@@ -205,7 +169,7 @@ really_inline uint64_t json_structural_scanner::follows_odd_sequence_of(const ui
 //
 //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
 //
-really_inline uint64_t json_structural_scanner::follows(const uint64_t match, uint64_t &overflow) {
+really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
   const uint64_t result = match << 1 | overflow;
   overflow = match >> 63;
   return result;
@@ -217,7 +181,7 @@ really_inline uint64_t json_structural_scanner::follows(const uint64_t match, ui
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //
-really_inline uint64_t json_structural_scanner::follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
   uint64_t follows_match = follows(match, overflow);
   uint64_t result;
   overflow |= add_overflow(follows_match, filler, &result);
@@ -254,15 +218,6 @@ really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x6
   prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
   // Use ^ to turn the beginning quote off, and the end quote on.
   return in_string ^ quote;
-}
-
-really_inline uint64_t json_structural_scanner::invalid_string_bytes(const uint64_t unescaped, const uint64_t quote_mask) {
-  /* All Unicode characters may be placed within the
-  * quotation marks, except for the characters that MUST be escaped:
-  * quotation mark, reverse solidus, and the control characters (U+0000
-  * through U+001F).
-  * https://tools.ietf.org/html/rfc8259 */
-  return quote_mask & unescaped;
 }
 
 //
@@ -315,7 +270,8 @@ really_inline uint64_t json_structural_scanner::find_potential_structurals(const
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.
 //
-really_inline void json_structural_scanner::scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+template<>
+really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
   //
   // Load up all 128 bytes into SIMD registers
   //
@@ -340,23 +296,55 @@ really_inline void json_structural_scanner::scan_step(const uint8_t *buf, const 
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
   utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
   utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
 }
 
+//
+// Find the important bits of JSON in a 64-byte chunk, and add them to structural_indexes.
+//
+template<>
+really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+  //
+  // Load up bytes into SIMD registers
+  //
+  simd::simd8x64<uint8_t> in_1(buf);
+
+  //
+  // Find the strings and potential structurals (operators / primitives).
+  //
+  // This will include false structurals that are *inside* strings--we'll filter strings out
+  // before we return.
+  //
+  uint64_t string_1 = this->find_strings(in_1);
+  uint64_t structurals_1 = this->find_potential_structurals(in_1);
+
+  //
+  // Do miscellaneous work while the processor is busy calculating strings and structurals.
+  //
+  // After that, weed out structurals that are inside strings and find invalid string characters.
+  //
+  uint64_t unescaped_1 = in_1.lteq(0x1F);
+  utf8_checker.check_next_input(in_1);
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->prev_structurals = structurals_1 & ~string_1;
+  this->unescaped_chars_error |= unescaped_1 & string_1;
+}
+
+template<size_t STEP_SIZE>
 really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
   size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
   size_t idx = 0;
 
   for (; idx < lenminusstep; idx += STEP_SIZE) {
-    this->scan_step(&buf[idx], idx, utf8_checker);
+    this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
   }
 
   /* If we have a final chunk of less than 64 bytes, pad it to 64 with
@@ -366,7 +354,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
     uint8_t tmp_buf[STEP_SIZE];
     memset(tmp_buf, 0x20, STEP_SIZE);
     memcpy(tmp_buf, buf + idx, len - idx);
-    this->scan_step(&tmp_buf[0], idx, utf8_checker);
+    this->scan_step<STEP_SIZE>(&tmp_buf[0], idx, utf8_checker);
     idx += STEP_SIZE;
   }
 
@@ -374,6 +362,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
 }
 
+template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
     std::cerr << "Your ParsedJson object only supports documents up to "
@@ -383,7 +372,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
+  scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (!streaming && unlikely(error != simdjson::SUCCESS)) {
@@ -408,3 +397,5 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   pj.structural_indexes[pj.n_structural_indexes] = 0;
   return utf8_checker.errors();
 }
+
+} // namespace stage1
