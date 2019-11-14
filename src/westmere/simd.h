@@ -188,17 +188,26 @@ namespace simdjson::westmere::simd {
 
   template<typename T>
   struct simd8x64 {
-    const simd8<T> chunks[4];
+    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    const simd8<T> chunks[NUM_CHUNKS];
 
     really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
     really_inline void store(T ptr[64]) {
-      this->chunks[0].store(ptr);
-      this->chunks[0].store(ptr+16);
-      this->chunks[0].store(ptr+32);
-      this->chunks[0].store(ptr+48);
+      this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
+      this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
+      this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
+      this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
+    }
+
+    template <typename F>
+    static really_inline void each_index(F const& each) {
+      each(0);
+      each(1);
+      each(2);
+      each(3);
     }
 
     template <typename F>

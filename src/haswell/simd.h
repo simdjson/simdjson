@@ -198,15 +198,22 @@ namespace simdjson::haswell::simd {
 
   template<typename T>
   struct simd8x64 {
-    const simd8<T> chunks[2];
+    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    const simd8<T> chunks[NUM_CHUNKS];
 
     really_inline simd8x64() : chunks{simd8<T>(), simd8<T>()} {}
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
 
-    really_inline void store(T *ptr) {
-      this->chunks[0].store(ptr);
-      this->chunks[0].store(ptr+sizeof(simd8<T>));
+    template <typename F>
+    static really_inline void each_index(F const& each) {
+      each(0);
+      each(1);
+    }
+
+    really_inline void store(T ptr[64]) {
+      this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
+      this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
     }
 
     template <typename F>
