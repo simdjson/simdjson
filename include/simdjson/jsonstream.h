@@ -28,8 +28,6 @@ namespace simdjson {
 
         size_t get_n_bytes_parsed() const;
 
-        void stage_1_thread_func(ParsedJson &pj);
-
     private:
         const char *_buf;
         size_t _len;
@@ -45,6 +43,10 @@ namespace simdjson {
 
         std::thread stage_1_thread;
         simdjson::ParsedJson pj_thread;
+
+#ifdef SIMDJSON_THREADS_ENABLED
+        size_t find_last_json(const ParsedJson &pj);
+#endif
     };
 
 }

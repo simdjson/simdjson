@@ -1,4 +1,4 @@
-/* auto-generated on Wed 13 Nov 2019 05:50:07 PM EST. Do not edit! */
+/* auto-generated on Mon 18 Nov 2019 04:25:01 PM EST. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -36467,16 +36467,12 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 
 using namespace simdjson;
 void find_the_best_supported_implementation();
-size_t find_last_json(ParsedJson&, const char *);
 
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
-
-
 stage1_functype best_stage1;
 stage2_functype best_stage2;
-
 
 JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
         : _buf(buf), _len(len), _batch_size(batchSize) {
@@ -36496,8 +36492,6 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 }
 
 int JsonStream::json_parse(ParsedJson &pj) {
-    //return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, batch_size, pj, realloc_if_needed);
-
     if (pj.byte_capacity == 0) {
         const bool allocok = pj.allocate_capacity(_batch_size, _batch_size);
         const bool allocok_thread = pj_thread.allocate_capacity(_batch_size, _batch_size);
@@ -36510,21 +36504,11 @@ int JsonStream::json_parse(ParsedJson &pj) {
         return simdjson::CAPACITY;
     }
 
-//    //Quick heuristic to see if it's worth parsing the remaining data in the batch
-//    if(!load_next_batch && n_bytes_parsed > 0) {
-//        const auto remaining_data = _batch_size - current_buffer_loc;
-//        const auto avg_doc_len = (float) n_bytes_parsed / n_parsed_docs;
-//
-//        if(remaining_data < avg_doc_len)
-//            load_next_batch = true;
-//    }
-
     if (load_next_batch || current_buffer_loc == last_json){
 
         //First time loading
         if(!stage_1_thread.joinable()){
             _batch_size = std::min(_batch_size, _len);
-
             int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
 
             if (stage1_is_ok != simdjson::SUCCESS) {
@@ -36543,8 +36527,10 @@ int JsonStream::json_parse(ParsedJson &pj) {
             n_bytes_parsed += last_json;
             last_json = 0; //because we want to use it in the if above.
         }
-        if(_len-_batch_size > 0)
+        if(_len-_batch_size > 0) {
+            last_json = find_last_json(pj);
             stage_1_thread = std::thread(&JsonStream::stage_1_thread_func, this, std::ref(pj));
+        }
 
         load_next_batch = false;
 
@@ -36563,7 +36549,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         //of the last loaded document and start parsing at structural_index[1] for the next batch.
         // It should point to the start of the first document in the new batch
         if(next_json == pj.n_structural_indexes) {
-            current_buffer_loc = pj.structural_indexes[next_json - 1];
+            //current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
             load_next_batch = true;
         }
@@ -36583,42 +36569,93 @@ int JsonStream::json_parse(ParsedJson &pj) {
     return res;
 }
 
+size_t JsonStream::find_last_json(const ParsedJson &pj) {
+    auto last_i = pj.n_structural_indexes - 1;
+    if (pj.structural_indexes[last_i] == _batch_size)
+        last_i = pj.n_structural_indexes - 2;
+    auto arr_cnt = 0;
+    auto obj_cnt = 0;
+//    for(auto i = 0; i <= last_i; i++){
+//        printf("%c\t", _buf[pj.structural_indexes[i]]);
+//    }
+//    printf("\n");
+    for (auto i = last_i; i > 0; i--) {
+        auto idxb = pj.structural_indexes[i];
+        switch (_buf[idxb]) {
+            case ':':
+            case ',':
+                continue;
+            case '}':
+                obj_cnt--;
+                continue;
+            case ']':
+                arr_cnt--;
+                continue;
+            case '{':
+                obj_cnt++;
+                break;
+            case '[':
+                arr_cnt++;
+                break;
+        }
+        auto idxa = pj.structural_indexes[i - 1];
+        switch (_buf[idxa]) {
+            case '{':
+            case '[':
+            case ':':
+            case ',':
+                continue;
+        }
+        if (!arr_cnt && !obj_cnt)
+            return pj.structural_indexes[last_i+1];
+        return idxb;
+    }
+}
+
 
 void JsonStream::stage_1_thread_func(ParsedJson &pj){
-    last_json = find_last_json(pj, _buf);
     _batch_size = std::min(_batch_size, _len-last_json);
     if(_batch_size>0)
         (*best_stage1)(&_buf[last_json],_batch_size, pj_thread, true);
 }
 
-size_t find_last_json(ParsedJson &pj, const char *buf){
-    int arr_cnt = 0;
-    int obj_cnt = 0;
-    size_t lj{0};
-    uint32_t i = (buf[0] == ']') || (buf[0] == '}');
-
-    for(i; i<pj.n_structural_indexes; i++){
-        auto idx = pj.structural_indexes[i];
-        switch (buf[idx]){
-            case '{': obj_cnt++;
-                break;
-            case '}': obj_cnt--;
-                break;
-            case '[': arr_cnt++;
-                break;
-            case ']': arr_cnt--;
-                break;
-            default:
-                continue;
-        }
-        if (!arr_cnt && !obj_cnt) {
-            lj = pj.structural_indexes[i+1];
-            if(lj==0) return pj.structural_indexes[i];
-        }
-    }
-    return lj;
-}
-
+//size_t find_last_json(ParsedJson &pj, const char *buf){
+//    int arr_cnt = 0;
+//    int obj_cnt = 0;
+//    size_t lj{0};
+//    uint32_t i = (buf[0] == ']') || (buf[0] == '}');
+//
+//    for(i; i<pj.n_structural_indexes; i++){
+//        auto idx = pj.structural_indexes[i];
+//        switch (buf[idx]){
+//            case '{': obj_cnt++;
+//                break;
+//            case '}': obj_cnt--;
+//                break;
+//            case '[': arr_cnt++;
+//                break;
+//            case ']': arr_cnt--;
+//                break;
+//            default:
+//                continue;
+//        }
+//        if (!arr_cnt && !obj_cnt) {
+//            lj = pj.structural_indexes[i+1];
+//            if(lj==0) return pj.structural_indexes[i];
+//        }
+//    }
+//    return lj;
+//}
+//size_t find_last_json2(ParsedJson &pj, const char *buf){
+////    auto last_buf_idx = pj.structural_indexes[pj.n_structural_indexes-1];
+////    if(last_buf_idx > )
+////    for(auto i=last_buf_idx; i>=0; i--){
+////        if(buf[i] == '\n')
+////            return i-1;
+////    }
+////
+//    return 0;
+//}
 
 size_t JsonStream::get_current_buffer_loc() const {
     return current_buffer_loc;
@@ -38119,7 +38156,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
+    scanner.scan(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (!streaming && unlikely(error != simdjson::SUCCESS)) {
@@ -38664,7 +38701,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
+    scanner.scan(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (!streaming && unlikely(error != simdjson::SUCCESS)) {
@@ -39212,7 +39249,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan(buf, len, utf8_checker);
+    scanner.scan(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
   if (!streaming && unlikely(error != simdjson::SUCCESS)) {
