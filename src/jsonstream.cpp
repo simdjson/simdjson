@@ -41,7 +41,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         return simdjson::CAPACITY;
     }
 #ifdef SIMDJSON_THREADS_ENABLED
-    if(current_buffer_loc == last_json)
+    if(current_buffer_loc == last_json_buffer_loc)
         load_next_batch = true;
 #endif
 
@@ -49,6 +49,10 @@ int JsonStream::json_parse(ParsedJson &pj) {
 #ifdef SIMDJSON_THREADS_ENABLED
         //First time loading
         if(!stage_1_thread.joinable()){
+            _buf = &_buf[current_buffer_loc];
+            _len -= current_buffer_loc;
+            n_bytes_parsed += current_buffer_loc;
+
             _batch_size = std::min(_batch_size, _len);
             int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
 
@@ -64,27 +68,27 @@ int JsonStream::json_parse(ParsedJson &pj) {
             std::swap(pj.structural_indexes, pj_thread.structural_indexes);
             pj.n_structural_indexes = pj_thread.n_structural_indexes;
 
-            _buf = &_buf[last_json];
-            _len -= last_json;
-            n_bytes_parsed += last_json;
-            last_json = 0; //because we want to use it in the if above.
+            _buf = &_buf[last_json_buffer_loc];
+            _len -= last_json_buffer_loc;
+            n_bytes_parsed += last_json_buffer_loc;
+            last_json_buffer_loc = 0; //because we want to use it in the if above.
         }
 
         if(_len-_batch_size > 0) {
-            last_json = find_last_json(pj);
-            _batch_size = std::min(_batch_size, _len-last_json);
+            last_json_buffer_loc = find_last_json(pj);
+            _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
             if(_batch_size>0)
                 stage_1_thread = std::thread(
                         static_cast<stage1_functype>(*best_stage1),
-                        &_buf[last_json],_batch_size,
+                        &_buf[last_json_buffer_loc], _batch_size,
                         std::ref(pj_thread),
                         true);
 
         }
 #else
-        _buf = &_buf[last_json];
-        _len -= last_json;
-        n_bytes_parsed += last_json;
+        _buf = &_buf[current_buffer_loc];
+        _len -= current_buffer_loc;
+        n_bytes_parsed += current_buffer_loc;
 
         _batch_size = std::min(_batch_size, _len);
         int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);

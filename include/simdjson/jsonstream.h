@@ -33,10 +33,10 @@ namespace simdjson {
         size_t _len;
         size_t _batch_size;
         size_t next_json{0};
-        size_t last_json{0};
         bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};
+        size_t last_json_buffer_loc{0};
         size_t thread_current_buffer_loc{0};
         size_t n_parsed_docs{0};
         size_t n_bytes_parsed{0};
