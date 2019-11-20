@@ -1,4 +1,5 @@
 .vscode/
+.idea/
 /VS/
 /build/
 /benchbranch/
