@@ -60,6 +60,18 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
+size_t sum_line_lengths(char * data, size_t length) {
+  std::stringstream is;
+  is.rdbuf()->pubsetbuf(data, length);
+  std::string line;
+  size_t sumofalllinelengths{0};
+  while(getline(is, line)) {
+    sumofalllinelengths += line.size();
+  }
+  return sumofalllinelengths;
+}
+
+
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool just_data = false;
@@ -117,6 +129,12 @@ int main(int argc, char *argv[]) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
            "cycles_per_byte_err", "gb_per_s", "gb_per_s_err");
   }
+  if (!just_data) {
+    size_t lc = sum_line_lengths(p.data(), p.size());
+    BEST_TIME("getline ",sum_line_lengths(p.data(), p.size()) , lc, , 
+       repeat, volume, !just_data);
+  }
+ 
   if (!just_data)
     BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).is_valid(), true,
               , repeat, volume, !just_data);
