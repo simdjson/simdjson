@@ -166,7 +166,9 @@ struct utf8_checker {
       this->check_carried_continuations();
     } else {
       // it is not ascii so we have to do heavy work
-      in.each([&](auto _in) { this->check_utf8_bytes(_in); });
+      for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+        this->check_utf8_bytes(in.chunks[i]);
+      }
     }
   }
 

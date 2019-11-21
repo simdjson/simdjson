@@ -349,7 +349,9 @@ struct utf8_checker {
   }
 
   really_inline void check_next_input(simd8x64<uint8_t> in) {
-    in.each([&](auto bytes) { this->check_next_input(bytes); });
+    for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+      this->check_next_input(in.chunks[i]);
+    }
   }
 
   really_inline ErrorValues errors() {
