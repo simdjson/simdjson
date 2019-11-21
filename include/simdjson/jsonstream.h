@@ -3,6 +3,7 @@
 
 
 #include <algorithm>
+#include <thread>
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
@@ -35,8 +36,17 @@ namespace simdjson {
         bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};
+        size_t last_json_buffer_loc{0};
+        size_t thread_current_buffer_loc{0};
         size_t n_parsed_docs{0};
         size_t n_bytes_parsed{0};
+
+        std::thread stage_1_thread;
+        simdjson::ParsedJson pj_thread;
+
+#ifdef SIMDJSON_THREADS_ENABLED
+        size_t find_last_json(const ParsedJson &pj);
+#endif
     };
 
 }

@@ -22,7 +22,7 @@ else
 ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
-CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude -Isrc -Ibenchmark/linux $(EXTRAFLAGS)
+CXXFLAGS = $(ARCHFLAGS) -std=c++17  -pthread -Wall -Wextra -Wshadow -Iinclude -Isrc -Ibenchmark/linux $(EXTRAFLAGS)
 CFLAGS =  $(ARCHFLAGS)  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 
 

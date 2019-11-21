@@ -181,16 +181,16 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson"
+echo "c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson"
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
 mkdir -p $SINGLEHDR
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson" > $SINGLEHDR/README.md
+echo "c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson" > $SINGLEHDR/README.md
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
-cd $SINGLEHDR && c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
+cd $SINGLEHDR && c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'
