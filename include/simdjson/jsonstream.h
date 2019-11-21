@@ -9,11 +9,60 @@
 #include "simdjson/simdjson.h"
 
 namespace simdjson {
-
+    /*************************************************************************************
+     * The main motivation for this piece of software is to achieve maximum speed and offer
+     * good quality of life while parsing files containing multiple JSON documents.
+     *
+     * Since we want to offer flexibility and not restrict ourselves to a specific file
+     * format, we support any file that contains any valid JSON documents separated by one
+     * or more character that is considered a whitespace by the JSON spec.
+     * Namely: space, nothing, linefeed, carriage return, horizontal tab.
+     * Anything that is not whitespace will be parsed as a JSON document and could lead
+     * to failure.
+     *
+     * To offer maximum parsing speed, our implementation processes the data inside the
+     * buffer by batches and their size is defined by the parameter "batch_size".
+     * By loading data in batches, we can optimize the time spent allocating data in the
+     * ParsedJson and can also open the possibility of multi-threading.
+     * The batch_size must be at least as large as the biggest document in the file, but
+     * not too large in order to submerge the chached memory.  We found that 1MB is
+     * somewhat a sweet spot for now.  Eventually, this batch_size could be fully
+     * automated and be optimal at all times.
+     ************************************************************************************/
     class JsonStream {
     public:
+        /* Create a JsonStream object that can be used to parse sequentially the valid
+         * JSON documents found in the buffer "buf".
+         *
+         * The batch_size must be at least as large as the biggest document in the file, but
+         * not too large in order to submerge the chached memory.  We found that 1MB is
+         * somewhat a sweet spot for now.
+         *
+         * The user is expected to call the following json_parse method to parse the next
+         * valid JSON document found in the buffer.  This method can and is expected to be
+         * called in a loop.
+         *
+         * Various methods are offered to keep track of the status, like get_current_buffer_loc,
+         * get_n_parsed_docs, get_n_bytes_parsed, etc.
+         *
+         * */
         JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
 
+        /* Create a JsonStream object that can be used to parse sequentially the valid
+         * JSON documents found in the buffer "buf".
+         *
+         * The batch_size must be at least as large as the biggest document in the file, but
+         * not too large in order to submerge the chached memory.  We found that 1MB is
+         * somewhat a sweet spot for now.
+         *
+         * The user is expected to call the following json_parse method to parse the next
+         * valid JSON document found in the buffer.  This method can and is expected to be
+         * called in a loop.
+         *
+         * Various methods are offered to keep track of the status, like get_current_buffer_loc,
+         * get_n_parsed_docs, get_n_bytes_parsed, etc.
+         *
+         * */
         JsonStream(const std::string &s, size_t batch_size = 1000000) : JsonStream(s.data(), s.size(), batch_size) {};
 
         /* Parse the next document found in the buffer previously given to JsonStream.
@@ -44,21 +93,27 @@ namespace simdjson {
          * and should be reused for the other documents in the buffer. */
         int json_parse(ParsedJson &pj);
 
+        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
+         * which is basically a reset.  A new JsonStream without initializing again.
+         * */
         void set_new_buffer(const char *buf, size_t len);
 
+        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
+         * which is basically a reset.  A new JsonStream without initializing again.
+         * */
         void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
 
-        // Returns the location (index) of where the next document should be in the buffer.
-        // Can be used for debugging, it tells the user to position of the end of the last
-        // valid JSON document parsed
+        /* Returns the location (index) of where the next document should be in the buffer.
+         * Can be used for debugging, it tells the user to position of the end of the last
+         * valid JSON document parsed*/
         size_t get_current_buffer_loc() const;
 
-        // Returns the total amount of complete documents parsed by the JsonStream,
-        // in the current buffer, at the given time.
+        /* Returns the total amount of complete documents parsed by the JsonStream,
+         * in the current buffer, at the given time.*/
         size_t get_n_parsed_docs() const;
 
-        // Returns the total amount of data (in bytes) parsed by the JsonStream,
-        // in the current buffer, at the given time.
+        /* Returns the total amount of data (in bytes) parsed by the JsonStream,
+         * in the current buffer, at the given time.*/
         size_t get_n_bytes_parsed() const;
 
     private:
