@@ -38,11 +38,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 find_package(CTargets)
 find_package(Options)
-find_package(Threads REQUIRED)
 
-if(CMAKE_USE_PTHREADS_INIT)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-endif()
+option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
 
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
