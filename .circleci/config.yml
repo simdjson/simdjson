@@ -150,6 +150,8 @@ workflows:
       - clang-sse-dynamic
       - clang-sse-static
       - clang-sse-sanitize
+      - gcc-avx-threaded
+      - gcc-avx-unthreaded
 
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
