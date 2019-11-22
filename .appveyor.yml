@@ -17,8 +17,8 @@ environment:
       THREADS: "OFF"
     - SIMDJSON_BUILD_STATIC: "ON"
       THREADS: "ON"
-    - SIMDJSON_BUILD_STATIC: "ON"
-      THREADS: "OFF"
+#    - SIMDJSON_BUILD_STATIC: "ON"
+#      THREADS: "OFF"
       
 build_script:
   - mkdir build
