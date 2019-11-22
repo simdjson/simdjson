@@ -100,3 +100,9 @@ if(MSVC AND (SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
  set_target_properties(${SIMDJSON_LIB_NAME}
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 endif()
+
+if(SIMDJSON_ENABLE_THREADS)
+  find_package(Threads REQUIRED)
+  target_link_libraries( ${SIMDJSON_LIB_NAME} Threads::Threads)
+endif()
+

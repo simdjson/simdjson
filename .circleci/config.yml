@@ -37,6 +37,28 @@ commands:
 
 jobs:
 
+  gcc-avx-unthreaded:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 *without* threads
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ cmake_test ]
+  gcc-avx-threaded:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with threads
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
+    steps: [ cmake_test ]
+
+  clang-avx-unthreaded:
+    description: Build, run tests and check performance on Clang 6 and AVX 2 *without* threads
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ init_clang6, cmake_test ]
+  clang-avx-threaded:
+    description: Build, run tests and check performance on Clang 6 and AVX 2 with threads
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
+    steps: [ init_clang6, cmake_test ]
+
   gcc-avx:
     description: Build, run tests and check performance on GCC 7 and AVX 2
     executor: gcc7
@@ -99,22 +121,22 @@ jobs:
     steps: [ init_clang6, cmake_test ]
 
   clang-sse:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2
     executor: clang6
     environment: { ARCHFLAGS: -march=nehalem }
     steps: [ init_clang6, make_test ]
   clang-sse-dynamic:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake dynamic build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
     steps: [ init_clang6, cmake_test ]
   clang-sse-static:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake static build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ init_clang6, cmake_test ]
   clang-sse-sanitize:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake sanitize build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
     steps: [ init_clang6, cmake_test ]
@@ -139,6 +161,10 @@ workflows:
       - clang-sse-dynamic
       - clang-sse-static
       - clang-sse-sanitize
+      - gcc-avx-threaded
+      - gcc-avx-unthreaded
+      - clang-avx-threaded
+      - clang-avx-unthreaded
 
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
