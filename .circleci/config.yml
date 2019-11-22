@@ -37,6 +37,17 @@ commands:
 
 jobs:
 
+  gcc-avx-unthreaded:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 *without* threads
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ cmake_test ]
+  gcc-avx-threaded:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 with threads
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
+    steps: [ cmake_test ]
+
   gcc-avx:
     description: Build, run tests and check performance on GCC 7 and AVX 2
     executor: gcc7
