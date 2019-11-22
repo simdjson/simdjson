@@ -121,22 +121,22 @@ jobs:
     steps: [ init_clang6, cmake_test ]
 
   clang-sse:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2
     executor: clang6
     environment: { ARCHFLAGS: -march=nehalem }
     steps: [ init_clang6, make_test ]
   clang-sse-dynamic:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake dynamic build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake dynamic build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
     steps: [ init_clang6, cmake_test ]
   clang-sse-static:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake static build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake static build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ init_clang6, cmake_test ]
   clang-sse-sanitize:
-    description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
+    description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake sanitize build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
     steps: [ init_clang6, cmake_test ]
