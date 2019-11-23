@@ -56,6 +56,10 @@ namespace simdjson::haswell::simd {
     really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
       return _mm256_alignr_epi8(*this, _mm256_permute2x128_si256(prev_chunk, *this, 0x21), 16 - N);
     }
+
+    // TODO can we use alignr more directly, without a zero constant?
+    template<int N=1>
+    really_inline simd8<T> prev() const { return this->prev<N>(uint8_t(0)); }
   };
 
   // SIMD byte mask type (returned by things like eq and gt)
@@ -295,7 +299,15 @@ namespace simdjson::haswell::simd {
       return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
     }
 
+    really_inline simd8<uint8_t> last_chunk() const {
+      return this->chunks[NUM_CHUNKS-1];
+    }
+
   }; // struct simd8x64<T>
+
+  // Get a comma separated list of the vector chunks
+  #undef SIMD8X64_CHUNKS
+  #define SIMD8X64_CHUNKS(vec) (vec.chunks[0]), (vec.chunks[1])
 
 } // namespace simdjson::haswell::simd
 UNTARGET_REGION

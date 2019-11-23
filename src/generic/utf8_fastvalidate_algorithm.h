@@ -19,15 +19,10 @@
 
 using namespace simd;
 
-struct processed_utf_bytes {
-  simd8<uint8_t> raw_bytes;
-  simd8<int8_t> high_nibbles;
-  simd8<int8_t> carried_continuations;
-};
-
 struct utf8_checker {
   simd8<uint8_t> has_error;
-  processed_utf_bytes previous;
+  simd8<int8_t> prev_carried_continuations;
+  simd8<int8_t> prev_high_nibbles;
 
   // all byte values must be no larger than 0xF4
   really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
@@ -45,11 +40,11 @@ struct utf8_checker {
   }
 
   really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
-    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
-    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
+    simd8<int8_t> prev1_carried_continuations = initial_lengths.prev(this->prev_carried_continuations);
+    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev1_carried_continuations).saturating_sub(1));
     simd8<int8_t> sum = initial_lengths + right1;
 
-    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
+    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->prev_carried_continuations);
     simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
     return sum + right2;
   }
@@ -70,7 +65,7 @@ struct utf8_checker {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 1
     };
-    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
+    this->has_error |= simd8<uint8_t>(this->prev_carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
   }
 
   // when 0xED is found, next byte must be no larger than 0x9F
@@ -97,7 +92,7 @@ struct utf8_checker {
   really_inline void check_overlong(simd8<uint8_t> current_bytes,
                                     simd8<uint8_t> off1_current_bytes,
                                     simd8<int8_t> high_nibbles) {
-    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
+    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->prev_high_nibbles);
 
     // Two-byte characters must start with at least C2
     // Three-byte characters must start with at least E1
@@ -125,54 +120,45 @@ struct utf8_checker {
     this->has_error |= simd8<uint8_t>(initial_under & second_under);
   }
 
-  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
-    answer->raw_bytes = bytes;
-    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
+  really_inline simd8<int8_t> count_nibbles(simd8<uint8_t> bytes) {
+    return simd8<int8_t>(bytes.shr<4>());
   }
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
-    struct processed_utf_bytes pb {};
-    this->count_nibbles(current_bytes, &pb);
+  really_inline void check_utf8_bytes(simd8<uint8_t> bytes, simd8<uint8_t> prev_bytes) {
+    simd8<int8_t> high_nibbles = this->count_nibbles(bytes);
 
-    this->check_smaller_than_0xF4(current_bytes);
+    this->check_smaller_than_0xF4(bytes);
 
-    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
+    simd8<int8_t> initial_lengths = this->continuation_lengths(high_nibbles);
 
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
+    simd8<int8_t> carried_continuations = this->carry_continuations(initial_lengths);
 
-    this->check_continuations(initial_lengths, pb.carried_continuations);
+    this->check_continuations(initial_lengths, carried_continuations);
 
-    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
+    simd8<uint8_t> off1_bytes = bytes.prev(prev_bytes);
+    this->check_first_continuation_max(bytes, off1_bytes);
 
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
+    this->check_overlong(bytes, off1_bytes, high_nibbles);
+    this->prev_high_nibbles = high_nibbles;
+    this->prev_carried_continuations = carried_continuations;
   }
 
-  really_inline void check_next_input(simd8<uint8_t> in) {
-    if (likely(!in.any_bits_set_anywhere(0x80u))) {
-      this->check_carried_continuations();
-    } else {
-      this->check_utf8_bytes(in);
-    }
-  }
-
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
+  really_inline void check(const simd8x64<uint8_t> in, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
     simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
-    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
-      // it is ascii, we just check carried continuations.
+    if (likely(bits.bits_not_set_anywhere(0x80u))) {
+      // If it's ascii, we just check carried continuations.
       this->check_carried_continuations();
     } else {
-      // it is not ascii so we have to do heavy work
-      for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->check_utf8_bytes(in.chunks[i]);
-      }
+      this->check_utf8_bytes(in.chunks[0], prev_bytes ? *prev_bytes : buf-sizeof(simd8<uint8_t>));
+      for (int i=1;i<simd8x64<uint8_t>::NUM_CHUNKS;i++) { this->check_utf8_bytes(in.chunks[i], in.chunks[i-1]); }
     }
   }
 
-  really_inline ErrorValues errors() {
+  really_inline ErrorValues check_eof() {
+    // It's EOF, there will be no more continuations.
+    this->check_carried_continuations();
     return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

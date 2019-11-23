@@ -42,6 +42,9 @@ namespace simdjson::arm64::simd {
     really_inline simd8<T> prev(const simd8<T> prev_chunk) const {
       return vextq_u8(prev_chunk, *this, 16 - N);
     }
+
+    template<int N=1>
+    really_inline simd8<T> prev() const { this->prev(uint8_t(0)); }
   };
 
   // SIMD byte mask type (returned by things like eq and gt)
@@ -128,7 +131,9 @@ namespace simdjson::arm64::simd {
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
     really_inline bool any_bits_set_anywhere() const { return vmaxvq_u8(*this) != 0; }
+    really_inline bool bits_not_set_anywhere() const { return vmaxvq_u8(*this) == 0; }
     really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set_anywhere(); }
     template<int N>
     really_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
     template<int N>
@@ -221,6 +226,9 @@ namespace simdjson::arm64::simd {
     really_inline simd8<int8_t> prev(const simd8<int8_t> prev_chunk) const {
       return vextq_s8(prev_chunk, *this, 16 - N);
     }
+
+    template<int N=1>
+    really_inline simd8<int8_t> prev() const { return this->prev(int8_t(0)); }
 
     // Perform a lookup assuming no value is larger than 16
     template<typename L>
@@ -336,7 +344,15 @@ namespace simdjson::arm64::simd {
       return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
     }
 
+    really_inline simd8<T> last_chunk() const {
+      return this->chunks[NUM_CHUNKS-1];
+    }
+
   }; // struct simd8x64<T>
+
+  // Get a comma separated list of the vector chunks
+  #undef SIMD8X64_CHUNKS
+  #define SIMD8X64_CHUNKS(vec) (vec.chunks[0]), (vec.chunks[1]), (vec.chunks[2]), (vec.chunks[3])
 
 } // namespace simdjson::arm64::simd
 

@@ -57,6 +57,11 @@ public:
 
 class json_structural_scanner {
 public:
+  ParsedJson& pj;
+  bit_indexer structural_indexes;
+  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
+  uint64_t unescaped_chars_error = 0;
+
   // Whether the first character of the next iteration is escaped.
   uint64_t prev_escaped = 0ULL;
   // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
@@ -68,18 +73,8 @@ public:
   // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
   // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
   uint64_t prev_structurals = 0;
-  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
-  uint64_t unescaped_chars_error = 0;
-  bit_indexer structural_indexes;
 
-  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
-
-  //
-  // Finish the scan and return any errors.
-  //
-  // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
-  //
-  really_inline ErrorValues detect_errors_on_eof();
+  json_structural_scanner(ParsedJson &_pj) : pj{_pj}, structural_indexes{_pj.structural_indexes} {}
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -113,13 +108,25 @@ public:
   // Find the important bits of JSON in a STEP_SIZE-byte chunk, and add them to structural_indexes.
   //
   template<size_t STEP_SIZE>
-  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker);
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker, const simd8<uint8_t> *prev_bytes=NULL);
+  template<size_t STEP_SIZE>
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker, const simd8<uint8_t> prev_bytes);
+
+  template<size_t STEP_SIZE>
+  really_inline ErrorValues scan_remainder(const uint8_t *buf, const size_t idx, const size_t len, utf8_checker &utf8_checker, const simd8<uint8_t> prev_bytes);
+
+  //
+  // Finish the scan and return any errors.
+  //
+  // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
+  //
+  really_inline ErrorValues scan_eof(const size_t idx, const size_t len, utf8_checker &utf8_checker);
 
   //
   // Parse the entire input in STEP_SIZE-byte chunks.
   //
   template<size_t STEP_SIZE>
-  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
+  really_inline ErrorValues scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
 };
 
 // return a bitvector indicating where we have characters that end an odd-length
@@ -186,16 +193,6 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   uint64_t result;
   overflow |= add_overflow(follows_match, filler, &result);
   return result;
-}
-
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof() {
-  if (prev_in_string) {
-    return UNCLOSED_STRING;
-  }
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
-  return SUCCESS;
 }
 
 //
@@ -271,12 +268,12 @@ really_inline uint64_t json_structural_scanner::find_potential_structurals(const
 // workout.
 //
 template<>
-really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker, const simd8<uint8_t> *prev_bytes) {
   //
   // Load up all 128 bytes into SIMD registers
   //
-  simd::simd8x64<uint8_t> in_1(buf);
-  simd::simd8x64<uint8_t> in_2(buf+64);
+  simd::simd8x64<uint8_t> in_1(&buf[0]);
+  simd::simd8x64<uint8_t> in_2(&buf[64]);
 
   //
   // Find the strings and potential structurals (operators / primitives).
@@ -295,13 +292,13 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
   // After that, weed out structurals that are inside strings and find invalid string characters.
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_checker.check_next_input(in_1);
+  utf8_checker.check(in_1, &buf[0], prev_bytes);
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_checker.check_next_input(in_2);
+  utf8_checker.check(in_2, &buf[64], NULL);
   this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
@@ -311,11 +308,11 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
 // Find the important bits of JSON in a 64-byte chunk, and add them to structural_indexes.
 //
 template<>
-really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker, const simd8<uint8_t> *prev_bytes) {
   //
   // Load up bytes into SIMD registers
   //
-  simd::simd8x64<uint8_t> in_1(buf);
+  simd::simd8x64<uint8_t> in_1(&buf[0]);
 
   //
   // Find the strings and potential structurals (operators / primitives).
@@ -332,61 +329,41 @@ really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, co
   // After that, weed out structurals that are inside strings and find invalid string characters.
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_checker.check_next_input(in_1);
+  utf8_checker.check(in_1, &buf[0], prev_bytes);
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 }
 
+//
+// Find the important bits of JSON in a 64-byte chunk, and add them to structural_indexes.
+//
 template<size_t STEP_SIZE>
-really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
-  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-  size_t idx = 0;
-
-  for (; idx < lenminusstep; idx += STEP_SIZE) {
-    this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
-  }
-
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-  * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-  * checks). */
-  if (likely(idx < len)) {
-    uint8_t tmp_buf[STEP_SIZE];
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    this->scan_step<STEP_SIZE>(&tmp_buf[0], idx, utf8_checker);
-    idx += STEP_SIZE;
-  }
-
-  /* finally, flatten out the remaining structurals from the last iteration */
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+really_inline void json_structural_scanner::scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker, const simd8<uint8_t> prev_bytes) {
+  scan_step<STEP_SIZE>(buf, idx, utf8_checker, &prev_bytes);
 }
 
-template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
-  }
-  utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
+// Handle EOF (there are still errors to check)
+really_inline ErrorValues json_structural_scanner::scan_eof(const size_t idx, const size_t len, utf8_checker &utf8_checker) {
+  // Flatten out the remaining structurals from the last iteration
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
 
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
-    return error;
+  // The UTF-8 checker needs to look at the last set of bytes to be sure there's no error.
+  if (this->prev_in_string) {
+    return UNCLOSED_STRING;
+  }
+  if (this->unescaped_chars_error) {
+    return UNESCAPED_CHARS;
   }
 
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
+  pj.n_structural_indexes = this->structural_indexes.tail - pj.structural_indexes;
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+    return EMPTY;
   }
   if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+    return UNEXPECTED_ERROR;
   }
   if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
@@ -395,7 +372,54 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   }
   /* make it safe to dereference one beyond this array */
   pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_checker.errors();
+  return utf8_checker.check_eof();
+}
+
+template<size_t STEP_SIZE>
+really_inline ErrorValues json_structural_scanner::scan_remainder(const uint8_t *buf, const size_t idx, const size_t len, utf8_checker &utf8_checker, const simd8<uint8_t> prev_bytes) {
+  uint8_t end_buf[STEP_SIZE];
+  memset(end_buf, 0x20, STEP_SIZE);
+  memcpy(end_buf, buf, len - idx);
+  this->scan_step<STEP_SIZE>(end_buf, idx, utf8_checker, prev_bytes);
+  return this->scan_eof(idx+STEP_SIZE, len, utf8_checker);
+}
+
+template<size_t STEP_SIZE>
+really_inline ErrorValues json_structural_scanner::scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+  if (unlikely(len > pj.byte_capacity)) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+
+  // If we have more than one step, we loop.
+  simd8<uint8_t> zero(uint8_t(0));
+  if (likely(len > STEP_SIZE)) {
+    // Having more than STEP_SIZE bytes means having at least one chunk at the beginning.
+    this->scan_step<STEP_SIZE>(buf, 0, utf8_checker, uint8_t(0));
+
+    // Loop until all except the last chunk.
+    size_t idx;
+    for (idx = STEP_SIZE; idx < (len - STEP_SIZE); idx += STEP_SIZE) {
+      this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
+    }
+
+    // The last step will be between 1 and STEP_SIZE bytes.
+    return this->scan_remainder<STEP_SIZE>(&buf[idx], idx, len, utf8_checker, &buf[idx-sizeof(simd8<uint8_t>)]);
+
+  } else {
+    return this->scan_remainder<STEP_SIZE>(buf, 0, len, utf8_checker, uint8_t(0));
+  }
+}
+
+template<size_t STEP_SIZE>
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, UNUSED bool streaming) {
+  // TODO I imagine this breaks streaming ... but I can't reason about what errors streaming does
+  // and does not want to return.
+  utf8_checker utf8_checker{};
+  json_structural_scanner scanner(pj);
+  return scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
 }
 
 } // namespace stage1

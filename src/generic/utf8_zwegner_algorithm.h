@@ -103,7 +103,6 @@ using vmask2_t = simd8<bool>::bitmask2_t;
 
 struct utf8_checker {
   simd8<uint8_t> special_case_errors;
-  simd8<uint8_t> prev_bytes;
   vmask2_t last_cont;
   vmask_t length_errors;
 
@@ -258,10 +257,7 @@ struct utf8_checker {
   // bytes, we AND them together. Only when all three have an error bit in common
   // do we fail validation.
   //
-  really_inline void check_special_cases(const simd8<uint8_t> bytes) {
-    const simd8<uint8_t> shifted_bytes = bytes.prev<1>(this->prev_bytes);
-    this->prev_bytes = bytes;
-
+  really_inline void check_special_cases(const simd8<uint8_t> bytes, const simd8<uint8_t> shifted_bytes) {
     // Look up error masks for three consecutive nibbles. We need to
     // AND with 0x0F for each one, because vpshufb has the neat
     // "feature" that negative values in an index byte will result in 
@@ -329,32 +325,33 @@ struct utf8_checker {
   }
 
   // check whether the current bytes are valid UTF-8
-  // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(const simd8<uint8_t> bytes, const vmask_t bit_7) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t> bytes, const simd8<uint8_t> shifted_bytes, const vmask_t bit_7) {
     this->check_length_errors(bytes, bit_7);
-    this->check_special_cases(bytes);
+    this->check_special_cases(bytes, shifted_bytes);
   }
 
-  really_inline void check_next_input(simd8<uint8_t> bytes) {
-    vmask_t bit_7 = bytes.get_bit<7>();
+  really_inline void check(const simd8x64<uint8_t> in, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
+    vmask_t bit_7 = in.chunks[0].get_bit<7>();
     if (unlikely(bit_7)) {
-      // TODO (@jkeiser): To work with simdjson's caller model, I moved the calculation of
-      // shifted_bytes inside check_utf8_bytes. I believe this adds an extra instruction to the hot
-      // path (saving prev_bytes), which is undesirable, though 2 register accesses vs. 1 memory
-      // access might be a wash. Come back and try the other way.
-      this->check_utf8_bytes(bytes, bit_7);
-    } else {
-      this->length_errors |= this->last_cont;
+      if (prev_bytes) {
+        this->check_utf8_bytes(in.chunks[0], in.chunks[0].prev(*prev_bytes), bit_7);
+      } else {
+        this->check_utf8_bytes(in.chunks[0], &buf[-1], bit_7);
+      }
+    }
+
+    for (int i=1;i<simd8x64<uint8_t>::NUM_CHUNKS;i++) {
+      bit_7 = in.chunks[i].get_bit<7>();
+      if (unlikely(bit_7)) {
+        this->check_utf8_bytes(in.chunks[i], &buf[sizeof(simd8<uint8_t>)*i-1], bit_7);
+      } else {
+        this->length_errors |= this->last_cont;
+      }
     }
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
-    for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-      this->check_next_input(in.chunks[i]);
-    }
-  }
-
-  really_inline ErrorValues errors() {
-    return (this->special_case_errors.any_bits_set_anywhere() | this->length_errors) ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  really_inline ErrorValues check_eof() {
+    this->length_errors |= this->last_cont;
+    return (this->special_case_errors.any_bits_set_anywhere() || this->length_errors) ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

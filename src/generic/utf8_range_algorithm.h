@@ -19,14 +19,9 @@
 
 using namespace simd;
 
-struct processed_utf_bytes {
-  simd8<uint8_t> raw_bytes;
-  simd8<uint8_t> first_len;
-};
-
 struct utf8_checker {
   simd8<bool> has_error;
-  processed_utf_bytes previous;
+  simd8<uint8_t> prev_first_len;
 
   really_inline void check_carried_continuations() {
     static const int8_t last_len[32] = {
@@ -35,15 +30,15 @@ struct utf8_checker {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 2, 1, 0
     };
-    this->has_error |= simd8<int8_t>(this->previous.first_len) > simd8<int8_t>(last_len + 32 - sizeof(simd8<int8_t>));
+    this->has_error |= simd8<int8_t>(this->prev_first_len) > simd8<int8_t>(last_len + 32 - sizeof(simd8<int8_t>));
   }
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t> bytes, const simd8<uint8_t> prev_bytes) {
 
     /* high_nibbles = input >> 4 */
-    const simd8<uint8_t> high_nibbles = current_bytes.shr<4>();
+    const simd8<uint8_t> high_nibbles = bytes.shr<4>();
 
     /*
     * Map high nibble of "First Byte" to legal character length minus 1
@@ -65,17 +60,17 @@ struct utf8_checker {
     /* Second Byte: set range index to first_len */
     /* 0 for 00~7F, 1 for C0~DF, 2 for E0~EF, 3 for F0~FF */
     /* range |= (first_len, previous->first_len) << 1 byte */
-    range |= first_len.prev(this->previous.first_len);
+    range |= first_len.prev(this->prev_first_len);
 
     /* Third Byte: set range index to saturate_sub(first_len, 1) */
     /* 0 for 00~7F, 0 for C0~DF, 1 for E0~EF, 2 for F0~FF */
     /* range |= (first_len - 1) << 2 bytes */
-    range |= first_len.saturating_sub(1).prev<2>(this->previous.first_len.saturating_sub(1));
+    range |= first_len.saturating_sub(1).prev<2>(this->prev_first_len.saturating_sub(1));
 
     /* Fourth Byte: set range index to saturate_sub(first_len, 2) */
     /* 0 for 00~7F, 0 for C0~DF, 0 for E0~EF, 1 for F0~FF */
     /* range |= (first_len - 2) << 3 bytes */
-    range |= first_len.saturating_sub(2).prev<3>(this->previous.first_len.saturating_sub(2));
+    range |= first_len.saturating_sub(2).prev<3>(this->prev_first_len.saturating_sub(2));
 
     /*
       * Now we have below range indices caluclated
@@ -94,7 +89,7 @@ struct utf8_checker {
     /* Adjust Second Byte range for special First Bytes(E0,ED,F0,F4) */
     /* Overlaps lead to index 9~15, which are illegal in range table */
     /* shift1 = (input, previous->input) << 1 byte */
-    simd8<uint8_t> shift1 = current_bytes.prev(this->previous.raw_bytes);
+    simd8<uint8_t> shift1 = bytes.prev(prev_bytes);
     /*
       * shift1:  | EF  F0 ... FE | FF  00  ... ...  DE | DF  E0 ... EE |
       * pos:     | 0   1      15 | 16  17           239| 240 241    255|
@@ -146,35 +141,27 @@ struct utf8_checker {
     );
 
     // We're fine with high-bit wraparound here, so we use int comparison since it's faster on Intel
-    this->has_error |= simd8<int8_t>(minv) > simd8<int8_t>(current_bytes);
-    this->has_error |= simd8<int8_t>(current_bytes) > simd8<int8_t>(maxv);
+    this->has_error |= simd8<int8_t>(minv) > simd8<int8_t>(bytes);
+    this->has_error |= simd8<int8_t>(bytes) > simd8<int8_t>(maxv);
 
-    this->previous.raw_bytes = current_bytes;
-    this->previous.first_len = first_len;
+    this->prev_first_len = first_len;
   }
 
-  really_inline void check_next_input(simd8<uint8_t> in) {
-    if (likely(!in.any_bits_set_anywhere(0x80u))) {
-      this->check_carried_continuations();
-    } else {
-      this->check_utf8_bytes(in);
-    }
-  }
-
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
+  really_inline void check(const simd8x64<uint8_t> in, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
+    // It it's not ascii so we have to do heavy work
     simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
-    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
-      // it is ascii, we just check carried continuations.
-      this->check_carried_continuations();
-    } else {
-      // it is not ascii so we have to do heavy work
-      for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->check_utf8_bytes(in.chunks[i]);
-      }
+    if (unlikely(bits.any_bits_set_anywhere(0x80u))) {
+      this->check_utf8_bytes(in.chunks[0], prev_bytes ? *prev_bytes : &buf[-sizeof(simd8<uint8_t>)]);
+      for (int i=1;i<simd8x64<uint8_t>::NUM_CHUNKS;i++) { this->check_utf8_bytes(in.chunks[i], in.chunks[i-1]); }
+      return;
     }
+
+    // it is ascii, we just check carried continuations.
+    this->check_carried_continuations();
   }
 
-  really_inline ErrorValues errors() {
+  really_inline ErrorValues check_eof() {
+    this->check_carried_continuations();
     return this->has_error.any() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker
