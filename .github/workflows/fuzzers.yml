@@ -18,15 +18,16 @@ jobs:
     steps:
     - name: Install packages necessary for building
       run: |
-        sudo apt-get install --quiet ninja-build valgrind
+        sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 8
 
     - uses: actions/checkout@v1
-        # with:
-        # remove this once integrated
-        # ref: paul/fuzz_experiment
+    - name: Create and prepare the initial seed corpus
+      run: |
+        fuzz/build_corpus.sh
+        mv corpus.zip seed_corpus.zip
     - name: Download the corpus from the last run
       run: |
         wget --quiet https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
@@ -39,6 +40,15 @@ jobs:
         clang++ --version
     - name: Build all the variants
       run: fuzz/build_fuzzer_variants.sh
+    - name: Verify that the oss-fuzz seed corpus passes without problems
+      run: |
+        mkdir seedcorpus
+        unzip -d seedcorpus seed_corpus.zip
+        for buildvariant in noavx withavx; do
+          for fuzzer in $allfuzzers; do
+            build-ossfuzz-$buildvariant/fuzz/fuzz_$fuzzer seedcorpus -max_total_time=1
+          done
+        done
     - name: Run the fastest fuzzer to explore fast
       run: |
         for fuzzer in $allfuzzers; do
