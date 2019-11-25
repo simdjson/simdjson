@@ -4,12 +4,12 @@ As fast and convenient as possible.
 ## Contents
 - [Motivations](#Motivations)
 - [Performance](#Performance)
-- [How it works](#How it works)
+- [How it works](how-it-works)
 - [Support](#Support)
 - [API](#API)
-- [Concurrency mode](#Concurrency mode)
+- [Concurrency mode](#concurrency-mode)
 - [Example](#Example)
-- [Use cases](#Use cases)
+- [Use cases](#use-cases)
 
 
 ## Motivations
