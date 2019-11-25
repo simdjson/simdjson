@@ -35,7 +35,7 @@ namespace simdjson {
          * JSON documents found in the buffer "buf".
          *
          * The batch_size must be at least as large as the biggest document in the file, but
-         * not too large in order to submerge the chached memory.  We found that 1MB is
+         * not too large to submerge the cached memory.  We found that 1MB is
          * somewhat a sweet spot for now.
          *
          * The user is expected to call the following json_parse method to parse the next
@@ -52,7 +52,7 @@ namespace simdjson {
          * JSON documents found in the buffer "buf".
          *
          * The batch_size must be at least as large as the biggest document in the file, but
-         * not too large in order to submerge the chached memory.  We found that 1MB is
+         * not too large to submerge the cached memory.  We found that 1MB is
          * somewhat a sweet spot for now.
          *
          * The user is expected to call the following json_parse method to parse the next
@@ -76,13 +76,13 @@ namespace simdjson {
          * JsonStream object.
          *
          * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case
-         * of a success and indicates that the buffer still contains more data to be parsed,
+         * of success and indicates that the buffer still contains more data to be parsed,
          * meaning this function can be called again to return the next JSON document
          * after this one.
          *
-         * The function returns simdjson::SUCCESS (as integer = 0) in case of a success
+         * The function returns simdjson::SUCCESS (as integer = 0) in case of success
          * and indicates that the buffer has successfully been parsed to the end.
-         * Every document it contained have been parsed without error.
+         * Every document it contained has been parsed without error.
          *
          * The function returns an error code from simdjson/simdjson.h in case of failure
          * such as simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
@@ -94,7 +94,7 @@ namespace simdjson {
         int json_parse(ParsedJson &pj);
 
         /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
-         * which is basically a reset.  A new JsonStream without initializing again.
+         * which acts as a reset.  A new JsonStream without initializing again.
          * */
         void set_new_buffer(const char *buf, size_t len);
 
@@ -104,7 +104,7 @@ namespace simdjson {
         void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
 
         /* Returns the location (index) of where the next document should be in the buffer.
-         * Can be used for debugging, it tells the user to position of the end of the last
+         * Can be used for debugging, it tells the user the position of the end of the last
          * valid JSON document parsed*/
         size_t get_current_buffer_loc() const;
 

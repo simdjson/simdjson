@@ -154,6 +154,29 @@ if( ! pj.is_valid() ) {
 
 As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
 
+## JSON streaming
+
+**API and detailed documentation found [here](doc/JsonStream.md).**
+
+Here is a simple exemple, using single header simdjson:
+```cpp
+#include "simdjson.h"
+#include "simdjson.cpp"
+
+int parse_file(const char *filename) {
+    simdjson::padded_string p = simdjson::get_corpus(filename);
+    simdjson::ParsedJson pj;
+    simdjson::JsonStream js{p};
+    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+    
+    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+            parse_res = js.json_parse(pj);
+
+            //Do something with pj...
+        }
+}
+```
+
 ## Usage: easy single-header version
 
 See the "singleheader" repository for a single header version. See the included
