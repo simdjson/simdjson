@@ -4,7 +4,7 @@ As fast and convenient as possible.
 ## Contents
 - [Motivations](#Motivations)
 - [Performance](#Performance)
-- [How it works](how-it-works)
+- [How it works](#how-it-works)
 - [Support](#Support)
 - [API](#API)
 - [Concurrency mode](#concurrency-mode)
