@@ -63,10 +63,6 @@
 //
 using namespace simd;
 
-namespace utf8_validation {
-
-} // namespace utf8_validation
-
 struct utf8_checker {
   // If this is nonzero, there has been a UTF-8 error.
   simd8<uint8_t> error;
@@ -196,13 +192,13 @@ struct utf8_checker {
     return byte_1_flags & byte_2_flags;
   }
 
+  //
+  // Get the error flags for bytes 3, 4 and 5.
+  //
+  // The only special errors we can detect on these bytes are TOO_LONG and TOO_SHORT: basically,
+  // missing or extra continuation bytes.
+  //
   really_inline simd8<uint8_t> get_byte_3_4_5_errors(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
-    // Total 7 instructions, 3 simd constants:
-    // - 3 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 2 "or"
-    // - 1 table constant
-
     const simd8<uint8_t> byte_3_table = simd8<uint8_t>::repeat_16(
         // TOO_SHORT ASCII:           111_____ ________ [0___]____
         LEAD_3, LEAD_3, LEAD_3, LEAD_3,
@@ -212,8 +208,24 @@ struct utf8_checker {
         // TOO_SHORT Multibyte Leads: 111_____ ________ [11__]____
         LEAD_3, LEAD_3, LEAD_3, LEAD_3
     );
-    const simd8<uint8_t> byte_4_table = byte_3_table.shr<1>(); // TOO_SHORT: LEAD_4, TOO_LONG: LEAD_3
-    const simd8<uint8_t> byte_5_table = byte_3_table.shr<2>(); // TOO_SHORT: <none>, TOO_LONG: LEAD_4
+    const simd8<uint8_t> byte_4_table = simd8<uint8_t>::repeat_16(
+        // TOO_SHORT ASCII:           1111____ ________ [0___]____
+        LEAD_4, LEAD_4, LEAD_4, LEAD_4,
+        LEAD_4, LEAD_4, LEAD_4, LEAD_4,
+        // TOO_LONG  Continuations:   1110____ ________ [10__]____
+        LEAD_3, LEAD_3, LEAD_3, LEAD_3,
+        // TOO_SHORT Multibyte Leads: 1111____ ________ [11__]____
+        LEAD_4, LEAD_4, LEAD_4, LEAD_4
+    );
+    const simd8<uint8_t> byte_5_table = simd8<uint8_t>::repeat_16(
+        // ASCII:           1111____ ________ [0___]____
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        // TOO_LONG  Continuations:   1110____ ________ [10__]____
+        LEAD_4, LEAD_4, LEAD_4, LEAD_4,
+        // TOO_SHORT Multibyte Leads: 1111____ ________ [11__]____
+        0, 0, 0, 0
+    );
 
     // high_bits is byte 5, high_bits.prev<2> is byte 3 and high_bits.prev<1> is byte 4
     return high_bits.prev<2>(prev_high_bits).lookup_16(byte_3_table) |
