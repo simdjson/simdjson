@@ -75,7 +75,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         }
 
         if(_len-_batch_size > 0) {
-            last_json_buffer_loc = find_last_json(pj);
+            last_json_buffer_loc = find_last_json_buf_loc(pj);
             _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
             if(_batch_size>0)
                 stage_1_thread = std::thread(
@@ -136,7 +136,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
 }
 
 #ifdef SIMDJSON_THREADS_ENABLED
-size_t JsonStream::find_last_json(const ParsedJson &pj) {
+size_t JsonStream::find_last_json_buf_loc(const ParsedJson &pj) {
     auto last_i = pj.n_structural_indexes - 1;
     if (pj.structural_indexes[last_i] == _batch_size)
         last_i = pj.n_structural_indexes - 2;
