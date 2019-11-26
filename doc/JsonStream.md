@@ -106,7 +106,8 @@ Some official formats **(non-exhaustive list)**:
 // loop.  
 //  
 // Various methods are offered to keep track of the status, like get_current_buffer_loc, 
-// get_n_parsed_docs, // get_n_bytes_parsed, etc.
+// get_n_parsed_docs, 
+// get_n_bytes_parsed, etc.
  JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
  JsonStream(const std::string &s, size_t batch_size = 1000000);
  ```  
@@ -121,21 +122,26 @@ Some official formats **(non-exhaustive list)**:
 	// JsonStream object.  
 	//  
 	// The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case of 
-	// success and indicates that the buffer // still contains more data to be parsed, 
+	// success and indicates that the buffer 
+	// still contains more data to be parsed, 
 	// meaning this function can be called again to return the next JSON document 
 	// after this one.  
 	//  
 	// The function returns simdjson::SUCCESS (as integer = 0) in case of success and 
-	// indicates that the buffer has // successfully been parsed to the end. Every 
+	// indicates that the buffer has 
+	// successfully been parsed to the end. Every 
 	// document it contained has been parsed without error.  
 	//  
 	// The function returns an error code from simdjson/simdjson.h in case of failure 
-	// such as simdjson::CAPACITY, // simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so 
-	// forth; the simdjson::error_message function converts these error // codes into a 
+	// such as simdjson::CAPACITY, 
+	// simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so 
+	// forth; the simdjson::error_message function converts these error 
+	// codes into a 
 	// string).  
 	//  
 	// You can also check validity by calling pj.is_valid(). The same ParsedJson can 
-	// and should be reused for the other // documents in the buffer.
+	// and should be reused for the other 
+	// documents in the buffer.
 	 int json_parse(ParsedJson &pj)
 	 ```  
  - **Buffer**
