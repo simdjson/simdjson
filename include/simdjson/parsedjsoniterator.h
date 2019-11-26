@@ -37,12 +37,12 @@ public:
   inline bool move_forward();
 
   // retrieve the character code of what we're looking at:
-  // [{"sltfn are the possibilities
+  // [{"slutfn are the possibilities
   inline uint8_t get_type() const {
     return current_type; // short functions should be inlined!
   }
 
-  // get the int64_t value at this node; valid only if we're at "l"
+  // get the int64_t value at this node; valid only if get_type is "l"
   inline int64_t get_integer() const {
     if (location + 1 >= tape_length) {
       return 0; // default value in case of error
@@ -50,7 +50,7 @@ public:
     return static_cast<int64_t>(pj->tape[location + 1]);
   }
 
-  // get the value as uint64
+  // get the value as uint64; valid only if  if get_type is "u"
   inline uint64_t get_unsigned_integer() const {
     if (location + 1 >= tape_length) {
       return 0; // default value in case of error
@@ -58,9 +58,9 @@ public:
     return pj->tape[location + 1];
   }
 
-  // get the string value at this node (NULL ended); valid only if we're at "
+  // get the string value at this node (NULL ended); valid only if get_type is "
   // note that tabs, and line endings are escaped in the returned value (see
-  // print_with_escapes) return value is valid UTF-8 It may contain NULL chars
+  // print_with_escapes) return value is valid UTF-8, it may contain NULL chars
   // within the string: get_string_length determines the true string length.
   inline const char *get_string() const {
     return reinterpret_cast<const char *>(
@@ -78,7 +78,7 @@ public:
   }
 
   // get the double value at this node; valid only if
-  // we're at "d"
+  // get_type() is "d"
   inline double get_double() const {
     if (location + 1 >= tape_length) {
       return std::numeric_limits<double>::quiet_NaN(); // default value in
@@ -151,7 +151,7 @@ public:
   inline bool move_to_key(const char *key, uint32_t length);
 
   // when at a key location within an object, this moves to the accompanying
-  // value (located next to it). this is equivalent but much faster than
+  // value (located next to it). This is equivalent but much faster than
   // calling "next()".
   inline void move_to_value();
 
@@ -207,7 +207,7 @@ public:
   // true).
   inline bool next();
 
-  // Withing a given scope (series of nodes at the same depth within either an
+  // Within a given scope (series of nodes at the same depth within either an
   // array or an object), we move backward.
   // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true
   // when starting at the end of the scope. At the object ({) or at the array
@@ -239,7 +239,7 @@ public:
   // void to_end_scope();              // move us to
   // the start of our current scope; always succeeds
 
-  // print the thing we're currently pointing at
+  // print the node we are currently pointing at
   bool print(std::ostream &os, bool escape_strings = true) const;
   typedef struct {
     size_t start_of_scope;

@@ -401,6 +401,55 @@ In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, p
 
 ## Navigating the parsed document
 
+
+
+From a `simdjson::ParsedJson` instance, you can create an iterator (of type `simdjson::ParsedJson::Iterator` which is in fact `simdjson::ParsedJson::BasicIterator<DEFAULT_MAX_DEPTH>` ) via a constructor:
+
+```
+ParsedJson::Iterator pjh(pj); // pj is a ParsedJSON
+```
+
+You then have access to the following methods on the resulting `simdjson::ParsedJson::Iterator`  instance:
+
+* `bool is_ok() const`: whether you have a valid iterator, will be false if your parent parsed ParsedJson is not a valid JSON.
+* `size_t get_depth() const`:  returns the current depth (start at 1 with 0 reserved for the fictitious root node)
+* `int8_t get_scope_type() const`: a scope is a series of nodes at the same depth, typically it is either an object (`{`) or an array (`[`). The root node has type 'r'.
+* `bool move_forward()`:  move forward in document order
+* `uint8_t get_type() const`: retrieve the character code of what we're looking at: `[{"slutfn` are the possibilities
+* `int64_t get_integer() const`: get the int64_t value at this node; valid only if get_type() is "l"
+* `uint64_t get_unsigned_integer() const`: get the value as uint64; valid only if get_type() is "u"
+* `const char *get_string() const`: get the string value at this node (NULL ended); valid only if get_type()  is ", note that tabs, and line endings are escaped in the returned value, return value is valid UTF-8, it may contain NULL chars, get_string_length() determines the true string length.
+* `uint32_t get_string_length() const`: return the length of the string in bytes
+* `double get_double() const`: get the double value at this node; valid only if gettype() is "d"
+* `bool is_object_or_array() const`: self-explanatory
+* `bool is_object() const`: self-explanatory
+* `bool is_array() const`: self-explanatory
+* `bool is_string() const`: self-explanatory
+* `bool is_integer() const`: self-explanatory
+* `bool is_unsigned_integer() const`: Returns true if the current type of node is an unsigned integer. You can get its value with `get_unsigned_integer()`. Only a large value, which is out of range of a 64-bit signed integer, is represented internally as an unsigned node. On the other hand, a typical positive integer, such as 1, 42, or 1000000, is as a signed node. Be aware this function returns false for a signed node.
+* `bool is_double() const`: self-explanatory
+* `bool is_number() const`: self-explanatory
+* `bool is_true() const`: self-explanatory
+* `bool is_false() const`: self-explanatory
+* `bool is_null() const`: self-explanatory
+* `bool is_number() const`: self-explanatory
+* `bool move_to_key(const char *key)`: when at {, go one level deep, looking for a given key, if successful, we are left pointing at the value, if not, we are still pointing at the object ({)  (in case of repeated keys, this only finds the first one). We seek the key using C's strcmp so if your JSON strings contain NULL chars, this would trigger a false positive: if you expect that to be the case, take extra precautions. Furthermore, we do the comparison character-by-character without taking into account Unicode equivalence.
+* `bool move_to_key_insensitive(const char *key)`: as above, but case insensitive lookup 
+* `bool move_to_key(const char *key, uint32_t length)`: as above except that the target can contain NULL characters
+* `void move_to_value()`: when at a key location within an object, this moves to the accompanying, value (located next to it).  This is equivalent but much faster than calling `next()`.
+* `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
+* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value correspoding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+* `bool move_to(const std::string &pointer) `: same as above but with a std::string parameter
+* `bool next()`:   Withing a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
+* `bool prev()`:  Within a given scope (series of nodes at the same depth within either an
+   array or an object), we move backward.
+* `bool up()`:  moves back to either the containing array or object (type { or [) from within a contained scope.
+* `bool down()`: moves us to start of that deeper scope if it not empty. Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the "a" node.
+* `void to_start_scope()`: move us to the start of our current scope, a scope is a series of nodes at the same level
+* `void rewind()`: repeatedly calls up until we are at the root of the document
+* `bool print(std::ostream &os, bool escape_strings = true) const`: print the node we are currently pointing at
+
+
 Here is a code sample to dump back the parsed JSON to a string:
 
 ```c
