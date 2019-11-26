@@ -88,7 +88,7 @@ Whitespace Characters:
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](http://ndjson.org/)
 - [JSON lines (JSONL)](http://jsonlines.org/)
-- [RFC 7464](https://tools.ietf.org/html/rfc7464)
+- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by JsonStream!
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
 ## API
