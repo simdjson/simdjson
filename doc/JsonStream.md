@@ -118,7 +118,8 @@ Some official formats **(non-exhaustive list)**:
 	// Parse the next document found in the buffer previously given to JsonStream.  
 	//  
 	// You do NOT need to pre-allocate ParsedJson.  This function takes care of pre
-	// allocating a capacity defined by the // batch_size defined when creating the 
+	// allocating a capacity defined by the 
+	// batch_size defined when creating the 
 	// JsonStream object.  
 	//  
 	// The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case of 
