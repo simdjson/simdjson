@@ -30,8 +30,8 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 
 int JsonStream::json_parse(ParsedJson &pj) {
     if (pj.byte_capacity == 0) {
-        const bool allocok = pj.allocate_capacity(_batch_size, _batch_size);
-        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size, _batch_size);
+        const bool allocok = pj.allocate_capacity(_batch_size);
+        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
         if (!allocok || !allocok_thread) {
             std::cerr << "can't allocate memory" << std::endl;
             return false;
