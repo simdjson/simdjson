@@ -64,7 +64,6 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 
 namespace simdjson {
 
-
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
                                             __m256i mask) {
@@ -75,22 +74,21 @@ static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
   return res_0 | (res_1 << 32);
 }
 
-
-// Write up to 16 bytes, only the bytes corresponding to a 1-bit are written out.
-// credit: Anime Tosho
-static  __m128i skinnycleanm128(__m128i x, int mask) {
+// Write up to 16 bytes, only the bytes corresponding to a 1-bit are written
+// out. credit: Anime Tosho
+static __m128i skinnycleanm128(__m128i x, int mask) {
   int mask1 = mask & 0xFF;
   int mask2 = (mask >> 8) & 0xFF;
-  __m128i shufmask = _mm_castps_si128(_mm_loadh_pi(
-        _mm_castsi128_ps(
-          _mm_loadl_epi64((const __m128i *)(thintable_epi8 + mask1))
-        ),
-        (const __m64 *)(thintable_epi8 + mask2)
-  ));
-  shufmask = _mm_add_epi8(shufmask, _mm_set_epi32(0x08080808, 0x08080808, 0, 0));
+  __m128i shufmask = _mm_castps_si128(
+      _mm_loadh_pi(_mm_castsi128_ps(_mm_loadl_epi64(
+                       (const __m128i *)(thintable_epi8 + mask1))),
+                   (const __m64 *)(thintable_epi8 + mask2)));
+  shufmask =
+      _mm_add_epi8(shufmask, _mm_set_epi32(0x08080808, 0x08080808, 0, 0));
   __m128i pruned = _mm_shuffle_epi8(x, shufmask);
   intptr_t popx2 = BitsSetTable256mul2[mask1];
-  __m128i compactmask = _mm_loadu_si128((const __m128i*)(pshufb_combine_table + popx2*8));
+  __m128i compactmask =
+      _mm_loadu_si128((const __m128i *)(pshufb_combine_table + popx2 * 8));
   return _mm_shuffle_epi8(pruned, compactmask);
 }
 
@@ -172,16 +170,12 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
       uint64_t whitespace = ~(ws_res_0 | (ws_res_1 << 32));
       whitespace &= ~quote_mask;
 
-      uint64_t non_whitespace = ~ whitespace;
+      uint64_t non_whitespace = ~whitespace;
 
-
-    __m128i x1 = _mm256_extracti128_si256(input_lo,0);
-    __m128i x2 = _mm256_extracti128_si256(input_lo,1);
-    __m128i x3 = _mm256_extracti128_si256(input_hi,0);
-    __m128i x4 = _mm256_extracti128_si256(input_hi,1);
-
-
-
+      __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+      __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+      __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+      __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
 
       int mask1 = non_whitespace & 0xFFFF;
       int mask2 = (non_whitespace >> 16) & 0xFFFF;
@@ -264,17 +258,17 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     if (len - idx < 64) {
       whitespace |= UINT64_C(0xFFFFFFFFFFFFFFFF) << (len - idx);
     }
-      int mask1 = non_whitespace & 0xFFFF;
-      int mask2 = (non_whitespace >> 16) & 0xFFFF;
-      int mask3 = (non_whitespace >> 32) & 0xFFFF;
-      int mask4 = (non_whitespace >> 48) & 0xFFFF;
+    int mask1 = non_whitespace & 0xFFFF;
+    int mask2 = (non_whitespace >> 16) & 0xFFFF;
+    int mask3 = (non_whitespace >> 32) & 0xFFFF;
+    int mask4 = (non_whitespace >> 48) & 0xFFFF;
 
-      x1 = skinnycleanm128(x1, mask1);
-      x2 = skinnycleanm128(x2, mask2);
-      x3 = skinnycleanm128(x3, mask3);
-      x4 = skinnycleanm128(x4, mask4);
-      int pop1 = hamming(non_whitespace & 0xFFFF);
-      int pop2 = hamming(non_whitespace & UINT64_C(0xFFFFFFFF));
+    x1 = skinnycleanm128(x1, mask1);
+    x2 = skinnycleanm128(x2, mask2);
+    x3 = skinnycleanm128(x3, mask3);
+    x4 = skinnycleanm128(x4, mask4);
+    int pop1 = hamming(non_whitespace & 0xFFFF);
+    int pop2 = hamming(non_whitespace & UINT64_C(0xFFFFFFFF));
       int pop3 = hamming(non_whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming(non_whitespace);
       _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
@@ -286,7 +280,6 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
   *out = '\0'; // NULL termination
   return out - initout;
 }
-
 
 size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
   // Useful constant masks
