@@ -55,8 +55,11 @@ objs
 /basictests
 /benchfeatures
 /benchmark/parse
+/benchmark/parse_stream
 /benchmark/perfdiff
 /benchmark/statisticalmodel
+/fuzz/fuzz_dump
+/fuzz/fuzz_parser
 /json2json
 /jsoncheck
 /jsoncheck_noavx
@@ -85,6 +88,7 @@ objs
 /tests/integer_tests
 /tools/json2json
 /tools/jsonstats
+/tests/jsonstream_test
 /tools/minify
 
 # Don't check in generated examples
