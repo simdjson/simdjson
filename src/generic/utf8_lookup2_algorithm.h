@@ -63,20 +63,16 @@
 //
 using namespace simd;
 
-namespace utf8_validation {
-
-} // namespace utf8_validation
-
 struct utf8_checker {
   // If this is nonzero, there has been a UTF-8 error.
   simd8<uint8_t> error;
-  // The last input we received.
-  simd8<uint8_t> prev_input_block;
   // If there were leads at the end of the previous block, to be continued in the next.
   simd8<uint8_t> prev_incomplete;
 
+  static const uint8_t HIGH_BIT = 0b10000000u;
+
   // Prepare fast_path_error in case the next block is ASCII
-  really_inline void set_fast_path_error() {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t last_len[32] = {
@@ -87,7 +83,7 @@ struct utf8_checker {
     };
     const simd8<uint8_t> max_value(&last_len[sizeof(last_len)-sizeof(simd8<uint8_t>)]);
     // If anything is > the desired value, there will be a nonzero value in the result.
-    this->prev_incomplete = this->prev_input_block.saturating_sub(max_value);
+    return input.saturating_sub(max_value);
   }
 
   //
@@ -336,12 +332,9 @@ struct utf8_checker {
   // Min Critical Path (5):         Shuffle+Comparison(2) -> Bitwise+Add -> Shuffle+Add+Comparison -> Add+Comparison -> Add
   // Min Critical Path Haswell (5): Shuffle+Comparison -> Comparison+Bitwise+Add -> Shuffle+Comparison -> Add+Comparison -> Add(2)
   //
-  really_inline void check_multibyte_lengths(const simd8<uint8_t> input, const simd8<uint8_t> prev_input, const simd8<int8_t> prev1_flipped) {
-    simd8<int8_t> prev2(input.prev<2>(prev_input));
-    simd8<int8_t> prev2_flipped = prev2 ^ 0x80;
-
-    simd8<int8_t> prev3(input.prev<3>(prev_input));
-    simd8<int8_t> prev3_flipped = prev3 ^ 0x80;
+  really_inline void check_multibyte_lengths(const simd8<uint8_t> input, const simd8<int8_t> prev1_flipped, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+    simd8<int8_t> prev2_flipped(prev2 ^ HIGH_BIT);
+    simd8<int8_t> prev3_flipped(prev3 ^ HIGH_BIT);
 
     // Cont is 10000000-101111111 (-65...-128)
     simd8<uint8_t> is_continuation(simd8<int8_t>(input) < int8_t(-64));
@@ -502,40 +495,46 @@ struct utf8_checker {
   //
   // From port usage alone (ignoring the path), Haswell's Min Critical Path is at least 8 (8 shifts+shuffles, all on port 5)
   //
-  really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
     // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
-    simd8<uint8_t> prev1(input.prev<1>(prev_input));
-    simd8<int8_t> prev1_flipped(prev1 ^ 0x80);
+    simd8<int8_t> prev1_flipped(prev1 ^ HIGH_BIT);
+    this->check_multibyte_lengths(input, prev1_flipped, prev2, prev3);
     this->check_special_cases(input, prev1, prev1_flipped);
-    this->check_multibyte_lengths(input, prev_input, prev1_flipped);
   }
 
-  // The only problem that can happen at EOF is that a multibyte character is too short.
-  really_inline void check_eof() {
-    // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-    // possibly finish them.
-    this->error |= this->prev_incomplete;
+  really_inline bool has_utf8(const simd8x64<uint8_t> input) {
+    return input.reduce([&](auto a, auto b) { return a | b; }).any_bits_set_anywhere(HIGH_BIT);
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
-    if (likely(!bits.any_bits_set_anywhere(0b10000000u))) {
-      // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-      // possibly finish them.
-      this->error |= this->prev_incomplete;
-    } else {
-      this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-      for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
+  really_inline void check(const simd8x64<uint8_t> input, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
+    if (unlikely(has_utf8(input))) {
+      // This "if" is elided in inlining
+      const simd8<uint8_t>& first = input.chunks[0];
+      if (prev_bytes) {
+        check_utf8_bytes(first, first.prev<1>(*prev_bytes), first.prev<2>(*prev_bytes), first.prev<3>(*prev_bytes));
+      } else {
+        check_utf8_bytes(first, &buf[-1], &buf[-2], &buf[-3]);
       }
-      this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      this->set_fast_path_error();
+      for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+        const simd8<uint8_t>& chunk = input.chunks[i];
+        const uint8_t* chunk_buf = &buf[i*sizeof(simd8<uint8_t>)];
+        check_utf8_bytes(chunk, chunk.prev<1>(input.chunks[i-1]), &chunk_buf[-2], &chunk_buf[-3]);
+      }
+      this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+    } else {
+      // If the previous block had incomplete UTF-8 characters at the end, we now know there are no
+      // more continuation bytes, so it's an error.
+      this->error |= this->prev_incomplete;
     }
   }
 
-  really_inline ErrorValues errors() {
-    return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+  // The only problem that can happen at EOF is that a multibyte character is too short.
+  really_inline ErrorValues check_eof() {
+    // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+    // possibly finish them.
+    this->error |= this->prev_incomplete;
+    return this->error.any_bits_set_anywhere() ? UTF8_ERROR : SUCCESS;
   }
 
 }; // struct utf8_checker
