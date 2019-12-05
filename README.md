@@ -56,7 +56,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 
 ## Requirements
 
-- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
+- We support 64-bit platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017),
   - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
@@ -301,9 +301,9 @@ make
 make test
 ```
 
-## Usage (CMake on Windows using Visual Studio)
+## Usage (CMake on 64-bit Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
+We assume you have a common 64-bit Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
@@ -314,7 +314,7 @@ We assume you have a common Windows PC with at least Visual Studio 2017 and an x
 
 
 
-## Usage (Using `vcpkg` on Windows, Linux and MacOS)
+## Usage (Using `vcpkg` on 64-bit Windows, Linux and MacOS)
 
 [vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and MacOS can download and install `simdjson` with one single command from their favorite shell.
 
