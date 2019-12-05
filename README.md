@@ -225,7 +225,7 @@ If you are on an x64 processor, the runtime dispatching assigns the right code p
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
-Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A system like Linux or macOS is expected.
+Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A 64-bit system like Linux or macOS is expected.
 
 To test:
 
@@ -249,7 +249,7 @@ To run comparative benchmarks (with other parsers):
 make benchmark
 ```
 
-## Usage (CMake on platforms like Linux or macOS)
+## Usage (CMake on 64-bit platforms like Linux or macOS)
 
 Requirements: We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type
 
@@ -314,11 +314,11 @@ We assume you have a common 64-bit Windows PC with at least Visual Studio 2017 a
 
 
 
-## Usage (Using `vcpkg` on 64-bit Windows, Linux and MacOS)
+## Usage (Using `vcpkg` on 64-bit Windows, Linux and macOS)
 
-[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and MacOS can download and install `simdjson` with one single command from their favorite shell.
+[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and macOS can download and install `simdjson` with one single command from their favorite shell.
 
-On Linux and MacOS:
+On 64-bit Linux and macOS:
 
 ```
 $ ./vcpkg install simdjson
