@@ -49,6 +49,7 @@ set(SIMDJSON_SRC_HEADERS
   generic/stringparsing.h
   generic/utf8_fastvalidate_algorithm.h
   generic/utf8_lookup_algorithm.h
+  generic/utf8_lookup2_algorithm.h
   generic/utf8_range_algorithm.h
   generic/utf8_zwegner_algorithm.h
   haswell/bitmask.h

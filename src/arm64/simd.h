@@ -220,6 +220,7 @@ namespace simdjson::arm64::simd {
     really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return vmaxq_s8(*this, other); }
     really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return vminq_s8(*this, other); }
     really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return vcgtq_s8(*this, other); }
+    really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return vcltq_s8(*this, other); }
     really_inline simd8<bool> operator==(const simd8<int8_t> other) const { return vceqq_s8(*this, other); }
 
     template<int N=1>
