@@ -317,7 +317,7 @@ struct scan_step<128, T> {
     indexer.unescaped_chars_error |= unescaped_1 & string_1;
 
     uint64_t unescaped_2 = in_2.lteq(0x1F);
-    utf8_checker.check(in_2, &buf[64], prev_input::mid_cached { &buf[64], in_1.last_chunk() });
+    utf8_checker.check(in_2, &buf[64], prev_input::mid { &buf[64], in_1.last_chunk() });
     indexer.structural_indexes.write_indexes(idx, indexer.prev_structurals); // Output *last* iteration's structurals to ParsedJson
     indexer.prev_structurals = structurals_2 & ~string_2;
     indexer.unescaped_chars_error |= unescaped_2 & string_2;
@@ -383,7 +383,7 @@ really_inline ErrorValues scan(const uint8_t *buf, const size_t len, structural_
     // Loop until all except the last chunk.
     size_t idx;
     for (idx = STEP_SIZE; idx < (len - STEP_SIZE); idx += STEP_SIZE) {
-      scan_step<STEP_SIZE, prev_input::mid>(&buf[idx], idx, indexer, utf8_checker, { &buf[idx] });
+      scan_step<STEP_SIZE, prev_input::mid_uncached>(&buf[idx], idx, indexer, utf8_checker, { &buf[idx] });
     }
 
     // The last step will be between 1 and STEP_SIZE bytes.
