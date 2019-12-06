@@ -259,9 +259,11 @@ really_inline ErrorValues structural_indexer::check_eof(const size_t idx, const 
   return utf8_checker.check_eof();
 }
 
+
 template<size_t STEP_SIZE, typename T>
 struct scan_step {
-  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev_input);
+  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev);
+  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker): scan_step(buf, idx, indexer, utf8_checker, {}) {}
 };
 
 //
@@ -285,7 +287,7 @@ struct scan_step {
 //
 template<typename T>
 struct scan_step<128, T> {
-  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev_input) {
+  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev={}) {
     //
     // Load up all 128 bytes into SIMD registers
     //
@@ -309,13 +311,13 @@ struct scan_step<128, T> {
     // After that, weed out structurals that are inside strings and find invalid string characters.
     //
     uint64_t unescaped_1 = in_1.lteq(0x1F);
-    utf8_checker.check(in_1, &buf[0], prev_input);
+    utf8_checker.check(in_1, &buf[0], prev);
     indexer.structural_indexes.write_indexes(idx-64, indexer.prev_structurals); // Output *last* iteration's structurals to ParsedJson
     indexer.prev_structurals = structurals_1 & ~string_1;
     indexer.unescaped_chars_error |= unescaped_1 & string_1;
 
     uint64_t unescaped_2 = in_2.lteq(0x1F);
-    utf8_checker.check(in_2, &buf[64], &buf[64-sizeof(simd8<uint8_t>)], in_1.last_chunk());
+    utf8_checker.check(in_2, &buf[64], prev_input::mid_cached { &buf[64], in_1.last_chunk() });
     indexer.structural_indexes.write_indexes(idx, indexer.prev_structurals); // Output *last* iteration's structurals to ParsedJson
     indexer.prev_structurals = structurals_2 & ~string_2;
     indexer.unescaped_chars_error |= unescaped_2 & string_2;
@@ -327,7 +329,7 @@ struct scan_step<128, T> {
 //
 template<typename T>
 struct scan_step<64, T> {
-  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev_input) {
+  really_inline scan_step(const uint8_t *buf, const size_t idx, structural_indexer& indexer, utf8_checker &utf8_checker, T prev={}) {
     //
     // Load up bytes into SIMD registers
     //
@@ -348,7 +350,7 @@ struct scan_step<64, T> {
     // After that, weed out structurals that are inside strings and find invalid string characters.
     //
     uint64_t unescaped_1 = in_1.lteq(0x1F);
-    utf8_checker.check(in_1, &buf[0], prev_input);
+    utf8_checker.check(in_1, &buf[0], prev);
     indexer.structural_indexes.write_indexes(idx-64, indexer.prev_structurals); // Output *last* iteration's structurals to ParsedJson
     indexer.prev_structurals = structurals_1 & ~string_1;
     indexer.unescaped_chars_error |= unescaped_1 & string_1;
@@ -356,11 +358,11 @@ struct scan_step<64, T> {
 };
 
 template<size_t STEP_SIZE, typename T>
-really_inline ErrorValues scan_remainder(const uint8_t *buf, const size_t idx, const size_t len, structural_indexer& indexer, utf8_checker &utf8_checker, T prev_bytes) {
+really_inline ErrorValues scan_remainder(const uint8_t *buf, const size_t idx, const size_t len, structural_indexer& indexer, utf8_checker &utf8_checker, T prev={}) {
   uint8_t end_buf[STEP_SIZE];
   memset(end_buf, 0x20, STEP_SIZE);
   memcpy(end_buf, buf, len - idx);
-  scan_step<STEP_SIZE, T>(end_buf, idx, indexer, utf8_checker, prev_bytes);
+  scan_step<STEP_SIZE, T>(end_buf, idx, indexer, utf8_checker, prev);
   return indexer.check_eof(idx+STEP_SIZE, len, indexer, utf8_checker);
 }
 
@@ -376,19 +378,19 @@ really_inline ErrorValues scan(const uint8_t *buf, const size_t len, structural_
   // If we have more than one step, we loop.
   if (likely(len > STEP_SIZE)) {
     // Having more than STEP_SIZE bytes means having at least one chunk at the beginning.
-    scan_step<STEP_SIZE, uint8_t>(buf, 0, indexer, utf8_checker, uint8_t(0));
+    scan_step<STEP_SIZE, prev_input::start>(buf, 0, indexer, utf8_checker);
 
     // Loop until all except the last chunk.
     size_t idx;
     for (idx = STEP_SIZE; idx < (len - STEP_SIZE); idx += STEP_SIZE) {
-      scan_step<STEP_SIZE, const uint8_t*>(&buf[idx], idx, indexer, utf8_checker, &buf[idx-sizeof(simd8<uint8_t>)]);
+      scan_step<STEP_SIZE, prev_input::mid>(&buf[idx], idx, indexer, utf8_checker, { &buf[idx] });
     }
 
     // The last step will be between 1 and STEP_SIZE bytes.
-    return scan_remainder<STEP_SIZE>(&buf[idx], idx, len, indexer, utf8_checker, &buf[idx-sizeof(simd8<uint8_t>)]);
+    return scan_remainder<STEP_SIZE, prev_input::end>(&buf[idx], idx, len, indexer, utf8_checker, { &buf[idx] });
 
   } else {
-    return scan_remainder<STEP_SIZE>(buf, 0, len, indexer, utf8_checker, uint8_t(0));
+    return scan_remainder<STEP_SIZE, prev_input::single>(buf, 0, len, indexer, utf8_checker);
   }
 }
 

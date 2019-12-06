@@ -12,7 +12,10 @@
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
+#include "generic/simd_stream.h"
+
 using namespace simd;
+using namespace simd::stream;
 
 really_inline void find_whitespace_and_operators(
   const simd8x64<uint8_t> in,

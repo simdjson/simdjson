@@ -334,7 +334,6 @@ struct utf8_checker {
   //
   really_inline void check_multibyte_lengths(const simd8<uint8_t> input, const simd8<int8_t> prev1_flipped, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<int8_t> prev2_flipped(prev2 ^ HIGH_BIT);
-    simd8<int8_t> prev3_flipped(prev3 ^ HIGH_BIT);
 
     // Cont is 10000000-101111111 (-65...-128)
     simd8<uint8_t> is_continuation(simd8<int8_t>(input) < int8_t(-64));
@@ -344,6 +343,8 @@ struct utf8_checker {
     // 4+-byte lead flipped is 0111____ (112-127)
     simd8<uint8_t> is_second_byte(prev1_flipped > 63);
     simd8<uint8_t> is_third_byte(prev2_flipped > 95);
+
+    simd8<int8_t> prev3_flipped(prev3 ^ HIGH_BIT);
     simd8<uint8_t> is_fourth_byte(prev3_flipped > 111);
     this->error |= (is_second_byte | is_third_byte | is_fourth_byte) ^ is_continuation;
   }
@@ -507,19 +508,15 @@ struct utf8_checker {
     return input.reduce([&](auto a, auto b) { return a | b; }).any_bits_set_anywhere(HIGH_BIT);
   }
 
-  really_inline void check(const simd8x64<uint8_t> input, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
+  really_inline void check_real(const simd8x64<uint8_t> input, const uint8_t *buf, simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
     if (unlikely(has_utf8(input))) {
       // This "if" is elided in inlining
       const simd8<uint8_t>& first = input.chunks[0];
-      if (prev_bytes) {
-        check_utf8_bytes(first, first.prev<1>(*prev_bytes), first.prev<2>(*prev_bytes), first.prev<3>(*prev_bytes));
-      } else {
-        check_utf8_bytes(first, &buf[-1], &buf[-2], &buf[-3]);
-      }
+      check_utf8_bytes(first, prev1, prev2, prev3);
       for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
         const simd8<uint8_t>& chunk = input.chunks[i];
         const uint8_t* chunk_buf = &buf[i*sizeof(simd8<uint8_t>)];
-        check_utf8_bytes(chunk, chunk.prev<1>(input.chunks[i-1]), &chunk_buf[-2], &chunk_buf[-3]);
+        check_utf8_bytes(chunk, chunk_buf-1, chunk_buf-2, chunk_buf-3);
       }
       this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
     } else {
@@ -527,6 +524,22 @@ struct utf8_checker {
       // more continuation bytes, so it's an error.
       this->error |= this->prev_incomplete;
     }
+  }
+
+  // When we're walking > 64 bytes
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, UNUSED prev_input::mid prev) {
+    this->check_real(input, buf, buf-1, buf-2, buf-3);
+  }
+
+  // When we're at the middle
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, prev_input::mid_cached prev) {
+    const simd8<uint8_t>& chunk = input.chunks[0];
+    this->check_real(input, buf, chunk.prev<1>(prev.bytes), chunk.prev<2>(prev.bytes), chunk.prev<3>(prev.bytes));
+  }
+
+  // When we're at the start or end
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, prev_input::start_or_end prev) {
+    this->check_real(input, buf, input.chunks[0].prev<1>(prev), input.chunks[0].prev<2>(prev), input.chunks[0].prev<3>(prev));
   }
 
   // The only problem that can happen at EOF is that a multibyte character is too short.

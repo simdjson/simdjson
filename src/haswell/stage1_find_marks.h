@@ -12,7 +12,10 @@
 TARGET_HASWELL
 namespace simdjson::haswell {
 
+#include "generic/simd_stream.h"
+
 using namespace simd;
+using namespace simd::stream;
 
 really_inline void find_whitespace_and_operators(
   const simd::simd8x64<uint8_t> in,
