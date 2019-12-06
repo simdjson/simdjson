@@ -253,23 +253,36 @@ private:
 public:
   really_inline utf8_checker() {}
 
-  really_inline void check(const simd8x64<uint8_t> input, const uint8_t *buf, const simd8<uint8_t> *prev_bytes) {
+  really_inline void check_real(simd8x64<uint8_t> input, const uint8_t* buf, simd8<uint8_t> prev_bytes, simd8<uint8_t> prev4) {
     if (unlikely(has_utf8(input))) {
-      // This "if" is elided in inlining
-      if (prev_bytes) {
-        this->error |= utf8_validation::check_utf8(input.chunks[0], *prev_bytes, input.chunks[0].prev<4>(*prev_bytes));
-      } else {
-        this->error |= utf8_validation::check_utf8(input.chunks[0], &buf[-sizeof(simd8<uint8_t>)], &buf[-4]);
-      }
+      this->error |= utf8_validation::check_utf8(input.chunks[0], prev_bytes, prev4);
       for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
         this->error |= utf8_validation::check_utf8(input.chunks[i], &buf[(i-1)*sizeof(simd8<uint8_t>)], &buf[i*sizeof(simd8<uint8_t>)-4]);
       }
       this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
     } else {
-      // If the previous block had incomplete UTF-8 characters at the end, we now know there are no
-      // more continuation bytes, so it's an error.
       this->error |= this->prev_incomplete;
     }
+  }
+
+  // When we're at the middle
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, simd8<uint8_t> prev_bytes) {
+    this->check_real(input, buf, prev_bytes, input.chunks[0].prev<4>(prev_bytes));
+  }
+
+  // When we're walking > 64 bytes
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, const uint8_t* prev_buf, simd8<uint8_t> prev_bytes) {
+    this->check_real(input, buf, prev_bytes, prev_buf+sizeof(simd8<uint8_t>)-4);
+  }
+
+  // When we're at the start
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, UNUSED uint8_t prev_const) {
+    this->check_real(input, buf, uint8_t(0), input.chunks[0].prev<4>());
+  }
+
+  // When we're at the end
+  really_inline void check(simd8x64<uint8_t> input, const uint8_t* buf, const uint8_t* prev_buf) {
+    this->check_real(input, buf, prev_buf, prev_buf+sizeof(simd8<uint8_t>)-4);
   }
 
   // The only problem that can happen at EOF is that a multibyte character is too short.
