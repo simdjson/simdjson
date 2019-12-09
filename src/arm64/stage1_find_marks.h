@@ -29,7 +29,7 @@ really_inline void find_whitespace_and_operators(
   whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
 }
 
-#include "generic/utf8_fastvalidate_algorithm.h"
+#include "generic/utf8_lookup_algorithm.h"
 #include "generic/stage1_find_marks.h"
 
 } // namespace simdjson::arm64
