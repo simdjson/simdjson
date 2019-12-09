@@ -16,10 +16,12 @@ namespace simdjson::arm64 {
 // For example, prefix_xor(00100100) == 00011100
 //
 really_inline uint64_t prefix_xor(uint64_t bitmask) {
-
-#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
-  return vmull_p64(-1ULL, bitmask);
-#else
+  //
+  // We could do this with PMULL, but it is apparently slow.
+  //  
+  //#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
+  //return vmull_p64(-1ULL, bitmask);
+  //#else
   bitmask ^= bitmask << 1;
   bitmask ^= bitmask << 2;
   bitmask ^= bitmask << 4;
@@ -27,8 +29,6 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
   bitmask ^= bitmask << 16;
   bitmask ^= bitmask << 32;
   return bitmask;
-#endif
-
 }
 
 } // namespace simdjson::arm64
