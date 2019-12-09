@@ -17,7 +17,7 @@ architecture:=$(shell arch)
 # E.g., type ' ARCHFLAGS="-march=nehalem" make parse '
 ###
 ifeq ($(architecture),aarch64)
-ARCHFLAGS ?= -march=armv8-a+crc+crypto
+ARCHFLAGS ?= -march=armv8-a
 else
 ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
