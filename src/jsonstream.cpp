@@ -211,7 +211,7 @@ void find_the_best_supported_implementation() {
     }
 #endif
 #ifdef IS_ARM64
-    if (instruction_set::NEON) {
+    if (supports & instruction_set::NEON) {
         best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
         best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
         return;

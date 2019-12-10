@@ -74,7 +74,7 @@ enum instruction_set {
 
 #if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
 
-#if defined(__NEON__)
+#if defined(__ARM_NEON)
 
 static inline uint32_t detect_supported_architectures() {
   return instruction_set::NEON;
