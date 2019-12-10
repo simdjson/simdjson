@@ -136,8 +136,8 @@ cat <<< '
 #include "simdjson.h"
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
-  if(argc < 3) {
-    std::cerr << "Please specify filenames " << std::endl;
+  if(argc < 2) {
+    std::cerr << "Please specify at least one file name. " << std::endl;
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
@@ -146,6 +146,9 @@ int main(int argc, char *argv[]) {
     std::cout << "build_parsed_json not valid" << std::endl;
   } else {
     std::cout << "build_parsed_json valid" << std::endl;
+  }
+  if(argc == 2) {
+    return EXIT_SUCCESS;
   }
 
   //JsonStream
@@ -157,7 +160,7 @@ int main(int argc, char *argv[]) {
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
             parse_res = js.json_parse(pj2);
-        }
+  }
 
   if( ! pj2.is_valid()) {
     std::cout << "JsonStream not valid" << std::endl;
