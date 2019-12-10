@@ -6,6 +6,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
+#include "westmere/intrinsics.h"
 
 #ifdef JSON_TEST_STRINGS
 void found_string(const uint8_t *buf, const uint8_t *parsed_begin,

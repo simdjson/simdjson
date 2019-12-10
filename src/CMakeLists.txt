@@ -37,6 +37,8 @@ set(SIMDJSON_SRC_HEADERS
   jsoncharutils.h
   numberparsing.h
   simdprune_tables.h
+  arm64/bitmanipulation.h
+  arm64/intrinsics.h
   arm64/simd_input.h
   arm64/simdutf8check.h
   arm64/stage1_find_marks.h
@@ -45,11 +47,15 @@ set(SIMDJSON_SRC_HEADERS
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
   generic/stringparsing.h
+  haswell/bitmanipulation.h
+  haswell/intrinsics.h
   haswell/simd_input.h
   haswell/simdutf8check.h
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
+  westmere/bitmanipulation.h
+  westmere/intrinsics.h
   westmere/simd_input.h
   westmere/simdutf8check.h
   westmere/stage1_find_marks.h

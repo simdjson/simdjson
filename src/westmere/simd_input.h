@@ -4,6 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
+#include "westmere/intrinsics.h"
 
 #ifdef IS_X86_64
 

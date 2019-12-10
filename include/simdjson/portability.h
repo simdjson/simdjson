@@ -42,16 +42,6 @@
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 #define TARGET_ARM64
 
-#ifdef _MSC_VER
-#include <intrin.h>
-#else
-#if IS_X86_64
-#include <x86intrin.h>
-#elif IS_ARM64
-#include <arm_neon.h>
-#endif
-#endif
-
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
@@ -61,6 +51,7 @@
 #endif
 
 #ifdef _MSC_VER
+
 /* Microsoft C/C++-compatible compiler */
 #include <cstdint>
 #include <iso646.h>
@@ -79,27 +70,6 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2,
   *result = _umul128(value1, value2, &high);
   return high;
 }
-
-static inline int trailing_zeroes(uint64_t input_num) {
-  return static_cast<int>(_tzcnt_u64(input_num));
-}
-
-static inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return _blsr_u64(input_num);
-}
-
-static inline int leading_zeroes(uint64_t input_num) {
-  return static_cast<int>(_lzcnt_u64(input_num));
-}
-
-static inline int hamming(uint64_t input_num) {
-#ifdef _WIN64 // highly recommended!!!
-  return (int)__popcnt64(input_num);
-#else // if we must support 32-bit Windows
-  return (int)(__popcnt((uint32_t)input_num) +
-               __popcnt((uint32_t)(input_num >> 32)));
-#endif
-}
 } // namespace simdjson
 #else
 #include <cstdint>
@@ -117,41 +87,7 @@ static inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                    (unsigned long long *)result);
 }
 
-/* result might be undefined when input_num is zero */
-static inline NO_SANITIZE_UNDEFINED int trailing_zeroes(uint64_t input_num) {
-#ifdef __BMI__ // tzcnt is BMI1
-  return _tzcnt_u64(input_num);
-#else
-  return __builtin_ctzll(input_num);
-#endif
-}
 
-/* result might be undefined when input_num is zero */
-static inline uint64_t clear_lowest_bit(uint64_t input_num) {
-#ifdef __BMI__ // blsr is BMI1
-  return _blsr_u64(input_num);
-#else
-  return input_num & (input_num-1);
-#endif
-}
-
-/* result might be undefined when input_num is zero */
-static inline int leading_zeroes(uint64_t input_num) {
-#ifdef __BMI2__
-  return _lzcnt_u64(input_num);
-#else
-  return __builtin_clzll(input_num);
-#endif
-}
-
-/* result might be undefined when input_num is zero */
-static inline int hamming(uint64_t input_num) {
-#ifdef __POPCOUNT__
-  return _popcnt64(input_num);
-#else
-  return __builtin_popcountll(input_num);
-#endif
-}
 } // namespace simdjson
 #endif // _MSC_VER
 

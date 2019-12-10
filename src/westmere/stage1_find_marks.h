@@ -5,6 +5,7 @@
 
 #ifdef IS_X86_64
 
+#include "westmere/bitmanipulation.h"
 #include "westmere/simd_input.h"
 #include "westmere/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"

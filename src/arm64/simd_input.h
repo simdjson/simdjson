@@ -4,6 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 #include "simdjson/simdjson.h"
+#include "arm64/intrinsics.h"
 
 #ifdef IS_ARM64
 

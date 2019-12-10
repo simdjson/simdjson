@@ -5,6 +5,7 @@
 
 #ifdef IS_ARM64
 
+#include "arm64/bitmanipulation.h"
 #include "arm64/simd_input.h"
 #include "arm64/simdutf8check.h"
 #include "simdjson/stage1_find_marks.h"
