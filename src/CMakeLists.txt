@@ -44,6 +44,7 @@ set(SIMDJSON_SRC_HEADERS
   arm64/stage1_find_marks.h
   arm64/stage2_build_tape.h
   arm64/stringparsing.h
+  arm64/numberparsing.h
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
   generic/stringparsing.h
@@ -54,6 +55,7 @@ set(SIMDJSON_SRC_HEADERS
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
+  haswell/numberparsing.h
   westmere/bitmanipulation.h
   westmere/intrinsics.h
   westmere/simd_input.h
@@ -61,6 +63,7 @@ set(SIMDJSON_SRC_HEADERS
   westmere/stage1_find_marks.h
   westmere/stage2_build_tape.h
   westmere/stringparsing.h
+  westmere/numberparsing.h
 )
 
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC} ${SIMDJSON_INCLUDE} ${SIMDJSON_SRC_HEADERS})
