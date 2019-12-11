@@ -168,6 +168,36 @@ bool bad_example() {
   }
   return true;
 }
+// returns true if successful
+bool stable_test() {
+  std::string json = "{"
+        "\"Image\":{"
+            "\"Width\":800,"
+            "\"Height\":600,"
+            "\"Title\":\"View from 15th Floor\","
+            "\"Thumbnail\":{"
+            "\"Url\":\"http://www.example.com/image/481989943\","
+            "\"Height\":125,"
+            "\"Width\":100"
+            "},"
+            "\"Animated\":false,"
+            "\"IDs\":[116,943.3,234,38793]"
+          "}"
+      "}";
+  simdjson::ParsedJson pj = simdjson::build_parsed_json(json);
+  std::ostringstream myStream;
+  if( ! pj.print_json(myStream) ) {
+    std::cout << "cannot print it out? " << std::endl;
+    return false;
+  }
+  std::string newjson = myStream.str();
+  if(json != newjson) {
+    std::cout << "serialized json differs!" << std::endl;
+    std::cout << json << std::endl;
+    std::cout << newjson << std::endl;
+  }
+  return newjson == json;
+}
 
 // returns true if successful
 bool navigate_test() {
@@ -295,6 +325,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!stable_test())
+    return EXIT_FAILURE;
   if(!bad_example())
     return EXIT_FAILURE;
   if(!number_test_powers_of_two())

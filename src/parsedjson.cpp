@@ -198,7 +198,7 @@ bool ParsedJson::print_json(std::ostream &os) const {
       memcpy(&string_length, string_buf + payload, sizeof(uint32_t));
       print_with_escapes(
           (const unsigned char *)(string_buf + payload + sizeof(uint32_t)),
-          string_length);
+          os, string_length);
       os << '"';
       break;
     case 'l': // we have a long int
