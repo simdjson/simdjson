@@ -3,7 +3,7 @@
 [![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson/master.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
-
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
 
 
 ## A C++ library to see how fast we can parse JSON with complete validation.
@@ -56,7 +56,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 
 ## Requirements
 
-- We support platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
+- We support 64-bit platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017),
   - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
@@ -154,6 +154,29 @@ if( ! pj.is_valid() ) {
 
 As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
 
+## JSON streaming
+
+**API and detailed documentation found [here](doc/JsonStream.md).**
+
+Here is a simple exemple, using single header simdjson:
+```cpp
+#include "simdjson.h"
+#include "simdjson.cpp"
+
+int parse_file(const char *filename) {
+    simdjson::padded_string p = simdjson::get_corpus(filename);
+    simdjson::ParsedJson pj;
+    simdjson::JsonStream js{p};
+    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+    
+    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+            parse_res = js.json_parse(pj);
+
+            //Do something with pj...
+        }
+}
+```
+
 ## Usage: easy single-header version
 
 See the "singleheader" repository for a single header version. See the included
@@ -197,12 +220,12 @@ There is no runtime dispatch on ARM.
 
 The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
 
-If you are on an x64 processor, the runtime dispatching assigns the right code path the firs time that parsing is attempted. The runtime dispatching is thread-safe.
+If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 
-Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A system like Linux or macOS is expected.
+Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A 64-bit system like Linux or macOS is expected.
 
 To test:
 
@@ -226,7 +249,7 @@ To run comparative benchmarks (with other parsers):
 make benchmark
 ```
 
-## Usage (CMake on platforms like Linux or macOS)
+## Usage (CMake on 64-bit platforms like Linux or macOS)
 
 Requirements: We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type
 
@@ -278,9 +301,9 @@ make
 make test
 ```
 
-## Usage (CMake on Windows using Visual Studio)
+## Usage (CMake on 64-bit Windows using Visual Studio)
 
-We assume you have a common Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
+We assume you have a common 64-bit Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
 
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
@@ -291,11 +314,11 @@ We assume you have a common Windows PC with at least Visual Studio 2017 and an x
 
 
 
-## Usage (Using `vcpkg` on Windows, Linux and MacOS)
+## Usage (Using `vcpkg` on 64-bit Windows, Linux and macOS)
 
-[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and MacOS can download and install `simdjson` with one single command from their favorite shell.
+[vcpkg](https://github.com/Microsoft/vcpkg) users on Windows, Linux and macOS can download and install `simdjson` with one single command from their favorite shell.
 
-On Linux and MacOS:
+On 64-bit Linux and macOS:
 
 ```
 $ ./vcpkg install simdjson
@@ -377,6 +400,55 @@ make jsonpointer
 In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, passing a `std::string` representing the JSON Pointer query.
 
 ## Navigating the parsed document
+
+
+
+From a `simdjson::ParsedJson` instance, you can create an iterator (of type `simdjson::ParsedJson::Iterator` which is in fact `simdjson::ParsedJson::BasicIterator<DEFAULT_MAX_DEPTH>` ) via a constructor:
+
+```
+ParsedJson::Iterator pjh(pj); // pj is a ParsedJSON
+```
+
+You then have access to the following methods on the resulting `simdjson::ParsedJson::Iterator`  instance:
+
+* `bool is_ok() const`: whether you have a valid iterator, will be false if your parent parsed ParsedJson is not a valid JSON.
+* `size_t get_depth() const`:  returns the current depth (start at 1 with 0 reserved for the fictitious root node)
+* `int8_t get_scope_type() const`: a scope is a series of nodes at the same depth, typically it is either an object (`{`) or an array (`[`). The root node has type 'r'.
+* `bool move_forward()`:  move forward in document order
+* `uint8_t get_type() const`: retrieve the character code of what we're looking at: `[{"slutfn` are the possibilities
+* `int64_t get_integer() const`: get the int64_t value at this node; valid only if get_type() is "l"
+* `uint64_t get_unsigned_integer() const`: get the value as uint64; valid only if get_type() is "u"
+* `const char *get_string() const`: get the string value at this node (NULL ended); valid only if get_type()  is ", note that tabs, and line endings are escaped in the returned value, return value is valid UTF-8, it may contain NULL chars, get_string_length() determines the true string length.
+* `uint32_t get_string_length() const`: return the length of the string in bytes
+* `double get_double() const`: get the double value at this node; valid only if gettype() is "d"
+* `bool is_object_or_array() const`: self-explanatory
+* `bool is_object() const`: self-explanatory
+* `bool is_array() const`: self-explanatory
+* `bool is_string() const`: self-explanatory
+* `bool is_integer() const`: self-explanatory
+* `bool is_unsigned_integer() const`: Returns true if the current type of node is an unsigned integer. You can get its value with `get_unsigned_integer()`. Only a large value, which is out of range of a 64-bit signed integer, is represented internally as an unsigned node. On the other hand, a typical positive integer, such as 1, 42, or 1000000, is as a signed node. Be aware this function returns false for a signed node.
+* `bool is_double() const`: self-explanatory
+* `bool is_number() const`: self-explanatory
+* `bool is_true() const`: self-explanatory
+* `bool is_false() const`: self-explanatory
+* `bool is_null() const`: self-explanatory
+* `bool is_number() const`: self-explanatory
+* `bool move_to_key(const char *key)`: when at {, go one level deep, looking for a given key, if successful, we are left pointing at the value, if not, we are still pointing at the object ({)  (in case of repeated keys, this only finds the first one). We seek the key using C's strcmp so if your JSON strings contain NULL chars, this would trigger a false positive: if you expect that to be the case, take extra precautions. Furthermore, we do the comparison character-by-character without taking into account Unicode equivalence.
+* `bool move_to_key_insensitive(const char *key)`: as above, but case insensitive lookup 
+* `bool move_to_key(const char *key, uint32_t length)`: as above except that the target can contain NULL characters
+* `void move_to_value()`: when at a key location within an object, this moves to the accompanying, value (located next to it).  This is equivalent but much faster than calling `next()`.
+* `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
+* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value correspoding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+* `bool move_to(const std::string &pointer) `: same as above but with a std::string parameter
+* `bool next()`:   Withing a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
+* `bool prev()`:  Within a given scope (series of nodes at the same depth within either an
+   array or an object), we move backward.
+* `bool up()`:  moves back to either the containing array or object (type { or [) from within a contained scope.
+* `bool down()`: moves us to start of that deeper scope if it not empty. Thus, given [true, null, {"a":1}, [1,2]], if we are at the { node, we would move to the "a" node.
+* `void to_start_scope()`: move us to the start of our current scope, a scope is a series of nodes at the same level
+* `void rewind()`: repeatedly calls up until we are at the root of the document
+* `bool print(std::ostream &os, bool escape_strings = true) const`: print the node we are currently pointing at
+
 
 Here is a code sample to dump back the parsed JSON to a string:
 

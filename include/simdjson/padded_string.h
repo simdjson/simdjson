@@ -3,6 +3,7 @@
 #include "simdjson/portability.h"
 #include <cstring>
 #include <memory>
+#include <string>
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
@@ -41,6 +42,15 @@ public:
       : viable_size(o.viable_size), data_ptr(o.data_ptr) {
     o.data_ptr = nullptr; // we take ownership
   }
+
+  padded_string &operator=(padded_string &&o) {
+    data_ptr = o.data_ptr;
+    viable_size = o.viable_size;
+    o.data_ptr = nullptr; // we take ownership
+    o.viable_size = 0;
+    return *this;
+  }
+
   void swap(padded_string &o) {
     size_t tmp_viable_size = viable_size;
     char *tmp_data_ptr = data_ptr;

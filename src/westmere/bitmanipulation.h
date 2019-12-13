@@ -3,7 +3,8 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
-
+#ifdef IS_X86_64
+#include "westmere/intrinsics.h"
 TARGET_WESTMERE
 namespace simdjson::westmere {
 
@@ -47,4 +48,6 @@ static inline int hamming(uint64_t input_num) {
 
 }// namespace simdjson::westmere
 UNTARGET_REGION
+
+#endif
 #endif //  SIMDJSON_WESTMERE_BITMANIPULATION_H

@@ -12,11 +12,18 @@ platform:
 environment:
   matrix:
     - SIMDJSON_BUILD_STATIC: "OFF"
+      THREADS: "ON"
+    - SIMDJSON_BUILD_STATIC: "OFF"
+      THREADS: "OFF"
     - SIMDJSON_BUILD_STATIC: "ON"
+      THREADS: "ON"
+#    - SIMDJSON_BUILD_STATIC: "ON"
+#      THREADS: "OFF"
       
 build_script:
   - mkdir build
   - cd build
-  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC" -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR_PLATFORM=x64 ..
+  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC" -DSIMDJSON_ENABLE_THREADS="$env:THREADS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR_PLATFORM=x64 ..
   - cmake --build .
   - ctest --verbose --output-on-failure
+

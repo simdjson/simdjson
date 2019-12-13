@@ -3,6 +3,9 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
+
+#ifdef IS_ARM64
+
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64 {
@@ -46,4 +49,6 @@ static inline int hamming(uint64_t input_num) {
 }
 
 }// namespace simdjson::arm64
+
+#endif //IS_ARM64
 #endif //  SIMDJSON_ARM64_BITMANIPULATION_H

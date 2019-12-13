@@ -25,6 +25,7 @@ set(SIMDJSON_SRC
   jsonioutil.cpp
   jsonminifier.cpp
   jsonparser.cpp
+  jsonstream.cpp
   stage1_find_marks.cpp
   stage2_build_tape.cpp
   parsedjson.cpp
@@ -36,30 +37,34 @@ set(SIMDJSON_SRC
 set(SIMDJSON_SRC_HEADERS
   jsoncharutils.h
   simdprune_tables.h
+  arm64/bitmask.h
+  arm64/simd.h
   arm64/bitmanipulation.h
   arm64/intrinsics.h
-  arm64/simd_input.h
-  arm64/simdutf8check.h
   arm64/stage1_find_marks.h
   arm64/stage2_build_tape.h
   arm64/stringparsing.h
   arm64/numberparsing.h
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
+  generic/stage2_streaming_build_tape.h
   generic/stringparsing.h
   generic/numberparsing.h
+  generic/utf8_fastvalidate_algorithm.h
+  generic/utf8_lookup_algorithm.h
+  generic/utf8_range_algorithm.h
+  generic/utf8_zwegner_algorithm.h
+  haswell/bitmask.h
   haswell/bitmanipulation.h
   haswell/intrinsics.h
-  haswell/simd_input.h
-  haswell/simdutf8check.h
+  haswell/simd.h
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
-  haswell/numberparsing.h
   westmere/bitmanipulation.h
   westmere/intrinsics.h
-  westmere/simd_input.h
-  westmere/simdutf8check.h
+  westmere/bitmask.h
+  westmere/simd.h
   westmere/stage1_find_marks.h
   westmere/stage2_build_tape.h
   westmere/stringparsing.h
@@ -106,3 +111,9 @@ if(MSVC AND (SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
  set_target_properties(${SIMDJSON_LIB_NAME}
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 endif()
+
+if(SIMDJSON_ENABLE_THREADS)
+  find_package(Threads REQUIRED)
+  target_link_libraries( ${SIMDJSON_LIB_NAME} Threads::Threads)
+endif()
+

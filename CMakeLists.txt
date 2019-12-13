@@ -11,6 +11,9 @@ option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 if (NOT CMAKE_BUILD_TYPE)
                 message(STATUS "No build type selected, default to Release")
                 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -36,6 +39,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 find_package(CTargets)
 find_package(Options)
 
+option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
+
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
@@ -49,9 +54,9 @@ add_subdirectory(tests)
 add_subdirectory(benchmark)
 
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
-option(ENABLE_FUZZING "enable fuzzing (experimental, requires clang)" OFF)
+option(ENABLE_FUZZING "enable building the fuzzers" ON)
 if(ENABLE_FUZZING)
-add_subdirectory(fuzz)
+ add_subdirectory(fuzz)
 endif()
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")

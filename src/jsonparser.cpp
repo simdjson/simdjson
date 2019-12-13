@@ -42,7 +42,7 @@ Architecture find_best_supported_implementation() {
     return Architecture::HASWELL;
   if ((westmere_flags & supports) == westmere_flags)
     return Architecture::WESTMERE;
-  if (instruction_set::NEON)
+  if (supports & instruction_set::NEON)
     return Architecture::ARM64;
 
   return Architecture::NONE;

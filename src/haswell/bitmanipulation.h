@@ -2,6 +2,8 @@
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
 #include "simdjson/common_defs.h"
+
+#ifdef IS_X86_64
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -27,5 +29,5 @@ static inline int hamming(uint64_t input_num) {
 }
 }// namespace simdjson::haswell
 UNTARGET_REGION
-
+#endif
 #endif //  SIMDJSON_HASWELL_BITMANIPULATION_H
