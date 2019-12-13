@@ -7,6 +7,7 @@
 
 #include "simdjson/stage2_build_tape.h"
 #include "westmere/stringparsing.h"
+#include "westmere/numberparsing.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {

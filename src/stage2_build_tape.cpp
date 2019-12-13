@@ -5,7 +5,6 @@
 #include "simdjson/portability.h"
 #include "simdjson/common_defs.h"
 #include "jsoncharutils.h"
-#include "numberparsing.h"
 
 using namespace simdjson;
 
