@@ -56,7 +56,6 @@
 #endif
 
 #ifdef _MSC_VER
-
 /* Microsoft C/C++-compatible compiler */
 #include <cstdint>
 #include <iso646.h>
