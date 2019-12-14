@@ -5,9 +5,9 @@
 #include "simdjson/portability.h"
 #ifdef IS_X86_64
 #include "westmere/intrinsics.h"
+
 TARGET_WESTMERE
 namespace simdjson::westmere {
-
 
 /* result might be undefined when input_num is zero */
 static inline  int trailing_zeroes(uint64_t input_num) {
@@ -44,6 +44,32 @@ static inline int leading_zeroes(uint64_t input_num) {
 
 static inline int hamming(uint64_t input_num) {
   return _popcnt64(input_num);
+}
+
+static inline bool add_overflow(uint64_t value1, uint64_t value2,
+                                uint64_t *result) {
+#ifdef _MSC_VER
+  return _addcarry_u64(0, value1, value2,
+                       reinterpret_cast<unsigned __int64 *>(result));
+#else
+  return __builtin_uaddll_overflow(value1, value2,
+                                   (unsigned long long *)result);
+#endif
+}
+
+#ifdef _MSC_VER
+#pragma intrinsic(_umul128)
+#endif
+static inline bool mul_overflow(uint64_t value1, uint64_t value2,
+                                uint64_t *result) {
+#ifdef _MSC_VER
+  uint64_t high;
+  *result = _umul128(value1, value2, &high);
+  return high;
+#else
+  return __builtin_umulll_overflow(value1, value2,
+                                   (unsigned long long *)result);
+#endif
 }
 
 }// namespace simdjson::westmere

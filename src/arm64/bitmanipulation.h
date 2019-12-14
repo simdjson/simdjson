@@ -48,6 +48,35 @@ static inline int hamming(uint64_t input_num) {
    return vaddv_u8(vcnt_u8((uint8x8_t)input_num));
 }
 
+static inline bool add_overflow(uint64_t value1, uint64_t value2,
+                                uint64_t *result) {
+#ifdef _MSC_VER
+  // todo: this might fail under visual studio for ARM
+  return _addcarry_u64(0, value1, value2,
+                       reinterpret_cast<unsigned __int64 *>(result));
+#else
+  return __builtin_uaddll_overflow(value1, value2,
+                                   (unsigned long long *)result);
+#endif
+}
+
+#ifdef _MSC_VER
+#pragma intrinsic(_umul128) // todo: this might fail under visual studio for ARM
+#endif
+
+static inline bool mul_overflow(uint64_t value1, uint64_t value2,
+                                uint64_t *result) {
+#ifdef _MSC_VER
+  // todo: this might fail under visual studio for ARM
+  uint64_t high;
+  *result = _umul128(value1, value2, &high);
+  return high;
+#else
+  return __builtin_umulll_overflow(value1, value2,
+                                   (unsigned long long *)result);
+#endif
+}
+
 }// namespace simdjson::arm64
 
 #endif //IS_ARM64

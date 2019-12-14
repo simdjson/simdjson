@@ -1,6 +1,14 @@
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
+#include <cstdint>
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
+#ifdef _MSC_VER
+#include <iso646.h>
+#endif
+
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define IS_X86_64 1
 #endif
@@ -56,45 +64,9 @@
 #endif
 
 #ifdef _MSC_VER
+#include <intrin.h> // visual studio
+#endif
 
-/* Microsoft C/C++-compatible compiler */
-#include <cstdint>
-#include <iso646.h>
-
-namespace simdjson {
-static inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
-}
-
-#pragma intrinsic(_umul128)
-static inline bool mul_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-  uint64_t high;
-  *result = _umul128(value1, value2, &high);
-  return high;
-}
-} // namespace simdjson
-#else
-#include <cstdint>
-#include <cstdlib>
-
-namespace simdjson {
-static inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-  return __builtin_uaddll_overflow(value1, value2,
-                                   (unsigned long long *)result);
-}
-static inline bool mul_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-  return __builtin_umulll_overflow(value1, value2,
-                                   (unsigned long long *)result);
-}
-
-
-} // namespace simdjson
-#endif // _MSC_VER
 
 #ifdef _MSC_VER
 #define simdjson_strcasecmp _stricmp
