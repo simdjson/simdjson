@@ -19,7 +19,7 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-TARGET_WESTMERE
+TARGET_HASWELL
 namespace simdjson::haswell {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.

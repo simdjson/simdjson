@@ -10,25 +10,25 @@ TARGET_HASWELL
 namespace simdjson::haswell {
 
 /* result might be undefined when input_num is zero */
-static inline int trailing_zeroes(uint64_t input_num) {
+really_inline int trailing_zeroes(uint64_t input_num) {
   return static_cast<int>(_tzcnt_u64(input_num));
 }
 
 /* result might be undefined when input_num is zero */
-static inline uint64_t clear_lowest_bit(uint64_t input_num) {
+really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return _blsr_u64(input_num);
 }
 
 /* result might be undefined when input_num is zero */
-static inline int leading_zeroes(uint64_t input_num) {
+really_inline int leading_zeroes(uint64_t input_num) {
   return static_cast<int>(_lzcnt_u64(input_num));
 }
 
-static inline int hamming(uint64_t input_num) {
+really_inline int hamming(uint64_t input_num) {
   return _popcnt64(input_num);
 }
 
-static inline bool add_overflow(uint64_t value1, uint64_t value2,
+really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
 #ifdef _MSC_VER
   return _addcarry_u64(0, value1, value2,
@@ -42,7 +42,7 @@ static inline bool add_overflow(uint64_t value1, uint64_t value2,
 #ifdef _MSC_VER
 #pragma intrinsic(_umul128)
 #endif
-static inline bool mul_overflow(uint64_t value1, uint64_t value2,
+really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
 #ifdef _MSC_VER
   uint64_t high;
