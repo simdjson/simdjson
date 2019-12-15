@@ -36,7 +36,7 @@ static const uint8_t pshufb_combine_table[272] = {
 };
 
 // 256 * 8 bytes = 2kB, easily fits in cache.
-static uint64_t thintable_epi8[256] = {
+static const uint64_t thintable_epi8[256] = {
     0x0706050403020100, 0x0007060504030201, 0x0007060504030200,
     0x0000070605040302, 0x0007060504030100, 0x0000070605040301,
     0x0000070605040300, 0x0000000706050403, 0x0007060504020100,
