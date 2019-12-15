@@ -9,9 +9,18 @@
 TARGET_HASWELL
 namespace simdjson::haswell {
 
-/* result might be undefined when input_num is zero */
+
 really_inline int trailing_zeroes(uint64_t input_num) {
-  return static_cast<int>(_tzcnt_u64(input_num));
+#ifdef _MSC_VER
+  return (int)_tzcnt_u64(input_num);
+#else
+  ////////
+  // You might expect the next line to be equivalent to 
+  // return (int)_tzcnt_u64(input_num);
+  // but the generated code differs and might be less efficient?
+  ////////
+  return __builtin_ctzll(input_num);
+#endif// _MSC_VER
 }
 
 /* result might be undefined when input_num is zero */
