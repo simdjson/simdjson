@@ -10,6 +10,12 @@
 
 namespace simdjson::arm64 {
 
+#ifndef _MSC_VER
+// We sometimes call trailing_zero on inputs that are zero,
+// but the algorithms do not end up using the returned value.
+// Sadly, sanitizers are not smart enough to figure it out. 
+__attribute__((no_sanitize("undefined"))) // this is deliberate
+#endif
 /* result might be undefined when input_num is zero */
 really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef _MSC_VER
