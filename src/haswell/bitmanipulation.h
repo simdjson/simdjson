@@ -34,7 +34,12 @@ really_inline int leading_zeroes(uint64_t input_num) {
 }
 
 really_inline int hamming(uint64_t input_num) {
+#ifdef _MSC_VER
+  // note: we do not support legacy 32-bit Windows
+  return __popcnt64(input_num);// Visual Studio wants two underscores
+#else
   return _popcnt64(input_num);
+#endif
 }
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
