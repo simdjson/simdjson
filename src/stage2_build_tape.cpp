@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <simdjson/stage2_build_tape.h>
+
 
 #include "simdjson/portability.h"
 #include "simdjson/common_defs.h"

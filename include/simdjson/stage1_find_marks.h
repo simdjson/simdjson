@@ -16,12 +16,12 @@ int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj, 
 
 template <Architecture T = Architecture::NATIVE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj){
-    return find_structural_bits<T>((const uint8_t *)buf, len, pj, false);
+    return find_structural_bits<T>((const uint8_t *)buf, len, pj, true);
 }
 
 template <Architecture T = Architecture::NATIVE>
 int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj) {
-    return find_structural_bits<T>((const uint8_t *)buf, len, pj, false);
+    return find_structural_bits<T>((const uint8_t *)buf, len, pj, true);
 }
 
 }; // namespace simdjson

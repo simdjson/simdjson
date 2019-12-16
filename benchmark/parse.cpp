@@ -25,6 +25,8 @@
 #include "linux-perf-events.h"
 #ifdef __linux__
 #include <libgen.h>
+#include <thread>
+
 #endif
 //#define DEBUG
 #include "simdjson/common_defs.h"
@@ -241,87 +243,88 @@ int main(int argc, char *argv[]) {
   results.resize(evts.size());
   unsigned long cy0 = 0, cy1 = 0, cy2 = 0;
   unsigned long cl0 = 0, cl1 = 0, cl2 = 0;
-  unsigned long mis0 = 0, mis1 = 0, mis2 = 0;
+    unsigned long mis0 = 0, mis1 = 0, mis2 = 0;
   unsigned long cref0 = 0, cref1 = 0, cref2 = 0;
   unsigned long cmis0 = 0, cmis1 = 0, cmis2 = 0;
 #endif
 
   // Do warmup iterations
   bool isok = true;
-  for (int32_t i = 0; i < warmup_iterations; i++) {
-    if (verbose) {
-      std::cout << "[verbose] warmup iteration # " << i << std::endl;
-    }
-    simdjson::ParsedJson pj;
-    bool allocok = pj.allocate_capacity(p.size());
-    if (!allocok) {
-      std::cerr << "failed to allocate memory" << std::endl;
-      return EXIT_FAILURE;
-    }
-    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
-            simdjson::SUCCESS);
-    isok = isok &&
-           (simdjson::SUCCESS ==
-            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
-    if (!isok) {
-      std::cerr << pj.get_error_message() << std::endl;
-      std::cerr << "Could not parse. " << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
+//  for (int32_t i = 0; i < warmup_iterations; i++) {
+//    if (verbose) {
+//      std::cout << "[verbose] warmup iteration # " << i << std::endl;
+//    }
+//    simdjson::ParsedJson pj;
+//    bool allocok = pj.allocate_capacity(p.size());
+//    if (!allocok) {
+//      std::cerr << "failed to allocate memory" << std::endl;
+//      return EXIT_FAILURE;
+//    }
+//    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+//            simdjson::SUCCESS);
+//    isok = isok &&
+//           (simdjson::SUCCESS ==
+//            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+//    if (!isok) {
+//      std::cerr << pj.get_error_message() << std::endl;
+//      std::cerr << "Could not parse. " << std::endl;
+//      return EXIT_FAILURE;
+//    }
+//  }
 
 #ifndef SQUASH_COUNTERS
-  for (int32_t i = 0; i < iterations; i++) {
-    if (verbose) {
-      std::cout << "[verbose] iteration # " << i << std::endl;
-    }
-    unified.start();
-    simdjson::ParsedJson pj;
-    bool allocok = pj.allocate_capacity(p.size());
-    if (!allocok) {
-      std::cerr << "failed to allocate memory" << std::endl;
-      return EXIT_FAILURE;
-    }
-    unified.end(results);
-    cy0 += results[0];
-    cl0 += results[1];
-    mis0 += results[2];
-    cref0 += results[3];
-    cmis0 += results[4];
-    if (verbose) {
-      std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
-    }
-    unified.start();
-    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
-            simdjson::SUCCESS);
-    unified.end(results);
-    cy1 += results[0];
-    cl1 += results[1];
-    mis1 += results[2];
-    cref1 += results[3];
-    cmis1 += results[4];
-    if (!isok) {
-      std::cout << "Failed during stage 1" << std::endl;
-      break;
-    }
-    unified.start();
-    isok = isok &&
-           (simdjson::SUCCESS ==
-            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
-    unified.end(results);
-    cy2 += results[0];
-    cl2 += results[1];
-    mis2 += results[2];
-    cref2 += results[3];
-    cmis2 += results[4];
-    if (!isok) {
-      std::cout << "Failed during stage 2" << std::endl;
-      break;
-    }
-  }
+//  for (int32_t i = 0; i < iterations; i++) {
+//    if (verbose) {
+//      std::cout << "[verbose] iteration # " << i << std::endl;
+//    }
+//    unified.start();
+//    simdjson::ParsedJson pj;
+//    bool allocok = pj.allocate_capacity(p.size());
+//    if (!allocok) {
+//      std::cerr << "failed to allocate memory" << std::endl;
+//      return EXIT_FAILURE;
+//    }
+//    unified.end(results);
+//    cy0 += results[0];
+//    cl0 += results[1];
+//    mis0 += results[2];
+//    cref0 += results[3];
+//    cmis0 += results[4];
+//    if (verbose) {
+//      std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
+//    }
+//    unified.start();
+//    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+//            simdjson::SUCCESS);
+//    unified.end(results);
+//    cy1 += results[0];
+//    cl1 += results[1];
+//    mis1 += results[2];
+//    cref1 += results[3];
+//    cmis1 += results[4];
+//    if (!isok) {
+//      std::cout << "Failed during stage 1" << std::endl;
+//      break;
+//    }
+//    unified.start();
+//    isok = isok &&
+//           (simdjson::SUCCESS ==
+//            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+//    unified.end(results);
+//    cy2 += results[0];
+//    cl2 += results[1];
+//    mis2 += results[2];
+//    cref2 += results[3];
+//    cmis2 += results[4];
+//    if (!isok) {
+//      std::cout << "Failed during stage 2" << std::endl;
+//      break;
+//    }
+//  }
 #endif
 
   // we do it again, this time just measuring the elapsed time
+  auto s2 = simdjson::create_stage2<simdjson::Architecture::HASWELL>();
   for (int32_t i = 0; i < iterations; i++) {
     if (verbose) {
       std::cout << "[verbose] iteration # " << i << std::endl;
@@ -335,13 +338,74 @@ int main(int argc, char *argv[]) {
     if (verbose) {
       std::cout << "[verbose] allocated memory for parsed JSON " << std::endl;
     }
+    const auto KB = 1000;
+    const auto MB = 1000 * KB;
+    const auto MAX_BATCH_SIZE = 4l * MB;
+    int stage2_res;
+    auto buf = (const uint8_t *)p.data();
+    long remaining_len = p.size();
+    std::thread stage1_thread;
+    simdjson::ParsedJson pj_thread;
+    isok = pj_thread.allocate_capacity(p.size());
 
+    typedef int (*stage1_functype)(const unsigned char *buf, size_t len, simdjson::ParsedJson &pj);
     auto start = std::chrono::steady_clock::now();
-    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
-            simdjson::SUCCESS);
-    isok = isok &&
-          (simdjson::SUCCESS ==
-            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+
+//    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+//            simdjson::SUCCESS);
+//    isok = isok &&
+//          (simdjson::SUCCESS ==
+//            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+
+
+//    using namespace simdjson; {
+//        const uint8_t *buf = (const uint8_t *)p.data();
+//        auto remaining_len = p.size();
+//        //initialize_stage2<Architecture::HASWELL>(pj);
+//        s2->initialize(pj);
+//        isok = SUCCESS == stage1_ptr(buf, remaining_len, pj);
+//        //isok = SUCCESS == run_stage2<Architecture::HASWELL>(buf, remaining_len);
+//        s2->run(buf, remaining_len, 0);
+//    }
+        simdjson::json_parse(buf, remaining_len, pj);
+//        auto batch_size = std::min(remaining_len, MAX_BATCH_SIZE);
+//        auto thread_batch_size = 0;
+//        s2->initialize(pj);
+//        do {
+//            auto offset = 0;
+//            if(!stage1_thread.joinable()) {
+//                isok = simdjson::SUCCESS == simdjson::stage1_ptr(buf, batch_size, pj);
+//            } else {
+//                stage1_thread.join();
+//
+//                offset = s2->getCurrentIndex() - pj.n_structural_indexes;
+//                std::swap(pj_thread.structural_indexes, pj.structural_indexes);
+//                pj.n_structural_indexes = pj_thread.n_structural_indexes;
+//
+//
+//
+//            }
+//
+//            if(remaining_len - pj.structural_indexes[pj.n_structural_indexes-1] > 0){
+//                pj.n_structural_indexes -= 4;
+//                thread_batch_size = std::min(remaining_len - pj.structural_indexes[pj.n_structural_indexes], MAX_BATCH_SIZE);
+//                stage1_thread = std::thread(
+//                            static_cast<stage1_functype >(*simdjson::stage1_ptr),
+//                            &buf[pj.structural_indexes[pj.n_structural_indexes]],
+//                            thread_batch_size,
+//                            std::ref(pj_thread)
+//                        );
+//            }
+//
+//
+//            stage2_res = s2->run(buf, batch_size, offset);
+//            buf = &buf[pj.structural_indexes[pj.n_structural_indexes]];
+//            remaining_len -= pj.structural_indexes[pj.n_structural_indexes];
+//            batch_size = thread_batch_size;
+//
+//        } while (stage2_res == simdjson::SUCCESS_AND_HAS_MORE);
+        //pj.print_json(std::cout);
+        //std::cout << std::endl;
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> secs = end - start;
     res[i] = secs.count();
