@@ -30,6 +30,9 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
   return (val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32;
 }
+
+#define SWAR_NUMBER_PARSING
+
 #include "generic/numberparsing.h"
 
 

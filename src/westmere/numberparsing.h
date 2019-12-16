@@ -43,6 +43,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
       t4); // only captures the sum of the first 8 digits, drop the rest
 }
 
+#define SWAR_NUMBER_PARSING
 
 #include "generic/numberparsing.h"
 
