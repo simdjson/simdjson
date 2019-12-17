@@ -7,6 +7,7 @@
 
 #include "simdjson/stage2_build_tape.h"
 #include "haswell/stringparsing.h"
+#include "haswell/numberparsing.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell {

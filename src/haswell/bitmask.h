@@ -6,6 +6,7 @@
 #ifdef IS_X86_64
 
 #include "simdjson/common_defs.h"
+#include "haswell/intrinsics.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell {
@@ -16,7 +17,7 @@ namespace simdjson::haswell {
 // For example, prefix_xor(00100100) == 00011100
 //
 really_inline uint64_t prefix_xor(const uint64_t bitmask) {
-  // There should be no such thing with a processing supporting avx2
+  // There should be no such thing with a processor supporting avx2
   // but not clmul.
   __m128i all_ones = _mm_set1_epi8('\xFF');
   __m128i result = _mm_clmulepi64_si128(_mm_set_epi64x(0ULL, bitmask), all_ones, 0);

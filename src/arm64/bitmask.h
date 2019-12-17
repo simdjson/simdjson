@@ -5,8 +5,8 @@
 
 #ifdef IS_ARM64
 
-#include "haswell/bitmask.h"
 #include "simdjson/common_defs.h"
+#include "arm64/intrinsics.h"
 
 namespace simdjson::arm64 {
 

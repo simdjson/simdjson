@@ -7,6 +7,7 @@
 
 #include "arm64/bitmask.h"
 #include "arm64/simd.h"
+#include "arm64/bitmanipulation.h"
 #include "simdjson/stage1_find_marks.h"
 
 namespace simdjson::arm64 {

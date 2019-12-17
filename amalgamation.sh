@@ -11,16 +11,24 @@ echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/
 AMAL_H="simdjson.h"
 AMAL_C="simdjson.cpp"
 
-# order does not matter
+# this list excludes the "src/generic headers"
 ALLCFILES="
+$SCRIPTPATH/src/arm64/intrinsics.h
+$SCRIPTPATH/src/haswell/intrinsics.h
+$SCRIPTPATH/src/westmere/intrinsics.h
 $SCRIPTPATH/src/jsoncharutils.h
-$SCRIPTPATH/src/numberparsing.h
 $SCRIPTPATH/src/simdprune_tables.h
 $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/jsonstream.cpp
+$SCRIPTPATH/src/arm64/bitmanipulation.h
+$SCRIPTPATH/src/haswell/bitmanipulation.h
+$SCRIPTPATH/src/westmere/bitmanipulation.h
+$SCRIPTPATH/src/arm64/numberparsing.h
+$SCRIPTPATH/src/haswell/numberparsing.h
+$SCRIPTPATH/src/westmere/numberparsing.h
 $SCRIPTPATH/src/arm64/bitmask.h
 $SCRIPTPATH/src/haswell/bitmask.h
 $SCRIPTPATH/src/westmere/bitmask.h
@@ -73,7 +81,7 @@ function dofile()
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
-    while IFS= read -r line
+    while IFS= read -r line || [ -n "$line" ];
     do
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)

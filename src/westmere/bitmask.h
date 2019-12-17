@@ -6,6 +6,7 @@
 #ifdef IS_X86_64
 
 #include "simdjson/common_defs.h"
+#include "westmere/intrinsics.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {

@@ -7,6 +7,7 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/simdjson.h"
+#include "arm64/intrinsics.h"
 
 namespace simdjson::arm64::simd {
 

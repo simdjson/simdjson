@@ -9,6 +9,8 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
+#include "westmere/intrinsics.h"
+#include "westmere/bitmanipulation.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {

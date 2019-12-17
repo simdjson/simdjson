@@ -6,6 +6,7 @@
 #ifdef IS_X86_64
 
 #include "simdjson/common_defs.h"
+#include "haswell/intrinsics.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell::simd {

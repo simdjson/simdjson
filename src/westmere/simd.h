@@ -7,6 +7,7 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/simdjson.h"
+#include "westmere/intrinsics.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere::simd {

@@ -7,6 +7,7 @@
 
 #include "westmere/bitmask.h"
 #include "westmere/simd.h"
+#include "westmere/bitmanipulation.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_WESTMERE

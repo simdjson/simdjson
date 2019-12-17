@@ -7,6 +7,7 @@
 
 #include "haswell/bitmask.h"
 #include "haswell/simd.h"
+#include "haswell/bitmanipulation.h"
 #include "simdjson/stage1_find_marks.h"
 
 TARGET_HASWELL
