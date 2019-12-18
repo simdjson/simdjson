@@ -1,4 +1,4 @@
-/* auto-generated on Mon Dec 16 19:07:18 EST 2019. Do not edit! */
+/* auto-generated on Wed Dec 18 14:39:04 UTC 2019. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -497,7 +497,7 @@ const std::map<int, const std::string> error_strings = {
     {NUMBER_ERROR, "Problem while parsing a number"},
     {UTF8_ERROR, "The input is not valid UTF-8"},
     {UNITIALIZED, "Unitialized"},
-    {EMPTY, "Empty"},
+    {EMPTY, "Empty: no JSON found"},
     {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
                       "found unescaped characters"},
     {UNCLOSED_STRING, "A string is opened, but never closed."},
@@ -1061,7 +1061,7 @@ int json_parse(const char *buf, size_t len, ParsedJson &pj,
                                                         realloc);
 }
 
-Architecture find_best_supported_implementation() {
+Architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ |
       instruction_set::BMI1 | instruction_set::BMI2;
@@ -1077,13 +1077,20 @@ Architecture find_best_supported_implementation() {
   if (supports & instruction_set::NEON)
     return Architecture::ARM64;
 
-  return Architecture::NONE;
+  return Architecture::UNSUPPORTED;
+}
+
+Architecture parse_architecture(char *architecture) {
+  if (!strcmp(architecture, "HASWELL")) { return Architecture::HASWELL; }
+  if (!strcmp(architecture, "WESTMERE")) { return Architecture::WESTMERE; }
+  if (!strcmp(architecture, "ARM64")) { return Architecture::ARM64; }
+  return Architecture::UNSUPPORTED;
 }
 
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
                         bool realloc) {
-  Architecture best_implementation = find_best_supported_implementation();
+  Architecture best_implementation = find_best_supported_architecture();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_X86_64

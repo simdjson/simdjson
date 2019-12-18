@@ -18,7 +18,7 @@ const std::map<int, const std::string> error_strings = {
     {NUMBER_ERROR, "Problem while parsing a number"},
     {UTF8_ERROR, "The input is not valid UTF-8"},
     {UNITIALIZED, "Unitialized"},
-    {EMPTY, "Empty"},
+    {EMPTY, "Empty: no JSON found"},
     {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
                       "found unescaped characters"},
     {UNCLOSED_STRING, "A string is opened, but never closed."},
