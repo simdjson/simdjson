@@ -313,8 +313,8 @@ struct benchmarker {
 
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
-    printf("%s%-13s: %8.4f ns per block (%5.1f %%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
-      prefix,
+    printf("%s%-13s: %8.4f ns per block (%6.2f %%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
+       prefix,
       "Speed",
       stage.elapsed_ns() / stats->blocks, // per block
       100.0 * stage.elapsed_sec() / all_stages.elapsed_sec(), // %
@@ -324,7 +324,7 @@ struct benchmarker {
     );
 
     if (collector.has_events()) {
-      printf("%s%-13s: %2.3f per block (%5.2f %%) - %2.3f per byte - %2.3f per structural - %2.3f GHz est. frequency\n",
+      printf("%s%-13s: %8.4f per block    (%6.2f %%) - %8.4f per byte    - %8.4f per structural    - %8.3f GHz est. frequency\n",
         prefix,
         "Cycles",
         stage.cycles() / stats->blocks,
@@ -333,8 +333,7 @@ struct benchmarker {
         stage.cycles() / stats->structurals,
         (stage.cycles() / stage.elapsed_sec()) / 1000000000.0
       );
-
-      printf("%s%-13s: %2.2f per block (%5.2f %%) - %2.2f per byte - %2.2f per structural - %2.2f per cycle\n",
+      printf("%s%-13s: %8.3f per block    (%6.2f %%) - %8.4f per byte    - %8.4f per structural    - %8.3f per cycle\n",
         prefix,
         "Instructions",
         stage.instructions() / stats->blocks,
@@ -345,7 +344,7 @@ struct benchmarker {
       );
 
       // NOTE: removed cycles/miss because it is a somewhat misleading stat
-      printf("%s%-13s: %2.2f branch misses (%5.2f %%) - %2.2f cache misses (%5.2f %%) - %2.2f cache references\n",
+      printf("%s%-13s: %7.0f branch misses (%6.2f %%) - %8.0f cache misses (%6.2f %%)               - %2.2f cache references\n",
         prefix,
         "Misses",
         stage.branch_misses(),
