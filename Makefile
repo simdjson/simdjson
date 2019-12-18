@@ -72,6 +72,7 @@ LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/jsonstream.cpp src/simdjson.c
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
+FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/0-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/utf-8.json jsonexamples/generated/15-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/utf-8-miss.json
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
@@ -126,10 +127,10 @@ run_issue150_sh: allparserscheckfile
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
-generate_featurejson:
+$(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
 	ruby ./benchmark/genfeaturejson.rb
 
-run_benchfeatures: benchfeatures generate_featurejson
+run_benchfeatures: benchfeatures $(FEATURE_JSON_FILES)
 	./benchfeatures -n 1000
 
 test: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx

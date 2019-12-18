@@ -134,21 +134,6 @@ struct option_struct {
   }
 };
 
-double actual(const benchmarker& feature) {
-  return feature.stage1.best.elapsed_ns() / feature.stats->blocks;
-}
-double diff(const benchmarker& feature, const benchmarker& struct7) {
-  if (feature.stats->blocks == struct7.stats->blocks) {
-    return (feature.stage1.best.elapsed_ns() - struct7.stage1.best.elapsed_ns()) / struct7.stats->blocks;
-  } else {
-    return (feature.stage1.best.elapsed_ns() / feature.stats->blocks) - (struct7.stage1.best.elapsed_ns() / struct7.stats->blocks);
-  }
-}
-double diff_miss(const benchmarker& feature, const benchmarker& struct7) {
-  // There are roughly 2650 branch mispredicts, so we have to scale it so it represents a per block amount
-  return diff(feature, struct7) * 10000.0 / 2650.0;
-}
-
 struct feature_benchmarker {
   benchmarker utf8;
   benchmarker utf8_miss;
@@ -192,86 +177,181 @@ struct feature_benchmarker {
     struct23_miss.run_iterations(iterations, stage1_only);
   }
 
-  void print() {
-    printf("base (ns/block)");
-    printf(",struct 1-7");
-    printf(",struct 1-7 miss");
-    printf(",utf-8");
-    printf(",utf-8 miss");
-    printf(",struct 8-15");
-    printf(",struct 8-15 miss");
-    printf(",struct 16+");
-    printf(",struct 16+ miss");
-    printf("\n");
-
-    printf("%g",   actual(empty));
-    printf(",%+g", diff(struct7, empty));
-    printf(",%+g", diff(struct7_miss, struct7));
-    printf(",%+g", diff(utf8, struct7));
-    printf(",%+g", diff(utf8_miss, utf8));
-    printf(",%+g", diff(struct15, struct7));
-    printf(",%+g", diff(struct15_miss, struct15));
-    printf(",%+g", diff(struct23, struct15));
-    printf(",%+g", diff(struct23_miss, struct23));
-    printf("\n");
-  }
-
-  double cost_per_block(benchmarker& feature, size_t feature_blocks, benchmarker& base) {
+  double cost_per_block(const benchmarker& feature, size_t feature_blocks, const benchmarker& base) const {
     return (feature.stage1.best.elapsed_ns() - base.stage1.best.elapsed_ns()) / feature_blocks;
   }
 
+  // Whether we're recording cache miss and branch miss events
+  bool has_events() const {
+    return empty.collector.has_events();
+  }
+
   // Base cost of any block (including empty ones)
-  double base_cost() {
+  double base_cost() const {
     return (empty.stage1.best.elapsed_ns() / empty.stats->blocks);
   }
+
   // Extra cost of a 1-7 structural block over an empty block
-  double struct1_7_cost() {
+  double struct1_7_cost() const {
     return cost_per_block(struct7, struct7.stats->blocks_with_1_structural, empty);
   }
   // Extra cost of an 1-7-structural miss
-  double struct1_7_miss_cost() {
+  double struct1_7_miss_cost() const {
     return cost_per_block(struct7_miss, struct7_miss.stats->blocks_with_1_structural, struct7);
   }
+  // Rate of 1-7-structural misses per 8-structural flip
+  double struct1_7_miss_rate() const {
+    if (!has_events()) { return 1; }
+    return double(struct7_miss.stage1.best.branch_misses() - struct7.stage1.best.branch_misses()) / struct7_miss.stats->blocks_with_1_structural_flipped;
+  }
+
   // Extra cost of an 8-15 structural block over a 1-7 structural block
-  double struct8_15_cost() {
+  double struct8_15_cost() const {
     return cost_per_block(struct15, struct15.stats->blocks_with_8_structurals, struct7);
   }
   // Extra cost of an 8-15-structural miss over a 1-7 miss
-  double struct8_15_miss_cost() {
+  double struct8_15_miss_cost() const {
     return cost_per_block(struct15_miss, struct15_miss.stats->blocks_with_8_structurals_flipped, struct15);
   }
+  // Rate of 8-15-structural misses per 8-structural flip
+  double struct8_15_miss_rate() const {
+    if (!has_events()) { return 1; }
+    return double(struct15_miss.stage1.best.branch_misses() - struct15.stage1.best.branch_misses()) / struct15_miss.stats->blocks_with_8_structurals_flipped;
+  }
+
   // Extra cost of a 16+-structural block over an 8-15 structural block (actual varies based on # of structurals!)
-  double struct16_cost() {
+  double struct16_cost() const {
     return cost_per_block(struct23, struct23.stats->blocks_with_16_structurals, struct15);
   }
   // Extra cost of a 16-structural miss over an 8-15 miss
-  double struct16_miss_cost() {
+  double struct16_miss_cost() const {
     return cost_per_block(struct23_miss, struct23_miss.stats->blocks_with_16_structurals_flipped, struct23);
   }
+  // Rate of 16-structural misses per 16-structural flip
+  double struct16_miss_rate() const {
+    if (!has_events()) { return 1; }
+    return double(struct23_miss.stage1.best.branch_misses() - struct23.stage1.best.branch_misses()) / struct23_miss.stats->blocks_with_16_structurals_flipped;
+  }
+
   // Extra cost of having UTF-8 in a block
-  double utf8_cost() {
+  double utf8_cost() const {
     return cost_per_block(utf8, utf8.stats->blocks_with_utf8, struct7_full);
   }
   // Extra cost of a UTF-8 miss
-  double utf8_miss_cost() {
+  double utf8_miss_cost() const {
     return cost_per_block(utf8_miss, utf8_miss.stats->blocks_with_utf8_flipped, utf8);
   }
+  // Rate of UTF-8 misses per UTF-8 flip
+  double utf8_miss_rate() const {
+    if (!has_events()) { return 1; }
+    return double(utf8_miss.stage1.best.branch_misses() - utf8.stage1.best.branch_misses()) / utf8_miss.stats->blocks_with_utf8_flipped;
+  }
 
-  double calc_expected(benchmarker& file) {
+  double calc_expected_feature_cost(const benchmarker& file) const {
     // Expected base ns/block (empty)
     json_stats& stats = *file.stats;
-    double expected = base_cost()      * stats.blocks;
-    expected += struct1_7_cost()       * stats.blocks_with_1_structural;
-    expected += struct1_7_miss_cost()  * stats.blocks_with_1_structural_flipped;
-    expected += utf8_cost()            * stats.blocks_with_utf8;
-    expected += utf8_miss_cost()       * stats.blocks_with_utf8_flipped;
-    expected += struct8_15_cost()      * stats.blocks_with_8_structurals;
-    expected += struct8_15_miss_cost() * stats.blocks_with_8_structurals_flipped;
-    expected += struct16_cost()        * stats.blocks_with_16_structurals;
-    expected += struct16_miss_cost()   * stats.blocks_with_16_structurals_flipped;
+    double expected = base_cost()       * stats.blocks;
+    expected +=       struct1_7_cost()  * stats.blocks_with_1_structural;
+    expected +=       utf8_cost()       * stats.blocks_with_utf8;
+    expected +=       struct8_15_cost() * stats.blocks_with_8_structurals;
+    expected +=       struct16_cost()   * stats.blocks_with_16_structurals;
     return expected / stats.blocks;
   }
+
+  double calc_expected_miss_cost(const benchmarker& file) const {
+    // Expected base ns/block (empty)
+    json_stats& stats = *file.stats;
+    double expected = struct1_7_miss_cost()  * stats.blocks_with_1_structural_flipped * struct1_7_miss_rate();
+    expected +=       utf8_miss_cost()       * stats.blocks_with_utf8_flipped * utf8_miss_rate();
+    expected +=       struct8_15_miss_cost() * stats.blocks_with_8_structurals_flipped * struct8_15_miss_rate();
+    expected +=       struct16_miss_cost()   * stats.blocks_with_16_structurals_flipped * struct16_miss_rate();
+    return expected / stats.blocks;
+  }
+
+  double calc_expected_misses(const benchmarker& file) const {
+    json_stats& stats = *file.stats;
+    double expected = stats.blocks_with_1_structural_flipped   * struct1_7_miss_rate();
+    expected +=       stats.blocks_with_utf8_flipped           * utf8_miss_rate();
+    expected +=       stats.blocks_with_8_structurals_flipped  * struct8_15_miss_rate();
+    expected +=       stats.blocks_with_16_structurals_flipped * struct16_miss_rate();
+    return expected;
+  }
+
+  double calc_expected(const benchmarker& file) const {
+    return calc_expected_feature_cost(file) + calc_expected_miss_cost(file);
+  }
+
+  void print() {
+    printf("\n");
+    printf("Features in ns/block (64 bytes):\n");
+    printf("\n");
+    printf("| %-8s ",   "Stage");
+    printf("| %8s ",  "Base");
+    printf("| %8s ",  "7 Struct");
+    printf("| %8s ",  "UTF-8");
+    printf("| %8s ",  "15 Str.");
+    printf("| %8s ",  "16+ Str.");
+    printf("| %15s ", "7 Struct Miss");
+    printf("| %15s ", "UTF-8 Miss");
+    printf("| %15s ", "15 Str. Miss");
+    printf("| %15s ", "16+ Str. Miss");
+    printf("|\n");
+
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.17s", "---------------------------------------");
+    printf("|%.17s", "---------------------------------------");
+    printf("|%.17s", "---------------------------------------");
+    printf("|%.17s", "---------------------------------------");
+    printf("|\n");
+
+    printf("| %-8s ",         "Stage 1");
+    printf("| %8.3g ",        base_cost());
+    printf("| %8.3g ",        struct1_7_cost());
+    printf("| %8.3g ",        utf8_cost());
+    printf("| %8.3g ",        struct8_15_cost());
+    printf("| %8.3g ",        struct16_cost());
+    if (has_events()) {
+      printf("| %8.3g (%3d%%) ", struct1_7_miss_cost(), int(struct1_7_miss_rate()*100));
+      printf("| %8.3g (%3d%%) ", utf8_miss_cost(), int(utf8_miss_rate()*100));
+      printf("| %8.3g (%3d%%) ", struct8_15_miss_cost(), int(struct8_15_miss_rate()*100));
+      printf("| %8.3g (%3d%%) ", struct16_miss_cost(), int(struct16_miss_rate()*100));
+    } else {
+      printf("|        %8.3g ", struct1_7_miss_cost());
+      printf("|        %8.3g ", utf8_miss_cost());
+      printf("|        %8.3g ", struct8_15_miss_cost());
+      printf("|        %8.3g ", struct16_miss_cost());
+    }
+    printf("|\n");
+  }
 };
+
+void print_file_effectiveness(const char* filename, const benchmarker& results, const feature_benchmarker& features) {
+  double actual = results.stage1.best.elapsed_ns() / results.stats->blocks;
+  double calc = features.calc_expected(results);
+  uint64_t actual_misses = results.stage1.best.branch_misses();
+  uint64_t calc_misses = uint64_t(features.calc_expected_misses(results));
+  double calc_miss_cost = features.calc_expected_miss_cost(results);
+  printf("| %-15s ",   filename);
+  printf("|    %8.3g ", features.calc_expected_feature_cost(results));
+  printf("|    %8.3g ", calc_miss_cost);
+  printf("| %8.3g ",  calc);
+  printf("| %8.3g ",  actual);
+  printf("| %+8.3g ", actual - calc);
+  printf("| %13lu ",  calc_misses);
+  if (features.has_events()) {
+    printf("| %13lu ",  actual_misses);
+    printf("| %+13ld ", int64_t(actual_misses - calc_misses));
+    double miss_adjustment = calc_miss_cost * (double(int64_t(actual_misses - calc_misses)) / calc_misses);
+    printf("|      %8.3g ", calc_miss_cost + miss_adjustment);
+    printf("|      %+8.3g ", actual - (calc + miss_adjustment));
+  }
+  printf("|\n");
+}
 
 int main(int argc, char *argv[]) {
   // Read options
@@ -317,10 +397,42 @@ int main(int argc, char *argv[]) {
 
   features.print();
 
-// Gauge effectiveness
-  printf("gsoc-2018.json expected/actual: %g/%g\n", features.calc_expected(gsoc_2018), actual(gsoc_2018));
-  printf("twitter.json expected/actual: %g/%g\n", features.calc_expected(twitter), actual(twitter));
-  printf("random.json expected/actual: %g/%g\n", features.calc_expected(random), actual(random));
+  // Gauge effectiveness
+  printf("\n");
+  printf("Estimated vs. Actual ns/block for real files:\n");
+  printf("\n");
+  printf("| %-15s ", "File");
+  printf("| %11s ", "Est. (Base)");
+  printf("| %11s ", "Est. (Miss)");
+  printf("| %8s ",  "Est.");
+  printf("| %8s ",  "Actual");
+  printf("| %8s ",  "Diff");
+  printf("| %13s ", "Est. Misses");
+  if (features.has_events()) {
+    printf("| %13s ", "Actual Misses");
+    printf("| %13s ", "Diff (Misses)");
+    printf("| %13s ", "Adjusted Miss");
+    printf("| %13s ", "Adjusted Diff");
+  }
+  printf("|\n");
+  printf("|%.17s",  "---------------------------------------");
+  printf("|%.13s",  "---------------------------------------");
+  printf("|%.13s",  "---------------------------------------");
+  printf("|%.10s",  "---------------------------------------");
+  printf("|%.10s",  "---------------------------------------");
+  printf("|%.10s",  "---------------------------------------");
+  printf("|%.15s",  "---------------------------------------");
+  if (features.has_events()) {
+    printf("|%.15s",  "---------------------------------------");
+    printf("|%.15s",  "---------------------------------------");
+    printf("|%.15s",  "---------------------------------------");
+    printf("|%.15s",  "---------------------------------------");
+  }
+  printf("|\n");
+
+  print_file_effectiveness("gsoc-2018.json", gsoc_2018, features);
+  print_file_effectiveness("twitter.json", twitter, features);
+  print_file_effectiveness("random.json", random, features);
 
   return EXIT_SUCCESS;
 }
