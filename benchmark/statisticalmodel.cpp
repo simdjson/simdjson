@@ -62,7 +62,10 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   answer.true_count = 0;
   answer.false_count = 0;
   answer.string_count = 0;
-  answer.structural_indexes_count = pj.n_structural_indexes;
+  answer.structural_indexes_count = 0;
+  for (size_t block=0; block<ROUNDUP_N(block.size(), 64); block++) {
+    answer.structural_indexes_count += hamming(pj.structurals[block]);
+  }
   size_t tape_idx = 0;
   uint64_t tape_val = pj.tape[tape_idx++];
   uint8_t type = (tape_val >> 56);

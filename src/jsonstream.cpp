@@ -21,7 +21,8 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
     this->_len = len;
     _batch_size = 0;
     _batch_size = 0;
-    next_json = 0;
+    block = 0;
+    num_blocks = (ROUNDUP_N(len, 64)/64);
     current_buffer_loc = 0;
     n_parsed_docs = 0;
     error_on_last_attempt= false;
@@ -65,8 +66,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
             //the second thread is running or done.
         else{
             stage_1_thread.join();
-            std::swap(pj.structural_indexes, pj_thread.structural_indexes);
-            pj.n_structural_indexes = pj_thread.n_structural_indexes;
+            std::swap(pj.structurals, pj_thread.structurals);
 
             _buf = &_buf[last_json_buffer_loc];
             _len -= last_json_buffer_loc;
@@ -114,7 +114,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
         //of the last loaded document and start parsing at structural_index[1] for the next batch.
         // It should point to the start of the first document in the new batch
-        if(next_json == pj.n_structural_indexes) {
+        if(block >= num_blocks) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
             load_next_batch = true;

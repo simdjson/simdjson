@@ -3,7 +3,7 @@
 
 namespace simdjson {
 ParsedJson::ParsedJson()
-    : structural_indexes(nullptr), tape(nullptr),
+    : structural_blocks(nullptr), tape(nullptr),
       containing_scope_offset(nullptr), ret_address(nullptr),
       string_buf(nullptr), current_string_buf_loc(nullptr) {}
 
@@ -12,12 +12,12 @@ ParsedJson::~ParsedJson() { deallocate(); }
 ParsedJson::ParsedJson(ParsedJson &&p)
     : byte_capacity(p.byte_capacity), depth_capacity(p.depth_capacity),
       tape_capacity(p.tape_capacity), string_capacity(p.string_capacity),
-      current_loc(p.current_loc), n_structural_indexes(p.n_structural_indexes),
-      structural_indexes(p.structural_indexes), tape(p.tape),
+      current_loc(p.current_loc), num_structural_blocks(p.num_structural_blocks),
+      structural_blocks(p.structural_blocks), tape(p.tape),
       containing_scope_offset(p.containing_scope_offset),
       ret_address(p.ret_address), string_buf(p.string_buf),
       current_string_buf_loc(p.current_string_buf_loc), valid(p.valid) {
-  p.structural_indexes = nullptr;
+  p.structural_blocks = nullptr;
   p.tape = nullptr;
   p.containing_scope_offset = nullptr;
   p.ret_address = nullptr;
@@ -36,10 +36,8 @@ ParsedJson &ParsedJson::operator=(ParsedJson &&p) {
   p.string_capacity = 0;
   current_loc = p.current_loc;
   p.current_loc = 0;
-  n_structural_indexes = p.n_structural_indexes;
-  p.n_structural_indexes = 0;
-  structural_indexes = p.structural_indexes;
-  p.structural_indexes = nullptr;
+  structural_blocks = p.structural_blocks;
+  p.structural_blocks = nullptr;
   tape = p.tape;
   p.tape = nullptr;
   containing_scope_offset = p.containing_scope_offset;
@@ -72,9 +70,8 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   deallocate();
   valid = false;
   byte_capacity = 0; // will only set it to len after allocations are a success
-  n_structural_indexes = 0;
-  uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes = new (std::nothrow) uint32_t[max_structures];
+  size_t structural_blocks_capacity = (len / 64 + 1);
+  structural_blocks = new (std::nothrow) uint64_t[structural_blocks_capacity];
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
@@ -94,13 +91,13 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
 #endif
   if ((string_buf == nullptr) || (tape == nullptr) ||
       (containing_scope_offset == nullptr) || (ret_address == nullptr) ||
-      (structural_indexes == nullptr)) {
+      (structural_blocks == nullptr)) {
     std::cerr << "Could not allocate memory" << std::endl;
     delete[] ret_address;
     delete[] containing_scope_offset;
     delete[] tape;
     delete[] string_buf;
-    delete[] structural_indexes;
+    delete[] structural_blocks;
 
     return false;
   }
@@ -135,7 +132,7 @@ void ParsedJson::deallocate() {
   delete[] containing_scope_offset;
   delete[] tape;
   delete[] string_buf;
-  delete[] structural_indexes;
+  delete[] structural_blocks;
   valid = false;
 }
 

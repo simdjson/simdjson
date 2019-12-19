@@ -177,9 +177,9 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     }
     start_continue:
     /* the string might not be NULL terminated. */
-    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
+    if (AT_EOF() && buf[idx+2] == '\0') {
         goto succeed;
-    } else if(depth == 1 && i<=pj.n_structural_indexes) {
+    } else if(depth == 1 && !AT_EOF()) {
         goto succeedAndHasMore;
     } else {
         goto fail;

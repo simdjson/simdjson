@@ -40,6 +40,7 @@
 #include "simdjson/parsedjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
+#include "westmere/bitmanipulation.h"
 
 #include <functional>
 
@@ -88,7 +89,6 @@ struct json_stats {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
-    structurals = pj.n_structural_indexes-1;
 
     // Calculate stats on blocks that will trigger utf-8 if statements / mispredictions
     bool last_block_has_utf8 = false;
@@ -118,14 +118,9 @@ struct json_stats {
     bool last_block_has_1_structural = false;
     bool last_block_has_8_structurals = false;
     bool last_block_has_16_structurals = false;
-    size_t structural=0;
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
-      int block_structurals=0;
-      while (structural < pj.n_structural_indexes && pj.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
-        block_structurals++;
-        structural++;
-      }
+      int block_structurals = simdjson::westmere::hamming(pj.structural_blocks[block]);
 
       bool block_has_0_structurals = block_structurals == 0;
       if (block_has_0_structurals) {

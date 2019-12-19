@@ -144,8 +144,8 @@ static double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+static never_inline int parse_float(const uint8_t *const buf, ParsedJson &pj,
+                                     int offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -180,7 +180,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
     while (is_integer(*p)) {
       unsigned char digit = *p - '0';
@@ -203,7 +203,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
     unsigned char digit = *p - '0';
     int64_t exp_number = digit; // exponential part
@@ -229,7 +229,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false;
+        return 0;
       }
       digit = *p - '0';
       exp_number = 10 * exp_number + digit;
@@ -247,7 +247,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false;
+        return 0;
       }
     } else {
       int exponent = (neg_exp ? -exp_number : exp_number);
@@ -258,21 +258,21 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
     }
   }
   if (is_not_structural_or_whitespace(*p)) {
-    return false;
+    return 0;
   }
   // check that we can go from long double to double safely.
   if(i > std::numeric_limits<double>::max()) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false;
+        return 0;
   }
   double d = negative ? -i : i;
   pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
-  return is_structural_or_whitespace(*p);
+  return is_structural_or_whitespace(*p) ? reinterpret_cast<const uint8_t *>(p)-(buf+offset) : 0;
 }
 
 // called by parse_number when we know that the output is an integer,
@@ -283,7 +283,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const uint8_t *const buf,
+static never_inline int parse_large_integer(const uint8_t *const buf,
                                              ParsedJson &pj,
                                              const uint32_t offset,
                                              bool found_minus) {
@@ -310,13 +310,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false; // overflow
+        return 0; // overflow
       }
       if (add_overflow(i, digit, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false; // overflow
+        return 0; // overflow
       }
       ++p;
     }
@@ -327,7 +327,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false; // overflow
+      return 0; // overflow
     } else if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
       // as a positive signed integer, but the negative version is 
@@ -361,7 +361,7 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       pj.write_tape_u64(i);
     }
   }
-  return is_structural_or_whitespace(*p);
+  return is_structural_or_whitespace(*p) ? reinterpret_cast<const uint8_t *>(p)-(buf+offset) : 0;
 }
 
 // parse the number at buf + offset
@@ -373,13 +373,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
+static really_inline int parse_number(const uint8_t *const buf, ParsedJson &pj,
                                        const uint32_t offset,
                                        bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
   pj.write_tape_s64(0);           // always write zero
-  return true;                    // always succeeds
+  return offset;                  // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
@@ -390,7 +390,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
   }
   const char *const start_digits = p;
@@ -402,7 +402,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
     i = 0;
   } else {
@@ -410,7 +410,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
     unsigned char digit = *p - '0';
     i = digit;
@@ -445,7 +445,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
@@ -480,7 +480,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(buf + offset);
 #endif
-      return false;
+      return 0;
     }
     unsigned char digit = *p - '0';
     exp_number = digit;
@@ -501,7 +501,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(buf + offset);
 #endif
-        return false;
+        return 0;
       }
       digit = *p - '0';
       exp_number = 10 * exp_number + digit;
@@ -551,7 +551,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     found_integer(i, buf + offset);
 #endif
   }
-  return is_structural_or_whitespace(*p);
+  return is_structural_or_whitespace(*p) ? reinterpret_cast<const uint8_t *>(p)-(buf+offset) : 0;
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 

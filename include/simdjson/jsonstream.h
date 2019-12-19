@@ -120,7 +120,7 @@ namespace simdjson {
         const char *_buf;
         size_t _len;
         size_t _batch_size;
-        size_t next_json{0};
+        size_t block{0};
         bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};

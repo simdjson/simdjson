@@ -10483,7 +10483,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   valid = false;
   byte_capacity = 0; // will only set it to len after allocations are a success
   n_structural_indexes = 0;
-  uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
+  uint32_t max_structures = (ROUNDUP_N(len, 64)/64) + 2 + 7;
   structural_indexes = new (std::nothrow) uint32_t[max_structures];
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do

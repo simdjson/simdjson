@@ -13,7 +13,7 @@ TARGET_WESTMERE
 namespace simdjson::westmere {
 
 #include "generic/stage2_build_tape.h"
-#include "generic/stage2_streaming_build_tape.h"
+// #include "generic/stage2_streaming_build_tape.h"
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
@@ -27,11 +27,11 @@ unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJs
   return westmere::unified_machine(buf, len, pj);
 }
 
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return westmere::unified_machine(buf, len, pj, next_json);
-}
+// template <>
+// WARN_UNUSED int
+// unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+//     return westmere::unified_machine(buf, len, pj, next_json);
+// }
 
 
 } // namespace simdjson
