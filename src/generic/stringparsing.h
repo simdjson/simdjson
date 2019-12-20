@@ -37,7 +37,8 @@ static const uint8_t escape_map[256] = {
 // We work in little-endian then swap at write time
 WARN_UNUSED
 really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
+                                            uint8_t **dst_ptr,
+                                            bool quote_within_twelve) {
   // hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
   // conversion isn't valid; we defer the check for this to inside the
   // multilingual plane check
@@ -46,7 +47,7 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // check for low surrogate for characters outside the Basic
   // Multilingual Plane.
   if (code_point >= 0xd800 && code_point < 0xdc00) {
-    if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+    if (quote_within_twelve || ((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
       return false;
     }
     uint32_t code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
@@ -108,7 +109,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       return true;
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
-      /* find out where the backspace is */
+      /* find out where the backslash is */
       auto bs_dist = trailing_zeroes(helper.bs_bits);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
@@ -117,7 +118,24 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
            within the unicode codepoint handling code. */
         src += bs_dist;
         dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst)) {
+        /* determine whether a quote char occurs within the hex sequence
+           of the unicode char */
+        uint32_t quote_dist = 32;
+        if (helper.quote_bits != 0) {
+          quote_dist = trailing_zeroes(helper.quote_bits);
+        } else if (bs_dist > 32 - 12) {
+          /* the 6 + 6 byte unicode sequences can overflow to the next YMM word,
+             so reload with shift and recheck for possibly premature quote */
+          uint32_t shift = bs_dist - 20;
+          parse_string_helper quote_overflow = find_quote_bits_no_copy(src-bs_dist+shift);
+          if (quote_overflow.quote_bits != 0) {
+            quote_dist = trailing_zeroes(quote_overflow.quote_bits);
+          }
+          quote_dist += shift;
+        }
+        bool quote_within_six = (quote_dist - bs_dist < 6);     /* is there a quote within six bytes */
+        bool quote_within_twelve = (quote_dist - bs_dist < 12); /* is there a quote within twelve bytes */
+        if (quote_within_six || !handle_unicode_codepoint(&src, &dst, quote_within_twelve)) {
           return false;
         }
       } else {

@@ -39,6 +39,19 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
   };
 }
 
+really_inline parse_string_helper find_quote_bits_no_copy(const uint8_t *src) {
+  // this can read up to 31 bytes beyond the buffer size, but we require
+  // SIMDJSON_PADDING of padding
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v0(src);
+  simd8<uint8_t> v1(src + 16);
+  uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
+  return {
+    static_cast<uint32_t>(bs_and_quote),      // bs_bits
+    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
+  };
+}
+
 #include "generic/stringparsing.h"
 
 } // namespace simdjson::westmere

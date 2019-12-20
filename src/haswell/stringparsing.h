@@ -37,6 +37,17 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
   };
 }
 
+really_inline parse_string_helper find_quote_bits_no_copy(const uint8_t *src) {
+  // this can read up to 15 bytes beyond the buffer size, but we require
+  // SIMDJSON_PADDING of padding
+  static_assert(SIMDJSON_PADDING >= (parse_string_helper::BYTES_PROCESSED - 1));
+  simd8<uint8_t> v(src);
+  return {
+      (uint32_t)(0),                     // bs_bits
+      (uint32_t)(v == '"').to_bitmask(), // quote_bits
+  };
+}
+
 #include "generic/stringparsing.h"
 
 } // namespace simdjson::haswell
