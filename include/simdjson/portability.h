@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_PORTABILITY_H
 #define SIMDJSON_PORTABILITY_H
 
-#include <cstdint>
 #include <cstddef>
-#include <cstdlib>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #ifdef _MSC_VER
 #include <iso646.h>
 #endif
@@ -17,7 +17,10 @@
 #endif
 
 // this is almost standard?
-#define STRINGIFY(a) #a
+#undef STRINGIFY_IMPLEMENTATION_
+#undef STRINGIFY
+#define STRINGIFY_IMPLEMENTATION_(a) #a
+#define STRINGIFY(a) STRINGIFY_IMPLEMENTATION_(a)
 
 // we are going to use runtime dispatch
 #ifdef IS_X86_64
@@ -37,7 +40,7 @@
 #define UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
-#endif  // x86
+#endif // x86
 
 // Default target region macros don't do anything.
 #ifndef TARGET_REGION
@@ -66,7 +69,6 @@
 #ifdef _MSC_VER
 #include <intrin.h> // visual studio
 #endif
-
 
 #ifdef _MSC_VER
 #define simdjson_strcasecmp _stricmp
