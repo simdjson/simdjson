@@ -79,13 +79,6 @@ namespace simdjson {
                                     pj_thread
                             );
                         });
-
-//                stage1_thread = std::thread(
-//                        static_cast<stage1_functype >(simdjson::find_structural_bits<T>),
-//                        &buf[pj.structural_indexes[pj.n_structural_indexes]],
-//                        thread_batch_size,
-//                        std::ref(pj_thread)
-//                );
             }
 
 

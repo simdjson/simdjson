@@ -6,7 +6,7 @@
 #include "simdjson/simdjson.h"
 
 namespace simdjson {
-
+using label_ptr = void*;
 
 
 class Stage2{
@@ -20,12 +20,12 @@ public:
         object_begin = 5,
         object_continue = 6,
         object_key = 7,
-        fail,
-        succeed
+        fail = 8,
+        succeed = 9
     } State;
 
 protected:
-    State state{};
+    label_ptr state{};
     uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
     uint32_t idx{}; /* location of the structural character in the input (buf)   */
     uint8_t c{};    /* used to track the (structural) character we are looking at,
@@ -35,20 +35,18 @@ protected:
     ParsedJson *_pj = nullptr;
     const uint8_t *_buf{};
     size_t _len{};
+    label_ptr label_ptr_table[11];
+    label_ptr scope_stack[1024]{};
 
-    State scope_stack[1024]{};
-
-    virtual inline State handle_root() =0;
-    virtual inline State handle_root_continue() =0;
-    virtual inline State handle_array_begin() =0;
-    virtual inline State handle_array_continue() =0;
-    virtual inline State handle_array_element() =0;
-    virtual inline State handle_object_begin() =0;
-    virtual inline State handle_object_continue()=0;
-    virtual inline State handle_object_key()=0;
-
-
-    virtual inline State scope_end()=0;
+    virtual really_inline label_ptr handle_root() =0;
+    virtual really_inline label_ptr handle_root_continue() =0;
+    virtual really_inline label_ptr handle_array_begin() =0;
+    virtual really_inline label_ptr handle_array_continue() =0;
+    virtual really_inline label_ptr handle_array_element() =0;
+    virtual really_inline label_ptr handle_object_begin() =0;
+    virtual really_inline label_ptr handle_object_continue()=0;
+    virtual really_inline label_ptr handle_object_key()=0;
+    virtual really_inline label_ptr scope_end()=0;
 
     void update_char() {
         idx = _pj->structural_indexes[i++];

@@ -3,10 +3,13 @@
 
 
 #include <algorithm>
-#include <thread>
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
+
+#ifdef SIMDJSON_THREADS_ENABLED
+#include <thread>
+#endif
 
 namespace simdjson {
     /*************************************************************************************

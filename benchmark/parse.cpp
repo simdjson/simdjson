@@ -224,12 +224,12 @@ int main(int argc, char *argv[]) {
   }
 #endif
   { // practice run
-    simdjson::ParsedJson pj;
-    bool allocok = pj.allocate_capacity(p.size());
-    if (allocok) {
-      simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj);
-      simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj);
-    }
+//    simdjson::ParsedJson pj;
+//    bool allocok = pj.allocate_capacity(p.size());
+//    if (allocok) {
+//      simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj);
+//      simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj);
+//    }
   }
 #ifndef SQUASH_COUNTERS
   std::vector<int> evts;
@@ -351,23 +351,25 @@ int main(int argc, char *argv[]) {
     typedef int (*stage1_functype)(const unsigned char *buf, size_t len, simdjson::ParsedJson &pj);
     auto start = std::chrono::steady_clock::now();
 
-//    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
-//            simdjson::SUCCESS);
-//    isok = isok &&
-//          (simdjson::SUCCESS ==
-//            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
+    isok = (simdjson::stage1_ptr((const uint8_t *)p.data(), p.size(), pj) ==
+            simdjson::SUCCESS);
+    isok = isok &&
+          (simdjson::SUCCESS ==
+            simdjson::unified_ptr((const uint8_t *)p.data(), p.size(), pj));
 
 
 //    using namespace simdjson; {
 //        const uint8_t *buf = (const uint8_t *)p.data();
 //        auto remaining_len = p.size();
-//        //initialize_stage2<Architecture::HASWELL>(pj);
 //        s2->initialize(pj);
 //        isok = SUCCESS == stage1_ptr(buf, remaining_len, pj);
-//        //isok = SUCCESS == run_stage2<Architecture::HASWELL>(buf, remaining_len);
 //        s2->run(buf, remaining_len, 0);
 //    }
-        simdjson::json_parse(buf, remaining_len, pj);
+
+//        simdjson::json_parse(buf, remaining_len, pj);
+
+
+
 //        auto batch_size = std::min(remaining_len, MAX_BATCH_SIZE);
 //        auto thread_batch_size = 0;
 //        s2->initialize(pj);

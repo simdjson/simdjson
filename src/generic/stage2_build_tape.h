@@ -31,19 +31,20 @@
   }
 #endif
 using State = simdjson::Stage2::State;
+//using label_ptr = void*;
 class Stage2_impl: public simdjson::Stage2 {
 
 protected:
-        inline State handle_root() override ;
-        inline State handle_root_continue() override;
-        inline State handle_array_begin() override;
-        inline State handle_array_continue() override;
-        inline State handle_array_element() override;
-        inline State handle_object_begin() override;
-        inline State handle_object_continue() override;
-        inline State handle_object_key() override;
-        inline State scope_end() override;
-        inline void conclude() override;
+        really_inline label_ptr handle_root() override ;
+        really_inline label_ptr handle_root_continue() override;
+        really_inline label_ptr handle_array_begin() override;
+        really_inline label_ptr handle_array_continue() override;
+        really_inline label_ptr handle_array_element() override;
+        really_inline label_ptr handle_object_begin() override;
+        really_inline label_ptr handle_object_continue() override;
+        really_inline label_ptr handle_object_key() override;
+        really_inline label_ptr scope_end() override;
+        really_inline void conclude() override;
 
     public:
         void initialize(ParsedJson &pj) override;
@@ -58,8 +59,10 @@ void Stage2_impl::initialize(ParsedJson &pj){
     _pj->init();
 
     //scope_stack = {}; // Empty the stack
-    scope_stack[0] = (root_continue);
-    state = root;
+//    scope_stack[0] = label_ptr_table[root_continue];
+//    state = label_ptr_table[root];
+    scope_stack[0] = nullptr;
+    state = nullptr;
     _pj->containing_scope_offset[0] = _pj->get_current_loc();
     _pj->write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
     /* the root is used, if nothing else, to capture the size of the tape */
@@ -73,69 +76,145 @@ int Stage2_impl::run(const uint8_t *buf, const size_t &len, uint32_t offset){
     _len = len;
     i = offset;
 
-    while (i <= _pj->n_structural_indexes){
-        update_char();
-        switch (state){
-            case root:
-                state = handle_root();
-                break;
-            case root_continue:
-                state = handle_root_continue();
-                break;
-            case array_begin:
-                state = handle_array_begin();
-                break;
-            case array_continue:
-                state = handle_array_continue();
-                break;
-            case array_element:
-                state = handle_array_element();
-                break;
-            case object_begin:
-                state = handle_object_begin();
-                break;
-            case object_continue:
-                state = handle_object_continue();
-                break;
-            case object_key:
-                state = handle_object_key();
-                break;
-            case succeed:
-            case fail:
+//    static label_ptr dispatch_table[] = {
+//        &&case_root, &&case_root_continue, &&case_array_begin, &&case_array_continue,
+//        &&case_array_element, &&case_object_begin, &&case_object_continue, &&case_object_key,
+//        &&case_succeed, &&case_fail
+//    };
+
+//    std::copy(dispatch_table, dispatch_table+ sizeof(dispatch_table)/ sizeof(dispatch_table[0]), label_ptr_table);
+    //std::swap(label_ptr_table, dispatch_table);
+
+    label_ptr_table[0] = &&case_root;
+    label_ptr_table[1] = &&case_root_continue;
+    label_ptr_table[2] = &&case_array_begin;
+    label_ptr_table[3] = &&case_array_continue;
+    label_ptr_table[4] = &&case_array_element;
+    label_ptr_table[5] = &&case_object_begin;
+    label_ptr_table[6] = &&case_object_continue;
+    label_ptr_table[7] = &&case_object_key;
+    label_ptr_table[8] = &&case_succeed;
+    label_ptr_table[9] = &&case_fail;
+    label_ptr_table[10] = &&case_break;
+
+//#define DISPATCH(state){                                                    \
+//        auto is_not_done = (i <= _pj->n_structural_indexes);                \
+//        update_char();                                                      \
+//        if(is_not_done) goto *state;                                        \
+//        goto case_break;                                                    \
+//    }
+
+#define GOTO(state){                                                    \
+        auto is_not_done = (i <= _pj->n_structural_indexes);                \
+        update_char();                                                      \
+        if(is_not_done) goto *state;                                        \
+        goto case_break;                                                    \
+    }                                                                       \
+
+//#define GOTO(state){                                                    \
+//        update_char();                                                      \
+//        goto *state;         \
+//}
+
+    update_char();
+    if(!scope_stack[0] || !state) {
+        scope_stack[0] = &&case_root_continue;
+        state = &&case_root;
+    }
+    goto *state;
+        case_root:
+            state = handle_root();
+            GOTO(state);
+        case_root_continue:
+            state = handle_root_continue();
+            GOTO(state);
+        case_array_begin:
+            state = handle_array_begin();
+            GOTO(state);
+        case_array_element:
+            state = handle_array_element();
+            GOTO(state);
+        case_array_continue:
+            state = handle_array_continue();
+            GOTO(state);
+        case_object_begin:
+            state = handle_object_begin();
+            GOTO(state);
+        case_object_continue:
+            state = handle_object_continue();
+            GOTO(state);
+        case_object_key:
+            state = handle_object_key();
+            GOTO(state);
+        case_succeed:
+        case_fail:
                 conclude();
                 return _pj->get_error_code();
-        }
+    case_break:
 
-    }
+//    while (i <= _pj->n_structural_indexes){
+//        update_char();
+//        switch (state){
+//            case root:
+//                state = handle_root();
+//                break;
+//            case root_continue:
+//                state = handle_root_continue();
+//                break;
+//            case array_begin:
+//                state = handle_array_begin();
+//                break;
+//            case array_continue:
+//                state = handle_array_continue();
+//                break;
+//            case array_element:
+//                state = handle_array_element();
+//                break;
+//            case object_begin:
+//                state = handle_object_begin();
+//                break;
+//            case object_continue:
+//                state = handle_object_continue();
+//                break;
+//            case object_key:
+//                state = handle_object_key();
+//                break;
+//            case succeed:
+//            case fail:
+//                conclude();
+//                return _pj->get_error_code();
+//        }
+//
+//    }
 
     return SUCCESS_AND_HAS_MORE;
 }
 
-State Stage2_impl::handle_root() {
+label_ptr Stage2_impl::handle_root() {
     if (depth >= _pj->depth_capacity) {
-        return fail;
+        return label_ptr_table[fail];
     }
 
     switch (c) {
         case '{':
             _pj->containing_scope_offset[depth] = _pj->get_current_loc();
-            scope_stack[depth] = root_continue;
+            scope_stack[depth] = label_ptr_table[root_continue];
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(
                     0, c); /* strangely, moving this to object_begin slows things down */
-            return object_begin;
+            return label_ptr_table[object_begin];
         case '[':
             _pj->containing_scope_offset[depth] = _pj->get_current_loc();
-            scope_stack[depth] = root_continue;
+            scope_stack[depth] = label_ptr_table[root_continue];
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
-            return array_begin;
+            return label_ptr_table[array_begin];
             /* #define SIMDJSON_ALLOWANYTHINGINROOT
              * A JSON text is a serialized value.  Note that certain previous
              * specifications of JSON constrained a JSON text to be an object or an
@@ -146,7 +225,7 @@ State Stage2_impl::handle_root() {
              * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
         case '"': {
             if (!parse_string(_buf, _len, *_pj, depth, idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             break;
         }
@@ -157,13 +236,13 @@ State Stage2_impl::handle_root() {
              * this will almost never be called in practice */
             char *copy = static_cast<char *>(malloc(_len + SIMDJSON_PADDING));
             if (copy == nullptr) {
-                return fail;
+                return label_ptr_table[fail];
             }
             memcpy(copy, _buf, _len);
             memset(copy + _len, ' ', sizeof(uint64_t));
             if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
                 free(copy);
-                return fail;
+                return label_ptr_table[fail];
             }
             free(copy);
             _pj->write_tape(0, c);
@@ -177,13 +256,13 @@ State Stage2_impl::handle_root() {
              * this will almost never be called in practice */
             char *copy = static_cast<char *>(malloc(_len + SIMDJSON_PADDING));
             if (copy == nullptr) {
-                return fail;
+                return label_ptr_table[fail];
             }
             memcpy(copy, _buf, _len);
             memset(copy + _len, ' ', sizeof(uint64_t));
             if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
                 free(copy);
-                return fail;
+                return label_ptr_table[fail];
             }
             free(copy);
             _pj->write_tape(0, c);
@@ -196,13 +275,13 @@ State Stage2_impl::handle_root() {
              * this will almost never be called in practice */
             char *copy = static_cast<char *>(malloc(_len + SIMDJSON_PADDING));
             if (copy == nullptr) {
-                return fail;
+                return label_ptr_table[fail];
             }
             memcpy(copy, _buf, _len);
             memset(copy + _len, ' ', sizeof(uint64_t));
             if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
                 free(copy);
-                return fail;
+                return label_ptr_table[fail];
             }
             free(copy);
             _pj->write_tape(0, c);
@@ -228,14 +307,14 @@ State Stage2_impl::handle_root() {
              * space in the middle of a number would be identified in stage 1). */
             char *copy = static_cast<char *>(malloc(_len + SIMDJSON_PADDING));
             if (copy == nullptr) {
-                return fail;
+                return label_ptr_table[fail];
             }
             memcpy(copy, _buf, _len);
             memset(copy + _len, ' ', SIMDJSON_PADDING);
             if (!parse_number(reinterpret_cast<const uint8_t *>(copy), *_pj, idx,
                               false)) {
                 free(copy);
-                return fail;
+                return label_ptr_table[fail];
             }
             free(copy);
             break;
@@ -247,19 +326,19 @@ State Stage2_impl::handle_root() {
              * this will almost never be called in practice */
             char *copy = static_cast<char *>(malloc(_len + SIMDJSON_PADDING));
             if (copy == nullptr) {
-                return fail;
+                return label_ptr_table[fail];
             }
             memcpy(copy, _buf, _len);
             memset(copy + _len, ' ', SIMDJSON_PADDING);
             if (!parse_number(reinterpret_cast<const uint8_t *>(copy), *_pj, idx, true)) {
                 free(copy);
-                return fail;
+                return label_ptr_table[fail];
             }
             free(copy);
             break;
         }
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
     return scope_stack[depth];
     //    auto s = scope_stack.top();
@@ -267,61 +346,61 @@ State Stage2_impl::handle_root() {
 //    return s;
 }
 
-State Stage2_impl::handle_root_continue() {
+label_ptr Stage2_impl::handle_root_continue() {
     /* the string might not be NULL terminated. */
     if (i == _pj->n_structural_indexes) {
-        return succeed;
+        return label_ptr_table[succeed];
     } else {
-        return fail;
+        return label_ptr_table[fail];
     }
 }
 
-State Stage2_impl::handle_array_begin() {
+label_ptr Stage2_impl::handle_array_begin() {
     if (c == ']') {
         return scope_end(); /* could also go to array_continue */
     }
     return handle_array_element(); // No need to update char
 }
 
-State Stage2_impl::handle_array_continue() {
+label_ptr Stage2_impl::handle_array_continue() {
     switch (c) {
         case ',':
-            return array_element;
+            return label_ptr_table[array_element];
         case ']':
             return scope_end();
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
 }
 
-State Stage2_impl::handle_array_element() {
+label_ptr Stage2_impl::handle_array_element() {
     /* we call update char on all paths in, so we can peek at c on the
    * on paths that can accept a close square brace (post-, and at start) */
     switch (c) {
         case '"': {
             if (!parse_string(_buf, _len, *_pj, depth, idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return array_continue;
+            return label_ptr_table[array_continue];
         }
         case 't':
             if (!is_valid_true_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
-            return array_continue;
+            return label_ptr_table[array_continue];
         case 'f':
             if (!is_valid_false_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
-            return array_continue;
+            return label_ptr_table[array_continue];
         case 'n':
             if (!is_valid_null_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
-            return array_continue; /* goto array_continue; */
+            return label_ptr_table[array_continue]; /* goto array_continue; */
 
         case '0':
         case '1':
@@ -334,111 +413,111 @@ State Stage2_impl::handle_array_element() {
         case '8':
         case '9': {
             if (!parse_number(_buf, *_pj, idx, false)) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return array_continue; /* goto array_continue; */
+            return label_ptr_table[array_continue]; /* goto array_continue; */
         }
         case '-': {
             if (!parse_number(_buf, *_pj, idx, true)) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return array_continue; /* goto array_continue; */
+            return label_ptr_table[array_continue]; /* goto array_continue; */
         }
         case '{': {
             /* we have not yet encountered ] so we need to come back for it */
             _pj->containing_scope_offset[depth] = _pj->get_current_loc();
             _pj->write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-            scope_stack[depth] = array_continue;
+            scope_stack[depth] = label_ptr_table[array_continue];
             /* we found an object inside an array, so we need to increment the depth
              */
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
 
-            return object_begin;
+            return label_ptr_table[object_begin];
         }
         case '[': {
             /* we have not yet encountered ] so we need to come back for it */
             _pj->containing_scope_offset[depth] = _pj->get_current_loc();
             _pj->write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-            scope_stack[depth] = array_continue;
+            scope_stack[depth] = label_ptr_table[array_continue];
             /* we found an array inside an array, so we need to increment the depth
              */
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return array_begin;
+            return label_ptr_table[array_begin];
         }
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
 }
 
-State Stage2_impl::handle_object_begin() {
+label_ptr Stage2_impl::handle_object_begin() {
     switch (c) {
         case '"': {
             if (!parse_string(_buf, _len, *_pj, depth, idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return object_key;
+            return label_ptr_table[object_key];
         }
         case '}':
             return scope_end();
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
 }
 
-State Stage2_impl::handle_object_continue() {
+label_ptr Stage2_impl::handle_object_continue() {
     switch (c) {
         case ',':
             update_char();
             if (c != '"') {
-                return fail;
+                return label_ptr_table[fail];
             } else {
                 if (!parse_string(_buf, _len, *_pj, depth, idx)) {
-                    return fail;
+                    return label_ptr_table[fail];
                 }
-                return object_key;
+                return label_ptr_table[object_key];
             }
         case '}':
             return scope_end();
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
 }
 
-State Stage2_impl::handle_object_key() {
+label_ptr Stage2_impl::handle_object_key() {
     if (c != ':') {
-        return fail;
+        return label_ptr_table[fail];
     }
     update_char();
     switch (c) {
         case '"': {
             if (!parse_string(_buf, _len, *_pj, depth, idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             break;
         }
         case 't':
             if (!is_valid_true_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
             break;
         case 'f':
             if (!is_valid_false_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
             break;
         case 'n':
             if (!is_valid_null_atom(_buf + idx)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             _pj->write_tape(0, c);
             break;
@@ -453,13 +532,13 @@ State Stage2_impl::handle_object_key() {
         case '8':
         case '9': {
             if (!parse_number(_buf, *_pj, idx, false)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             break;
         }
         case '-': {
             if (!parse_number(_buf, *_pj, idx, true)) {
-                return fail;
+                return label_ptr_table[fail];
             }
             break;
         }
@@ -468,37 +547,37 @@ State Stage2_impl::handle_object_key() {
             _pj->write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
             /* we have not yet encountered } so we need to come back for it */
-            scope_stack[depth] = object_continue;
+            scope_stack[depth] = label_ptr_table[object_continue];
             /* we found an object inside an object, so we need to increment the
              * depth                                                             */
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
 
-            return object_begin;
+            return label_ptr_table[object_begin];
         }
         case '[': {
             _pj->containing_scope_offset[depth] = _pj->get_current_loc();
             _pj->write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
             /* we have not yet encountered } so we need to come back for it */
-            scope_stack[depth] = object_continue;
+            scope_stack[depth] = label_ptr_table[object_continue];
             /* we found an array inside an object, so we need to increment the depth
              */
             depth++;
             if (depth >= _pj->depth_capacity) {
-                return fail;
+                return label_ptr_table[fail];
             }
-            return array_begin;
+            return label_ptr_table[array_begin];
         }
         default:
-            return fail;
+            return label_ptr_table[fail];
     }
-    return object_continue;
+    return label_ptr_table[object_continue];
 }
 
-State Stage2_impl::scope_end() {
+label_ptr Stage2_impl::scope_end() {
     /* write our tape location to the header scope */
     depth--;
     _pj->write_tape(_pj->containing_scope_offset[depth], c);
@@ -512,10 +591,10 @@ State Stage2_impl::scope_end() {
 }
 
 void Stage2_impl::conclude() {
-    if(state == succeed){
+    if(state == label_ptr_table[succeed]){
         depth--;
         if (depth != 0) {
-            fprintf(stderr, "internal bug\n");
+            fprintf(stderr, "internal bug, %d\n", depth);
             abort();
         }
         if (_pj->containing_scope_offset[depth] != 0) {
