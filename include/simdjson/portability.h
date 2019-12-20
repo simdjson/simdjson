@@ -53,9 +53,11 @@
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 #define TARGET_ARM64
 
+// Threading is disabled
+#undef SIMDJSON_THREADS_ENABLED
 // Is threading enabled?
 #if defined(BOOST_HAS_THREADS) || defined(_REENTRANT) || defined(_MT)
-#define SIMDJSON_THREADS_ENABLED 1
+#define SIMDJSON_THREADS_ENABLED
 #endif
 
 #if defined(__clang__)
