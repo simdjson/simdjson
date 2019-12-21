@@ -126,7 +126,8 @@ struct option_struct {
           }
           break;
         default:
-          exit_error("Unexpected argument " + c);
+          // reaching here means an argument was given to getopt() which did not have a case label
+          exit_error("Unexpected argument - missing case (programming error)");
         }
       }
     #else
