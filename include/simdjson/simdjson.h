@@ -2,6 +2,7 @@
 #define SIMDJSON_SIMDJSON_H
 
 #include <string>
+#include "simdjson_nanolib.h"
 
 namespace simdjson {
 // Represents the minimal architecture that would support an implementation
@@ -21,7 +22,20 @@ enum class Architecture : unsigned short {
 };
 
 Architecture find_best_supported_architecture();
-Architecture parse_architecture(char *architecture);
+
+
+constexpr inline Architecture parse_architecture(char const *architecture) {
+  if (strings_equal(architecture, "HASWELL")) {
+    return Architecture::HASWELL;
+  }
+  if (strings_equal(architecture, "WESTMERE")) {
+    return Architecture::WESTMERE;
+  }
+  if (strings_equal(architecture, "ARM64")) {
+    return Architecture::ARM64;
+  }
+  return Architecture::UNSUPPORTED;
+}
 
 /// <summary>
 /// call this once upon entering main() , it it returns false

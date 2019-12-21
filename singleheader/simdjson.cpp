@@ -1080,12 +1080,7 @@ Architecture find_best_supported_architecture() {
   return Architecture::UNSUPPORTED;
 }
 
-Architecture parse_architecture(char *architecture) {
-  if (!strcmp(architecture, "HASWELL")) { return Architecture::HASWELL; }
-  if (!strcmp(architecture, "WESTMERE")) { return Architecture::WESTMERE; }
-  if (!strcmp(architecture, "ARM64")) { return Architecture::ARM64; }
-  return Architecture::UNSUPPORTED;
-}
+
 
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
