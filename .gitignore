@@ -1,3 +1,8 @@
+# visual studio build artifacts
+visual_studio/
+.vs
+out/
+
 /benchbranch/
 /submodules/
 
