@@ -89,10 +89,11 @@ static inline uint32_t detect_supported_architectures() {
 #endif
 
 #else // x86
-static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
-                         uint32_t *edx) {
+ inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
+                         uint32_t *edx) noexcept 
+{
 #if defined(_MSC_VER)
-  int cpu_info[4];
+  int cpu_info[4]{0};
   __cpuid(cpu_info, *eax);
   *eax = cpu_info[0];
   *ebx = cpu_info[1];
@@ -111,9 +112,10 @@ static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 #endif
 }
 
-static inline uint32_t detect_supported_architectures() {
-  uint32_t eax, ebx, ecx, edx;
-  uint32_t host_isa = 0x0;
+ inline uint32_t detect_supported_architectures() noexcept
+{
+  uint32_t eax{}, ebx{}, ecx{}, edx{};
+  uint32_t host_isa{0x0};
 
   // ECX for EAX=0x7
   eax = 0x7;

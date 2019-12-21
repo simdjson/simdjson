@@ -2,14 +2,45 @@
 #define _SIMDJSON_INC_NANOLIB_
 
 namespace simdjson {
-    // compile time string comparison
-    // C++11 or better
+//
+// compile time string handling
+// C++11 or better
+// NOTE: for compiler time results, arguments have to be compile time values
+// that is: literals or constexpr values
+// for testing use https://godbolt.org/z/gGL95T
+//
+// NOTE: C++20 char8_t is a path peppered with a shards of glass, just don't go there
+// NOTE: char16_t and char32_t are ok. if need them add them bellow
+// NOTE: WIN32 is UTF-16 aka wchar_t universe, WIN32 char API's are all translated to wchar_t
+//
 constexpr bool strings_equal(char const *lhs, char const *rhs) {
   while (*lhs || *rhs)
     if (*lhs++ != *rhs++)
       return false;
   return true;
 }
+
+constexpr bool strings_equal(wchar_t const *lhs, wchar_t const *rhs) {
+  while (*lhs || *rhs)
+    if (*lhs++ != *rhs++)
+      return false;
+  return true;
+}
+
+constexpr size_t ct_strlen(const char *ch) {
+  size_t len = 0;
+  while (ch[len])
+    ++len;
+  return len;
+}
+
+constexpr size_t ct_strlen(const wchar_t *ch) {
+  size_t len = 0;
+  while (ch[len])
+    ++len;
+  return len;
+}
+
 } // simdjson
 
 #endif // !_SIMDJSON_INC_NANOLIB_

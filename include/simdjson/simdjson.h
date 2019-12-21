@@ -22,7 +22,6 @@ enum class Architecture : unsigned short {
 #endif
 };
 
-// Architecture find_best_supported_architecture();
 inline Architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ |
@@ -42,6 +41,9 @@ inline Architecture find_best_supported_architecture() {
   return Architecture::UNSUPPORTED;
 }
 
+/*
+NOTE: for compile time result, argument has to be compile time value
+*/
 constexpr inline Architecture parse_architecture(char const *architecture) {
   if (strings_equal(architecture, "HASWELL")) {
     return Architecture::HASWELL;
@@ -56,7 +58,7 @@ constexpr inline Architecture parse_architecture(char const *architecture) {
 }
 
 /// <summary>
-/// call this once upon entering main() , it it returns false
+/// call this once upon entering main() , if it returns false
 /// there is no point of proceeding
 /// </summary>
 /// <returns>bool</returns>
@@ -67,6 +69,9 @@ inline bool is_cpu_supported() {
   return true;
 }
 
+/*
+this should be enum class ErrorValues {};
+*/
 enum ErrorValues {
   SUCCESS = 0,
   SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
@@ -87,6 +92,11 @@ enum ErrorValues {
   UNCLOSED_STRING, // missing quote at the end
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
+
+/*
+this should be 
+char const *  error_message( ErrorValues );
+*/
 const std::string &error_message(const int);
 } // namespace simdjson
 #endif // SIMDJSON_SIMDJSON_H
