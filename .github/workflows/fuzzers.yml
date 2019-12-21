@@ -18,6 +18,7 @@ jobs:
     steps:
     - name: Install packages necessary for building
       run: |
+        sudo apt update
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
