@@ -19,7 +19,7 @@
 
 typedef int (*stage1_functype)(const unsigned char *buf, size_t len, simdjson::ParsedJson &pj);
 
-const auto MAX_BATCH_SIZE = 4000000l;
+const size_t MAX_BATCH_SIZE = 4000000l;
 namespace simdjson {
     // json_parse_implementation is the generic function, it is specialized for
     // various architectures, e.g., as
@@ -34,7 +34,7 @@ namespace simdjson {
         }
 
         auto s2 = simdjson::create_stage2<simdjson::Architecture::HASWELL>();
-        auto remaining_len = (long) len;
+        size_t remaining_len = len;
         auto batch_size = std::min(remaining_len, MAX_BATCH_SIZE);
         auto thread_batch_size = 0;
         int res;

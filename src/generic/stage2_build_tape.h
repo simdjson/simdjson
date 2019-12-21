@@ -75,7 +75,6 @@ int Stage2_impl::run(const uint8_t *buf, const size_t &len, uint32_t offset){
     _buf = buf;
     _len = len;
     i = offset;
-
 //    static label_ptr dispatch_table[] = {
 //        &&case_root, &&case_root_continue, &&case_array_begin, &&case_array_continue,
 //        &&case_array_element, &&case_object_begin, &&case_object_continue, &&case_object_key,
@@ -85,36 +84,25 @@ int Stage2_impl::run(const uint8_t *buf, const size_t &len, uint32_t offset){
 //    std::copy(dispatch_table, dispatch_table+ sizeof(dispatch_table)/ sizeof(dispatch_table[0]), label_ptr_table);
     //std::swap(label_ptr_table, dispatch_table);
 
-    label_ptr_table[0] = &&case_root;
-    label_ptr_table[1] = &&case_root_continue;
-    label_ptr_table[2] = &&case_array_begin;
-    label_ptr_table[3] = &&case_array_continue;
-    label_ptr_table[4] = &&case_array_element;
-    label_ptr_table[5] = &&case_object_begin;
-    label_ptr_table[6] = &&case_object_continue;
-    label_ptr_table[7] = &&case_object_key;
-    label_ptr_table[8] = &&case_succeed;
-    label_ptr_table[9] = &&case_fail;
+    label_ptr_table[root] = &&case_root;
+    label_ptr_table[root_continue] = &&case_root_continue;
+    label_ptr_table[array_begin] = &&case_array_begin;
+    label_ptr_table[array_continue] = &&case_array_continue;
+    label_ptr_table[array_element] = &&case_array_element;
+    label_ptr_table[object_begin] = &&case_object_begin;
+    label_ptr_table[object_continue] = &&case_object_continue;
+    label_ptr_table[object_key] = &&case_object_key;
+    label_ptr_table[fail] = &&case_fail;
+    label_ptr_table[succeed] = &&case_succeed;
     label_ptr_table[10] = &&case_break;
 
-//#define DISPATCH(state){                                                    \
-//        auto is_not_done = (i <= _pj->n_structural_indexes);                \
-//        update_char();                                                      \
-//        if(is_not_done) goto *state;                                        \
-//        goto case_break;                                                    \
-//    }
-
-#define GOTO(state){                                                    \
-        auto is_not_done = (i <= _pj->n_structural_indexes);                \
-        update_char();                                                      \
-        if(is_not_done) goto *state;                                        \
-        goto case_break;                                                    \
+        
+#define GOTO(state){                                            \
+        if (i > _pj->n_structural_indexes) goto case_break;     \
+        update_char();      \
+        goto *state;                                        \
+                                                            \
     }                                                                       \
-
-//#define GOTO(state){                                                    \
-//        update_char();                                                      \
-//        goto *state;         \
-//}
 
     update_char();
     if(!scope_stack[0] || !state) {
@@ -186,7 +174,6 @@ int Stage2_impl::run(const uint8_t *buf, const size_t &len, uint32_t offset){
 //        }
 //
 //    }
-
     return SUCCESS_AND_HAS_MORE;
 }
 

@@ -36,7 +36,7 @@ protected:
     const uint8_t *_buf{};
     size_t _len{};
     label_ptr label_ptr_table[11];
-    label_ptr scope_stack[1024]{};
+    label_ptr scope_stack[DEFAULT_MAX_DEPTH]{};
 
     virtual really_inline label_ptr handle_root() =0;
     virtual really_inline label_ptr handle_root_continue() =0;
@@ -48,7 +48,7 @@ protected:
     virtual really_inline label_ptr handle_object_key()=0;
     virtual really_inline label_ptr scope_end()=0;
 
-    void update_char() {
+    really_inline void update_char() {
         idx = _pj->structural_indexes[i++];
         c = _buf[idx];
     };
