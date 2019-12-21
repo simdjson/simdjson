@@ -3,6 +3,7 @@
 
 #include <string>
 #include "simdjson_nanolib.h"
+#include "isadetection.h"
 
 namespace simdjson {
 // Represents the minimal architecture that would support an implementation
@@ -21,8 +22,25 @@ enum class Architecture : unsigned short {
 #endif
 };
 
-Architecture find_best_supported_architecture();
+// Architecture find_best_supported_architecture();
+inline Architecture find_best_supported_architecture() {
+  constexpr uint32_t haswell_flags =
+      instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+      instruction_set::BMI1 | instruction_set::BMI2;
+  constexpr uint32_t westmere_flags =
+      instruction_set::SSE42 | instruction_set::PCLMULQDQ;
 
+  uint32_t supports = detect_supported_architectures();
+  // Order from best to worst (within architecture)
+  if ((haswell_flags & supports) == haswell_flags)
+    return Architecture::HASWELL;
+  if ((westmere_flags & supports) == westmere_flags)
+    return Architecture::WESTMERE;
+  if (supports & instruction_set::NEON)
+    return Architecture::ARM64;
+
+  return Architecture::UNSUPPORTED;
+}
 
 constexpr inline Architecture parse_architecture(char const *architecture) {
   if (strings_equal(architecture, "HASWELL")) {

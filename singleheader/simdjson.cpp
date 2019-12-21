@@ -1061,6 +1061,7 @@ int json_parse(const char *buf, size_t len, ParsedJson &pj,
                                                         realloc);
 }
 
+/*
 Architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ |
@@ -1079,7 +1080,7 @@ Architecture find_best_supported_architecture() {
 
   return Architecture::UNSUPPORTED;
 }
-
+*/
 
 
 // Responsible to select the best json_parse implementation
