@@ -141,9 +141,9 @@ if(test_best_batch) {
 
     }
 
-    std::min(res.begin(), res.end());
+    // just left here by accident? std::min(res.begin(), res.end());
 
-    double min_result = *min_element(res.begin(), res.end());
+    double min_result = * std::min_element(res.begin(), res.end());
     double speedinGBs = (p.size()) / (min_result * 1000000000.0);
 
 
