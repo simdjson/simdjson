@@ -78,10 +78,19 @@
 #define simdjson_strcasecmp strcasecmp
 #endif
 
+#define SIMDJSON_FAST_FAIL_POLICY
+
 namespace simdjson {
+/*
+why this namespace?
+https://stackoverflow.com/a/10877104
+*/
+namespace {
 // portable version of  posix_memalign
-static inline void *aligned_malloc(size_t alignment, size_t size) {
-  void *p;
+ inline void *aligned_malloc(size_t alignment, size_t size) 
+ {
+  // always initialize on declaration
+  void *p{};
 #ifdef _MSC_VER
   p = _aligned_malloc(size, alignment);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
@@ -93,14 +102,21 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
     return nullptr;
   }
 #endif
+
+#ifdef SIMDJSON_FAST_FAIL_POLICY
+  if (p == nullptr) {
+    perror("aligned_malloc() failed! ");
+    exit(errno);
+  }
+#endif
   return p;
 }
 
-static inline char *aligned_malloc_char(size_t alignment, size_t size) {
+ inline char *aligned_malloc_char(size_t alignment, size_t size) {
   return (char *)aligned_malloc(alignment, size);
 }
 
-static inline void aligned_free(void *mem_block) {
+ inline void aligned_free(void *mem_block) {
   if (mem_block == nullptr) {
     return;
   }
@@ -113,8 +129,9 @@ static inline void aligned_free(void *mem_block) {
 #endif
 }
 
-static inline void aligned_free_char(char *mem_block) {
+ inline void aligned_free_char(char *mem_block) {
   aligned_free((void *)mem_block);
 }
+} // namespace
 } // namespace simdjson
 #endif // SIMDJSON_PORTABILITY_H
