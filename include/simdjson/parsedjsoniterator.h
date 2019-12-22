@@ -3,6 +3,7 @@
 
 #include "simdjson/parsedjson.h"
 #include "simdjson/jsonformatutils.h"
+#include <string>
 #include <cstring>
 #include <iostream>
 #include <iterator>

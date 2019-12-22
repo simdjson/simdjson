@@ -1,7 +1,6 @@
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 
-#include <string>
 #include "isadetection.h"
 
 namespace simdjson {
@@ -92,80 +91,6 @@ constexpr inline Architecture parse_architecture(char const *architecture) {
 }
 
 /*
-constexpr auto arch_name_ = parse_architecture(Architecture::ARM64) ;
-*/
-constexpr char const * architecture_name (Architecture code_) noexcept {
-  // C++11 -- single return statement
-  return (
-      code_ == Architecture::ARM64
-          ? "ARM64"
-          : (code_ == Architecture::HASWELL
-                 ? "HASWELL"
-                 : (code_ == Architecture::WESTMERE ? "WESTMERE" : "UNSUPPORTED")));
-}
-
-/*
-Compile time Architecture code (C++11). Example.
-
-// user defined literal type
-// leave all the default scafolding to the compiler
-struct parser_type final
-{
-    const Architecture code_ {} ;
-    // secret sauce is constexpr constructor
-    constexpr parser_type( Architecture a_)  : code_(a_) {}
-    constexpr Architecture arch_code () const noexcept { return code_ ; }
-    constexpr char const * arch_name () const noexcept { return architecture_name(code_) ; }
-} ;
-
-// using the above requires x_ to be template argument
-template<  Architecture x_ >
-void test_parser() 
-{
-    constexpr parser_type amd_parser{ x_ } ;
-    constexpr auto code = amd_parser.arch_code();
-    constexpr auto name = amd_parser.arch_name();
-
-    printf("\nFor architecture code %d, names is %s", code, name );
-}
-
-*/
-// a literal type holding the simdjson::Architecture code
-// one type --> many codes
-struct compile_time_architecture_code {
-  const Architecture arch_{};
-  constexpr compile_time_architecture_code(Architecture x_) : arch_(x_) {}
-  constexpr Architecture code() const noexcept { return arch_; }
-  constexpr char const *name() const noexcept {
-    return architecture_name(arch_) ;
-  }
-};
-
-// long descriptive name is important
-// shorcut is comfortable 
-// when in doubt what is simdjson::CTA 
-// one can always use IDE to find out
-    using CTA = compile_time_architecture_code;
-
-/*
------------------------------------------------------------------------
-simdjson::Architecture will not change at runtime.  So, one does not have to check 
-for it repeatedly, from constructors for example.
-
-If code_ arg is compile time one can make compile time CTA
-*/
-    constexpr CTA
-        make_cta(Architecture code_) {
-  // C++11 -- single return statement
-  return (code_ == Architecture::ARM64
-              ? CTA(Architecture::ARM64)
-              : (code_ == Architecture::HASWELL
-                     ? CTA(Architecture::HASWELL)
-                     : (code_ == Architecture::WESTMERE
-                            ? CTA(Architecture::WESTMERE)
-                            : CTA(Architecture::UNSUPPORTED))));
-}
-/*
 ---------------------------------------------------------------------------
 if this function could be compile time, many simdjson  API's could be too
 */
@@ -206,12 +131,13 @@ inline bool is_cpu_supported() {
 
 /*
 this should be enum class ErrorValues {};
+please fix!
 */
 enum ErrorValues {
   SUCCESS = 0,
-  SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
-  CAPACITY,    // This ParsedJson can't support a document that big
-  MEMALLOC,    // Error allocating memory, most likely out of memory
+  SUCCESS_AND_HAS_MORE, // No errors and buffer still has more data
+  CAPACITY,             // This ParsedJson can't support a document that big
+  MEMALLOC,             // Error allocating memory, most likely out of memory
   TAPE_ERROR,  // Something went wrong while writing to the tape (stage 2), this
                // is a generic error
   DEPTH_ERROR, // Your document exceeds the user-specified depth limitation
@@ -221,17 +147,62 @@ enum ErrorValues {
   N_ATOM_ERROR,    // Problem while parsing an atom starting with the letter 'n'
   NUMBER_ERROR,    // Problem while parsing a number
   UTF8_ERROR,      // the input is not valid UTF-8
-  UNITIALIZED,     // unknown error, or uninitialized document
+  UNINITIALIZED,   // unknown error, or uninitialized document
   EMPTY,           // no structural document found
   UNESCAPED_CHARS, // found unescaped characters in a string.
   UNCLOSED_STRING, // missing quote at the end
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 
+namespace detail {
+
+struct error_and_message final {
+  /*simdjson::ErrorValues*/ int code;
+  char const *message;
+};
+
 /*
-this should be 
-char const *  error_message( ErrorValues );
+inline var is C++17 feature, 
+thus we must use static 
+and static will grow the code
 */
-const std::string &error_message(const int);
+static const error_and_message errors_and_messages[]{
+    {/* ErrorValue:s: */ SUCCESS, "No errors"}, /* 0 */
+    {/* ErrorValue:s: */ SUCCESS_AND_HAS_MORE,
+     "No errors and buffer still has more data"},
+    {/* ErrorValue:s: */ CAPACITY,
+     "This ParsedJson can't support a document that big"},
+    {/* ErrorValue:s: */ MEMALLOC,
+     "Error allocating memory, we're most likely out of memory"},
+    {/* ErrorValue:s: */ TAPE_ERROR,
+     "Something went wrong while writing to the tape"},
+    {/* ErrorValue:s: */ STRING_ERROR, "Problem while parsing a string"},
+    {/* ErrorValue:s: */ T_ATOM_ERROR,
+     "Problem while parsing an atom starting with the letter 't'"},
+    {/* ErrorValue:s: */ F_ATOM_ERROR,
+     "Problem while parsing an atom starting with the letter 'f'"},
+    {/* ErrorValue:s: */ N_ATOM_ERROR,
+     "Problem while parsing an atom starting with the letter 'n'"},
+    {/* ErrorValue:s: */ NUMBER_ERROR, "Problem while parsing a number"},
+    {/* ErrorValue:s: */ UTF8_ERROR, "The input is not valid UTF-8"},
+    {/* ErrorValue:s: */ UNINITIALIZED, "Uninitialized"},
+    {/* ErrorValue:s: */ EMPTY, "Empty: no JSON found"},
+    {/* ErrorValue:s: */ UNESCAPED_CHARS,
+     "Within strings, some characters must be escaped, we "
+     "found unescaped characters"},
+    {/* ErrorValue:s: */ UNCLOSED_STRING,
+     "A string is opened, but never closed."},
+    {/* ErrorValue:s: */ UNEXPECTED_ERROR,
+     "Unexpected error, consider reporting this problem as "
+     "you may have found a bug in simdjson"},
+};
+} // namespace detail
+
+// returns a string matching the error code
+inline char const *error_message(/*simdjson::ErrorValues*/ int err_code_) {
+  // DANGER: hack ahead
+  return detail::errors_and_messages[size_t(err_code_)].message;
+}
+
 } // namespace simdjson
 #endif // SIMDJSON_SIMDJSON_H

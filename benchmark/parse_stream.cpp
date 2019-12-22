@@ -98,7 +98,7 @@ if(test_per_batch) {
                 batch_size_res[i] = speedinGBs;
 
             if (parse_res != simdjson::SUCCESS) {
-                std::wcerr << "Parsing failed with: " << simdjson::error_message(parse_res).c_str() << std::endl;
+                std::wcerr << "Parsing failed with: " << simdjson::error_message(parse_res) << std::endl;
                 exit(1);
             }
         }

@@ -103,7 +103,7 @@ bool validate(const char *dirname) {
             } else if (starts_with("pass", name) && parse_res != 0) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
-                       name, simdjson::error_message(parse_res).data());
+                       name, simdjson::error_message(parse_res));
                 printf("size of file in bytes: %zu \n", p.size());
                 everything_fine = false;
             } else if (starts_with("fail", name) && parse_res == 0) {

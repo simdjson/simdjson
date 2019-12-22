@@ -35,7 +35,7 @@ public:
   bool is_valid() const;
 
   // return an error code corresponding to the last parsing attempt, see
-  // simdjson.h will return simdjson::UNITIALIZED if no parsing was attempted
+  // simdjson.h will return simdjson::ErrorValues::UNINITIALIZED if no parsing was attempted
   int get_error_code() const;
 
   // return the string equivalent of "get_error_code"
@@ -126,7 +126,8 @@ public:
   uint8_t *string_buf; // should be at least byte_capacity
   uint8_t *current_string_buf_loc;
   bool valid{false};
-  int error_code{simdjson::UNITIALIZED};
+  // DANGER! Hack ahead, please fix, use simdjson::ErrorValues as error codes not int
+  int error_code{ int(simdjson::UNINITIALIZED) };
 
 private:
   // we don't want the default constructor to be called
