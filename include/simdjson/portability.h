@@ -106,7 +106,7 @@ namespace {
 #ifdef SIMDJSON_FAST_FAIL_POLICY
   if (p == nullptr) {
     perror("aligned_malloc() failed! ");
-    exit(errno);
+    exit(EXIT_FAILURE);
   }
 #endif
   return p;
