@@ -61,7 +61,7 @@ bool validate(const char *dirname) {
         if (has_extension(name, extension1) || has_extension(name, extension2)) {
 
             /*  Finding the file path  */
-            printf("validating: file %s ", name);
+            printf("\n\n-------------------------------------------------------------------------------------------------\nvalidating file [%3d of %3d] %s ", i,c,name);
             fflush(nullptr);
             size_t filelen = strlen(name);
             char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
@@ -92,9 +92,11 @@ bool validate(const char *dirname) {
                 parse_res = js.json_parse(pj);
             }
 
-            printf("%s\n", parse_res == 0 ? "ok" : "invalid");
+            printf("\n\nStatus: %s\n", parse_res == 0 ? "ok" : "invalid, ");
 
-
+            if (parse_res != simdjson::SUCCESS)
+              printf(" error message: '%s'\n\n",
+                     simdjson::error_message(parse_res));
 
             /* Check if the file is supposed to pass or not.  Print the results */
             if (contains("EXCLUDE", name)) {
