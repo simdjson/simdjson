@@ -3,6 +3,8 @@
 
 /*
 Temporary shelter for new abstractions in the TBD state
+
+|~/benchmark/json_parser.h constains and uses architecture_services
 */
 
 namespace simdjson {
@@ -50,8 +52,10 @@ constexpr size_t ct_strlen(const wchar_t *ch) noexcept {
   return len;
 }
 } // namespace nanolib
-
-namespace architecture_services {
+/*
+| ~ / benchmark / json_parser.h constains and uses architecture_services 
+* /
+ namespace architecture_services {
 /*
 constexpr auto arch_name_ = parse_architecture(Architecture::ARM64) ;
 */
