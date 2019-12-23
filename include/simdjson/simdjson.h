@@ -1,6 +1,24 @@
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 
+// source: github.com/martinmoene
+// C++ language version detection (C++20 is speculative):
+// Note: VC14.0/1900 (VS2015) lacks too much from C++14.
+
+#ifndef SIMDJSON_CPLUSPLUS
+#if defined(_MSVC_LANG) && !defined(__clang__)
+#define SIMDJSON_CPLUSPLUS (_MSC_VER == 1900 ? 201103L : _MSVC_LANG)
+#else
+#define SIMDJSON_CPLUSPLUS __cplusplus
+#endif
+#endif
+
+#define SIMDJSON_CPP98_OR_GREATER (SIMDJSON_CPLUSPLUS >= 199711L)
+#define SIMDJSON_CPP11_OR_GREATER (SIMDJSON_CPLUSPLUS >= 201103L)
+#define SIMDJSON_CPP14_OR_GREATER (SIMDJSON_CPLUSPLUS >= 201402L)
+#define SIMDJSON_CPP17_OR_GREATER (SIMDJSON_CPLUSPLUS >= 201703L)
+#define SIMDJSON_CPP20_OR_GREATER (SIMDJSON_CPLUSPLUS >= 202000L)
+
 #include <string>
 
 namespace simdjson {
