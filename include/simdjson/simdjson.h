@@ -1,6 +1,30 @@
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 
+// from MSVC STD LIB -- now open source
+#if !defined(_SIMDJSON_HAS_CXX17) && !defined(_SIMDJSON_HAS_CXX20)
+#if defined(_MSVC_LANG)
+#define _SIMDJSON__STL_LANG _MSVC_LANG
+#else // ^^^ use _MSVC_LANG / use __cplusplus vvv
+#define _SIMDJSON__STL_LANG __cplusplus
+#endif // ^^^ use __cplusplus ^^^
+
+#if _SIMDJSON__STL_LANG > 201703L
+#define _SIMDJSON_HAS_CXX17 1
+#define _SIMDJSON_HAS_CXX20 1
+#elif _SIMDJSON__STL_LANG > 201402L
+#define _SIMDJSON_HAS_CXX17 1
+#define _SIMDJSON_HAS_CXX20 0
+#else // _SIMDJSON__STL_LANG <= 201402L
+#define _SIMDJSON_HAS_CXX17 0
+#define _SIMDJSON_HAS_CXX20 0
+#endif // Use the value of _SIMDJSON__STL_LANG to define _SIMDJSON_HAS_CXX17 and
+       // _SIMDJSON_HAS_CXX20
+
+#undef _SIMDJSON__STL_LANG
+#endif // !defined(_SIMDJSON_HAS_CXX17) && !defined(_SIMDJSON_HAS_CXX20)
+
+
 #include "isadetection.h"
 
 namespace simdjson {

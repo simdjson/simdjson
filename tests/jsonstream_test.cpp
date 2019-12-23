@@ -14,7 +14,45 @@
 #include "simdjson/jsonparser.h"
 #include <simdjson/jsonstream.h>
 
+#if !defined(_SIMDJSON_HAS_CXX17) && !defined(_SIMDJSON_HAS_CXX20)
+#if defined(_MSVC_LANG)
+#define _SIMDJSON__STL_LANG _MSVC_LANG
+#else // ^^^ use _MSVC_LANG / use __cplusplus vvv
+#define _SIMDJSON__STL_LANG __cplusplus
+#endif // ^^^ use __cplusplus ^^^
+
+#if _SIMDJSON__STL_LANG > 201703L
+#define _SIMDJSON_HAS_CXX17 1
+#define _SIMDJSON_HAS_CXX20 1
+#elif _SIMDJSON__STL_LANG > 201402L
+#define _SIMDJSON_HAS_CXX17 1
+#define _SIMDJSON_HAS_CXX20 0
+#else // _SIMDJSON__STL_LANG <= 201402L
+#define _SIMDJSON_HAS_CXX17 0
+#define _SIMDJSON_HAS_CXX20 0
+#endif // Use the value of _SIMDJSON__STL_LANG to define _SIMDJSON_HAS_CXX17 and
+       // _SIMDJSON_HAS_CXX20
+
+#undef _SIMDJSON__STL_LANG
+#endif // !defined(_SIMDJSON_HAS_CXX17) && !defined(_SIMDJSON_HAS_CXX20)
+
+#if !defined(_SIMDJSON_HAS_CXX17)
+#error This code requires C++17 or better
+#endif
+
+#if defined __has_include
+
+#if __has_include(<filesystem>)
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif // __has_include(<filesystem>)
+
+#else
+    #error __has_include is undefined?
+#endif // defined __has_include
+
+
 
 /*
 ------------------------------------------------------------------------------
