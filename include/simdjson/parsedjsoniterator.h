@@ -64,14 +64,14 @@ public:
   // within the string: get_string_length determines the true string length.
   inline const char *get_string() const {
     return reinterpret_cast<const char *>(
-        pj->string_buf + (current_val & JSON_VALUE_MASK) + sizeof(uint32_t));
+        pj->string_buf.get() + (current_val & JSON_VALUE_MASK) + sizeof(uint32_t));
   }
 
   // return the length of the string in bytes
   inline uint32_t get_string_length() const {
     uint32_t answer;
     memcpy(&answer,
-           reinterpret_cast<const char *>(pj->string_buf +
+           reinterpret_cast<const char *>(pj->string_buf.get() +
                                           (current_val & JSON_VALUE_MASK)),
            sizeof(uint32_t));
     return answer;

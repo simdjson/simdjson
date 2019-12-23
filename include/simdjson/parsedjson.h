@@ -5,6 +5,7 @@
 #include "simdjson/simdjson.h"
 #include <cstring>
 #include <iostream>
+#include <memory>
 
 #define JSON_VALUE_MASK 0xFFFFFFFFFFFFFF
 
@@ -21,10 +22,14 @@ class ParsedJson {
 public:
   // create a ParsedJson container with zero capacity, call allocate_capacity to
   // allocate memory
-  ParsedJson();
-  ~ParsedJson();
-  ParsedJson(ParsedJson &&p);
-  ParsedJson &operator=(ParsedJson &&o);
+  ParsedJson()=default;
+  ~ParsedJson()=default;
+
+  // this is a move only class
+  ParsedJson(ParsedJson &&p) = default;
+  ParsedJson(const ParsedJson &p) = delete;
+  ParsedJson &operator=(ParsedJson &&o) = default;
+  ParsedJson &operator=(const ParsedJson &o) = delete;
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len bytes and max_depth "depth"
@@ -77,6 +82,7 @@ public:
 
   really_inline void write_tape_s64(int64_t i) {
     write_tape(0, 'l');
+    // this seems weird - storing the address of a stack variable?
     tape[current_loc++] = *(reinterpret_cast<uint64_t *>(&i));
   }
 
@@ -113,27 +119,22 @@ public:
   uint32_t current_loc{0};
   uint32_t n_structural_indexes{0};
 
-  uint32_t *structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes;
 
-  uint64_t *tape;
-  uint32_t *containing_scope_offset;
+  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint32_t[]> containing_scope_offset;
+
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-  void **ret_address;
+  std::unique_ptr<void*[]> ret_address;
 #else
-  char *ret_address;
+  std::unique_ptr<char[]> ret_address;
 #endif
 
-  uint8_t *string_buf; // should be at least byte_capacity
+  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
   uint8_t *current_string_buf_loc;
   bool valid{false};
   int error_code{simdjson::UNITIALIZED};
 
-private:
-  // we don't want the default constructor to be called
-  ParsedJson(const ParsedJson &p) =
-      delete; // we don't want the default constructor to be called
-  // we don't want the assignment to be called
-  ParsedJson &operator=(const ParsedJson &o) = delete;
 };
 
 // dump bits low to high
