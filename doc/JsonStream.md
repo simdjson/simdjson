@@ -177,7 +177,7 @@ To use concurrency mode, tell the compiler to enable threading mode:
 **Note:** The JsonStream API remains the same whether you are using the threaded version or not.
 ## Example
 
-Here is a simple exemple, using single header simdjson:
+Here is a simple example, using single header simdjson:
 ```cpp
 #include "simdjson.h"
 #include "simdjson.cpp"
