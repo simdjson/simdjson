@@ -1,41 +1,39 @@
-#include <filesystem>
-
-#include <cassert>
-#include <cstring>
-#ifndef _MSC_VER
-#include <dirent.h>
-#include <unistd.h>
-#else
-// Microsoft can't be bothered to provide standard utils.
-// #include <dirent_portable.h>
-#endif
-#include <cinttypes>
-
-#include <cstdio>
-#include <cstdlib>
-#include <simdjson/jsonstream.h>
+//#include <cassert>
+//#include <cinttypes>
+//#include <cstdio>
+//#include <cstdlib>
+//#include <cstring>
+//#ifndef _MSC_VER
+//#include <dirent.h>
+//#include <unistd.h>
+//#else
+//// Microsoft can't be bothered to provide standard utils.
+//// #include <dirent_portable.h>
+//#endif
 
 #include "simdjson/jsonparser.h"
+#include <simdjson/jsonstream.h>
 
+#include <filesystem>
+
+/*
+------------------------------------------------------------------------------
+*/
 namespace detail {
 using namespace std;
 namespace fs = std::filesystem;
 
-enum class get_corpus_noex_error {
-  OK,
-  SEEK,  //("cannot seek in the file");
-  TELL,  // ("cannot tell where we are in the file");
-  ALLOC, // ("could not allocate memory");
-  READ,  // ("could not read the data");
-  LOAD   // ("could not load corpus");
-};
+/*
+------------------------------------------------------------------------------
+*/
+enum class get_corpus_noex_error : unsigned short { OK, SEEK, TELL, ALLOC, READ, LOAD };
 
-struct get_corpus_noex_status {
+struct get_corpus_noex_status final {
   get_corpus_noex_error code;
   char const *message;
 };
 
-static get_corpus_noex_status get_corpus_noex_errors[]{
+inline get_corpus_noex_status get_corpus_noex_errors[]{
     {get_corpus_noex_error::OK, "OK"},
     {get_corpus_noex_error::SEEK, "cannot seek in the file"},
     {get_corpus_noex_error::TELL, "cannot tell where we are in the file"},
@@ -43,10 +41,13 @@ static get_corpus_noex_status get_corpus_noex_errors[]{
     {get_corpus_noex_error::READ, "could not read the data"},
     {get_corpus_noex_error::LOAD, "could not load corpus"}};
 
-char const *get_corpus_noex_error_message(get_corpus_noex_error code_) {
-  return get_corpus_noex_errors[ size_t(code_)].message;
+char const *error_message(get_corpus_noex_error code_) {
+  return get_corpus_noex_errors[size_t(code_)].message;
 }
-
+/*
+------------------------------------------------------------------------------
+no exceptions thrown
+*/
 get_corpus_noex_error get_corpus_noex(simdjson::padded_string &rezult,
                                       std::string const &filename) noexcept {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
@@ -55,31 +56,33 @@ get_corpus_noex_error get_corpus_noex(simdjson::padded_string &rezult,
     return get_corpus_noex_error::LOAD;
   }
 
-    if (std::fseek(fp, 0, SEEK_END) < 0) {
-      std::fclose(fp);
-      return get_corpus_noex_error::SEEK;
-    }
-    long llen = std::ftell(fp);
-    if ((llen < 0) || (llen == LONG_MAX)) {
-      std::fclose(fp);
-      return get_corpus_noex_error::TELL;
-    }
-
-    size_t len = size_t(llen);
-    simdjson::padded_string temp(len);
-    rezult.swap(temp);
-    if (rezult.data() == nullptr) {
-      std::fclose(fp);
-      return get_corpus_noex_error::ALLOC;
-    }
-    std::rewind(fp);
-    size_t readb = std::fread(rezult.data(), 1, len, fp);
+  if (std::fseek(fp, 0, SEEK_END) < 0) {
     std::fclose(fp);
-    if (readb != len) {
-      return get_corpus_noex_error::READ;
-    }
-    return get_corpus_noex_error::OK;
- 
+    return get_corpus_noex_error::SEEK;
+  }
+  long llen = std::ftell(fp);
+  if ((llen < 0) || (llen == LONG_MAX)) {
+    std::fclose(fp);
+    perror("\nERROR could not std::ftell(), ");
+    return get_corpus_noex_error::TELL;
+  }
+
+  size_t len = size_t(llen);
+  simdjson::padded_string temp(len);
+  rezult.swap(temp);
+  if (rezult.data() == nullptr) {
+    std::fclose(fp);
+    perror("\nERROR could not allocate padded string, ");
+    return get_corpus_noex_error::ALLOC;
+  }
+  std::rewind(fp);
+  size_t readb = std::fread(rezult.data(), 1, len, fp);
+  std::fclose(fp);
+  if (readb != len) {
+    perror("\nERROR could not std::fread(), ");
+    return get_corpus_noex_error::READ;
+  }
+  return get_corpus_noex_error::OK;
 }
 
 /*
@@ -88,20 +91,21 @@ The actual test
 */
 void the_actual_test(std::string fullpath) {
 
-  simdjson::padded_string p{};
+  simdjson::padded_string pstring_{};
 
-    get_corpus_noex_error ec_ = get_corpus_noex(p, fullpath);
+  /* populate pstring with file contents */
+  get_corpus_noex_error ec_ = get_corpus_noex(pstring_, fullpath);
 
-    if (get_corpus_noex_error::OK != ec_) {
-      printf("\nCould not load the contents of the file %s, error: %s", fullpath.c_str(),
-             get_corpus_noex_error_message(ec_));
+  if (get_corpus_noex_error::OK != ec_) {
+    printf("\nCould not load the contents of the file %s, error: %s",
+           fullpath.c_str(), error_message(ec_));
     return;
   }
 
   printf("\nTesting simdjson::JsonStream with: %s", fullpath.c_str());
 
   simdjson::ParsedJson pj;
-  simdjson::JsonStream js{p.data(), p.size()};
+  simdjson::JsonStream js{pstring_.data(), pstring_.size()};
 
   int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
@@ -127,8 +131,12 @@ std::uintmax_t compute_file_size(const fs::path &pathToCheck) {
   return static_cast<uintmax_t>(-1);
 }
 
-void file_callback(fs::directory_entry entry, fs::path filename_) {
+/*
+------------------------------------------------------------------------------
+*/
+void file_callback(fs::directory_entry entry) {
 
+    fs::path filename_{entry.path().filename()};
   printf("\n========================================="
          "\nUsing %s",
          filename_.generic_string().c_str());
@@ -150,47 +158,63 @@ void file_callback(fs::directory_entry entry, fs::path filename_) {
   the_actual_test(entry.path().string());
 }
 
-void traverse_folder_imp(const fs::path &pathToShow, int level,
+/*
+------------------------------------------------------------------------------
+*/
+void traverse_folder_imp(const fs::path &path_to_use, int level,
                          bool drill = false) {
 
-  if (!(fs::exists(pathToShow) && fs::is_directory(pathToShow)))
+  if (!(fs::exists(path_to_use) && fs::is_directory(path_to_use)))
+    /* silent error? not good */
     return;
 
-  for (const auto &entry : fs::directory_iterator(pathToShow)) {
-    auto filename = entry.path().filename();
-    if (drill && fs::is_directory(entry.status())) {
-      traverse_folder_imp(entry, level + 1);
-    } else if (fs::is_regular_file(entry.status()))
-      file_callback(entry, filename);
-    else
-      cout << "\n[ not a file or directory? ]" << filename << "\n";
+  for (const auto &entry : fs::directory_iterator(path_to_use)) {
+    if (fs::is_directory(entry.status())) {
+      if ( drill ) traverse_folder_imp(entry, level + 1);
+    } else if (fs::is_regular_file(entry.status())) {
+      file_callback(entry);
+    } else {
+      /* could be symlink? ignore ... */
+    }
   }
 }
 
-// adapted from Modern C++ Programming Cookbook
-void traverse_folder(const fs::path &pathToShow) {
-  traverse_folder_imp(pathToShow, 0);
+/*
+------------------------------------------------------------------------------
+*/
+void traverse_folder(const fs::path &path_to_use, bool drill = false) {
+  traverse_folder_imp(path_to_use, 0 /* level */, drill);
 }
 } // namespace detail
 
-int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    std::cerr << "\n\nUsage: " << argv[0] << " <directorywithjsonfiles>"
-              << std::endl;
-#ifndef SIMDJSON_TEST_DATA_DIR
-    std::cout << "\n\nWe are going to assume you mean to use the 'jsonchecker' "
-                 "directory."
-              << std::endl;
-    return validate("jsonchecker/") ? EXIT_SUCCESS : EXIT_FAILURE;
+#ifdef SIMDJSON_TEST_DATA_DIR
+constexpr const char *simdjson_test_data_dir{SIMDJSON_TEST_DATA_DIR};
 #else
-    std::cout << "\n\nWe are going to assume you mean to use the '"
-              << SIMDJSON_TEST_DATA_DIR << "' directory." << std::endl;
-
-    detail::traverse_folder(SIMDJSON_TEST_DATA_DIR);
-
-    return EXIT_SUCCESS;
+constexpr const char *simdjson_test_data_dir{nullptr}; // empty
 #endif
+/*
+------------------------------------------------------------------------------
+*/
+int main(int argc, char *argv[]) {
+  using namespace std;
+  string folder_to_use{};
+  if (argc == 2) {
+    folder_to_use = argv[1];
+  } else {
+    printf("\n\nUsage:\n %s 'directory_with_json_files'\n", argv[0]);
+    if (simdjson_test_data_dir) {
+      printf("\nDefault to SIMDJSON_TEST_DATA_DIR");
+      folder_to_use = simdjson_test_data_dir;
+    } else {
+      printf("\n\nNo argument given and SIMDJSON_TEST_DATA_DIR not found?\n\n");
+      return (EXIT_FAILURE);
+    }
   }
-   detail::traverse_folder(argv[1]) ;
-  return EXIT_SUCCESS ;
+  printf("\n\nGoing to use '%s' as a folder with json file to sample.\n",
+         folder_to_use.c_str());
+  detail::traverse_folder(folder_to_use);
+  /*
+  Do not depend on the json files tested
+  */
+  return EXIT_SUCCESS;
 }
