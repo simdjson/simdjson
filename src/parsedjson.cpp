@@ -90,7 +90,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   ret_address = new (std::nothrow) void *[max_depth];
 #else
-  ret_address = new (std::nothrow) char[max_depth];
+  ret_address = new (std::nothrow) bool[max_depth];
 #endif
   if ((string_buf == nullptr) || (tape == nullptr) ||
       (containing_scope_offset == nullptr) || (ret_address == nullptr) ||

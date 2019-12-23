@@ -120,7 +120,7 @@ public:
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   void **ret_address;
 #else
-  char *ret_address;
+  bool *ret_address;
 #endif
 
   uint8_t *string_buf; // should be at least byte_capacity

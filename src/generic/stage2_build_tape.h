@@ -13,24 +13,19 @@
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
 #define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
 #define GOTO_CONTINUE() goto *pj.ret_address[depth];
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
+#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = true;
+#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = false;
 #define GOTO_CONTINUE()                                                        \
   {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
+    if (pj.ret_address[depth]) {                                               \
       goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
+    } else  {                                                                  \
       goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
     }                                                                          \
   }
 #endif
-
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
@@ -60,7 +55,6 @@ unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_stat
   uint8_t c;
   /*//////////////////////////// START STATE /////////////////////////////
    */
-  SET_GOTO_START_CONTINUE()
   pj.containing_scope_offset[depth] = pj.get_current_loc();
   pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
   /* the root is used, if nothing else, to capture the size of the tape */
@@ -195,14 +189,6 @@ unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_stat
   default:
     goto fail;
   }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
-    goto fail;
-  }
-succeed:
   depth--;
   if (depth != 0) {
     fprintf(stderr, "internal bug\n");
@@ -279,7 +265,6 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
   switch (c) {
   case '{':
     pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
     depth++;
     if (depth >= pj.depth_capacity) {
       goto fail;
@@ -289,7 +274,6 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
     goto object_begin;
   case '[':
     pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
     depth++;
     if (depth >= pj.depth_capacity) {
       goto fail;
@@ -297,13 +281,6 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
     pj.write_tape(0, c);
     goto array_begin;
   default:
-    goto fail;
-  }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
     goto fail;
   }
   /*//////////////////////////// OBJECT STATES ///////////////////////////*/
@@ -434,9 +411,18 @@ object_continue:
 scope_end:
   /* write our tape location to the header scope */
   depth--;
+
   pj.write_tape(pj.containing_scope_offset[depth], c);
   pj.annotate_previous_loc(pj.containing_scope_offset[depth],
                            pj.get_current_loc());
+  if(depth == 1) {
+    if (i + 1 == pj.n_structural_indexes) {
+      goto succeed;
+    } else {
+      goto fail;
+    }
+  }
+
   /* goto saved_state */
   GOTO_CONTINUE()
 

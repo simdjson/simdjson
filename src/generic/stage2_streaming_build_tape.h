@@ -11,14 +11,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     /* by UPDATE_CHAR macro */
     size_t depth = 0; /* could have an arbitrary starting depth */
     pj.init();          /* sets is_valid to false          */
-//    if (pj.byte_capacity < len) {
-//        pj.error_code = simdjson::CAPACITY;
-//        return pj.error_code;
-//    }
 
     /*//////////////////////////// START STATE /////////////////////////////
      */
-    SET_GOTO_START_CONTINUE()
+    //SET_GOTO_START_CONTINUE()
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
     /* the root is used, if nothing else, to capture the size of the tape */
@@ -33,7 +29,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     switch (c) {
         case '{':
             pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
             depth++;
             if (depth >= pj.depth_capacity) {
                 goto fail;
@@ -43,7 +38,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
             goto object_begin;
         case '[':
             pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
             depth++;
             if (depth >= pj.depth_capacity) {
                 goto fail;
@@ -175,7 +169,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
         default:
             goto fail;
     }
-    start_continue:
+    //start_continue:
     /* the string might not be NULL terminated. */
     if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
         goto succeed;
@@ -313,6 +307,15 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     pj.write_tape(pj.containing_scope_offset[depth], c);
     pj.annotate_previous_loc(pj.containing_scope_offset[depth],
                              pj.get_current_loc());
+    if(depth == 1) {
+      if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
+        goto succeed;
+      } else if(depth == 1 && i<=pj.n_structural_indexes) {
+        goto succeedAndHasMore;
+      } else {
+        goto fail;
+      }
+    }
     /* goto saved_state */
     GOTO_CONTINUE()
 
@@ -464,12 +467,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
      * We could even trigger special code paths to assess what happened
      * carefully,
      * all without any added cost. */
-//    if(i <= pj.n_structural_indexes) {
-//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
-//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
-//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
-//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
-//    }
     if (depth >= pj.depth_capacity) {
         pj.error_code = simdjson::DEPTH_ERROR;
         return pj.error_code;

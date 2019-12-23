@@ -23,7 +23,7 @@ WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   arm64::stage2_status status;
   int ret = arm64::unified_machine_init(buf, len, pj, status);
-  while(ret == simdjson::SUCCESS_AND_HAS_MORE) {
+  if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
     ret = arm64::unified_machine_continue(buf, len, pj, status, pj.n_structural_indexes);
   }
   return ret;
