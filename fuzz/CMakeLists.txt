@@ -29,6 +29,12 @@ set(SOURCES
   fuzz_parser.cpp
 #  fuzz_minify.cpp   # <--- does not pass the build check test on oss-fuzz, says "partially instrumented". help needed!
   fuzz_dump.cpp
+  fuzz_print_json.cpp
+  fuzz_dump_raw_tape.cpp
+)
+
+add_custom_target(print_all_fuzz_targets
+    COMMAND ${CMAKE_COMMAND} -E echo ${SOURCES}
 )
 
 macro(implement_fuzzer sourcefile)
