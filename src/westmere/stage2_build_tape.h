@@ -24,7 +24,12 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return westmere::unified_machine(buf, len, pj);
+  westmere::stage2_status status;
+  int ret = westmere::unified_machine_init(buf, len, pj, status);
+  while(ret == simdjson::SUCCESS_AND_HAS_MORE) {
+    ret = westmere::unified_machine_continue(buf, len, pj, status, pj.n_structural_indexes);
+  }
+  return ret;
 }
 
 template <>

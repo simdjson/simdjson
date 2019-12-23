@@ -24,7 +24,12 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return haswell::unified_machine(buf, len, pj);
+  haswell::stage2_status status;
+  int ret = haswell::unified_machine_init(buf, len, pj, status);
+  while(ret == simdjson::SUCCESS_AND_HAS_MORE) {
+    ret = haswell::unified_machine_continue(buf, len, pj, status, pj.n_structural_indexes);
+  }
+  return ret;
 }
 
 template <>
