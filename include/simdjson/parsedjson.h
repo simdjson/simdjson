@@ -77,7 +77,8 @@ public:
 
   really_inline void write_tape_s64(int64_t i) {
     write_tape(0, 'l');
-    tape[current_loc++] = *(reinterpret_cast<uint64_t *>(&i));
+    std::memcpy(&tape[current_loc], &i, sizeof(i));
+    ++current_loc;
   }
 
   really_inline void write_tape_u64(uint64_t i) {
