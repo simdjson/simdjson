@@ -158,7 +158,7 @@ As needed, the `json_parse` and `build_parsed_json` functions copy the input dat
 
 **API and detailed documentation found [here](doc/JsonStream.md).**
 
-Here is a simple exemple, using single header simdjson:
+Here is a simple example, using single header simdjson:
 ```cpp
 #include "simdjson.h"
 #include "simdjson.cpp"
