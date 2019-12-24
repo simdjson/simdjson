@@ -262,6 +262,7 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
   uint32_t depth = s.current_depth;
   uint32_t i = s.current_index;/* index of the structural character (0,1,2,3...) */
   UPDATE_CHAR();
+  // next switch case is executed once.
   switch (c) {
   case '{':
     pj.containing_scope_offset[depth] = pj.get_current_loc();
@@ -287,22 +288,20 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
 
 object_begin:
   UPDATE_CHAR();
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    goto object_key_state;
+  if(unlikely(c == '}')) {
+    goto scope_end;
   }
-  case '}':
-    goto scope_end; /* could also go to object_continue */
-  default:
+  if(unlikely(c != '"')) {
+    goto fail;
+  }
+  if((!parse_string(buf, len, pj, depth, idx))) {
     goto fail;
   }
 
+
 object_key_state:
   UPDATE_CHAR();
-  if (c != ':') {
+  if (unlikely(c != ':')) {
     goto fail;
   }
   UPDATE_CHAR();
@@ -362,11 +361,10 @@ object_key_state:
     /* we found an object inside an object, so we need to increment the
      * depth                                                             */
     depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
+    if(depth < pj.depth_capacity) {
+      goto object_begin;
     }
-
-    goto object_begin;
+    goto fail;
   }
   case '[': {
     if(i > index_end) goto success_and_more;
@@ -378,10 +376,10 @@ object_key_state:
     /* we found an array inside an object, so we need to increment the depth
      */
     depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
+    if(depth < pj.depth_capacity) {
+      goto array_begin;
     }
-    goto array_begin;
+    goto fail;
   }
   default:
     goto fail;
@@ -389,22 +387,17 @@ object_key_state:
 
 object_continue:
   UPDATE_CHAR();
-  switch (c) {
-  case ',':
+  if( c == ',' ) {// common case
     UPDATE_CHAR();
-    if (c != '"') {
-      goto fail;
-    } else {
-      if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
+    if( c == '"' ) { // common case
+      if (parse_string(buf, len, pj, depth, idx)) { // common case
+        goto object_key_state;
       }
-      goto object_key_state;
     }
-  case '}':
+  } else if (c == '}') {
     goto scope_end;
-  default:
-    goto fail;
-  }
+  } 
+  goto fail;
 
   /*//////////////////////////// COMMON STATE ///////////////////////////*/
 
@@ -415,17 +408,15 @@ scope_end:
   pj.write_tape(pj.containing_scope_offset[depth], c);
   pj.annotate_previous_loc(pj.containing_scope_offset[depth],
                            pj.get_current_loc());
-  if(depth == 1) {
+  if(depth > 1) {
+    GOTO_CONTINUE()
+  } else {
     if (i + 1 == pj.n_structural_indexes) {
       goto succeed;
     } else {
       goto fail;
     }
   }
-
-  /* goto saved_state */
-  GOTO_CONTINUE()
-
   /*//////////////////////////// ARRAY STATES ///////////////////////////*/
 array_begin:
   UPDATE_CHAR();
@@ -493,11 +484,10 @@ main_array_switch:
     /* we found an object inside an array, so we need to increment the depth
      */
     depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
+    if(depth < pj.depth_capacity) {
+      goto object_begin;
     }
-
-    goto object_begin;
+    goto fail;
   }
   case '[': {
     if(i > index_end) goto success_and_more;
@@ -509,10 +499,11 @@ main_array_switch:
     /* we found an array inside an array, so we need to increment the depth
      */
     depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
+    if (depth < pj.depth_capacity) {
+      goto array_begin;
     }
-    goto array_begin;
+    goto fail; 
+    
   }
   default:
     goto fail;
@@ -520,13 +511,12 @@ main_array_switch:
 
 array_continue:
   UPDATE_CHAR();
-  switch (c) {
-  case ',':
+  if(c == ',') {
     UPDATE_CHAR();
     goto main_array_switch;
-  case ']':
+  } else if(c == ']') {
     goto scope_end;
-  default:
+  } else {
     goto fail;
   }
 
