@@ -26,6 +26,13 @@
     }                                                                          \
   }
 #endif
+
+
+enum {
+  check_index_end_true = true,
+  check_index_end_false = false
+};
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
@@ -245,15 +252,16 @@ fail:
 
 
 
-
 /************
  * The unified_machine_continue function should be called when we are looking at the
  * start of an object or array ('[' or '{') as indicated by index.
- * Meanwhile index_end should point either at the location of the start of an array or object 
+ * Meanwhile when CHECK_INDEX_END is set to true, index_end should point either at the 
+ * location of the start of an array or object
  * ('[' or '{') that we do not want to parse or at an index beyond the last structural index.
  * If the parsing does not terminate with success or failure, it will return 
  * simdjson::SUCCESS_AND_HAS_MORE and you need to call unified_machine_continue again.
  ***********/
+ template <bool CHECK_INDEX_END>
 WARN_UNUSED  int
 unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, uint32_t index_end) {
   uint32_t idx; /* location of the structural character in the input (buf)   */
@@ -352,7 +360,9 @@ object_key_state:
     break;
   }
   case '{': {
-    if(i > index_end) goto success_and_more;
+    if(CHECK_INDEX_END) {
+      if(i > index_end) goto success_and_more;
+    }
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
@@ -367,7 +377,9 @@ object_key_state:
     goto fail;
   }
   case '[': {
-    if(i > index_end) goto success_and_more;
+    if(CHECK_INDEX_END) {
+      if(i > index_end) goto success_and_more;
+    }
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
@@ -475,7 +487,9 @@ main_array_switch:
     break; /* goto array_continue; */
   }
   case '{': {
-    if(i > index_end) goto success_and_more;
+    if(CHECK_INDEX_END) {
+      if(i > index_end) goto success_and_more;
+    }
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
@@ -490,7 +504,9 @@ main_array_switch:
     goto fail;
   }
   case '[': {
-    if(i > index_end) goto success_and_more;
+    if(CHECK_INDEX_END) {
+      if(i > index_end) goto success_and_more;
+    }
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets

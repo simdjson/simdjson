@@ -27,7 +27,7 @@ unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJso
   haswell::stage2_status status;
   int ret = haswell::unified_machine_init(buf, len, pj, status);
   if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
-    ret = haswell::unified_machine_continue(buf, len, pj, status, pj.n_structural_indexes);
+    ret = haswell::unified_machine_continue<haswell::check_index_end_false>(buf, len, pj, status, pj.n_structural_indexes);
   }
   return ret;
 }

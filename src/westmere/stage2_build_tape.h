@@ -27,7 +27,7 @@ unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJs
   westmere::stage2_status status;
   int ret = westmere::unified_machine_init(buf, len, pj, status);
   if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
-    ret = westmere::unified_machine_continue(buf, len, pj, status, pj.n_structural_indexes);
+    ret = westmere::unified_machine_continue<westmere::check_index_end_false>(buf, len, pj, status, pj.n_structural_indexes);
   }
   return ret;
 }
