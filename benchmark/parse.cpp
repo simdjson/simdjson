@@ -127,7 +127,9 @@ struct option_struct {
           break;
         default:
           // reaching here means an argument was given to getopt() which did not have a case label
-          exit_error("Unexpected argument - missing case (programming error)");
+          exit_error("Unexpected argument - missing case for option "+
+                     std::string(1,static_cast<char>(c))+
+                     " (programming error)");
         }
       }
     #else
