@@ -10,6 +10,14 @@
     c = buf[idx];                                                              \
   }
 
+// Equivalent to UPDATE_CHAR() and then a comparison with c, but does not
+// update the idx variable: this is useful for the ':' structural character
+// since its location is irrelevant. Not having to update the idx variable
+// gives the compiler extra freedom which may translate into better performance.
+#define CHECK_CHAR(validchar)                                                  \
+  {                                                                            \
+    if((buf[pj.structural_indexes[i++]] != validchar)) goto fail;                \
+  }
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
 #define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
@@ -308,10 +316,7 @@ object_begin:
 
 
 object_key_state:
-  UPDATE_CHAR();
-  if (unlikely(c != ':')) {
-    goto fail;
-  }
+  CHECK_CHAR(':'); // we don't need to know where the ':' is
   UPDATE_CHAR();
   switch (c) {
   case '"': {
@@ -399,6 +404,10 @@ object_key_state:
 
 object_continue:
   UPDATE_CHAR();
+  // Next bit could be a switch case. Short switch cases tend to be compiled
+  // as sequences of branches. The compiler can't tell which branch is more likely
+  // but we *know* that most objects contain more than one entry so that ',' is a common result,
+  // hence we build our own sequence of branches, starting with the most likely result.
   if( c == ',' ) {// common case
     UPDATE_CHAR();
     if( c == '"' ) { // common case
@@ -413,6 +422,8 @@ object_continue:
 
   /*//////////////////////////// COMMON STATE ///////////////////////////*/
 
+
+
 scope_end:
   /* write our tape location to the header scope */
   depth--;
@@ -420,6 +431,9 @@ scope_end:
   pj.write_tape(pj.containing_scope_offset[depth], c);
   pj.annotate_previous_loc(pj.containing_scope_offset[depth],
                            pj.get_current_loc());
+  // The GOTO_CONTINUE is guarded. Instead we could have a "goto" at depth 1 that
+  // goes straight to the else clause, thus saving a branch. It does not
+  // appear to be obviously profitable to do so.
   if(depth > 1) {
     GOTO_CONTINUE()
   } else {
@@ -527,6 +541,10 @@ main_array_switch:
 
 array_continue:
   UPDATE_CHAR();
+  // Next bit could be a switch case. Short switch cases tend to be compiled
+  // as sequences of branches. The compiler can't tell which branch is more likely
+  // but we *know* that most arrays contain more than one entry so that ',' is a common result,
+  // hence we build our own sequence of branches, starting with the most likely result.
   if(c == ',') {
     UPDATE_CHAR();
     goto main_array_switch;
