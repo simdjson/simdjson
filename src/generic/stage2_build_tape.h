@@ -48,7 +48,7 @@ enum {
 
 typedef struct {
   uint32_t current_depth;
-  uint32_t current_index;
+  size_t current_index;
 } stage2_status;
 
  /**
@@ -65,7 +65,7 @@ unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_stat
     pj.error_code = simdjson::CAPACITY;
     return pj.error_code;
   }
-  uint32_t i = 0;
+  size_t i = 0;
   uint32_t idx; 
   uint8_t c;
   /*//////////////////////////// START STATE /////////////////////////////
@@ -276,7 +276,7 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
   uint8_t c;    /* used to track the (structural) character we are looking at,
                    updated */
   uint32_t depth = s.current_depth;
-  uint32_t i = s.current_index;/* index of the structural character (0,1,2,3...) */
+  size_t i = s.current_index;/* index of the structural character (0,1,2,3...) */
   UPDATE_CHAR();
   // next switch case is executed once.
   switch (c) {
