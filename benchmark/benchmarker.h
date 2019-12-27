@@ -218,6 +218,23 @@ struct progress_bar {
   }
 };
 
+enum class BenchmarkStage {
+  ALL,
+  ALLOCATE,
+  STAGE1,
+  STAGE2
+};
+
+const char* benchmark_stage_name(BenchmarkStage stage) {
+  switch (stage) {
+    case BenchmarkStage::ALL: return "All";
+    case BenchmarkStage::ALLOCATE: return "Allocate";
+    case BenchmarkStage::STAGE1: return "Stage 1";
+    case BenchmarkStage::STAGE2: return "Stage 2";
+    default: return "Unknown";
+  }
+}
+
 struct benchmarker {
   // JSON text from loading the file. Owns the memory.
   const padded_string json;
@@ -246,6 +263,16 @@ struct benchmarker {
   ~benchmarker() {
     if (stats) {
       delete stats;
+    }
+  }
+
+  const event_aggregate& operator[](BenchmarkStage stage) const {
+    switch (stage) {
+      case BenchmarkStage::ALL: return this->all_stages;
+      case BenchmarkStage::STAGE1: return this->stage1;
+      case BenchmarkStage::STAGE2: return this->stage2;
+      case BenchmarkStage::ALLOCATE: return this->allocate_stage;
+      default: exit_error("Unknown stage"); return this->all_stages;
     }
   }
 
@@ -305,10 +332,6 @@ struct benchmarker {
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only);
     }
-  }
-
-  double stage1_ns_per_block() {
-    return stage1.elapsed_ns() / stats->blocks;
   }
 
   template<typename T>
