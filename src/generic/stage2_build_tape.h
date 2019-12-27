@@ -82,7 +82,7 @@ unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_stat
     goto fail;
   }
   // we are now going to check whether we have a single atom
-  UPDATE_CHAR()
+  UPDATE_CHAR();
   switch (c) {
   case '{':
   case '[':
