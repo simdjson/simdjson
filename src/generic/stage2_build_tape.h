@@ -408,6 +408,7 @@ object_continue:
   // as sequences of branches. The compiler can't tell which branch is more likely
   // but we *know* that most objects contain more than one entry so that ',' is a common result,
   // hence we build our own sequence of branches, starting with the most likely result.
+  // This may or may not help: revisit at will.
   if( c == ',' ) {// common case
     UPDATE_CHAR();
     if( c == '"' ) { // common case
@@ -545,6 +546,7 @@ array_continue:
   // as sequences of branches. The compiler can't tell which branch is more likely
   // but we *know* that most arrays contain more than one entry so that ',' is a common result,
   // hence we build our own sequence of branches, starting with the most likely result.
+  // This may or may not help: revisit at will.
   if(c == ',') {
     UPDATE_CHAR();
     goto main_array_switch;
