@@ -44,6 +44,201 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
   }
   return res;
 }
+namespace {
+
+typedef struct {
+  size_t last_index;
+  size_t last_buf_index;
+  bool has_error;
+} last_index_t;
+
+last_index_t find_last_open_brace(const uint8_t *buf, size_t len,
+                                  ParsedJson &pj) {
+  last_index_t answer;
+  if (pj.n_structural_indexes == 0) {
+    answer.has_error = true;
+    return answer;
+  }
+  uint32_t largest = pj.n_structural_indexes - 1;
+  if (pj.structural_indexes[largest] == len) {
+    if (largest == 0) {
+      answer.has_error = true;
+      return answer;
+    }
+    largest--;
+  }
+  size_t i = largest;
+  for (; i >= 1; i--) {
+
+    char c = buf[pj.structural_indexes[i]];
+    printf("i = %d (%zu) %c \n", i,pj.structural_indexes[i],c);
+    if ((c == '{') || (c == '[')) {
+      printf("structural char at %u = %c\n", pj.structural_indexes[i],
+           buf[pj.structural_indexes[i]]);
+      break;
+    }
+  }
+  if (i == 0) {
+    answer.has_error = true;
+    return answer;
+  }
+  answer.has_error = false;
+  answer.last_index = i;
+  answer.last_buf_index = pj.structural_indexes[i];
+  return answer;
+}
+}
+
+// interleaved_json_parse_implementation is the generic function, it is
+// specialized for
+// various architectures, e.g., as
+// interleaved_json_parse_implementation<Architecture::HASWELL> or
+// interleaved_json_parse_implementation<Architecture::ARM64>
+template <Architecture T>
+int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
+                                          ParsedJson &pj, size_t window,
+                                          bool realloc_if_needed = true) {
+  if (pj.byte_capacity < len) {
+    return simdjson::CAPACITY;
+  }
+  if (window <= 0) {
+    return simdjson::UNEXPECTED_ERROR; // might replace by something more
+                                       // indicative later
+  }
+  bool reallocated = false;
+  if (realloc_if_needed) {
+    const uint8_t *tmp_buf = buf;
+    buf = (uint8_t *)allocate_padded_buffer(len);
+    if (buf == NULL)
+      return simdjson::MEMALLOC;
+    memcpy((void *)buf, tmp_buf, len);
+    reallocated = true;
+  } // if(realloc_if_needed) {
+
+  size_t idx = 0;
+  size_t actual_window = window > len ? len : window;
+  bool last_window = false;
+  printf("windo = %d len = %d \n", window, len);
+  if (window >= len)
+    last_window = true;
+  if (last_window)
+    printf("last window\n");
+  else
+    printf("not last\n");
+  int stage1_is_ok =
+      find_structural_bits<T>(buf, actual_window, pj, !last_window);
+  if (stage1_is_ok != simdjson::SUCCESS) {
+    pj.error_code = stage1_is_ok;
+    if (reallocated) {
+      aligned_free((void *)buf);
+    }
+    return pj.error_code;
+  }
+  stage2_status status;
+  printf("calling unified_machine_init\n");
+  int stage2_is_ok = unified_machine_init(buf, actual_window, pj, status);
+  if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
+    pj.error_code = stage2_is_ok;
+    if (reallocated) {
+      aligned_free((void *)buf);
+    }
+    return pj.error_code;
+  }
+  /*printf("unified_machine_init ok\n");
+  if (last_window) {
+    printf("finishing\n");
+
+    stage2_is_ok = unified_machine_finish<T>(buf, actual_window, pj, status);
+  } else {
+    printf("hitting the first window\n");
+    last_index_t last_open_brace_index =
+        find_last_open_brace(buf, actual_window, pj);
+    if (last_open_brace_index.has_error) {
+      pj.error_code = simdjson::EMPTY;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return pj.error_code;
+    }
+    actual_window = last_open_brace_index.last_buf_index + 1;
+    // we have to identify the first start of scope
+    stage2_is_ok = unified_machine_continue<T>(
+        buf + idx, actual_window, pj, status, last_open_brace_index.last_index);
+    printf("unified_machine_continue returned %d\n", stage2_is_ok);
+  }
+  if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
+    pj.error_code = stage2_is_ok;
+    if (reallocated) {
+      aligned_free((void *)buf);
+    }
+    return pj.error_code;
+  }
+  printf("the first window is ok\n");
+  idx += actual_window;*/
+
+  while (idx + window < len) {
+    printf("========================= idx = %zu string = %.32s \n", idx, buf+idx);
+    actual_window = window;
+    printf("running streaming stage 1 from idx = %zu with actual_window = %zu \n", idx, actual_window);
+    stage1_is_ok = find_structural_bits<T>(buf + idx, actual_window, pj, true);
+    if (stage1_is_ok != simdjson::SUCCESS) {
+      pj.error_code = stage1_is_ok;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return pj.error_code;
+    }
+    last_index_t last_open_brace_index =
+        find_last_open_brace(buf + idx, actual_window, pj);
+    if (last_open_brace_index.has_error) {
+      pj.error_code = simdjson::EMPTY;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return pj.error_code;
+    }
+    actual_window = last_open_brace_index.last_buf_index;
+    printf("actual window is %zu \n",actual_window );
+    printf("idx = %zu \n",idx );
+
+printf("I am going to run unified machine on @@@@%.32s@@@@\n", buf+idx);
+status.current_index = 0;
+    stage2_is_ok = unified_machine_continue<T>(
+        buf + idx, actual_window, pj, status, last_open_brace_index.last_index);
+        printf("stage2 depth = %zu latest index = %zu \n", status.current_depth, status.current_index);
+    if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
+      printf("stage2 returned %zu\n", stage2_is_ok);
+      pj.error_code = stage2_is_ok;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return stage2_is_ok;
+    }
+    idx += actual_window;
+  }
+  if (idx < len) {
+    actual_window = len - idx;
+    stage1_is_ok = find_structural_bits<T>(buf + idx, actual_window, pj, false);
+
+    if (stage1_is_ok != simdjson::SUCCESS) {
+      pj.error_code = stage1_is_ok;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return pj.error_code;
+    }
+    status.current_index = 0;
+    stage2_is_ok =
+        unified_machine_finish<T>(buf + idx, actual_window, pj, status);
+    idx += actual_window;
+  }
+  pj.error_code = stage2_is_ok;
+  if (reallocated) {
+    aligned_free((void *)buf);
+  }
+  return pj.error_code;
+}
+
 
 // Parse a document found in buf.
 //

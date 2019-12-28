@@ -43,6 +43,7 @@ using std::string;
 
 using stage2_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
 using stage1_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
+using interleaved_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, size_t window, bool realloc_if_needed);
 
 stage1_functype* get_stage1_func(const Architecture architecture) {
   switch (architecture) {
@@ -82,15 +83,38 @@ stage2_functype* get_stage2_func(const Architecture architecture) {
     exit(EXIT_FAILURE);
   }
 }
+interleaved_functype* get_interleaved_func(const Architecture architecture) {
+  switch (architecture) {
+#ifdef IS_X86_64
+  case Architecture::HASWELL:
+    return &interleaved_json_parse_implementation<Architecture::HASWELL>;
+    break;
+  case Architecture::WESTMERE:
+    return &interleaved_json_parse_implementation<Architecture::WESTMERE>;
+    break;
+#endif
+#ifdef IS_ARM64
+  case Architecture::ARM64:
+    return &interleaved_json_parse_implementation<Architecture::ARM64>;
+    break;
+#endif
+  default:
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
 
 struct json_parser {
   const Architecture architecture;
   const stage1_functype *stage1_func;
   const stage2_functype *stage2_func;
+  const interleaved_functype *interleaved_func;
 
   json_parser(const Architecture _architecture) : architecture(_architecture) {
     this->stage1_func = get_stage1_func(architecture);
     this->stage2_func = get_stage2_func(architecture);
+    this->interleaved_func = get_interleaved_func(architecture);
   }
   json_parser() : json_parser(find_best_supported_architecture()) {}
 
@@ -99,6 +123,9 @@ struct json_parser {
   }
   int stage2(const uint8_t *buf, const size_t len, ParsedJson &pj) const {
     return this->stage2_func(buf, len, pj);
+  }
+  int interleave(const uint8_t *buf, const size_t len, ParsedJson &pj, size_t window) const {
+    return this->interleaved_func(buf, len, pj, window, false);
   }
 
   int parse(const uint8_t *buf, const size_t len, ParsedJson &pj) const {

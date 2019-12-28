@@ -237,6 +237,8 @@ struct benchmarker {
   event_aggregate stage1;
   // Speed and event summary for stage 2
   event_aggregate stage2;
+  // Speed and event summary for interleave
+  event_aggregate stage1stage2;
   // Speed and event summary for allocation
   event_aggregate allocate_stage;
 
@@ -301,9 +303,45 @@ struct benchmarker {
     }
   }
 
+  really_inline void run_iteration_interleave(size_t window) {
+    // Allocate ParsedJson
+    collector.start();
+    ParsedJson pj;
+    bool allocok = pj.allocate_capacity(json.size());
+    event_count allocate_count = collector.end();
+    allocate_stage << allocate_count;
+
+    if (!allocok) {
+      exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result.");
+    }
+    verbose() << "[verbose] allocated memory for parsed JSON " << endl;
+
+    // Stage 1 (find structurals)
+    collector.start();
+    int result = parser.interleave((const uint8_t *)json.data(), json.size(), pj, window);
+    event_count stage1stage2_count = collector.end();
+    stage1stage2 << stage1stage2_count;
+
+    if (result != simdjson::SUCCESS) {
+      exit_error(string("Failed to parse ") + filename + " during interleave : " + pj.get_error_message());
+    }
+    // Calculate stats the first time we parse
+    if (stats == NULL) {
+      stats = new json_stats(json, pj);
+    }
+  }
+
   really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
+            printf("run_iterations?\n");
+
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only);
+    }
+  }
+
+  really_inline void run_iterations_interleave(size_t iterations, size_t window) {
+    for (size_t i = 0; i<iterations; i++) {
+      run_iteration_interleave(window);
     }
   }
 
@@ -313,6 +351,8 @@ struct benchmarker {
 
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
+                    printf("print_aggregate?\n");
+
     printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
       prefix,
       "Speed",
@@ -357,6 +397,8 @@ struct benchmarker {
   }
 
   void print(bool tabbed_output) const {
+                printf("print?\n");
+
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);
@@ -418,6 +460,29 @@ struct benchmarker {
       print_aggregate("|    ", stage2.best);
     }
   }
+
+
+  void print_interleave(bool tabbed_output) const {
+    if (tabbed_output) {
+      char* filename_copy = (char*)malloc(strlen(filename)+1);
+      strcpy(filename_copy, filename);
+      #if defined(__linux__)
+      char* base = ::basename(filename_copy);
+      #else
+      char* base = filename_copy;
+      #endif
+      if (strlen(base) >= 5 && !strcmp(base+strlen(base)-5, ".json")) {
+        base[strlen(base)-5] = '\0';
+      }
+
+      printf("All Stages\n");
+      print_aggregate("|    "   , all_stages.best);
+               printf("|- Interleave\n");
+      print_aggregate("|    ", stage1stage2.best);
+    }
+  }
+
+
 };
 
 #endif

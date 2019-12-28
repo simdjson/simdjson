@@ -19,6 +19,28 @@ int unified_machine(const char *buf, size_t len, ParsedJson &pj) {
 }
 
 
+// more flexible version
+
+// This structure is ugly and at least partly unnecessary, it should go away?
+// We need to track the current depth, but not much else?
+typedef struct {
+  uint32_t current_depth;
+  size_t current_index;
+} stage2_status;
+
+template <Architecture T = Architecture::NATIVE>
+WARN_UNUSED  int
+unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status& s);
+
+template <Architecture T = Architecture::NATIVE>
+WARN_UNUSED  int
+unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index);
+
+template <Architecture T = Architecture::NATIVE>
+WARN_UNUSED  int
+unified_machine_finish(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s);
+
+
 
 // Streaming
 template <Architecture T = Architecture::NATIVE>

@@ -7,7 +7,7 @@
 #define UPDATE_CHAR()                                                          \
   {                                                                            \
     idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
+    c = buf[idx];                                                          \
   }
 
 // Equivalent to UPDATE_CHAR() and then a comparison with c, but does not
@@ -46,10 +46,7 @@ enum {
  * for documentation.
  ***********/
 
-typedef struct {
-  uint32_t current_depth;
-  size_t current_index;
-} stage2_status;
+
 
  /**
  * Unified_machine_init is meant to be always called at least one.
@@ -271,7 +268,7 @@ fail:
  ***********/
  template <bool CHECK_INDEX_END>
 WARN_UNUSED  int
-unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, uint32_t index_end) {
+unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index) {
   uint32_t idx; /* location of the structural character in the input (buf)   */
   uint8_t c;    /* used to track the (structural) character we are looking at,
                    updated */
@@ -365,14 +362,14 @@ object_key_state:
     break;
   }
   case '{': {
+    /* we have not yet encountered } so we need to come back for it */
+    SET_GOTO_OBJECT_CONTINUE();
     if(CHECK_INDEX_END) {
-      if(i > index_end) goto success_and_more;
+      if(i > last_index) goto success_and_more;
     }
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
     /* we found an object inside an object, so we need to increment the
      * depth                                                             */
     depth++;
@@ -382,14 +379,14 @@ object_key_state:
     goto fail;
   }
   case '[': {
+    /* we have not yet encountered } so we need to come back for it */
+    SET_GOTO_OBJECT_CONTINUE();
     if(CHECK_INDEX_END) {
-      if(i > index_end) goto success_and_more;
+      if(i > last_index) goto success_and_more;
     }
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
     /* we found an array inside an object, so we need to increment the depth
      */
     depth++;
@@ -403,6 +400,7 @@ object_key_state:
   }
 
 object_continue:
+printf("object_continue\n");
   UPDATE_CHAR();
   // Next bit could be a switch case. Short switch cases tend to be compiled
   // as sequences of branches. The compiler can't tell which branch is more likely
@@ -435,8 +433,9 @@ scope_end:
   // The GOTO_CONTINUE is guarded. Instead we could have a "goto" at depth 1 that
   // goes straight to the else clause, thus saving a branch. It does not
   // appear to be obviously profitable to do so.
+  printf("at scope_end with a reduced depth of %d\n", depth);
   if(depth > 1) {
-    GOTO_CONTINUE()
+    GOTO_CONTINUE();
   } else {
     if (i + 1 == pj.n_structural_indexes) {
       goto succeed;
@@ -448,6 +447,7 @@ scope_end:
 array_begin:
   UPDATE_CHAR();
   if (c == ']') {
+    printf("Going to scope_end\n");
     goto scope_end; /* could also go to array_continue */
   }
 
@@ -502,14 +502,14 @@ main_array_switch:
     break; /* goto array_continue; */
   }
   case '{': {
+    SET_GOTO_ARRAY_CONTINUE();
     if(CHECK_INDEX_END) {
-      if(i > index_end) goto success_and_more;
+      if(i > last_index) goto success_and_more;
     }
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-    SET_GOTO_ARRAY_CONTINUE()
     /* we found an object inside an array, so we need to increment the depth
      */
     depth++;
@@ -519,14 +519,14 @@ main_array_switch:
     goto fail;
   }
   case '[': {
+    SET_GOTO_ARRAY_CONTINUE();
     if(CHECK_INDEX_END) {
-      if(i > index_end) goto success_and_more;
+      if(i > last_index) goto success_and_more;
     }
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
-    SET_GOTO_ARRAY_CONTINUE()
     /* we found an array inside an array, so we need to increment the depth
      */
     depth++;
@@ -541,6 +541,8 @@ main_array_switch:
   }
 
 array_continue:
+printf("array_continue\n");
+
   UPDATE_CHAR();
   // Next bit could be a switch case. Short switch cases tend to be compiled
   // as sequences of branches. The compiler can't tell which branch is more likely
@@ -551,6 +553,7 @@ array_continue:
     UPDATE_CHAR();
     goto main_array_switch;
   } else if(c == ']') {
+    printf("Going to scope_end\n");
     goto scope_end;
   } else {
     goto fail;

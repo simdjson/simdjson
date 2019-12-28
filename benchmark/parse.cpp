@@ -72,6 +72,7 @@ void print_usage(ostream& out) {
   out << "             -s all    - Run all stages." << endl;
   out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
   out << "             or ARM64). By default, detects best supported architecture." << endl;
+  out << "-I window  - Use the interleaved parser with a provided with size (>0)." << endl;
 }
 
 void exit_usage(string message) {
@@ -85,6 +86,8 @@ struct option_struct {
   vector<char*> files;
   Architecture architecture = Architecture::UNSUPPORTED;
   bool stage1_only = false;
+  bool interleave = false;
+  size_t window = 4096;
 
   int32_t iterations = 200;
   int32_t iteration_step = 50;
@@ -96,7 +99,7 @@ struct option_struct {
     #ifndef _MSC_VER
       int c;
 
-      while ((c = getopt(argc, argv, "vtn:i:a:s:")) != -1) {
+      while ((c = getopt(argc, argv, "vtn:i:a:s:I:")) != -1) {
         switch (c) {
         case 'n':
           iterations = atoi(optarg);
@@ -109,6 +112,13 @@ struct option_struct {
           break;
         case 'v':
           verbose = true;
+          break;
+        case 'I':
+          interleave = true;
+          window = atoi(optarg);
+          if(window <= 0) {
+            exit_error("interleave window should be positive ");
+          }
           break;
         case 'a':
           architecture = parse_architecture(optarg);
@@ -186,7 +196,16 @@ int main(int argc, char *argv[]) {
   // Run the benchmarks
   progress_bar progress(options.iterations, 50);
   // Put the if (options.stage1_only) *outside* the loop so that run_iterations will be optimized
-  if (options.stage1_only) {
+  if(options.interleave) {
+    for (int iteration = 0; iteration < options.iterations; iteration += options.iteration_step) {
+      if (!options.verbose) { progress.print(iteration); }
+      // Benchmark each file once per iteration
+      for (size_t f=0; f<options.files.size(); f++) {
+        verbose() << "[verbose] " << benchmarkers[f]->filename << " iterations #" << iteration << "-" << (iteration+options.iteration_step-1) << endl;
+        benchmarkers[f]->run_iterations_interleave(options.iteration_step, options.window);
+      }
+    }
+  } else if (options.stage1_only) {
     for (int iteration = 0; iteration < options.iterations; iteration += options.iteration_step) {
       if (!options.verbose) { progress.print(iteration); }
       // Benchmark each file once per iteration
@@ -208,7 +227,11 @@ int main(int argc, char *argv[]) {
   if (!options.verbose) { progress.erase(); }
 
   for (size_t i=0; i<options.files.size(); i++) {
-    benchmarkers[i]->print(options.tabbed_output);
+    if(options.interleave) {
+      benchmarkers[i]->print_interleave(options.tabbed_output);
+    } else {
+      benchmarkers[i]->print(options.tabbed_output);
+    }
     delete benchmarkers[i];
   }
 

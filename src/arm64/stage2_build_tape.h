@@ -35,6 +35,27 @@ unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson 
     return arm64::unified_machine(buf, len, pj, next_json);
 }
 
+template <>
+WARN_UNUSED  int
+unified_machine_init<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status& s) {
+    return arm64::unified_machine_init(buf, len, pj, s);
+}
+
+template <>
+WARN_UNUSED  int
+unified_machine_continue<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index) {
+    return arm64::unified_machine_continue<true>(buf, len, pj, s, last_index);
+}
+
+template <>
+WARN_UNUSED  int
+unified_machine_finish<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s) {
+    return arm64::unified_machine_continue<false>(buf, len, pj, s, pj.n_structural_indexes);
+}
+
+
+
+
 } // namespace simdjson
 
 #endif // IS_ARM64
