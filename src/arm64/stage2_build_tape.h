@@ -24,7 +24,7 @@ unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson 
   arm64::stage2_status status;
   int ret = arm64::unified_machine_init(buf, len, pj, status);
   if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
-    ret = arm64::unified_machine_continue<arm64::check_index_end_false>(buf, len, pj, status, pj.n_structural_indexes);
+    ret = arm64::unified_machine_continue<false>(buf, len, pj, status, pj.n_structural_indexes);
   }
   return ret;
 }
@@ -50,7 +50,7 @@ unified_machine_continue<Architecture::ARM64>(const uint8_t *buf, size_t len, Pa
 template <>
 WARN_UNUSED  int
 unified_machine_finish<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s) {
-    return arm64::unified_machine_continue<false>(buf, len, pj, s, pj.n_structural_indexes);
+    return arm64::unified_machine_continue<true>(buf, len, pj, s, pj.n_structural_indexes);
 }
 
 

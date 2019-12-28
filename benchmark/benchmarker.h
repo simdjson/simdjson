@@ -237,8 +237,6 @@ struct benchmarker {
   event_aggregate stage1;
   // Speed and event summary for stage 2
   event_aggregate stage2;
-  // Speed and event summary for interleave
-  event_aggregate stage1stage2;
   // Speed and event summary for allocation
   event_aggregate allocate_stage;
 
@@ -320,7 +318,7 @@ struct benchmarker {
     collector.start();
     int result = parser.interleave((const uint8_t *)json.data(), json.size(), pj, window);
     event_count stage1stage2_count = collector.end();
-    stage1stage2 << stage1stage2_count;
+    all_stages << stage1stage2_count;
 
     if (result != simdjson::SUCCESS) {
       exit_error(string("Failed to parse ") + filename + " during interleave : " + pj.get_error_message());
@@ -332,8 +330,6 @@ struct benchmarker {
   }
 
   really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
-            printf("run_iterations?\n");
-
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only);
     }
@@ -351,8 +347,6 @@ struct benchmarker {
 
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
-                    printf("print_aggregate?\n");
-
     printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
       prefix,
       "Speed",
@@ -397,8 +391,6 @@ struct benchmarker {
   }
 
   void print(bool tabbed_output) const {
-                printf("print?\n");
-
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);
@@ -460,9 +452,7 @@ struct benchmarker {
       print_aggregate("|    ", stage2.best);
     }
   }
-
-
-  void print_interleave(bool tabbed_output) const {
+void print_interleave(bool tabbed_output) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);
@@ -475,10 +465,41 @@ struct benchmarker {
         base[strlen(base)-5] = '\0';
       }
 
+      double gb = json.size() / 1000000000.0;
+      if (collector.has_events()) {
+        printf("\"%s\"\t%f\t%f\t%f\n",
+                base,
+                allocate_stage.best.cycles() / json.size(),
+                all_stages.best.cycles() / json.size(),
+                gb / all_stages.best.elapsed_sec());
+      } else {
+        printf("\"%s\"\t\t\t\t\t%f\n",
+                base,
+                gb / all_stages.best.elapsed_sec());
+      }
+      free(filename_copy);
+    } else {
+      printf("\n");
+      printf("%s\n", filename);
+      printf("%s\n", string(strlen(filename), '=').c_str());
+      printf("%9zu blocks - %10zu bytes - %5zu structurals (%5.1f %%)\n", stats->bytes / BYTES_PER_BLOCK, stats->bytes, stats->structurals, 100.0 * stats->structurals / stats->bytes);
+      if (stats) {
+        printf("special blocks with: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+          stats->blocks_with_utf8, 100.0 * stats->blocks_with_utf8 / stats->blocks,
+          stats->blocks_with_0_structurals, 100.0 * stats->blocks_with_0_structurals / stats->blocks,
+          stats->blocks_with_1_structural, 100.0 * stats->blocks_with_1_structural / stats->blocks,
+          stats->blocks_with_8_structurals, 100.0 * stats->blocks_with_8_structurals / stats->blocks,
+          stats->blocks_with_16_structurals, 100.0 * stats->blocks_with_16_structurals / stats->blocks);
+        printf("special block flips: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+          stats->blocks_with_utf8_flipped, 100.0 * stats->blocks_with_utf8_flipped / stats->blocks,
+          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
+          stats->blocks_with_0_structurals_flipped, 100.0 * stats->blocks_with_0_structurals_flipped / stats->blocks,
+          stats->blocks_with_8_structurals_flipped, 100.0 * stats->blocks_with_8_structurals_flipped / stats->blocks,
+          stats->blocks_with_16_structurals_flipped, 100.0 * stats->blocks_with_16_structurals_flipped / stats->blocks);
+      }
+      printf("\n");
       printf("All Stages\n");
       print_aggregate("|    "   , all_stages.best);
-               printf("|- Interleave\n");
-      print_aggregate("|    ", stage1stage2.best);
     }
   }
 

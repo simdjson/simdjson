@@ -24,6 +24,7 @@ const std::map<int, const std::string> error_strings = {
     {UNCLOSED_STRING, "A string is opened, but never closed."},
     {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as "
                        "you may have found a bug in simdjson"},
+    {WINDOW_ERROR, "Your window might be too small"}
 };
 
 // string returned when the error code is not recognized

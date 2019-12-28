@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
     }
   }
   if (!options.verbose) { progress.erase(); }
-
+printf("options.tabbed_output %d\n",options.tabbed_output);
   for (size_t i=0; i<options.files.size(); i++) {
     if(options.interleave) {
       benchmarkers[i]->print_interleave(options.tabbed_output);

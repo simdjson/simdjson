@@ -41,7 +41,8 @@ enum ErrorValues {
   EMPTY,           // no structural document found
   UNESCAPED_CHARS, // found unescaped characters in a string.
   UNCLOSED_STRING, // missing quote at the end
-  UNEXPECTED_ERROR // indicative of a bug in simdjson
+  UNEXPECTED_ERROR, // indicative of a bug in simdjson
+  WINDOW_ERROR, // window is too small?
 };
 const std::string &error_message(const int);
 } // namespace simdjson

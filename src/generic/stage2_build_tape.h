@@ -19,17 +19,17 @@
     if((buf[pj.structural_indexes[i++]] != validchar)) goto fail;                \
   }
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
+#define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = &&array_continue;}
+#define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = &&object_continue;}
+#define GOTO_CONTINUE() {goto *pj.ret_address[depth];}
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = true;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = false;
+#define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = true;}
+#define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = false;}
 #define GOTO_CONTINUE()                                                        \
   {                                                                            \
     if (pj.ret_address[depth]) {                                               \
       goto array_continue;                                                     \
-    } else  {                                                                  \
+    } else {                                                                  \
       goto object_continue;                                                    \
     }                                                                          \
   }
@@ -265,6 +265,8 @@ fail:
  * ('[' or '{') that we do not want to parse or at an index beyond the last structural index.
  * If the parsing does not terminate with success or failure, it will return 
  * simdjson::SUCCESS_AND_HAS_MORE and you need to call unified_machine_continue again.
+ * If you are using computed gotos, you cannot safely mix and match calls to this templated function
+ * with different template parameters, since it will create different goto addresses.
  ***********/
  template <bool CHECK_INDEX_END>
 WARN_UNUSED  int
@@ -400,7 +402,6 @@ object_key_state:
   }
 
 object_continue:
-printf("object_continue\n");
   UPDATE_CHAR();
   // Next bit could be a switch case. Short switch cases tend to be compiled
   // as sequences of branches. The compiler can't tell which branch is more likely
@@ -433,7 +434,6 @@ scope_end:
   // The GOTO_CONTINUE is guarded. Instead we could have a "goto" at depth 1 that
   // goes straight to the else clause, thus saving a branch. It does not
   // appear to be obviously profitable to do so.
-  printf("at scope_end with a reduced depth of %d\n", depth);
   if(depth > 1) {
     GOTO_CONTINUE();
   } else {
@@ -447,7 +447,6 @@ scope_end:
 array_begin:
   UPDATE_CHAR();
   if (c == ']') {
-    printf("Going to scope_end\n");
     goto scope_end; /* could also go to array_continue */
   }
 
@@ -541,8 +540,6 @@ main_array_switch:
   }
 
 array_continue:
-printf("array_continue\n");
-
   UPDATE_CHAR();
   // Next bit could be a switch case. Short switch cases tend to be compiled
   // as sequences of branches. The compiler can't tell which branch is more likely
@@ -553,7 +550,6 @@ printf("array_continue\n");
     UPDATE_CHAR();
     goto main_array_switch;
   } else if(c == ']') {
-    printf("Going to scope_end\n");
     goto scope_end;
   } else {
     goto fail;
