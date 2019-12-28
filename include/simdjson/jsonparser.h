@@ -19,7 +19,8 @@ template <Architecture T>
 int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
                               bool realloc_if_needed = true) {
   if (pj.byte_capacity < len) {
-    return simdjson::CAPACITY;
+    pj.error_code = simdjson::CAPACITY;
+    return pj.error_code;
   }
   bool reallocated = false;
   if (realloc_if_needed) {
@@ -99,11 +100,12 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
                                           ParsedJson &pj, size_t window,
                                           bool realloc_if_needed = true) {
   if (pj.byte_capacity < len) {
-    return simdjson::CAPACITY;
+    pj.error_code = simdjson::CAPACITY;
+    return pj.error_code;
   }
   if (window <= 0) {
-    return simdjson::UNEXPECTED_ERROR; // might replace by something more
-                                       // indicative later
+    pj.error_code = simdjson::WINDOW_ERROR;
+    return pj.error_code;
   }
   bool reallocated = false;
   if (realloc_if_needed) {
@@ -118,13 +120,8 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
   size_t idx = 0;
   size_t actual_window = window > len ? len : window;
   bool last_window = false;
-  printf("windo = %zu len = %zu \n", window, len);
   if (window >= len)
     last_window = true;
-  if (last_window)
-    printf("last window\n");
-  else
-    printf("not last\n");
   int stage1_is_ok =
       find_structural_bits<T>(buf, actual_window, pj, !last_window);
   if (stage1_is_ok != simdjson::SUCCESS) {
@@ -135,7 +132,6 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
     return pj.error_code;
   }
   stage2_status status;
-  printf("calling unified_machine_init\n");
   int stage2_is_ok = unified_machine_init(buf, actual_window, pj, status);
   if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
     pj.error_code = stage2_is_ok;
@@ -145,9 +141,7 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
     return pj.error_code;
   }
   while (idx + window < len) {
-    printf("========================= idx = %zu string = %.32s \n", idx, buf+idx);
     actual_window = window;
-    printf("running streaming stage 1 from idx = %zu with actual_window = %zu \n", idx, actual_window);
     stage1_is_ok = find_structural_bits<T>(buf + idx, actual_window, pj, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
       pj.error_code = stage1_is_ok;
@@ -166,11 +160,7 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
       return pj.error_code;
     }
     actual_window = last_open_brace_index.last_buf_index;
-    printf("actual window is %zu \n",actual_window );
-    printf("idx = %zu \n",idx );
-
-printf("I am going to run unified machine on @@@@%.32s@@@@\n", buf+idx);
-status.current_index = 0;
+    status.current_index = 0;
     stage2_is_ok = unified_machine_continue<T>(
         buf + idx, actual_window, pj, status, last_open_brace_index.last_index);
         printf("stage2 depth = %u latest index = %zu \n", status.current_depth, status.current_index);
