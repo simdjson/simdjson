@@ -18,37 +18,15 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
 
     /*//////////////////////////// START STATE /////////////////////////////
      */
-    SET_GOTO_START_CONTINUE()
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-    /* the root is used, if nothing else, to capture the size of the tape */
-    depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-    if (depth >= pj.depth_capacity) {
-        goto fail;
-    }
+    PUSH_START_SCOPE('r');
 
     UPDATE_CHAR();
     switch (c) {
         case '{':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(
-                    0, c); /* strangely, moving this to object_begin slows things down */
+            PUSH_START_SCOPE(c);
             goto object_begin;
         case '[':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
+            PUSH_START_SCOPE(c);
             goto array_begin;
             /* #define SIMDJSON_ALLOWANYTHINGINROOT
              * A JSON text is a serialized value.  Note that certain previous
@@ -254,32 +232,11 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
             break;
         }
         case '{': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an object inside an object, so we need to increment the
-             * depth                                                             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-
+            PUSH_SCOPE(c, object_continue);
             goto object_begin;
         }
         case '[': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an array inside an object, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
+            PUSH_SCOPE(c, object_continue);
             goto array_begin;
         }
         default:
@@ -374,32 +331,11 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
             break; /* goto array_continue; */
         }
         case '{': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an object inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-
+            PUSH_SCOPE(c, array_continue);
             goto object_begin;
         }
         case '[': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an array inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
+            PUSH_SCOPE(c, array_continue);
             goto array_begin;
         }
         default:
