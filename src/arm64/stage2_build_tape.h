@@ -21,12 +21,7 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  arm64::stage2_status status;
-  int ret = arm64::unified_machine_init(buf, len, pj, status);
-  if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
-    ret = arm64::unified_machine_continue<false>(buf, len, pj, status, pj.n_structural_indexes);
-  }
-  return ret;
+  return arm64::unified_machine(buf, len, pj);
 }
 
 template <>
@@ -44,13 +39,13 @@ unified_machine_init<Architecture::ARM64>(const uint8_t *buf, size_t len, Parsed
 template <>
 WARN_UNUSED  int
 unified_machine_continue<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index) {
-    return arm64::unified_machine_continue<true>(buf, len, pj, s, last_index);
+    return arm64::unified_machine_continue(buf, len, pj, s, last_index);
 }
 
 template <>
 WARN_UNUSED  int
 unified_machine_finish<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s) {
-    return arm64::unified_machine_continue<true>(buf, len, pj, s, pj.n_structural_indexes);
+    return arm64::unified_machine_continue(buf, len, pj, s, pj.n_structural_indexes);
 }
 
 

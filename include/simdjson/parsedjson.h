@@ -120,13 +120,14 @@ public:
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   void **ret_address;
 #else
-  bool *ret_address;
+  char *ret_address;
 #endif
 
   uint8_t *string_buf; // should be at least byte_capacity
   uint8_t *current_string_buf_loc;
   bool valid{false};
   int error_code{simdjson::UNITIALIZED};
+  uint32_t current_depth{0}; // used by unified_machine_continue
 
 private:
   // we don't want the default constructor to be called

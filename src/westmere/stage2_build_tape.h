@@ -24,12 +24,7 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  stage2_status status;
-  int ret = westmere::unified_machine_init(buf, len, pj, status);
-  if(ret == simdjson::SUCCESS_AND_HAS_MORE) {
-    ret = westmere::unified_machine_continue<false>(buf, len, pj, status, pj.n_structural_indexes);
-  }
-  return ret;
+  return westmere::unified_machine(buf, len, pj);
 }
 
 template <>
@@ -38,22 +33,27 @@ unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJs
     return westmere::unified_machine(buf, len, pj, next_json);
 }
 
+/**
+* The unified_machine_init, unified_machine_continue and unified_machine_finish
+* functions are meant to support interruptible and interleaved processing.
+*/
+
 template <>
 WARN_UNUSED  int
-unified_machine_init<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status& s) {
-    return westmere::unified_machine_init(buf, len, pj, s);
+unified_machine_init<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+    return westmere::unified_machine_init(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED  int
-unified_machine_continue<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index) {
-    return westmere::unified_machine_continue<true>(buf, len, pj, s, last_index);
+unified_machine_continue<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t last_index) {
+    return westmere::unified_machine_continue(buf, len, pj, last_index);
 }
 
 template <>
 WARN_UNUSED  int
-unified_machine_finish<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s) {
-    return westmere::unified_machine_continue<true>(buf, len, pj, s, pj.n_structural_indexes);
+unified_machine_finish<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+    return westmere::unified_machine_continue(buf, len, pj, pj.n_structural_indexes);
 }
 
 

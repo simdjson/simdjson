@@ -70,12 +70,8 @@ last_index_t find_last_open_brace(const uint8_t *buf, size_t len,
   }
   size_t i = largest;
   for (; i >= 1; i--) {
-
     char c = buf[pj.structural_indexes[i]];
-    printf("i = %zu (%u) %c \n", i,pj.structural_indexes[i],c);
     if ((c == '{') || (c == '[')) {
-      printf("structural char at %u = %c\n", pj.structural_indexes[i],
-           buf[pj.structural_indexes[i]]);
       break;
     }
   }
@@ -131,8 +127,7 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
     }
     return pj.error_code;
   }
-  stage2_status status;
-  int stage2_is_ok = unified_machine_init(buf, actual_window, pj, status);
+  int stage2_is_ok = unified_machine_init(buf, actual_window, pj);
   if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
     pj.error_code = stage2_is_ok;
     if (reallocated) {
@@ -160,12 +155,9 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
       return pj.error_code;
     }
     actual_window = last_open_brace_index.last_buf_index;
-    status.current_index = 0;
     stage2_is_ok = unified_machine_continue<T>(
-        buf + idx, actual_window, pj, status, last_open_brace_index.last_index);
-        printf("stage2 depth = %u latest index = %zu \n", status.current_depth, status.current_index);
+        buf + idx, actual_window, pj, last_open_brace_index.last_index);
     if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
-      printf("stage2 returned %dz\n", stage2_is_ok);
       pj.error_code = stage2_is_ok;
       if (reallocated) {
         aligned_free((void *)buf);
@@ -185,9 +177,8 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
       }
       return pj.error_code;
     }
-    status.current_index = 0;
     stage2_is_ok =
-        unified_machine_finish<T>(buf + idx, actual_window, pj, status);
+        unified_machine_finish<T>(buf + idx, actual_window, pj);
     idx += actual_window;
   }
   pj.error_code = stage2_is_ok;

@@ -325,6 +325,12 @@ struct benchmarker {
     }
     // Calculate stats the first time we parse
     if (stats == NULL) {
+      // Because the interleave not scan all of the JSON at once, it is not possible
+      // to just have all of the stats. in one data structure, so let us run stage 1 alone.
+      int result_s1 = parser.stage1((const uint8_t *)json.data(), json.size(), pj);
+      if (result_s1 != simdjson::SUCCESS) {
+        exit_error(string("Failed to parse ") + filename + " during stage 1: " + pj.get_error_message());
+      }
       stats = new json_stats(json, pj);
     }
   }
@@ -452,7 +458,8 @@ struct benchmarker {
       print_aggregate("|    ", stage2.best);
     }
   }
-void print_interleave(bool tabbed_output) const {
+
+  void print_interleave(bool tabbed_output) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);

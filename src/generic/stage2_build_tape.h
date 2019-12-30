@@ -21,32 +21,525 @@
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = &&array_continue;}
 #define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = &&object_continue;}
+#define SET_GOTO_START_CONTINUE() {pj.ret_address[depth] = &&start_continue;}
+#define SET_GOTO_START_CONTINUE_AT(d) {pj.ret_address[d] = &&start_continue;}
 #define GOTO_CONTINUE() {goto *pj.ret_address[depth];}
 #else
 #define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = true;}
 #define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = false;}
+#define SET_GOTO_START_CONTINUE() {pj.ret_address[depth] = 's';}
+#define SET_GOTO_START_CONTINUE_AT(d) {pj.ret_address[d] = 's';}
+
 #define GOTO_CONTINUE()                                                        \
   {                                                                            \
-    if (pj.ret_address[depth]) {                                               \
-      goto array_continue;                                                     \
-    } else {                                                                  \
+    if (pj.ret_address[depth] == 'o') {                                        \
       goto object_continue;                                                    \
+    } else if (pj.ret_address[depth] == 'a') {                                 \
+      goto object_continue;                                                    \
+    } else {                                                                   \
+      goto start_continue;                                                     \
     }                                                                          \
   }
 #endif
 
-
-enum {
-  check_index_end_true = true,
-  check_index_end_false = false
-};
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
 
+/**
+* unified_machine is a big monolithic function that does all of stage 2 processing
+* in one go. It is not modular, but it is fast.
+*/
 
+WARN_UNUSED  int
+unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
+  uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
+  uint32_t idx; /* location of the structural character in the input (buf)   */
+  uint8_t c;    /* used to track the (structural) character we are looking at,
+                   updated */
+  /* by UPDATE_CHAR macro */
+  uint32_t depth = 0; /* could have an arbitrary starting depth */
+  pj.init();          /* sets is_valid to false          */
+  if (pj.byte_capacity < len) {
+    pj.error_code = simdjson::CAPACITY;
+    return pj.error_code;
+  }
+
+  /*//////////////////////////// START STATE /////////////////////////////
+   */
+  SET_GOTO_START_CONTINUE()
+  pj.containing_scope_offset[depth] = pj.get_current_loc();
+  pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
+  /* the root is used, if nothing else, to capture the size of the tape */
+  depth++; /* everything starts at depth = 1, depth = 0 is just for the
+              root, the root may contain an object, an array or something
+              else. */
+  if (depth >= pj.depth_capacity) {
+    goto fail;
+  }
+
+  UPDATE_CHAR();
+  switch (c) {
+  case '{':
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    SET_GOTO_START_CONTINUE();
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+    pj.write_tape(
+        0, c); /* strangely, moving this to object_begin slows things down */
+    goto object_begin;
+  case '[':
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    SET_GOTO_START_CONTINUE();
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    goto array_begin;
+    /* #define SIMDJSON_ALLOWANYTHINGINROOT
+     * A JSON text is a serialized value.  Note that certain previous
+     * specifications of JSON constrained a JSON text to be an object or an
+     * array.  Implementations that generate only objects or arrays where a
+     * JSON text is called for will be interoperable in the sense that all
+     * implementations will accept these as conforming JSON texts.
+     * https://tools.ietf.org/html/rfc8259
+     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
+  case '"': {
+    if (!parse_string(buf, len, pj, depth, idx)) {
+      goto fail;
+    }
+    break;
+  }
+  case 't': {
+    /* we need to make a copy to make sure that the string is space
+     * terminated.
+     * this only applies to the JSON document made solely of the true value.
+     * this will almost never be called in practice */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      goto fail;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', sizeof(uint64_t));
+    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+      free(copy);
+      goto fail;
+    }
+    free(copy);
+    pj.write_tape(0, c);
+    break;
+  }
+  case 'f': {
+    /* we need to make a copy to make sure that the string is space
+     * terminated.
+     * this only applies to the JSON document made solely of the false
+     * value.
+     * this will almost never be called in practice */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      goto fail;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', sizeof(uint64_t));
+    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+      free(copy);
+      goto fail;
+    }
+    free(copy);
+    pj.write_tape(0, c);
+    break;
+  }
+  case 'n': {
+    /* we need to make a copy to make sure that the string is space
+     * terminated.
+     * this only applies to the JSON document made solely of the null value.
+     * this will almost never be called in practice */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      goto fail;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', sizeof(uint64_t));
+    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
+      free(copy);
+      goto fail;
+    }
+    free(copy);
+    pj.write_tape(0, c);
+    break;
+  }
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9': {
+    /* we need to make a copy to make sure that the string is space
+     * terminated.
+     * this is done only for JSON documents made of a sole number
+     * this will almost never be called in practice. We terminate with a
+     * space
+     * because we do not want to allow NULLs in the middle of a number
+     * (whereas a
+     * space in the middle of a number would be identified in stage 1). */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      goto fail;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
+                      false)) {
+      free(copy);
+      goto fail;
+    }
+    free(copy);
+    break;
+  }
+  case '-': {
+    /* we need to make a copy to make sure that the string is NULL
+     * terminated.
+     * this is done only for JSON documents made of a sole number
+     * this will almost never be called in practice */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      goto fail;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
+      free(copy);
+      goto fail;
+    }
+    free(copy);
+    break;
+  }
+  default:
+    goto fail;
+  }
+start_continue:
+  /* the string might not be NULL terminated. */
+  if (i + 1 == pj.n_structural_indexes) {
+    goto succeed;
+  } else {
+    goto fail;
+  }
+  /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+
+object_begin:
+  UPDATE_CHAR();
+  switch (c) {
+  case '"': {
+    if (!parse_string(buf, len, pj, depth, idx)) {
+      goto fail;
+    }
+    goto object_key_state;
+  }
+  case '}':
+    goto scope_end; /* could also go to object_continue */
+  default:
+    goto fail;
+  }
+
+object_key_state:
+  UPDATE_CHAR();
+  if (c != ':') {
+    goto fail;
+  }
+  UPDATE_CHAR();
+  switch (c) {
+  case '"': {
+    if (!parse_string(buf, len, pj, depth, idx)) {
+      goto fail;
+    }
+    break;
+  }
+  case 't':
+    if (!is_valid_true_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break;
+  case 'f':
+    if (!is_valid_false_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break;
+  case 'n':
+    if (!is_valid_null_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break;
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9': {
+    if (!parse_number(buf, pj, idx, false)) {
+      goto fail;
+    }
+    break;
+  }
+  case '-': {
+    if (!parse_number(buf, pj, idx, true)) {
+      goto fail;
+    }
+    break;
+  }
+  case '{': {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+    /* we have not yet encountered } so we need to come back for it */
+    SET_GOTO_OBJECT_CONTINUE()
+    /* we found an object inside an object, so we need to increment the
+     * depth                                                             */
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+
+    goto object_begin;
+  }
+  case '[': {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+    /* we have not yet encountered } so we need to come back for it */
+    SET_GOTO_OBJECT_CONTINUE()
+    /* we found an array inside an object, so we need to increment the depth
+     */
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+    goto array_begin;
+  }
+  default:
+    goto fail;
+  }
+
+object_continue:
+  UPDATE_CHAR();
+  switch (c) {
+  case ',':
+    UPDATE_CHAR();
+    if (c != '"') {
+      goto fail;
+    } else {
+      if (!parse_string(buf, len, pj, depth, idx)) {
+        goto fail;
+      }
+      goto object_key_state;
+    }
+  case '}':
+    goto scope_end;
+  default:
+    goto fail;
+  }
+
+  /*//////////////////////////// COMMON STATE ///////////////////////////*/
+
+scope_end:
+  /* write our tape location to the header scope */
+  depth--;
+  pj.write_tape(pj.containing_scope_offset[depth], c);
+  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                           pj.get_current_loc());
+  /* goto saved_state */
+  GOTO_CONTINUE()
+
+  /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+array_begin:
+  UPDATE_CHAR();
+  if (c == ']') {
+    goto scope_end; /* could also go to array_continue */
+  }
+
+main_array_switch:
+  /* we call update char on all paths in, so we can peek at c on the
+   * on paths that can accept a close square brace (post-, and at start) */
+  switch (c) {
+  case '"': {
+    if (!parse_string(buf, len, pj, depth, idx)) {
+      goto fail;
+    }
+    break;
+  }
+  case 't':
+    if (!is_valid_true_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break;
+  case 'f':
+    if (!is_valid_false_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break;
+  case 'n':
+    if (!is_valid_null_atom(buf + idx)) {
+      goto fail;
+    }
+    pj.write_tape(0, c);
+    break; /* goto array_continue; */
+
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9': {
+    if (!parse_number(buf, pj, idx, false)) {
+      goto fail;
+    }
+    break; /* goto array_continue; */
+  }
+  case '-': {
+    if (!parse_number(buf, pj, idx, true)) {
+      goto fail;
+    }
+    break; /* goto array_continue; */
+  }
+  case '{': {
+    /* we have not yet encountered ] so we need to come back for it */
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+    SET_GOTO_ARRAY_CONTINUE()
+    /* we found an object inside an array, so we need to increment the depth
+     */
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+
+    goto object_begin;
+  }
+  case '[': {
+    /* we have not yet encountered ] so we need to come back for it */
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
+                            optimized */
+    SET_GOTO_ARRAY_CONTINUE()
+    /* we found an array inside an array, so we need to increment the depth
+     */
+    depth++;
+    if (depth >= pj.depth_capacity) {
+      goto fail;
+    }
+    goto array_begin;
+  }
+  default:
+    goto fail;
+  }
+
+array_continue:
+  UPDATE_CHAR();
+  switch (c) {
+  case ',':
+    UPDATE_CHAR();
+    goto main_array_switch;
+  case ']':
+    goto scope_end;
+  default:
+    goto fail;
+  }
+
+  /*//////////////////////////// FINAL STATES ///////////////////////////*/
+
+succeed:
+  depth--;
+  if (depth != 0) {
+    fprintf(stderr, "internal bug\n");
+    abort();
+  }
+  if (pj.containing_scope_offset[depth] != 0) {
+    fprintf(stderr, "internal bug\n");
+    abort();
+  }
+  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
+                           pj.get_current_loc());
+  pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
+
+  pj.valid = true;
+  pj.error_code = simdjson::SUCCESS;
+  return pj.error_code;
+fail:
+  /* we do not need the next line because this is done by pj.init(),
+   * pessimistically.
+   * pj.is_valid  = false;
+   * At this point in the code, we have all the time in the world.
+   * Note that we know exactly where we are in the document so we could,
+   * without any overhead on the processing code, report a specific
+   * location.
+   * We could even trigger special code paths to assess what happened
+   * carefully,
+   * all without any added cost. */
+  if (depth >= pj.depth_capacity) {
+    pj.error_code = simdjson::DEPTH_ERROR;
+    return pj.error_code;
+  }
+  switch (c) {
+  case '"':
+    pj.error_code = simdjson::STRING_ERROR;
+    return pj.error_code;
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+  case '-':
+    pj.error_code = simdjson::NUMBER_ERROR;
+    return pj.error_code;
+  case 't':
+    pj.error_code = simdjson::T_ATOM_ERROR;
+    return pj.error_code;
+  case 'n':
+    pj.error_code = simdjson::N_ATOM_ERROR;
+    return pj.error_code;
+  case 'f':
+    pj.error_code = simdjson::F_ATOM_ERROR;
+    return pj.error_code;
+  default:
+    break;
+  }
+  pj.error_code = simdjson::TAPE_ERROR;
+  return pj.error_code;
+}
+
+
+/*****************
+* Following are unified_machine_init and unified_machine_continue which
+* are the first and last part of the unified_machine respectively. Unfortunately,
+* they are not as fast.
+**/
 
  /**
  * Unified_machine_init is meant to be always called at least one.
@@ -55,7 +548,7 @@ enum {
  * If an object or an array if found, then it will return  simdjson::SUCCESS_AND_HAS_MORE.
  */
 WARN_UNUSED  int
-unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status& s) {
+unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj) {
   uint32_t depth = 0;
   pj.init();          /* sets is_valid to false          */
   if (pj.byte_capacity < len) {
@@ -73,8 +566,7 @@ unified_machine_init(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_stat
   depth++; /* everything starts at depth = 1, depth = 0 is just for the
               root, the root may contain an object, an array or something
               else. */
-  s.current_depth = depth;
-  s.current_index = i;
+  pj.current_depth = depth;
   if (depth >= pj.depth_capacity) {
     goto fail;
   }
@@ -260,22 +752,19 @@ fail:
 /************
  * The unified_machine_continue function should be called when we are looking at the
  * start of an object or array ('[' or '{') as indicated by index.
- * Meanwhile when CHECK_INDEX_END is set to true, index_end should point either at the 
- * location of the start of an array or object
+
  * ('[' or '{') that we do not want to parse or at an index beyond the last structural index.
  * If the parsing does not terminate with success or failure, it will return 
  * simdjson::SUCCESS_AND_HAS_MORE and you need to call unified_machine_continue again.
- * If you are using computed gotos, you cannot safely mix and match calls to this templated function
- * with different template parameters, since it will create different goto addresses.
  ***********/
- template <bool CHECK_INDEX_END>
 WARN_UNUSED  int
-unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_status &s, size_t last_index) {
+unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, size_t last_index) {
   uint32_t idx; /* location of the structural character in the input (buf)   */
   uint8_t c;    /* used to track the (structural) character we are looking at,
                    updated */
-  uint32_t depth = s.current_depth;
-  size_t i = s.current_index;/* index of the structural character (0,1,2,3...) */
+  uint32_t depth = pj.current_depth;
+  size_t i = 0;/* index of the structural character (0,1,2,3...) */
+  SET_GOTO_START_CONTINUE_AT(1);
   UPDATE_CHAR();
   // next switch case is executed once.
   switch (c) {
@@ -297,6 +786,12 @@ unified_machine_continue(const uint8_t *buf, size_t len, ParsedJson &pj, stage2_
     pj.write_tape(0, c);
     goto array_begin;
   default:
+    goto fail;
+  }
+start_continue:
+  if (i + 1 == pj.n_structural_indexes) {
+    goto succeed;
+  } else {
     goto fail;
   }
   /*//////////////////////////// OBJECT STATES ///////////////////////////*/
@@ -366,9 +861,7 @@ object_key_state:
   case '{': {
     /* we have not yet encountered } so we need to come back for it */
     SET_GOTO_OBJECT_CONTINUE();
-    if(CHECK_INDEX_END) {
-      if(i > last_index) goto success_and_more;
-    }
+    if(i > last_index) goto success_and_more;// this check is not present in unified_machine (overhead)
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
@@ -383,9 +876,7 @@ object_key_state:
   case '[': {
     /* we have not yet encountered } so we need to come back for it */
     SET_GOTO_OBJECT_CONTINUE();
-    if(CHECK_INDEX_END) {
-      if(i > last_index) goto success_and_more;
-    }
+    if(i > last_index) goto success_and_more; // this check is not present in unified_machine (overhead)
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
                             optimized */
@@ -431,18 +922,8 @@ scope_end:
   pj.write_tape(pj.containing_scope_offset[depth], c);
   pj.annotate_previous_loc(pj.containing_scope_offset[depth],
                            pj.get_current_loc());
-  // The GOTO_CONTINUE is guarded. Instead we could have a "goto" at depth 1 that
-  // goes straight to the else clause, thus saving a branch. It does not
-  // appear to be obviously profitable to do so.
-  if(depth > 1) {
-    GOTO_CONTINUE();
-  } else {
-    if (i + 1 == pj.n_structural_indexes) {
-      goto succeed;
-    } else {
-      goto fail;
-    }
-  }
+  
+  GOTO_CONTINUE();
   /*//////////////////////////// ARRAY STATES ///////////////////////////*/
 array_begin:
   UPDATE_CHAR();
@@ -502,9 +983,7 @@ main_array_switch:
   }
   case '{': {
     SET_GOTO_ARRAY_CONTINUE();
-    if(CHECK_INDEX_END) {
-      if(i > last_index) goto success_and_more;
-    }
+    if(i > last_index) goto success_and_more; // this check is not present in unified_machine (overhead)
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
@@ -519,9 +998,7 @@ main_array_switch:
   }
   case '[': {
     SET_GOTO_ARRAY_CONTINUE();
-    if(CHECK_INDEX_END) {
-      if(i > last_index) goto success_and_more;
-    }
+    if(i > last_index) goto success_and_more; // this check is not present in unified_machine (overhead)
     /* we have not yet encountered ] so we need to come back for it */
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, c); /* here the compilers knows what c is so this gets
@@ -557,8 +1034,7 @@ array_continue:
 
   /*//////////////////////////// FINAL STATES ///////////////////////////*/
 success_and_more:
-  s.current_depth = depth;
-  s.current_index = i - 1;
+  pj.current_depth = depth;
   return simdjson::SUCCESS_AND_HAS_MORE;
 succeed:
   depth--;

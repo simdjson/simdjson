@@ -16,7 +16,7 @@ ParsedJson::ParsedJson(ParsedJson &&p)
       structural_indexes(p.structural_indexes), tape(p.tape),
       containing_scope_offset(p.containing_scope_offset),
       ret_address(p.ret_address), string_buf(p.string_buf),
-      current_string_buf_loc(p.current_string_buf_loc), valid(p.valid) {
+      current_string_buf_loc(p.current_string_buf_loc), valid(p.valid), current_depth(p.current_depth) {
   p.structural_indexes = nullptr;
   p.tape = nullptr;
   p.containing_scope_offset = nullptr;
