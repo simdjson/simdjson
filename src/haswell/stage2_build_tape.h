@@ -33,7 +33,10 @@ unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJso
     return haswell::unified_machine(buf, len, pj, next_json);
 }
 
-
+/**
+* The unified_machine_init, unified_machine_continue and unified_machine_finish
+* functions are meant to support interruptible and interleaved processing.
+*/
 
 template <>
 WARN_UNUSED  int
