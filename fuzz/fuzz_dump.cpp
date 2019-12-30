@@ -4,22 +4,7 @@
 #include <iostream>
 #include <string>
 
-// from https://stackoverflow.com/a/8244052
-class NulStreambuf : public std::streambuf {
-  char dummyBuffer[64];
-
-protected:
-  virtual int overflow(int c) {
-    setp(dummyBuffer, dummyBuffer + sizeof(dummyBuffer));
-    return (c == traits_type::eof()) ? '\0' : c;
-  }
-};
-
-class NulOStream : private NulStreambuf, public std::ostream {
-public:
-  NulOStream() : std::ostream(this) {}
-  NulStreambuf *rdbuf() { return this; }
-};
+#include "NullBuffer.h"
 
 // from the README on the front page
 void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
