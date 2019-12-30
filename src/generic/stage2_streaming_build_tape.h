@@ -29,6 +29,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     switch (c) {
         case '{':
             pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
             depth++;
             if (depth >= pj.depth_capacity) {
                 goto fail;
@@ -38,6 +39,7 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
             goto object_begin;
         case '[':
             pj.containing_scope_offset[depth] = pj.get_current_loc();
+            SET_GOTO_START_CONTINUE();
             depth++;
             if (depth >= pj.depth_capacity) {
                 goto fail;
