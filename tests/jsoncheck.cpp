@@ -80,7 +80,7 @@ bool validate(const char *dirname) {
       }
       ++how_many;
       const int parse_res = json_parse(p, pj);
-      printf("%s\n", parse_res == 0 ? "ok" : "invalid");
+      printf("%s", parse_res == 0 ? "ok" : "invalid");
       if (contains("EXCLUDE", name)) {
         // skipping
         how_many--;
@@ -96,6 +96,25 @@ bool validate(const char *dirname) {
         printf("size of file in bytes: %zu \n", p.size());
         everything_fine = false;
       }
+
+      const int interleaved_parse_res = interleaved_json_parse(p, pj, 4096);
+      printf("%s (interleaved)", parse_res == 0 ? "ok" : "invalid");
+      if (contains("EXCLUDE", name)) {
+        // skipping
+        how_many--;
+      } else if (starts_with("pass", name) && interleaved_parse_res != 0) {
+        is_file_as_expected[i] = false;
+        printf("warning: file %s should pass but it fails. Error is: %s\n",
+               name, simdjson::error_message(interleaved_parse_res).data());
+        printf("size of file in bytes: %zu \n", p.size());
+        everything_fine = false;
+      } else if (starts_with("fail", name) && interleaved_parse_res == 0) {
+        is_file_as_expected[i] = false;
+        printf("warning: file %s should fail but it passes.\n", name);
+        printf("size of file in bytes: %zu \n", p.size());
+        everything_fine = false;
+      }
+      printf("\n");
       free(fullpath);
     }
   }
