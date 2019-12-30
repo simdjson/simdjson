@@ -96,9 +96,8 @@ bool validate(const char *dirname) {
         printf("size of file in bytes: %zu \n", p.size());
         everything_fine = false;
       }
-
       const int interleaved_parse_res = interleaved_json_parse(p, pj, 4096);
-      printf("%s (interleaved)", parse_res == 0 ? "ok" : "invalid");
+      printf("\t%s (interleaved)", parse_res == 0 ? "ok" : "invalid");
       if (contains("EXCLUDE", name)) {
         // skipping
         how_many--;

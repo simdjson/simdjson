@@ -25,8 +25,8 @@
 #define SET_GOTO_START_CONTINUE_AT(d) {pj.ret_address[d] = &&start_continue;}
 #define GOTO_CONTINUE() {goto *pj.ret_address[depth];}
 #else
-#define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = true;}
-#define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = false;}
+#define SET_GOTO_ARRAY_CONTINUE() {pj.ret_address[depth] = 'a';}
+#define SET_GOTO_OBJECT_CONTINUE() {pj.ret_address[depth] = 'o';}
 #define SET_GOTO_START_CONTINUE() {pj.ret_address[depth] = 's';}
 #define SET_GOTO_START_CONTINUE_AT(d) {pj.ret_address[d] = 's';}
 
@@ -35,7 +35,7 @@
     if (pj.ret_address[depth] == 'o') {                                        \
       goto object_continue;                                                    \
     } else if (pj.ret_address[depth] == 'a') {                                 \
-      goto object_continue;                                                    \
+      goto array_continue;                                                    \
     } else {                                                                   \
       goto start_continue;                                                     \
     }                                                                          \
@@ -454,7 +454,6 @@ main_array_switch:
   default:
     goto fail;
   }
-
 array_continue:
   UPDATE_CHAR();
   switch (c) {
@@ -1015,7 +1014,6 @@ main_array_switch:
   default:
     goto fail;
   }
-
 array_continue:
   UPDATE_CHAR();
   // Next bit could be a switch case. Short switch cases tend to be compiled
