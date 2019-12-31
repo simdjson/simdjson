@@ -3,7 +3,7 @@
 set -e
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-if [ -z "$CHECKPERF_REPOSITORY"]; then CHECKPERF_REPOSITORY=.; fi
+if [ -z "$CHECKPERF_REPOSITORY" ]; then CHECKPERF_REPOSITORY=.; fi
 
 # Arguments: perfdiff.sh <branch> <test json files>
 if [ -z "$1" ]; then reference_branch="master"; else reference_branch=$1; shift; fi

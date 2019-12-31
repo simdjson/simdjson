@@ -73,7 +73,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
                                             UNUSED size_t len, ParsedJson &pj,
                                             UNUSED const uint32_t depth,
                                             UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
