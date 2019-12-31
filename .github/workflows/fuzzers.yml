@@ -64,7 +64,8 @@ jobs:
         done
     - name: Run the other fuzzer variants for $fuzzer, with sanitizers etc
       run: |
-        for fuzzer in $allfuzzers; do      
+        set -x
+        for fuzzer in $allfuzzers; do
           build-ossfuzz-withavx/fuzz/fuzz_$fuzzer       out/$fuzzer -max_total_time=20 $artifactsprefix || touch failed
           build-ossfuzz-noavx/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
           build-ossfuzz-noavx8/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
