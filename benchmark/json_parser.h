@@ -43,7 +43,11 @@ using std::string;
 
 using stage2_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
 using stage1_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+using interleaved_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, ParsedJson &pj_threaded, size_t window, bool realloc_if_needed);
+#else
 using interleaved_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, size_t window, bool realloc_if_needed);
+#endif
 
 stage1_functype* get_stage1_func(const Architecture architecture) {
   switch (architecture) {
@@ -124,9 +128,15 @@ struct json_parser {
   int stage2(const uint8_t *buf, const size_t len, ParsedJson &pj) const {
     return this->stage2_func(buf, len, pj);
   }
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+  int interleave(const uint8_t *buf, const size_t len, ParsedJson &pj,ParsedJson &pj_threaded, size_t window) const {
+    return this->interleaved_func(buf, len, pj, pj_threaded, window, false);
+  }
+#else
   int interleave(const uint8_t *buf, const size_t len, ParsedJson &pj, size_t window) const {
     return this->interleaved_func(buf, len, pj, window, false);
   }
+#endif
 
   int parse(const uint8_t *buf, const size_t len, ParsedJson &pj) const {
     int result = this->stage1(buf, len, pj);

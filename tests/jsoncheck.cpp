@@ -96,8 +96,14 @@ bool validate(const char *dirname) {
         printf("size of file in bytes: %zu \n", p.size());
         everything_fine = false;
       }
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+      simdjson::ParsedJson pj_threaded;
+      const int interleaved_parse_res = interleaved_json_parse(p, pj, pj_threaded, 4096);
+#else
       const int interleaved_parse_res = interleaved_json_parse(p, pj, 4096);
+#endif
       printf("\t%s (interleaved)", parse_res == 0 ? "ok" : "invalid");
+
       if (contains("EXCLUDE", name)) {
         // skipping
         how_many--;

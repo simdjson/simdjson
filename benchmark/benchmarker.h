@@ -287,7 +287,6 @@ struct benchmarker {
         stage2_count = collector.end();
         stage2 << stage2_count;
       }
-
       if (result != simdjson::SUCCESS) {
         exit_error(string("Failed to parse ") + filename + " during stage 2: " + pj.get_error_message());
       }
@@ -306,6 +305,10 @@ struct benchmarker {
     collector.start();
     ParsedJson pj;
     bool allocok = pj.allocate_capacity(json.size());
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+    ParsedJson pj_threaded;
+    allocok &= pj_threaded.allocate_capacity(json.size());
+#endif
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
 
@@ -316,7 +319,11 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+    int result = parser.interleave((const uint8_t *)json.data(), json.size(), pj, pj_threaded, window);
+#else
     int result = parser.interleave((const uint8_t *)json.data(), json.size(), pj, window);
+#endif
     event_count stage1stage2_count = collector.end();
     all_stages << stage1stage2_count;
 

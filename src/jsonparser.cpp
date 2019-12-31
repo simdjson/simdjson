@@ -13,8 +13,13 @@ namespace simdjson {
 // function pointer type for json_parse
 using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
                                 bool realloc);
+#ifdef SIMDJSON_THREADS_ENABLED  // ugly ifdef, todo: fixme
+using interleaved_json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
+                                 ParsedJson &pj_threaded, size_t window, bool realloc);
+#else
 using interleaved_json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
                                  size_t window, bool realloc);
+#endif
 // Pointer that holds the json_parse implementation corresponding to the
 // available SIMD instruction set
 extern std::atomic<json_parse_functype *> json_parse_ptr;
@@ -31,7 +36,19 @@ int json_parse(const char *buf, size_t len, ParsedJson &pj,
                                                         realloc);
 }
 
+#ifdef SIMDJSON_THREADS_ENABLED // ugly ifdef, todo: fixme
+int interleaved_json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, ParsedJson &pj_threaded,
+               size_t window, bool realloc) {
+  return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, pj_threaded, window, realloc);
+}
 
+int interleaved_json_parse(const char *buf, size_t len, ParsedJson &pj, ParsedJson &pj_threaded,
+               size_t window, bool realloc) {
+  return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
+                                                        pj_threaded, window, realloc);
+}
+
+#else
 int interleaved_json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
                size_t window, bool realloc) {
   return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, window, realloc);
@@ -42,6 +59,7 @@ int interleaved_json_parse(const char *buf, size_t len, ParsedJson &pj,
   return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
                                                         window, realloc);
 }
+#endif
 
 Architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
@@ -111,7 +129,34 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
   return pj;
 }
 
+#ifdef SIMDJSON_THREADS_ENABLED  // ugly ifdef, todo: fixme
+// Responsible to select the best interleaved_json_parse implementation
+int interleaved_json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, ParsedJson &pj_threaded,
+                        size_t window, bool realloc) {
+  Architecture best_implementation = find_best_supported_architecture();
+  // Selecting the best implementation
+  switch (best_implementation) {
+#ifdef IS_X86_64
+  case Architecture::HASWELL:
+    interleaved_json_parse_ptr.store(&interleaved_json_parse_implementation<Architecture::HASWELL>, std::memory_order_relaxed);
+    break;
+  case Architecture::WESTMERE:
+    interleaved_json_parse_ptr.store(&interleaved_json_parse_implementation<Architecture::WESTMERE>, std::memory_order_relaxed);
+    break;
+#endif
+#ifdef IS_ARM64
+  case Architecture::ARM64:
+    interleaved_json_parse_ptr.store(&interleaved_json_parse_implementation<Architecture::ARM64>, std::memory_order_relaxed);
+    break;
+#endif
+  default:
+    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    return simdjson::UNEXPECTED_ERROR;
+  }
 
+  return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, pj_threaded, window, realloc);
+}
+#else
 // Responsible to select the best interleaved_json_parse implementation
 int interleaved_json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
                         size_t window, bool realloc) {
@@ -138,6 +183,7 @@ int interleaved_json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &
 
   return interleaved_json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, window, realloc);
 }
+#endif
 
 std::atomic<interleaved_json_parse_functype *> interleaved_json_parse_ptr{&interleaved_json_parse_dispatch};
 

@@ -10,6 +10,11 @@
 #include "simdjson/stage2_build_tape.h"
 #include <string>
 
+#ifdef SIMDJSON_THREADS_ENABLED
+#include <thread>
+#include <atomic>
+#endif // SIMDJSON_THREADS_ENABLED
+
 namespace simdjson {
 
 // (This is not meant for end users, see json_parse.)
@@ -270,6 +275,149 @@ last_index_t find_last_open_brace(const uint8_t *buf, size_t len,
 }
 }
 
+
+#ifdef SIMDJSON_THREADS_ENABLED // this ifdef should probably not be there
+
+
+// This is the threaded version. At most, it will use two threads.
+// interleaved_json_parse_implementation is not meant for end users.
+// interleaved_json_parse_implementation is the generic function, it is
+// specialized for
+// various architectures, e.g., as
+// interleaved_json_parse_implementation<Architecture::HASWELL> or
+// interleaved_json_parse_implementation<Architecture::ARM64>
+// (This is not meant for end users, see interleaved_json_parse.)
+// pj_thread is a temporary buffer, for threaded purposes (it is an ugly hack)
+template <Architecture T>
+int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
+                                          ParsedJson &pj, ParsedJson &pj_thread,
+                                          size_t window,
+                                          bool realloc_if_needed = true) {
+  int stage1_is_ok_thread;
+  std::thread stage1_thread{};
+  if (pj.byte_capacity < len) {
+    pj.error_code = simdjson::CAPACITY;
+    return pj.error_code;
+  }
+  if (pj_thread.byte_capacity < pj.byte_capacity) {
+    bool isok = pj_thread.allocate_capacity(pj.byte_capacity);
+    if (!isok) {
+      pj.error_code = simdjson::CAPACITY;
+      return pj.error_code;
+    }
+  }
+  if (window <= 0) {
+    pj.error_code = simdjson::WINDOW_ERROR;
+    return pj.error_code;
+  }
+  bool reallocated = false;
+  if (realloc_if_needed) {
+    const uint8_t *tmp_buf = buf;
+    buf = (uint8_t *)allocate_padded_buffer(len);
+    if (buf == NULL)
+      return simdjson::MEMALLOC;
+    memcpy((void *)buf, tmp_buf, len);
+    reallocated = true;
+  } // if(realloc_if_needed) {
+
+  size_t idx = 0;
+  size_t actual_window = window > len ? len : window;
+  bool last_window = false;
+  if (window >= len)
+    last_window = true;
+  int stage1_is_ok =
+      find_structural_bits<T>(buf, actual_window, pj, !last_window);
+  if (stage1_is_ok != simdjson::SUCCESS) {
+    pj.error_code = stage1_is_ok;
+    if (reallocated) {
+      aligned_free((void *)buf);
+    }
+    return pj.error_code;
+  }
+  int stage2_is_ok = unified_machine_init(buf, actual_window, pj);
+  if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
+    pj.error_code = stage2_is_ok;
+    if (reallocated) {
+      aligned_free((void *)buf);
+    }
+    return pj.error_code;
+  }
+  while (idx + window < len) {
+    actual_window = window;
+    if (stage1_thread.joinable()) {
+      stage1_thread.join();
+      if (stage1_is_ok_thread != simdjson::SUCCESS) {
+        pj.error_code = stage1_is_ok_thread;
+        if (reallocated) {
+          aligned_free((void *)buf);
+        }
+        return pj.error_code;
+      }
+      std::swap(pj.structural_indexes, pj_thread.structural_indexes);
+      std::swap(pj.n_structural_indexes, pj_thread.n_structural_indexes);
+    }
+    last_index_t last_open_brace_index =
+        find_last_open_brace(buf + idx, actual_window, pj);
+    if (last_open_brace_index.has_error) {
+
+      pj.error_code = simdjson::WINDOW_ERROR;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return pj.error_code;
+    }
+    actual_window = last_open_brace_index.last_buf_index;
+    // while stage 2 is being run, we start the next stage 1
+    int next_idx = idx + actual_window;
+    stage1_thread = std::thread(
+        [&stage1_is_ok_thread, &pj_thread, buf, window, next_idx, len] {
+          stage1_is_ok_thread = find_structural_bits<T>(
+              buf + next_idx, next_idx + window < len ? window : len - next_idx,
+              pj_thread, next_idx + window < len);
+        });
+    stage2_is_ok = unified_machine_continue<T>(
+        buf + idx, actual_window, pj, last_open_brace_index.last_index);
+
+    if (stage2_is_ok != simdjson::SUCCESS_AND_HAS_MORE) {
+      if (stage1_thread.joinable()) {
+        stage1_thread.join();
+      }
+      pj.error_code = stage2_is_ok;
+      if (reallocated) {
+        aligned_free((void *)buf);
+      }
+      return stage2_is_ok;
+    }
+    idx += actual_window;
+  }
+  if (idx < len) {
+    actual_window = len - idx;
+    if (stage1_thread.joinable()) {
+      stage1_thread.join();
+      if (stage1_is_ok_thread != simdjson::SUCCESS) {
+        pj.error_code = stage1_is_ok_thread;
+        if (reallocated) {
+          aligned_free((void *)buf);
+        }
+        return pj.error_code;
+      }
+      std::swap(pj.structural_indexes, pj_thread.structural_indexes);
+      std::swap(pj.n_structural_indexes, pj_thread.n_structural_indexes);
+    }
+    stage2_is_ok = unified_machine_finish<T>(buf + idx, actual_window, pj);
+    idx += actual_window; // should be unnecessary
+  }
+  pj.error_code = stage2_is_ok;
+  if (reallocated) {
+    aligned_free((void *)buf);
+  }
+  return pj.error_code;
+}
+
+#else // SIMDJSON_THREADS_ENABLED
+
+// This is the non-threaded version.
+// interleaved_json_parse_implementation is not meant for end users.
 // interleaved_json_parse_implementation is the generic function, it is
 // specialized for
 // various architectures, e.g., as
@@ -379,6 +527,25 @@ int interleaved_json_parse_implementation(const uint8_t *buf, size_t len,
   return pj.error_code;
 }
 
+#endif // SIMDJSON_THREADS_ENABLED
+
+
+#ifdef SIMDJSON_THREADS_ENABLED // ugly hack, todo: fixme
+
+// like json_parse but parses the document in chunks of "window" bytes
+int interleaved_json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,ParsedJson &pj_thread,
+               size_t window, bool realloc_if_needed = true);
+int interleaved_json_parse(const char *buf, size_t len, ParsedJson &pj,ParsedJson &pj_thread,
+               size_t window, bool realloc_if_needed = true);
+inline int interleaved_json_parse(const std::string &s, ParsedJson &pj, ParsedJson &pj_thread, size_t window) {
+  return interleaved_json_parse(s.data(), s.length(), pj, pj_thread, window, true);
+}
+inline int interleaved_json_parse(const padded_string &s, ParsedJson &pj, ParsedJson &pj_thread, size_t window) {
+  return interleaved_json_parse(s.data(), s.length(), pj, pj_thread, window, false);
+}
+ 
+#else 
+
 // like json_parse but parses the document in chunks of "window" bytes
 int interleaved_json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
                size_t window, bool realloc_if_needed = true);
@@ -390,5 +557,8 @@ inline int interleaved_json_parse(const std::string &s, ParsedJson &pj, size_t w
 inline int interleaved_json_parse(const padded_string &s, ParsedJson &pj, size_t window) {
   return interleaved_json_parse(s.data(), s.length(), pj, window, false);
 }
+
+#endif
+
 } // namespace simdjson
 #endif
