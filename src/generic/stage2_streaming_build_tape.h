@@ -11,11 +11,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
     /* by UPDATE_CHAR macro */
     size_t depth = 0; /* could have an arbitrary starting depth */
     pj.init();          /* sets is_valid to false          */
-//    if (pj.byte_capacity < len) {
-//        pj.error_code = simdjson::CAPACITY;
-//        return pj.error_code;
-//    }
-
     /*//////////////////////////// START STATE /////////////////////////////
      */
     SET_GOTO_START_CONTINUE()
@@ -464,12 +459,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
      * We could even trigger special code paths to assess what happened
      * carefully,
      * all without any added cost. */
-//    if(i <= pj.n_structural_indexes) {
-//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
-//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
-//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
-//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
-//    }
     if (depth >= pj.depth_capacity) {
         pj.error_code = simdjson::DEPTH_ERROR;
         return pj.error_code;
