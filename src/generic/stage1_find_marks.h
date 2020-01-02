@@ -375,7 +375,9 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
 
   simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
+  printf("error detected? %d \n", error);
+  //!streaming && 
+  if (unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
 

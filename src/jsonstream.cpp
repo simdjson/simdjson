@@ -132,6 +132,10 @@ int JsonStream::json_parse(ParsedJson &pj) {
         error_on_last_attempt = true;
         res = json_parse(pj);
     }
+    // no matter what this function should not terminate without joining the thread.
+    if(stage_1_thread.joinable()) {
+         stage_1_thread.join();
+    }
     return res;
 }
 
@@ -218,4 +222,5 @@ void find_the_best_supported_implementation() {
     }
 #endif
     std::cerr << "The processor is not supported by simdjson." << std::endl;
+    throw new std::runtime_error("unsupported architecture");
 }

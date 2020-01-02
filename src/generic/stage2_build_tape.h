@@ -50,7 +50,11 @@ struct unified_machine_addresses {
 // This is just so we can call parse_string() from parser.parse_string() without conflict.
 WARN_UNUSED really_inline bool
 really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, pj, depth, idx);
+  printf("parsing %.32s\n", buf + idx);
+  bool answer = parse_string(buf, len, pj, depth, idx);
+  printf("answer = %d\n", answer);
+return answer;
+//  return parse_string(buf, len, pj, depth, idx);
 }
 WARN_UNUSED really_inline bool
 really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
@@ -176,7 +180,9 @@ struct structural_parser {
   WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
     switch (c) {
     case '"':
+    printf("reading a string\n");
       FAIL_IF( parse_string() );
+      printf(" we did not fail?\n");
       return continue_state;
     case 't': case 'f': case 'n':
       FAIL_IF( parse_atom() );

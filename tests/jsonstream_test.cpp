@@ -36,6 +36,8 @@ bool validate(const char *dirname) {
     bool everything_fine = true;
     const char *extension1 = ".ndjson";
     const char *extension2 = ".jsonl";
+    const char *extension3 = ".json"; // json files should qualify
+
     size_t dirlen = strlen(dirname);
     struct dirent **entry_list;
     int c = scandir(dirname, &entry_list, nullptr, alphasort);
@@ -58,7 +60,7 @@ bool validate(const char *dirname) {
     /*For all files in the folder*/
     for (int i = 0; i < c; i++) {
         const char *name = entry_list[i]->d_name;
-        if (has_extension(name, extension1) || has_extension(name, extension2)) {
+        if (has_extension(name, extension1) || has_extension(name, extension2) || has_extension(name, extension3)) {
 
             /*  Finding the file path  */
             printf("validating: file %s ", name);
