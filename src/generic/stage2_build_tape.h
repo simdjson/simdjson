@@ -83,14 +83,14 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     }
     pj.write_tape(0, c);
     goto array_begin;
-    /* #define SIMDJSON_ALLOWANYTHINGINROOT
+    /**
      * A JSON text is a serialized value.  Note that certain previous
      * specifications of JSON constrained a JSON text to be an object or an
      * array.  Implementations that generate only objects or arrays where a
      * JSON text is called for will be interoperable in the sense that all
      * implementations will accept these as conforming JSON texts.
      * https://tools.ietf.org/html/rfc8259
-     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
+     **/
   case '"': {
     if (!parse_string(buf, len, pj, depth, idx)) {
       goto fail;
@@ -98,10 +98,18 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 't': {
-    /* we need to make a copy to make sure that the string is space
+    /* We need to make a copy to make sure that the string is space
      * terminated.
-     * this only applies to the JSON document made solely of the true value.
-     * this will almost never be called in practice */
+     * This only applies to the JSON document made solely of the true
+     * value.
+     * This is not about padding the input, which should already be padded up
+     * to len + SIMDJSON_PADDING. However, we have no control at this stage
+     * on how the padding was done. What if the input string was padded with nulls?
+     * It is quite common for an input string to have an extra null character (C string).
+     * This copy is relatively expensive, but it will almost never be called in
+     * practice unless you are in the strange scenario where you have many JSON
+     * documents made of single atoms.
+     */
     char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       goto fail;
@@ -117,11 +125,18 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 'f': {
-    /* we need to make a copy to make sure that the string is space
+    /* We need to make a copy to make sure that the string is space
      * terminated.
-     * this only applies to the JSON document made solely of the false
+     * This only applies to the JSON document made solely of the false
      * value.
-     * this will almost never be called in practice */
+     * This is not about padding the input, which should already be padded up
+     * to len + SIMDJSON_PADDING. However, we have no control at this stage
+     * on how the padding was done. What if the input string was padded with nulls?
+     * It is quite common for an input string to have an extra null character (C string).
+     * This copy is relatively expensive, but it will almost never be called in
+     * practice unless you are in the strange scenario where you have many JSON
+     * documents made of single atoms.
+     */
     char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       goto fail;
@@ -137,10 +152,17 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case 'n': {
-    /* we need to make a copy to make sure that the string is space
+    /* We need to make a copy to make sure that the string is space
      * terminated.
-     * this only applies to the JSON document made solely of the null value.
-     * this will almost never be called in practice */
+     * This is not about padding the input, which should already padded up
+     * to len + SIMDJSON_PADDING. However, we have no control at this stage
+     * on how the padding was done. What if the input string was padded with nulls?
+     * It is quite common for an input string to have an extra null character (C string).
+     * This only applies to the JSON document made solely of the null value.
+     * This copy is relatively expensive, but it will almost never be called in
+     * practice unless you are in the strange scenario where you have many JSON
+     * documents made of single atoms.
+     */
     char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       goto fail;
@@ -165,14 +187,19 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   case '7':
   case '8':
   case '9': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice. We terminate with a
-     * space
-     * because we do not want to allow NULLs in the middle of a number
-     * (whereas a
-     * space in the middle of a number would be identified in stage 1). */
+    /**
+    * We need to make a copy to make sure that the input string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
     char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       goto fail;
@@ -188,10 +215,19 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
     break;
   }
   case '-': {
-    /* we need to make a copy to make sure that the string is NULL
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice */
+    /**
+    * We need to make a copy to make sure that the input string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow -9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "-9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
     char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       goto fail;
