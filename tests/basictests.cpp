@@ -23,6 +23,45 @@ inline uint64_t f64_ulp_dist(double a, double b) {
   return ua + ub + 0x80000000;
 }
 
+
+bool number_test_small_integers() {
+  char buf[1024];
+  simdjson::ParsedJson pj;
+  if (!pj.allocate_capacity(1024)) {
+    printf("allocation failure in number_test_small_integers\n");
+    return false;
+  }
+  for (int m = 10; m < 20; m++) {
+    for (int i = -1024; i < 1024; i++) {
+      auto n = sprintf(buf, "%*d", m, i);
+      buf[n] = '\0';
+      fflush(NULL);
+      auto ok1 = json_parse(buf, n, pj);
+      if (ok1 != 0 || !pj.is_valid()) {
+        printf("Could not parse: %s.\n", buf);
+        return false;
+      }
+      simdjson::ParsedJson::Iterator pjh(pj);
+      if(!pjh.is_number()) {
+        printf("Root should be number\n");
+        return false;
+      }
+      if(!pjh.is_integer()) {
+        printf("Root should be an integer\n");
+        return false;
+      }
+      int64_t x = pjh.get_integer();
+      if(x != i) {
+        printf("failed to parse %s. \n", buf);
+        return false;
+      }
+    } 
+  }
+  printf("Small integers can be parsed.\n");
+  return true;
+}
+
+
 bool number_test_powers_of_two() {
   char buf[1024];
   simdjson::ParsedJson pj;
@@ -325,6 +364,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!number_test_small_integers())
+    return EXIT_FAILURE;
   if(!stable_test())
     return EXIT_FAILURE;
   if(!bad_example())
