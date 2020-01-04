@@ -133,7 +133,7 @@ public:
   std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
   uint8_t *current_string_buf_loc;
   bool valid{false};
-  int error_code{simdjson::UNITIALIZED};
+  int error_code{simdjson::UNINITIALIZED};
 
 };
 

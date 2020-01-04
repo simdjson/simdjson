@@ -18,12 +18,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline int finish() {
-    /* the string might not be NULL terminated. */
     if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
-    }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    if (finished && buf[idx+2] != '\0') {
       return set_error_code(TAPE_ERROR);
     }
     pop_root_scope();
@@ -33,7 +28,7 @@ struct streaming_structural_parser: structural_parser {
     if (pj.containing_scope_offset[depth] != 0) {
       return set_error_code(TAPE_ERROR);
     }
-
+    bool finished = i + 1 == pj.n_structural_indexes;
     pj.valid = true;
     return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
@@ -49,7 +44,6 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
   streaming_structural_parser parser(buf, len, pj, next_json);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
-
   //
   // Read first value
   //
@@ -107,7 +101,6 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
-
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 

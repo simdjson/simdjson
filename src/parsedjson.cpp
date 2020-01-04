@@ -288,7 +288,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
          << " (start of the scope) \n";
       break;
     case 'r': // we start and end with the root node
-      printf("end of root\n");
+      fprintf(stderr, "should we be hitting the root node?\n");
       return false;
     default:
       return false;

@@ -160,6 +160,9 @@ $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJ
 parse: benchmark/parse.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
 
+parse_stream: benchmark/parse_stream.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_stream $(LIBFILES) benchmark/parse_stream.cpp $(LIBFLAGS)
+
 benchfeatures: benchmark/benchfeatures.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o benchfeatures $(LIBFILES) benchmark/benchfeatures.cpp $(LIBFLAGS)
 
