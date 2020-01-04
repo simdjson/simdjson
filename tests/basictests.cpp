@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "simdjson/jsonparser.h"
+#include "simdjson/jsonstream.h"
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -306,6 +307,128 @@ bool navigate_test() {
 }
 
 // returns true if successful
+bool stream_utf8_test() {
+  printf("Running stream_utf8_test");
+  fflush(NULL);
+  const size_t n_records = 10000;
+  std::string data;
+  char buf[1024];
+  for (size_t i = 0; i < n_records; ++i) {
+    auto n = sprintf(buf,
+                     "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+                     "\"été\": {\"id\": %zu, \"name\": \"éventail%zu\"}}",
+                     i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
+    data += std::string(buf, n);
+  }
+  for(size_t i = 1000; i < 2000; i += 10) {
+    printf(".");
+    fflush(NULL);
+    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+    size_t count = 0;
+    simdjson::ParsedJson pj;
+    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+      parse_res = js.json_parse(pj);
+      simdjson::ParsedJson::Iterator pjh(pj);
+      if(!pjh.is_object()) {
+        printf("Root should be object\n");
+        return false;
+      }
+      if(!pjh.down()) {
+        printf("Root should not be emtpy\n");
+        return false;
+      }
+      if(!pjh.is_string()) {
+        printf("Object should start with string key\n");
+        return false;
+      }
+      if(strcmp(pjh.get_string(),"id")!=0) {
+        printf("There should a single key, id.\n");
+        return false;
+      }
+      pjh.move_to_value();
+      if(!pjh.is_integer()) {
+        printf("Value of image should be integer\n");
+        return false;
+      }
+      int64_t keyid = pjh.get_integer();
+      if(keyid != (int64_t)count) {
+        printf("key does not match %d, expected %d\n",(int) keyid, (int) count);
+        return false;
+      }
+      count++;
+    }
+    if(count != n_records) {
+      printf("Something is wrong in stream_test at window size = %zu.\n", i);
+      return false;
+    }
+  }
+  printf("ok\n");
+  return true;
+}
+
+// returns true if successful
+bool stream_test() {
+  printf("Running stream_test");
+  fflush(NULL);
+  const size_t n_records = 10000;
+  std::string data;
+  char buf[1024];
+  for (size_t i = 0; i < n_records; ++i) {
+    auto n = sprintf(buf,
+                     "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+                     "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
+                     i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
+    data += std::string(buf, n);
+  }
+  for(size_t i = 1000; i < 2000; i += 10) {
+    printf(".");
+    fflush(NULL);
+    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+    size_t count = 0;
+    simdjson::ParsedJson pj;
+    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+      parse_res = js.json_parse(pj);
+      simdjson::ParsedJson::Iterator pjh(pj);
+      if(!pjh.is_object()) {
+        printf("Root should be object\n");
+        return false;
+      }
+      if(!pjh.down()) {
+        printf("Root should not be emtpy\n");
+        return false;
+      }
+      if(!pjh.is_string()) {
+        printf("Object should start with string key\n");
+        return false;
+      }
+      if(strcmp(pjh.get_string(),"id")!=0) {
+        printf("There should a single key, id.\n");
+        return false;
+      }
+      pjh.move_to_value();
+      if(!pjh.is_integer()) {
+        printf("Value of image should be integer\n");
+        return false;
+      }
+      int64_t keyid = pjh.get_integer();
+      if(keyid != (int64_t)count) {
+        printf("key does not match %d, expected %d\n",(int) keyid, (int) count);
+        return false;
+      }
+      count++;
+    }
+    if(count != n_records) {
+      printf("Something is wrong in stream_test at window size = %zu.\n", i);
+      return false;
+    }
+  }
+  printf("ok\n");
+  return true;
+}
+
+// returns true if successful
 bool skyprophet_test() {
   const size_t n_records = 100000;
   std::vector<std::string> data;
@@ -364,6 +487,10 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!stream_test())
+    return EXIT_FAILURE;
+  if(!stream_utf8_test())
+    return EXIT_FAILURE;
   if(!number_test_small_integers())
     return EXIT_FAILURE;
   if(!stable_test())

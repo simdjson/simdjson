@@ -78,8 +78,9 @@ public:
   // Finish the scan and return any errors.
   //
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
+  // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof();
+  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -188,8 +189,8 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof() {
-  if (prev_in_string) {
+really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+  if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
   if (unescaped_chars_error) {
@@ -362,6 +363,9 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
 }
 
+// Setting the streaming parameter to true allows the find_structural_bits to tolerate unclosed strings.
+// The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
+// you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
@@ -373,14 +377,11 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
   utf8_checker utf8_checker{};
   json_structural_scanner scanner{pj.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
-
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  printf("error detected? %d \n", error);
-  //!streaming && 
+  // we might tolerate an unclosed string if streaming is true
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
   if (unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
-
   pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */

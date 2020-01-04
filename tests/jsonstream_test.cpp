@@ -93,22 +93,18 @@ bool validate(const char *dirname) {
             while(parse_res == simdjson::SUCCESS_AND_HAS_MORE){
                 parse_res = js.json_parse(pj);
             }
-
             printf("%s\n", parse_res == 0 ? "ok" : "invalid");
-
-
-
             /* Check if the file is supposed to pass or not.  Print the results */
             if (contains("EXCLUDE", name)) {
                 // skipping
                 how_many--;
-            } else if (starts_with("pass", name) && parse_res != 0) {
+            } else if (((starts_with("pass", name) or (starts_with("fail10.json", name))) and parse_res != 0)) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
                        name, simdjson::error_message(parse_res).data());
                 printf("size of file in bytes: %zu \n", p.size());
                 everything_fine = false;
-            } else if (starts_with("fail", name) && parse_res == 0) {
+            } else if ( starts_with("fail", name) and (not starts_with("fail10.json", name)) and parse_res == 0) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should fail but it passes.\n", name);
                 printf("size of file in bytes: %zu \n", p.size());

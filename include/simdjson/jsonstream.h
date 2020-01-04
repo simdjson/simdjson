@@ -65,6 +65,8 @@ namespace simdjson {
          * */
         JsonStream(const std::string &s, size_t batch_size = 1000000) : JsonStream(s.data(), s.size(), batch_size) {};
 
+        ~JsonStream();
+
         /* Parse the next document found in the buffer previously given to JsonStream.
 
          * The content should be a valid JSON document encoded as UTF-8. If there is a
@@ -127,15 +129,17 @@ namespace simdjson {
         size_t last_json_buffer_loc{0};
         size_t n_parsed_docs{0};
         size_t n_bytes_parsed{0};
+#ifdef SIMDJSON_THREADS_ENABLED
+        int stage1_is_ok_thread{0};
+#endif
 
         std::thread stage_1_thread;
         simdjson::ParsedJson pj_thread;
 
-#ifdef SIMDJSON_THREADS_ENABLED
         /* This algorithm is used to quickly identify the buffer position of
          * the last JSON document inside the current batch.
          *
-         * It does it's work by finding the last pair of structural characters
+         * It does its work by finding the last pair of structural characters
          * that represent the end followed by the start of a document.
          *
          * Simply put, we iterate over the structural characters, starting from
@@ -155,7 +159,6 @@ namespace simdjson {
          * */
         size_t find_last_json_buf_loc(const ParsedJson &pj);
 
-#endif
     };
 
 }

@@ -18,49 +18,19 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline int finish() {
-    printf("made it to finish %zu %zu  \n", i, pj.n_structural_indexes);
     if ( i + 1 > pj.n_structural_indexes ) {
-      printf("rhh %zu %zu \n", i, pj.n_structural_indexes);
       return set_error_code(TAPE_ERROR);
     }
     pop_root_scope();
     if (depth != 0) {
-      printf("ohh\n");
       return set_error_code(TAPE_ERROR);
     }
     if (pj.containing_scope_offset[depth] != 0) {
-      printf("Ahh\n");
-      return set_error_code(TAPE_ERROR);
-    }
-
-    pj.valid = true;
-    return set_error_code(SUCCESS);
-/*    printf("made it to finish\n");
-    if ( i + 1 > pj.n_structural_indexes ) {
-          printf("made it to finish 1\n");
-
       return set_error_code(TAPE_ERROR);
     }
     bool finished = i + 1 == pj.n_structural_indexes;
-    if (finished && buf[idx+2] != '\0') {
-                printf("made it to finish 2\n");
-
-      return set_error_code(TAPE_ERROR);
-    }
-    pop_root_scope();
-    if (depth != 0) {
-                printf("made it to finish 3\n");
-
-      return set_error_code(TAPE_ERROR);
-    }
-    if (pj.containing_scope_offset[depth] != 0) {
-                printf("made it to finish 4\n");
-
-      return set_error_code(TAPE_ERROR);
-    }
-
     pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);*/
+    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -71,10 +41,10 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  
   streaming_structural_parser parser(buf, len, pj, next_json);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
-printf("parser.c = %c\n", parser.c);
   //
   // Read first value
   //
