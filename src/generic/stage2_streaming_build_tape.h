@@ -41,7 +41,6 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  
   streaming_structural_parser parser(buf, len, pj, next_json);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
