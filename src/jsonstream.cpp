@@ -182,8 +182,6 @@ int JsonStream::json_parse(ParsedJson &pj) {
     // We assume the error is because the json was not loaded completely in this batch.
     // Load a new batch and if the error persists, it's a genuine error.
     else if(!error_on_last_attempt) {
-                printf("failure?\n");
- 
         load_next_batch = true;
         error_on_last_attempt = true;
         res = json_parse(pj);
