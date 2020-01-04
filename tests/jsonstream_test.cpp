@@ -36,7 +36,7 @@ bool validate(const char *dirname) {
     bool everything_fine = true;
     const char *extension1 = ".ndjson";
     const char *extension2 = ".jsonl";
-    const char *extension3 = ".json"; // json files should qualify
+    const char *extension3 = ".json"; // bad json files shoud fail
 
     size_t dirlen = strlen(dirname);
     struct dirent **entry_list;
@@ -98,7 +98,7 @@ bool validate(const char *dirname) {
             if (contains("EXCLUDE", name)) {
                 // skipping
                 how_many--;
-            } else if (((starts_with("pass", name) or (starts_with("fail10.json", name))) and parse_res != 0)) {
+            } else if (starts_with("pass", name) and (has_extension(extension1, name) or has_extension(extension2, name)) and parse_res != 0) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
                        name, simdjson::error_message(parse_res).data());
@@ -126,6 +126,7 @@ bool validate(const char *dirname) {
             }
         }
     }
+    printf("Note that json stream expects sequences of objects and arrays, so otherwise valid json files can fail by design.\n");
     for (int i = 0; i < c; ++i) {
         free(entry_list[i]);
     }

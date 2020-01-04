@@ -44,6 +44,7 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
     load_next_batch = true;
 }
 
+// todo: this code is too complicated, it should be greatly simplified
 int JsonStream::json_parse(ParsedJson &pj) {
     if (pj.byte_capacity == 0) {
         const bool allocok = pj.allocate_capacity(_batch_size);
@@ -80,6 +81,12 @@ int JsonStream::json_parse(ParsedJson &pj) {
                 pj.error_code = stage1_is_ok;
                 return pj.error_code;
             }
+            size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+            if(last_index == 0) {
+              pj.error_code = simdjson::EMPTY;
+              return pj.error_code;
+            }
+            pj.n_structural_indexes = last_index + 1;
         }
         // the second thread is running or done.
         else {
@@ -96,7 +103,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
             last_json_buffer_loc = 0; //because we want to use it in the if above.
         }
         if(_len - _batch_size > 0) {
-            last_json_buffer_loc = find_last_json_buf_loc(pj);
+            last_json_buffer_loc =  pj.structural_indexes[find_last_json_buf_idx(_buf,_batch_size,pj)];
             _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
             if(_batch_size > 0) {
                 _batch_size = trimmed_length_safe_utf8((const char*)(_buf + last_json_buffer_loc), _batch_size);
@@ -115,129 +122,73 @@ int JsonStream::json_parse(ParsedJson &pj) {
                 });
             }
         }
+
+        //If we loaded a perfect amount of documents last time, we need to skip the first element,
+        // because it represents the end of the last document
+        next_json = next_json == 1;
 #else
         _buf = _buf + current_buffer_loc;
-        //printf("Looking at %.32s\n",_buf);
         _len -= current_buffer_loc;
         n_bytes_parsed += current_buffer_loc;
 
         _batch_size = std::min(_batch_size, _len);
         _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
         int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
-
         if (stage1_is_ok != simdjson::SUCCESS) {
             pj.error_code = stage1_is_ok;
             return pj.error_code;
         }
-        /*
-printf("calling find_last_json_buf_loc\n");
-        last_json_buffer_loc = find_last_json_buf_loc(pj);
-        printf("last_json_buffer_loc is %zu\n", last_json_buffer_loc);
-             //   printf("moving to %.32s\n", _buf+last_json_buffer_loc);
-        _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
-        _batch_size = trimmed_length_safe_utf8((const char*)(_buf + last_json_buffer_loc), _batch_size);
-
-        _buf = _buf + last_json_buffer_loc;
-        _len -= last_json_buffer_loc;
-        n_bytes_parsed += last_json_buffer_loc;
-        //_batch_size = std::min(_batch_size, _len);
-        //_batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
-        // the following may be needed: (todo)
-        //if(_batch_size == 0) {
-        //  pj.error_code = simdjson::UTF8_ERROR;
-        //  return pj.error_code;
-        //}
-        printf("scanning %.32s\n", _buf);
-        int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
-        if (stage1_is_ok != simdjson::SUCCESS) {
-            pj.error_code = stage1_is_ok;
+        size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+        if(last_index == 0) {
+            pj.error_code = simdjson::EMPTY;
             return pj.error_code;
-        }*/
+        }
+        pj.n_structural_indexes = last_index + 1;
 #endif
         load_next_batch = false;
 
-        //If we loaded a perfect amount of documents last time, we need to skip the first element,
-        // because it represents the end of the last document
-        next_json = next_json == 1;
-
     }
-    int res = best_stage2(_buf, _len, pj, next_json);  
+//#define SIMDJSON_IREALLYNEEDHELP
+#ifdef SIMDJSON_IREALLYNEEDHELP // for debugging
+    size_t oldnext_json = next_json;
+#endif
+    int res = best_stage2(_buf, _len, pj, next_json);
+#ifdef SIMDJSON_IREALLYNEEDHELP // for debugging
+    int sizeofdoc = pj.structural_indexes[next_json]-pj.structural_indexes[oldnext_json];
+    printf("size = %d\n", sizeofdoc);
+    if(sizeofdoc > 0) {
+      printf("%.*s\n",sizeofdoc, _buf + pj.structural_indexes[oldnext_json]);
+    } else {
+      printf("<empty>\n");
+    }
+#endif
+
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
         error_on_last_attempt = false; 
         n_parsed_docs++;
-        //Check if we loaded a perfect amount of json documents and we are done parsing them.
-        //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
-        //of the last loaded document and start parsing at structural_index[1] for the next batch.
-        // It should point to the start of the first document in the new batch
-        if(next_json == pj.n_structural_indexes) {
-            current_buffer_loc = pj.structural_indexes[next_json - 1];
-            next_json = 1;
-            load_next_batch = true;
-        } else {
-            current_buffer_loc = pj.structural_indexes[next_json];
-        }
+        current_buffer_loc = pj.structural_indexes[next_json];
     } else if (res == simdjson::SUCCESS) {
         error_on_last_attempt = false; 
         n_parsed_docs++;
         if(_len > _batch_size) {
-          load_next_batch = true;
-       //    current_buffer_loc = pj.structural_indexes[next_json - 1];
-          // next_json = 1;
-          res = simdjson::SUCCESS_AND_HAS_MORE;
+            current_buffer_loc = pj.structural_indexes[next_json - 1];
+#ifndef SIMDJSON_THREADS_ENABLED
+            next_json = 1;
+#endif
+            load_next_batch = true;
+            res = simdjson::SUCCESS_AND_HAS_MORE;
         }
     }
     // We assume the error is because the json was not loaded completely in this batch.
     // Load a new batch and if the error persists, it's a genuine error.
-    else {
-             //   printf("failure?\n");
-
+    else if(!error_on_last_attempt) {
+                printf("failure?\n");
+ 
         load_next_batch = true;
         error_on_last_attempt = true;
         res = json_parse(pj);
     }
     return res;
-}
-
-size_t JsonStream::find_last_json_buf_loc(const ParsedJson &pj) {
-    auto last_i = pj.n_structural_indexes - 1;
-    if (pj.structural_indexes[last_i] == _batch_size) {
-        last_i = pj.n_structural_indexes - 2;
-    }
-    auto arr_cnt = 0;
-    auto obj_cnt = 0;
-    for (auto i = last_i; i > 0; i--) {
-        auto idxb = pj.structural_indexes[i];
-        switch (_buf[idxb]) {
-            case ':':
-            case ',':
-                continue;
-            case '}':
-                obj_cnt--;
-                continue;
-            case ']':
-                arr_cnt--;
-                continue;
-            case '{':
-                obj_cnt++;
-                break;
-            case '[':
-                arr_cnt++;
-                break;
-        }
-        auto idxa = pj.structural_indexes[i - 1];
-        switch (_buf[idxa]) {
-            case '{':
-            case '[':
-            case ':':
-            case ',':
-                continue;
-        }
-        if (!arr_cnt && !obj_cnt) {
-            return pj.structural_indexes[last_i+1];
-        }
-        return idxb;
-    }
-    return 0;
 }
 
 size_t JsonStream::get_current_buffer_loc() const {

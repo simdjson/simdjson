@@ -320,7 +320,7 @@ bool stream_utf8_test() {
                      i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
     data += std::string(buf, n);
   }
-  for(size_t i = 1000; i < 2000; i += 10) {
+  for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
     simdjson::JsonStream js{data.c_str(), data.size(), i};
@@ -381,7 +381,7 @@ bool stream_test() {
                      i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
     data += std::string(buf, n);
   }
-  for(size_t i = 1000; i < 2000; i += 10) {
+  for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
     simdjson::JsonStream js{data.c_str(), data.size(), i};

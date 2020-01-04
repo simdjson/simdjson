@@ -102,7 +102,6 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
-
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
