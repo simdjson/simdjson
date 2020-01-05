@@ -2,6 +2,13 @@
 #include "simdjson/jsonparser.h"
 #include <simdjson/jsonstream.h>
 
+/*
+Originally in the C standard library as <limits.h>.
+Part of the type support library, in particular it's part of the
+C numeric limits interface.
+*/
+#include <climits>
+
 // this is MSVC STD LIB code
 // it actually does not depend on C++20 __cplusplus 
 // which is yet undefined as of 2020 Q1
