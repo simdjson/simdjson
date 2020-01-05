@@ -13,12 +13,8 @@
 #endif
 #endif
 
-
 #if (SIMDJSON_CPLUSPLUS < 201703L)
 #error SIMDBJSON requires the standard C++17 compiler
-#endif
-#if (SIMDJSON_CPLUSPLUS > 201703L)
-#error SIMDBJSON is not ready yet for the standard C++20 (or higher)
 #endif
 
 #include <string>
