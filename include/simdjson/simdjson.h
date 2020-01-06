@@ -2,7 +2,7 @@
 #define SIMDJSON_SIMDJSON_H
 
 #ifndef __cplusplus
-#error SIMDBJSON requires C++ compiler
+#error simdjson requires a C++ compiler
 #endif
 
 #ifndef SIMDJSON_CPLUSPLUS
@@ -14,7 +14,7 @@
 #endif
 
 #if (SIMDJSON_CPLUSPLUS < 201703L)
-#error SIMDBJSON requires the standard C++17 compiler
+#error simdjson requires a compiler compliant with the C++17 standard
 #endif
 
 #include <string>
