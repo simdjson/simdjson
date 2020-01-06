@@ -1,6 +1,22 @@
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 
+#ifndef __cplusplus
+#error SIMDBJSON requires C++ compiler
+#endif
+
+#ifndef SIMDJSON_CPLUSPLUS
+#if defined(_MSVC_LANG) && !defined(__clang__)
+#define SIMDJSON_CPLUSPLUS (_MSC_VER == 1900 ? 201103L : _MSVC_LANG)
+#else
+#define SIMDJSON_CPLUSPLUS __cplusplus
+#endif
+#endif
+
+#if (SIMDJSON_CPLUSPLUS < 201703L)
+#error SIMDBJSON requires the standard C++17 compiler
+#endif
+
 #include <string>
 
 namespace simdjson {
