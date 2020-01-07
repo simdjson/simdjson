@@ -1,18 +1,15 @@
 #include <cassert>
 #include <cstring>
-#ifndef _MSC_VER
-#include <dirent.h>
-#include <unistd.h>
-#else
-// Microsoft can't be bothered to provide standard utils.
-#include <dirent_portable.h>
-#endif
 #include <cinttypes>
-
 #include <cstdio>
 #include <cstdlib>
-#include <simdjson/jsonstream.h>
 
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif 
+
+#include <dirent_portable.h>
+#include <simdjson/jsonstream.h>
 #include "simdjson/jsonparser.h"
 
 /**
@@ -23,16 +20,16 @@ static bool has_extension(const char *filename, const char *extension) {
     return ((ext != nullptr) && (strcmp(ext, extension) == 0));
 }
 
-bool starts_with(const char *pre, const char *str) {
+static bool starts_with(const char *pre, const char *str) {
     size_t len_pre = strlen(pre), len_str = strlen(str);
     return len_str < len_pre ? false : strncmp(pre, str, len_pre) == 0;
 }
 
-bool contains(const char *pre, const char *str) {
+static bool contains(const char *pre, const char *str) {
     return (strstr(str, pre) != nullptr);
 }
 
-bool validate(const char *dirname) {
+static bool validate(const char *dirname) {
     bool everything_fine = true;
     const char *extension1 = ".ndjson";
     const char *extension2 = ".jsonl";
