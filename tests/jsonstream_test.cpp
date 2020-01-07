@@ -8,7 +8,10 @@
 #include <unistd.h>
 #endif 
 
-#include <dirent_portable.h>
+#include "../windows/dirent_portable.h"
+// for some reason this is failing
+// #include <dirent_portable.h>
+
 #include <simdjson/jsonstream.h>
 #include "simdjson/jsonparser.h"
 
