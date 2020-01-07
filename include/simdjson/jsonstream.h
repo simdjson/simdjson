@@ -130,10 +130,10 @@ namespace simdjson {
         size_t n_bytes_parsed{0};
 #ifdef SIMDJSON_THREADS_ENABLED
         int stage1_is_ok_thread{0};
-#endif
-
         std::thread stage_1_thread;
         simdjson::ParsedJson pj_thread;
+#endif
+
     };
 
 

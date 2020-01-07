@@ -46,17 +46,24 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 
 #ifdef SIMDJSON_THREADS_ENABLED
 
-// todo: this code is too complicated, it should be greatly simplified
+// threaded version of json_parse
 int JsonStream::json_parse(ParsedJson &pj) {
     if (unlikely(pj.byte_capacity == 0)) {
         const bool allocok = pj.allocate_capacity(_batch_size);
-        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
-        if (!allocok || !allocok_thread) {
-            std::cerr << "can't allocate memory" << std::endl;
-            return false;
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
     } else if (unlikely(pj.byte_capacity < _batch_size)) {
-        return simdjson::CAPACITY;
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
+    }
+    if(unlikely(pj_thread.byte_capacity < _batch_size)) {
+        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
+        if (!allocok_thread) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
+        }
     }
     if (unlikely(load_next_batch)) {
         //First time loading
@@ -91,7 +98,6 @@ int JsonStream::json_parse(ParsedJson &pj) {
             _buf = _buf + last_json_buffer_loc;
             _len -= last_json_buffer_loc;
             n_bytes_parsed += last_json_buffer_loc;
-            //last_json_buffer_loc = 0; //because we want to use it in the if above.
         }
         // let us decide whether we will start a new thread
         if(_len - _batch_size > 0) {
@@ -114,11 +120,8 @@ int JsonStream::json_parse(ParsedJson &pj) {
                 });
             }
         }
-        //If we loaded a perfect amount of documents last time, we need to skip the first element,
-        // because it represents the end of the last document
-        next_json = (next_json == 1) ? 1 : 0;
+        next_json = 0;
         load_next_batch = false;
-
     } // load_next_batch
     int res = best_stage2(_buf, _len, pj, next_json);
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
@@ -138,17 +141,17 @@ int JsonStream::json_parse(ParsedJson &pj) {
 
 #else  // SIMDJSON_THREADS_ENABLED
 
-// todo: this code is too complicated, it should be greatly simplified
+// single-threaded version of json_parse
 int JsonStream::json_parse(ParsedJson &pj) {
     if (unlikely(pj.byte_capacity == 0)) {
         const bool allocok = pj.allocate_capacity(_batch_size);
-        const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
-        if (!allocok || !allocok_thread) {
-            std::cerr << "can't allocate memory" << std::endl;
-            return false;
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
     } else if (unlikely(pj.byte_capacity < _batch_size)) {
-        return simdjson::CAPACITY;
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
     }
     if (unlikely(load_next_batch)) {
         _buf = _buf + current_buffer_loc;
@@ -177,8 +180,6 @@ int JsonStream::json_parse(ParsedJson &pj) {
         n_parsed_docs++;
         if(_len > _batch_size) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
-            // After loading a perfect number of documents, we need to skip the first structural element
-            // from the next round
             next_json = 1;
             load_next_batch = true;
             res = simdjson::SUCCESS_AND_HAS_MORE;
