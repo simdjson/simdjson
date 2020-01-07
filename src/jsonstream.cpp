@@ -53,16 +53,9 @@ int JsonStream::json_parse(ParsedJson &pj) {
             std::cerr << "can't allocate memory" << std::endl;
             return false;
         }
-    }
-    else if (pj.byte_capacity < _batch_size) {
+    } else if (pj.byte_capacity < _batch_size) {
         return simdjson::CAPACITY;
     }
-#ifdef SIMDJSON_THREADS_ENABLED
-    if(current_buffer_loc == last_json_buffer_loc) {
-        load_next_batch = true;
-    }
-#endif
-
     if (load_next_batch) {
 #ifdef SIMDJSON_THREADS_ENABLED
         //First time loading
@@ -167,6 +160,7 @@ int JsonStream::json_parse(ParsedJson &pj) {
         error_on_last_attempt = false; 
         n_parsed_docs++;
         current_buffer_loc = pj.structural_indexes[next_json];
+        load_next_batch = (current_buffer_loc == last_json_buffer_loc);
     } else if (res == simdjson::SUCCESS) {
         error_on_last_attempt = false; 
         n_parsed_docs++;
