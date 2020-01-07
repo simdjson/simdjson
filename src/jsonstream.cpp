@@ -26,7 +26,7 @@ JsonStream::~JsonStream() {
 #endif
 }
 
-
+/* // this implementation is untested and unlikely to work
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
 #ifdef SIMDJSON_THREADS_ENABLED
     if(stage_1_thread.joinable()) {
@@ -41,7 +41,7 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
     current_buffer_loc = 0;
     n_parsed_docs = 0;
     load_next_batch = true;
-}
+}*/
 
 
 #ifdef SIMDJSON_THREADS_ENABLED
