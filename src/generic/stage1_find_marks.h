@@ -348,7 +348,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
     this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+  /* If we have a final chunk of less than STEP_SIZE bytes, pad it to STEP_SIZE with
   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
   * checks). */
   if (likely(idx < len)) {
