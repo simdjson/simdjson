@@ -35,8 +35,8 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 #endif
     this->_buf = buf;
     this->_len = len;
-    _batch_size = 0;
-    _batch_size = 0;
+    _batch_size = 0; // why zero?
+    _batch_size = 0; // waat??
     next_json = 0;
     current_buffer_loc = 0;
     n_parsed_docs = 0;
@@ -47,6 +47,7 @@ void JsonStream::set_new_buffer(const char *buf, size_t len) {
 #ifdef SIMDJSON_THREADS_ENABLED
 
 // threaded version of json_parse
+// todo: simplify this code further
 int JsonStream::json_parse(ParsedJson &pj) {
     if (unlikely(pj.byte_capacity == 0)) {
         const bool allocok = pj.allocate_capacity(_batch_size);
