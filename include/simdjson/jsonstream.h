@@ -98,12 +98,14 @@ namespace simdjson {
         /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
          * which acts as a reset.  A new JsonStream without initializing again.
          * */
-        void set_new_buffer(const char *buf, size_t len);
+        // todo: implement and test this function, note that _batch_size is mutable
+        // void set_new_buffer(const char *buf, size_t len);
 
         /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
          * which is basically a reset.  A new JsonStream without initializing again.
          * */
-        void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
+        // todo: implement and test this function, note that _batch_size is mutable
+        // void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
 
         /* Returns the location (index) of where the next document should be in the buffer.
          * Can be used for debugging, it tells the user the position of the end of the last
@@ -123,7 +125,6 @@ namespace simdjson {
         size_t _len;
         size_t _batch_size;
         size_t next_json{0};
-        bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};
         size_t last_json_buffer_loc{0};
@@ -131,10 +132,10 @@ namespace simdjson {
         size_t n_bytes_parsed{0};
 #ifdef SIMDJSON_THREADS_ENABLED
         int stage1_is_ok_thread{0};
-#endif
-
         std::thread stage_1_thread;
         simdjson::ParsedJson pj_thread;
+#endif
+
     };
 
 
