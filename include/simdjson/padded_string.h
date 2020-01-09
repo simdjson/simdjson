@@ -66,9 +66,8 @@ struct padded_string final {
   }
 
   // note: do not have std::string arguments passed by value
-  padded_string(std::string const & s) noexcept
-      : viable_size(s.size()), data_ptr(allocate_padded_buffer(s.size())) 
-  {
+  padded_string(std::string const &s) noexcept
+      : viable_size(s.size()), data_ptr(allocate_padded_buffer(s.size())) {
     if (data_ptr != nullptr) {
       memcpy(data_ptr, s.data(), s.size());
       data_ptr[s.size()] = '\0'; // easier when you need a c_str
@@ -82,7 +81,7 @@ struct padded_string final {
 #endif
   }
 
-    padded_string(std::string_view sv_) noexcept
+  padded_string(std::string_view sv_) noexcept
       : viable_size(sv_.size()), data_ptr(allocate_padded_buffer(sv_.size())) {
     if (data_ptr != nullptr) {
       memcpy(data_ptr, sv_.data(), sv_.size());
@@ -96,7 +95,6 @@ struct padded_string final {
     }
 #endif
   }
-
 
   padded_string(padded_string &&o) noexcept
       : viable_size(o.viable_size), data_ptr(o.data_ptr) {
@@ -141,7 +139,7 @@ private:
   padded_string(const padded_string &o) = delete;
 
   size_t viable_size{};
-  char *data_ptr{ nullptr };
+  char *data_ptr{nullptr};
 
 }; // padded_string
 
