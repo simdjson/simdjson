@@ -61,8 +61,8 @@ struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
   ParsedJson &pj;
-  uint32_t i; // next structural index
-  uint32_t idx; // location of the structural character in the input (buf)
+  size_t i; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
   uint32_t depth = 0; // could have an arbitrary starting depth
 
