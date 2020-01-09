@@ -5,6 +5,9 @@
 #include <memory>
 #include <string>
 
+// padded buffer can be made with length < 1
+#define SIMDJSON_OK_EMPTY_PADDED_BUFFER 1
+
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -12,12 +15,14 @@ namespace simdjson {
 // responsible to free the memory (free(...))
 inline char *allocate_padded_buffer(size_t length) noexcept {
 
-#ifndef NDEBUG
+#ifndef NDEBUG 
+#ifndef SIMDJSON_OK_EMPTY_PADDED_BUFFER 
   if (length < 1) {
     errno = EINVAL;
     perror("simdjson::allocate_padded_buffer() length argument is less than 1");
     return nullptr;
   }
+  #endif // SIMDJSON_OK_EMPTY_PADDED_STRING
 #endif // NDEBUG
 
   // we could do a simple malloc
@@ -25,6 +30,15 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+
+  #ifndef NDEBUG
+  if (padded_buffer == nullptr) {
+    errno = EINVAL;
+    perror("simdjson::allocate_padded_buffer() aligned_malloc_char() failed");
+    return nullptr;
+  }
+#endif // NDEBUG
+
   memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer
@@ -41,28 +55,14 @@ struct padded_string final {
 
     if (data_ptr != nullptr)
       data_ptr[length] = '\0'; // easier when you need a c_str
-#ifndef NDEBUG
-    else {
-      errno = EINVAL;
-      perror("simdjson::padded_string() length argument is less than 1");
-      // what to do here? exit() ?
-    }
-#endif
   }
 
   explicit padded_string(char *data, size_t length) noexcept
       : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
-    if (data_ptr != nullptr) {
+    if (data != nullptr) {
       memcpy(data_ptr, data, length);
       data_ptr[length] = '\0'; // easier when you need a c_str
     }
-#ifndef NDEBUG
-    else {
-      errno = EINVAL;
-      perror("simdjson::padded_string() data argument is null");
-      // what to do here? exit() ?
-    }
-#endif
   }
 
   // note: do not pass std::string arguments by value
@@ -72,28 +72,15 @@ struct padded_string final {
       memcpy(data_ptr, str_.data(), str_.size());
       data_ptr[str_.size()] = '\0'; // easier when you need a c_str
     }
-#ifndef NDEBUG
-    else {
-      errno = EINVAL;
-      perror("simdjson::padded_string() std::string argument is empty");
-      // what to do here? exit() ?
-    }
-#endif
   }
 
+  // note: do pass std::string_view arguments by value
   padded_string(std::string_view sv_) noexcept
       : viable_size(sv_.size()), data_ptr(allocate_padded_buffer(sv_.size())) {
     if (data_ptr != nullptr) {
       memcpy(data_ptr, sv_.data(), sv_.size());
       data_ptr[sv_.size()] = '\0'; // easier when you need a c_str
     }
-#ifndef NDEBUG
-    else {
-      errno = EINVAL;
-      perror("simdjson::padded_string() std::string_view argument is empty");
-      // what to do here? exit() ?
-    }
-#endif
   }
 
   padded_string(padded_string &&o) noexcept
