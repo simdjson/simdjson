@@ -1246,6 +1246,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
           return true;
         }
       } while (next());
+      up();
     }
     return false;
 }
@@ -1261,6 +1262,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
           return true;
         }
       } while (next());
+      up();
     }
     return false;
 }
@@ -1277,6 +1279,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
         return true;
       }
     } while (next());
+    up();
   }
   return false;
 }
@@ -1293,6 +1296,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
     if (i == index) {
       return true;
     }
+    up();
   }
   return false;
 }
