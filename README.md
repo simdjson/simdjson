@@ -70,6 +70,28 @@ This code is made available under the Apache License 2.0.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
+
+
+## Runtime dispatch
+
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better). The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
+
+We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
+
+
+
+## Thread safety
+
+The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
+
+If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
+
+The json stream parser is threaded, using exactly two threads. 
+
+## Large files
+
+If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses. You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+
 ## Code usage and example
 
 The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::Iterator pjh(pj)`, see 'Navigating the parsed document').
@@ -154,9 +176,15 @@ if( ! pj.is_valid() ) {
 
 As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
 
-## JSON streaming
+## Newline-Delimited JSON (ndjson) and  JSON lines 
+
+
+
+
+The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) on [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
 
 **API and detailed documentation found [here](doc/JsonStream.md).**
+
 
 Here is a simple example, using single header simdjson:
 ```cpp
@@ -204,23 +232,6 @@ int main(int argc, char *argv[]) {
 
 
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
-
-## Runtime dispatch
-
-On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
-runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
-The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique
-sometimes called runtime dispatch).
-
-
-We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
-There is no runtime dispatch on ARM.
-
-## Thread safety
-
-The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
-
-If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
