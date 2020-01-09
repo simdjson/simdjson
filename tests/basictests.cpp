@@ -266,6 +266,30 @@ bool navigate_test() {
     printf("Root should be object\n");
     return false;
   }
+  if(pjh.move_to_key("bad key")) {
+    printf("We should not move to a non-existing key\n");
+    return false;    
+  }
+  if(!pjh.is_object()) {
+    printf("We should have remained at the object.\n");
+    return false;
+  }
+  if(pjh.move_to_key_insensitive("bad key")) {
+    printf("We should not move to a non-existing key\n");
+    return false;    
+  }
+  if(!pjh.is_object()) {
+    printf("We should have remained at the object.\n");
+    return false;
+  }
+  if(pjh.move_to_key("bad key", 7)) {
+    printf("We should not move to a non-existing key\n");
+    return false;    
+  }
+  if(!pjh.is_object()) {
+    printf("We should have remained at the object.\n");
+    return false;
+  }
   if(!pjh.down()) {
     printf("Root should not be emtpy\n");
     return false;
@@ -301,6 +325,25 @@ bool navigate_test() {
   }
   if(strcmp(pjh.get_string(),"Width")!=0) {
     printf("There should be a  key Width.\n");
+    return false;
+  }
+  if(!pjh.up()) {
+    return false;
+  }
+  if(!pjh.move_to_key("IDs")) {
+    printf("We should be able to move to an existing key\n");
+    return false;    
+  }
+  if(!pjh.is_array()) {
+    printf("Value of IDs should be array, it is %c \n", pjh.get_type());
+    return false;
+  }
+  if(pjh.move_to_index(4)) {
+    printf("We should not be able to move to a non-existing index\n");
+    return false;    
+  }
+  if(!pjh.is_array()) {
+    printf("We should have remained at the array\n");
     return false;
   }
   return true;
