@@ -65,12 +65,12 @@ struct padded_string final {
 #endif
   }
 
-  // note: do not have std::string arguments passed by value
-  padded_string(std::string const &s) noexcept
-      : viable_size(s.size()), data_ptr(allocate_padded_buffer(s.size())) {
+  // note: do not pass std::string arguments by value
+  padded_string(const std::string & str_ ) noexcept
+      : viable_size(str_.size()), data_ptr(allocate_padded_buffer(str_.size())) {
     if (data_ptr != nullptr) {
-      memcpy(data_ptr, s.data(), s.size());
-      data_ptr[s.size()] = '\0'; // easier when you need a c_str
+      memcpy(data_ptr, str_.data(), str_.size());
+      data_ptr[str_.size()] = '\0'; // easier when you need a c_str
     }
 #ifndef NDEBUG
     else {
@@ -119,26 +119,21 @@ struct padded_string final {
   }
 
   ~padded_string() {
-#ifndef NDEBUG
-    if (this->data_ptr != nullptr)
-#endif
-    {
       aligned_free_char(data_ptr);
       this->data_ptr = nullptr;
-    }
   }
 
-  size_t size() const noexcept { return viable_size; }
+  size_t size() const  { return viable_size; }
 
-  size_t length() const noexcept { return viable_size; }
+  size_t length() const  { return viable_size; }
 
-  char *data() const noexcept { return data_ptr; }
+  char *data() const  { return data_ptr; }
 
 private:
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
-  size_t viable_size{};
+  size_t viable_size ;
   char *data_ptr{nullptr};
 
 }; // padded_string
