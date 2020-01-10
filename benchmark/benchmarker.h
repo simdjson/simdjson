@@ -456,9 +456,9 @@ struct benchmarker {
               printf("|- Stage 2\n");
       print_aggregate("|    ", stage2.best);
       if (collector.has_events()) {
-        double freq1 = (stage1.cycles() / stage1.elapsed_sec()) / 1000000000.0;
-        double freq2 = (stage2.cycles() / stage2.elapsed_sec()) / 1000000000.0;
-        double freqall = (all_stages.cycles() / all_stages.elapsed_sec()) / 1000000000.0;
+        double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
+        double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
+        double freqall = (all_stages.best.cycles() / all_stages.best.elapsed_sec()) / 1000000000.0;
         double freqmin = std::min(freq1, freq2);
         double freqmax = std::max(freq1, freq2);
         if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
