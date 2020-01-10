@@ -311,6 +311,9 @@ struct benchmarker {
       event_count stage2_count;
       collector.start();
       result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
+      if (result != simdjson::SUCCESS) {
+        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + pj.get_error_message());
+      }
       stage2_count = collector.end();
       stage2 << stage2_count;
       // You would think that the entire processing is just stage 1 + stage 2, but
@@ -447,6 +450,19 @@ struct benchmarker {
       print_aggregate("|    ", stage1.best);
               printf("|- Stage 2\n");
       print_aggregate("|    ", stage2.best);
+      if (collector.has_events()) {
+        double freq1 = (stage1.cycles() / stage1.elapsed_sec()) / 1000000000.0;
+        double freq2 = (stage2.cycles() / stage2.elapsed_sec()) / 1000000000.0;
+        double freqall = (all_stages.cycles() / all_stages.elapsed_sec()) / 1000000000.0;
+        double freqmin = std::min(freq1, freq2);
+        double freqmax = std::max(freq1, freq2);
+        if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
+          printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
+          "Expect the overall speed not to match stage 1 and stage 2 speeds.\n"
+          "Range for stage 1 and stage 2 : [%.3f GHz, %.3f GHz], overall: %.3f GHz.\n",
+          freqmin, freqmax, freqall);
+        }
+      }
     }
   }
 };
