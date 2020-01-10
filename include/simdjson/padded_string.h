@@ -5,8 +5,6 @@
 #include <memory>
 #include <string>
 
-// padded buffer can be made with length < 1
-#define SIMDJSON_OK_EMPTY_PADDED_BUFFER 1
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
@@ -14,31 +12,18 @@ namespace simdjson {
 // with this function: length is the max. size in bytes of the string caller is
 // responsible to free the memory (free(...))
 inline char *allocate_padded_buffer(size_t length) noexcept {
-
-#ifndef NDEBUG 
-#ifndef SIMDJSON_OK_EMPTY_PADDED_BUFFER 
-  if (length < 1) {
-    errno = EINVAL;
-    perror("simdjson::allocate_padded_buffer() length argument is less than 1");
-    return nullptr;
-  }
-  #endif // SIMDJSON_OK_EMPTY_PADDED_STRING
-#endif // NDEBUG
-
   // we could do a simple malloc
   // return (char *) malloc(length + SIMDJSON_PADDING);
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
-
-  #ifndef NDEBUG
+#ifndef NDEBUG
   if (padded_buffer == nullptr) {
     errno = EINVAL;
     perror("simdjson::allocate_padded_buffer() aligned_malloc_char() failed");
     return nullptr;
   }
 #endif // NDEBUG
-
   memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer
@@ -52,14 +37,13 @@ struct padded_string final {
 
   explicit padded_string(size_t length) noexcept
       : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
-
     if (data_ptr != nullptr)
       data_ptr[length] = '\0'; // easier when you need a c_str
   }
 
   explicit padded_string(char *data, size_t length) noexcept
       : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
-    if (data != nullptr) {
+    if ((data != nullptr) and (data_ptr != nullptr)) {
       memcpy(data_ptr, data, length);
       data_ptr[length] = '\0'; // easier when you need a c_str
     }
@@ -107,7 +91,6 @@ struct padded_string final {
 
   ~padded_string() {
       aligned_free_char(data_ptr);
-      this->data_ptr = nullptr;
   }
 
   size_t size() const  { return viable_size; }
@@ -120,7 +103,7 @@ private:
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
-  size_t viable_size ;
+  size_t viable_size;
   char *data_ptr{nullptr};
 
 }; // padded_string
