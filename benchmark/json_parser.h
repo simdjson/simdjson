@@ -133,6 +133,4 @@ struct json_parser {
   }
 };
 
-
-
 #endif
