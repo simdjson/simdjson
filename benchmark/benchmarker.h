@@ -280,7 +280,7 @@ struct benchmarker {
     return all_stages.iterations;
   }
 
-  really_inline void run_iteration(bool stage1_only=false) {
+  really_inline void run_iteration(bool stage1_only, bool rerunbothstages) {
     // Allocate ParsedJson
     collector.start();
     ParsedJson pj;
@@ -316,16 +316,21 @@ struct benchmarker {
       }
       stage2_count = collector.end();
       stage2 << stage2_count;
-      // You would think that the entire processing is just stage 1 + stage 2, but
-      // empirically, that's not true! Not even close to be true in some instances.
-      event_count allstages_count;
-      collector.start();
-      result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
-      if (result != simdjson::SUCCESS) {
-        exit_error(string("Failed to parse ") + filename + " during overall parsing " + pj.get_error_message());
+      if(rerunbothstages) {
+        // You would think that the entire processing is just stage 1 + stage 2, but
+        // empirically, that's not true! Not even close to be true in some instances.
+        event_count allstages_count;
+        collector.start();
+        result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
+        if (result != simdjson::SUCCESS) {
+          exit_error(string("Failed to parse ") + filename + " during overall parsing " + pj.get_error_message());
+        }
+        allstages_count = collector.end();
+        all_stages << allstages_count;
+      } else {
+        // we are optimistic
+        all_stages << stage1_count + stage2_count;
       }
-      allstages_count = collector.end();
-      all_stages << allstages_count;
     }
     // Calculate stats the first time we parse
     if (stats == NULL) {
@@ -339,9 +344,9 @@ struct benchmarker {
     }
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
+  really_inline void run_iterations(size_t iterations, bool stage1_only, bool rerunbothstages) {
     for (size_t i = 0; i<iterations; i++) {
-      run_iteration(stage1_only);
+      run_iteration(stage1_only, rerunbothstages);
     }
   }
 
