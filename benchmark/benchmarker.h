@@ -280,7 +280,7 @@ struct benchmarker {
     return all_stages.iterations;
   }
 
-  really_inline void run_iteration(bool stage1_only=false) {
+  really_inline void run_iteration(bool stage1_only, bool rerunbothstages) {
     // Allocate ParsedJson
     collector.start();
     ParsedJson pj;
@@ -303,34 +303,50 @@ struct benchmarker {
       exit_error(string("Failed to parse ") + filename + " during stage 1: " + pj.get_error_message());
     }
 
-    // Stage 2 (unified machine)
-    event_count stage2_count;
-    if (!stage1_only || stats == NULL) {
-      if (!stage1_only) {
-        collector.start();
-      }
-      result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
-      if (!stage1_only) {
-        stage2_count = collector.end();
-        stage2 << stage2_count;
-      }
+    // Stage 2 (unified machine) and the rest
 
+    if (stage1_only) {
+      all_stages << stage1_count;
+    } else {
+      event_count stage2_count;
+      collector.start();
+      result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
       if (result != simdjson::SUCCESS) {
-        exit_error(string("Failed to parse ") + filename + " during stage 2: " + pj.get_error_message());
+        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + pj.get_error_message());
+      }
+      stage2_count = collector.end();
+      stage2 << stage2_count;
+      if(rerunbothstages) {
+        // You would think that the entire processing is just stage 1 + stage 2, but
+        // empirically, that's not true! Not even close to be true in some instances.
+        event_count allstages_count;
+        collector.start();
+        result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
+        if (result != simdjson::SUCCESS) {
+          exit_error(string("Failed to parse ") + filename + " during overall parsing " + pj.get_error_message());
+        }
+        allstages_count = collector.end();
+        all_stages << allstages_count;
+      } else {
+        // we are optimistic
+        all_stages << stage1_count + stage2_count;
       }
     }
-
-    all_stages << (stage1_count + stage2_count);
-
     // Calculate stats the first time we parse
     if (stats == NULL) {
+      if (stage1_only) { //  we need stage 2 once
+        result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
+        if (result != simdjson::SUCCESS) {
+          printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
+        }
+      }
       stats = new json_stats(json, pj);
     }
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
+  really_inline void run_iterations(size_t iterations, bool stage1_only, bool rerunbothstages) {
     for (size_t i = 0; i<iterations; i++) {
-      run_iteration(stage1_only);
+      run_iteration(stage1_only, rerunbothstages);
     }
   }
 
@@ -439,6 +455,19 @@ struct benchmarker {
       print_aggregate("|    ", stage1.best);
               printf("|- Stage 2\n");
       print_aggregate("|    ", stage2.best);
+      if (collector.has_events()) {
+        double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
+        double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
+        double freqall = (all_stages.best.cycles() / all_stages.best.elapsed_sec()) / 1000000000.0;
+        double freqmin = std::min(freq1, freq2);
+        double freqmax = std::max(freq1, freq2);
+        if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
+          printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
+          "Expect the overall speed not to match stage 1 and stage 2 speeds.\n"
+          "Range for stage 1 and stage 2 : [%.3f GHz, %.3f GHz], overall: %.3f GHz.\n",
+          freqmin, freqmax, freqall);
+        }
+      }
     }
   }
 };
