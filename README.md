@@ -90,7 +90,7 @@ The json stream parser is threaded, using exactly two threads.
 
 ## Large files
 
-If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses. You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses and/or page allocation. You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
 
 ## Code usage and example
 
