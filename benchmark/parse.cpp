@@ -74,8 +74,6 @@ void print_usage(ostream& out) {
 
   out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
   out << "             or ARM64). By default, detects best supported architecture." << endl;
-  out << "-o         - Estimate the overall speed as stage 1 + stage 2 instead of a rerun of both" << endl;
-
 }
 
 void exit_usage(string message) {
@@ -129,10 +127,6 @@ struct option_struct {
             stage1_only = true;
           } else if (!strcmp(optarg, "all")) {
             stage1_only = false;
-            rerunbothstages = true; // for safety
-          } else if (!strcmp(optarg, "allfast")) {
-            stage1_only = false;
-            rerunbothstages = false;
           } else {
             exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
           }
