@@ -70,11 +70,7 @@ void print_usage(ostream& out) {
   out << "-s STAGE   - Stop after the given stage." << endl;
   out << "             -s stage1  - Stop after find_structural_bits." << endl;
   out << "             -s all     - Run all stages." << endl;
-<<<<<<< HEAD
   out << "-H         - Make the buffers hot (reduce page allocation during parsing)" << endl;
-=======
-  out << "             -s allfast - Run all stages." << endl;
->>>>>>> master
 
   out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
   out << "             or ARM64). By default, detects best supported architecture." << endl;
