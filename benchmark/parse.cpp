@@ -99,11 +99,7 @@ struct option_struct {
 
   bool verbose = false;
   bool tabbed_output = false;
-<<<<<<< HEAD
   bool hotbuffers = false;
-=======
-  bool rerunbothstages = true;
->>>>>>> master
 
   option_struct(int argc, char **argv) {
     #ifndef _MSC_VER
@@ -215,11 +211,7 @@ int main(int argc, char *argv[]) {
       // Benchmark each file once per iteration
       for (size_t f=0; f<options.files.size(); f++) {
         verbose() << "[verbose] " << benchmarkers[f]->filename << " iterations #" << iteration << "-" << (iteration+options.iteration_step-1) << endl;
-<<<<<<< HEAD
         benchmarkers[f]->run_iterations(options.iteration_step, true, options.hotbuffers);
-=======
-        benchmarkers[f]->run_iterations(options.iteration_step, true, false);
->>>>>>> master
       }
     }
   } else {
@@ -228,11 +220,7 @@ int main(int argc, char *argv[]) {
       // Benchmark each file once per iteration
       for (size_t f=0; f<options.files.size(); f++) {
         verbose() << "[verbose] " << benchmarkers[f]->filename << " iterations #" << iteration << "-" << (iteration+options.iteration_step-1) << endl;
-<<<<<<< HEAD
         benchmarkers[f]->run_iterations(options.iteration_step, false, options.hotbuffers);
-=======
-        benchmarkers[f]->run_iterations(options.iteration_step, false, options.rerunbothstages);
->>>>>>> master
       }
     }
   }
