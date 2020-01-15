@@ -104,9 +104,7 @@ public:
     tape[saved_loc] |= val;
   }
 
-  // was class
   struct InvalidJSON : public std::exception {
-      // thus what() was not accessible
     const char *what() const throw() { return "JSON document is invalid"; }
   };
 
