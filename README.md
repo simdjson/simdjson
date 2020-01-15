@@ -18,6 +18,8 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
+If you are planning to use simdjson in a product, please work from one of our releases.
+
 ## Research article (VLDB Journal)
 
 A description of the design and implementation of simdjson is in our research article:
@@ -83,6 +85,8 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 ## Runtime dispatch
 
 On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better). The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
+
+On x64 hardware, you should typically build your code by specifying the oldest/less-featureful system you want to support so that runtime dispatch may work. The minimum requirement for simdjson is the equivalent of a Westmere processor (SSE 4.2 and PCLMUL). If you build your code by asking the compiler to use more advanced instructions (e.g., `-mavx2`, `/AVX2`  or `-march=haswell`), then it will break runtime dispatch and your binaries will fail to run on older processors.
 
 We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
 
