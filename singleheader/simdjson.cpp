@@ -1,4 +1,4 @@
-/* auto-generated on Wed Dec 18 14:39:04 UTC 2019. Do not edit! */
+/* auto-generated on Wed Jan 15 13:09:01 EST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -301,6 +301,30 @@ static inline uint32_t hex_to_u32_nocheck(
   return v1 | v2 | v3 | v4;
 }
 
+// returns true if the provided byte value is a 
+// "continuing" UTF-8 value, that is, if it starts with
+// 0b10...
+static inline bool is_utf8_continuing(char c) {
+  // in 2 complement's notation, values start at 0b10000 (-128)... and
+  // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
+  return ((signed char)c) <= -65;
+}
+// returns true if the provided byte value is an ASCII character
+static inline bool is_ascii(char c) {
+  return ((unsigned char)c) <= 127;
+}
+
+// if the string ends with  UTF-8 values, backtrack 
+// up to the first ASCII character. May return 0.
+static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
+  while ((len > 0) and (not is_ascii(c[len - 1]))) {
+    len--;
+  }
+  return len;
+}
+
+
+
 // given a code point cp, writes to c
 // the utf-8 code, outputting the length in
 // bytes, if the length is zero, the code point
@@ -482,8 +506,8 @@ static const uint64_t thintable_epi8[256] = {
 
 namespace simdjson {
 const std::map<int, const std::string> error_strings = {
-    {SUCCESS, "No errors"},
-    {SUCCESS_AND_HAS_MORE, "No errors and buffer still has more data"},
+    {SUCCESS, "No error"},
+    {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
     {CAPACITY, "This ParsedJson can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
@@ -496,7 +520,7 @@ const std::map<int, const std::string> error_strings = {
      "Problem while parsing an atom starting with the letter 'n'"},
     {NUMBER_ERROR, "Problem while parsing a number"},
     {UTF8_ERROR, "The input is not valid UTF-8"},
-    {UNITIALIZED, "Unitialized"},
+    {UNINITIALIZED, "Uninitialized"},
     {EMPTY, "Empty: no JSON found"},
     {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
                       "found unescaped characters"},
@@ -524,15 +548,6 @@ const std::string &error_message(const int error_code) {
 #include <climits>
 
 namespace simdjson {
-char *allocate_padded_buffer(size_t length) {
-  // we could do a simple malloc
-  // return (char *) malloc(length + SIMDJSON_PADDING);
-  // However, we might as well align to cache lines...
-  size_t totalpaddedlength = length + SIMDJSON_PADDING;
-  char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
-  memset(padded_buffer + length, 0, totalpaddedlength - length);
-  return padded_buffer;
-}
 
 padded_string get_corpus(const std::string &filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
@@ -625,7 +640,13 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 }
 } // namespace simdjson
 #else
+
+//
+// This fast code is disabled in the context of runtime dispatching.
+// See issue https://github.com/lemire/simdjson/issues/384
+//
 #include <cstring>
+#include <x86intrin.h> // currently, there is no runtime dispatch for the minifier
 
 namespace simdjson {
 
@@ -928,18 +949,18 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
       int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
       int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming((~whitespace));
-      __m256i vmask1 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-      __m256i vmask2 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-      __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-      __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop1),
-                           reinterpret_cast<__m128i *>(out), result1);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop3),
-                           reinterpret_cast<__m128i *>(out + pop2), result2);
+      __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+      __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+      __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+      __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+      x1 = skinnycleanm128(x1, mask1);
+      x2 = skinnycleanm128(x2, mask2);
+      x3 = skinnycleanm128(x3, mask3);
+      x4 = skinnycleanm128(x4, mask4);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop2), x3);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop3), x4);
       out += pop4;
     }
   }
@@ -1012,24 +1033,25 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = hamming((~whitespace));
-    __m256i vmask1 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-    __m256i vmask2 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-    __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-    __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop1),
-                         reinterpret_cast<__m128i *>(buffer), result1);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop3),
-                         reinterpret_cast<__m128i *>(buffer + pop2), result2);
+    __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+    __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+    __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+    __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+    x1 = skinnycleanm128(x1, mask1);
+    x2 = skinnycleanm128(x2, mask2);
+    x3 = skinnycleanm128(x3, mask3);
+    x4 = skinnycleanm128(x4, mask4);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer), x1);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop1), x2);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop2), x3);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop3), x4);
     memcpy(out, buffer, pop4);
     out += pop4;
   }
   *out = '\0'; // NULL termination
   return out - initout;
 }
+
 } // namespace simdjson
 #endif
 /* end file src/jsonminifier.cpp */
@@ -1133,6 +1155,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 /* begin file src/jsonstream.cpp */
 #include <map>
 
+
 using namespace simdjson;
 void find_the_best_supported_implementation();
 
@@ -1147,166 +1170,179 @@ JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
     find_the_best_supported_implementation();
 }
 
+JsonStream::~JsonStream() {
+#ifdef SIMDJSON_THREADS_ENABLED
+    if(stage_1_thread.joinable()) {
+      stage_1_thread.join();
+    }
+#endif
+}
+
+/* // this implementation is untested and unlikely to work
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
+#ifdef SIMDJSON_THREADS_ENABLED
+    if(stage_1_thread.joinable()) {
+      stage_1_thread.join();
+    }
+#endif
     this->_buf = buf;
     this->_len = len;
-    _batch_size = 0;
-    _batch_size = 0;
+    _batch_size = 0; // why zero?
+    _batch_size = 0; // waat??
     next_json = 0;
     current_buffer_loc = 0;
     n_parsed_docs = 0;
-    error_on_last_attempt= false;
     load_next_batch = true;
-}
+}*/
 
+
+#ifdef SIMDJSON_THREADS_ENABLED
+
+// threaded version of json_parse
+// todo: simplify this code further
 int JsonStream::json_parse(ParsedJson &pj) {
-    if (pj.byte_capacity == 0) {
+    if (unlikely(pj.byte_capacity == 0)) {
         const bool allocok = pj.allocate_capacity(_batch_size);
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
+        }
+    } else if (unlikely(pj.byte_capacity < _batch_size)) {
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
+    }
+    if(unlikely(pj_thread.byte_capacity < _batch_size)) {
         const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
-        if (!allocok || !allocok_thread) {
-            std::cerr << "can't allocate memory" << std::endl;
-            return false;
+        if (!allocok_thread) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
     }
-    else if (pj.byte_capacity < _batch_size) {
-        return simdjson::CAPACITY;
-    }
-#ifdef SIMDJSON_THREADS_ENABLED
-    if(current_buffer_loc == last_json_buffer_loc)
-        load_next_batch = true;
-#endif
-
-    if (load_next_batch){
-#ifdef SIMDJSON_THREADS_ENABLED
+    if (unlikely(load_next_batch)) {
         //First time loading
-        if(!stage_1_thread.joinable()){
-            _buf = &_buf[current_buffer_loc];
-            _len -= current_buffer_loc;
-            n_bytes_parsed += current_buffer_loc;
-
+        if(!stage_1_thread.joinable()) {
             _batch_size = std::min(_batch_size, _len);
-            int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
-
+            _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
+            if(_batch_size == 0) {
+                pj.error_code = simdjson::UTF8_ERROR;
+                return pj.error_code;
+            }
+            int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
             if (stage1_is_ok != simdjson::SUCCESS) {
                 pj.error_code = stage1_is_ok;
                 return pj.error_code;
             }
+            size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+            if(last_index == 0) {
+              pj.error_code = simdjson::EMPTY;
+              return pj.error_code;
+            }
+            pj.n_structural_indexes = last_index + 1;
         }
-
-            //the second thread is running or done.
-        else{
+        // the second thread is running or done.
+        else {
             stage_1_thread.join();
+            if (stage1_is_ok_thread != simdjson::SUCCESS) {
+                pj.error_code = stage1_is_ok_thread;
+                return pj.error_code;
+            }
             std::swap(pj.structural_indexes, pj_thread.structural_indexes);
             pj.n_structural_indexes = pj_thread.n_structural_indexes;
-
-            _buf = &_buf[last_json_buffer_loc];
+            _buf = _buf + last_json_buffer_loc;
             _len -= last_json_buffer_loc;
             n_bytes_parsed += last_json_buffer_loc;
-            last_json_buffer_loc = 0; //because we want to use it in the if above.
         }
-
-        if(_len-_batch_size > 0) {
-            last_json_buffer_loc = find_last_json_buf_loc(pj);
+        // let us decide whether we will start a new thread
+        if(_len - _batch_size > 0) {
+            last_json_buffer_loc =  pj.structural_indexes[find_last_json_buf_idx(_buf,_batch_size,pj)];
             _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
-            if(_batch_size>0)
+            if(_batch_size > 0) {
+                _batch_size = trimmed_length_safe_utf8((const char*)(_buf + last_json_buffer_loc), _batch_size);
+                if(_batch_size == 0) {
+                  pj.error_code = simdjson::UTF8_ERROR;
+                  return pj.error_code;
+                }
+                // let us capture read-only variables
+                const char * const b = _buf + last_json_buffer_loc;
+                const size_t bs = _batch_size;
+                // we call the thread on a lambda that will update  this->stage1_is_ok_thread
+                // there is only one thread that may write to this value
                 stage_1_thread = std::thread(
-                        static_cast<stage1_functype>(*best_stage1),
-                        &_buf[last_json_buffer_loc], _batch_size,
-                        std::ref(pj_thread),
-                        true);
-
+                   [this, b, bs] {
+                     this->stage1_is_ok_thread = best_stage1(b, bs, this->pj_thread, true);
+                });
+            }
         }
-#else
-        _buf = &_buf[current_buffer_loc];
-        _len -= current_buffer_loc;
-        n_bytes_parsed += current_buffer_loc;
-
-        _batch_size = std::min(_batch_size, _len);
-        int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
-
-        if (stage1_is_ok != simdjson::SUCCESS) {
-            pj.error_code = stage1_is_ok;
-            return pj.error_code;
-        }
-#endif
+        next_json = 0;
         load_next_batch = false;
-
-        //If we loaded a perfect amount of documents last time, we need to skip the first element,
-        // because it represents the end of the last document
-        next_json = next_json == 1;
-    }
-
-    int res = (*best_stage2)(_buf, _len, pj, next_json);
-
+    } // load_next_batch
+    int res = best_stage2(_buf, _len, pj, next_json);
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
-        error_on_last_attempt = false;
         n_parsed_docs++;
-        //Check if we loaded a perfect amount of json documents and we are done parsing them.
-        //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
-        //of the last loaded document and start parsing at structural_index[1] for the next batch.
-        // It should point to the start of the first document in the new batch
-        if(next_json == pj.n_structural_indexes) {
+        current_buffer_loc = pj.structural_indexes[next_json];
+        load_next_batch = (current_buffer_loc == last_json_buffer_loc);
+    } else if (res == simdjson::SUCCESS) {
+        n_parsed_docs++;
+        if(_len > _batch_size) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
-            next_json = 1;
             load_next_batch = true;
+            res = simdjson::SUCCESS_AND_HAS_MORE;
         }
-
-        else {
-            current_buffer_loc = pj.structural_indexes[next_json];
-        }
-    }
-    //TODO: have a more precise error check
-    //Give it two chances for now.  We assume the error is because the json was not loaded completely in this batch.
-    //Load a new batch and if the error persists, it's a genuine error.
-    else if ( res > 1 && !error_on_last_attempt) {
-        load_next_batch = true;
-        error_on_last_attempt = true;
-        res = json_parse(pj);
     }
     return res;
 }
 
-#ifdef SIMDJSON_THREADS_ENABLED
-size_t JsonStream::find_last_json_buf_loc(const ParsedJson &pj) {
-    auto last_i = pj.n_structural_indexes - 1;
-    if (pj.structural_indexes[last_i] == _batch_size)
-        last_i = pj.n_structural_indexes - 2;
-    auto arr_cnt = 0;
-    auto obj_cnt = 0;
-    for (auto i = last_i; i > 0; i--) {
-        auto idxb = pj.structural_indexes[i];
-        switch (_buf[idxb]) {
-            case ':':
-            case ',':
-                continue;
-            case '}':
-                obj_cnt--;
-                continue;
-            case ']':
-                arr_cnt--;
-                continue;
-            case '{':
-                obj_cnt++;
-                break;
-            case '[':
-                arr_cnt++;
-                break;
+#else  // SIMDJSON_THREADS_ENABLED
+
+// single-threaded version of json_parse
+int JsonStream::json_parse(ParsedJson &pj) {
+    if (unlikely(pj.byte_capacity == 0)) {
+        const bool allocok = pj.allocate_capacity(_batch_size);
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
-        auto idxa = pj.structural_indexes[i - 1];
-        switch (_buf[idxa]) {
-            case '{':
-            case '[':
-            case ':':
-            case ',':
-                continue;
-        }
-        if (!arr_cnt && !obj_cnt)
-            return pj.structural_indexes[last_i+1];
-        return idxb;
+    } else if (unlikely(pj.byte_capacity < _batch_size)) {
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
     }
-    return 0;
+    if (unlikely(load_next_batch)) {
+        _buf = _buf + current_buffer_loc;
+        _len -= current_buffer_loc;
+        n_bytes_parsed += current_buffer_loc;
+        _batch_size = std::min(_batch_size, _len);
+        _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
+        int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
+        if (stage1_is_ok != simdjson::SUCCESS) {
+            pj.error_code = stage1_is_ok;
+            return pj.error_code;
+        }
+        size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+        if(last_index == 0) {
+            pj.error_code = simdjson::EMPTY;
+            return pj.error_code;
+        }
+        pj.n_structural_indexes = last_index + 1;
+        load_next_batch = false;
+    } // load_next_batch
+    int res = best_stage2(_buf, _len, pj, next_json);
+    if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
+        n_parsed_docs++;
+        current_buffer_loc = pj.structural_indexes[next_json];
+    } else if (res == simdjson::SUCCESS) {
+        n_parsed_docs++;
+        if(_len > _batch_size) {
+            current_buffer_loc = pj.structural_indexes[next_json - 1];
+            next_json = 1;
+            load_next_batch = true;
+            res = simdjson::SUCCESS_AND_HAS_MORE;
+        }
+    }
+    return res;
 }
-#endif
+
+#endif // SIMDJSON_THREADS_ENABLED
+
 
 size_t JsonStream::get_current_buffer_loc() const {
     return current_buffer_loc;
@@ -1349,6 +1385,8 @@ void find_the_best_supported_implementation() {
     }
 #endif
     std::cerr << "The processor is not supported by simdjson." << std::endl;
+    // we throw an exception since this should not be recoverable
+    throw new std::runtime_error("unsupported architecture");
 }
 /* end file src/jsonstream.cpp */
 /* begin file src/arm64/bitmanipulation.h */
@@ -3636,15 +3674,22 @@ namespace simdjson::arm64::simd {
     really_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { *this = *this - other; return *this; }
 
     // Order-specific operations
+    really_inline uint8_t max() const { return vmaxvq_u8(*this); }
+    really_inline uint8_t min() const { return vminvq_u8(*this); }
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return vmaxq_u8(*this, other); }
     really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return vminq_u8(*this, other); }
     really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return vcleq_u8(*this, other); }
     really_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return vcgeq_u8(*this, other); }
+    really_inline simd8<bool> operator<(const simd8<uint8_t> other) const { return vcltq_u8(*this, other); }
     really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return vcgtq_u8(*this, other); }
+    // Same as >, but instead of guaranteeing all 1's == true, false = 0 and true = nonzero. For ARM, returns all 1's.
+    really_inline simd8<uint8_t> gt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this > other); }
+    // Same as <, but instead of guaranteeing all 1's == true, false = 0 and true = nonzero. For ARM, returns all 1's.
+    really_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
 
     // Bit-specific operations
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
-    really_inline bool any_bits_set_anywhere() const { return vmaxvq_u8(*this) != 0; }
+    really_inline bool any_bits_set_anywhere() const { return this->max() != 0; }
     really_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
     template<int N>
     really_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
@@ -3732,6 +3777,7 @@ namespace simdjson::arm64::simd {
     really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return vmaxq_s8(*this, other); }
     really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return vminq_s8(*this, other); }
     really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return vcgtq_s8(*this, other); }
+    really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return vcltq_s8(*this, other); }
     really_inline simd8<bool> operator==(const simd8<int8_t> other) const { return vceqq_s8(*this, other); }
 
     template<int N=1>
@@ -3890,7 +3936,7 @@ namespace simdjson::haswell::simd {
     really_inline Child operator|(const Child other) const { return _mm256_or_si256(*this, other); }
     really_inline Child operator&(const Child other) const { return _mm256_and_si256(*this, other); }
     really_inline Child operator^(const Child other) const { return _mm256_xor_si256(*this, other); }
-    really_inline Child bit_andnot(const Child other) const { return _mm256_andnot_si256(*this, other); }
+    really_inline Child bit_andnot(const Child other) const { return _mm256_andnot_si256(other, *this); }
     really_inline Child operator~() const { return *this ^ 0xFFu; }
     really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
     really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
@@ -3957,7 +4003,7 @@ namespace simdjson::haswell::simd {
     really_inline base8_numeric(const __m256i _value) : base8<T>(_value) {}
 
     // Store to array
-    really_inline void store(T dst[32]) { return _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), *this); }
+    really_inline void store(T dst[32]) const { return _mm256_storeu_si256(reinterpret_cast<__m256i *>(dst), *this); }
 
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm256_add_epi8(*this, other); }
@@ -4023,6 +4069,7 @@ namespace simdjson::haswell::simd {
     really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return _mm256_max_epi8(*this, other); }
     really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return _mm256_min_epi8(*this, other); }
     really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm256_cmpgt_epi8(*this, other); }
+    really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm256_cmpgt_epi8(other, *this); }
   };
 
   // Unsigned bytes
@@ -4065,14 +4112,21 @@ namespace simdjson::haswell::simd {
 
     // Order-specific operations
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm256_max_epu8(*this, other); }
-    really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm256_min_epu8(*this, other); }
+    really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm256_min_epu8(other, *this); }
+    // Same as >, but only guarantees true is nonzero (< guarantees true = -1)
+    really_inline simd8<uint8_t> gt_bits(const simd8<uint8_t> other) const { return this->saturating_sub(other); }
+    // Same as <, but only guarantees true is nonzero (< guarantees true = -1)
+    really_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return other.saturating_sub(*this); }
     really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
     really_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return other.min(*this) == other; }
-    really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return this->saturating_sub(other).any_bits_set(); }
+    really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return this->gt_bits(other).any_bits_set(); }
+    really_inline simd8<bool> operator<(const simd8<uint8_t> other) const { return this->lt_bits(other).any_bits_set(); }
 
     // Bit-specific operations
-    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
-    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
+    really_inline simd8<bool> bits_not_set() const { return *this == uint8_t(0); }
+    really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
+    really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
     really_inline bool bits_not_set_anywhere() const { return _mm256_testz_si256(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm256_testz_si256(*this, bits); }
@@ -4102,7 +4156,7 @@ namespace simdjson::haswell::simd {
       each(1);
     }
 
-    really_inline void store(T ptr[64]) {
+    really_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
     }
@@ -4193,7 +4247,7 @@ namespace simdjson::westmere::simd {
     really_inline Child operator|(const Child other) const { return _mm_or_si128(*this, other); }
     really_inline Child operator&(const Child other) const { return _mm_and_si128(*this, other); }
     really_inline Child operator^(const Child other) const { return _mm_xor_si128(*this, other); }
-    really_inline Child bit_andnot(const Child other) const { return _mm_andnot_si128(*this, other); }
+    really_inline Child bit_andnot(const Child other) const { return _mm_andnot_si128(other, *this); }
     really_inline Child operator~() const { return *this ^ 0xFFu; }
     really_inline Child& operator|=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast | other; return *this_cast; }
     really_inline Child& operator&=(const Child other) { auto this_cast = (Child*)this; *this_cast = *this_cast & other; return *this_cast; }
@@ -4258,7 +4312,7 @@ namespace simdjson::westmere::simd {
     really_inline base8_numeric(const __m128i _value) : base8<T>(_value) {}
 
     // Store to array
-    really_inline void store(T dst[16]) { return _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), *this); }
+    really_inline void store(T dst[16]) const { return _mm_storeu_si128(reinterpret_cast<__m128i *>(dst), *this); }
 
     // Addition/subtraction are the same for signed and unsigned
     really_inline simd8<T> operator+(const simd8<T> other) const { return _mm_add_epi8(*this, other); }
@@ -4318,6 +4372,7 @@ namespace simdjson::westmere::simd {
     really_inline simd8<int8_t> max(const simd8<int8_t> other) const { return _mm_max_epi8(*this, other); }
     really_inline simd8<int8_t> min(const simd8<int8_t> other) const { return _mm_min_epi8(*this, other); }
     really_inline simd8<bool> operator>(const simd8<int8_t> other) const { return _mm_cmpgt_epi8(*this, other); }
+    really_inline simd8<bool> operator<(const simd8<int8_t> other) const { return _mm_cmpgt_epi8(other, *this); }
   };
 
   // Unsigned bytes
@@ -4355,13 +4410,20 @@ namespace simdjson::westmere::simd {
     // Order-specific operations
     really_inline simd8<uint8_t> max(const simd8<uint8_t> other) const { return _mm_max_epu8(*this, other); }
     really_inline simd8<uint8_t> min(const simd8<uint8_t> other) const { return _mm_min_epu8(*this, other); }
+    // Same as >, but only guarantees true is nonzero (< guarantees true = -1)
+    really_inline simd8<uint8_t> gt_bits(const simd8<uint8_t> other) const { return this->saturating_sub(other); }
+    // Same as <, but only guarantees true is nonzero (< guarantees true = -1)
+    really_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return other.saturating_sub(*this); }
     really_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return other.max(*this) == other; }
     really_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return other.min(*this) == other; }
-    really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return this->saturating_sub(other).any_bits_set(); }
+    really_inline simd8<bool> operator>(const simd8<uint8_t> other) const { return this->gt_bits(other).any_bits_set(); }
+    really_inline simd8<bool> operator<(const simd8<uint8_t> other) const { return this->gt_bits(other).any_bits_set(); }
 
     // Bit-specific operations
-    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set(); }
-    really_inline simd8<bool> any_bits_set() const { return ~(*this == uint8_t(0)); }
+    really_inline simd8<bool> bits_not_set() const { return *this == uint8_t(0); }
+    really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
+    really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
+    really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
     really_inline bool bits_not_set_anywhere() const { return _mm_testz_si128(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm_testz_si128(*this, bits); }
@@ -4385,7 +4447,7 @@ namespace simdjson::westmere::simd {
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
-    really_inline void store(T ptr[64]) {
+    really_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
       this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
@@ -4496,630 +4558,21 @@ really_inline void find_whitespace_and_operators(
   whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
 }
 
-/*
- * legal utf-8 byte sequence
- * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
- *
- *  Code Points        1st       2s       3s       4s
- * U+0000..U+007F     00..7F
- * U+0080..U+07FF     C2..DF   80..BF
- * U+0800..U+0FFF     E0       A0..BF   80..BF
- * U+1000..U+CFFF     E1..EC   80..BF   80..BF
- * U+D000..U+D7FF     ED       80..9F   80..BF
- * U+E000..U+FFFF     EE..EF   80..BF   80..BF
- * U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
- * U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
- * U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
- *
- */
-
-// all byte values must be no larger than 0xF4
-
-using namespace simd;
-
-struct processed_utf_bytes {
-  simd8<uint8_t> raw_bytes;
-  simd8<int8_t> high_nibbles;
-  simd8<int8_t> carried_continuations;
-};
-
-struct utf8_checker {
-  simd8<uint8_t> has_error;
-  processed_utf_bytes previous;
-
-  // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(simd8<uint8_t> current_bytes) {
-    // unsigned, saturates to 0 below max
-    this->has_error |= current_bytes.saturating_sub(0xF4u);
-  }
-
-  really_inline simd8<int8_t> continuation_lengths(simd8<int8_t> high_nibbles) {
-    return high_nibbles.lookup_16<int8_t>(
-      1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
-      0, 0, 0, 0,             // 10xx (continuation)
-      2, 2,                   // 110x
-      3,                      // 1110
-      4);                     // 1111, next should be 0 (not checked here)
-  }
-
-  really_inline simd8<int8_t> carry_continuations(simd8<int8_t> initial_lengths) {
-    simd8<int8_t> prev_carried_continuations = initial_lengths.prev(this->previous.carried_continuations);
-    simd8<int8_t> right1 = simd8<int8_t>(simd8<uint8_t>(prev_carried_continuations).saturating_sub(1));
-    simd8<int8_t> sum = initial_lengths + right1;
-
-    simd8<int8_t> prev2_carried_continuations = sum.prev<2>(this->previous.carried_continuations);
-    simd8<int8_t> right2 = simd8<int8_t>(simd8<uint8_t>(prev2_carried_continuations).saturating_sub(2));
-    return sum + right2;
-  }
-
-  really_inline void check_continuations(simd8<int8_t> initial_lengths, simd8<int8_t> carries) {
-    // overlap || underlap
-    // carry > length && length > 0 || !(carry > length) && !(length > 0)
-    // (carries > length) == (lengths > 0)
-    // (carries > current) == (current > 0)
-    this->has_error |= simd8<uint8_t>(
-      (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
-  }
-
-  really_inline void check_carried_continuations() {
-    static const int8_t last_1[32] = {
-      9, 9, 9, 9, 9, 9, 9, 9,
-      9, 9, 9, 9, 9, 9, 9, 9,
-      9, 9, 9, 9, 9, 9, 9, 9,
-      9, 9, 9, 9, 9, 9, 9, 1
-    };
-    this->has_error |= simd8<uint8_t>(this->previous.carried_continuations > simd8<int8_t>(last_1 + 32 - sizeof(simd8<int8_t>)));
-  }
-
-  // when 0xED is found, next byte must be no larger than 0x9F
-  // when 0xF4 is found, next byte must be no larger than 0x8F
-  // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(simd8<uint8_t> current_bytes,
-                                                  simd8<uint8_t> off1_current_bytes) {
-    simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
-    simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
-    // Check if ED is followed by A0 or greater
-    simd8<bool> ED_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x9Fu)) & prev_ED;
-    // Check if F4 is followed by 90 or greater
-    simd8<bool> F4_too_large = (simd8<int8_t>(current_bytes) > simd8<int8_t>::splat(0x8Fu)) & prev_F4;
-    // These will also error if ED or F4 is followed by ASCII, but that's an error anyway
-    this->has_error |= simd8<uint8_t>(ED_too_large | F4_too_large);
-  }
-
-  // map off1_hibits => error condition
-  // hibits     off1    cur
-  // C       => < C2 && true
-  // E       => < E1 && < A0
-  // F       => < F1 && < 90
-  // else      false && false
-  really_inline void check_overlong(simd8<uint8_t> current_bytes,
-                                    simd8<uint8_t> off1_current_bytes,
-                                    simd8<int8_t> high_nibbles) {
-    simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
-
-    // Two-byte characters must start with at least C2
-    // Three-byte characters must start with at least E1
-    // Four-byte characters must start with at least F1
-    simd8<int8_t> initial_mins = off1_high_nibbles.lookup_16<int8_t>(
-      -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx -> false
-      -128, -128, -128, -128,                         // 10xx -> false
-      0xC2, -128,                                     // 1100 -> C2
-      0xE1,                                           // 1110
-      0xF1                                            // 1111
-    );
-    simd8<bool> initial_under = initial_mins > simd8<int8_t>(off1_current_bytes);
-
-    // Two-byte characters starting with at least C2 are always OK
-    // Three-byte characters starting with at least E1 must be followed by at least A0
-    // Four-byte characters starting with at least F1 must be followed by at least 90
-    simd8<int8_t> second_mins = off1_high_nibbles.lookup_16<int8_t>(
-      -128, -128, -128, -128, -128, -128, -128, -128, -128, // 0xxx => false
-      -128, -128, -128,                                     // 10xx => false
-      127, 127,                                             // 110x => true
-      0xA0,                                                 // 1110
-      0x90                                                  // 1111
-    );
-    simd8<bool> second_under = second_mins > simd8<int8_t>(current_bytes);
-    this->has_error |= simd8<uint8_t>(initial_under & second_under);
-  }
-
-  really_inline void count_nibbles(simd8<uint8_t> bytes, struct processed_utf_bytes *answer) {
-    answer->raw_bytes = bytes;
-    answer->high_nibbles = simd8<int8_t>(bytes.shr<4>());
-  }
-
-  // check whether the current bytes are valid UTF-8
-  // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
-    struct processed_utf_bytes pb {};
-    this->count_nibbles(current_bytes, &pb);
-
-    this->check_smaller_than_0xF4(current_bytes);
-
-    simd8<int8_t> initial_lengths = this->continuation_lengths(pb.high_nibbles);
-
-    pb.carried_continuations = this->carry_continuations(initial_lengths);
-
-    this->check_continuations(initial_lengths, pb.carried_continuations);
-
-    simd8<uint8_t> off1_current_bytes = pb.raw_bytes.prev(this->previous.raw_bytes);
-    this->check_first_continuation_max(current_bytes, off1_current_bytes);
-
-    this->check_overlong(current_bytes, off1_current_bytes, pb.high_nibbles);
-    this->previous = pb;
-  }
-
-  really_inline void check_next_input(simd8<uint8_t> in) {
-    if (likely(!in.any_bits_set_anywhere(0x80u))) {
-      this->check_carried_continuations();
-    } else {
-      this->check_utf8_bytes(in);
-    }
-  }
-
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
-    simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
-    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
-      // it is ascii, we just check carried continuations.
-      this->check_carried_continuations();
-    } else {
-      // it is not ascii so we have to do heavy work
-      for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->check_utf8_bytes(in.chunks[i]);
-      }
-    }
-  }
-
-  really_inline ErrorValues errors() {
-    return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
-  }
-}; // struct utf8_checker
-// This file contains the common code every implementation uses in stage1
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is included already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
-
-namespace stage1 {
-
-class bit_indexer {
-public:
-  uint32_t *tail;
-
-  bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
-
-  // flatten out values in 'bits' assuming that they are are to have values of idx
-  // plus their position in the bitvector, and store these indexes at
-  // base_ptr[base] incrementing base as we go
-  // will potentially store extra values beyond end of valid bits, so base_ptr
-  // needs to be large enough to handle this
-  really_inline void write_indexes(uint32_t idx, uint64_t bits) {
-    // In some instances, the next branch is expensive because it is mispredicted.
-    // Unfortunately, in other cases,
-    // it helps tremendously.
-    if (bits == 0)
-        return;
-    uint32_t cnt = hamming(bits);
-
-    // Do the first 8 all together
-    for (int i=0; i<8; i++) {
-      this->tail[i] = idx + trailing_zeroes(bits);
-      bits = clear_lowest_bit(bits);
-    }
-
-    // Do the next 8 all together (we hope in most cases it won't happen at all
-    // and the branch is easily predicted).
-    if (unlikely(cnt > 8)) {
-      for (int i=8; i<16; i++) {
-        this->tail[i] = idx + trailing_zeroes(bits);
-        bits = clear_lowest_bit(bits);
-      }
-
-      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
-      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
-      // or the start of a value ("abc" true 123) every four characters.
-      if (unlikely(cnt > 16)) {
-        uint32_t i = 16;
-        do {
-          this->tail[i] = idx + trailing_zeroes(bits);
-          bits = clear_lowest_bit(bits);
-          i++;
-        } while (i < cnt);
-      }
-    }
-
-    this->tail += cnt;
-  }
-};
-
-class json_structural_scanner {
-public:
-  // Whether the first character of the next iteration is escaped.
-  uint64_t prev_escaped = 0ULL;
-  // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
-  uint64_t prev_in_string = 0ULL;
-  // Whether the last character of the previous iteration is a primitive value character
-  // (anything except whitespace, braces, comma or colon).
-  uint64_t prev_primitive = 0ULL;
-  // Mask of structural characters from the last iteration.
-  // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
-  // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
-  uint64_t prev_structurals = 0;
-  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
-  uint64_t unescaped_chars_error = 0;
-  bit_indexer structural_indexes;
-
-  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
-
-  //
-  // Finish the scan and return any errors.
-  //
-  // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
-  //
-  really_inline ErrorValues detect_errors_on_eof();
-
-  //
-  // Return a mask of all string characters plus end quotes.
-  //
-  // prev_escaped is overflow saying whether the next character is escaped.
-  // prev_in_string is overflow saying whether we're still in a string.
-  //
-  // Backslash sequences outside of quotes will be detected in stage 2.
-  //
-  really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in);
-
-  //
-  // Determine which characters are *structural*:
-  // - braces: [] and {}
-  // - the start of primitives (123, true, false, null)
-  // - the start of invalid non-whitespace (+, &, ture, UTF-8)
-  //
-  // Also detects value sequence errors:
-  // - two values with no separator between ("hello" "world")
-  // - separators with no values ([1,] [1,,]and [,2])
-  //
-  // This method will find all of the above whether it is in a string or not.
-  //
-  // To reduce dependency on the expensive "what is in a string" computation, this method treats the
-  // contents of a string the same as content outside. Errors and structurals inside the string or on
-  // the trailing quote will need to be removed later when the correct string information is known.
-  //
-  really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in);
-
-  //
-  // Find the important bits of JSON in a STEP_SIZE-byte chunk, and add them to structural_indexes.
-  //
-  template<size_t STEP_SIZE>
-  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker);
-
-  //
-  // Parse the entire input in STEP_SIZE-byte chunks.
-  //
-  template<size_t STEP_SIZE>
-  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
-};
-
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
-  const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-  * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
-
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-  * indicates whether the sense of any edge going to the next iteration
-  * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
+really_inline bool is_ascii(simd8x64<uint8_t> input) {
+    simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+    return bits.max() < 0b10000000u;
 }
 
-//
-// Check if the current character immediately follows a matching character.
-//
-// For example, this checks for quotes with backslashes in front of them:
-//
-//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
-//
-really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
-  const uint64_t result = match << 1 | overflow;
-  overflow = match >> 63;
-  return result;
-}
-
-//
-// Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
-//
-//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-//
-really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
-  uint64_t follows_match = follows(match, overflow);
-  uint64_t result;
-  overflow |= add_overflow(follows_match, filler, &result);
-  return result;
-}
-
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof() {
-  if (prev_in_string) {
-    return UNCLOSED_STRING;
-  }
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
-  return SUCCESS;
-}
-
-//
-// Return a mask of all string characters plus end quotes.
-//
-// prev_escaped is overflow saying whether the next character is escaped.
-// prev_in_string is overflow saying whether we're still in a string.
-//
-// Backslash sequences outside of quotes will be detected in stage 2.
-//
-really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x64<uint8_t> in) {
-  const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
-  const uint64_t quote = in.eq('"') & ~escaped;
-  // prefix_xor flips on bits inside the string (and flips off the end quote).
-  const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
-  /* right shift of a signed value expected to be well-defined and standard
-  * compliant as of C++20,
-  * John Regher from Utah U. says this is fine code */
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
-  // Use ^ to turn the beginning quote off, and the end quote on.
-  return in_string ^ quote;
-}
-
-//
-// Determine which characters are *structural*:
-// - braces: [] and {}
-// - the start of primitives (123, true, false, null)
-// - the start of invalid non-whitespace (+, &, ture, UTF-8)
-//
-// Also detects value sequence errors:
-// - two values with no separator between ("hello" "world")
-// - separators with no values ([1,] [1,,]and [,2])
-//
-// This method will find all of the above whether it is in a string or not.
-//
-// To reduce dependency on the expensive "what is in a string" computation, this method treats the
-// contents of a string the same as content outside. Errors and structurals inside the string or on
-// the trailing quote will need to be removed later when the correct string information is known.
-//
-really_inline uint64_t json_structural_scanner::find_potential_structurals(const simd::simd8x64<uint8_t> in) {
-  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
-  uint64_t whitespace, op;
-  find_whitespace_and_operators(in, whitespace, op);
-
-  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
-  // Everything except whitespace, braces, colon and comma.
-  const uint64_t primitive = ~(op | whitespace);
-  const uint64_t follows_primitive = follows(primitive, prev_primitive);
-  const uint64_t start_primitive = primitive & ~follows_primitive;
-
-  // Return final structurals
-  return op | start_primitive;
-}
-
-//
-// Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
-//
-// PERF NOTES:
-// We pipe 2 inputs through these stages:
-// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
-//    The output of step 1 depends entirely on this information. These functions don't quite use
-//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-//    at a time. The second input's scans has some dependency on the first ones finishing it, but
-//    they can make a lot of progress before they need that information.
-// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-//    to finish: utf-8 checks and generating the output from the last iteration.
-// 
-// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-// workout.
-//
-template<>
-really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
-  //
-  // Load up all 128 bytes into SIMD registers
-  //
-  simd::simd8x64<uint8_t> in_1(buf);
-  simd::simd8x64<uint8_t> in_2(buf+64);
-
-  //
-  // Find the strings and potential structurals (operators / primitives).
-  //
-  // This will include false structurals that are *inside* strings--we'll filter strings out
-  // before we return.
-  //
-  uint64_t string_1 = this->find_strings(in_1);
-  uint64_t structurals_1 = this->find_potential_structurals(in_1);
-  uint64_t string_2 = this->find_strings(in_2);
-  uint64_t structurals_2 = this->find_potential_structurals(in_2);
-
-  //
-  // Do miscellaneous work while the processor is busy calculating strings and structurals.
-  //
-  // After that, weed out structurals that are inside strings and find invalid string characters.
-  //
-  uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  this->prev_structurals = structurals_1 & ~string_1;
-  this->unescaped_chars_error |= unescaped_1 & string_1;
-
-  uint64_t unescaped_2 = in_2.lteq(0x1F);
-  utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  this->prev_structurals = structurals_2 & ~string_2;
-  this->unescaped_chars_error |= unescaped_2 & string_2;
-}
-
-//
-// Find the important bits of JSON in a 64-byte chunk, and add them to structural_indexes.
-//
-template<>
-really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
-  //
-  // Load up bytes into SIMD registers
-  //
-  simd::simd8x64<uint8_t> in_1(buf);
-
-  //
-  // Find the strings and potential structurals (operators / primitives).
-  //
-  // This will include false structurals that are *inside* strings--we'll filter strings out
-  // before we return.
-  //
-  uint64_t string_1 = this->find_strings(in_1);
-  uint64_t structurals_1 = this->find_potential_structurals(in_1);
-
-  //
-  // Do miscellaneous work while the processor is busy calculating strings and structurals.
-  //
-  // After that, weed out structurals that are inside strings and find invalid string characters.
-  //
-  uint64_t unescaped_1 = in_1.lteq(0x1F);
-  utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
-  this->prev_structurals = structurals_1 & ~string_1;
-  this->unescaped_chars_error |= unescaped_1 & string_1;
-}
-
-template<size_t STEP_SIZE>
-really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
-  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
-  size_t idx = 0;
-
-  for (; idx < lenminusstep; idx += STEP_SIZE) {
-    this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
-  }
-
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
-  * spaces  before processing it (otherwise, we risk invalidating the UTF-8
-  * checks). */
-  if (likely(idx < len)) {
-    uint8_t tmp_buf[STEP_SIZE];
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-    this->scan_step<STEP_SIZE>(&tmp_buf[0], idx, utf8_checker);
-    idx += STEP_SIZE;
-  }
-
-  /* finally, flatten out the remaining structurals from the last iteration */
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
-}
-
-template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
-    return simdjson::CAPACITY;
-  }
-  utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes};
-  scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
-
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
-    return error;
-  }
-
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
-  /* a valid JSON file cannot have zero structural indexes - we should have
-   * found something */
-  if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
-  }
-  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
-  }
-  if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
-    /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending character. */
-    pj.structural_indexes[pj.n_structural_indexes++] = len;
-  }
-  /* make it safe to dereference one beyond this array */
-  pj.structural_indexes[pj.n_structural_indexes] = 0;
-  return utf8_checker.errors();
-}
-
-} // namespace stage1
-
-} // namespace simdjson::arm64
-
-namespace simdjson {
-
-template <>
-int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return arm64::stage1::find_structural_bits<64>(buf, len, pj, streaming);
-}
-
-} // namespace simdjson
-
-#endif // IS_ARM64
-#endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
-/* end file src/arm64/stage1_find_marks.h */
-/* begin file src/haswell/stage1_find_marks.h */
-#ifndef SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
-#define SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
-
-
-#ifdef IS_X86_64
-
-
-TARGET_HASWELL
-namespace simdjson::haswell {
-
-using namespace simd;
-
-really_inline void find_whitespace_and_operators(
-  const simd::simd8x64<uint8_t> in,
-  uint64_t &whitespace, uint64_t &op) {
-
-  // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
-  // we can't use the generic lookup_16.
-  auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
-  auto op_table = simd8<uint8_t>::repeat_16(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
-
-  whitespace = in.map([&](simd8<uint8_t> _in) {
-    return _in == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, _in));
-  }).to_bitmask();
-
-  op = in.map([&](simd8<uint8_t> _in) {
-    // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
-    return (_in | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, _in-','));
-  }).to_bitmask();
+really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+    simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
+    simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
+    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
+    // Use ^ instead of | for is_*_byte, because ^ is commutative, and the caller is using ^ as well.
+    // This will work fine because we only have to report errors for cases with 0-1 lead bytes.
+    // Multiple lead bytes implies 2 overlapping multibyte characters, and if that happens, there is
+    // guaranteed to be at least *one* lead byte that is part of only 1 other multibyte character.
+    // The error will be detected there.
+    return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
 //
@@ -5189,238 +4642,364 @@ using namespace simd;
 
 namespace utf8_validation {
 
-} // namespace utf8_validation
-
-struct utf8_checker {
-  // If this is nonzero, there has been a UTF-8 error.
-  simd8<uint8_t> error;
-  // The last input we received.
-  simd8<uint8_t> prev_input_block;
-  // If there were leads at the end of the previous block, to be continued in the next.
-  simd8<uint8_t> prev_incomplete;
-
   //
-  // These are the bits in lead_flags. Its main purpose is to tell you what kind of lead character
-  // it is (1,2,3 or 4--or none if it's continuation), but it also maps 4 other bytes that will be
-  // used to detect other kinds of errors.
+  // Find special case UTF-8 errors where the character is technically readable (has the right length)
+  // but the *value* is disallowed.
   //
-  // LEAD_4 is first because we use a << trick in get_byte_3_4_5_errors to turn LEAD_2 -> LEAD_3,
-  // LEAD_3 -> LEAD_4, and we want LEAD_4 to turn into nothing since there is no LEAD_5. This trick
-  // lets us use one constant table instead of 3, possibly saving registers on systems with fewer
-  // registers.
+  // This includes overlong encodings, surrogates and values too large for Unicode.
   //
-  static const uint8_t LEAD_4      = 0x01; // [1111]____ 10______ 10______ 10______ (0_|11)__
-  static const uint8_t LEAD_3      = 0x02; // [1110]____ 10______ 10______ (0|11)__
-  static const uint8_t LEAD_2      = 0x04; // [110_]____ 10______ (0|11)__
-  static const uint8_t LEAD_1      = 0x08; // [0___]____ (0|11)__
-  static const uint8_t LEAD_2_PLUS = 0x10; // [11__]____ ...
-  static const uint8_t LEAD_1100   = 0x20; // [1100]____ ...
-  static const uint8_t LEAD_1110   = 0x40; // [1110]____ ...
-  static const uint8_t LEAD_1111   = 0x80; // [1111]____ ...
-
-  // Prepare fast_path_error in case the next block is ASCII
-  really_inline void set_fast_path_error() {
-    // If any of the last 3 bytes in the input needs a continuation at the start of the next input,
-    // it is an error for the next input to be ASCII.
-    // static const uint8_t incomplete_long[32] = {
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, LEAD_4, LEAD_4 | LEAD_3, LEAD_4 | LEAD_3 | LEAD_2
-    // };
-    // const simd8<uint8_t> incomplete(&incomplete_long[sizeof(incomplete_long) - sizeof(simd8<uint8_t>)]);
-    // this->prev_incomplete = lead_flags & incomplete;
-    // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
-    // ... 1111____ 111_____ 11______
-    static const uint8_t last_len[32] = {
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
-    };
-    const simd8<uint8_t> max_value(&last_len[sizeof(last_len)-sizeof(simd8<uint8_t>)]);
-    // If anything is > the desired value, there will be a nonzero value in the result.
-    this->prev_incomplete = this->prev_input_block.saturating_sub(max_value);
-  }
-
-  really_inline simd8<uint8_t> get_lead_flags(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
-    // Total: 2 instructions, 1 constant
-    // - 1 byte shift (shuffle)
-    // - 1 table lookup (shuffle)
-    // - 1 table constant
-
-    // high_bits is byte 5, so lead is high_bits.prev<4>()
-    return high_bits.prev<4>(prev_high_bits).lookup_16<uint8_t>(
-      LEAD_1, LEAD_1, LEAD_1, LEAD_1,   // [0___]____ (ASCII)
-      LEAD_1, LEAD_1, LEAD_1, LEAD_1,   // [0___]____ (ASCII)
-      0,      0,      0,      0,        // [10__]____ (continuation)
-      LEAD_2 | LEAD_2_PLUS | LEAD_1100, // [1100]____
-      LEAD_2 | LEAD_2_PLUS,             // [110_]____
-      LEAD_3 | LEAD_2_PLUS | LEAD_1110, // [1110]____
-      LEAD_4 | LEAD_2_PLUS | LEAD_1111  // [1111]____
-    );
-  }
-
-  // Find errors in bytes 1 and 2 together (one single multi-nibble &)
-  really_inline simd8<uint8_t> get_byte_1_2_errors(const simd8<uint8_t> input, const simd8<uint8_t> prev_input, const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
+  // It turns out the bad character ranges can all be detected by looking at the first 12 bits of the
+  // UTF-8 encoded character (i.e. all of byte 1, and the high 4 bits of byte 2). This algorithm does a
+  // 3 4-bit table lookups, identifying which errors that 4 bits could match, and then &'s them together.
+  // If all 3 lookups detect the same error, it's an error.
+  //
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
     //
     // These are the errors we're going to match for bytes 1-2, by looking at the first three
-    // nibbles of the character: lead_flags & <low bits of byte 1> & <high bits of byte 2>
+    // nibbles of the character: <high bits of byte 1>> & <low bits of byte 1> & <high bits of byte 2>
     //
-    // The important thing here is that these constants all take up *different* bits, since they
-    // match different patterns. This is why there are 2 LEAD_4 and 2 LEAD_3s in lead_flags, among
-    // other things.
-    //
-    static const int TOO_SHORT_2 = LEAD_2_PLUS; // 11______ (0___|11__)____
-    static const int TOO_LONG_1  = LEAD_1;      // 0_______ 10______
-    static const int OVERLONG_2  = LEAD_1100;   // 1100000_ ________ (technically we match 10______ but we could match ________, they both yield errors either way)
-    static const int OVERLONG_3  = LEAD_3;      // 11100000 100_____ ________
-    static const int OVERLONG_4  = LEAD_4;      // 11110000 1000____ ________ ________
-    static const int TOO_LARGE   = LEAD_1111;   // 11110100 (1001|101_)____
-    static const int SURROGATE   = LEAD_1110;   // 11101101 [101_]____
-
-    // Total: 4 instructions, 2 constants
-    // - 2 table lookups (shuffles)
-    // - 1 byte shift (shuffle)
-    // - 1 "and"
-    // - 2 table constants
+    static const int OVERLONG_2  = 0x01; // 1100000_ 10______ (technically we match 10______ but we could match ________, they both yield errors either way)
+    static const int OVERLONG_3  = 0x02; // 11100000 100_____ ________
+    static const int OVERLONG_4  = 0x04; // 11110000 1000____ ________ ________
+    static const int SURROGATE   = 0x08; // 11101101 [101_]____
+    static const int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
+    static const int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
 
     // After processing the rest of byte 1 (the low bits), we're still not done--we have to check
     // byte 2 to be sure which things are errors and which aren't.
-    // Since input is byte 5, byte 1 is input.prev<4>
-    const simd8<uint8_t> byte_1_flags = (input.prev<4>(prev_input) & 0x0F).lookup_16<uint8_t>(
-      // ____[00__] ________
-      TOO_SHORT_2 | TOO_LONG_1 | OVERLONG_2 | OVERLONG_3 | OVERLONG_4, // ____[0000] ________
-      TOO_SHORT_2 | TOO_LONG_1 | OVERLONG_2,                           // ____[0001] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[01__] ________
-      TOO_SHORT_2 | TOO_LONG_1 | TOO_LARGE,                            // ____[0100] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[10__] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[11__] ________
-      TOO_SHORT_2 | TOO_LONG_1,
-      TOO_SHORT_2 | TOO_LONG_1 | SURROGATE,                            // ____[1101] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1
-    );
     // Since high_bits is byte 5, byte 2 is high_bits.prev<3>
-    const simd8<uint8_t> byte_2_flags = high_bits.prev<3>(prev_high_bits).lookup_16<uint8_t>(
+    static const int CARRY = OVERLONG_2 | TOO_LARGE_2;
+    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16<uint8_t>(
         // ASCII: ________ [0___]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2,
+        CARRY, CARRY, CARRY, CARRY,
         // ASCII: ________ [0___]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2,
+        CARRY, CARRY, CARRY, CARRY,
         // Continuations: ________ [10__]____
-        OVERLONG_2 | TOO_LONG_1 | OVERLONG_3 | OVERLONG_4, // ________ [1000]____
-        OVERLONG_2 | TOO_LONG_1 | OVERLONG_3 | SURROGATE,  // ________ [1001]____
-        OVERLONG_2 | TOO_LONG_1 | TOO_LARGE  | SURROGATE,  // ________ [1010]____
-        OVERLONG_2 | TOO_LONG_1 | TOO_LARGE  | SURROGATE,  // ________ [1011]____
+        CARRY | OVERLONG_3 | OVERLONG_4, // ________ [1000]____
+        CARRY | OVERLONG_3 | TOO_LARGE,  // ________ [1001]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1010]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1011]____
         // Multibyte Leads: ________ [11__]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2
+        CARRY, CARRY, CARRY, CARRY
     );
-    return byte_1_flags & byte_2_flags;
-  }
 
-  really_inline simd8<uint8_t> get_byte_3_4_5_errors(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
-    // Total 7 instructions, 3 simd constants:
-    // - 3 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 2 "or"
-    // - 1 table constant
-
-    const simd8<uint8_t> byte_3_table = simd8<uint8_t>::repeat_16(
-        // TOO_SHORT ASCII:           111_____ ________ [0___]____
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3,
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3,
-        // TOO_LONG  Continuations:   110_____ ________ [10__]____
-        LEAD_2, LEAD_2, LEAD_2, LEAD_2,
-        // TOO_SHORT Multibyte Leads: 111_____ ________ [11__]____
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3
+    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16<uint8_t>(
+      // [0___]____ (ASCII)
+      0, 0, 0, 0,                          
+      0, 0, 0, 0,
+      // [10__]____ (continuation)
+      0, 0, 0, 0,
+      // [11__]____ (2+-byte leads)
+      OVERLONG_2, 0,                       // [110_]____ (2-byte lead)
+      OVERLONG_3 | SURROGATE,              // [1110]____ (3-byte lead)
+      OVERLONG_4 | TOO_LARGE | TOO_LARGE_2 // [1111]____ (4+-byte lead)
     );
-    const simd8<uint8_t> byte_4_table = byte_3_table.shr<1>(); // TOO_SHORT: LEAD_4, TOO_LONG: LEAD_3
-    const simd8<uint8_t> byte_5_table = byte_3_table.shr<2>(); // TOO_SHORT: <none>, TOO_LONG: LEAD_4
 
-    // high_bits is byte 5, high_bits.prev<2> is byte 3 and high_bits.prev<1> is byte 4
-    return high_bits.prev<2>(prev_high_bits).lookup_16(byte_3_table) |
-           high_bits.prev<1>(prev_high_bits).lookup_16(byte_4_table) |
-           high_bits.lookup_16(byte_5_table);
+    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16<uint8_t>(
+      // ____[00__] ________
+      OVERLONG_2 | OVERLONG_3 | OVERLONG_4, // ____[0000] ________
+      OVERLONG_2,                           // ____[0001] ________
+      0, 0,
+      // ____[01__] ________
+      TOO_LARGE,                            // ____[0100] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      // ____[10__] ________
+      TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2,
+      // ____[11__] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2 | SURROGATE,                            // ____[1101] ________
+      TOO_LARGE_2, TOO_LARGE_2
+    );
+
+    return byte_1_high & byte_1_low & byte_2_high;
   }
 
-  // Check whether the current bytes are valid UTF-8.
-  // At the end of the function, previous gets updated
-  // This should come down to 22 instructions if table definitions are in registers--30 if not.
-  really_inline simd8<uint8_t> check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
-    // When we process bytes M through N, we look for lead characters in M-4 through N-4. This allows
-    // us to look for all errors related to any lead character at one time (since UTF-8 characters
-    // can only be up to 4 bytes, and the next byte after a character finishes must be another lead,
-    // we never need to look more than 4 bytes past the current one to fully validate).
-    // This way, we have all relevant bytes around and can save ourselves a little overflow and
-    // several instructions on each loop.
+  //
+  // Validate the length of multibyte characters (that each multibyte character has the right number
+  // of continuation characters, and that all continuation characters are part of a multibyte
+  // character).
+  //
+  // Algorithm
+  // =========
+  //
+  // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
+  // and emits an error anytime there is a mismatch.
+  //
+  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // characters, the file will look like this:
+  //
+  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
+  // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
+  // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
+  // | is_second_byte        |    |  X |    |    |    |  X |    |    |  X |    |    |
+  // | is_third_byte         |    |    |  X |    |    |    |  X |    |    |    |    |
+  // | is_fourth_byte        |    |    |    |  X |    |    |    |    |    |    |    |
+  // | expected_continuation |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  // | is_continuation       |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  //
+  // The errors here are basically (Second Byte OR Third Byte OR Fourth Byte == Continuation):
+  //
+  // - **Extra Continuations:** Any continuation that is not a second, third or fourth byte is not
+  //   part of a valid 2-, 3- or 4-byte character and is thus an error. It could be that it's just
+  //   floating around extra outside of any character, or that there is an illegal 5-byte character,
+  //   or maybe it's at the beginning of the file before any characters have started; but it's an
+  //   error in all these cases.
+  // - **Missing Continuations:** Any second, third or fourth byte that *isn't* a continuation is an error, because that means
+  //   we started a new character before we were finished with the current one.
+  //
+  // Getting the Previous Bytes
+  // --------------------------
+  //
+  // Because we want to know if a byte is the *second* (or third, or fourth) byte of a multibyte
+  // character, we need to "shift the bytes" to find that out. This is what they mean:
+  //
+  // - `is_continuation`: if the current byte is a continuation.
+  // - `is_second_byte`: if 1 byte back is the start of a 2-, 3- or 4-byte character.
+  // - `is_third_byte`: if 2 bytes back is the start of a 3- or 4-byte character.
+  // - `is_fourth_byte`: if 3 bytes back is the start of a 4-byte character.
+  //
+  // We use shuffles to go n bytes back, selecting part of the current `input` and part of the
+  // `prev_input` (search for `.prev<1>`, `.prev<2>`, etc.). These are passed in by the caller
+  // function, because the 1-byte-back data is used by other checks as well.
+  //
+  // Getting the Continuation Mask
+  // -----------------------------
+  //
+  // Once we have the right bytes, we have to get the masks. To do this, we treat UTF-8 bytes as
+  // numbers, using signed `<` and `>` operations to check if they are continuations or leads.
+  // In fact, we treat the numbers as *signed*, partly because it helps us, and partly because
+  // Intel's SIMD presently only offers signed `<` and `>` operations (not unsigned ones).
+  //
+  // In UTF-8, bytes that start with the bits 110, 1110 and 11110 are 2-, 3- and 4-byte "leads,"
+  // respectively, meaning they expect to have 1, 2 and 3 "continuation bytes" after them.
+  // Continuation bytes start with 10, and ASCII (1-byte characters) starts with 0.
+  //
+  // When treated as signed numbers, they look like this:
+  //
+  // | Type         | High Bits  | Binary Range | Signed |
+  // |--------------|------------|--------------|--------|
+  // | ASCII        | `0`        | `01111111`   |   127  |
+  // |              |            | `00000000`   |     0  |
+  // | 4+-Byte Lead | `1111`     | `11111111`   |    -1  |
+  // |              |            | `11110000    |   -16  |
+  // | 3-Byte Lead  | `1110`     | `11101111`   |   -17  |
+  // |              |            | `11100000    |   -32  |
+  // | 2-Byte Lead  | `110`      | `11011111`   |   -33  |
+  // |              |            | `11000000    |   -64  |
+  // | Continuation | `10`       | `10111111`   |   -65  |
+  // |              |            | `10000000    |  -128  |
+  //
+  // This makes it pretty easy to get the continuation mask! It's just a single comparison:
+  //
+  // ```
+  // is_continuation = input < -64`
+  // ```
+  //
+  // We can do something similar for the others, but it takes two comparisons instead of one: "is
+  // the start of a 4-byte character" is `< -32` and `> -65`, for example. And 2+ bytes is `< 0` and
+  // `> -64`. Surely we can do better, they're right next to each other!
+  //
+  // Getting the is_xxx Masks: Shifting the Range
+  // --------------------------------------------
+  //
+  // Notice *why* continuations were a single comparison. The actual *range* would require two
+  // comparisons--`< -64` and `> -129`--but all characters are always greater than -128, so we get
+  // that for free. In fact, if we had *unsigned* comparisons, 2+, 3+ and 4+ comparisons would be
+  // just as easy: 4+ would be `> 239`, 3+ would be `> 223`, and 2+ would be `> 191`.
+  //
+  // Instead, we add 128 to each byte, shifting the range up to make comparison easy. This wraps
+  // ASCII down into the negative, and puts 4+-Byte Lead at the top:
+  //
+  // | Type                 | High Bits  | Binary Range | Signed |
+  // |----------------------|------------|--------------|-------|
+  // | 4+-Byte Lead (+ 127) | `0111`     | `01111111`   |   127 |
+  // |                      |            | `01110000    |   112 |
+  // |----------------------|------------|--------------|-------|
+  // | 3-Byte Lead (+ 127)  | `0110`     | `01101111`   |   111 |
+  // |                      |            | `01100000    |    96 |
+  // |----------------------|------------|--------------|-------|
+  // | 2-Byte Lead (+ 127)  | `010`      | `01011111`   |    95 |
+  // |                      |            | `01000000    |    64 |
+  // |----------------------|------------|--------------|-------|
+  // | Continuation (+ 127) | `00`       | `00111111`   |    63 |
+  // |                      |            | `00000000    |     0 |
+  // |----------------------|------------|--------------|-------|
+  // | ASCII (+ 127)        | `1`        | `11111111`   |    -1 |
+  // |                      |            | `10000000`   |  -128 |
+  // |----------------------|------------|--------------|-------|
+  // 
+  // *Now* we can use signed `>` on all of them:
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev2 = input.prev<2>
+  // prev3 = input.prev<3>
+  // prev1_flipped = input.prev<1>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = input.prev<2>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = input.prev<3>(prev_input) ^ 0x80; // Same as `+ 128`
+  // is_second_byte = prev1_flipped > 63;  // 2+-byte lead
+  // is_third_byte  = prev2_flipped > 95;  // 3+-byte lead
+  // is_fourth_byte = prev3_flipped > 111; // 4+-byte lead
+  // ```
+  //
+  // NOTE: we use `^ 0x80` instead of `+ 128` in the code, which accomplishes the same thing, and even takes the same number
+  // of cycles as `+`, but on many Intel architectures can be parallelized better (you can do 3
+  // `^`'s at a time on Haswell, but only 2 `+`'s).
+  //
+  // That doesn't look like it saved us any instructions, did it? Well, because we're adding the
+  // same number to all of them, we can save one of those `+ 128` operations by assembling
+  // `prev2_flipped` out of prev 1 and prev 3 instead of assembling it from input and adding 128
+  // to it. One more instruction saved!
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev3 = input.prev<3>
+  // prev1_flipped = prev1 ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = prev3 ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = prev1_flipped.concat<2>(prev3_flipped): // <shuffle: take the first 2 bytes from prev1 and the rest from prev3  
+  // ```
+  //
+  // ### Bringing It All Together: Detecting the Errors
+  //
+  // At this point, we have `is_continuation`, `is_first_byte`, `is_second_byte` and `is_third_byte`.
+  // All we have left to do is check if they match!
+  //
+  // ```
+  // return (is_second_byte | is_third_byte | is_fourth_byte) ^ is_continuation;
+  // ```
+  //
+  // But wait--there's more. The above statement is only 3 operations, but they *cannot be done in
+  // parallel*. You have to do 2 `|`'s and then 1 `&`. Haswell, at least, has 3 ports that can do
+  // bitwise operations, and we're only using 1!
+  //
+  // Epilogue: Addition For Booleans
+  // -------------------------------
+  //
+  // There is one big case the above code doesn't explicitly talk about--what if is_second_byte
+  // and is_third_byte are BOTH true? That means there is a 3-byte and 2-byte character right next
+  // to each other (or any combination), and the continuation could be part of either of them!
+  // Our algorithm using `&` and `|` won't detect that the continuation byte is problematic.
+  //
+  // Never fear, though. If that situation occurs, we'll already have detected that the second
+  // leading byte was an error, because it was supposed to be a part of the preceding multibyte
+  // character, but it *wasn't a continuation*.
+  //
+  // We could stop here, but it turns out that we can fix it using `+` and `-` instead of `|` and
+  // `&`, which is both interesting and possibly useful (even though we're not using it here). It
+  // exploits the fact that in SIMD, a *true* value is -1, and a *false* value is 0. So those
+  // comparisons were giving us numbers!
+  //
+  // Given that, if you do `is_second_byte + is_third_byte + is_fourth_byte`, under normal
+  // circumstances you will either get 0 (0 + 0 + 0) or -1 (-1 + 0 + 0, etc.). Thus,
+  // `(is_second_byte + is_third_byte + is_fourth_byte) - is_continuation` will yield 0 only if
+  // *both* or *neither* are 0 (0-0 or -1 - -1). You'll get 1 or -1 if they are different. Because
+  // *any* nonzero value is treated as an error (not just -1), we're just fine here :)
+  //
+  // Further, if *more than one* multibyte character overlaps,
+  // `is_second_byte + is_third_byte + is_fourth_byte` will be -2 or -3! Subtracting `is_continuation`
+  // from *that* is guaranteed to give you a nonzero value (-1, -2 or -3). So it'll always be
+  // considered an error.
+  //
+  // One reason you might want to do this is parallelism. ^ and | are not associative, so
+  // (A | B | C) ^ D will always be three operations in a row: either you do A | B -> | C -> ^ D, or
+  // you do B | C -> | A -> ^ D. But addition and subtraction *are* associative: (A + B + C) - D can
+  // be written as `(A + B) + (C - D)`. This means you can do A + B and C - D at the same time, and
+  // then adds the result together. Same number of operations, but if the processor can run
+  // independent things in parallel (which most can), it runs faster.
+  //
+  // This doesn't help us on Intel, but might help us elsewhere: on Haswell, at least, | and ^ have
+  // a super nice advantage in that more of them can be run at the same time (they can run on 3
+  // ports, while + and - can run on 2)! This means that we can do A | B while we're still doing C,
+  // saving us the cycle we would have earned by using +. Even more, using an instruction with a
+  // wider array of ports can help *other* code run ahead, too, since these instructions can "get
+  // out of the way," running on a port other instructions can't.
+  // 
+  // Epilogue II: One More Trick
+  // ---------------------------
+  //
+  // There's one more relevant trick up our sleeve, it turns out: it turns out on Intel we can "pay
+  // for" the (prev<1> + 128) instruction, because it can be used to save an instruction in
+  // check_special_cases()--but we'll talk about that there :)
+  //
+  really_inline simd8<uint8_t> check_multibyte_lengths(simd8<uint8_t> input, simd8<uint8_t> prev_input, simd8<uint8_t> prev1) {
+    simd8<uint8_t> prev2 = input.prev<2>(prev_input);
+    simd8<uint8_t> prev3 = input.prev<3>(prev_input);
 
-    // Total: 22 instructions, 7 simd constants
-    // Local: 8 instructions, 1 simd constant
-    // - 2 bit shifts
-    // - 1 byte shift (shuffle)
-    // - 3 "or"
-    // - 1 "and"
-    // - 1 saturating_sub
-    // - 1 constant (0b11111000-1)
-    // lead_flags: 2 instructions, 1 simd constant
-    // - 1 byte shift (shuffle)
-    // - 1 table lookup (shuffle)
-    // - 1 table constant
-    // byte_1_2_errors: 5 instructions, 2 simd constants
-    // - 2 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 1 "and"
-    // - 2 table constants
-    // byte_3_4_5_errors: 7 instructions, 3 simd constants
-    // - 3 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 2 "or"
-    // - 3 table constants
-
-    const simd8<uint8_t> high_bits = input.shr<4>();
-    const simd8<uint8_t> prev_high_bits = prev_input.shr<4>();
-    const simd8<uint8_t> lead_flags = get_lead_flags(high_bits, prev_high_bits);
-    const simd8<uint8_t> byte_1_2_errors = get_byte_1_2_errors(input, prev_input, high_bits, prev_high_bits);
-    const simd8<uint8_t> byte_3_4_5_errors = get_byte_3_4_5_errors(high_bits, prev_high_bits);
-    // Detect illegal 5-byte+ Unicode values. We can't do this as part of byte_1_2_errors  because
-    // it would need a third lead_flag = 1111, and we've already used up all 8 between
-    // byte_1_2_errors and byte_3_4_5_errors.
-    const simd8<uint8_t> too_large = input.saturating_sub(0b11111000-1); // too-large values will be nonzero
-    return too_large | (lead_flags & (byte_1_2_errors | byte_3_4_5_errors));
+    // Cont is 10000000-101111111 (-65...-128)
+    simd8<bool> is_continuation = simd8<int8_t>(input) < int8_t(-64);
+    // must_be_continuation is architecture-specific because Intel doesn't have unsigned comparisons
+    return simd8<uint8_t>(must_be_continuation(prev1, prev2, prev3) ^ is_continuation);
   }
 
-  // TODO special case start of file, too, so that small documents are efficient! No shifting needed ...
-
-  // The only problem that can happen at EOF is that a multibyte character is too short.
-  really_inline void check_eof() {
-    // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-    // possibly finish them.
-    this->error |= this->prev_incomplete;
+  //
+  // Return nonzero if there are incomplete multibyte characters at the end of the block:
+  // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
+  //
+  really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
+    // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
+    // ... 1111____ 111_____ 11______
+    static const uint8_t max_array[32] = {
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
+    };
+    const simd8<uint8_t> max_value(&max_array[sizeof(max_array)-sizeof(simd8<uint8_t>)]);
+    return input.gt_bits(max_value);
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
-    if (likely(!bits.any_bits_set_anywhere(0b10000000u))) {
+  struct utf8_checker {
+    // If this is nonzero, there has been a UTF-8 error.
+    simd8<uint8_t> error;
+    // The last input we received
+    simd8<uint8_t> prev_input_block;
+    // Whether the last input we received was incomplete (used for ASCII fast path)
+    simd8<uint8_t> prev_incomplete;
+
+    //
+    // Check whether the current bytes are valid UTF-8.
+    //
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+      // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
+      // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
+      simd8<uint8_t> prev1 = input.prev<1>(prev_input);
+      this->error |= check_special_cases(input, prev1);
+      this->error |= check_multibyte_lengths(input, prev_input, prev1);
+    }
+
+    // The only problem that can happen at EOF is that a multibyte character is too short.
+    really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
       // possibly finish them.
       this->error |= this->prev_incomplete;
-    } else {
-      this->error |= this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-      for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->error |= this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
-      }
-      this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      this->set_fast_path_error();
     }
-  }
 
-  really_inline ErrorValues errors() {
-    return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
-  }
+    really_inline void check_next_input(simd8x64<uint8_t> input) {
+      if (likely(is_ascii(input))) {
+        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+        // possibly finish them.
+        this->error |= this->prev_incomplete;
+      } else {
+        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
+        }
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      }
+    }
 
-}; // struct utf8_checker
+    really_inline ErrorValues errors() {
+      return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    }
+
+  }; // struct utf8_checker
+}
+
+using utf8_validation::utf8_checker;
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -5501,8 +5080,9 @@ public:
   // Finish the scan and return any errors.
   //
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
+  // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof();
+  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -5611,8 +5191,8 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof() {
-  if (prev_in_string) {
+really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+  if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
   if (unescaped_chars_error) {
@@ -5770,7 +5350,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
     this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+  /* If we have a final chunk of less than STEP_SIZE bytes, pad it to STEP_SIZE with
   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
   * checks). */
   if (likely(idx < len)) {
@@ -5785,6 +5365,9 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
 }
 
+// Setting the streaming parameter to true allows the find_structural_bits to tolerate unclosed strings.
+// The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
+// you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
@@ -5794,15 +5377,901 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes};
+  json_structural_scanner scanner{pj.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
-
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
+  // we might tolerate an unclosed string if streaming is true
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
+  /* a valid JSON file cannot have zero structural indexes - we should have
+   * found something */
+  if (unlikely(pj.n_structural_indexes == 0u)) {
+    return simdjson::EMPTY;
+  }
+  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
+    return simdjson::UNEXPECTED_ERROR;
+  }
+  if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
+    /* the string might not be NULL terminated, but we add a virtual NULL
+     * ending character. */
+    pj.structural_indexes[pj.n_structural_indexes++] = len;
+  }
+  /* make it safe to dereference one beyond this array */
+  pj.structural_indexes[pj.n_structural_indexes] = 0;
+  return utf8_checker.errors();
+}
 
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
+} // namespace stage1
+
+} // namespace simdjson::arm64
+
+namespace simdjson {
+
+template <>
+int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  return arm64::stage1::find_structural_bits<64>(buf, len, pj, streaming);
+}
+
+} // namespace simdjson
+
+#endif // IS_ARM64
+#endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
+/* end file src/arm64/stage1_find_marks.h */
+/* begin file src/haswell/stage1_find_marks.h */
+#ifndef SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
+#define SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
+
+
+#ifdef IS_X86_64
+
+
+TARGET_HASWELL
+namespace simdjson::haswell {
+
+using namespace simd;
+
+really_inline void find_whitespace_and_operators(simd8x64<uint8_t> in, uint64_t &whitespace, uint64_t &op) {
+
+  // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
+  // we can't use the generic lookup_16.
+  auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
+  auto op_table = simd8<uint8_t>::repeat_16(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
+
+  whitespace = in.map([&](simd8<uint8_t> _in) {
+    return _in == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, _in));
+  }).to_bitmask();
+
+  op = in.map([&](simd8<uint8_t> _in) {
+    // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
+    return (_in | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, _in-','));
+  }).to_bitmask();
+}
+
+really_inline bool is_ascii(simd8x64<uint8_t> input) {
+  simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+  return !bits.any_bits_set_anywhere(0b10000000u);
+}
+
+really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
+  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
+  return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
+}
+
+//
+// Detect Unicode errors.
+//
+// UTF-8 is designed to allow multiple bytes and be compatible with ASCII. It's a fairly basic
+// encoding that uses the first few bits on each byte to denote a "byte type", and all other bits
+// are straight up concatenated into the final value. The first byte of a multibyte character is a
+// "leading byte" and starts with N 1's, where N is the total number of bytes (110_____ = 2 byte
+// lead). The remaining bytes of a multibyte character all start with 10. 1-byte characters just
+// start with 0, because that's what ASCII looks like. Here's what each size 
+//
+// - ASCII (7 bits):              0_______
+// - 2 byte character (11 bits):  110_____ 10______
+// - 3 byte character (17 bits):  1110____ 10______ 10______
+// - 4 byte character (23 bits):  11110___ 10______ 10______ 10______
+// - 5+ byte character (illegal): 11111___ <illegal>
+//
+// There are 5 classes of error that can happen in Unicode:
+//
+// - TOO_SHORT: when you have a multibyte character with too few bytes (i.e. missing continuation).
+//   We detect this by looking for new characters (lead bytes) inside the range of a multibyte
+//   character.
+//
+//   e.g. 11000000 01100001 (2-byte character where second byte is ASCII)
+//
+// - TOO_LONG: when there are more bytes in your character than you need (i.e. extra continuation).
+//   We detect this by requiring that the next byte after your multibyte character be a new
+//   character--so a continuation after your character is wrong.
+//
+//   e.g. 11011111 10111111 10111111 (2-byte character followed by *another* continuation byte)
+//
+// - TOO_LARGE: Unicode only goes up to U+10FFFF. These characters are too large.
+//
+//   e.g. 11110111 10111111 10111111 10111111 (bigger than 10FFFF).
+//
+// - OVERLONG: multibyte characters with a bunch of leading zeroes, where you could have
+//   used fewer bytes to make the same character. Like encoding an ASCII character in 4 bytes is
+//   technically possible, but UTF-8 disallows it so that there is only one way to write an "a".
+//
+//   e.g. 11000001 10100001 (2-byte encoding of "a", which only requires 1 byte: 01100001)
+//
+// - SURROGATE: Unicode U+D800-U+DFFF is a *surrogate* character, reserved for use in UCS-2 and
+//   WTF-8 encodings for characters with > 2 bytes. These are illegal in pure UTF-8.
+//
+//   e.g. 11101101 10100000 10000000 (U+D800)
+//
+// - INVALID_5_BYTE: 5-byte, 6-byte, 7-byte and 8-byte characters are unsupported; Unicode does not
+//   support values with more than 23 bits (which a 4-byte character supports).
+//
+//   e.g. 11111000 10100000 10000000 10000000 10000000 (U+800000)
+//   
+// Legal utf-8 byte sequences per  http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94:
+// 
+//   Code Points        1st       2s       3s       4s
+//  U+0000..U+007F     00..7F
+//  U+0080..U+07FF     C2..DF   80..BF
+//  U+0800..U+0FFF     E0       A0..BF   80..BF
+//  U+1000..U+CFFF     E1..EC   80..BF   80..BF
+//  U+D000..U+D7FF     ED       80..9F   80..BF
+//  U+E000..U+FFFF     EE..EF   80..BF   80..BF
+//  U+10000..U+3FFFF   F0       90..BF   80..BF   80..BF
+//  U+40000..U+FFFFF   F1..F3   80..BF   80..BF   80..BF
+//  U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
+//
+using namespace simd;
+
+namespace utf8_validation {
+
+  //
+  // Find special case UTF-8 errors where the character is technically readable (has the right length)
+  // but the *value* is disallowed.
+  //
+  // This includes overlong encodings, surrogates and values too large for Unicode.
+  //
+  // It turns out the bad character ranges can all be detected by looking at the first 12 bits of the
+  // UTF-8 encoded character (i.e. all of byte 1, and the high 4 bits of byte 2). This algorithm does a
+  // 3 4-bit table lookups, identifying which errors that 4 bits could match, and then &'s them together.
+  // If all 3 lookups detect the same error, it's an error.
+  //
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
+    //
+    // These are the errors we're going to match for bytes 1-2, by looking at the first three
+    // nibbles of the character: <high bits of byte 1>> & <low bits of byte 1> & <high bits of byte 2>
+    //
+    static const int OVERLONG_2  = 0x01; // 1100000_ 10______ (technically we match 10______ but we could match ________, they both yield errors either way)
+    static const int OVERLONG_3  = 0x02; // 11100000 100_____ ________
+    static const int OVERLONG_4  = 0x04; // 11110000 1000____ ________ ________
+    static const int SURROGATE   = 0x08; // 11101101 [101_]____
+    static const int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
+    static const int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
+
+    // After processing the rest of byte 1 (the low bits), we're still not done--we have to check
+    // byte 2 to be sure which things are errors and which aren't.
+    // Since high_bits is byte 5, byte 2 is high_bits.prev<3>
+    static const int CARRY = OVERLONG_2 | TOO_LARGE_2;
+    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16<uint8_t>(
+        // ASCII: ________ [0___]____
+        CARRY, CARRY, CARRY, CARRY,
+        // ASCII: ________ [0___]____
+        CARRY, CARRY, CARRY, CARRY,
+        // Continuations: ________ [10__]____
+        CARRY | OVERLONG_3 | OVERLONG_4, // ________ [1000]____
+        CARRY | OVERLONG_3 | TOO_LARGE,  // ________ [1001]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1010]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1011]____
+        // Multibyte Leads: ________ [11__]____
+        CARRY, CARRY, CARRY, CARRY
+    );
+
+    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16<uint8_t>(
+      // [0___]____ (ASCII)
+      0, 0, 0, 0,                          
+      0, 0, 0, 0,
+      // [10__]____ (continuation)
+      0, 0, 0, 0,
+      // [11__]____ (2+-byte leads)
+      OVERLONG_2, 0,                       // [110_]____ (2-byte lead)
+      OVERLONG_3 | SURROGATE,              // [1110]____ (3-byte lead)
+      OVERLONG_4 | TOO_LARGE | TOO_LARGE_2 // [1111]____ (4+-byte lead)
+    );
+
+    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16<uint8_t>(
+      // ____[00__] ________
+      OVERLONG_2 | OVERLONG_3 | OVERLONG_4, // ____[0000] ________
+      OVERLONG_2,                           // ____[0001] ________
+      0, 0,
+      // ____[01__] ________
+      TOO_LARGE,                            // ____[0100] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      // ____[10__] ________
+      TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2,
+      // ____[11__] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2 | SURROGATE,                            // ____[1101] ________
+      TOO_LARGE_2, TOO_LARGE_2
+    );
+
+    return byte_1_high & byte_1_low & byte_2_high;
+  }
+
+  //
+  // Validate the length of multibyte characters (that each multibyte character has the right number
+  // of continuation characters, and that all continuation characters are part of a multibyte
+  // character).
+  //
+  // Algorithm
+  // =========
+  //
+  // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
+  // and emits an error anytime there is a mismatch.
+  //
+  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // characters, the file will look like this:
+  //
+  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
+  // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
+  // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
+  // | is_second_byte        |    |  X |    |    |    |  X |    |    |  X |    |    |
+  // | is_third_byte         |    |    |  X |    |    |    |  X |    |    |    |    |
+  // | is_fourth_byte        |    |    |    |  X |    |    |    |    |    |    |    |
+  // | expected_continuation |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  // | is_continuation       |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  //
+  // The errors here are basically (Second Byte OR Third Byte OR Fourth Byte == Continuation):
+  //
+  // - **Extra Continuations:** Any continuation that is not a second, third or fourth byte is not
+  //   part of a valid 2-, 3- or 4-byte character and is thus an error. It could be that it's just
+  //   floating around extra outside of any character, or that there is an illegal 5-byte character,
+  //   or maybe it's at the beginning of the file before any characters have started; but it's an
+  //   error in all these cases.
+  // - **Missing Continuations:** Any second, third or fourth byte that *isn't* a continuation is an error, because that means
+  //   we started a new character before we were finished with the current one.
+  //
+  // Getting the Previous Bytes
+  // --------------------------
+  //
+  // Because we want to know if a byte is the *second* (or third, or fourth) byte of a multibyte
+  // character, we need to "shift the bytes" to find that out. This is what they mean:
+  //
+  // - `is_continuation`: if the current byte is a continuation.
+  // - `is_second_byte`: if 1 byte back is the start of a 2-, 3- or 4-byte character.
+  // - `is_third_byte`: if 2 bytes back is the start of a 3- or 4-byte character.
+  // - `is_fourth_byte`: if 3 bytes back is the start of a 4-byte character.
+  //
+  // We use shuffles to go n bytes back, selecting part of the current `input` and part of the
+  // `prev_input` (search for `.prev<1>`, `.prev<2>`, etc.). These are passed in by the caller
+  // function, because the 1-byte-back data is used by other checks as well.
+  //
+  // Getting the Continuation Mask
+  // -----------------------------
+  //
+  // Once we have the right bytes, we have to get the masks. To do this, we treat UTF-8 bytes as
+  // numbers, using signed `<` and `>` operations to check if they are continuations or leads.
+  // In fact, we treat the numbers as *signed*, partly because it helps us, and partly because
+  // Intel's SIMD presently only offers signed `<` and `>` operations (not unsigned ones).
+  //
+  // In UTF-8, bytes that start with the bits 110, 1110 and 11110 are 2-, 3- and 4-byte "leads,"
+  // respectively, meaning they expect to have 1, 2 and 3 "continuation bytes" after them.
+  // Continuation bytes start with 10, and ASCII (1-byte characters) starts with 0.
+  //
+  // When treated as signed numbers, they look like this:
+  //
+  // | Type         | High Bits  | Binary Range | Signed |
+  // |--------------|------------|--------------|--------|
+  // | ASCII        | `0`        | `01111111`   |   127  |
+  // |              |            | `00000000`   |     0  |
+  // | 4+-Byte Lead | `1111`     | `11111111`   |    -1  |
+  // |              |            | `11110000    |   -16  |
+  // | 3-Byte Lead  | `1110`     | `11101111`   |   -17  |
+  // |              |            | `11100000    |   -32  |
+  // | 2-Byte Lead  | `110`      | `11011111`   |   -33  |
+  // |              |            | `11000000    |   -64  |
+  // | Continuation | `10`       | `10111111`   |   -65  |
+  // |              |            | `10000000    |  -128  |
+  //
+  // This makes it pretty easy to get the continuation mask! It's just a single comparison:
+  //
+  // ```
+  // is_continuation = input < -64`
+  // ```
+  //
+  // We can do something similar for the others, but it takes two comparisons instead of one: "is
+  // the start of a 4-byte character" is `< -32` and `> -65`, for example. And 2+ bytes is `< 0` and
+  // `> -64`. Surely we can do better, they're right next to each other!
+  //
+  // Getting the is_xxx Masks: Shifting the Range
+  // --------------------------------------------
+  //
+  // Notice *why* continuations were a single comparison. The actual *range* would require two
+  // comparisons--`< -64` and `> -129`--but all characters are always greater than -128, so we get
+  // that for free. In fact, if we had *unsigned* comparisons, 2+, 3+ and 4+ comparisons would be
+  // just as easy: 4+ would be `> 239`, 3+ would be `> 223`, and 2+ would be `> 191`.
+  //
+  // Instead, we add 128 to each byte, shifting the range up to make comparison easy. This wraps
+  // ASCII down into the negative, and puts 4+-Byte Lead at the top:
+  //
+  // | Type                 | High Bits  | Binary Range | Signed |
+  // |----------------------|------------|--------------|-------|
+  // | 4+-Byte Lead (+ 127) | `0111`     | `01111111`   |   127 |
+  // |                      |            | `01110000    |   112 |
+  // |----------------------|------------|--------------|-------|
+  // | 3-Byte Lead (+ 127)  | `0110`     | `01101111`   |   111 |
+  // |                      |            | `01100000    |    96 |
+  // |----------------------|------------|--------------|-------|
+  // | 2-Byte Lead (+ 127)  | `010`      | `01011111`   |    95 |
+  // |                      |            | `01000000    |    64 |
+  // |----------------------|------------|--------------|-------|
+  // | Continuation (+ 127) | `00`       | `00111111`   |    63 |
+  // |                      |            | `00000000    |     0 |
+  // |----------------------|------------|--------------|-------|
+  // | ASCII (+ 127)        | `1`        | `11111111`   |    -1 |
+  // |                      |            | `10000000`   |  -128 |
+  // |----------------------|------------|--------------|-------|
+  // 
+  // *Now* we can use signed `>` on all of them:
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev2 = input.prev<2>
+  // prev3 = input.prev<3>
+  // prev1_flipped = input.prev<1>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = input.prev<2>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = input.prev<3>(prev_input) ^ 0x80; // Same as `+ 128`
+  // is_second_byte = prev1_flipped > 63;  // 2+-byte lead
+  // is_third_byte  = prev2_flipped > 95;  // 3+-byte lead
+  // is_fourth_byte = prev3_flipped > 111; // 4+-byte lead
+  // ```
+  //
+  // NOTE: we use `^ 0x80` instead of `+ 128` in the code, which accomplishes the same thing, and even takes the same number
+  // of cycles as `+`, but on many Intel architectures can be parallelized better (you can do 3
+  // `^`'s at a time on Haswell, but only 2 `+`'s).
+  //
+  // That doesn't look like it saved us any instructions, did it? Well, because we're adding the
+  // same number to all of them, we can save one of those `+ 128` operations by assembling
+  // `prev2_flipped` out of prev 1 and prev 3 instead of assembling it from input and adding 128
+  // to it. One more instruction saved!
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev3 = input.prev<3>
+  // prev1_flipped = prev1 ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = prev3 ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = prev1_flipped.concat<2>(prev3_flipped): // <shuffle: take the first 2 bytes from prev1 and the rest from prev3  
+  // ```
+  //
+  // ### Bringing It All Together: Detecting the Errors
+  //
+  // At this point, we have `is_continuation`, `is_first_byte`, `is_second_byte` and `is_third_byte`.
+  // All we have left to do is check if they match!
+  //
+  // ```
+  // return (is_second_byte | is_third_byte | is_fourth_byte) ^ is_continuation;
+  // ```
+  //
+  // But wait--there's more. The above statement is only 3 operations, but they *cannot be done in
+  // parallel*. You have to do 2 `|`'s and then 1 `&`. Haswell, at least, has 3 ports that can do
+  // bitwise operations, and we're only using 1!
+  //
+  // Epilogue: Addition For Booleans
+  // -------------------------------
+  //
+  // There is one big case the above code doesn't explicitly talk about--what if is_second_byte
+  // and is_third_byte are BOTH true? That means there is a 3-byte and 2-byte character right next
+  // to each other (or any combination), and the continuation could be part of either of them!
+  // Our algorithm using `&` and `|` won't detect that the continuation byte is problematic.
+  //
+  // Never fear, though. If that situation occurs, we'll already have detected that the second
+  // leading byte was an error, because it was supposed to be a part of the preceding multibyte
+  // character, but it *wasn't a continuation*.
+  //
+  // We could stop here, but it turns out that we can fix it using `+` and `-` instead of `|` and
+  // `&`, which is both interesting and possibly useful (even though we're not using it here). It
+  // exploits the fact that in SIMD, a *true* value is -1, and a *false* value is 0. So those
+  // comparisons were giving us numbers!
+  //
+  // Given that, if you do `is_second_byte + is_third_byte + is_fourth_byte`, under normal
+  // circumstances you will either get 0 (0 + 0 + 0) or -1 (-1 + 0 + 0, etc.). Thus,
+  // `(is_second_byte + is_third_byte + is_fourth_byte) - is_continuation` will yield 0 only if
+  // *both* or *neither* are 0 (0-0 or -1 - -1). You'll get 1 or -1 if they are different. Because
+  // *any* nonzero value is treated as an error (not just -1), we're just fine here :)
+  //
+  // Further, if *more than one* multibyte character overlaps,
+  // `is_second_byte + is_third_byte + is_fourth_byte` will be -2 or -3! Subtracting `is_continuation`
+  // from *that* is guaranteed to give you a nonzero value (-1, -2 or -3). So it'll always be
+  // considered an error.
+  //
+  // One reason you might want to do this is parallelism. ^ and | are not associative, so
+  // (A | B | C) ^ D will always be three operations in a row: either you do A | B -> | C -> ^ D, or
+  // you do B | C -> | A -> ^ D. But addition and subtraction *are* associative: (A + B + C) - D can
+  // be written as `(A + B) + (C - D)`. This means you can do A + B and C - D at the same time, and
+  // then adds the result together. Same number of operations, but if the processor can run
+  // independent things in parallel (which most can), it runs faster.
+  //
+  // This doesn't help us on Intel, but might help us elsewhere: on Haswell, at least, | and ^ have
+  // a super nice advantage in that more of them can be run at the same time (they can run on 3
+  // ports, while + and - can run on 2)! This means that we can do A | B while we're still doing C,
+  // saving us the cycle we would have earned by using +. Even more, using an instruction with a
+  // wider array of ports can help *other* code run ahead, too, since these instructions can "get
+  // out of the way," running on a port other instructions can't.
+  // 
+  // Epilogue II: One More Trick
+  // ---------------------------
+  //
+  // There's one more relevant trick up our sleeve, it turns out: it turns out on Intel we can "pay
+  // for" the (prev<1> + 128) instruction, because it can be used to save an instruction in
+  // check_special_cases()--but we'll talk about that there :)
+  //
+  really_inline simd8<uint8_t> check_multibyte_lengths(simd8<uint8_t> input, simd8<uint8_t> prev_input, simd8<uint8_t> prev1) {
+    simd8<uint8_t> prev2 = input.prev<2>(prev_input);
+    simd8<uint8_t> prev3 = input.prev<3>(prev_input);
+
+    // Cont is 10000000-101111111 (-65...-128)
+    simd8<bool> is_continuation = simd8<int8_t>(input) < int8_t(-64);
+    // must_be_continuation is architecture-specific because Intel doesn't have unsigned comparisons
+    return simd8<uint8_t>(must_be_continuation(prev1, prev2, prev3) ^ is_continuation);
+  }
+
+  //
+  // Return nonzero if there are incomplete multibyte characters at the end of the block:
+  // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
+  //
+  really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
+    // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
+    // ... 1111____ 111_____ 11______
+    static const uint8_t max_array[32] = {
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
+    };
+    const simd8<uint8_t> max_value(&max_array[sizeof(max_array)-sizeof(simd8<uint8_t>)]);
+    return input.gt_bits(max_value);
+  }
+
+  struct utf8_checker {
+    // If this is nonzero, there has been a UTF-8 error.
+    simd8<uint8_t> error;
+    // The last input we received
+    simd8<uint8_t> prev_input_block;
+    // Whether the last input we received was incomplete (used for ASCII fast path)
+    simd8<uint8_t> prev_incomplete;
+
+    //
+    // Check whether the current bytes are valid UTF-8.
+    //
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+      // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
+      // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
+      simd8<uint8_t> prev1 = input.prev<1>(prev_input);
+      this->error |= check_special_cases(input, prev1);
+      this->error |= check_multibyte_lengths(input, prev_input, prev1);
+    }
+
+    // The only problem that can happen at EOF is that a multibyte character is too short.
+    really_inline void check_eof() {
+      // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+      // possibly finish them.
+      this->error |= this->prev_incomplete;
+    }
+
+    really_inline void check_next_input(simd8x64<uint8_t> input) {
+      if (likely(is_ascii(input))) {
+        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+        // possibly finish them.
+        this->error |= this->prev_incomplete;
+      } else {
+        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
+        }
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      }
+    }
+
+    really_inline ErrorValues errors() {
+      return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    }
+
+  }; // struct utf8_checker
+}
+
+using utf8_validation::utf8_checker;
+// This file contains the common code every implementation uses in stage1
+// It is intended to be included multiple times and compiled multiple times
+// We assume the file in which it is included already includes
+// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
+
+namespace stage1 {
+
+class bit_indexer {
+public:
+  uint32_t *tail;
+
+  bit_indexer(uint32_t *index_buf) : tail(index_buf) {}
+
+  // flatten out values in 'bits' assuming that they are are to have values of idx
+  // plus their position in the bitvector, and store these indexes at
+  // base_ptr[base] incrementing base as we go
+  // will potentially store extra values beyond end of valid bits, so base_ptr
+  // needs to be large enough to handle this
+  really_inline void write_indexes(uint32_t idx, uint64_t bits) {
+    // In some instances, the next branch is expensive because it is mispredicted.
+    // Unfortunately, in other cases,
+    // it helps tremendously.
+    if (bits == 0)
+        return;
+    uint32_t cnt = hamming(bits);
+
+    // Do the first 8 all together
+    for (int i=0; i<8; i++) {
+      this->tail[i] = idx + trailing_zeroes(bits);
+      bits = clear_lowest_bit(bits);
+    }
+
+    // Do the next 8 all together (we hope in most cases it won't happen at all
+    // and the branch is easily predicted).
+    if (unlikely(cnt > 8)) {
+      for (int i=8; i<16; i++) {
+        this->tail[i] = idx + trailing_zeroes(bits);
+        bits = clear_lowest_bit(bits);
+      }
+
+      // Most files don't have 16+ structurals per block, so we take several basically guaranteed
+      // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
+      // or the start of a value ("abc" true 123) every four characters.
+      if (unlikely(cnt > 16)) {
+        uint32_t i = 16;
+        do {
+          this->tail[i] = idx + trailing_zeroes(bits);
+          bits = clear_lowest_bit(bits);
+          i++;
+        } while (i < cnt);
+      }
+    }
+
+    this->tail += cnt;
+  }
+};
+
+class json_structural_scanner {
+public:
+  // Whether the first character of the next iteration is escaped.
+  uint64_t prev_escaped = 0ULL;
+  // Whether the last iteration was still inside a string (all 1's = true, all 0's = false).
+  uint64_t prev_in_string = 0ULL;
+  // Whether the last character of the previous iteration is a primitive value character
+  // (anything except whitespace, braces, comma or colon).
+  uint64_t prev_primitive = 0ULL;
+  // Mask of structural characters from the last iteration.
+  // Kept around for performance reasons, so we can call flatten_bits to soak up some unused
+  // CPU capacity while the next iteration is busy with an expensive clmul in compute_quote_mask.
+  uint64_t prev_structurals = 0;
+  // Errors with unescaped characters in strings (ASCII codepoints < 0x20)
+  uint64_t unescaped_chars_error = 0;
+  bit_indexer structural_indexes;
+
+  json_structural_scanner(uint32_t *_structural_indexes) : structural_indexes{_structural_indexes} {}
+
+  //
+  // Finish the scan and return any errors.
+  //
+  // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
+  // if streaming is set to true, an unclosed string is allowed.
+  //
+  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
+
+  //
+  // Return a mask of all string characters plus end quotes.
+  //
+  // prev_escaped is overflow saying whether the next character is escaped.
+  // prev_in_string is overflow saying whether we're still in a string.
+  //
+  // Backslash sequences outside of quotes will be detected in stage 2.
+  //
+  really_inline uint64_t find_strings(const simd::simd8x64<uint8_t> in);
+
+  //
+  // Determine which characters are *structural*:
+  // - braces: [] and {}
+  // - the start of primitives (123, true, false, null)
+  // - the start of invalid non-whitespace (+, &, ture, UTF-8)
+  //
+  // Also detects value sequence errors:
+  // - two values with no separator between ("hello" "world")
+  // - separators with no values ([1,] [1,,]and [,2])
+  //
+  // This method will find all of the above whether it is in a string or not.
+  //
+  // To reduce dependency on the expensive "what is in a string" computation, this method treats the
+  // contents of a string the same as content outside. Errors and structurals inside the string or on
+  // the trailing quote will need to be removed later when the correct string information is known.
+  //
+  really_inline uint64_t find_potential_structurals(const simd::simd8x64<uint8_t> in);
+
+  //
+  // Find the important bits of JSON in a STEP_SIZE-byte chunk, and add them to structural_indexes.
+  //
+  template<size_t STEP_SIZE>
+  really_inline void scan_step(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker);
+
+  //
+  // Parse the entire input in STEP_SIZE-byte chunks.
+  //
+  template<size_t STEP_SIZE>
+  really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
+};
+
+// return a bitvector indicating where we have characters that end an odd-length
+// sequence of backslashes (and thus change the behavior of the next character
+// to follow). A even-length sequence of backslashes, and, for that matter, the
+// largest even-length prefix of our odd-length sequence of backslashes, simply
+// modify the behavior of the backslashes themselves.
+// We also update the prev_iter_ends_odd_backslash reference parameter to
+// indicate whether we end an iteration on an odd-length sequence of
+// backslashes, which modifies our subsequent search for odd-length
+// sequences of backslashes in an obvious way.
+really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+  const uint64_t even_bits = 0x5555555555555555ULL;
+  const uint64_t odd_bits = ~even_bits;
+  uint64_t start_edges = match & ~(match << 1);
+  /* flip lowest if we have an odd-length run at the end of the prior
+  * iteration */
+  uint64_t even_start_mask = even_bits ^ overflow;
+  uint64_t even_starts = start_edges & even_start_mask;
+  uint64_t odd_starts = start_edges & ~even_start_mask;
+  uint64_t even_carries = match + even_starts;
+
+  uint64_t odd_carries;
+  /* must record the carry-out of our odd-carries out of bit 63; this
+  * indicates whether the sense of any edge going to the next iteration
+  * should be flipped */
+  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
+
+  odd_carries |= overflow; /* push in bit zero as a
+                              * potential end if we had an
+                              * odd-numbered run at the
+                              * end of the previous
+                              * iteration */
+  overflow = new_overflow ? 0x1ULL : 0x0ULL;
+  uint64_t even_carry_ends = even_carries & ~match;
+  uint64_t odd_carry_ends = odd_carries & ~match;
+  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
+  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
+  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
+  return odd_ends;
+}
+
+//
+// Check if the current character immediately follows a matching character.
+//
+// For example, this checks for quotes with backslashes in front of them:
+//
+//     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
+//
+really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+  const uint64_t result = match << 1 | overflow;
+  overflow = match >> 63;
+  return result;
+}
+
+//
+// Check if the current character follows a matching character, with possible "filler" between.
+// For example, this checks for empty curly braces, e.g. 
+//
+//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
+//
+really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
+  uint64_t follows_match = follows(match, overflow);
+  uint64_t result;
+  overflow |= add_overflow(follows_match, filler, &result);
+  return result;
+}
+
+really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+  if ((prev_in_string) and (not streaming)) {
+    return UNCLOSED_STRING;
+  }
+  if (unescaped_chars_error) {
+    return UNESCAPED_CHARS;
+  }
+  return SUCCESS;
+}
+
+//
+// Return a mask of all string characters plus end quotes.
+//
+// prev_escaped is overflow saying whether the next character is escaped.
+// prev_in_string is overflow saying whether we're still in a string.
+//
+// Backslash sequences outside of quotes will be detected in stage 2.
+//
+really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x64<uint8_t> in) {
+  const uint64_t backslash = in.eq('\\');
+  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+  const uint64_t quote = in.eq('"') & ~escaped;
+  // prefix_xor flips on bits inside the string (and flips off the end quote).
+  const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
+  /* right shift of a signed value expected to be well-defined and standard
+  * compliant as of C++20,
+  * John Regher from Utah U. says this is fine code */
+  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  // Use ^ to turn the beginning quote off, and the end quote on.
+  return in_string ^ quote;
+}
+
+//
+// Determine which characters are *structural*:
+// - braces: [] and {}
+// - the start of primitives (123, true, false, null)
+// - the start of invalid non-whitespace (+, &, ture, UTF-8)
+//
+// Also detects value sequence errors:
+// - two values with no separator between ("hello" "world")
+// - separators with no values ([1,] [1,,]and [,2])
+//
+// This method will find all of the above whether it is in a string or not.
+//
+// To reduce dependency on the expensive "what is in a string" computation, this method treats the
+// contents of a string the same as content outside. Errors and structurals inside the string or on
+// the trailing quote will need to be removed later when the correct string information is known.
+//
+really_inline uint64_t json_structural_scanner::find_potential_structurals(const simd::simd8x64<uint8_t> in) {
+  // These use SIMD so let's kick them off before running the regular 64-bit stuff ...
+  uint64_t whitespace, op;
+  find_whitespace_and_operators(in, whitespace, op);
+
+  // Detect the start of a run of primitive characters. Includes numbers, booleans, and strings (").
+  // Everything except whitespace, braces, colon and comma.
+  const uint64_t primitive = ~(op | whitespace);
+  const uint64_t follows_primitive = follows(primitive, prev_primitive);
+  const uint64_t start_primitive = primitive & ~follows_primitive;
+
+  // Return final structurals
+  return op | start_primitive;
+}
+
+//
+// Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+//
+// PERF NOTES:
+// We pipe 2 inputs through these stages:
+// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+// 2. Scan the JSON for critical data: strings, primitives and operators. This is the critical path.
+//    The output of step 1 depends entirely on this information. These functions don't quite use
+//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+//    at a time. The second input's scans has some dependency on the first ones finishing it, but
+//    they can make a lot of progress before they need that information.
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+//    to finish: utf-8 checks and generating the output from the last iteration.
+// 
+// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+// workout.
+//
+template<>
+really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+  //
+  // Load up all 128 bytes into SIMD registers
+  //
+  simd::simd8x64<uint8_t> in_1(buf);
+  simd::simd8x64<uint8_t> in_2(buf+64);
+
+  //
+  // Find the strings and potential structurals (operators / primitives).
+  //
+  // This will include false structurals that are *inside* strings--we'll filter strings out
+  // before we return.
+  //
+  uint64_t string_1 = this->find_strings(in_1);
+  uint64_t structurals_1 = this->find_potential_structurals(in_1);
+  uint64_t string_2 = this->find_strings(in_2);
+  uint64_t structurals_2 = this->find_potential_structurals(in_2);
+
+  //
+  // Do miscellaneous work while the processor is busy calculating strings and structurals.
+  //
+  // After that, weed out structurals that are inside strings and find invalid string characters.
+  //
+  uint64_t unescaped_1 = in_1.lteq(0x1F);
+  utf8_checker.check_next_input(in_1);
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->prev_structurals = structurals_1 & ~string_1;
+  this->unescaped_chars_error |= unescaped_1 & string_1;
+
+  uint64_t unescaped_2 = in_2.lteq(0x1F);
+  utf8_checker.check_next_input(in_2);
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->prev_structurals = structurals_2 & ~string_2;
+  this->unescaped_chars_error |= unescaped_2 & string_2;
+}
+
+//
+// Find the important bits of JSON in a 64-byte chunk, and add them to structural_indexes.
+//
+template<>
+really_inline void json_structural_scanner::scan_step<64>(const uint8_t *buf, const size_t idx, utf8_checker &utf8_checker) {
+  //
+  // Load up bytes into SIMD registers
+  //
+  simd::simd8x64<uint8_t> in_1(buf);
+
+  //
+  // Find the strings and potential structurals (operators / primitives).
+  //
+  // This will include false structurals that are *inside* strings--we'll filter strings out
+  // before we return.
+  //
+  uint64_t string_1 = this->find_strings(in_1);
+  uint64_t structurals_1 = this->find_potential_structurals(in_1);
+
+  //
+  // Do miscellaneous work while the processor is busy calculating strings and structurals.
+  //
+  // After that, weed out structurals that are inside strings and find invalid string characters.
+  //
+  uint64_t unescaped_1 = in_1.lteq(0x1F);
+  utf8_checker.check_next_input(in_1);
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->prev_structurals = structurals_1 & ~string_1;
+  this->unescaped_chars_error |= unescaped_1 & string_1;
+}
+
+template<size_t STEP_SIZE>
+really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker) {
+  size_t lenminusstep = len < STEP_SIZE ? 0 : len - STEP_SIZE;
+  size_t idx = 0;
+
+  for (; idx < lenminusstep; idx += STEP_SIZE) {
+    this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
+  }
+
+  /* If we have a final chunk of less than STEP_SIZE bytes, pad it to STEP_SIZE with
+  * spaces  before processing it (otherwise, we risk invalidating the UTF-8
+  * checks). */
+  if (likely(idx < len)) {
+    uint8_t tmp_buf[STEP_SIZE];
+    memset(tmp_buf, 0x20, STEP_SIZE);
+    memcpy(tmp_buf, buf + idx, len - idx);
+    this->scan_step<STEP_SIZE>(&tmp_buf[0], idx, utf8_checker);
+    idx += STEP_SIZE;
+  }
+
+  /* finally, flatten out the remaining structurals from the last iteration */
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
+}
+
+// Setting the streaming parameter to true allows the find_structural_bits to tolerate unclosed strings.
+// The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
+// you may want to call on a function like trimmed_length_safe_utf8.
+template<size_t STEP_SIZE>
+int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
+  if (unlikely(len > pj.byte_capacity)) {
+    std::cerr << "Your ParsedJson object only supports documents up to "
+              << pj.byte_capacity << " bytes but you are trying to process "
+              << len << " bytes" << std::endl;
+    return simdjson::CAPACITY;
+  }
+  utf8_checker utf8_checker{};
+  json_structural_scanner scanner{pj.structural_indexes.get()};
+  scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
+  // we might tolerate an unclosed string if streaming is true
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != simdjson::SUCCESS)) {
+    return error;
+  }
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
@@ -5872,6 +6341,19 @@ really_inline void find_whitespace_and_operators(
   }).to_bitmask();
 }
 
+really_inline bool is_ascii(simd8x64<uint8_t> input) {
+  simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
+  return !bits.any_bits_set_anywhere(0b10000000u);
+}
+
+really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
+  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
+  return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
+}
+
 //
 // Detect Unicode errors.
 //
@@ -5939,238 +6421,364 @@ using namespace simd;
 
 namespace utf8_validation {
 
-} // namespace utf8_validation
-
-struct utf8_checker {
-  // If this is nonzero, there has been a UTF-8 error.
-  simd8<uint8_t> error;
-  // The last input we received.
-  simd8<uint8_t> prev_input_block;
-  // If there were leads at the end of the previous block, to be continued in the next.
-  simd8<uint8_t> prev_incomplete;
-
   //
-  // These are the bits in lead_flags. Its main purpose is to tell you what kind of lead character
-  // it is (1,2,3 or 4--or none if it's continuation), but it also maps 4 other bytes that will be
-  // used to detect other kinds of errors.
+  // Find special case UTF-8 errors where the character is technically readable (has the right length)
+  // but the *value* is disallowed.
   //
-  // LEAD_4 is first because we use a << trick in get_byte_3_4_5_errors to turn LEAD_2 -> LEAD_3,
-  // LEAD_3 -> LEAD_4, and we want LEAD_4 to turn into nothing since there is no LEAD_5. This trick
-  // lets us use one constant table instead of 3, possibly saving registers on systems with fewer
-  // registers.
+  // This includes overlong encodings, surrogates and values too large for Unicode.
   //
-  static const uint8_t LEAD_4      = 0x01; // [1111]____ 10______ 10______ 10______ (0_|11)__
-  static const uint8_t LEAD_3      = 0x02; // [1110]____ 10______ 10______ (0|11)__
-  static const uint8_t LEAD_2      = 0x04; // [110_]____ 10______ (0|11)__
-  static const uint8_t LEAD_1      = 0x08; // [0___]____ (0|11)__
-  static const uint8_t LEAD_2_PLUS = 0x10; // [11__]____ ...
-  static const uint8_t LEAD_1100   = 0x20; // [1100]____ ...
-  static const uint8_t LEAD_1110   = 0x40; // [1110]____ ...
-  static const uint8_t LEAD_1111   = 0x80; // [1111]____ ...
-
-  // Prepare fast_path_error in case the next block is ASCII
-  really_inline void set_fast_path_error() {
-    // If any of the last 3 bytes in the input needs a continuation at the start of the next input,
-    // it is an error for the next input to be ASCII.
-    // static const uint8_t incomplete_long[32] = {
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, 0, 0, 0,
-    //   0, 0, 0, 0, 0, LEAD_4, LEAD_4 | LEAD_3, LEAD_4 | LEAD_3 | LEAD_2
-    // };
-    // const simd8<uint8_t> incomplete(&incomplete_long[sizeof(incomplete_long) - sizeof(simd8<uint8_t>)]);
-    // this->prev_incomplete = lead_flags & incomplete;
-    // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
-    // ... 1111____ 111_____ 11______
-    static const uint8_t last_len[32] = {
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
-    };
-    const simd8<uint8_t> max_value(&last_len[sizeof(last_len)-sizeof(simd8<uint8_t>)]);
-    // If anything is > the desired value, there will be a nonzero value in the result.
-    this->prev_incomplete = this->prev_input_block.saturating_sub(max_value);
-  }
-
-  really_inline simd8<uint8_t> get_lead_flags(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
-    // Total: 2 instructions, 1 constant
-    // - 1 byte shift (shuffle)
-    // - 1 table lookup (shuffle)
-    // - 1 table constant
-
-    // high_bits is byte 5, so lead is high_bits.prev<4>()
-    return high_bits.prev<4>(prev_high_bits).lookup_16<uint8_t>(
-      LEAD_1, LEAD_1, LEAD_1, LEAD_1,   // [0___]____ (ASCII)
-      LEAD_1, LEAD_1, LEAD_1, LEAD_1,   // [0___]____ (ASCII)
-      0,      0,      0,      0,        // [10__]____ (continuation)
-      LEAD_2 | LEAD_2_PLUS | LEAD_1100, // [1100]____
-      LEAD_2 | LEAD_2_PLUS,             // [110_]____
-      LEAD_3 | LEAD_2_PLUS | LEAD_1110, // [1110]____
-      LEAD_4 | LEAD_2_PLUS | LEAD_1111  // [1111]____
-    );
-  }
-
-  // Find errors in bytes 1 and 2 together (one single multi-nibble &)
-  really_inline simd8<uint8_t> get_byte_1_2_errors(const simd8<uint8_t> input, const simd8<uint8_t> prev_input, const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
+  // It turns out the bad character ranges can all be detected by looking at the first 12 bits of the
+  // UTF-8 encoded character (i.e. all of byte 1, and the high 4 bits of byte 2). This algorithm does a
+  // 3 4-bit table lookups, identifying which errors that 4 bits could match, and then &'s them together.
+  // If all 3 lookups detect the same error, it's an error.
+  //
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
     //
     // These are the errors we're going to match for bytes 1-2, by looking at the first three
-    // nibbles of the character: lead_flags & <low bits of byte 1> & <high bits of byte 2>
+    // nibbles of the character: <high bits of byte 1>> & <low bits of byte 1> & <high bits of byte 2>
     //
-    // The important thing here is that these constants all take up *different* bits, since they
-    // match different patterns. This is why there are 2 LEAD_4 and 2 LEAD_3s in lead_flags, among
-    // other things.
-    //
-    static const int TOO_SHORT_2 = LEAD_2_PLUS; // 11______ (0___|11__)____
-    static const int TOO_LONG_1  = LEAD_1;      // 0_______ 10______
-    static const int OVERLONG_2  = LEAD_1100;   // 1100000_ ________ (technically we match 10______ but we could match ________, they both yield errors either way)
-    static const int OVERLONG_3  = LEAD_3;      // 11100000 100_____ ________
-    static const int OVERLONG_4  = LEAD_4;      // 11110000 1000____ ________ ________
-    static const int TOO_LARGE   = LEAD_1111;   // 11110100 (1001|101_)____
-    static const int SURROGATE   = LEAD_1110;   // 11101101 [101_]____
-
-    // Total: 4 instructions, 2 constants
-    // - 2 table lookups (shuffles)
-    // - 1 byte shift (shuffle)
-    // - 1 "and"
-    // - 2 table constants
+    static const int OVERLONG_2  = 0x01; // 1100000_ 10______ (technically we match 10______ but we could match ________, they both yield errors either way)
+    static const int OVERLONG_3  = 0x02; // 11100000 100_____ ________
+    static const int OVERLONG_4  = 0x04; // 11110000 1000____ ________ ________
+    static const int SURROGATE   = 0x08; // 11101101 [101_]____
+    static const int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
+    static const int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
 
     // After processing the rest of byte 1 (the low bits), we're still not done--we have to check
     // byte 2 to be sure which things are errors and which aren't.
-    // Since input is byte 5, byte 1 is input.prev<4>
-    const simd8<uint8_t> byte_1_flags = (input.prev<4>(prev_input) & 0x0F).lookup_16<uint8_t>(
-      // ____[00__] ________
-      TOO_SHORT_2 | TOO_LONG_1 | OVERLONG_2 | OVERLONG_3 | OVERLONG_4, // ____[0000] ________
-      TOO_SHORT_2 | TOO_LONG_1 | OVERLONG_2,                           // ____[0001] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[01__] ________
-      TOO_SHORT_2 | TOO_LONG_1 | TOO_LARGE,                            // ____[0100] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[10__] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1,
-      // ____[11__] ________
-      TOO_SHORT_2 | TOO_LONG_1,
-      TOO_SHORT_2 | TOO_LONG_1 | SURROGATE,                            // ____[1101] ________
-      TOO_SHORT_2 | TOO_LONG_1, TOO_SHORT_2 | TOO_LONG_1
-    );
     // Since high_bits is byte 5, byte 2 is high_bits.prev<3>
-    const simd8<uint8_t> byte_2_flags = high_bits.prev<3>(prev_high_bits).lookup_16<uint8_t>(
+    static const int CARRY = OVERLONG_2 | TOO_LARGE_2;
+    const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16<uint8_t>(
         // ASCII: ________ [0___]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2,
+        CARRY, CARRY, CARRY, CARRY,
         // ASCII: ________ [0___]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2,
+        CARRY, CARRY, CARRY, CARRY,
         // Continuations: ________ [10__]____
-        OVERLONG_2 | TOO_LONG_1 | OVERLONG_3 | OVERLONG_4, // ________ [1000]____
-        OVERLONG_2 | TOO_LONG_1 | OVERLONG_3 | SURROGATE,  // ________ [1001]____
-        OVERLONG_2 | TOO_LONG_1 | TOO_LARGE  | SURROGATE,  // ________ [1010]____
-        OVERLONG_2 | TOO_LONG_1 | TOO_LARGE  | SURROGATE,  // ________ [1011]____
+        CARRY | OVERLONG_3 | OVERLONG_4, // ________ [1000]____
+        CARRY | OVERLONG_3 | TOO_LARGE,  // ________ [1001]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1010]____
+        CARRY | TOO_LARGE  | SURROGATE,  // ________ [1011]____
         // Multibyte Leads: ________ [11__]____
-        OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2, OVERLONG_2 | TOO_SHORT_2
+        CARRY, CARRY, CARRY, CARRY
     );
-    return byte_1_flags & byte_2_flags;
-  }
 
-  really_inline simd8<uint8_t> get_byte_3_4_5_errors(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
-    // Total 7 instructions, 3 simd constants:
-    // - 3 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 2 "or"
-    // - 1 table constant
-
-    const simd8<uint8_t> byte_3_table = simd8<uint8_t>::repeat_16(
-        // TOO_SHORT ASCII:           111_____ ________ [0___]____
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3,
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3,
-        // TOO_LONG  Continuations:   110_____ ________ [10__]____
-        LEAD_2, LEAD_2, LEAD_2, LEAD_2,
-        // TOO_SHORT Multibyte Leads: 111_____ ________ [11__]____
-        LEAD_3, LEAD_3, LEAD_3, LEAD_3
+    const simd8<uint8_t> byte_1_high = prev1.shr<4>().lookup_16<uint8_t>(
+      // [0___]____ (ASCII)
+      0, 0, 0, 0,                          
+      0, 0, 0, 0,
+      // [10__]____ (continuation)
+      0, 0, 0, 0,
+      // [11__]____ (2+-byte leads)
+      OVERLONG_2, 0,                       // [110_]____ (2-byte lead)
+      OVERLONG_3 | SURROGATE,              // [1110]____ (3-byte lead)
+      OVERLONG_4 | TOO_LARGE | TOO_LARGE_2 // [1111]____ (4+-byte lead)
     );
-    const simd8<uint8_t> byte_4_table = byte_3_table.shr<1>(); // TOO_SHORT: LEAD_4, TOO_LONG: LEAD_3
-    const simd8<uint8_t> byte_5_table = byte_3_table.shr<2>(); // TOO_SHORT: <none>, TOO_LONG: LEAD_4
 
-    // high_bits is byte 5, high_bits.prev<2> is byte 3 and high_bits.prev<1> is byte 4
-    return high_bits.prev<2>(prev_high_bits).lookup_16(byte_3_table) |
-           high_bits.prev<1>(prev_high_bits).lookup_16(byte_4_table) |
-           high_bits.lookup_16(byte_5_table);
+    const simd8<uint8_t> byte_1_low = (prev1 & 0x0F).lookup_16<uint8_t>(
+      // ____[00__] ________
+      OVERLONG_2 | OVERLONG_3 | OVERLONG_4, // ____[0000] ________
+      OVERLONG_2,                           // ____[0001] ________
+      0, 0,
+      // ____[01__] ________
+      TOO_LARGE,                            // ____[0100] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      TOO_LARGE_2,
+      // ____[10__] ________
+      TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2, TOO_LARGE_2,
+      // ____[11__] ________
+      TOO_LARGE_2,
+      TOO_LARGE_2 | SURROGATE,                            // ____[1101] ________
+      TOO_LARGE_2, TOO_LARGE_2
+    );
+
+    return byte_1_high & byte_1_low & byte_2_high;
   }
 
-  // Check whether the current bytes are valid UTF-8.
-  // At the end of the function, previous gets updated
-  // This should come down to 22 instructions if table definitions are in registers--30 if not.
-  really_inline simd8<uint8_t> check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
-    // When we process bytes M through N, we look for lead characters in M-4 through N-4. This allows
-    // us to look for all errors related to any lead character at one time (since UTF-8 characters
-    // can only be up to 4 bytes, and the next byte after a character finishes must be another lead,
-    // we never need to look more than 4 bytes past the current one to fully validate).
-    // This way, we have all relevant bytes around and can save ourselves a little overflow and
-    // several instructions on each loop.
+  //
+  // Validate the length of multibyte characters (that each multibyte character has the right number
+  // of continuation characters, and that all continuation characters are part of a multibyte
+  // character).
+  //
+  // Algorithm
+  // =========
+  //
+  // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
+  // and emits an error anytime there is a mismatch.
+  //
+  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // characters, the file will look like this:
+  //
+  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
+  // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
+  // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
+  // | is_second_byte        |    |  X |    |    |    |  X |    |    |  X |    |    |
+  // | is_third_byte         |    |    |  X |    |    |    |  X |    |    |    |    |
+  // | is_fourth_byte        |    |    |    |  X |    |    |    |    |    |    |    |
+  // | expected_continuation |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  // | is_continuation       |    |  X |  X |  X |    |  X |  X |    |  X |    |    |
+  //
+  // The errors here are basically (Second Byte OR Third Byte OR Fourth Byte == Continuation):
+  //
+  // - **Extra Continuations:** Any continuation that is not a second, third or fourth byte is not
+  //   part of a valid 2-, 3- or 4-byte character and is thus an error. It could be that it's just
+  //   floating around extra outside of any character, or that there is an illegal 5-byte character,
+  //   or maybe it's at the beginning of the file before any characters have started; but it's an
+  //   error in all these cases.
+  // - **Missing Continuations:** Any second, third or fourth byte that *isn't* a continuation is an error, because that means
+  //   we started a new character before we were finished with the current one.
+  //
+  // Getting the Previous Bytes
+  // --------------------------
+  //
+  // Because we want to know if a byte is the *second* (or third, or fourth) byte of a multibyte
+  // character, we need to "shift the bytes" to find that out. This is what they mean:
+  //
+  // - `is_continuation`: if the current byte is a continuation.
+  // - `is_second_byte`: if 1 byte back is the start of a 2-, 3- or 4-byte character.
+  // - `is_third_byte`: if 2 bytes back is the start of a 3- or 4-byte character.
+  // - `is_fourth_byte`: if 3 bytes back is the start of a 4-byte character.
+  //
+  // We use shuffles to go n bytes back, selecting part of the current `input` and part of the
+  // `prev_input` (search for `.prev<1>`, `.prev<2>`, etc.). These are passed in by the caller
+  // function, because the 1-byte-back data is used by other checks as well.
+  //
+  // Getting the Continuation Mask
+  // -----------------------------
+  //
+  // Once we have the right bytes, we have to get the masks. To do this, we treat UTF-8 bytes as
+  // numbers, using signed `<` and `>` operations to check if they are continuations or leads.
+  // In fact, we treat the numbers as *signed*, partly because it helps us, and partly because
+  // Intel's SIMD presently only offers signed `<` and `>` operations (not unsigned ones).
+  //
+  // In UTF-8, bytes that start with the bits 110, 1110 and 11110 are 2-, 3- and 4-byte "leads,"
+  // respectively, meaning they expect to have 1, 2 and 3 "continuation bytes" after them.
+  // Continuation bytes start with 10, and ASCII (1-byte characters) starts with 0.
+  //
+  // When treated as signed numbers, they look like this:
+  //
+  // | Type         | High Bits  | Binary Range | Signed |
+  // |--------------|------------|--------------|--------|
+  // | ASCII        | `0`        | `01111111`   |   127  |
+  // |              |            | `00000000`   |     0  |
+  // | 4+-Byte Lead | `1111`     | `11111111`   |    -1  |
+  // |              |            | `11110000    |   -16  |
+  // | 3-Byte Lead  | `1110`     | `11101111`   |   -17  |
+  // |              |            | `11100000    |   -32  |
+  // | 2-Byte Lead  | `110`      | `11011111`   |   -33  |
+  // |              |            | `11000000    |   -64  |
+  // | Continuation | `10`       | `10111111`   |   -65  |
+  // |              |            | `10000000    |  -128  |
+  //
+  // This makes it pretty easy to get the continuation mask! It's just a single comparison:
+  //
+  // ```
+  // is_continuation = input < -64`
+  // ```
+  //
+  // We can do something similar for the others, but it takes two comparisons instead of one: "is
+  // the start of a 4-byte character" is `< -32` and `> -65`, for example. And 2+ bytes is `< 0` and
+  // `> -64`. Surely we can do better, they're right next to each other!
+  //
+  // Getting the is_xxx Masks: Shifting the Range
+  // --------------------------------------------
+  //
+  // Notice *why* continuations were a single comparison. The actual *range* would require two
+  // comparisons--`< -64` and `> -129`--but all characters are always greater than -128, so we get
+  // that for free. In fact, if we had *unsigned* comparisons, 2+, 3+ and 4+ comparisons would be
+  // just as easy: 4+ would be `> 239`, 3+ would be `> 223`, and 2+ would be `> 191`.
+  //
+  // Instead, we add 128 to each byte, shifting the range up to make comparison easy. This wraps
+  // ASCII down into the negative, and puts 4+-Byte Lead at the top:
+  //
+  // | Type                 | High Bits  | Binary Range | Signed |
+  // |----------------------|------------|--------------|-------|
+  // | 4+-Byte Lead (+ 127) | `0111`     | `01111111`   |   127 |
+  // |                      |            | `01110000    |   112 |
+  // |----------------------|------------|--------------|-------|
+  // | 3-Byte Lead (+ 127)  | `0110`     | `01101111`   |   111 |
+  // |                      |            | `01100000    |    96 |
+  // |----------------------|------------|--------------|-------|
+  // | 2-Byte Lead (+ 127)  | `010`      | `01011111`   |    95 |
+  // |                      |            | `01000000    |    64 |
+  // |----------------------|------------|--------------|-------|
+  // | Continuation (+ 127) | `00`       | `00111111`   |    63 |
+  // |                      |            | `00000000    |     0 |
+  // |----------------------|------------|--------------|-------|
+  // | ASCII (+ 127)        | `1`        | `11111111`   |    -1 |
+  // |                      |            | `10000000`   |  -128 |
+  // |----------------------|------------|--------------|-------|
+  // 
+  // *Now* we can use signed `>` on all of them:
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev2 = input.prev<2>
+  // prev3 = input.prev<3>
+  // prev1_flipped = input.prev<1>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = input.prev<2>(prev_input) ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = input.prev<3>(prev_input) ^ 0x80; // Same as `+ 128`
+  // is_second_byte = prev1_flipped > 63;  // 2+-byte lead
+  // is_third_byte  = prev2_flipped > 95;  // 3+-byte lead
+  // is_fourth_byte = prev3_flipped > 111; // 4+-byte lead
+  // ```
+  //
+  // NOTE: we use `^ 0x80` instead of `+ 128` in the code, which accomplishes the same thing, and even takes the same number
+  // of cycles as `+`, but on many Intel architectures can be parallelized better (you can do 3
+  // `^`'s at a time on Haswell, but only 2 `+`'s).
+  //
+  // That doesn't look like it saved us any instructions, did it? Well, because we're adding the
+  // same number to all of them, we can save one of those `+ 128` operations by assembling
+  // `prev2_flipped` out of prev 1 and prev 3 instead of assembling it from input and adding 128
+  // to it. One more instruction saved!
+  //
+  // ```
+  // prev1 = input.prev<1>
+  // prev3 = input.prev<3>
+  // prev1_flipped = prev1 ^ 0x80; // Same as `+ 128`
+  // prev3_flipped = prev3 ^ 0x80; // Same as `+ 128`
+  // prev2_flipped = prev1_flipped.concat<2>(prev3_flipped): // <shuffle: take the first 2 bytes from prev1 and the rest from prev3  
+  // ```
+  //
+  // ### Bringing It All Together: Detecting the Errors
+  //
+  // At this point, we have `is_continuation`, `is_first_byte`, `is_second_byte` and `is_third_byte`.
+  // All we have left to do is check if they match!
+  //
+  // ```
+  // return (is_second_byte | is_third_byte | is_fourth_byte) ^ is_continuation;
+  // ```
+  //
+  // But wait--there's more. The above statement is only 3 operations, but they *cannot be done in
+  // parallel*. You have to do 2 `|`'s and then 1 `&`. Haswell, at least, has 3 ports that can do
+  // bitwise operations, and we're only using 1!
+  //
+  // Epilogue: Addition For Booleans
+  // -------------------------------
+  //
+  // There is one big case the above code doesn't explicitly talk about--what if is_second_byte
+  // and is_third_byte are BOTH true? That means there is a 3-byte and 2-byte character right next
+  // to each other (or any combination), and the continuation could be part of either of them!
+  // Our algorithm using `&` and `|` won't detect that the continuation byte is problematic.
+  //
+  // Never fear, though. If that situation occurs, we'll already have detected that the second
+  // leading byte was an error, because it was supposed to be a part of the preceding multibyte
+  // character, but it *wasn't a continuation*.
+  //
+  // We could stop here, but it turns out that we can fix it using `+` and `-` instead of `|` and
+  // `&`, which is both interesting and possibly useful (even though we're not using it here). It
+  // exploits the fact that in SIMD, a *true* value is -1, and a *false* value is 0. So those
+  // comparisons were giving us numbers!
+  //
+  // Given that, if you do `is_second_byte + is_third_byte + is_fourth_byte`, under normal
+  // circumstances you will either get 0 (0 + 0 + 0) or -1 (-1 + 0 + 0, etc.). Thus,
+  // `(is_second_byte + is_third_byte + is_fourth_byte) - is_continuation` will yield 0 only if
+  // *both* or *neither* are 0 (0-0 or -1 - -1). You'll get 1 or -1 if they are different. Because
+  // *any* nonzero value is treated as an error (not just -1), we're just fine here :)
+  //
+  // Further, if *more than one* multibyte character overlaps,
+  // `is_second_byte + is_third_byte + is_fourth_byte` will be -2 or -3! Subtracting `is_continuation`
+  // from *that* is guaranteed to give you a nonzero value (-1, -2 or -3). So it'll always be
+  // considered an error.
+  //
+  // One reason you might want to do this is parallelism. ^ and | are not associative, so
+  // (A | B | C) ^ D will always be three operations in a row: either you do A | B -> | C -> ^ D, or
+  // you do B | C -> | A -> ^ D. But addition and subtraction *are* associative: (A + B + C) - D can
+  // be written as `(A + B) + (C - D)`. This means you can do A + B and C - D at the same time, and
+  // then adds the result together. Same number of operations, but if the processor can run
+  // independent things in parallel (which most can), it runs faster.
+  //
+  // This doesn't help us on Intel, but might help us elsewhere: on Haswell, at least, | and ^ have
+  // a super nice advantage in that more of them can be run at the same time (they can run on 3
+  // ports, while + and - can run on 2)! This means that we can do A | B while we're still doing C,
+  // saving us the cycle we would have earned by using +. Even more, using an instruction with a
+  // wider array of ports can help *other* code run ahead, too, since these instructions can "get
+  // out of the way," running on a port other instructions can't.
+  // 
+  // Epilogue II: One More Trick
+  // ---------------------------
+  //
+  // There's one more relevant trick up our sleeve, it turns out: it turns out on Intel we can "pay
+  // for" the (prev<1> + 128) instruction, because it can be used to save an instruction in
+  // check_special_cases()--but we'll talk about that there :)
+  //
+  really_inline simd8<uint8_t> check_multibyte_lengths(simd8<uint8_t> input, simd8<uint8_t> prev_input, simd8<uint8_t> prev1) {
+    simd8<uint8_t> prev2 = input.prev<2>(prev_input);
+    simd8<uint8_t> prev3 = input.prev<3>(prev_input);
 
-    // Total: 22 instructions, 7 simd constants
-    // Local: 8 instructions, 1 simd constant
-    // - 2 bit shifts
-    // - 1 byte shift (shuffle)
-    // - 3 "or"
-    // - 1 "and"
-    // - 1 saturating_sub
-    // - 1 constant (0b11111000-1)
-    // lead_flags: 2 instructions, 1 simd constant
-    // - 1 byte shift (shuffle)
-    // - 1 table lookup (shuffle)
-    // - 1 table constant
-    // byte_1_2_errors: 5 instructions, 2 simd constants
-    // - 2 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 1 "and"
-    // - 2 table constants
-    // byte_3_4_5_errors: 7 instructions, 3 simd constants
-    // - 3 table lookups (shuffles)
-    // - 2 byte shifts (shuffles)
-    // - 2 "or"
-    // - 3 table constants
-
-    const simd8<uint8_t> high_bits = input.shr<4>();
-    const simd8<uint8_t> prev_high_bits = prev_input.shr<4>();
-    const simd8<uint8_t> lead_flags = get_lead_flags(high_bits, prev_high_bits);
-    const simd8<uint8_t> byte_1_2_errors = get_byte_1_2_errors(input, prev_input, high_bits, prev_high_bits);
-    const simd8<uint8_t> byte_3_4_5_errors = get_byte_3_4_5_errors(high_bits, prev_high_bits);
-    // Detect illegal 5-byte+ Unicode values. We can't do this as part of byte_1_2_errors  because
-    // it would need a third lead_flag = 1111, and we've already used up all 8 between
-    // byte_1_2_errors and byte_3_4_5_errors.
-    const simd8<uint8_t> too_large = input.saturating_sub(0b11111000-1); // too-large values will be nonzero
-    return too_large | (lead_flags & (byte_1_2_errors | byte_3_4_5_errors));
+    // Cont is 10000000-101111111 (-65...-128)
+    simd8<bool> is_continuation = simd8<int8_t>(input) < int8_t(-64);
+    // must_be_continuation is architecture-specific because Intel doesn't have unsigned comparisons
+    return simd8<uint8_t>(must_be_continuation(prev1, prev2, prev3) ^ is_continuation);
   }
 
-  // TODO special case start of file, too, so that small documents are efficient! No shifting needed ...
-
-  // The only problem that can happen at EOF is that a multibyte character is too short.
-  really_inline void check_eof() {
-    // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-    // possibly finish them.
-    this->error |= this->prev_incomplete;
+  //
+  // Return nonzero if there are incomplete multibyte characters at the end of the block:
+  // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
+  //
+  really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
+    // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
+    // ... 1111____ 111_____ 11______
+    static const uint8_t max_array[32] = {
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 0b11110000u-1, 0b11100000u-1, 0b11000000u-1
+    };
+    const simd8<uint8_t> max_value(&max_array[sizeof(max_array)-sizeof(simd8<uint8_t>)]);
+    return input.gt_bits(max_value);
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = input.reduce([&](auto a,auto b) { return a|b; });
-    if (likely(!bits.any_bits_set_anywhere(0b10000000u))) {
+  struct utf8_checker {
+    // If this is nonzero, there has been a UTF-8 error.
+    simd8<uint8_t> error;
+    // The last input we received
+    simd8<uint8_t> prev_input_block;
+    // Whether the last input we received was incomplete (used for ASCII fast path)
+    simd8<uint8_t> prev_incomplete;
+
+    //
+    // Check whether the current bytes are valid UTF-8.
+    //
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+      // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
+      // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
+      simd8<uint8_t> prev1 = input.prev<1>(prev_input);
+      this->error |= check_special_cases(input, prev1);
+      this->error |= check_multibyte_lengths(input, prev_input, prev1);
+    }
+
+    // The only problem that can happen at EOF is that a multibyte character is too short.
+    really_inline void check_eof() {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
       // possibly finish them.
       this->error |= this->prev_incomplete;
-    } else {
-      this->error |= this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-      for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-        this->error |= this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
-      }
-      this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      this->set_fast_path_error();
     }
-  }
 
-  really_inline ErrorValues errors() {
-    return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
-  }
+    really_inline void check_next_input(simd8x64<uint8_t> input) {
+      if (likely(is_ascii(input))) {
+        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+        // possibly finish them.
+        this->error |= this->prev_incomplete;
+      } else {
+        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
+          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
+        }
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      }
+    }
 
-}; // struct utf8_checker
+    really_inline ErrorValues errors() {
+      return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
+    }
+
+  }; // struct utf8_checker
+}
+
+using utf8_validation::utf8_checker;
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
@@ -6251,8 +6859,9 @@ public:
   // Finish the scan and return any errors.
   //
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
+  // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof();
+  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -6361,8 +6970,8 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof() {
-  if (prev_in_string) {
+really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+  if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
   if (unescaped_chars_error) {
@@ -6520,7 +7129,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
     this->scan_step<STEP_SIZE>(&buf[idx], idx, utf8_checker);
   }
 
-  /* If we have a final chunk of less than 64 bytes, pad it to 64 with
+  /* If we have a final chunk of less than STEP_SIZE bytes, pad it to STEP_SIZE with
   * spaces  before processing it (otherwise, we risk invalidating the UTF-8
   * checks). */
   if (likely(idx < len)) {
@@ -6535,6 +7144,9 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
   this->structural_indexes.write_indexes(idx-64, this->prev_structurals);
 }
 
+// Setting the streaming parameter to true allows the find_structural_bits to tolerate unclosed strings.
+// The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
+// you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
@@ -6544,15 +7156,14 @@ int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &p
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes};
+  json_structural_scanner scanner{pj.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
-
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof();
-  if (!streaming && unlikely(error != simdjson::SUCCESS)) {
+  // we might tolerate an unclosed string if streaming is true
+  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != simdjson::SUCCESS)) {
     return error;
   }
-
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes;
+  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(pj.n_structural_indexes == 0u)) {
@@ -6704,7 +7315,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
                                             UNUSED size_t len, ParsedJson &pj,
                                             UNUSED const uint32_t depth,
                                             UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
@@ -6889,7 +7500,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
                                             UNUSED size_t len, ParsedJson &pj,
                                             UNUSED const uint32_t depth,
                                             UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
@@ -7077,7 +7688,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
                                             UNUSED size_t len, ParsedJson &pj,
                                             UNUSED const uint32_t depth,
                                             UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf, '"');
+  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
   uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
   const uint8_t *const start_of_string = dst;
@@ -7165,56 +7776,46 @@ using namespace simdjson;
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *loc) {
-  uint64_t tv = *reinterpret_cast<const uint64_t *>("true    ");
-  uint64_t mask4 = 0x00000000ffffffff;
+  uint32_t tv = *reinterpret_cast<const uint32_t *>("true");
   uint32_t error = 0;
-  uint64_t
+  uint32_t
       locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  // this can read up to 7 bytes beyond the buffer size, but we require
+  // this can read up to 3 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
-  std::memcpy(&locval, loc, sizeof(uint64_t));
-  error = (locval & mask4) ^ tv;
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  std::memcpy(&locval, loc, sizeof(uint32_t));
+  error = locval ^ tv;
   error |= is_not_structural_or_whitespace(loc[4]);
   return error == 0;
 }
 
 WARN_UNUSED
 really_inline bool is_valid_false_atom(const uint8_t *loc) {
-  // We have to use an integer constant because the space in the cast
-  // below would lead to values illegally being qualified
-  // uint64_t fv = *reinterpret_cast<const uint64_t *>("false   ");
-  // using this constant (that is the same false) but nulls out the
-  // unused bits solves that
-  uint64_t fv = 0x00000065736c6166; // takes into account endianness
-  uint64_t mask5 = 0x000000ffffffffff;
-  // we can't use the 32 bit value for checking for errors otherwise
-  // the last character of false (it being 5 byte long!) would be
-  // ignored
-  uint64_t error = 0;
-  uint64_t
-      locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  // this can read up to 7 bytes beyond the buffer size, but we require
+  // assume that loc starts with "f"
+  uint32_t fv = *reinterpret_cast<const uint32_t *>("alse");
+  uint32_t error = 0;
+  uint32_t
+      locval; // we want to avoid unaligned 32-bit loads (undefined in C/C++)
+  // this can read up to 4 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
-  std::memcpy(&locval, loc, sizeof(uint64_t));
-  error = (locval & mask5) ^ fv;
+  static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING);
+  std::memcpy(&locval, loc + 1, sizeof(uint32_t));
+  error = locval ^ fv;
   error |= is_not_structural_or_whitespace(loc[5]);
   return error == 0;
 }
 
 WARN_UNUSED
 really_inline bool is_valid_null_atom(const uint8_t *loc) {
-  uint64_t nv = *reinterpret_cast<const uint64_t *>("null    ");
-  uint64_t mask4 = 0x00000000ffffffff;
+  uint32_t nv = *reinterpret_cast<const uint32_t *>("null");
   uint32_t error = 0;
-  uint64_t
-      locval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
-  // this can read up to 7 bytes beyond the buffer size, but we require
+  uint32_t
+      locval; // we want to avoid unaligned 32-bit loads (undefined in C/C++)
+  // this can read up to 2 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(sizeof(uint64_t) - 1 <= SIMDJSON_PADDING);
-  std::memcpy(&locval, loc, sizeof(uint64_t));
-  error = (locval & mask4) ^ nv;
+  static_assert(sizeof(uint32_t) - 1 <= SIMDJSON_PADDING);
+  std::memcpy(&locval, loc, sizeof(uint32_t));
+  error = locval ^ nv;
   error |= is_not_structural_or_whitespace(loc[4]);
   return error == 0;
 }
@@ -7241,33 +7842,277 @@ namespace simdjson::arm64 {
 // We assume the file in which it is include already includes
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
-// this macro reads the next structural character, updating idx, i and c.
-#define UPDATE_CHAR()                                                          \
-  {                                                                            \
-    idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
-  }
+namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
+typedef void* ret_address;
+#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
+#define GOTO(address) { goto *(address); }
+#define CONTINUE(address) { goto *(address); }
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
-#define GOTO_CONTINUE()                                                        \
-  {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
-      goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
-      goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
-    }                                                                          \
+typedef char ret_address;
+#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
+#define GOTO(address)                 \
+  {                                   \
+    switch(address) {                 \
+      case '[': goto array_begin;     \
+      case 'a': goto array_continue;  \
+      case 'e': goto error;           \
+      case 'f': goto finish;          \
+      case '{': goto object_begin;    \
+      case 'o': goto object_continue; \
+    }                                 \
+  }
+// For the more constrained pop_scope() situation
+#define CONTINUE(address)             \
+  {                                   \
+    switch(address) {                 \
+      case 'a': goto array_continue;  \
+      case 'o': goto object_continue; \
+      case 'f': goto finish;          \
+    }                                 \
   }
 #endif
+
+struct unified_machine_addresses {
+  ret_address array_begin;
+  ret_address array_continue;
+  ret_address error;
+  ret_address finish;
+  ret_address object_begin;
+  ret_address object_continue;
+};
+
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
+
+// This is just so we can call parse_string() from parser.parse_string() without conflict.
+WARN_UNUSED really_inline bool
+really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
+  return parse_string(buf, len, pj, depth, idx);
+}
+WARN_UNUSED really_inline bool
+really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
+  return parse_number(buf, pj, offset, found_minus);
+}
+
+struct structural_parser {
+  const uint8_t* const buf;
+  const size_t len;
+  ParsedJson &pj;
+  size_t i; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
+  uint8_t c;    // used to track the (structural) character we are looking at
+  uint32_t depth = 0; // could have an arbitrary starting depth
+
+  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
+
+  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
+    pj.error_code = error_code;
+    return error_code;
+  }
+
+  really_inline char advance_char() {
+    idx = pj.structural_indexes[i++];
+    c = buf[idx];
+    return c;
+  }
+
+  template<typename F>
+  really_inline bool with_space_terminated_copy(const F& f) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    free(copy);
+    return result;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    pj.write_tape(0, type);
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
+    return push_start_scope(continue_state, c);
+  }
+
+  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); // Do this as early as possible
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline ret_address pop_scope() {
+    // write our tape location to the header scope
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    return pj.ret_address[depth];
+  }
+  really_inline void pop_root_scope() {
+    // write our tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    depth--;
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+  }
+
+  WARN_UNUSED really_inline bool parse_string() {
+    return !really_parse_string(buf, len, pj, depth, idx);
+  }
+
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
+    return !really_parse_number(copy, pj, offset, found_minus);
+  }
+  WARN_UNUSED really_inline bool parse_number(bool found_minus) {
+    return parse_number(buf, idx, found_minus);
+  }
+
+  WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
+    switch (c) {
+      case 't':
+        if (!is_valid_true_atom(copy + offset)) { return true; };
+        break;
+      case 'f':
+        if (!is_valid_false_atom(copy + offset)) { return true; }
+        break;
+      case 'n':
+        if (!is_valid_null_atom(copy + offset)) { return true; }
+        break;
+      default:
+        return false;
+    }
+    pj.write_tape(0, c);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_atom() {
+    return parse_atom(buf, idx);
+  }
+
+  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+    switch (c) {
+    case '"':
+      FAIL_IF( parse_string() );
+      return continue_state;
+    case 't': case 'f': case 'n':
+      FAIL_IF( parse_atom() );
+      return continue_state;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      FAIL_IF( parse_number(false) );
+      return continue_state;
+    case '-':
+      FAIL_IF( parse_number(true) );
+      return continue_state;
+    case '{':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.object_begin;
+    case '[':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.array_begin;
+    default:
+      return addresses.error;
+    }
+  }
+
+  WARN_UNUSED really_inline int finish() {
+    // the string might not be NULL terminated.
+    if ( i + 1 != pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+
+    pj.valid = true;
+    return set_error_code(SUCCESS);
+  }
+
+  WARN_UNUSED really_inline int error() {
+    /* We do not need the next line because this is done by pj.init(),
+    * pessimistically.
+    * pj.is_valid  = false;
+    * At this point in the code, we have all the time in the world.
+    * Note that we know exactly where we are in the document so we could,
+    * without any overhead on the processing code, report a specific
+    * location.
+    * We could even trigger special code paths to assess what happened
+    * carefully,
+    * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+      return set_error_code(DEPTH_ERROR);
+    }
+    switch (c) {
+    case '"':
+      return set_error_code(STRING_ERROR);
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '-':
+      return set_error_code(NUMBER_ERROR);
+    case 't':
+      return set_error_code(T_ATOM_ERROR);
+    case 'n':
+      return set_error_code(N_ATOM_ERROR);
+    case 'f':
+      return set_error_code(F_ATOM_ERROR);
+    default:
+      return set_error_code(TAPE_ERROR);
+    }
+  }
+
+  WARN_UNUSED really_inline int start(ret_address finish_state) {
+    pj.init(); // sets is_valid to false
+    if (len > pj.byte_capacity) {
+      return CAPACITY;
+    }
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_state, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+};
+
+// Redefine FAIL_IF to use goto since it'll be used inside the function now
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
@@ -7275,992 +8120,272 @@ namespace simdjson::arm64 {
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
-  uint32_t idx; /* location of the structural character in the input (buf)   */
-  uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-  /* by UPDATE_CHAR macro */
-  uint32_t depth = 0; /* could have an arbitrary starting depth */
-  pj.init();          /* sets is_valid to false          */
-  if (pj.byte_capacity < len) {
-    pj.error_code = simdjson::CAPACITY;
-    return pj.error_code;
-  }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  structural_parser parser(buf, len, pj);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
 
-  /*//////////////////////////// START STATE /////////////////////////////
-   */
-  SET_GOTO_START_CONTINUE()
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-  /* the root is used, if nothing else, to capture the size of the tape */
-  depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-  if (depth >= pj.depth_capacity) {
-    goto fail;
-  }
-
-  UPDATE_CHAR();
-  switch (c) {
+  //
+  // Read first value
+  //
+  switch (parser.c) {
   case '{':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(
-        0, c); /* strangely, moving this to object_begin slows things down */
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto object_begin;
   case '[':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto array_begin;
-    /* #define SIMDJSON_ALLOWANYTHINGINROOT
-     * A JSON text is a serialized value.  Note that certain previous
-     * specifications of JSON constrained a JSON text to be an object or an
-     * array.  Implementations that generate only objects or arrays where a
-     * JSON text is called for will be interoperable in the sense that all
-     * implementations will accept these as conforming JSON texts.
-     * https://tools.ietf.org/html/rfc8259
-     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the true value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'f': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the false
-     * value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'n': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the null value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice. We terminate with a
-     * space
-     * because we do not want to allow NULLs in the middle of a number
-     * (whereas a
-     * space in the middle of a number would be identified in stage 1). */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                      false)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
-  case '-': {
-    /* we need to make a copy to make sure that the string is NULL
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
   default:
-    goto fail;
+    goto error;
   }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
-    goto fail;
-  }
-  /*//////////////////////////// OBJECT STATES ///////////////////////////*/
 
+//
+// Object parser states
+//
 object_begin:
-  UPDATE_CHAR();
-  switch (c) {
+  parser.advance_char();
+  switch (parser.c) {
   case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
+    FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
   case '}':
-    goto scope_end; /* could also go to object_continue */
+    goto scope_end; // could also go to object_continue
   default:
-    goto fail;
+    goto error;
   }
 
 object_key_state:
-  UPDATE_CHAR();
-  if (c != ':') {
-    goto fail;
-  }
-  UPDATE_CHAR();
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break;
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break;
-  }
-  case '{': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an object inside an object, so we need to increment the
-     * depth                                                             */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an array inside an object, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
-    if (c != '"') {
-      goto fail;
-    } else {
-      if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
-      }
-      goto object_key_state;
-    }
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_state;
   case '}':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// COMMON STATE ///////////////////////////*/
-
 scope_end:
-  /* write our tape location to the header scope */
-  depth--;
-  pj.write_tape(pj.containing_scope_offset[depth], c);
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  /* goto saved_state */
-  GOTO_CONTINUE()
+  CONTINUE( parser.pop_scope() );
 
-  /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+//
+// Array parser states
+//
 array_begin:
-  UPDATE_CHAR();
-  if (c == ']') {
-    goto scope_end; /* could also go to array_continue */
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
   }
 
 main_array_switch:
-  /* we call update char on all paths in, so we can peek at c on the
+  /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break; /* goto array_continue; */
-
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '{': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an object inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an array inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
 array_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
+    parser.advance_char();
     goto main_array_switch;
   case ']':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// FINAL STATES ///////////////////////////*/
+finish:
+  return parser.finish();
 
-succeed:
-  depth--;
-  if (depth != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  if (pj.containing_scope_offset[depth] != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-  pj.valid = true;
-  pj.error_code = simdjson::SUCCESS;
-  return pj.error_code;
-fail:
-  /* we do not need the next line because this is done by pj.init(),
-   * pessimistically.
-   * pj.is_valid  = false;
-   * At this point in the code, we have all the time in the world.
-   * Note that we know exactly where we are in the document so we could,
-   * without any overhead on the processing code, report a specific
-   * location.
-   * We could even trigger special code paths to assess what happened
-   * carefully,
-   * all without any added cost. */
-  if (depth >= pj.depth_capacity) {
-    pj.error_code = simdjson::DEPTH_ERROR;
-    return pj.error_code;
-  }
-  switch (c) {
-  case '"':
-    pj.error_code = simdjson::STRING_ERROR;
-    return pj.error_code;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-  case '-':
-    pj.error_code = simdjson::NUMBER_ERROR;
-    return pj.error_code;
-  case 't':
-    pj.error_code = simdjson::T_ATOM_ERROR;
-    return pj.error_code;
-  case 'n':
-    pj.error_code = simdjson::N_ATOM_ERROR;
-    return pj.error_code;
-  case 'f':
-    pj.error_code = simdjson::F_ATOM_ERROR;
-    return pj.error_code;
-  default:
-    break;
-  }
-  pj.error_code = simdjson::TAPE_ERROR;
-  return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
+namespace stage2 {
+
+struct streaming_structural_parser: structural_parser {
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+
+  // override to add streaming
+  WARN_UNUSED really_inline int start(ret_address finish_parser) {
+    pj.init(); // sets is_valid to false
+    // Capacity ain't no thang for streaming, so we don't check it.
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_parser, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+
+  // override to add streaming
+  WARN_UNUSED really_inline int finish() {
+    if ( i + 1 > pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    bool finished = i + 1 == pj.n_structural_indexes;
+    pj.valid = true;
+    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+  }
+};
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
-    size_t idx; /* location of the structural character in the input (buf)   */
-    uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-    /* by UPDATE_CHAR macro */
-    size_t depth = 0; /* could have an arbitrary starting depth */
-    pj.init();          /* sets is_valid to false          */
-//    if (pj.byte_capacity < len) {
-//        pj.error_code = simdjson::CAPACITY;
-//        return pj.error_code;
-//    }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  streaming_structural_parser parser(buf, len, pj, next_json);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
+  //
+  // Read first value
+  //
+  switch (parser.c) {
+  case '{':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto object_begin;
+  case '[':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto array_begin;
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
+  default:
+    goto error;
+  }
 
-    /*//////////////////////////// START STATE /////////////////////////////
-     */
-    SET_GOTO_START_CONTINUE()
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-    /* the root is used, if nothing else, to capture the size of the tape */
-    depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-    if (depth >= pj.depth_capacity) {
-        goto fail;
-    }
+//
+// Object parser parsers
+//
+object_begin:
+  parser.advance_char();
+  switch (parser.c) {
+  case '"': {
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  }
+  case '}':
+    goto scope_end; // could also go to object_continue
+  default:
+    goto error;
+  }
 
-    UPDATE_CHAR();
-    switch (c) {
-        case '{':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(
-                    0, c); /* strangely, moving this to object_begin slows things down */
-            goto object_begin;
-        case '[':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            goto array_begin;
-            /* #define SIMDJSON_ALLOWANYTHINGINROOT
-             * A JSON text is a serialized value.  Note that certain previous
-             * specifications of JSON constrained a JSON text to be an object or an
-             * array.  Implementations that generate only objects or arrays where a
-             * JSON text is called for will be interoperable in the sense that all
-             * implementations will accept these as conforming JSON texts.
-             * https://tools.ietf.org/html/rfc8259
-             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the true value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'f': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the false
-             * value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'n': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the null value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice. We terminate with a
-             * space
-             * because we do not want to allow NULLs in the middle of a number
-             * (whereas a
-             * space in the middle of a number would be identified in stage 1). */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                              false)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        case '-': {
-            /* we need to make a copy to make sure that the string is NULL
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        default:
-            goto fail;
-    }
-    start_continue:
-    /* the string might not be NULL terminated. */
-    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
-        goto succeed;
-    } else if(depth == 1 && i<=pj.n_structural_indexes) {
-        goto succeedAndHasMore;
-    } else {
-        goto fail;
-    }
-    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+object_key_parser:
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
-    object_begin:
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            goto object_key_state;
-        }
-        case '}':
-            goto scope_end; /* could also go to object_continue */
-        default:
-            goto fail;
-    }
+object_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  case '}':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    object_key_state:
-    UPDATE_CHAR();
-    if (c != ':') {
-        goto fail;
-    }
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break;
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break;
-        }
-        case '{': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an object inside an object, so we need to increment the
-             * depth                                                             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
+scope_end:
+  CONTINUE( parser.pop_scope() );
 
-            goto object_begin;
-        }
-        case '[': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an array inside an object, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
+//
+// Array parser parsers
+//
+array_begin:
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
+  }
 
-    object_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            if (c != '"') {
-                goto fail;
-            } else {
-                if (!parse_string(buf, len, pj, depth, idx)) {
-                    goto fail;
-                }
-                goto object_key_state;
-            }
-        case '}':
-            goto scope_end;
-        default:
-            goto fail;
-    }
+main_array_switch:
+  /* we call update char on all paths in, so we can peek at parser.c on the
+   * on paths that can accept a close square brace (post-, and at start) */
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
-    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+array_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    parser.advance_char();
+    goto main_array_switch;
+  case ']':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    scope_end:
-    /* write our tape location to the header scope */
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    /* goto saved_state */
-    GOTO_CONTINUE()
+finish:
+  next_json = parser.i;
+  return parser.finish();
 
-    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
-    array_begin:
-    UPDATE_CHAR();
-    if (c == ']') {
-        goto scope_end; /* could also go to array_continue */
-    }
-
-    main_array_switch:
-    /* we call update char on all paths in, so we can peek at c on the
-     * on paths that can accept a close square brace (post-, and at start) */
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break; /* goto array_continue; */
-
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '{': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an object inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-
-            goto object_begin;
-        }
-        case '[': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an array inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
-
-    array_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            goto main_array_switch;
-        case ']':
-            goto scope_end;
-        default:
-            goto fail;
-    }
-
-    /*//////////////////////////// FINAL STATES ///////////////////////////*/
-    succeedAndHasMore:
-        depth--;
-        if (pj.containing_scope_offset[depth] != 0) {
-            fprintf(stderr, "internal bug\n");
-            abort();
-        }
-        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                                 pj.get_current_loc());
-        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-
-        next_json = i;
-
-        pj.valid = true;
-        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
-        return pj.error_code;
-
-    succeed:
-    depth--;
-    if (depth != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    if (pj.containing_scope_offset[depth] != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-    pj.valid = true;
-    pj.error_code = simdjson::SUCCESS;
-    return pj.error_code;
-    fail:
-    /* we do not need the next line because this is done by pj.init(),
-     * pessimistically.
-     * pj.is_valid  = false;
-     * At this point in the code, we have all the time in the world.
-     * Note that we know exactly where we are in the document so we could,
-     * without any overhead on the processing code, report a specific
-     * location.
-     * We could even trigger special code paths to assess what happened
-     * carefully,
-     * all without any added cost. */
-//    if(i <= pj.n_structural_indexes) {
-//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
-//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
-//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
-//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
-//    }
-    if (depth >= pj.depth_capacity) {
-        pj.error_code = simdjson::DEPTH_ERROR;
-        return pj.error_code;
-    }
-    switch (c) {
-        case '"':
-            pj.error_code = simdjson::STRING_ERROR;
-            return pj.error_code;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-        case '-':
-            pj.error_code = simdjson::NUMBER_ERROR;
-            return pj.error_code;
-        case 't':
-            pj.error_code = simdjson::T_ATOM_ERROR;
-            return pj.error_code;
-        case 'n':
-            pj.error_code = simdjson::N_ATOM_ERROR;
-            return pj.error_code;
-        case 'f':
-            pj.error_code = simdjson::F_ATOM_ERROR;
-            return pj.error_code;
-        default:
-            break;
-    }
-    pj.error_code = simdjson::TAPE_ERROR;
-    return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
 
 } // namespace simdjson::arm64
 
@@ -8269,13 +8394,13 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return arm64::unified_machine(buf, len, pj);
+  return arm64::stage2::unified_machine(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return arm64::unified_machine(buf, len, pj, next_json);
+    return arm64::stage2::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson
@@ -8300,33 +8425,277 @@ namespace simdjson::haswell {
 // We assume the file in which it is include already includes
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
-// this macro reads the next structural character, updating idx, i and c.
-#define UPDATE_CHAR()                                                          \
-  {                                                                            \
-    idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
-  }
+namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
+typedef void* ret_address;
+#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
+#define GOTO(address) { goto *(address); }
+#define CONTINUE(address) { goto *(address); }
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
-#define GOTO_CONTINUE()                                                        \
-  {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
-      goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
-      goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
-    }                                                                          \
+typedef char ret_address;
+#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
+#define GOTO(address)                 \
+  {                                   \
+    switch(address) {                 \
+      case '[': goto array_begin;     \
+      case 'a': goto array_continue;  \
+      case 'e': goto error;           \
+      case 'f': goto finish;          \
+      case '{': goto object_begin;    \
+      case 'o': goto object_continue; \
+    }                                 \
+  }
+// For the more constrained pop_scope() situation
+#define CONTINUE(address)             \
+  {                                   \
+    switch(address) {                 \
+      case 'a': goto array_continue;  \
+      case 'o': goto object_continue; \
+      case 'f': goto finish;          \
+    }                                 \
   }
 #endif
+
+struct unified_machine_addresses {
+  ret_address array_begin;
+  ret_address array_continue;
+  ret_address error;
+  ret_address finish;
+  ret_address object_begin;
+  ret_address object_continue;
+};
+
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
+
+// This is just so we can call parse_string() from parser.parse_string() without conflict.
+WARN_UNUSED really_inline bool
+really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
+  return parse_string(buf, len, pj, depth, idx);
+}
+WARN_UNUSED really_inline bool
+really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
+  return parse_number(buf, pj, offset, found_minus);
+}
+
+struct structural_parser {
+  const uint8_t* const buf;
+  const size_t len;
+  ParsedJson &pj;
+  size_t i; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
+  uint8_t c;    // used to track the (structural) character we are looking at
+  uint32_t depth = 0; // could have an arbitrary starting depth
+
+  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
+
+  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
+    pj.error_code = error_code;
+    return error_code;
+  }
+
+  really_inline char advance_char() {
+    idx = pj.structural_indexes[i++];
+    c = buf[idx];
+    return c;
+  }
+
+  template<typename F>
+  really_inline bool with_space_terminated_copy(const F& f) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    free(copy);
+    return result;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    pj.write_tape(0, type);
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
+    return push_start_scope(continue_state, c);
+  }
+
+  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); // Do this as early as possible
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline ret_address pop_scope() {
+    // write our tape location to the header scope
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    return pj.ret_address[depth];
+  }
+  really_inline void pop_root_scope() {
+    // write our tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    depth--;
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+  }
+
+  WARN_UNUSED really_inline bool parse_string() {
+    return !really_parse_string(buf, len, pj, depth, idx);
+  }
+
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
+    return !really_parse_number(copy, pj, offset, found_minus);
+  }
+  WARN_UNUSED really_inline bool parse_number(bool found_minus) {
+    return parse_number(buf, idx, found_minus);
+  }
+
+  WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
+    switch (c) {
+      case 't':
+        if (!is_valid_true_atom(copy + offset)) { return true; };
+        break;
+      case 'f':
+        if (!is_valid_false_atom(copy + offset)) { return true; }
+        break;
+      case 'n':
+        if (!is_valid_null_atom(copy + offset)) { return true; }
+        break;
+      default:
+        return false;
+    }
+    pj.write_tape(0, c);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_atom() {
+    return parse_atom(buf, idx);
+  }
+
+  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+    switch (c) {
+    case '"':
+      FAIL_IF( parse_string() );
+      return continue_state;
+    case 't': case 'f': case 'n':
+      FAIL_IF( parse_atom() );
+      return continue_state;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      FAIL_IF( parse_number(false) );
+      return continue_state;
+    case '-':
+      FAIL_IF( parse_number(true) );
+      return continue_state;
+    case '{':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.object_begin;
+    case '[':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.array_begin;
+    default:
+      return addresses.error;
+    }
+  }
+
+  WARN_UNUSED really_inline int finish() {
+    // the string might not be NULL terminated.
+    if ( i + 1 != pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+
+    pj.valid = true;
+    return set_error_code(SUCCESS);
+  }
+
+  WARN_UNUSED really_inline int error() {
+    /* We do not need the next line because this is done by pj.init(),
+    * pessimistically.
+    * pj.is_valid  = false;
+    * At this point in the code, we have all the time in the world.
+    * Note that we know exactly where we are in the document so we could,
+    * without any overhead on the processing code, report a specific
+    * location.
+    * We could even trigger special code paths to assess what happened
+    * carefully,
+    * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+      return set_error_code(DEPTH_ERROR);
+    }
+    switch (c) {
+    case '"':
+      return set_error_code(STRING_ERROR);
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '-':
+      return set_error_code(NUMBER_ERROR);
+    case 't':
+      return set_error_code(T_ATOM_ERROR);
+    case 'n':
+      return set_error_code(N_ATOM_ERROR);
+    case 'f':
+      return set_error_code(F_ATOM_ERROR);
+    default:
+      return set_error_code(TAPE_ERROR);
+    }
+  }
+
+  WARN_UNUSED really_inline int start(ret_address finish_state) {
+    pj.init(); // sets is_valid to false
+    if (len > pj.byte_capacity) {
+      return CAPACITY;
+    }
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_state, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+};
+
+// Redefine FAIL_IF to use goto since it'll be used inside the function now
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
@@ -8334,992 +8703,272 @@ namespace simdjson::haswell {
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
-  uint32_t idx; /* location of the structural character in the input (buf)   */
-  uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-  /* by UPDATE_CHAR macro */
-  uint32_t depth = 0; /* could have an arbitrary starting depth */
-  pj.init();          /* sets is_valid to false          */
-  if (pj.byte_capacity < len) {
-    pj.error_code = simdjson::CAPACITY;
-    return pj.error_code;
-  }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  structural_parser parser(buf, len, pj);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
 
-  /*//////////////////////////// START STATE /////////////////////////////
-   */
-  SET_GOTO_START_CONTINUE()
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-  /* the root is used, if nothing else, to capture the size of the tape */
-  depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-  if (depth >= pj.depth_capacity) {
-    goto fail;
-  }
-
-  UPDATE_CHAR();
-  switch (c) {
+  //
+  // Read first value
+  //
+  switch (parser.c) {
   case '{':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(
-        0, c); /* strangely, moving this to object_begin slows things down */
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto object_begin;
   case '[':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto array_begin;
-    /* #define SIMDJSON_ALLOWANYTHINGINROOT
-     * A JSON text is a serialized value.  Note that certain previous
-     * specifications of JSON constrained a JSON text to be an object or an
-     * array.  Implementations that generate only objects or arrays where a
-     * JSON text is called for will be interoperable in the sense that all
-     * implementations will accept these as conforming JSON texts.
-     * https://tools.ietf.org/html/rfc8259
-     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the true value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'f': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the false
-     * value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'n': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the null value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice. We terminate with a
-     * space
-     * because we do not want to allow NULLs in the middle of a number
-     * (whereas a
-     * space in the middle of a number would be identified in stage 1). */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                      false)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
-  case '-': {
-    /* we need to make a copy to make sure that the string is NULL
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
   default:
-    goto fail;
+    goto error;
   }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
-    goto fail;
-  }
-  /*//////////////////////////// OBJECT STATES ///////////////////////////*/
 
+//
+// Object parser states
+//
 object_begin:
-  UPDATE_CHAR();
-  switch (c) {
+  parser.advance_char();
+  switch (parser.c) {
   case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
+    FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
   case '}':
-    goto scope_end; /* could also go to object_continue */
+    goto scope_end; // could also go to object_continue
   default:
-    goto fail;
+    goto error;
   }
 
 object_key_state:
-  UPDATE_CHAR();
-  if (c != ':') {
-    goto fail;
-  }
-  UPDATE_CHAR();
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break;
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break;
-  }
-  case '{': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an object inside an object, so we need to increment the
-     * depth                                                             */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an array inside an object, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
-    if (c != '"') {
-      goto fail;
-    } else {
-      if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
-      }
-      goto object_key_state;
-    }
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_state;
   case '}':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// COMMON STATE ///////////////////////////*/
-
 scope_end:
-  /* write our tape location to the header scope */
-  depth--;
-  pj.write_tape(pj.containing_scope_offset[depth], c);
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  /* goto saved_state */
-  GOTO_CONTINUE()
+  CONTINUE( parser.pop_scope() );
 
-  /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+//
+// Array parser states
+//
 array_begin:
-  UPDATE_CHAR();
-  if (c == ']') {
-    goto scope_end; /* could also go to array_continue */
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
   }
 
 main_array_switch:
-  /* we call update char on all paths in, so we can peek at c on the
+  /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break; /* goto array_continue; */
-
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '{': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an object inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an array inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
 array_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
+    parser.advance_char();
     goto main_array_switch;
   case ']':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// FINAL STATES ///////////////////////////*/
+finish:
+  return parser.finish();
 
-succeed:
-  depth--;
-  if (depth != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  if (pj.containing_scope_offset[depth] != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-  pj.valid = true;
-  pj.error_code = simdjson::SUCCESS;
-  return pj.error_code;
-fail:
-  /* we do not need the next line because this is done by pj.init(),
-   * pessimistically.
-   * pj.is_valid  = false;
-   * At this point in the code, we have all the time in the world.
-   * Note that we know exactly where we are in the document so we could,
-   * without any overhead on the processing code, report a specific
-   * location.
-   * We could even trigger special code paths to assess what happened
-   * carefully,
-   * all without any added cost. */
-  if (depth >= pj.depth_capacity) {
-    pj.error_code = simdjson::DEPTH_ERROR;
-    return pj.error_code;
-  }
-  switch (c) {
-  case '"':
-    pj.error_code = simdjson::STRING_ERROR;
-    return pj.error_code;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-  case '-':
-    pj.error_code = simdjson::NUMBER_ERROR;
-    return pj.error_code;
-  case 't':
-    pj.error_code = simdjson::T_ATOM_ERROR;
-    return pj.error_code;
-  case 'n':
-    pj.error_code = simdjson::N_ATOM_ERROR;
-    return pj.error_code;
-  case 'f':
-    pj.error_code = simdjson::F_ATOM_ERROR;
-    return pj.error_code;
-  default:
-    break;
-  }
-  pj.error_code = simdjson::TAPE_ERROR;
-  return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
+namespace stage2 {
+
+struct streaming_structural_parser: structural_parser {
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+
+  // override to add streaming
+  WARN_UNUSED really_inline int start(ret_address finish_parser) {
+    pj.init(); // sets is_valid to false
+    // Capacity ain't no thang for streaming, so we don't check it.
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_parser, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+
+  // override to add streaming
+  WARN_UNUSED really_inline int finish() {
+    if ( i + 1 > pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    bool finished = i + 1 == pj.n_structural_indexes;
+    pj.valid = true;
+    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+  }
+};
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
-    size_t idx; /* location of the structural character in the input (buf)   */
-    uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-    /* by UPDATE_CHAR macro */
-    size_t depth = 0; /* could have an arbitrary starting depth */
-    pj.init();          /* sets is_valid to false          */
-//    if (pj.byte_capacity < len) {
-//        pj.error_code = simdjson::CAPACITY;
-//        return pj.error_code;
-//    }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  streaming_structural_parser parser(buf, len, pj, next_json);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
+  //
+  // Read first value
+  //
+  switch (parser.c) {
+  case '{':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto object_begin;
+  case '[':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto array_begin;
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
+  default:
+    goto error;
+  }
 
-    /*//////////////////////////// START STATE /////////////////////////////
-     */
-    SET_GOTO_START_CONTINUE()
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-    /* the root is used, if nothing else, to capture the size of the tape */
-    depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-    if (depth >= pj.depth_capacity) {
-        goto fail;
-    }
+//
+// Object parser parsers
+//
+object_begin:
+  parser.advance_char();
+  switch (parser.c) {
+  case '"': {
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  }
+  case '}':
+    goto scope_end; // could also go to object_continue
+  default:
+    goto error;
+  }
 
-    UPDATE_CHAR();
-    switch (c) {
-        case '{':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(
-                    0, c); /* strangely, moving this to object_begin slows things down */
-            goto object_begin;
-        case '[':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            goto array_begin;
-            /* #define SIMDJSON_ALLOWANYTHINGINROOT
-             * A JSON text is a serialized value.  Note that certain previous
-             * specifications of JSON constrained a JSON text to be an object or an
-             * array.  Implementations that generate only objects or arrays where a
-             * JSON text is called for will be interoperable in the sense that all
-             * implementations will accept these as conforming JSON texts.
-             * https://tools.ietf.org/html/rfc8259
-             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the true value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'f': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the false
-             * value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'n': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the null value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice. We terminate with a
-             * space
-             * because we do not want to allow NULLs in the middle of a number
-             * (whereas a
-             * space in the middle of a number would be identified in stage 1). */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                              false)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        case '-': {
-            /* we need to make a copy to make sure that the string is NULL
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        default:
-            goto fail;
-    }
-    start_continue:
-    /* the string might not be NULL terminated. */
-    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
-        goto succeed;
-    } else if(depth == 1 && i<=pj.n_structural_indexes) {
-        goto succeedAndHasMore;
-    } else {
-        goto fail;
-    }
-    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+object_key_parser:
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
-    object_begin:
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            goto object_key_state;
-        }
-        case '}':
-            goto scope_end; /* could also go to object_continue */
-        default:
-            goto fail;
-    }
+object_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  case '}':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    object_key_state:
-    UPDATE_CHAR();
-    if (c != ':') {
-        goto fail;
-    }
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break;
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break;
-        }
-        case '{': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an object inside an object, so we need to increment the
-             * depth                                                             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
+scope_end:
+  CONTINUE( parser.pop_scope() );
 
-            goto object_begin;
-        }
-        case '[': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an array inside an object, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
+//
+// Array parser parsers
+//
+array_begin:
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
+  }
 
-    object_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            if (c != '"') {
-                goto fail;
-            } else {
-                if (!parse_string(buf, len, pj, depth, idx)) {
-                    goto fail;
-                }
-                goto object_key_state;
-            }
-        case '}':
-            goto scope_end;
-        default:
-            goto fail;
-    }
+main_array_switch:
+  /* we call update char on all paths in, so we can peek at parser.c on the
+   * on paths that can accept a close square brace (post-, and at start) */
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
-    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+array_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    parser.advance_char();
+    goto main_array_switch;
+  case ']':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    scope_end:
-    /* write our tape location to the header scope */
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    /* goto saved_state */
-    GOTO_CONTINUE()
+finish:
+  next_json = parser.i;
+  return parser.finish();
 
-    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
-    array_begin:
-    UPDATE_CHAR();
-    if (c == ']') {
-        goto scope_end; /* could also go to array_continue */
-    }
-
-    main_array_switch:
-    /* we call update char on all paths in, so we can peek at c on the
-     * on paths that can accept a close square brace (post-, and at start) */
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break; /* goto array_continue; */
-
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '{': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an object inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-
-            goto object_begin;
-        }
-        case '[': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an array inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
-
-    array_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            goto main_array_switch;
-        case ']':
-            goto scope_end;
-        default:
-            goto fail;
-    }
-
-    /*//////////////////////////// FINAL STATES ///////////////////////////*/
-    succeedAndHasMore:
-        depth--;
-        if (pj.containing_scope_offset[depth] != 0) {
-            fprintf(stderr, "internal bug\n");
-            abort();
-        }
-        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                                 pj.get_current_loc());
-        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-
-        next_json = i;
-
-        pj.valid = true;
-        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
-        return pj.error_code;
-
-    succeed:
-    depth--;
-    if (depth != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    if (pj.containing_scope_offset[depth] != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-    pj.valid = true;
-    pj.error_code = simdjson::SUCCESS;
-    return pj.error_code;
-    fail:
-    /* we do not need the next line because this is done by pj.init(),
-     * pessimistically.
-     * pj.is_valid  = false;
-     * At this point in the code, we have all the time in the world.
-     * Note that we know exactly where we are in the document so we could,
-     * without any overhead on the processing code, report a specific
-     * location.
-     * We could even trigger special code paths to assess what happened
-     * carefully,
-     * all without any added cost. */
-//    if(i <= pj.n_structural_indexes) {
-//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
-//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
-//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
-//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
-//    }
-    if (depth >= pj.depth_capacity) {
-        pj.error_code = simdjson::DEPTH_ERROR;
-        return pj.error_code;
-    }
-    switch (c) {
-        case '"':
-            pj.error_code = simdjson::STRING_ERROR;
-            return pj.error_code;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-        case '-':
-            pj.error_code = simdjson::NUMBER_ERROR;
-            return pj.error_code;
-        case 't':
-            pj.error_code = simdjson::T_ATOM_ERROR;
-            return pj.error_code;
-        case 'n':
-            pj.error_code = simdjson::N_ATOM_ERROR;
-            return pj.error_code;
-        case 'f':
-            pj.error_code = simdjson::F_ATOM_ERROR;
-            return pj.error_code;
-        default:
-            break;
-    }
-    pj.error_code = simdjson::TAPE_ERROR;
-    return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
@@ -9330,13 +8979,13 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return haswell::unified_machine(buf, len, pj);
+  return haswell::stage2::unified_machine(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return haswell::unified_machine(buf, len, pj, next_json);
+  return haswell::stage2::unified_machine(buf, len, pj, next_json);
 }
 
 } // namespace simdjson
@@ -9362,33 +9011,277 @@ namespace simdjson::westmere {
 // We assume the file in which it is include already includes
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
-// this macro reads the next structural character, updating idx, i and c.
-#define UPDATE_CHAR()                                                          \
-  {                                                                            \
-    idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
-  }
+namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
+typedef void* ret_address;
+#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
+#define GOTO(address) { goto *(address); }
+#define CONTINUE(address) { goto *(address); }
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
-#define GOTO_CONTINUE()                                                        \
-  {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
-      goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
-      goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
-    }                                                                          \
+typedef char ret_address;
+#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
+#define GOTO(address)                 \
+  {                                   \
+    switch(address) {                 \
+      case '[': goto array_begin;     \
+      case 'a': goto array_continue;  \
+      case 'e': goto error;           \
+      case 'f': goto finish;          \
+      case '{': goto object_begin;    \
+      case 'o': goto object_continue; \
+    }                                 \
+  }
+// For the more constrained pop_scope() situation
+#define CONTINUE(address)             \
+  {                                   \
+    switch(address) {                 \
+      case 'a': goto array_continue;  \
+      case 'o': goto object_continue; \
+      case 'f': goto finish;          \
+    }                                 \
   }
 #endif
+
+struct unified_machine_addresses {
+  ret_address array_begin;
+  ret_address array_continue;
+  ret_address error;
+  ret_address finish;
+  ret_address object_begin;
+  ret_address object_continue;
+};
+
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
+
+// This is just so we can call parse_string() from parser.parse_string() without conflict.
+WARN_UNUSED really_inline bool
+really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
+  return parse_string(buf, len, pj, depth, idx);
+}
+WARN_UNUSED really_inline bool
+really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
+  return parse_number(buf, pj, offset, found_minus);
+}
+
+struct structural_parser {
+  const uint8_t* const buf;
+  const size_t len;
+  ParsedJson &pj;
+  size_t i; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
+  uint8_t c;    // used to track the (structural) character we are looking at
+  uint32_t depth = 0; // could have an arbitrary starting depth
+
+  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
+
+  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
+    pj.error_code = error_code;
+    return error_code;
+  }
+
+  really_inline char advance_char() {
+    idx = pj.structural_indexes[i++];
+    c = buf[idx];
+    return c;
+  }
+
+  template<typename F>
+  really_inline bool with_space_terminated_copy(const F& f) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    free(copy);
+    return result;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    pj.write_tape(0, type);
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
+    return push_start_scope(continue_state, c);
+  }
+
+  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, c); // Do this as early as possible
+    pj.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= pj.depth_capacity;
+  }
+
+  WARN_UNUSED really_inline ret_address pop_scope() {
+    // write our tape location to the header scope
+    depth--;
+    pj.write_tape(pj.containing_scope_offset[depth], c);
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    return pj.ret_address[depth];
+  }
+  really_inline void pop_root_scope() {
+    // write our tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    depth--;
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+  }
+
+  WARN_UNUSED really_inline bool parse_string() {
+    return !really_parse_string(buf, len, pj, depth, idx);
+  }
+
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
+    return !really_parse_number(copy, pj, offset, found_minus);
+  }
+  WARN_UNUSED really_inline bool parse_number(bool found_minus) {
+    return parse_number(buf, idx, found_minus);
+  }
+
+  WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
+    switch (c) {
+      case 't':
+        if (!is_valid_true_atom(copy + offset)) { return true; };
+        break;
+      case 'f':
+        if (!is_valid_false_atom(copy + offset)) { return true; }
+        break;
+      case 'n':
+        if (!is_valid_null_atom(copy + offset)) { return true; }
+        break;
+      default:
+        return false;
+    }
+    pj.write_tape(0, c);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_atom() {
+    return parse_atom(buf, idx);
+  }
+
+  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+    switch (c) {
+    case '"':
+      FAIL_IF( parse_string() );
+      return continue_state;
+    case 't': case 'f': case 'n':
+      FAIL_IF( parse_atom() );
+      return continue_state;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      FAIL_IF( parse_number(false) );
+      return continue_state;
+    case '-':
+      FAIL_IF( parse_number(true) );
+      return continue_state;
+    case '{':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.object_begin;
+    case '[':
+      FAIL_IF( push_scope(continue_state) );
+      return addresses.array_begin;
+    default:
+      return addresses.error;
+    }
+  }
+
+  WARN_UNUSED really_inline int finish() {
+    // the string might not be NULL terminated.
+    if ( i + 1 != pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+
+    pj.valid = true;
+    return set_error_code(SUCCESS);
+  }
+
+  WARN_UNUSED really_inline int error() {
+    /* We do not need the next line because this is done by pj.init(),
+    * pessimistically.
+    * pj.is_valid  = false;
+    * At this point in the code, we have all the time in the world.
+    * Note that we know exactly where we are in the document so we could,
+    * without any overhead on the processing code, report a specific
+    * location.
+    * We could even trigger special code paths to assess what happened
+    * carefully,
+    * all without any added cost. */
+    if (depth >= pj.depth_capacity) {
+      return set_error_code(DEPTH_ERROR);
+    }
+    switch (c) {
+    case '"':
+      return set_error_code(STRING_ERROR);
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '-':
+      return set_error_code(NUMBER_ERROR);
+    case 't':
+      return set_error_code(T_ATOM_ERROR);
+    case 'n':
+      return set_error_code(N_ATOM_ERROR);
+    case 'f':
+      return set_error_code(F_ATOM_ERROR);
+    default:
+      return set_error_code(TAPE_ERROR);
+    }
+  }
+
+  WARN_UNUSED really_inline int start(ret_address finish_state) {
+    pj.init(); // sets is_valid to false
+    if (len > pj.byte_capacity) {
+      return CAPACITY;
+    }
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_state, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+};
+
+// Redefine FAIL_IF to use goto since it'll be used inside the function now
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
@@ -9396,992 +9289,272 @@ namespace simdjson::westmere {
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
-  uint32_t idx; /* location of the structural character in the input (buf)   */
-  uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-  /* by UPDATE_CHAR macro */
-  uint32_t depth = 0; /* could have an arbitrary starting depth */
-  pj.init();          /* sets is_valid to false          */
-  if (pj.byte_capacity < len) {
-    pj.error_code = simdjson::CAPACITY;
-    return pj.error_code;
-  }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  structural_parser parser(buf, len, pj);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
 
-  /*//////////////////////////// START STATE /////////////////////////////
-   */
-  SET_GOTO_START_CONTINUE()
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-  /* the root is used, if nothing else, to capture the size of the tape */
-  depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-  if (depth >= pj.depth_capacity) {
-    goto fail;
-  }
-
-  UPDATE_CHAR();
-  switch (c) {
+  //
+  // Read first value
+  //
+  switch (parser.c) {
   case '{':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(
-        0, c); /* strangely, moving this to object_begin slows things down */
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto object_begin;
   case '[':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
     goto array_begin;
-    /* #define SIMDJSON_ALLOWANYTHINGINROOT
-     * A JSON text is a serialized value.  Note that certain previous
-     * specifications of JSON constrained a JSON text to be an object or an
-     * array.  Implementations that generate only objects or arrays where a
-     * JSON text is called for will be interoperable in the sense that all
-     * implementations will accept these as conforming JSON texts.
-     * https://tools.ietf.org/html/rfc8259
-     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the true value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'f': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the false
-     * value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'n': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the null value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice. We terminate with a
-     * space
-     * because we do not want to allow NULLs in the middle of a number
-     * (whereas a
-     * space in the middle of a number would be identified in stage 1). */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                      false)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
-  case '-': {
-    /* we need to make a copy to make sure that the string is NULL
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
   default:
-    goto fail;
+    goto error;
   }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
-    goto fail;
-  }
-  /*//////////////////////////// OBJECT STATES ///////////////////////////*/
 
+//
+// Object parser states
+//
 object_begin:
-  UPDATE_CHAR();
-  switch (c) {
+  parser.advance_char();
+  switch (parser.c) {
   case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
+    FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
   case '}':
-    goto scope_end; /* could also go to object_continue */
+    goto scope_end; // could also go to object_continue
   default:
-    goto fail;
+    goto error;
   }
 
 object_key_state:
-  UPDATE_CHAR();
-  if (c != ':') {
-    goto fail;
-  }
-  UPDATE_CHAR();
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break;
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break;
-  }
-  case '{': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an object inside an object, so we need to increment the
-     * depth                                                             */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an array inside an object, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
-    if (c != '"') {
-      goto fail;
-    } else {
-      if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
-      }
-      goto object_key_state;
-    }
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_state;
   case '}':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// COMMON STATE ///////////////////////////*/
-
 scope_end:
-  /* write our tape location to the header scope */
-  depth--;
-  pj.write_tape(pj.containing_scope_offset[depth], c);
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  /* goto saved_state */
-  GOTO_CONTINUE()
+  CONTINUE( parser.pop_scope() );
 
-  /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+//
+// Array parser states
+//
 array_begin:
-  UPDATE_CHAR();
-  if (c == ']') {
-    goto scope_end; /* could also go to array_continue */
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
   }
 
 main_array_switch:
-  /* we call update char on all paths in, so we can peek at c on the
+  /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break; /* goto array_continue; */
-
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '{': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an object inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an array inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
 array_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
+    parser.advance_char();
     goto main_array_switch;
   case ']':
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// FINAL STATES ///////////////////////////*/
+finish:
+  return parser.finish();
 
-succeed:
-  depth--;
-  if (depth != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  if (pj.containing_scope_offset[depth] != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-  pj.valid = true;
-  pj.error_code = simdjson::SUCCESS;
-  return pj.error_code;
-fail:
-  /* we do not need the next line because this is done by pj.init(),
-   * pessimistically.
-   * pj.is_valid  = false;
-   * At this point in the code, we have all the time in the world.
-   * Note that we know exactly where we are in the document so we could,
-   * without any overhead on the processing code, report a specific
-   * location.
-   * We could even trigger special code paths to assess what happened
-   * carefully,
-   * all without any added cost. */
-  if (depth >= pj.depth_capacity) {
-    pj.error_code = simdjson::DEPTH_ERROR;
-    return pj.error_code;
-  }
-  switch (c) {
-  case '"':
-    pj.error_code = simdjson::STRING_ERROR;
-    return pj.error_code;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-  case '-':
-    pj.error_code = simdjson::NUMBER_ERROR;
-    return pj.error_code;
-  case 't':
-    pj.error_code = simdjson::T_ATOM_ERROR;
-    return pj.error_code;
-  case 'n':
-    pj.error_code = simdjson::N_ATOM_ERROR;
-    return pj.error_code;
-  case 'f':
-    pj.error_code = simdjson::F_ATOM_ERROR;
-    return pj.error_code;
-  default:
-    break;
-  }
-  pj.error_code = simdjson::TAPE_ERROR;
-  return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
+namespace stage2 {
+
+struct streaming_structural_parser: structural_parser {
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+
+  // override to add streaming
+  WARN_UNUSED really_inline int start(ret_address finish_parser) {
+    pj.init(); // sets is_valid to false
+    // Capacity ain't no thang for streaming, so we don't check it.
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (push_start_scope(finish_parser, 'r')) {
+      return DEPTH_ERROR;
+    }
+    return SUCCESS;
+  }
+
+  // override to add streaming
+  WARN_UNUSED really_inline int finish() {
+    if ( i + 1 > pj.n_structural_indexes ) {
+      return set_error_code(TAPE_ERROR);
+    }
+    pop_root_scope();
+    if (depth != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    if (pj.containing_scope_offset[depth] != 0) {
+      return set_error_code(TAPE_ERROR);
+    }
+    bool finished = i + 1 == pj.n_structural_indexes;
+    pj.valid = true;
+    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+  }
+};
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    size_t i{next_json}; /* index of the structural character (0,1,2,3...) */
-    size_t idx; /* location of the structural character in the input (buf)   */
-    uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-    /* by UPDATE_CHAR macro */
-    size_t depth = 0; /* could have an arbitrary starting depth */
-    pj.init();          /* sets is_valid to false          */
-//    if (pj.byte_capacity < len) {
-//        pj.error_code = simdjson::CAPACITY;
-//        return pj.error_code;
-//    }
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  streaming_structural_parser parser(buf, len, pj, next_json);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
+  //
+  // Read first value
+  //
+  switch (parser.c) {
+  case '{':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto object_begin;
+  case '[':
+    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    goto array_begin;
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
+  default:
+    goto error;
+  }
 
-    /*//////////////////////////// START STATE /////////////////////////////
-     */
-    SET_GOTO_START_CONTINUE()
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-    /* the root is used, if nothing else, to capture the size of the tape */
-    depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-    if (depth >= pj.depth_capacity) {
-        goto fail;
-    }
+//
+// Object parser parsers
+//
+object_begin:
+  parser.advance_char();
+  switch (parser.c) {
+  case '"': {
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  }
+  case '}':
+    goto scope_end; // could also go to object_continue
+  default:
+    goto error;
+  }
 
-    UPDATE_CHAR();
-    switch (c) {
-        case '{':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(
-                    0, c); /* strangely, moving this to object_begin slows things down */
-            goto object_begin;
-        case '[':
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            SET_GOTO_START_CONTINUE();
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            goto array_begin;
-            /* #define SIMDJSON_ALLOWANYTHINGINROOT
-             * A JSON text is a serialized value.  Note that certain previous
-             * specifications of JSON constrained a JSON text to be an object or an
-             * array.  Implementations that generate only objects or arrays where a
-             * JSON text is called for will be interoperable in the sense that all
-             * implementations will accept these as conforming JSON texts.
-             * https://tools.ietf.org/html/rfc8259
-             * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the true value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'f': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the false
-             * value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case 'n': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this only applies to the JSON document made solely of the null value.
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            pj.write_tape(0, c);
-            break;
-        }
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            /* we need to make a copy to make sure that the string is space
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice. We terminate with a
-             * space
-             * because we do not want to allow NULLs in the middle of a number
-             * (whereas a
-             * space in the middle of a number would be identified in stage 1). */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                              false)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        case '-': {
-            /* we need to make a copy to make sure that the string is NULL
-             * terminated.
-             * this is done only for JSON documents made of a sole number
-             * this will almost never be called in practice */
-            char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-            if (copy == nullptr) {
-                goto fail;
-            }
-            memcpy(copy, buf, len);
-            copy[len] = ' ';
-            if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-                free(copy);
-                goto fail;
-            }
-            free(copy);
-            break;
-        }
-        default:
-            goto fail;
-    }
-    start_continue:
-    /* the string might not be NULL terminated. */
-    if (i + 1 == pj.n_structural_indexes && buf[idx+2] == '\0') {
-        goto succeed;
-    } else if(depth == 1 && i<=pj.n_structural_indexes) {
-        goto succeedAndHasMore;
-    } else {
-        goto fail;
-    }
-    /*//////////////////////////// OBJECT STATES ///////////////////////////*/
+object_key_parser:
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
-    object_begin:
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            goto object_key_state;
-        }
-        case '}':
-            goto scope_end; /* could also go to object_continue */
-        default:
-            goto fail;
-    }
+object_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_parser;
+  case '}':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    object_key_state:
-    UPDATE_CHAR();
-    if (c != ':') {
-        goto fail;
-    }
-    UPDATE_CHAR();
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break;
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break;
-        }
-        case '{': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an object inside an object, so we need to increment the
-             * depth                                                             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
+scope_end:
+  CONTINUE( parser.pop_scope() );
 
-            goto object_begin;
-        }
-        case '[': {
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            /* we have not yet encountered } so we need to come back for it */
-            SET_GOTO_OBJECT_CONTINUE()
-            /* we found an array inside an object, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
+//
+// Array parser parsers
+//
+array_begin:
+  if (parser.advance_char() == ']') {
+    goto scope_end; // could also go to array_continue
+  }
 
-    object_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            if (c != '"') {
-                goto fail;
-            } else {
-                if (!parse_string(buf, len, pj, depth, idx)) {
-                    goto fail;
-                }
-                goto object_key_state;
-            }
-        case '}':
-            goto scope_end;
-        default:
-            goto fail;
-    }
+main_array_switch:
+  /* we call update char on all paths in, so we can peek at parser.c on the
+   * on paths that can accept a close square brace (post-, and at start) */
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
-    /*//////////////////////////// COMMON STATE ///////////////////////////*/
+array_continue:
+  switch (parser.advance_char()) {
+  case ',':
+    parser.advance_char();
+    goto main_array_switch;
+  case ']':
+    goto scope_end;
+  default:
+    goto error;
+  }
 
-    scope_end:
-    /* write our tape location to the header scope */
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    /* goto saved_state */
-    GOTO_CONTINUE()
+finish:
+  next_json = parser.i;
+  return parser.finish();
 
-    /*//////////////////////////// ARRAY STATES ///////////////////////////*/
-    array_begin:
-    UPDATE_CHAR();
-    if (c == ']') {
-        goto scope_end; /* could also go to array_continue */
-    }
-
-    main_array_switch:
-    /* we call update char on all paths in, so we can peek at c on the
-     * on paths that can accept a close square brace (post-, and at start) */
-    switch (c) {
-        case '"': {
-            if (!parse_string(buf, len, pj, depth, idx)) {
-                goto fail;
-            }
-            break;
-        }
-        case 't':
-            if (!is_valid_true_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'f':
-            if (!is_valid_false_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break;
-        case 'n':
-            if (!is_valid_null_atom(buf + idx)) {
-                goto fail;
-            }
-            pj.write_tape(0, c);
-            break; /* goto array_continue; */
-
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-            if (!parse_number(buf, pj, idx, false)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '-': {
-            if (!parse_number(buf, pj, idx, true)) {
-                goto fail;
-            }
-            break; /* goto array_continue; */
-        }
-        case '{': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an object inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-
-            goto object_begin;
-        }
-        case '[': {
-            /* we have not yet encountered ] so we need to come back for it */
-            pj.containing_scope_offset[depth] = pj.get_current_loc();
-            pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-            SET_GOTO_ARRAY_CONTINUE()
-            /* we found an array inside an array, so we need to increment the depth
-             */
-            depth++;
-            if (depth >= pj.depth_capacity) {
-                goto fail;
-            }
-            goto array_begin;
-        }
-        default:
-            goto fail;
-    }
-
-    array_continue:
-    UPDATE_CHAR();
-    switch (c) {
-        case ',':
-        UPDATE_CHAR();
-            goto main_array_switch;
-        case ']':
-            goto scope_end;
-        default:
-            goto fail;
-    }
-
-    /*//////////////////////////// FINAL STATES ///////////////////////////*/
-    succeedAndHasMore:
-        depth--;
-        if (pj.containing_scope_offset[depth] != 0) {
-            fprintf(stderr, "internal bug\n");
-            abort();
-        }
-        pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                                 pj.get_current_loc());
-        pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-
-        next_json = i;
-
-        pj.valid = true;
-        pj.error_code = simdjson::SUCCESS_AND_HAS_MORE;
-        return pj.error_code;
-
-    succeed:
-    depth--;
-    if (depth != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    if (pj.containing_scope_offset[depth] != 0) {
-        fprintf(stderr, "internal bug\n");
-        abort();
-    }
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                             pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-    pj.valid = true;
-    pj.error_code = simdjson::SUCCESS;
-    return pj.error_code;
-    fail:
-    /* we do not need the next line because this is done by pj.init(),
-     * pessimistically.
-     * pj.is_valid  = false;
-     * At this point in the code, we have all the time in the world.
-     * Note that we know exactly where we are in the document so we could,
-     * without any overhead on the processing code, report a specific
-     * location.
-     * We could even trigger special code paths to assess what happened
-     * carefully,
-     * all without any added cost. */
-//    if(i <= pj.n_structural_indexes) {
-//        printf("%.32s    ...    %.32s\n", &buf[pj.structural_indexes[next_json]], &buf[100000 - 31]);
-//        printf("last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-1], &buf[pj.structural_indexes[pj.n_structural_indexes-1]]);
-//        printf("second to last structural char (%u): %.1s\n", pj.structural_indexes[pj.n_structural_indexes-2], &buf[pj.structural_indexes[pj.n_structural_indexes-2]]);
-//        printf("structural char at 0: %.1s\n", &buf[pj.structural_indexes[pj.n_structural_indexes]]);
-//    }
-    if (depth >= pj.depth_capacity) {
-        pj.error_code = simdjson::DEPTH_ERROR;
-        return pj.error_code;
-    }
-    switch (c) {
-        case '"':
-            pj.error_code = simdjson::STRING_ERROR;
-            return pj.error_code;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-        case '-':
-            pj.error_code = simdjson::NUMBER_ERROR;
-            return pj.error_code;
-        case 't':
-            pj.error_code = simdjson::T_ATOM_ERROR;
-            return pj.error_code;
-        case 'n':
-            pj.error_code = simdjson::N_ATOM_ERROR;
-            return pj.error_code;
-        case 'f':
-            pj.error_code = simdjson::F_ATOM_ERROR;
-            return pj.error_code;
-        default:
-            break;
-    }
-    pj.error_code = simdjson::TAPE_ERROR;
-    return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
@@ -10392,13 +9565,13 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return westmere::unified_machine(buf, len, pj);
+  return westmere::stage2::unified_machine(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return westmere::unified_machine(buf, len, pj, next_json);
+    return westmere::stage2::unified_machine(buf, len, pj, next_json);
 }
 
 
@@ -10412,58 +9585,6 @@ UNTARGET_REGION
 /* begin file src/parsedjson.cpp */
 
 namespace simdjson {
-ParsedJson::ParsedJson()
-    : structural_indexes(nullptr), tape(nullptr),
-      containing_scope_offset(nullptr), ret_address(nullptr),
-      string_buf(nullptr), current_string_buf_loc(nullptr) {}
-
-ParsedJson::~ParsedJson() { deallocate(); }
-
-ParsedJson::ParsedJson(ParsedJson &&p)
-    : byte_capacity(p.byte_capacity), depth_capacity(p.depth_capacity),
-      tape_capacity(p.tape_capacity), string_capacity(p.string_capacity),
-      current_loc(p.current_loc), n_structural_indexes(p.n_structural_indexes),
-      structural_indexes(p.structural_indexes), tape(p.tape),
-      containing_scope_offset(p.containing_scope_offset),
-      ret_address(p.ret_address), string_buf(p.string_buf),
-      current_string_buf_loc(p.current_string_buf_loc), valid(p.valid) {
-  p.structural_indexes = nullptr;
-  p.tape = nullptr;
-  p.containing_scope_offset = nullptr;
-  p.ret_address = nullptr;
-  p.string_buf = nullptr;
-  p.current_string_buf_loc = nullptr;
-}
-
-ParsedJson &ParsedJson::operator=(ParsedJson &&p) {
-  byte_capacity = p.byte_capacity;
-  p.byte_capacity = 0;
-  depth_capacity = p.depth_capacity;
-  p.depth_capacity = 0;
-  tape_capacity = p.tape_capacity;
-  p.tape_capacity = 0;
-  string_capacity = p.string_capacity;
-  p.string_capacity = 0;
-  current_loc = p.current_loc;
-  p.current_loc = 0;
-  n_structural_indexes = p.n_structural_indexes;
-  p.n_structural_indexes = 0;
-  structural_indexes = p.structural_indexes;
-  p.structural_indexes = nullptr;
-  tape = p.tape;
-  p.tape = nullptr;
-  containing_scope_offset = p.containing_scope_offset;
-  p.containing_scope_offset = nullptr;
-  ret_address = p.ret_address;
-  p.ret_address = nullptr;
-  string_buf = p.string_buf;
-  p.string_buf = nullptr;
-  current_string_buf_loc = p.current_string_buf_loc;
-  p.current_string_buf_loc = nullptr;
-  valid = p.valid;
-  p.valid = false;
-  return *this;
-}
 
 WARN_UNUSED
 bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
@@ -10484,7 +9605,8 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   byte_capacity = 0; // will only set it to len after allocations are a success
   n_structural_indexes = 0;
   uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes = new (std::nothrow) uint32_t[max_structures];
+  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]);
+
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
@@ -10494,24 +9616,19 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
   size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  string_buf = new (std::nothrow) uint8_t[local_string_capacity];
-  tape = new (std::nothrow) uint64_t[local_tape_capacity];
-  containing_scope_offset = new (std::nothrow) uint32_t[max_depth];
+  string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
+  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]);
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-  ret_address = new (std::nothrow) void *[max_depth];
+  //ret_address = new (std::nothrow) void *[max_depth];
+  ret_address.reset(new (std::nothrow) void *[max_depth]);
 #else
-  ret_address = new (std::nothrow) char[max_depth];
+  ret_address.reset(new (std::nothrow) char[max_depth]);
 #endif
-  if ((string_buf == nullptr) || (tape == nullptr) ||
-      (containing_scope_offset == nullptr) || (ret_address == nullptr) ||
-      (structural_indexes == nullptr)) {
+  if (!string_buf || !tape ||
+      !containing_scope_offset || !ret_address ||
+      !structural_indexes) {
     std::cerr << "Could not allocate memory" << std::endl;
-    delete[] ret_address;
-    delete[] containing_scope_offset;
-    delete[] tape;
-    delete[] string_buf;
-    delete[] structural_indexes;
-
     return false;
   }
   /*
@@ -10541,16 +9658,16 @@ void ParsedJson::deallocate() {
   depth_capacity = 0;
   tape_capacity = 0;
   string_capacity = 0;
-  delete[] ret_address;
-  delete[] containing_scope_offset;
-  delete[] tape;
-  delete[] string_buf;
-  delete[] structural_indexes;
+  ret_address.reset();
+  containing_scope_offset.reset();
+  tape.reset();
+  string_buf.reset();
+  structural_indexes.reset();
   valid = false;
 }
 
 void ParsedJson::init() {
-  current_string_buf_loc = string_buf;
+  current_string_buf_loc = string_buf.get();
   current_loc = 0;
   valid = false;
 }
@@ -10578,8 +9695,8 @@ bool ParsedJson::print_json(std::ostream &os) const {
     return false;
   }
   tape_idx++;
-  bool *in_object = new bool[depth_capacity];
-  auto *in_object_idx = new size_t[depth_capacity];
+  std::unique_ptr<bool[]> in_object(new bool[depth_capacity]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[depth_capacity]);
   int depth = 1; // only root at level 0
   in_object_idx[depth] = 0;
   in_object[depth] = false;
@@ -10605,32 +9722,26 @@ bool ParsedJson::print_json(std::ostream &os) const {
     switch (type) {
     case '"': // we have a string
       os << '"';
-      memcpy(&string_length, string_buf + payload, sizeof(uint32_t));
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
       print_with_escapes(
-          (const unsigned char *)(string_buf + payload + sizeof(uint32_t)),
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
           os, string_length);
       os << '"';
       break;
     case 'l': // we have a long int
       if (tape_idx + 1 >= how_many) {
-        delete[] in_object;
-        delete[] in_object_idx;
         return false;
       }
       os << static_cast<int64_t>(tape[++tape_idx]);
       break;
     case 'u':
       if (tape_idx + 1 >= how_many) {
-        delete[] in_object;
-        delete[] in_object_idx;
         return false;
       }
       os << tape[++tape_idx];
       break;
     case 'd': // we have a double
       if (tape_idx + 1 >= how_many) {
-        delete[] in_object;
-        delete[] in_object_idx;
         return false;
       }
       double answer;
@@ -10668,18 +9779,12 @@ bool ParsedJson::print_json(std::ostream &os) const {
       break;
     case 'r': // we start and end with the root node
       fprintf(stderr, "should we be hitting the root node?\n");
-      delete[] in_object;
-      delete[] in_object_idx;
       return false;
     default:
       fprintf(stderr, "bug %c\n", type);
-      delete[] in_object;
-      delete[] in_object_idx;
       return false;
     }
   }
-  delete[] in_object;
-  delete[] in_object_idx;
   return true;
 }
 
@@ -10711,9 +9816,10 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
     switch (type) {
     case '"': // we have a string
       os << "string \"";
-      memcpy(&string_length, string_buf + payload, sizeof(uint32_t));
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
       print_with_escapes(
-          (const unsigned char *)(string_buf + payload + sizeof(uint32_t)),
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+                  os,
           string_length);
       os << '"';
       os << '\n';
@@ -10765,7 +9871,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
          << " (start of the scope) \n";
       break;
     case 'r': // we start and end with the root node
-      printf("end of root\n");
+      fprintf(stderr, "should we be hitting the root node?\n");
       return false;
     default:
       return false;
