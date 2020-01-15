@@ -11,16 +11,24 @@ echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/
 AMAL_H="simdjson.h"
 AMAL_C="simdjson.cpp"
 
-# order does not matter
+# this list excludes the "src/generic headers"
 ALLCFILES="
+$SCRIPTPATH/src/arm64/intrinsics.h
+$SCRIPTPATH/src/haswell/intrinsics.h
+$SCRIPTPATH/src/westmere/intrinsics.h
 $SCRIPTPATH/src/jsoncharutils.h
-$SCRIPTPATH/src/numberparsing.h
 $SCRIPTPATH/src/simdprune_tables.h
 $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
 $SCRIPTPATH/src/jsonstream.cpp
+$SCRIPTPATH/src/arm64/bitmanipulation.h
+$SCRIPTPATH/src/haswell/bitmanipulation.h
+$SCRIPTPATH/src/westmere/bitmanipulation.h
+$SCRIPTPATH/src/arm64/numberparsing.h
+$SCRIPTPATH/src/haswell/numberparsing.h
+$SCRIPTPATH/src/westmere/numberparsing.h
 $SCRIPTPATH/src/arm64/bitmask.h
 $SCRIPTPATH/src/haswell/bitmask.h
 $SCRIPTPATH/src/westmere/bitmask.h
@@ -73,7 +81,7 @@ function dofile()
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
-    while IFS= read -r line
+    while IFS= read -r line || [ -n "$line" ];
     do
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)
@@ -136,8 +144,8 @@ cat <<< '
 #include "simdjson.h"
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
-  if(argc < 3) {
-    std::cerr << "Please specify filenames " << std::endl;
+  if(argc < 2) {
+    std::cerr << "Please specify at least one file name. " << std::endl;
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
@@ -146,6 +154,9 @@ int main(int argc, char *argv[]) {
     std::cout << "build_parsed_json not valid" << std::endl;
   } else {
     std::cout << "build_parsed_json valid" << std::endl;
+  }
+  if(argc == 2) {
+    return EXIT_SUCCESS;
   }
 
   //JsonStream
@@ -157,7 +168,7 @@ int main(int argc, char *argv[]) {
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
             parse_res = js.json_parse(pj2);
-        }
+  }
 
   if( ! pj2.is_valid()) {
     std::cout << "JsonStream not valid" << std::endl;

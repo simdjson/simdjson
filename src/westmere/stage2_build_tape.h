@@ -7,6 +7,7 @@
 
 #include "simdjson/stage2_build_tape.h"
 #include "westmere/stringparsing.h"
+#include "westmere/numberparsing.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {
@@ -23,13 +24,13 @@ namespace simdjson {
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return westmere::unified_machine(buf, len, pj);
+  return westmere::stage2::unified_machine(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED int
 unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return westmere::unified_machine(buf, len, pj, next_json);
+    return westmere::stage2::unified_machine(buf, len, pj, next_json);
 }
 
 

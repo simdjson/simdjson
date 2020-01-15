@@ -9,6 +9,8 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
+#include "haswell/intrinsics.h"
+#include "haswell/bitmanipulation.h"
 
 TARGET_HASWELL
 namespace simdjson::haswell {

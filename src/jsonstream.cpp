@@ -1,6 +1,8 @@
+#include <map>
 #include "simdjson/jsonstream.h"
 #include "simdjson/isadetection.h"
-#include <map>
+#include "jsoncharutils.h"
+
 
 using namespace simdjson;
 void find_the_best_supported_implementation();
@@ -16,166 +18,179 @@ JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
     find_the_best_supported_implementation();
 }
 
+JsonStream::~JsonStream() {
+#ifdef SIMDJSON_THREADS_ENABLED
+    if(stage_1_thread.joinable()) {
+      stage_1_thread.join();
+    }
+#endif
+}
+
+/* // this implementation is untested and unlikely to work
 void JsonStream::set_new_buffer(const char *buf, size_t len) {
+#ifdef SIMDJSON_THREADS_ENABLED
+    if(stage_1_thread.joinable()) {
+      stage_1_thread.join();
+    }
+#endif
     this->_buf = buf;
     this->_len = len;
-    _batch_size = 0;
-    _batch_size = 0;
+    _batch_size = 0; // why zero?
+    _batch_size = 0; // waat??
     next_json = 0;
     current_buffer_loc = 0;
     n_parsed_docs = 0;
-    error_on_last_attempt= false;
     load_next_batch = true;
-}
+}*/
 
+
+#ifdef SIMDJSON_THREADS_ENABLED
+
+// threaded version of json_parse
+// todo: simplify this code further
 int JsonStream::json_parse(ParsedJson &pj) {
-    if (pj.byte_capacity == 0) {
+    if (unlikely(pj.byte_capacity == 0)) {
         const bool allocok = pj.allocate_capacity(_batch_size);
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
+        }
+    } else if (unlikely(pj.byte_capacity < _batch_size)) {
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
+    }
+    if(unlikely(pj_thread.byte_capacity < _batch_size)) {
         const bool allocok_thread = pj_thread.allocate_capacity(_batch_size);
-        if (!allocok || !allocok_thread) {
-            std::cerr << "can't allocate memory" << std::endl;
-            return false;
+        if (!allocok_thread) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
     }
-    else if (pj.byte_capacity < _batch_size) {
-        return simdjson::CAPACITY;
-    }
-#ifdef SIMDJSON_THREADS_ENABLED
-    if(current_buffer_loc == last_json_buffer_loc)
-        load_next_batch = true;
-#endif
-
-    if (load_next_batch){
-#ifdef SIMDJSON_THREADS_ENABLED
+    if (unlikely(load_next_batch)) {
         //First time loading
-        if(!stage_1_thread.joinable()){
-            _buf = &_buf[current_buffer_loc];
-            _len -= current_buffer_loc;
-            n_bytes_parsed += current_buffer_loc;
-
+        if(!stage_1_thread.joinable()) {
             _batch_size = std::min(_batch_size, _len);
-            int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
-
+            _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
+            if(_batch_size == 0) {
+                pj.error_code = simdjson::UTF8_ERROR;
+                return pj.error_code;
+            }
+            int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
             if (stage1_is_ok != simdjson::SUCCESS) {
                 pj.error_code = stage1_is_ok;
                 return pj.error_code;
             }
+            size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+            if(last_index == 0) {
+              pj.error_code = simdjson::EMPTY;
+              return pj.error_code;
+            }
+            pj.n_structural_indexes = last_index + 1;
         }
-
-            //the second thread is running or done.
-        else{
+        // the second thread is running or done.
+        else {
             stage_1_thread.join();
+            if (stage1_is_ok_thread != simdjson::SUCCESS) {
+                pj.error_code = stage1_is_ok_thread;
+                return pj.error_code;
+            }
             std::swap(pj.structural_indexes, pj_thread.structural_indexes);
             pj.n_structural_indexes = pj_thread.n_structural_indexes;
-
-            _buf = &_buf[last_json_buffer_loc];
+            _buf = _buf + last_json_buffer_loc;
             _len -= last_json_buffer_loc;
             n_bytes_parsed += last_json_buffer_loc;
-            last_json_buffer_loc = 0; //because we want to use it in the if above.
         }
-
-        if(_len-_batch_size > 0) {
-            last_json_buffer_loc = find_last_json_buf_loc(pj);
+        // let us decide whether we will start a new thread
+        if(_len - _batch_size > 0) {
+            last_json_buffer_loc =  pj.structural_indexes[find_last_json_buf_idx(_buf,_batch_size,pj)];
             _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
-            if(_batch_size>0)
+            if(_batch_size > 0) {
+                _batch_size = trimmed_length_safe_utf8((const char*)(_buf + last_json_buffer_loc), _batch_size);
+                if(_batch_size == 0) {
+                  pj.error_code = simdjson::UTF8_ERROR;
+                  return pj.error_code;
+                }
+                // let us capture read-only variables
+                const char * const b = _buf + last_json_buffer_loc;
+                const size_t bs = _batch_size;
+                // we call the thread on a lambda that will update  this->stage1_is_ok_thread
+                // there is only one thread that may write to this value
                 stage_1_thread = std::thread(
-                        static_cast<stage1_functype>(*best_stage1),
-                        &_buf[last_json_buffer_loc], _batch_size,
-                        std::ref(pj_thread),
-                        true);
-
+                   [this, b, bs] {
+                     this->stage1_is_ok_thread = best_stage1(b, bs, this->pj_thread, true);
+                });
+            }
         }
-#else
-        _buf = &_buf[current_buffer_loc];
-        _len -= current_buffer_loc;
-        n_bytes_parsed += current_buffer_loc;
-
-        _batch_size = std::min(_batch_size, _len);
-        int stage1_is_ok = (*best_stage1)(_buf, _batch_size, pj, true);
-
-        if (stage1_is_ok != simdjson::SUCCESS) {
-            pj.error_code = stage1_is_ok;
-            return pj.error_code;
-        }
-#endif
+        next_json = 0;
         load_next_batch = false;
-
-        //If we loaded a perfect amount of documents last time, we need to skip the first element,
-        // because it represents the end of the last document
-        next_json = next_json == 1;
-    }
-
-    int res = (*best_stage2)(_buf, _len, pj, next_json);
-
+    } // load_next_batch
+    int res = best_stage2(_buf, _len, pj, next_json);
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
-        error_on_last_attempt = false;
         n_parsed_docs++;
-        //Check if we loaded a perfect amount of json documents and we are done parsing them.
-        //Since we don't know the position of the next json document yet, point the current_buffer_loc to the end
-        //of the last loaded document and start parsing at structural_index[1] for the next batch.
-        // It should point to the start of the first document in the new batch
-        if(next_json == pj.n_structural_indexes) {
+        current_buffer_loc = pj.structural_indexes[next_json];
+        load_next_batch = (current_buffer_loc == last_json_buffer_loc);
+    } else if (res == simdjson::SUCCESS) {
+        n_parsed_docs++;
+        if(_len > _batch_size) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
-            next_json = 1;
             load_next_batch = true;
+            res = simdjson::SUCCESS_AND_HAS_MORE;
         }
-
-        else {
-            current_buffer_loc = pj.structural_indexes[next_json];
-        }
-    }
-    //TODO: have a more precise error check
-    //Give it two chances for now.  We assume the error is because the json was not loaded completely in this batch.
-    //Load a new batch and if the error persists, it's a genuine error.
-    else if ( res > 1 && !error_on_last_attempt) {
-        load_next_batch = true;
-        error_on_last_attempt = true;
-        res = json_parse(pj);
     }
     return res;
 }
 
-#ifdef SIMDJSON_THREADS_ENABLED
-size_t JsonStream::find_last_json_buf_loc(const ParsedJson &pj) {
-    auto last_i = pj.n_structural_indexes - 1;
-    if (pj.structural_indexes[last_i] == _batch_size)
-        last_i = pj.n_structural_indexes - 2;
-    auto arr_cnt = 0;
-    auto obj_cnt = 0;
-    for (auto i = last_i; i > 0; i--) {
-        auto idxb = pj.structural_indexes[i];
-        switch (_buf[idxb]) {
-            case ':':
-            case ',':
-                continue;
-            case '}':
-                obj_cnt--;
-                continue;
-            case ']':
-                arr_cnt--;
-                continue;
-            case '{':
-                obj_cnt++;
-                break;
-            case '[':
-                arr_cnt++;
-                break;
+#else  // SIMDJSON_THREADS_ENABLED
+
+// single-threaded version of json_parse
+int JsonStream::json_parse(ParsedJson &pj) {
+    if (unlikely(pj.byte_capacity == 0)) {
+        const bool allocok = pj.allocate_capacity(_batch_size);
+        if (!allocok) {
+            pj.error_code = simdjson::MEMALLOC;
+            return pj.error_code;
         }
-        auto idxa = pj.structural_indexes[i - 1];
-        switch (_buf[idxa]) {
-            case '{':
-            case '[':
-            case ':':
-            case ',':
-                continue;
-        }
-        if (!arr_cnt && !obj_cnt)
-            return pj.structural_indexes[last_i+1];
-        return idxb;
+    } else if (unlikely(pj.byte_capacity < _batch_size)) {
+        pj.error_code = simdjson::CAPACITY;
+        return pj.error_code;
     }
-    return 0;
+    if (unlikely(load_next_batch)) {
+        _buf = _buf + current_buffer_loc;
+        _len -= current_buffer_loc;
+        n_bytes_parsed += current_buffer_loc;
+        _batch_size = std::min(_batch_size, _len);
+        _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
+        int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
+        if (stage1_is_ok != simdjson::SUCCESS) {
+            pj.error_code = stage1_is_ok;
+            return pj.error_code;
+        }
+        size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+        if(last_index == 0) {
+            pj.error_code = simdjson::EMPTY;
+            return pj.error_code;
+        }
+        pj.n_structural_indexes = last_index + 1;
+        load_next_batch = false;
+    } // load_next_batch
+    int res = best_stage2(_buf, _len, pj, next_json);
+    if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
+        n_parsed_docs++;
+        current_buffer_loc = pj.structural_indexes[next_json];
+    } else if (res == simdjson::SUCCESS) {
+        n_parsed_docs++;
+        if(_len > _batch_size) {
+            current_buffer_loc = pj.structural_indexes[next_json - 1];
+            next_json = 1;
+            load_next_batch = true;
+            res = simdjson::SUCCESS_AND_HAS_MORE;
+        }
+    }
+    return res;
 }
-#endif
+
+#endif // SIMDJSON_THREADS_ENABLED
+
 
 size_t JsonStream::get_current_buffer_loc() const {
     return current_buffer_loc;
@@ -211,11 +226,13 @@ void find_the_best_supported_implementation() {
     }
 #endif
 #ifdef IS_ARM64
-    if (instruction_set::NEON) {
+    if (supports & instruction_set::NEON) {
         best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
         best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
         return;
     }
 #endif
     std::cerr << "The processor is not supported by simdjson." << std::endl;
+    // we throw an exception since this should not be recoverable
+    throw new std::runtime_error("unsupported architecture");
 }

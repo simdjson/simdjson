@@ -1,21 +1,4 @@
-#ifndef SIMDJSON_NUMBERPARSING_H
-#define SIMDJSON_NUMBERPARSING_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/parsedjson.h"
-#include "simdjson/portability.h"
-#include "jsoncharutils.h"
-#include <cmath>
-#include <limits>
-
-#ifdef JSON_TEST_NUMBERS // for unit testing
-void found_invalid_number(const uint8_t *buf);
-void found_integer(int64_t result, const uint8_t *buf);
-void found_unsigned_integer(uint64_t result, const uint8_t *buf);
-void found_float(double result, const uint8_t *buf);
-#endif
-
-namespace simdjson {
 // Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
 // so from -1.7976e308 all the way to 1.7975e308 in binary64. The lowest
@@ -117,14 +100,7 @@ really_inline bool
 is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];
 }
-} // namespace simdjson
-#ifndef SIMDJSON_DISABLE_SWAR_NUMBER_PARSING
-#define SWAR_NUMBER_PARSING
-#endif
 
-#ifdef SWAR_NUMBER_PARSING
-
-namespace simdjson {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
@@ -142,45 +118,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
           0x3333333333333333);
 }
-} // namespace simdjson
-#ifdef IS_X86_64
-TARGET_WESTMERE
-namespace simdjson {
-static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
-  // this actually computes *16* values so we are being wasteful.
-  const __m128i ascii0 = _mm_set1_epi8('0');
-  const __m128i mul_1_10 =
-      _mm_setr_epi8(10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1);
-  const __m128i mul_1_100 = _mm_setr_epi16(100, 1, 100, 1, 100, 1, 100, 1);
-  const __m128i mul_1_10000 =
-      _mm_setr_epi16(10000, 1, 10000, 1, 10000, 1, 10000, 1);
-  const __m128i input = _mm_sub_epi8(
-      _mm_loadu_si128(reinterpret_cast<const __m128i *>(chars)), ascii0);
-  const __m128i t1 = _mm_maddubs_epi16(input, mul_1_10);
-  const __m128i t2 = _mm_madd_epi16(t1, mul_1_100);
-  const __m128i t3 = _mm_packus_epi32(t2, t2);
-  const __m128i t4 = _mm_madd_epi16(t3, mul_1_10000);
-  return _mm_cvtsi128_si32(
-      t4); // only captures the sum of the first 8 digits, drop the rest
-}
-} // namespace simdjson
-UNTARGET_REGION
-#endif
 
-namespace simdjson {
-#ifdef IS_ARM64
-// we don't have SSE, so let us use a scalar function
-// credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
-static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
-  uint64_t val;
-  memcpy(&val, chars, sizeof(uint64_t));
-  val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
-  val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
-  return (val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32;
-}
-#endif
-
-#endif
 
 //
 // This function computes base * 10 ^ (- negative_exponent ).
@@ -616,5 +554,4 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
   return is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
-} // simdjson
-#endif
+

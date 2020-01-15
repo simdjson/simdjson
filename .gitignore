@@ -1,3 +1,5 @@
+visual_studio
+
 /benchbranch/
 /submodules/
 
@@ -53,9 +55,13 @@ objs
 # Build outputs (TODO build to a subdir so we can exclude that instead)
 /allparserscheckfile
 /basictests
+/benchfeatures
 /benchmark/parse
+/benchmark/parse_stream
 /benchmark/perfdiff
 /benchmark/statisticalmodel
+/fuzz/fuzz_dump
+/fuzz/fuzz_parser
 /json2json
 /jsoncheck
 /jsoncheck_noavx
@@ -84,7 +90,11 @@ objs
 /tests/integer_tests
 /tools/json2json
 /tools/jsonstats
+/tests/jsonstream_test
 /tools/minify
+
+# Don't check in generated examples
+/jsonexamples/generated
 
 # C++ ignore from https://github.com/github/gitignore/blob/master/C%2B%2B.gitignore
 

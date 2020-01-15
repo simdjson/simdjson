@@ -5,8 +5,8 @@
 
 #ifdef IS_ARM64
 
-#include "haswell/bitmask.h"
 #include "simdjson/common_defs.h"
+#include "arm64/intrinsics.h"
 
 namespace simdjson::arm64 {
 
@@ -16,10 +16,19 @@ namespace simdjson::arm64 {
 // For example, prefix_xor(00100100) == 00011100
 //
 really_inline uint64_t prefix_xor(uint64_t bitmask) {
-
-#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
-  return vmull_p64(-1ULL, bitmask);
-#else
+  /////////////
+  // We could do this with PMULL, but it is apparently slow.
+  //  
+  //#ifdef __ARM_FEATURE_CRYPTO // some ARM processors lack this extension
+  //return vmull_p64(-1ULL, bitmask);
+  //#else
+  // Analysis by @sebpop:
+  // When diffing the assembly for src/stage1_find_marks.cpp I see that the eors are all spread out
+  // in between other vector code, so effectively the extra cycles of the sequence do not matter 
+  // because the GPR units are idle otherwise and the critical path is on the FP side.
+  // Also the PMULL requires two extra fmovs: GPR->FP (3 cycles in N1, 5 cycles in A72 ) 
+  // and FP->GPR (2 cycles on N1 and 5 cycles on A72.)
+  ///////////
   bitmask ^= bitmask << 1;
   bitmask ^= bitmask << 2;
   bitmask ^= bitmask << 4;
@@ -27,8 +36,6 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
   bitmask ^= bitmask << 16;
   bitmask ^= bitmask << 32;
   return bitmask;
-#endif
-
 }
 
 } // namespace simdjson::arm64

@@ -83,6 +83,10 @@ public:
     }
   }
 
+  bool is_working() {
+    return working;
+  }
+
 private:
   void report_error(const std::string &context) {
     if (working)

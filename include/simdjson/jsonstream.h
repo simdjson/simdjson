@@ -65,6 +65,8 @@ namespace simdjson {
          * */
         JsonStream(const std::string &s, size_t batch_size = 1000000) : JsonStream(s.data(), s.size(), batch_size) {};
 
+        ~JsonStream();
+
         /* Parse the next document found in the buffer previously given to JsonStream.
 
          * The content should be a valid JSON document encoded as UTF-8. If there is a
@@ -96,12 +98,14 @@ namespace simdjson {
         /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
          * which acts as a reset.  A new JsonStream without initializing again.
          * */
-        void set_new_buffer(const char *buf, size_t len);
+        // todo: implement and test this function, note that _batch_size is mutable
+        // void set_new_buffer(const char *buf, size_t len);
 
         /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
          * which is basically a reset.  A new JsonStream without initializing again.
          * */
-        void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
+        // todo: implement and test this function, note that _batch_size is mutable
+        // void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
 
         /* Returns the location (index) of where the next document should be in the buffer.
          * Can be used for debugging, it tells the user the position of the end of the last
@@ -121,42 +125,88 @@ namespace simdjson {
         size_t _len;
         size_t _batch_size;
         size_t next_json{0};
-        bool error_on_last_attempt{false};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};
         size_t last_json_buffer_loc{0};
         size_t n_parsed_docs{0};
         size_t n_bytes_parsed{0};
-
+#ifdef SIMDJSON_THREADS_ENABLED
+        int stage1_is_ok_thread{0};
         std::thread stage_1_thread;
         simdjson::ParsedJson pj_thread;
-
-#ifdef SIMDJSON_THREADS_ENABLED
-        /* This algorithm is used to quickly identify the buffer position of
-         * the last JSON document inside the current batch.
-         *
-         * It does it's work by finding the last pair of structural characters
-         * that represent the end followed by the start of a document.
-         *
-         * Simply put, we iterate over the structural characters, starting from
-         * the end. We consider that we found the end of a JSON document when the
-         * first element of the pair is NOT one of these characters: '{' '[' ';' ','
-         * and when the second element is NOT one of these characters: '}' '}' ';' ','.
-         *
-         * This simple comparison works most of the time, but it does not cover cases
-         * where the batch's structural indexes contain a perfect amount of documents.
-         * In such a case, we do not have access to the structural index which follows
-         * the last document, therefore, we do not have access to the second element in
-         * the pair, and means that we cannot identify the last document. To fix this
-         * issue, we keep a count of the open and closed curly/square braces we found
-         * while searching for the pair. When we find a pair AND the count of open and
-         * closed curly/square braces is the same, we know that we just passed a complete
-         * document, therefore the last json buffer location is the end of the batch
-         * */
-        size_t find_last_json_buf_loc(const ParsedJson &pj);
-
 #endif
+
     };
 
+
+
+/* This algorithm is used to quickly identify the buffer position of
+ * the last JSON document inside the current batch.
+ *
+ * It does its work by finding the last pair of structural characters
+ * that represent the end followed by the start of a document.
+ *
+ * Simply put, we iterate over the structural characters, starting from
+ * the end. We consider that we found the end of a JSON document when the
+ * first element of the pair is NOT one of these characters: '{' '[' ';' ','
+ * and when the second element is NOT one of these characters: '}' '}' ';' ','.
+ *
+ * This simple comparison works most of the time, but it does not cover cases
+ * where the batch's structural indexes contain a perfect amount of documents.
+ * In such a case, we do not have access to the structural index which follows
+ * the last document, therefore, we do not have access to the second element in
+ * the pair, and means that we cannot identify the last document. To fix this
+ * issue, we keep a count of the open and closed curly/square braces we found
+ * while searching for the pair. When we find a pair AND the count of open and
+ * closed curly/square braces is the same, we know that we just passed a complete
+ * document, therefore the last json buffer location is the end of the batch
+ * */
+inline size_t find_last_json_buf_idx(const char * buf, size_t size, const ParsedJson &pj) {
+    // this function can be generally useful
+    if(pj.n_structural_indexes == 0) return 0;
+    auto last_i = pj.n_structural_indexes - 1;
+    if (pj.structural_indexes[last_i] == size) {
+        if(last_i == 0) return 0;
+        last_i = pj.n_structural_indexes - 2;
+    }
+    auto arr_cnt = 0;
+    auto obj_cnt = 0;
+    for (auto i = last_i; i > 0; i--) {
+        auto idxb = pj.structural_indexes[i];
+        switch (buf[idxb]) {
+            case ':':
+            case ',':
+                continue;
+            case '}':
+                obj_cnt--;
+                continue;
+            case ']':
+                arr_cnt--;
+                continue;
+            case '{':
+                obj_cnt++;
+                break;
+            case '[':
+                arr_cnt++;
+                break;
+        }
+        auto idxa = pj.structural_indexes[i - 1];
+        switch (buf[idxa]) {
+            case '{':
+            case '[':
+            case ':':
+            case ',':
+                continue;
+        }
+        if (!arr_cnt && !obj_cnt) {
+            return last_i+1;
+        }
+        return i;
+    }
+    return 0;
 }
+
+}
+
+
 #endif //SIMDJSON_JSONSTREAM_H

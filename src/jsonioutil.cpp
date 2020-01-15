@@ -4,15 +4,6 @@
 #include <climits>
 
 namespace simdjson {
-char *allocate_padded_buffer(size_t length) {
-  // we could do a simple malloc
-  // return (char *) malloc(length + SIMDJSON_PADDING);
-  // However, we might as well align to cache lines...
-  size_t totalpaddedlength = length + SIMDJSON_PADDING;
-  char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
-  memset(padded_buffer + length, 0, totalpaddedlength - length);
-  return padded_buffer;
-}
 
 padded_string get_corpus(const std::string &filename) {
   std::FILE *fp = std::fopen(filename.c_str(), "rb");

@@ -3,8 +3,8 @@
 
 namespace simdjson {
 const std::map<int, const std::string> error_strings = {
-    {SUCCESS, "No errors"},
-    {SUCCESS_AND_HAS_MORE, "No errors and buffer still has more data"},
+    {SUCCESS, "No error"},
+    {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
     {CAPACITY, "This ParsedJson can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
@@ -17,8 +17,8 @@ const std::map<int, const std::string> error_strings = {
      "Problem while parsing an atom starting with the letter 'n'"},
     {NUMBER_ERROR, "Problem while parsing a number"},
     {UTF8_ERROR, "The input is not valid UTF-8"},
-    {UNITIALIZED, "Unitialized"},
-    {EMPTY, "Empty"},
+    {UNINITIALIZED, "Uninitialized"},
+    {EMPTY, "Empty: no JSON found"},
     {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
                       "found unescaped characters"},
     {UNCLOSED_STRING, "A string is opened, but never closed."},

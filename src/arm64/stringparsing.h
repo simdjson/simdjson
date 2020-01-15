@@ -9,6 +9,8 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
+#include "arm64/intrinsics.h"
+#include "arm64/bitmanipulation.h"
 
 namespace simdjson::arm64 {
 

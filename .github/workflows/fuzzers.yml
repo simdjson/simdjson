@@ -14,10 +14,12 @@ jobs:
   build:    
     runs-on: ubuntu-latest
     env:
-      allfuzzers: parser dump
+      allfuzzers: parser dump dump_raw_tape print_json
+      artifactsprefix: -artifact_prefix=fuzzfailure/
     steps:
     - name: Install packages necessary for building
       run: |
+        sudo apt update
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
@@ -43,7 +45,7 @@ jobs:
     - name: Verify that the oss-fuzz seed corpus passes without problems
       run: |
         mkdir seedcorpus
-        unzip -d seedcorpus seed_corpus.zip
+        unzip -q -d seedcorpus seed_corpus.zip
         for buildvariant in noavx withavx; do
           for fuzzer in $allfuzzers; do
             build-ossfuzz-$buildvariant/fuzz/fuzz_$fuzzer seedcorpus -max_total_time=1
@@ -53,17 +55,28 @@ jobs:
       run: |
         for fuzzer in $allfuzzers; do
           mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
-          build-ossfuzz-fast8/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=30
+          build-ossfuzz-fast8/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=30 $artifactsprefix || touch failed
+          # make sure the failing output is visible in the log
+          if [ -e failed ] ; then
+            ls fuzzfailure/* |xargs -n1 base64
+            exit 1
+          fi
         done
     - name: Run the other fuzzer variants for $fuzzer, with sanitizers etc
       run: |
-        for fuzzer in $allfuzzers; do      
-          build-ossfuzz-withavx/fuzz/fuzz_$fuzzer       out/$fuzzer -max_total_time=20
-          build-ossfuzz-noavx/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=10
-          build-ossfuzz-noavx8/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10
+        set -x
+        for fuzzer in $allfuzzers; do
+          build-ossfuzz-withavx/fuzz/fuzz_$fuzzer       out/$fuzzer -max_total_time=20 $artifactsprefix || touch failed
+          build-ossfuzz-noavx/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
+          build-ossfuzz-noavx8/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
+          if [ -e failed ] ; then
+            # make sure the failing output is visible in the log
+            ls fuzzfailure/* |xargs -n1 base64
+            exit 1
+          fi
           echo disable msan runs, it fails inside the fuzzing engine and not the fuzzed code!
-          echo build-ossfuzz-msan-noavx8/fuzz/fuzz_$fuzzer   out/$fuzzer -max_total_time=10 -reload=0
-          echo build-ossfuzz-msan-withavx8/fuzz/fuzz_$fuzzer out/$fuzzer -max_total_time=10 -reload=0
+          echo build-ossfuzz-msan-noavx8/fuzz/fuzz_$fuzzer   out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
+          echo build-ossfuzz-msan-withavx8/fuzz/fuzz_$fuzzer out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
     - name: Minimize the corpus with the fast fuzzer
