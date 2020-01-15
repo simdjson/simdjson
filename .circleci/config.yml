@@ -27,7 +27,9 @@ commands:
       - run: ARCHFLAGS=-march=haswell make amalgamate # some users do this: https://github.com/lemire/simdjson/issues/444
       - run: make test
       - run: make checkperf
-  cmake_test:
+      - run: make clean
+      - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
+   cmake_test:
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake
