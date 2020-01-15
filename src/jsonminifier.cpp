@@ -59,30 +59,16 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 }
 } // namespace simdjson
 #else
+
+//
+// This fast code is disabled in the context of runtime dispatching.
+// See issue https://github.com/lemire/simdjson/issues/384
+//
 #include "simdprune_tables.h"
 #include <cstring>
+#include <x86intrin.h> // currently, there is no runtime dispatch for the minifier
 
 namespace simdjson {
-
-// some intrinsics are missing under GCC?
-#ifndef __clang__
-#ifndef _MSC_VER
-static __m256i inline _mm256_loadu2_m128i(__m128i const *__addr_hi,
-                                          __m128i const *__addr_lo) {
-  __m256i __v256 = _mm256_castsi128_si256(_mm_loadu_si128(__addr_lo));
-  return _mm256_insertf128_si256(__v256, _mm_loadu_si128(__addr_hi), 1);
-}
-
-static inline void _mm256_storeu2_m128i(__m128i *__addr_hi, __m128i *__addr_lo,
-                                        __m256i __a) {
-  __m128i __v128;
-  __v128 = _mm256_castsi256_si128(__a);
-  _mm_storeu_si128(__addr_lo, __v128);
-  __v128 = _mm256_extractf128_si256(__a, 1);
-  _mm_storeu_si128(__addr_hi, __v128);
-}
-#endif
-#endif
 
 // a straightforward comparison of a mask against input.
 static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
@@ -92,6 +78,24 @@ static uint64_t cmp_mask_against_input_mini(__m256i input_lo, __m256i input_hi,
   __m256i cmp_res_1 = _mm256_cmpeq_epi8(input_hi, mask);
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
+}
+
+// Write up to 16 bytes, only the bytes corresponding to a 1-bit are written
+// out. credit: Anime Tosho
+static __m128i skinnycleanm128(__m128i x, int mask) {
+  int mask1 = mask & 0xFF;
+  int mask2 = (mask >> 8) & 0xFF;
+  __m128i shufmask = _mm_castps_si128(
+      _mm_loadh_pi(_mm_castsi128_ps(_mm_loadl_epi64(
+                       (const __m128i *)(thintable_epi8 + mask1))),
+                   (const __m64 *)(thintable_epi8 + mask2)));
+  shufmask =
+      _mm_add_epi8(shufmask, _mm_set_epi32(0x08080808, 0x08080808, 0, 0));
+  __m128i pruned = _mm_shuffle_epi8(x, shufmask);
+  intptr_t popx2 = BitsSetTable256mul2[mask1];
+  __m128i compactmask =
+      _mm_loadu_si128((const __m128i *)(pshufb_combine_table + popx2 * 8));
+  return _mm_shuffle_epi8(pruned, compactmask);
 }
 
 // take input from buf and remove useless whitespace, input and output can be
@@ -179,18 +183,18 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
       int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
       int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming((~whitespace));
-      __m256i vmask1 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-      __m256i vmask2 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-      __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-      __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop1),
-                           reinterpret_cast<__m128i *>(out), result1);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop3),
-                           reinterpret_cast<__m128i *>(out + pop2), result2);
+      __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+      __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+      __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+      __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+      x1 = skinnycleanm128(x1, mask1);
+      x2 = skinnycleanm128(x2, mask2);
+      x3 = skinnycleanm128(x3, mask3);
+      x4 = skinnycleanm128(x4, mask4);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop2), x3);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop3), x4);
       out += pop4;
     }
   }
@@ -263,23 +267,24 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = hamming((~whitespace));
-    __m256i vmask1 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-    __m256i vmask2 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-    __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-    __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop1),
-                         reinterpret_cast<__m128i *>(buffer), result1);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop3),
-                         reinterpret_cast<__m128i *>(buffer + pop2), result2);
+    __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+    __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+    __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+    __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+    x1 = skinnycleanm128(x1, mask1);
+    x2 = skinnycleanm128(x2, mask2);
+    x3 = skinnycleanm128(x3, mask3);
+    x4 = skinnycleanm128(x4, mask4);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer), x1);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop1), x2);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop2), x3);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop3), x4);
     memcpy(out, buffer, pop4);
     out += pop4;
   }
   *out = '\0'; // NULL termination
   return out - initout;
 }
+
 } // namespace simdjson
 #endif
