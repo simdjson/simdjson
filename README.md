@@ -22,13 +22,21 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 A description of the design and implementation of simdjson is in our research article:
 
-* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal (to appear)
+* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
 [<img src="images/halvarflake.png" width="50%">](https://twitter.com/halvarflake/status/1118459536686362625)
+
+
+## Talks
+
+QCon San Francisco 2019 (best voted talk):
+
+[![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)
+
 
 
 ## Performance results
