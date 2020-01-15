@@ -24,6 +24,7 @@ commands:
       - checkout
       - run: make
       - run: make amalgamate
+      - run: ARCHFLAGS=-march=haswell make amalgamate # some users do this: https://github.com/lemire/simdjson/issues/444
       - run: make test
       - run: make checkperf
   cmake_test:
