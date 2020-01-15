@@ -1,4 +1,4 @@
-/* auto-generated on Wed Jan 15 15:35:25 EST 2020. Do not edit! */
+/* auto-generated on Wed Jan 15 15:50:50 EST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
