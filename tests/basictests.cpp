@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <cinttypes>
 #include <cmath>
@@ -8,8 +9,94 @@
 #include <string>
 #include <vector>
 
-#include "simdjson/jsonparser.h"
-#include "simdjson/jsonstream.h"
+#include <string_view>
+
+namespace simdjson::lib {
+using namespace std;
+
+// VS2017 std lib or other non conformatn std libs
+// are C++17 but not having string_view literals
+    inline namespace literals {
+ constexpr string_view operator"" _sv(const char *_Str,
+                                               size_t _Len) noexcept {
+  return string_view(_Str, _Len);
+}
+
+ constexpr wstring_view operator"" _sv(const wchar_t *_Str,
+                                                size_t _Len) noexcept {
+  return wstring_view(_Str, _Len);
+}
+
+#ifdef __cpp_char8_t
+ constexpr basic_string_view<char8_t>
+operator"" _sv(const char8_t *_Str, size_t _Len) noexcept {
+  return basic_string_view<char8_t>(_Str, _Len);
+}
+#endif // __cpp_char8_t
+
+ constexpr u16string_view operator"" _sv(const char16_t *_Str,
+                                                  size_t _Len) noexcept {
+  return u16string_view(_Str, _Len);
+}
+
+ constexpr u32string_view operator"" _sv(const char32_t *_Str,
+                                                  size_t _Len) noexcept {
+  return u32string_view(_Str, _Len);
+}
+} // namespace string_view_literals
+
+/*
+compile time string equal, returns true or false
+*/
+constexpr inline bool str_equal(char const *lhs, char const *rhs) noexcept {
+  while (*lhs || *rhs)
+    if (*lhs++ != *rhs++)
+      return false;
+  return true;
+}
+
+/*
+
+Return string literal copy with white spaces removed.
+
+    1. This is compile time function.
+       It uses stack space, thus be carefull of overdose
+
+    What is returned is std::array, thus:
+
+    2. result size equals the input size
+    3. result strlen is less than it's size
+    4. on all white spaces strlen is 0
+
+Synopsis:
+
+    using namespace simdjson::lib;
+    constexpr auto clean_ = remove_ws("A \t\v\rB\n C");
+    printf("\n%s\n", clean_.data());
+
+*/
+template <typename C, size_t N>
+constexpr auto remove_ws(const C (&literal_)[N]) {
+
+  array<C, N> rezult_{{}}; // zero it
+  size_t rezult_idx_{};
+
+  for (size_t j{}; j < N; ++j) {
+    switch (literal_[j]) {
+    case ' ':
+    case '\f':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\v':
+      continue;
+      break;
+    default:
+      rezult_[rezult_idx_++] = literal_[j];
+    };
+  }
+  return rezult_;
+}
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -24,20 +111,61 @@ inline uint64_t f64_ulp_dist(double a, double b) {
   return ua + ub + 0x80000000;
 }
 
+/*
+char only version
+note: it is not allowed ot use protected names even if they are in namespaces
+thus we can not use 'sprintf' here
+
+returns int by the same logic as sprintf()
+thus on error -1  is returned amnd errno is set
+*/
+template <size_t N, typename... A>
+inline int s_printf(char (&buf_)[N], const char *fmt_, A... args_) {
+
+  // check if buf sent is big enough
+  int check_ = std::snprintf(nullptr, 0, fmt_, args_...);
+
+  if (check_ >= N) {
+    errno = EINVAL;
+    perror(__FILE__ " buffer sent to s_printf is not large enough ");
+    return -1;
+  }
+
+  // +1 for terminator
+  check_ = std::snprintf(buf_, N + 1, fmt_, args_...);
+
+  if (check_ < 0) {
+    errno = EINVAL;
+    perror(__FILE__ " std::snprintf failed ");
+    return -1;
+  }
+  return check_;
+}
+
+} // namespace simdjson::lib
+
+#include "simdjson/jsonparser.h"
+#include "simdjson/jsonstream.h"
+
 // -------------------------------------------------------------------------------------------------
 
 bool number_test_small_integers() {
+
   char buf[1024]{};
   simdjson::ParsedJson pj;
+
+  using simdjson::lib::s_printf;
+
   if (!pj.allocate_capacity(1024)) {
     printf("allocation failure in number_test_small_integers\n");
     return false;
   }
   for (int m = 10; m < 20; m++) {
     for (int i = -1024; i < 1024; i++) {
-      auto n = sprintf(buf, "%*d", m, i);
+
+      auto n = s_printf(buf, "%*d", m, i);
       buf[n] = '\0';
-      
+
       auto ok1 = json_parse(buf, n, pj);
       if (ok1 != 0 || !pj.is_valid()) {
         printf("Could not parse: %s.\n", buf);
@@ -66,8 +194,11 @@ bool number_test_small_integers() {
 // -------------------------------------------------------------------------------------------------
 
 bool number_test_powers_of_two() {
+
+  using simdjson::lib::s_printf;
   char buf[1024]{};
   simdjson::ParsedJson pj;
+
   if (!pj.allocate_capacity(1024)) {
     printf("allocation failure in number_test\n");
     return false;
@@ -75,10 +206,11 @@ bool number_test_powers_of_two() {
   int maxulp = 0;
   for (int i = -1075; i < 1024; ++i) { // large negative values should be zero.
     double expected = pow(2, i);
-    auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1,
+    auto n = s_printf(buf, "%.*e",
+                      std::numeric_limits<double>::max_digits10 - 1,
                      expected);
     buf[n] = '\0';
-    
+
     auto ok1 = json_parse(buf, n, pj);
     if (ok1 != 0 || !pj.is_valid()) {
       printf("Could not parse: %s.\n", buf);
@@ -121,7 +253,7 @@ bool number_test_powers_of_two() {
       }
     } else {
       double x = pjh.get_double();
-      int ulp = f64_ulp_dist(x, expected);
+      int ulp = simdjson::lib::f64_ulp_dist(x, expected);
       if (ulp > maxulp)
         maxulp = ulp;
       if (ulp > 3) {
@@ -147,7 +279,7 @@ bool number_test_powers_of_ten() {
        ++i) { // large negative values should be zero.
     auto n = sprintf(buf, "1e%d", i);
     buf[n] = '\0';
-    
+
     auto ok1 = json_parse(buf, n, pj);
     if (ok1 != 0 || !pj.is_valid()) {
       printf("Could not parse: %s.\n", buf);
@@ -191,7 +323,7 @@ bool number_test_powers_of_ten() {
     } else {
       double x = pjh.get_double();
       double expected = std::pow(10, i);
-      int ulp = (int)f64_ulp_dist(x, expected);
+      int ulp = (int)simdjson::lib::f64_ulp_dist(x, expected);
       if (ulp > 1) {
         printf("failed to parse %s. \n", buf);
         printf("actual: %.20g expected: %.20g \n", x, expected);
@@ -209,11 +341,11 @@ bool number_test_powers_of_ten() {
 // https://github.com/lemire/simdjson/issues/345
 bool bad_example() {
 
-    using namespace std;
-    using namespace std::string_view_literals ;
+  using namespace std;
+  using namespace simdjson::lib::literals; 
 
   constexpr auto badjson =
-      "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"sv;
+      "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_sv;
 
   simdjson::ParsedJson pj = simdjson::build_parsed_json(badjson);
   if (pj.is_valid()) {
@@ -226,11 +358,12 @@ bool bad_example() {
 // returns true if successful
 bool stable_test() {
   using namespace std;
-  using namespace std::string_view_literals;
+  using namespace simdjson::lib::literals;
   // std::string_view
-  // note: it seems currently (2020 Q1) simdjson input must not have white spaces or spaces
+  // note: it seems currently (2020 Q1) simdjson input must not have white
+  // spaces or spaces
   constexpr auto json =
-R"({"Image":{"Width":800,"Height":600,"Title":"Viewfromthe15thFloor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943.3,234,38793]}})"sv;
+      R"({"Image":{"Width":800,"Height":600,"Title":"Viewfromthe15thFloor","Thumbnail":{"Url":"http://www.example.com/image/481989943","Height":125,"Width":100},"Animated":false,"IDs":[116,943.3,234,38793]}})"_sv;
 
   simdjson::ParsedJson pj = simdjson::build_parsed_json(json);
   ostringstream myStream;
@@ -239,10 +372,9 @@ R"({"Image":{"Width":800,"Height":600,"Title":"Viewfromthe15thFloor","Thumbnail"
     return false;
   }
   string newjson = myStream.str();
-  if (json != newjson) {
-    cout << "serialized json differs!" 
-    << "\nInput: " << json 
-    << "\nOutput: " << newjson << endl;
+  if (  ! simdjson::lib::str_equal(  json.data() , newjson.data() ) ) {
+    cout << "serialized json differs!"
+         << "\nInput: " << json << "\nOutput: " << newjson << endl;
     return false;
   }
   return true;
@@ -252,7 +384,7 @@ R"({"Image":{"Width":800,"Height":600,"Title":"Viewfromthe15thFloor","Thumbnail"
 
 // returns true if successful
 bool navigate_test() {
-  using namespace std::string_view_literals;
+  using namespace simdjson::lib::literals;
   constexpr auto json =
       R"({
       "Image": {
@@ -267,7 +399,7 @@ bool navigate_test() {
       "Animated" : false,
       "IDs": [116, 943, 234, 38793]
       }
-})"sv;
+})"_sv;
 
   simdjson::ParsedJson pj =
       simdjson::build_parsed_json(json.data(), json.size());
@@ -367,7 +499,7 @@ bool navigate_test() {
 
 // returns true if successful
 bool stream_utf8_test() {
-  
+
   const size_t n_records = 10000;
   std::string data{};
   char buf[1024]{};
@@ -380,7 +512,7 @@ bool stream_utf8_test() {
   }
   for (size_t i = 1000; i < 2000; i += (i > 1050 ? 10 : 1)) {
     printf(".");
-    
+
     simdjson::JsonStream js{data.c_str(), data.size(), i};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
@@ -427,7 +559,7 @@ bool stream_utf8_test() {
 // -------------------------------------------------------------------------------------------------
 // returns true if successful
 bool stream_test() {
-  
+
   const size_t n_records = 10000;
   std::string data{};
   char buf[1024]{};
@@ -440,7 +572,7 @@ bool stream_test() {
   }
   for (size_t i = 1000; i < 2000; i += (i > 1050 ? 10 : 1)) {
     printf(".");
-    
+
     simdjson::JsonStream js{data.c_str(), data.size(), i};
     // int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count{};
@@ -474,8 +606,8 @@ bool stream_test() {
         printf("key does not match %d, expected %d\n", (int)keyid, (int)count);
         return false;
       }
-      
-      ++count ;
+
+      ++count;
     }
     if (count != (n_records - 1)) {
       printf("Something is wrong in stream_test at window size = %zu.\n", i);
@@ -505,7 +637,7 @@ bool skyprophet_test() {
     auto n = sprintf(buf, R"({"counter": %f, "array": ["%s"]})", i * 3.1416,
                      (i % 2) ? "true" : "false");
     data.emplace_back(string(buf, n));
-  } 
+  }
   // next n records
   // this is 3 * N = 300000 records
   for (size_t i = 0; i < n_records; ++i) {
@@ -534,8 +666,7 @@ bool skyprophet_test() {
 
   size_t counter = 0;
 
-  for (auto &rec : data) 
-  {
+  for (auto &rec : data) {
     // print the dot for each 10000-th
     if ((counter % 10000) == 0) {
       printf(".");
@@ -543,13 +674,15 @@ bool skyprophet_test() {
     counter++;
     auto ok1 = json_parse(rec.c_str(), rec.length(), pj);
     if (ok1 != 0 || !pj.is_valid()) {
-      printf("Something is wrong in the skyprophet_test, json: %s\n", rec.c_str());
-       return false;
+      printf("Something is wrong in the skyprophet_test, json: %s\n",
+             rec.c_str());
+      return false;
     }
     auto ok2 = json_parse(rec, pj);
     if (ok2 != 0 || !pj.is_valid()) {
-      printf("Something is wrong in the skyprophet_test, json: %s\n", rec.c_str());
-       return false;
+      printf("Something is wrong in the skyprophet_test, json: %s\n",
+             rec.c_str());
+      return false;
     }
   }
   return true;
@@ -563,14 +696,13 @@ bool skyprophet_test() {
 
 int main(int, char **argv) {
 
-
   auto runner = [&](bool (*test_unit)(), const char *prompt_) {
     try {
       fprintf(
           stdout,
           "\n----------------------------------------------\nRunning %s\n\n",
-                prompt_);
-       
+          prompt_);
+
       if (test_unit())
         printf("\n\nTEST OK\n\n");
       else
@@ -590,7 +722,7 @@ int main(int, char **argv) {
     }
   };
 
-  fprintf(stdout, "\n\nBasic tests -- [%s]\n", __TIMESTAMP__ ) ;
+  fprintf(stdout, "\n\nBasic tests -- [%s]\n", __TIMESTAMP__);
 
   RUN(stream_test);
   RUN(stream_utf8_test);
@@ -608,4 +740,3 @@ int main(int, char **argv) {
 }
 
 #undef RUN
-
