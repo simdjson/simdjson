@@ -104,34 +104,36 @@ public:
     tape[saved_loc] |= val;
   }
 
-  class InvalidJSON : public std::exception {
+  // was class
+  struct InvalidJSON : public std::exception {
+      // thus what() was not accessible
     const char *what() const throw() { return "JSON document is invalid"; }
   };
 
   template <size_t max_depth> class BasicIterator;
   using Iterator = BasicIterator<DEFAULT_MAX_DEPTH>;
 
-  size_t byte_capacity{0}; // indicates how many bits are meant to be supported
+  size_t byte_capacity{}; // indicates how many bits are meant to be supported
 
-  size_t depth_capacity{0}; // how deep we can go
-  size_t tape_capacity{0};
-  size_t string_capacity{0};
-  uint32_t current_loc{0};
-  uint32_t n_structural_indexes{0};
+  size_t depth_capacity{}; // how deep we can go
+  size_t tape_capacity{};
+  size_t string_capacity{};
+  uint32_t current_loc{};
+  uint32_t n_structural_indexes{};
 
-  std::unique_ptr<uint32_t[]> structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes{};
 
-  std::unique_ptr<uint64_t[]> tape;
-  std::unique_ptr<uint32_t[]> containing_scope_offset;
+  std::unique_ptr<uint64_t[]> tape{};
+  std::unique_ptr<uint32_t[]> containing_scope_offset{};
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-  std::unique_ptr<void*[]> ret_address;
+  std::unique_ptr<void *[]> ret_address {};
 #else
-  std::unique_ptr<char[]> ret_address;
+  std::unique_ptr<char[]> ret_address{};
 #endif
 
-  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
-  uint8_t *current_string_buf_loc;
+  std::unique_ptr<uint8_t[]> string_buf{}; // should be at least byte_capacity
+  uint8_t *current_string_buf_loc{};
   bool valid{false};
   int error_code{simdjson::UNINITIALIZED};
 
