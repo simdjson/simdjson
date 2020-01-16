@@ -13,8 +13,12 @@
 
 #ifdef _MSC_VER
 #define SIMDJSON_FUNC_NAME __FUNCSIG__
-#else 
+#else
+#ifndef __PRETTY_FUNCTION__
+#define SIMDJSON_FUNC_NAME __func__
+#else
 #define SIMDJSON_FUNC_NAME __PRETTY_FUNCTION__
+#endif
 #endif // _MSC_VER
 
 #define RETURN_ON_FALSE(x_, msg_) \
