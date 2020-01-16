@@ -97,7 +97,7 @@ template <size_t N> constexpr auto remove_ws(const char (&literal_)[N]) {
 
     static_assert(N < max_native_stack_char_array_size);
 
-  array<C, N> rezult_{{}}; // zero it
+  array<char, N> rezult_{{}}; // zero it
   size_t rezult_idx_{};
 
   for (size_t j{}; j < N; ++j) {
