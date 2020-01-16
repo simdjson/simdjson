@@ -280,13 +280,19 @@ struct benchmarker {
     return all_stages.iterations;
   }
 
-  really_inline void run_iteration(bool stage1_only, bool rerunbothstages) {
+  really_inline void run_iteration(bool stage1_only, bool hotbuffers) {
     // Allocate ParsedJson
     collector.start();
     ParsedJson pj;
     bool allocok = pj.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
+    if(hotbuffers) {
+      int result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
+      if (result != simdjson::SUCCESS) {
+        exit_error(string("Failed to parse ") + filename + string(":") + pj.get_error_message());
+      }
+    }
 
     if (!allocok) {
       exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result.");
@@ -316,21 +322,7 @@ struct benchmarker {
       }
       stage2_count = collector.end();
       stage2 << stage2_count;
-      if(rerunbothstages) {
-        // You would think that the entire processing is just stage 1 + stage 2, but
-        // empirically, that's not true! Not even close to be true in some instances.
-        event_count allstages_count;
-        collector.start();
-        result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
-        if (result != simdjson::SUCCESS) {
-          exit_error(string("Failed to parse ") + filename + " during overall parsing " + pj.get_error_message());
-        }
-        allstages_count = collector.end();
-        all_stages << allstages_count;
-      } else {
-        // we are optimistic
-        all_stages << stage1_count + stage2_count;
-      }
+      all_stages << allocate_count + stage1_count + stage2_count;
     }
     // Calculate stats the first time we parse
     if (stats == NULL) {
@@ -344,9 +336,9 @@ struct benchmarker {
     }
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only, bool rerunbothstages) {
+  really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers) {
     for (size_t i = 0; i<iterations; i++) {
-      run_iteration(stage1_only, rerunbothstages);
+      run_iteration(stage1_only, hotbuffers);
     }
   }
 
@@ -449,8 +441,11 @@ struct benchmarker {
       printf("\n");
       printf("All Stages\n");
       print_aggregate("|    "   , all_stages.best);
-      //          printf("|- Allocation\n");
-      // print_aggregate("|    ", allocate_stage.best);
+      // frequently, allocation is a tiny fraction of the running time so we omit it
+      if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages.best.elapsed_sec()) {
+        printf("|- Allocation\n");
+        print_aggregate("|    ", allocate_stage.best);
+      }
               printf("|- Stage 1\n");
       print_aggregate("|    ", stage1.best);
               printf("|- Stage 2\n");
