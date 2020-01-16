@@ -24,7 +24,9 @@
 #define RETURN_ON_FALSE(x_, msg_) \
 do {                                                                         \
     if (false == (x_)) {                                                     \
-      fprintf(stderr, "\n " SIMDJSON_FUNC_NAME " -- %s", msg_);              \
+      fprintf(stderr,                                                        \
+              "\n%s -- %s",                                                  \
+              SIMDJSON_FUNC_NAME, msg_);              \
       return false;                                                          \
     }                                                                        \
   } while (0)
