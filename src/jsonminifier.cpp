@@ -1,7 +1,7 @@
 #include "simdjson/portability.h"
 #include <cstdint>
 
-#ifndef __AVX2__
+#ifndef SIMDJSON_ISSUE384RESOLVED // to avoid tripping users
 
 namespace simdjson {
 static uint8_t jump_table[256 * 3] = {
@@ -61,7 +61,7 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 #else
 
 //
-// This fast code is disabled in the context of runtime dispatching.
+// This fast code is disabled.
 // See issue https://github.com/lemire/simdjson/issues/384
 //
 #include "simdprune_tables.h"
