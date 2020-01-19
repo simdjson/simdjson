@@ -1,9 +1,4 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ltoresult)
-if(ltoresult)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
 option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
@@ -26,6 +21,12 @@ set(PROJECT_VERSION_MINOR 2)
 set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.2.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ltoresult)
+if(ltoresult)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 if(NOT MSVC)
 option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
