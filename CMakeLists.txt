@@ -1,4 +1,15 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
+
+if (NOT CMAKE_BUILD_TYPE)
+                message(STATUS "No build type selected, default to Release")
+                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+endif()
+
+project(simdjson 
+  DESCRIPTION "Parsing gigabytes of JSON per second" 
+  LANGUAGES CXX
+)
+
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ltoresult)
 if(ltoresult)
@@ -14,12 +25,8 @@ set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-if (NOT CMAKE_BUILD_TYPE)
-                message(STATUS "No build type selected, default to Release")
-                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-endif()
 
-project(simdjson)
+
 set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 2)
