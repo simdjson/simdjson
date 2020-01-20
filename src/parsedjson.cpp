@@ -45,7 +45,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (!string_buf || !tape ||
       !containing_scope_offset || !ret_address ||
       !structural_indexes) {
-    std::cerr << "Could not allocate memory" << std::endl;
+    // Could not allocate memory
     return false;
   }
   /*
@@ -102,13 +102,11 @@ bool ParsedJson::print_json(std::ostream &os) const {
   if (type == 'r') {
     how_many = tape_val & JSON_VALUE_MASK;
   } else {
-    fprintf(stderr, "Error: no starting root node?");
+    // Error: no starting root node?
     return false;
   }
   if (how_many > tape_capacity) {
-    fprintf(
-        stderr,
-        "We may be exceeding the tape capacity. Is this a valid document?\n");
+    // We may be exceeding the tape capacity. Is this a valid document?
     return false;
   }
   tape_idx++;
@@ -195,10 +193,10 @@ bool ParsedJson::print_json(std::ostream &os) const {
       os << ']';
       break;
     case 'r': // we start and end with the root node
-      fprintf(stderr, "should we be hitting the root node?\n");
+      // should we be hitting the root node?
       return false;
     default:
-      fprintf(stderr, "bug %c\n", type);
+      // bug?
       return false;
     }
   }
@@ -220,7 +218,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
   if (type == 'r') {
     how_many = tape_val & JSON_VALUE_MASK;
   } else {
-    fprintf(stderr, "Error: no starting root node?");
+    // Error: no starting root node?
     return false;
   }
   os << "\t// pointing to " << how_many << " (right after last node)\n";
@@ -288,7 +286,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
          << " (start of the scope) \n";
       break;
     case 'r': // we start and end with the root node
-      fprintf(stderr, "should we be hitting the root node?\n");
+      // should we be hitting the root node?
       return false;
     default:
       return false;

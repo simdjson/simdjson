@@ -75,7 +75,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
     break;
 #endif
   default:
-    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    // The processor is not supported by simdjson.
     return simdjson::UNEXPECTED_ERROR;
   }
 
@@ -91,9 +91,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
   bool ok = pj.allocate_capacity(len);
   if (ok) {
     json_parse(buf, len, pj, realloc);
-  } else {
-    std::cerr << "failure during memory allocation " << std::endl;
-  }
+  } 
   return pj;
 }
 } // namespace simdjson

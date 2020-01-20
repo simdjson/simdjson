@@ -52,7 +52,7 @@ public:
   // this should be called when parsing (right before writing the tapes)
   void init();
 
-  // print the json to stdout (should be valid)
+  // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
   WARN_UNUSED
