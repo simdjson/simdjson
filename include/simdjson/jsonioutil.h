@@ -17,16 +17,25 @@ namespace simdjson {
 // throws exceptions in case of failure
 // first element of the pair is a string (null terminated)
 // whereas the second element is the length.
-// caller is responsible to free (aligned_free((void*)result.data())))
 //
 // throws an exception if the file cannot be opened, use try/catch
+//
+//      padded_string p{} ;
 //      try {
 //        p = get_corpus(filename);
 //      } catch (const std::exception& e) {
-//        aligned_free((void*)p.data());
+//          p.~padded_string() ;
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-padded_string get_corpus(const std::string &filename);
+inline padded_string get_corpus(std::string_view filename) {
+  using namespace std;
+
+  ifstream ifs_(filename.data());
+  string str_(istreambuf_iterator<char>{ifs_}, {});
+
+  return padded_string{str_};
+}
+
 } // namespace simdjson
 
 #endif
