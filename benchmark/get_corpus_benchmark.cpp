@@ -1,11 +1,13 @@
 
+#include "simdjson/common_defs.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 #include <chrono>
 #include <cstring>
 #include <iostream>
 
-__attribute__((noinline)) double bench(std::string filename, simdjson::padded_string& p) {
+never_inline
+double bench(std::string filename, simdjson::padded_string& p) {
   std::chrono::time_point<std::chrono::steady_clock> start_clock =
       std::chrono::steady_clock::now();
   simdjson::get_corpus(filename).swap(p);
