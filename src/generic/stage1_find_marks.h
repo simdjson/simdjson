@@ -369,9 +369,6 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};

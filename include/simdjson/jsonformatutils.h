@@ -1,53 +1,11 @@
 #ifndef SIMDJSON_JSONFORMATUTILS_H
 #define SIMDJSON_JSONFORMATUTILS_H
 
-#include <cstdio>
 #include <iomanip>
 #include <iostream>
 
 namespace simdjson {
-// ends with zero char
-static inline void print_with_escapes(const unsigned char *src) {
-  while (*src) {
-    switch (*src) {
-    case '\b':
-      putchar('\\');
-      putchar('b');
-      break;
-    case '\f':
-      putchar('\\');
-      putchar('f');
-      break;
-    case '\n':
-      putchar('\\');
-      putchar('n');
-      break;
-    case '\r':
-      putchar('\\');
-      putchar('r');
-      break;
-    case '\"':
-      putchar('\\');
-      putchar('"');
-      break;
-    case '\t':
-      putchar('\\');
-      putchar('t');
-      break;
-    case '\\':
-      putchar('\\');
-      putchar('\\');
-      break;
-    default:
-      if (*src <= 0x1F) {
-        printf("\\u%04x", *src);
-      } else {
-        putchar(*src);
-      }
-    }
-    src++;
-  }
-}
+
 
 // ends with zero char
 static inline void print_with_escapes(const unsigned char *src,
@@ -96,49 +54,6 @@ static inline void print_with_escapes(const unsigned char *src,
   }
 }
 
-// print len chars
-static inline void print_with_escapes(const unsigned char *src, size_t len) {
-  const unsigned char *finalsrc = src + len;
-  while (src < finalsrc) {
-    switch (*src) {
-    case '\b':
-      putchar('\\');
-      putchar('b');
-      break;
-    case '\f':
-      putchar('\\');
-      putchar('f');
-      break;
-    case '\n':
-      putchar('\\');
-      putchar('n');
-      break;
-    case '\r':
-      putchar('\\');
-      putchar('r');
-      break;
-    case '\"':
-      putchar('\\');
-      putchar('"');
-      break;
-    case '\t':
-      putchar('\\');
-      putchar('t');
-      break;
-    case '\\':
-      putchar('\\');
-      putchar('\\');
-      break;
-    default:
-      if (*src <= 0x1F) {
-        printf("\\u%04x", *src);
-      } else {
-        putchar(*src);
-      }
-    }
-    src++;
-  }
-}
 
 // print len chars
 static inline void print_with_escapes(const unsigned char *src,
