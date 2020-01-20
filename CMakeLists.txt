@@ -10,11 +10,13 @@ project(simdjson
   LANGUAGES CXX
 )
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ltoresult)
-if(ltoresult)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
+# LTO seems to create all sorts of fun problems. Let us
+# disable temporarily.
+#include(CheckIPOSupported)
+#check_ipo_supported(RESULT ltoresult)
+#if(ltoresult)
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#endif()
 
 # usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
 option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
