@@ -5,6 +5,12 @@ if(MSVC)
 endif()
 
 add_cpp_test(basictests)
+if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+# next line is a workaround for an odr-violation in basictests regarding the globals 0x432a40 and 0x52045c under clang
+set_tests_properties(basictests PROPERTIES
+    ENVIRONMENT ASAN_OPTIONS="detect_odr_violation=0")
+endif()
+
 add_cpp_test(jsoncheck)
 add_cpp_test(jsonstream_test)
 add_cpp_test(pointercheck)
