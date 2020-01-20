@@ -107,9 +107,9 @@ jsonparse_functype* get_jsonparse_func(const Architecture architecture) {
 
 struct json_parser {
   const Architecture architecture;
-  const stage1_functype *stage1_func;
-  const stage2_functype *stage2_func;
-  const jsonparse_functype *jsonparse_func;
+  stage1_functype *stage1_func;
+  stage2_functype *stage2_func;
+  jsonparse_functype *jsonparse_func;
 
   json_parser(const Architecture _architecture) : architecture(_architecture) {
     this->stage1_func = get_stage1_func(architecture);
