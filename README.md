@@ -18,17 +18,27 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
+If you are planning to use simdjson in a product, please work from one of our releases.
+
 ## Research article (VLDB Journal)
 
 A description of the design and implementation of simdjson is in our research article:
 
-* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal (to appear)
+* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
 [<img src="images/halvarflake.png" width="50%">](https://twitter.com/halvarflake/status/1118459536686362625)
+
+
+## Talks
+
+QCon San Francisco 2019 (best voted talk):
+
+[![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)
+
 
 
 ## Performance results
@@ -76,6 +86,8 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 
 On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better). The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
 
+On x64 hardware, you should typically build your code by specifying the oldest/less-featureful system you want to support so that runtime dispatch may work. The minimum requirement for simdjson is the equivalent of a Westmere processor (SSE 4.2 and PCLMUL). If you build your code by asking the compiler to use more advanced instructions (e.g., `-mavx2`, `/AVX2`  or `-march=haswell`), then it will break runtime dispatch and your binaries will fail to run on older processors.
+
 We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
 
 
@@ -90,7 +102,11 @@ The json stream parser is threaded, using exactly two threads.
 
 ## Large files
 
-If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses. You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses and/or page allocation. [On some systems, memory allocation runs far slower than we can parse (e.g., 1.4GB/s).](https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/)
+
+You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+
+Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocating memory. You just allocate memory once and reuse the blocks of memory.
 
 ## Code usage and example
 

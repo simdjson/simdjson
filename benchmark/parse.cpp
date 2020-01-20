@@ -68,8 +68,10 @@ void print_usage(ostream& out) {
   out << "-t         - Tabbed data output" << endl;
   out << "-v         - Verbose output." << endl;
   out << "-s STAGE   - Stop after the given stage." << endl;
-  out << "             -s stage1 - Stop after find_structural_bits." << endl;
-  out << "             -s all    - Run all stages." << endl;
+  out << "             -s stage1  - Stop after find_structural_bits." << endl;
+  out << "             -s all     - Run all stages." << endl;
+  out << "-H         - Make the buffers hot (reduce page allocation during parsing)" << endl;
+
   out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
   out << "             or ARM64). By default, detects best supported architecture." << endl;
 }
@@ -91,12 +93,13 @@ struct option_struct {
 
   bool verbose = false;
   bool tabbed_output = false;
+  bool hotbuffers = false;
 
   option_struct(int argc, char **argv) {
     #ifndef _MSC_VER
       int c;
 
-      while ((c = getopt(argc, argv, "vtn:i:a:s:")) != -1) {
+      while ((c = getopt(argc, argv, "vtn:i:a:s:H")) != -1) {
         switch (c) {
         case 'n':
           iterations = atoi(optarg);
@@ -115,6 +118,9 @@ struct option_struct {
           if (architecture == Architecture::UNSUPPORTED) {
             exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a HASWELL, WESTMERE or ARM64");
           }
+          break;
+        case 'H':
+          hotbuffers = true;
           break;
         case 's':
           if (!strcmp(optarg, "stage1")) {
@@ -195,7 +201,7 @@ int main(int argc, char *argv[]) {
       // Benchmark each file once per iteration
       for (size_t f=0; f<options.files.size(); f++) {
         verbose() << "[verbose] " << benchmarkers[f]->filename << " iterations #" << iteration << "-" << (iteration+options.iteration_step-1) << endl;
-        benchmarkers[f]->run_iterations(options.iteration_step, true);
+        benchmarkers[f]->run_iterations(options.iteration_step, true, options.hotbuffers);
       }
     }
   } else {
@@ -204,7 +210,7 @@ int main(int argc, char *argv[]) {
       // Benchmark each file once per iteration
       for (size_t f=0; f<options.files.size(); f++) {
         verbose() << "[verbose] " << benchmarkers[f]->filename << " iterations #" << iteration << "-" << (iteration+options.iteration_step-1) << endl;
-        benchmarkers[f]->run_iterations(options.iteration_step, false);
+        benchmarkers[f]->run_iterations(options.iteration_step, false, options.hotbuffers);
       }
     }
   }

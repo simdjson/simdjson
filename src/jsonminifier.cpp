@@ -1,7 +1,7 @@
 #include "simdjson/portability.h"
 #include <cstdint>
 
-#ifndef __AVX2__
+#ifndef SIMDJSON_ISSUE384RESOLVED // to avoid tripping users
 
 namespace simdjson {
 static uint8_t jump_table[256 * 3] = {
@@ -59,8 +59,14 @@ size_t json_minify(const unsigned char *bytes, size_t how_many,
 }
 } // namespace simdjson
 #else
+
+//
+// This fast code is disabled.
+// See issue https://github.com/lemire/simdjson/issues/384
+//
 #include "simdprune_tables.h"
 #include <cstring>
+#include <x86intrin.h> // currently, there is no runtime dispatch for the minifier
 
 namespace simdjson {
 
@@ -363,18 +369,18 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
       int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
       int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming((~whitespace));
-      __m256i vmask1 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-      __m256i vmask2 = _mm256_loadu2_m128i(
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-          reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-      __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-      __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop1),
-                           reinterpret_cast<__m128i *>(out), result1);
-      _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(out + pop3),
-                           reinterpret_cast<__m128i *>(out + pop2), result2);
+      __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+      __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+      __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+      __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+      x1 = skinnycleanm128(x1, mask1);
+      x2 = skinnycleanm128(x2, mask2);
+      x3 = skinnycleanm128(x3, mask3);
+      x4 = skinnycleanm128(x4, mask4);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop2), x3);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop3), x4);
       out += pop4;
     }
   }
@@ -447,23 +453,24 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     int pop2 = hamming((~whitespace) & UINT64_C(0xFFFFFFFF));
     int pop3 = hamming((~whitespace) & UINT64_C(0xFFFFFFFFFFFF));
     int pop4 = hamming((~whitespace));
-    __m256i vmask1 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask2 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask1 & 0x7FFF));
-    __m256i vmask2 = _mm256_loadu2_m128i(
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask4 & 0x7FFF),
-        reinterpret_cast<const __m128i *>(mask128_epi8) + (mask3 & 0x7FFF));
-    __m256i result1 = _mm256_shuffle_epi8(input_lo, vmask1);
-    __m256i result2 = _mm256_shuffle_epi8(input_hi, vmask2);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop1),
-                         reinterpret_cast<__m128i *>(buffer), result1);
-    _mm256_storeu2_m128i(reinterpret_cast<__m128i *>(buffer + pop3),
-                         reinterpret_cast<__m128i *>(buffer + pop2), result2);
+    __m128i x1 = _mm256_extracti128_si256(input_lo, 0);
+    __m128i x2 = _mm256_extracti128_si256(input_lo, 1);
+    __m128i x3 = _mm256_extracti128_si256(input_hi, 0);
+    __m128i x4 = _mm256_extracti128_si256(input_hi, 1);
+    x1 = skinnycleanm128(x1, mask1);
+    x2 = skinnycleanm128(x2, mask2);
+    x3 = skinnycleanm128(x3, mask3);
+    x4 = skinnycleanm128(x4, mask4);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer), x1);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop1), x2);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop2), x3);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(buffer + pop3), x4);
     memcpy(out, buffer, pop4);
     out += pop4;
   }
   *out = '\0'; // NULL termination
   return out - initout;
 }
+
 } // namespace simdjson
 #endif

@@ -128,6 +128,7 @@ struct event_collector {
     return linux_events.is_working();
   }
 #else
+  event_collector() {}
   bool has_events() {
     return false;
   }
