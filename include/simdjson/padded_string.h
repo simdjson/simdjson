@@ -5,6 +5,8 @@
 #include <memory>
 #include <string>
 
+// required by GNUC < 8
+#include <fstream>
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
