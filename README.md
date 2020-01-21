@@ -597,6 +597,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
 - [simdjson-go](https://github.com/fwessels/simdjson-go): Go port.
+- [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
 
 
 ## Various References

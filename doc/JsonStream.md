@@ -1,15 +1,19 @@
-# JsonStream
+# simdjson
+## JsonStream
 An interface providing features to work with files or streams containing multiple JSON documents. 
 As fast and convenient as possible.
 ## Contents
-- [Motivations](#Motivations)
-- [Performance](#Performance)
-- [How it works](#how-it-works)
-- [Support](#Support)
-- [API](#API)
-- [Concurrency mode](#concurrency-mode)
-- [Example](#Example)
-- [Use cases](#use-cases)
+- [simdjson](#simdjson)
+  - [JsonStream](#jsonstream)
+  - [Contents](#contents)
+  - [Motivations](#motivations)
+  - [Performance](#performance)
+  - [How it works](#how-it-works)
+  - [Support](#support)
+  - [API](#api)
+  - [Concurrency mode](#concurrency-mode)
+  - [Example](#example)
+  - [Use cases](#use-cases)
 
 
 ## Motivations

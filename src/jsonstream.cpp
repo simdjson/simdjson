@@ -232,7 +232,6 @@ void find_the_best_supported_implementation() {
         return;
     }
 #endif
-    std::cerr << "The processor is not supported by simdjson." << std::endl;
     // we throw an exception since this should not be recoverable
     throw new std::runtime_error("unsupported architecture");
 }
