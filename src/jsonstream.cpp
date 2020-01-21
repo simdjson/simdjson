@@ -3,6 +3,7 @@
 #include "simdjson/isadetection.h"
 #include "jsoncharutils.h"
 
+ #include <stdexcept>
 
 using namespace simdjson;
 void find_the_best_supported_implementation();

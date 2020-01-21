@@ -27,14 +27,7 @@ namespace simdjson {
 //          p.~padded_string() ;
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-inline padded_string get_corpus(std::string_view filename) {
-  using namespace std;
-
-  ifstream ifs_(filename.data());
-  string str_(istreambuf_iterator<char>{ifs_}, {});
-
-  return padded_string{str_};
-}
+padded_string get_corpus(const std::string & filename);
 
 } // namespace simdjson
 
