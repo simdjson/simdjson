@@ -8,6 +8,10 @@
 // required by GNUC < 8
 #include <fstream>
 
+#ifndef LONG_MAX
+#include <limits.h>
+#endif // LONG_MAX
+
 // https://stackoverflow.com/a/24207339
 #ifndef _MSC_VER
 typedef int errno_t ;
