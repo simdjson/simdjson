@@ -8,6 +8,11 @@
 // required by GNUC < 8
 #include <fstream>
 
+// https://stackoverflow.com/a/24207339
+#ifndef _MSC_VER
+typedef int errno_t ;
+#endif // _MSC_VER
+
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
 // "length" bytes safely. if you must provide a pointer to some data, create it
