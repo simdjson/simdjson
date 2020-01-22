@@ -5,7 +5,8 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
-#include "westmere/intrinsics.h"
+#include "arm64/intrinsics.h"
+#include "arm64/bitmanipulation.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
 #include <cmath>
