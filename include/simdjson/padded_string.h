@@ -17,6 +17,10 @@
 typedef int errno_t ;
 #endif // _MSC_VER
 
+#ifndef SIMDJSON_PADDING
+#define SIMDJSON_PADDING 32
+#endif // SIMDJSON_PADDING
+
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -36,7 +40,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   }
 #endif // NDEBUG
   
-    // ? -> memset(padded_buffer + length, 0, totalpaddedlength - length);
+    memset(padded_buffer + length, 0, totalpaddedlength - length);
 
   return padded_buffer;
 } // allocate_padded_buffer
@@ -46,34 +50,37 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 // constructors.
 struct padded_string final {
 
+    using type = padded_string;
+    using value_type = char *;
   // free the previous payload
   // allocate for the new size
   // return false on ENOMEM
-  bool reset(size_t new_size_) noexcept 
+  static bool reset(type & pstring_, size_t new_size_) noexcept 
   {
-    this->~padded_string(); 
-    viable_size = new_size_;
-    data_ptr = allocate_padded_buffer(new_size_);
-    if (data_ptr != nullptr) {
-      data_ptr[new_size_] = '\0'; // easier when you need a c_str
+      if (pstring_.data())
+        pstring_.~type(); 
+
+    pstring_.viable_size = new_size_;
+      pstring_.data_ptr = allocate_padded_buffer(new_size_);
+    if (pstring_.data_ptr != nullptr) {
+        pstring_.data_ptr[new_size_] = '\0'; // easier when you need a c_str
       return true;
     }
     // failed to allocate
-    viable_size = 0;
+    pstring_.viable_size = 0;
     return false;
   }
 
   explicit padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
 
-  explicit padded_string(size_t length) noexcept
+  explicit padded_string(size_t length) noexcept 
+      : data_ptr(allocate_padded_buffer(length)), viable_size(length)
   {
-    reset(length);
+    #ifndef NDEBUG
     if (data_ptr != nullptr) {
-      // done in reset() -> data_ptr[length] = '\0';
-    }
-    else {
       /* do what? */
     }
+    #endif
   }
 
   explicit padded_string(const char *data, size_t length) noexcept
@@ -114,7 +121,7 @@ struct padded_string final {
   // reset the ps_
   // return the result of fread()
   // return 0 on error
-  static errno_t load(padded_string &ps_, FILE *fp) noexcept {
+  static errno_t load(type  &ps_, FILE *fp) noexcept {
 
     if (std::fseek(fp, 0, SEEK_END) < 0) {
       std::fclose(fp);
@@ -129,7 +136,7 @@ struct padded_string final {
     // now make the temporary p string
     size_t length_ = (size_t)llen;
 
-    if (!ps_.reset(length_))
+    if (! type::reset(ps_,length_))
       return ENOMEM;
 
     std::rewind(fp);
@@ -137,8 +144,7 @@ struct padded_string final {
     std::fclose(fp);
 
     if (readb != length_) {
-      // free mem before bad return
-      ps_.~padded_string();
+      // ps_ dtor will free on scope exit
       return errno;
     }
     return 0;
@@ -168,7 +174,6 @@ struct padded_string final {
          printf("%s", a.data() ); // "B"
   */
   void swap( padded_string &right_) {
-    // auto &left_ = *this;
     std::swap(*this, right_);
   }
 
@@ -177,6 +182,8 @@ struct padded_string final {
      a.~padded_string() ;
     */
   ~padded_string() {
+      // in case something calls 
+      // the dtor excplicitly
     if (data_ptr != nullptr ) {
       aligned_free_char(data_ptr);
       data_ptr = nullptr;
@@ -188,7 +195,8 @@ struct padded_string final {
 
   size_t length() const { return viable_size; }
 
-  char *data() const { return data_ptr; }
+  char *data() { return data_ptr; }
+  const char *data() const { return data_ptr; }
 
 private:
     // no copying

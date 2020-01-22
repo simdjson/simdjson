@@ -1,10 +1,11 @@
 #include <map>
+#include <stdexcept>
+
 #include "simdjson/jsonstream.h"
 #include "simdjson/isadetection.h"
 #include "jsoncharutils.h"
 
- #include <stdexcept>
-
+ 
 using namespace simdjson;
 void find_the_best_supported_implementation();
 
