@@ -103,11 +103,10 @@ struct padded_string final {
     using namespace std;
     std::swap(data_ptr, other_.data_ptr);
     std::swap(viable_size, other_.viable_size);
-    // simdjson::aligned_free_char(other_.data_ptr);
     // free the payload
-    other_.~padded_string();
-    //other_.data_ptr = nullptr;
-    //other_.viable_size = 0;
+    simdjson::aligned_free_char(other_.data_ptr);
+    other_.data_ptr = nullptr;
+    other_.viable_size = 0;
     return *this;
   }
 
