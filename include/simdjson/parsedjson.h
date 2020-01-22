@@ -4,7 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/simdjson.h"
 #include <cstring>
-#include <iostream>
+#include <memory>
 
 #define JSON_VALUE_MASK 0xFFFFFFFFFFFFFF
 
@@ -21,9 +21,14 @@ class ParsedJson {
 public:
   // create a ParsedJson container with zero capacity, call allocate_capacity to
   // allocate memory
-  ParsedJson();
-  ~ParsedJson();
-  ParsedJson(ParsedJson &&p);
+  ParsedJson()=default;
+  ~ParsedJson()=default;
+
+  // this is a move only class
+  ParsedJson(ParsedJson &&p) = default;
+  ParsedJson(const ParsedJson &p) = delete;
+  ParsedJson &operator=(ParsedJson &&o) = default;
+  ParsedJson &operator=(const ParsedJson &o) = delete;
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len bytes and max_depth "depth"
@@ -47,7 +52,7 @@ public:
   // this should be called when parsing (right before writing the tapes)
   void init();
 
-  // print the json to stdout (should be valid)
+  // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
   WARN_UNUSED
@@ -76,7 +81,8 @@ public:
 
   really_inline void write_tape_s64(int64_t i) {
     write_tape(0, 'l');
-    tape[current_loc++] = *(reinterpret_cast<uint64_t *>(&i));
+    std::memcpy(&tape[current_loc], &i, sizeof(i));
+    ++current_loc;
   }
 
   really_inline void write_tape_u64(uint64_t i) {
@@ -97,8 +103,8 @@ public:
     tape[saved_loc] |= val;
   }
 
-  class InvalidJSON : public std::exception {
-    const char *what() const throw() { return "JSON document is invalid"; }
+  struct InvalidJSON : public std::exception {
+    const char *what() const noexcept { return "JSON document is invalid"; }
   };
 
   template <size_t max_depth> class BasicIterator;
@@ -112,42 +118,24 @@ public:
   uint32_t current_loc{0};
   uint32_t n_structural_indexes{0};
 
-  uint32_t *structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes;
 
-  uint64_t *tape;
-  uint32_t *containing_scope_offset;
+  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint32_t[]> containing_scope_offset;
+
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-  void **ret_address;
+  std::unique_ptr<void*[]> ret_address;
 #else
-  char *ret_address;
+  std::unique_ptr<char[]> ret_address;
 #endif
 
-  uint8_t *string_buf; // should be at least byte_capacity
+  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
   uint8_t *current_string_buf_loc;
   bool valid{false};
-  int error_code{simdjson::UNITIALIZED};
+  int error_code{simdjson::UNINITIALIZED};
 
-private:
-  // we don't want the default constructor to be called
-  ParsedJson(const ParsedJson &p) =
-      delete; // we don't want the default constructor to be called
-  // we don't want the assignment to be called
-  ParsedJson &operator=(const ParsedJson &o) = delete;
 };
 
-// dump bits low to high
-inline void dumpbits_always(uint64_t v, const std::string &msg) {
-  for (uint32_t i = 0; i < 64; i++) {
-    std::cout << (((v >> static_cast<uint64_t>(i)) & 0x1ULL) ? "1" : "_");
-  }
-  std::cout << " " << msg.c_str() << "\n";
-}
 
-inline void dumpbits32_always(uint32_t v, const std::string &msg) {
-  for (uint32_t i = 0; i < 32; i++) {
-    std::cout << (((v >> i) & 0x1ULL) ? "1" : "_");
-  }
-  std::cout << " " << msg.c_str() << "\n";
-}
 } // namespace simdjson
 #endif

@@ -9,13 +9,10 @@
 #define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
 
 // the input buf should be readable up to buf + SIMDJSON_PADDING
-#ifdef __AVX2__
-#define SIMDJSON_PADDING sizeof(__m256i)
-#else
 // this is a stopgap; there should be a better description of the
 // main loop and its behavior that abstracts over this
+// See https://github.com/lemire/simdjson/issues/174
 #define SIMDJSON_PADDING 32
-#endif
 
 #if defined(__GNUC__)
 // Marks a block with a name so that MCA analysis can see it.

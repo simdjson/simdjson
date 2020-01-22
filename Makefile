@@ -17,12 +17,12 @@ architecture:=$(shell arch)
 # E.g., type ' ARCHFLAGS="-march=nehalem" make parse '
 ###
 ifeq ($(architecture),aarch64)
-ARCHFLAGS ?= -march=armv8-a+crc+crypto
+ARCHFLAGS ?= -march=armv8-a
 else
 ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
-CXXFLAGS = $(ARCHFLAGS) -std=c++17   -Wall -Wextra -Wshadow -Iinclude -Isrc -Ibenchmark/linux $(EXTRAFLAGS)
+CXXFLAGS = $(ARCHFLAGS) -std=c++17  -pthread -Wall -Wextra -Wshadow -Iinclude -Isrc -Ibenchmark/linux $(EXTRAFLAGS)
 CFLAGS =  $(ARCHFLAGS)  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 
 
@@ -44,8 +44,8 @@ ifeq ($(MEMSANITIZE),1)
         CFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
 else
 ifeq ($(SANITIZE),1)
-	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
-	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined 
+	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
+	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 else
 ifeq ($(DEBUG),1)
         CXXFLAGS += -g3 -O0
@@ -59,19 +59,25 @@ endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
-TESTEXECUTABLES=jsoncheck integer_tests numberparsingcheck stringparsingcheck pointercheck
+TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck jsonstream_test
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
 # Load headers and sources
-LIBHEADERS=src/simdprune_tables.h src/numberparsing.h src/jsoncharutils.h src/arm64/simd_input.h src/arm64/simdutf8check.h src/arm64/stage1_find_marks.h src/arm64/stage2_build_tape.h src/arm64/stringparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/haswell/simd_input.h src/haswell/simdutf8check.h src/haswell/stage1_find_marks.h src/haswell/stage2_build_tape.h src/haswell/stringparsing.h src/westmere/simd_input.h src/westmere/simdutf8check.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+LIBHEADERS_GENERIC=src/generic/numberparsing.h src/generic/stage1_find_marks.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/generic/stage2_streaming_build_tape.h src/generic/utf8_fastvalidate_algorithm.h src/generic/utf8_lookup_algorithm.h src/generic/utf8_lookup2_algorithm.h src/generic/utf8_range_algorithm.h src/generic/utf8_zwegner_algorithm.h
+LIBHEADERS_ARM64=      src/arm64/bitmanipulation.h    src/arm64/bitmask.h    src/arm64/intrinsics.h    src/arm64/numberparsing.h    src/arm64/simd.h    src/arm64/stage1_find_marks.h    src/arm64/stage2_build_tape.h    src/arm64/stringparsing.h
+LIBHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/haswell/intrinsics.h  src/haswell/numberparsing.h  src/haswell/simd.h  src/haswell/stage1_find_marks.h  src/haswell/stage2_build_tape.h  src/haswell/stringparsing.h
+LIBHEADERS_WESTMERE=src/westmere/bitmanipulation.h src/westmere/bitmask.h src/westmere/intrinsics.h src/westmere/numberparsing.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
+LIBHEADERS=src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
+
 PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/jsonstream.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
+FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/0-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/utf-8.json jsonexamples/generated/15-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/utf-8-miss.json
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
@@ -111,6 +117,12 @@ run_stringparsingcheck: stringparsingcheck
 run_jsoncheck: jsoncheck
 	./jsoncheck
 
+run_jsonstream_test: jsonstream_test
+	./jsonstream_test
+
+run_jsoncheck_noavx: jsoncheck_noavx
+	./jsoncheck_noavx
+
 run_pointercheck: pointercheck
 	./pointercheck
 
@@ -120,27 +132,43 @@ run_issue150_sh: allparserscheckfile
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
-test: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
+$(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
+	ruby ./benchmark/genfeaturejson.rb
+
+run_benchfeatures: benchfeatures $(FEATURE_JSON_FILES)
+	./benchfeatures -n 1000
+
+test: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck run_testjson2json_sh run_issue150_sh
+quiettest: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 
-quicktests: run_basictests run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_pointercheck
+quicktests: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_jsoncheck_noavx
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
 amalgamate:
 	./amalgamation.sh
-	$(CXX) $(CXXFLAGS) -o singleheader/demo  ./singleheader/amalgamation_demo.cpp   -Isingleheader   
+	$(CXX) $(CXXFLAGS) -o singleheader/demo  ./singleheader/amalgamation_demo.cpp   -Isingleheader
 
-submodules: 
+submodules:
 	-git submodule update --init --recursive
 	-touch submodules
 
 $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
-parse: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
+parse: benchmark/parse.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
+
+get_corpus_benchmark: benchmark/get_corpus_benchmark.cpp  $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o get_corpus_benchmark $(LIBFILES) benchmark/get_corpus_benchmark.cpp $(LIBFLAGS)
+
+
+parse_stream: benchmark/parse_stream.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_stream $(LIBFILES) benchmark/parse_stream.cpp $(LIBFLAGS)
+
+benchfeatures: benchmark/benchfeatures.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o benchfeatures $(LIBFILES) benchmark/benchfeatures.cpp $(LIBFLAGS)
 
 perfdiff: benchmark/perfdiff.cpp
 	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFLAGS)
@@ -165,6 +193,13 @@ parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS)
 
+jsonstream_test:tests/jsonstream_test.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsonstream_test $(LIBFILES) tests/jsonstream_test.cpp -I. $(LIBFLAGS)
+
+
+jsoncheck_noavx:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o jsoncheck_noavx $(LIBFILES) tests/jsoncheck.cpp -I. $(LIBFLAGS) -DSIMDJSON_DISABLE_AVX2_DETECTION
+
 basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o basictests $(LIBFILES) tests/basictests.cpp -I. $(LIBFLAGS)
 
@@ -173,7 +208,7 @@ numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
 
 integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o integer_tests tests/integer_tests.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp       -I. $(LIBFLAGS) 
+	$(CXX) $(CXXFLAGS) -o integer_tests tests/integer_tests.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp       -I. $(LIBFLAGS)
 
 
 
@@ -207,7 +242,7 @@ parseandstatcompetition: benchmark/parseandstatcompetition.cpp $(HEADERS) $(LIBF
 distinctuseridcompetition: benchmark/distinctuseridcompetition.cpp $(HEADERS) $(LIBFILES) submodules
 	$(CXX) $(CXXFLAGS)  -o distinctuseridcompetition $(LIBFILES) benchmark/distinctuseridcompetition.cpp  -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 
-parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) submodules 
+parsingcompetition: benchmark/parsingcompetition.cpp $(HEADERS) $(LIBFILES) submodules
 	@echo "In case of build error due to missing files, try 'make clean'"
 	$(CXX) $(CXXFLAGS)  -o parsingcompetition $(LIBFILES) benchmark/parsingcompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)
 

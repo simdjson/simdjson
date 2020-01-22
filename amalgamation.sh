@@ -11,21 +11,30 @@ echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/
 AMAL_H="simdjson.h"
 AMAL_C="simdjson.cpp"
 
-# order does not matter
+# this list excludes the "src/generic headers"
 ALLCFILES="
+$SCRIPTPATH/src/arm64/intrinsics.h
+$SCRIPTPATH/src/haswell/intrinsics.h
+$SCRIPTPATH/src/westmere/intrinsics.h
 $SCRIPTPATH/src/jsoncharutils.h
-$SCRIPTPATH/src/numberparsing.h
 $SCRIPTPATH/src/simdprune_tables.h
 $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/src/arm64/simd_input.h
-$SCRIPTPATH/src/haswell/simd_input.h
-$SCRIPTPATH/src/westmere/simd_input.h
-$SCRIPTPATH/src/arm64/simdutf8check.h
-$SCRIPTPATH/src/haswell/simdutf8check.h
-$SCRIPTPATH/src/westmere/simdutf8check.h
+$SCRIPTPATH/src/jsonstream.cpp
+$SCRIPTPATH/src/arm64/bitmanipulation.h
+$SCRIPTPATH/src/haswell/bitmanipulation.h
+$SCRIPTPATH/src/westmere/bitmanipulation.h
+$SCRIPTPATH/src/arm64/numberparsing.h
+$SCRIPTPATH/src/haswell/numberparsing.h
+$SCRIPTPATH/src/westmere/numberparsing.h
+$SCRIPTPATH/src/arm64/bitmask.h
+$SCRIPTPATH/src/haswell/bitmask.h
+$SCRIPTPATH/src/westmere/bitmask.h
+$SCRIPTPATH/src/arm64/simd.h
+$SCRIPTPATH/src/haswell/simd.h
+$SCRIPTPATH/src/westmere/simd.h
 $SCRIPTPATH/src/arm64/stage1_find_marks.h
 $SCRIPTPATH/src/haswell/stage1_find_marks.h
 $SCRIPTPATH/src/westmere/stage1_find_marks.h
@@ -57,6 +66,7 @@ $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
+$SCRIPTPATH/include/simdjson/jsonstream.h
 "
 
 for i in ${ALLCHEADERS} ${ALLCFILES}; do
@@ -71,7 +81,7 @@ function dofile()
     RELFILE=${1#"$SCRIPTPATH/"}
     echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
-    while IFS= read -r line
+    while IFS= read -r line || [ -n "$line" ];
     do
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)
@@ -135,16 +145,38 @@ cat <<< '
 #include "simdjson.cpp"
 int main(int argc, char *argv[]) {
   if(argc < 2) {
-    std::cerr << "Please specify a filename " << std::endl;
+    std::cerr << "Please specify at least one file name. " << std::endl;
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
   simdjson::ParsedJson pj = simdjson::build_parsed_json(p); // do the parsing
   if( ! pj.is_valid() ) {
-    std::cout << "not valid" << std::endl;
+    std::cout << "build_parsed_json not valid" << std::endl;
   } else {
-    std::cout << "valid" << std::endl;
+    std::cout << "build_parsed_json valid" << std::endl;
   }
+  if(argc == 2) {
+    return EXIT_SUCCESS;
+  }
+
+  //JsonStream
+  const char * filename2 = argv[2];
+  simdjson::padded_string p2 = simdjson::get_corpus(filename2);
+  simdjson::ParsedJson pj2;
+  simdjson::JsonStream js{p2.data(), p2.size()};
+  int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
+
+  while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
+            parse_res = js.json_parse(pj2);
+  }
+
+  if( ! pj2.is_valid()) {
+    std::cout << "JsonStream not valid" << std::endl;
+  } else {
+    std::cout << "JsonStream valid" << std::endl;
+  }
+
+
   return EXIT_SUCCESS;
 }
 ' >>  "${DEMOCPP}"
@@ -160,16 +192,16 @@ echo "Giving final instructions:"
 CPPBIN=${DEMOCPP%%.*}
 
 echo "Try :"
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json "
+echo "c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson"
 
 SINGLEHDR=$SCRIPTPATH/singleheader
 echo "Copying files to $SCRIPTPATH/singleheader "
 mkdir -p $SINGLEHDR
-echo "c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json " > $SINGLEHDR/README.md
+echo "c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson" > $SINGLEHDR/README.md
 cp ${AMAL_C} ${AMAL_H}  ${DEMOCPP} $SINGLEHDR
 ls $SINGLEHDR
 
-cd $SINGLEHDR && c++ -O3 -std=c++17 -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json
+cd $SINGLEHDR && c++ -O3 -std=c++17 -pthread -o ${CPPBIN} ${DEMOCPP}  && ./${CPPBIN} ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
 
 lowercase(){
     echo "$1" | tr 'A-Z' 'a-z'

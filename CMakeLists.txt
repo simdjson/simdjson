@@ -1,9 +1,22 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ltoresult)
-if(ltoresult)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+if (NOT CMAKE_BUILD_TYPE)
+                message(STATUS "No build type selected, default to Release")
+                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
+
+project(simdjson 
+  DESCRIPTION "Parsing gigabytes of JSON per second" 
+  LANGUAGES CXX
+)
+
+# LTO seems to create all sorts of fun problems. Let us
+# disable temporarily.
+#include(CheckIPOSupported)
+#check_ipo_supported(RESULT ltoresult)
+#if(ltoresult)
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#endif()
 
 # usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
 option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
@@ -11,12 +24,11 @@ option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
-if (NOT CMAKE_BUILD_TYPE)
-                message(STATUS "No build type selected, default to Release")
-                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-endif()
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-project(simdjson)
+
+
 set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 2)
@@ -36,6 +48,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 find_package(CTargets)
 find_package(Options)
 
+option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
+
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
@@ -47,6 +61,12 @@ add_subdirectory(src)
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
+
+# for fuzzing, read the comments in the fuzz/CMakeLists.txt file
+option(ENABLE_FUZZING "enable building the fuzzers" ON)
+if(ENABLE_FUZZING)
+ add_subdirectory(fuzz)
+endif()
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
 set(CPACK_PACKAGE_CONTACT "lemire@gmail.com")
@@ -62,3 +82,5 @@ set(CPACK_RPM_PACKAGE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
 
 include(CPack)
+
+

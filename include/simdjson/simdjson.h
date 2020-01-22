@@ -1,15 +1,31 @@
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 
+#ifndef __cplusplus
+#error simdjson requires a C++ compiler
+#endif
+
+#ifndef SIMDJSON_CPLUSPLUS
+#if defined(_MSVC_LANG) && !defined(__clang__)
+#define SIMDJSON_CPLUSPLUS (_MSC_VER == 1900 ? 201103L : _MSVC_LANG)
+#else
+#define SIMDJSON_CPLUSPLUS __cplusplus
+#endif
+#endif
+
+#if (SIMDJSON_CPLUSPLUS < 201703L)
+#error simdjson requires a compiler compliant with the C++17 standard
+#endif
+
 #include <string>
 
 namespace simdjson {
 // Represents the minimal architecture that would support an implementation
 enum class Architecture {
+  UNSUPPORTED,
   WESTMERE,
   HASWELL,
   ARM64,
-  NONE,
 // TODO remove 'native' in favor of runtime dispatch?
 // the 'native' enum class value should point at a good default on the current
 // machine
@@ -20,8 +36,12 @@ enum class Architecture {
 #endif
 };
 
+Architecture find_best_supported_architecture();
+Architecture parse_architecture(char *architecture);
+
 enum ErrorValues {
   SUCCESS = 0,
+  SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
   CAPACITY,    // This ParsedJson can't support a document that big
   MEMALLOC,    // Error allocating memory, most likely out of memory
   TAPE_ERROR,  // Something went wrong while writing to the tape (stage 2), this
@@ -33,8 +53,8 @@ enum ErrorValues {
   N_ATOM_ERROR,    // Problem while parsing an atom starting with the letter 'n'
   NUMBER_ERROR,    // Problem while parsing a number
   UTF8_ERROR,      // the input is not valid UTF-8
-  UNITIALIZED,     // unknown error, or uninitialized document
-  EMPTY,           // no structural document found
+  UNINITIALIZED,     // unknown error, or uninitialized document
+  EMPTY,           // no structural element found
   UNESCAPED_CHARS, // found unescaped characters in a string.
   UNCLOSED_STRING, // missing quote at the end
   UNEXPECTED_ERROR // indicative of a bug in simdjson

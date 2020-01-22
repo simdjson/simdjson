@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME("simdjson orig",
             simdjson::json_parse((const uint8_t *)buffer, p.size(), pj,
                                  automated_reallocation),
-            true, memcpy(buffer, p.data(), p.size()), repeat, volume,
+            simdjson::SUCCESS, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
 
   simdjson::ParsedJson pj2;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME("simdjson despaced",
             simdjson::json_parse((const uint8_t *)buffer, minisize, pj2,
                                  automated_reallocation),
-            true, memcpy(buffer, mini_buffer, p.size()), repeat, volume,
+            simdjson::SUCCESS, memcpy(buffer, mini_buffer, p.size()), repeat, volume,
             !just_data);
   free(buffer);
   free(ast_buffer);
