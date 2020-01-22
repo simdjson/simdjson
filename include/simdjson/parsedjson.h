@@ -103,8 +103,8 @@ public:
     tape[saved_loc] |= val;
   }
 
-  class InvalidJSON : public std::exception {
-    const char *what() const throw() { return "JSON document is invalid"; }
+  struct InvalidJSON : public std::exception {
+    const char *what() const noexcept { return "JSON document is invalid"; }
   };
 
   template <size_t max_depth> class BasicIterator;
