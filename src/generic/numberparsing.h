@@ -154,6 +154,17 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
     mantissa += mantissa & 1;
     mantissa >>= 1;
     mantissa &= ~(1ULL << 52);
+    ////////
+    // This function is almost surely incorrect.
+    // c.exp ranges from -1087 to 960
+    // lz range from 0 to 64
+    // so real_exponent can range from -1087+1023+127-64 = -1
+    // all the way up to 2110. So real_exponent can certainly
+    // exceed the 11-bit range.
+    // This occurs when parsing  1e-308: in such cases,
+    // lz = 64, c.exp = -1087, and we get that real_exponent ends up
+    // being -1.
+    //////
     uint64_t real_exponent = c.exp + 1023 + (127 - lz);
     mantissa |= real_exponent << 52;
     mantissa |= (((uint64_t)negative) << 63);
@@ -228,9 +239,13 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
   }
 
 
-  static uint32_t parse_float_strtod(const uint8_t *const buf, ParsedJson &pj,
+  static bool parse_float_strtod(const uint8_t *const buf, ParsedJson &pj,
                                               const uint32_t offset, const char *float_end) {
     double d = strtod((char *)(buf + offset), NULL);
+    // technically, strtod could return zero if no parsing occurs, assume this is not the case
+    if(not isfinite(d)) { // we reject infinite, -infinte and NaN
+      return false;
+    }
     pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
