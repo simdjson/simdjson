@@ -35,7 +35,9 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
     return nullptr;
   }
 #endif // NDEBUG
-  memset(padded_buffer + length, 0, totalpaddedlength - length);
+  
+    // ? -> memset(padded_buffer + length, 0, totalpaddedlength - length);
+
   return padded_buffer;
 } // allocate_padded_buffer
 
@@ -44,26 +46,12 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 // constructors.
 struct padded_string final {
 
-  explicit padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
-
-  explicit padded_string(size_t length) noexcept
-      : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
-    if (data_ptr != nullptr)
-      data_ptr[length] = '\0'; // easier when you need a c_str
-  }
-
-  explicit padded_string(const char *data, size_t length) noexcept
-      : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
-    if ((data != nullptr) and (data_ptr != nullptr)) {
-      memcpy(data_ptr, data, length);
-      data_ptr[length] = '\0'; // easier when you need a c_str
-    }
-  }
-  // free the old payload
+  // free the previous payload
   // allocate for the new size
   // return false on ENOMEM
-  bool reset(size_t new_size_) noexcept {
-    this->~padded_string();
+  bool reset(size_t new_size_) noexcept 
+  {
+    this->~padded_string(); 
     viable_size = new_size_;
     data_ptr = allocate_padded_buffer(new_size_);
     if (data_ptr != nullptr) {
@@ -75,6 +63,55 @@ struct padded_string final {
     return false;
   }
 
+  explicit padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
+
+  explicit padded_string(size_t length) noexcept
+  {
+    reset(length);
+    if (data_ptr != nullptr) {
+      // done in reset() -> data_ptr[length] = '\0';
+    }
+    else {
+      /* do what? */
+    }
+  }
+
+  explicit padded_string(const char *data, size_t length) noexcept
+      : padded_string(length) 
+  {
+    if ((data != nullptr) and (data_ptr != nullptr)) {
+      memcpy(data_ptr, data, length);
+      // probably not necessary
+      data_ptr[length] = '\0'; 
+    } else {
+      /* do what? */
+    }
+  }
+
+    // note: do pass std::string_view arguments by value
+  padded_string(std::string_view sv_) noexcept
+      : padded_string(sv_.data(), sv_.size()) {}
+
+  // move ctor
+  padded_string(padded_string &&other_) noexcept {
+    // calling move assignment
+    *this = std::move(other_);
+  }
+
+  // move assignment
+  padded_string &operator=(padded_string && other_ ) {
+    using namespace std;
+    std::swap(data_ptr, other_.data_ptr);
+    std::swap(viable_size, other_.viable_size);
+    // simdjson::aligned_free_char(other_.data_ptr);
+    // free the payload
+    other_.~padded_string();
+    //other_.data_ptr = nullptr;
+    //other_.viable_size = 0;
+    return *this;
+  }
+
+  // load from file to padded_string
   // reset the ps_
   // return the result of fread()
   // return 0 on error
@@ -108,23 +145,6 @@ struct padded_string final {
     return 0;
   }
 
-  // note: do pass std::string_view arguments by value
-  padded_string(std::string_view sv_) noexcept
-      : padded_string(sv_.data(), sv_.size()) {}
-
-  padded_string(padded_string &&o) noexcept
-      : viable_size(o.viable_size), data_ptr(o.data_ptr) {
-    o.data_ptr = nullptr; // we take ownership
-  }
-
-  padded_string &operator=(padded_string &&o) {
-    data_ptr = o.data_ptr;
-    viable_size = o.viable_size;
-    o.data_ptr = nullptr; // we take ownership
-    o.viable_size = 0;
-    return *this;
-  }
-
   /*
   Makes padded_string 'Swappable'. This implementation is also ADL friendly.
 
@@ -148,10 +168,9 @@ struct padded_string final {
        a.swap(b) ;
          printf("%s", a.data() ); // "B"
   */
-  void swap(padded_string &right_) {
-    auto &left_ = *this;
-    std::swap(left_.viable_size, right_.viable_size);
-    std::swap(left_.data_ptr, right_.data_ptr);
+  void swap( padded_string &right_) {
+    // auto &left_ = *this;
+    std::swap(*this, right_);
   }
 
   /*
@@ -159,8 +178,11 @@ struct padded_string final {
      a.~padded_string() ;
     */
   ~padded_string() {
-    aligned_free_char(data_ptr);
-    viable_size = size_t(0);
+    if (data_ptr != nullptr ) {
+      aligned_free_char(data_ptr);
+      data_ptr = nullptr;
+      viable_size = size_t(0);
+    }
   }
 
   size_t size() const { return viable_size; }
@@ -170,6 +192,7 @@ struct padded_string final {
   char *data() const { return data_ptr; }
 
 private:
+    // no copying
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
