@@ -105,7 +105,11 @@ struct padded_string final {
     std::swap(data_ptr, other_.data_ptr);
     std::swap(viable_size, other_.viable_size);
     // free the payload
+    // that other_.data_ptr is pointing to
     simdjson::aligned_free_char(other_.data_ptr);
+    // technicaly not needed
+    // other_ is moved after this operator exits
+    // and it not to be used any more
     other_.data_ptr = nullptr;
     other_.viable_size = 0;
     return *this;
