@@ -46,24 +46,7 @@ struct padded_string final {
 
     using type = padded_string;
     using value_type = char *;
-  // free the previous payload
-  // allocate for the new size
-  // return false on ENOMEM
-  static bool reset(type & pstring_, size_t new_size_) noexcept 
-  {
-      if (pstring_.data())
-        pstring_.~type(); 
 
-    pstring_.viable_size = new_size_;
-      pstring_.data_ptr = allocate_padded_buffer(new_size_);
-    if (pstring_.data_ptr != nullptr) {
-        pstring_.data_ptr[new_size_] = '\0'; // easier when you need a c_str
-      return true;
-    }
-    // failed to allocate
-    pstring_.viable_size = 0;
-    return false;
-  }
 
   explicit padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
 
@@ -113,39 +96,6 @@ struct padded_string final {
     other_.data_ptr = nullptr;
     other_.viable_size = 0;
     return *this;
-  }
-
-  // load from file to padded_string
-  // reset the ps_
-  // return the result of fread()
-  // return 0 on error
-  static errno_t load(type  &ps_, FILE *fp) noexcept {
-
-    if (std::fseek(fp, 0, SEEK_END) < 0) {
-      std::fclose(fp);
-      return errno;
-    }
-    long llen = std::ftell(fp);
-    if ((llen < 0) || (llen == LONG_MAX)) {
-      std::fclose(fp);
-      return errno;
-    }
-
-    // now make the temporary p string
-    size_t length_ = (size_t)llen;
-
-    if (! type::reset(ps_,length_))
-      return ENOMEM;
-
-    std::rewind(fp);
-    size_t readb = std::fread(ps_.data(), 1, length_, fp);
-    std::fclose(fp);
-
-    if (readb != length_) {
-      // ps_ dtor will free on scope exit
-      return errno;
-    }
-    return 0;
   }
 
   /*
