@@ -379,7 +379,7 @@ void print_file_effectiveness(BenchmarkStage stage, const char* filename, const 
   uint64_t actual_misses = results[stage].best.branch_misses();
   uint64_t calc_misses = uint64_t(features.calc_expected_misses(stage, results));
   double calc_miss_cost = features.calc_expected_miss_cost(stage, results);
-  printf("| %-8s ", benchmark_stage_name(stage));
+  printf("        | %-8s ", benchmark_stage_name(stage));
   printf("| %-15s ",   filename);
   printf("|    %8.3g ", features.calc_expected_feature_cost(stage, results));
   printf("|    %8.3g ", calc_miss_cost);
@@ -442,45 +442,47 @@ int main(int argc, char *argv[]) {
   features.print(options);
 
   // Gauge effectiveness
-  printf("\n");
-  printf("Estimated vs. Actual ns/block for real files:\n");
-  printf("\n");
-  printf("| %8s ", "Stage");
-  printf("| %-15s ", "File");
-  printf("| %11s ", "Est. (Base)");
-  printf("| %11s ", "Est. (Miss)");
-  printf("| %8s ",  "Est.");
-  printf("| %8s ",  "Actual");
-  printf("| %8s ",  "Diff");
-  printf("| %13s ", "Est. Misses");
-  if (features.has_events()) {
-    printf("| %13s ", "Actual Misses");
-    printf("| %13s ", "Diff (Misses)");
-    printf("| %13s ", "Adjusted Miss");
-    printf("| %13s ", "Adjusted Diff");
-  }
-  printf("|\n");
-  printf("|%.10s",  "---------------------------------------");
-  printf("|%.17s",  "---------------------------------------");
-  printf("|%.13s",  "---------------------------------------");
-  printf("|%.13s",  "---------------------------------------");
-  printf("|%.10s",  "---------------------------------------");
-  printf("|%.10s",  "---------------------------------------");
-  printf("|%.10s",  "---------------------------------------");
-  printf("|%.15s",  "---------------------------------------");
-  if (features.has_events()) {
+  if (options.verbose) {
+    printf("\n");
+    printf("        Effectiveness Check: Estimated vs. Actual ns/block for real files:\n");
+    printf("\n");
+    printf("        | %8s ", "Stage");
+    printf("| %-15s ", "File");
+    printf("| %11s ", "Est. (Base)");
+    printf("| %11s ", "Est. (Miss)");
+    printf("| %8s ",  "Est.");
+    printf("| %8s ",  "Actual");
+    printf("| %8s ",  "Diff");
+    printf("| %13s ", "Est. Misses");
+    if (features.has_events()) {
+      printf("| %13s ", "Actual Misses");
+      printf("| %13s ", "Diff (Misses)");
+      printf("| %13s ", "Adjusted Miss");
+      printf("| %13s ", "Adjusted Diff");
+    }
+    printf("|\n");
+    printf("        |%.10s",  "---------------------------------------");
+    printf("|%.17s",  "---------------------------------------");
+    printf("|%.13s",  "---------------------------------------");
+    printf("|%.13s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
+    printf("|%.10s",  "---------------------------------------");
     printf("|%.15s",  "---------------------------------------");
-    printf("|%.15s",  "---------------------------------------");
-    printf("|%.15s",  "---------------------------------------");
-    printf("|%.15s",  "---------------------------------------");
-  }
-  printf("|\n");
+    if (features.has_events()) {
+      printf("|%.15s",  "---------------------------------------");
+      printf("|%.15s",  "---------------------------------------");
+      printf("|%.15s",  "---------------------------------------");
+      printf("|%.15s",  "---------------------------------------");
+    }
+    printf("|\n");
 
-  options.each_stage([&](auto stage) {
-    print_file_effectiveness(stage, "gsoc-2018.json", gsoc_2018, features);
-    print_file_effectiveness(stage, "twitter.json", twitter, features);
-    print_file_effectiveness(stage, "random.json", random, features);
-  });
+    options.each_stage([&](auto stage) {
+      print_file_effectiveness(stage, "gsoc-2018.json", gsoc_2018, features);
+      print_file_effectiveness(stage, "twitter.json", twitter, features);
+      print_file_effectiveness(stage, "random.json", random, features);
+    });
+  }
 
   return EXIT_SUCCESS;
 }
