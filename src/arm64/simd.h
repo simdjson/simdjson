@@ -107,7 +107,7 @@ namespace simdjson::arm64::simd {
     }
 
     // Store to array
-    really_inline void store(uint8_t dst[16]) { return vst1q_u8(dst, *this); }
+    really_inline void store(uint8_t dst[16]) const { return vst1q_u8(dst, *this); }
 
     // Saturated math
     really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
@@ -207,7 +207,7 @@ namespace simdjson::arm64::simd {
     }
 
     // Store to array
-    really_inline void store(int8_t dst[16]) { return vst1q_s8(dst, *this); }
+    really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
     really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
@@ -265,7 +265,7 @@ namespace simdjson::arm64::simd {
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
-    really_inline void store(T ptr[64]) {
+    really_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
       this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
