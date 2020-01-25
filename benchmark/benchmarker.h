@@ -75,6 +75,8 @@ struct json_stats {
   size_t structurals = 0;
   size_t blocks_with_utf8 = 0;
   size_t blocks_with_utf8_flipped = 0;
+  size_t blocks_with_escapes = 0;
+  size_t blocks_with_escapes_flipped = 0;
   size_t blocks_with_0_structurals = 0;
   size_t blocks_with_0_structurals_flipped = 0;
   size_t blocks_with_1_structural = 0;
@@ -111,6 +113,29 @@ struct json_stats {
         blocks_with_utf8_flipped++;
       }
       last_block_has_utf8 = block_has_utf8;
+    }
+
+    // Calculate stats on blocks that will trigger escape if statements / mispredictions
+    bool last_block_has_escapes = false;
+    for (size_t block=0; block<blocks; block++) {
+      // Find utf-8 in the block
+      size_t block_start = block*BYTES_PER_BLOCK;
+      size_t block_end = block_start+BYTES_PER_BLOCK;
+      if (block_end > json.size()) { block_end = json.size(); }
+      bool block_has_escapes = false;
+      for (size_t i=block_start; i<block_end; i++) {
+        if (json.data()[i] == '\\') {
+          block_has_escapes = true;
+          break;
+        }
+      }
+      if (block_has_escapes) {
+        blocks_with_escapes++;
+      }
+      if (block > 0 && last_block_has_escapes != block_has_escapes) {
+        blocks_with_escapes_flipped++;
+      }
+      last_block_has_escapes = block_has_escapes;
     }
 
     // Calculate stats on blocks that will trigger structural count if statements / mispredictions
@@ -280,7 +305,7 @@ struct benchmarker {
     return all_stages.iterations;
   }
 
-  really_inline void run_iteration(bool stage1_only, bool hotbuffers) {
+  really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
     // Allocate ParsedJson
     collector.start();
     ParsedJson pj;
@@ -336,7 +361,7 @@ struct benchmarker {
     }
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers) {
+  really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers=false) {
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only, hotbuffers);
     }
@@ -425,16 +450,18 @@ struct benchmarker {
       printf("%s\n", string(strlen(filename), '=').c_str());
       printf("%9zu blocks - %10zu bytes - %5zu structurals (%5.1f %%)\n", stats->bytes / BYTES_PER_BLOCK, stats->bytes, stats->structurals, 100.0 * stats->structurals / stats->bytes);
       if (stats) {
-        printf("special blocks with: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+        printf("special blocks with: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
           stats->blocks_with_utf8, 100.0 * stats->blocks_with_utf8 / stats->blocks,
+          stats->blocks_with_escapes, 100.0 * stats->blocks_with_escapes / stats->blocks,
           stats->blocks_with_0_structurals, 100.0 * stats->blocks_with_0_structurals / stats->blocks,
           stats->blocks_with_1_structural, 100.0 * stats->blocks_with_1_structural / stats->blocks,
           stats->blocks_with_8_structurals, 100.0 * stats->blocks_with_8_structurals / stats->blocks,
           stats->blocks_with_16_structurals, 100.0 * stats->blocks_with_16_structurals / stats->blocks);
-        printf("special block flips: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+        printf("special block flips: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
           stats->blocks_with_utf8_flipped, 100.0 * stats->blocks_with_utf8_flipped / stats->blocks,
-          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
+          stats->blocks_with_escapes_flipped, 100.0 * stats->blocks_with_escapes_flipped / stats->blocks,
           stats->blocks_with_0_structurals_flipped, 100.0 * stats->blocks_with_0_structurals_flipped / stats->blocks,
+          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
           stats->blocks_with_8_structurals_flipped, 100.0 * stats->blocks_with_8_structurals_flipped / stats->blocks,
           stats->blocks_with_16_structurals_flipped, 100.0 * stats->blocks_with_16_structurals_flipped / stats->blocks);
       }
