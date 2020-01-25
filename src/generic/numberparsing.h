@@ -268,7 +268,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  pj.found_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -333,14 +333,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      pj.found_int64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      pj.found_int64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -353,12 +353,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      pj.found_int64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      pj.found_uint64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -378,7 +378,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
                                        bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  pj.write_tape_s64(0);           // always write zero
+  pj.found_int64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -535,7 +535,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    pj.write_tape_double(d);
+    pj.found_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -546,7 +546,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
       return parse_large_integer(buf, pj, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    pj.write_tape_s64(i);
+    pj.found_int64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif

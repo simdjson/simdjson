@@ -154,18 +154,18 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
     switch (c) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; };
+        if (!is_valid_true_atom(copy + offset)) { return true; } else  {pj.found_true(); }
         break;
       case 'f':
-        if (!is_valid_false_atom(copy + offset)) { return true; }
+        if (!is_valid_false_atom(copy + offset)) { return true; } else { pj.found_false(); }
         break;
       case 'n':
-        if (!is_valid_null_atom(copy + offset)) { return true; }
+        if (!is_valid_null_atom(copy + offset)) { return true; } else { pj.found_null(); }
         break;
       default:
         return false;
     }
-    pj.write_tape(0, c);
+    //pj.write_tape(0, c);
     return false;
   }
 

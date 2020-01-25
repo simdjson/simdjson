@@ -60,6 +60,76 @@ public:
   WARN_UNUSED
   bool dump_raw_tape(std::ostream &os) const;
 
+  /***
+   * Following functions are a stage 2 consumer.
+   */
+
+  // return true if you want to continue, false to stop
+  really_inline bool found_double(double d) {
+    write_tape_double(d);
+    return true;
+  }
+  really_inline bool found_int64(int64_t d) {
+    write_tape_s64(d);
+    return true;
+  }
+  really_inline bool found_uint64(uint64_t d) {
+    write_tape_u64(d);
+    return true;
+  }
+
+  really_inline bool found_start_object() {
+    return true;
+  }
+
+  really_inline bool found_end_object() {
+    return true;
+  }
+
+  really_inline bool found_start_array() {
+    return true;
+  }
+
+  really_inline bool found_end_array() {
+    return true;
+  }
+
+  really_inline bool found_true() {
+    write_tape(0, 't');
+    return true;
+  }
+
+  really_inline bool found_false() {
+    write_tape(0, 'f');
+    return true;
+  }
+
+  really_inline bool found_null(){
+    write_tape(0, 'n');
+    return true;
+  }
+
+  really_inline void found_end_of_document() {
+
+  }
+
+  really_inline void found_error(int err_code) {
+      valid = false;
+      err_code = simdjson::UNINITIALIZED;
+  }
+
+  // gives me a pointer to an available buffer where I could write up to "budget" bytes, return null if unavailable
+  really_inline char * string_buffer(size_t /*budget*/) {
+    return (char *)current_string_buf_loc + sizeof(uint32_t);
+  }
+  // I wrote a string of length "len" on the string buffer
+  really_inline bool found_string(size_t len) {
+    write_tape(current_string_buf_loc - string_buf.get(), '"');
+    memcpy(current_string_buf_loc, &len, sizeof(uint32_t));
+    current_string_buf_loc +=  sizeof(uint32_t) + len + 1;
+    return true;
+  }
+
   // all nodes are stored on the tape using a 64-bit word.
   //
   // strings, double and ints are stored as
@@ -74,6 +144,40 @@ public:
   //
   //
 
+
+
+  struct InvalidJSON : public std::exception {
+    const char *what() const noexcept { return "JSON document is invalid"; }
+  };
+
+  template <size_t max_depth> class BasicIterator;
+  using Iterator = BasicIterator<DEFAULT_MAX_DEPTH>;
+
+  size_t byte_capacity{0}; // indicates how many bits are meant to be supported
+
+  size_t depth_capacity{0}; // how deep we can go
+  size_t tape_capacity{0};
+  size_t string_capacity{0};
+  uint32_t current_loc{0};
+  uint32_t n_structural_indexes{0};
+
+  std::unique_ptr<uint32_t[]> structural_indexes;
+
+  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint32_t[]> containing_scope_offset;
+
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  std::unique_ptr<void*[]> ret_address;
+#else
+  std::unique_ptr<char[]> ret_address;
+#endif
+
+
+  bool valid{false};
+  int error_code{simdjson::UNINITIALIZED};
+private:
+  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
+  uint8_t *current_string_buf_loc;
   // this should be considered a private function
   really_inline void write_tape(uint64_t val, uint8_t c) {
     tape[current_loc++] = val | ((static_cast<uint64_t>(c)) << 56);
@@ -102,37 +206,6 @@ public:
   really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {
     tape[saved_loc] |= val;
   }
-
-  struct InvalidJSON : public std::exception {
-    const char *what() const noexcept { return "JSON document is invalid"; }
-  };
-
-  template <size_t max_depth> class BasicIterator;
-  using Iterator = BasicIterator<DEFAULT_MAX_DEPTH>;
-
-  size_t byte_capacity{0}; // indicates how many bits are meant to be supported
-
-  size_t depth_capacity{0}; // how deep we can go
-  size_t tape_capacity{0};
-  size_t string_capacity{0};
-  uint32_t current_loc{0};
-  uint32_t n_structural_indexes{0};
-
-  std::unique_ptr<uint32_t[]> structural_indexes;
-
-  std::unique_ptr<uint64_t[]> tape;
-  std::unique_ptr<uint32_t[]> containing_scope_offset;
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  std::unique_ptr<void*[]> ret_address;
-#else
-  std::unique_ptr<char[]> ret_address;
-#endif
-
-  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
-  uint8_t *current_string_buf_loc;
-  bool valid{false};
-  int error_code{simdjson::UNINITIALIZED};
 
 };
 
