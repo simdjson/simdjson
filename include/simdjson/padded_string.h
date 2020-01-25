@@ -1,12 +1,10 @@
 #ifndef SIMDJSON_PADDING_STRING_H
 #define SIMDJSON_PADDING_STRING_H
 #include "simdjson/portability.h"
+#include "common_defs.h" // SIMDJSON_PADDING
 #include <cstring>
 #include <memory>
 #include <string>
-
-// required by GNUC < 8
-#include <fstream>
 
 #ifndef LONG_MAX
 #include <limits.h>
@@ -16,10 +14,6 @@
 #ifndef _MSC_VER
 typedef int errno_t ;
 #endif // _MSC_VER
-
-#ifndef SIMDJSON_PADDING
-#define SIMDJSON_PADDING 32
-#endif // SIMDJSON_PADDING
 
 namespace simdjson {
 // low-level function to allocate memory with padding so we can read passed the
