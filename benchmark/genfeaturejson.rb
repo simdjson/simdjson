@@ -88,6 +88,7 @@ miss_templates = File.expand_path("miss-templates", File.dirname(__FILE__))
 Dir.mkdir(output_dir) unless File.directory?(output_dir)
 w = ChunkWriter.new(output_dir, miss_templates)
 w.write_files "utf-8",          '["֏","֏",{}', ',"֏","֏",{}', ',"֏","֏","֏"]', repeat2: ',"ab","ab",{}'
+w.write_files "escape",         '["\\"","\\"",{}', ',"\\"","\\"",{}', ',"\\"","\\"","\\""]', repeat2: ',"ab","ab",{}'
 w.write_files "0-structurals",  '"ab"', '',  ''
 # w.write_files "1-structurals",  [ '[', '"ab"' ], [ ',', '"ab"' ], [ ',', '{', '}', ']' ]
 # w.write_files "2-structurals",  '["ab"', ',"ab"', [',{', '}]']
