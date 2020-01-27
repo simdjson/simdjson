@@ -29,6 +29,9 @@ commands:
       - run: make checkperf
       - run: make clean
       - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
+      - run: make clean
+      - run: EXTRAFLAGS=true make test
+  
   cmake_test:
     steps:
       - run: apt-get update -qq
