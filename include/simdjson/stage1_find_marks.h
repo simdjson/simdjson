@@ -34,6 +34,6 @@ int find_structural_bits(const char *buf, size_t len, simdjson::ParsedJson &pj) 
   return find_structural_bits<T>((const uint8_t *)buf, len, pj);
 }
 
-}; // namespace simdjson
+} // namespace simdjson
 
 #endif
