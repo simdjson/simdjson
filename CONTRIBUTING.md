@@ -18,6 +18,11 @@ We discourage the following types of contributions:
 
 In short, most code changes should either bring new features or better performance. We want to avoid unmotivated code changes.
 
+Contributors are encouraged to 
 
-We will not tolerate bullying, bigotery or intimidation.
+- Follow as much as possible the existing code style. We do not enforce a specific code style, but we prefer consistency.
+- Modify as few lines of code as possible when working on an issue. The more lines to you modify, the harder it is for your fellow human beings to understand what is going on.
+
+
+Though we do not have a formal code of conduct, we will not tolerate bullying, bigotery or intimidation. Everyone is welcome to contribute.
 
