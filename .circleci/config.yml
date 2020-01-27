@@ -29,6 +29,9 @@ commands:
       - run: make checkperf
       - run: make clean
       - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
+      - run: make clean
+      - run: EXTRAFLAGS=-DSIMDJSON_NO_COMPUTED_GOTO=true make test # this should run tests with computed gotos disabled
+  
   cmake_test:
     steps:
       - run: apt-get update -qq
