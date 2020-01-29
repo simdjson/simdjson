@@ -41,7 +41,7 @@ struct padded_string final {
       data_ptr[length] = '\0'; // easier when you need a c_str
   }
 
-  explicit padded_string(char *data, size_t length) noexcept
+  explicit padded_string(const char *data, size_t length) noexcept
       : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
     if ((data != nullptr) and (data_ptr != nullptr)) {
       memcpy(data_ptr, data, length);

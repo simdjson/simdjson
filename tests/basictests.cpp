@@ -247,7 +247,8 @@ static bool parse_json_message_issue467(char const* message, std::size_t len, si
         return false;
     }
     int res;
-    simdjson::JsonStream js(message, len, pj.byte_capacity);
+    simdjson::padded_string str(message,len);
+    simdjson::JsonStream js(str, pj.byte_capacity);
     do  {
         res = js.json_parse(pj);
         count++;
@@ -403,7 +404,8 @@ bool stream_utf8_test() {
   for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
-    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    simdjson::padded_string str(data);
+    simdjson::JsonStream js{str, i};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::ParsedJson pj;
@@ -464,7 +466,8 @@ bool stream_test() {
   for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
-    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    simdjson::padded_string str(data);
+    simdjson::JsonStream js{str, i};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::ParsedJson pj;
