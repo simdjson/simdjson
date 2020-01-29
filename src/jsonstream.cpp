@@ -6,8 +6,6 @@
 
 using namespace simdjson;
 
-
-
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
