@@ -1,4 +1,4 @@
-/* auto-generated on Wed Jan 29 16:08:03 EST 2020. Do not edit! */
+/* auto-generated on Wed Jan 29 17:53:53 EST 2020. Do not edit! */
 
 #include <iostream>
 #include "simdjson.h"
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   const char * filename2 = argv[2];
   simdjson::padded_string p2 = simdjson::get_corpus(filename2);
   simdjson::ParsedJson pj2;
-  simdjson::JsonStream js{p2.data(), p2.size()};
+  simdjson::JsonStream js{p2};
   int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {

@@ -1,4 +1,4 @@
-/* auto-generated on Wed Jan 29 16:08:03 EST 2020. Do not edit! */
+/* auto-generated on Wed Jan 29 17:53:53 EST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -1199,8 +1199,8 @@ void find_the_best_supported_implementation() {
 }
 }
 
-JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
-        : _buf(buf), _len(len), _batch_size(batchSize) {
+JsonStream::JsonStream(const padded_string& s, size_t batchSize)
+        : str(s), _batch_size(batchSize) {
     find_the_best_supported_implementation();
 }
 
@@ -1238,18 +1238,18 @@ int JsonStream::json_parse(ParsedJson &pj) {
     if (unlikely(load_next_batch)) {
         //First time loading
         if(!stage_1_thread.joinable()) {
-            _batch_size = std::min(_batch_size, _len);
-            _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
+            _batch_size = std::min(_batch_size, remaining());
+            _batch_size = trimmed_length_safe_utf8((const char*)buf(), _batch_size);
             if(_batch_size == 0) {
                 pj.error_code = simdjson::UTF8_ERROR;
                 return pj.error_code;
             }
-            int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
+            int stage1_is_ok = best_stage1(buf(), _batch_size, pj, true);
             if (stage1_is_ok != simdjson::SUCCESS) {
                 pj.error_code = stage1_is_ok;
                 return pj.error_code;
             }
-            size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+            size_t last_index = find_last_json_buf_idx(buf(), _batch_size, pj);
             if(last_index == 0) {
               if(pj.n_structural_indexes == 0) {
                 pj.error_code = simdjson::EMPTY;
@@ -1268,22 +1268,21 @@ int JsonStream::json_parse(ParsedJson &pj) {
             }
             std::swap(pj.structural_indexes, pj_thread.structural_indexes);
             pj.n_structural_indexes = pj_thread.n_structural_indexes;
-            _buf = _buf + last_json_buffer_loc;
-            _len -= last_json_buffer_loc;
+            advance(last_json_buffer_loc);
             n_bytes_parsed += last_json_buffer_loc;
         }
         // let us decide whether we will start a new thread
-        if(_len - _batch_size > 0) {
-            last_json_buffer_loc =  pj.structural_indexes[find_last_json_buf_idx(_buf,_batch_size,pj)];
-            _batch_size = std::min(_batch_size, _len - last_json_buffer_loc);
+        if(remaining() - _batch_size > 0) {
+            last_json_buffer_loc =  pj.structural_indexes[find_last_json_buf_idx(buf(),_batch_size,pj)];
+            _batch_size = std::min(_batch_size, remaining() - last_json_buffer_loc);
             if(_batch_size > 0) {
-                _batch_size = trimmed_length_safe_utf8((const char*)(_buf + last_json_buffer_loc), _batch_size);
+                _batch_size = trimmed_length_safe_utf8((const char*)(buf() + last_json_buffer_loc), _batch_size);
                 if(_batch_size == 0) {
                   pj.error_code = simdjson::UTF8_ERROR;
                   return pj.error_code;
                 }
                 // let us capture read-only variables
-                const char * const b = _buf + last_json_buffer_loc;
+                const char * const b = buf() + last_json_buffer_loc;
                 const size_t bs = _batch_size;
                 // we call the thread on a lambda that will update  this->stage1_is_ok_thread
                 // there is only one thread that may write to this value
@@ -1296,14 +1295,14 @@ int JsonStream::json_parse(ParsedJson &pj) {
         next_json = 0;
         load_next_batch = false;
     } // load_next_batch
-    int res = best_stage2(_buf, _len, pj, next_json);
+    int res = best_stage2(buf(), remaining(), pj, next_json);
     if (res == simdjson::SUCCESS_AND_HAS_MORE) {
         n_parsed_docs++;
         current_buffer_loc = pj.structural_indexes[next_json];
         load_next_batch = (current_buffer_loc == last_json_buffer_loc);
     } else if (res == simdjson::SUCCESS) {
         n_parsed_docs++;
-        if(_len > _batch_size) {
+        if(remaining() > _batch_size) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             load_next_batch = true;
             res = simdjson::SUCCESS_AND_HAS_MORE;
@@ -1327,17 +1326,16 @@ int JsonStream::json_parse(ParsedJson &pj) {
         return pj.error_code;
     }
     if (unlikely(load_next_batch)) {
-        _buf = _buf + current_buffer_loc;
-        _len -= current_buffer_loc;
+        advance(current_buffer_loc);
         n_bytes_parsed += current_buffer_loc;
-        _batch_size = std::min(_batch_size, _len);
-        _batch_size = trimmed_length_safe_utf8((const char*)_buf, _batch_size);
-        int stage1_is_ok = best_stage1(_buf, _batch_size, pj, true);
+        _batch_size = std::min(_batch_size, remaining());
+        _batch_size = trimmed_length_safe_utf8((const char*)buf(), _batch_size);
+        int stage1_is_ok = best_stage1(buf(), _batch_size, pj, true);
         if (stage1_is_ok != simdjson::SUCCESS) {
             pj.error_code = stage1_is_ok;
             return pj.error_code;
         }
-        size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
+        size_t last_index = find_last_json_buf_idx(buf(), _batch_size, pj);
         if(last_index == 0) {
             if(pj.n_structural_indexes == 0) {
               pj.error_code = simdjson::EMPTY;
@@ -1348,13 +1346,13 @@ int JsonStream::json_parse(ParsedJson &pj) {
         }
         load_next_batch = false;
     } // load_next_batch
-    int res = best_stage2(_buf, _len, pj, next_json);
+    int res = best_stage2(buf(), remaining(), pj, next_json);
     if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
         n_parsed_docs++;
         current_buffer_loc = pj.structural_indexes[next_json];
     } else if (res == simdjson::SUCCESS) {
         n_parsed_docs++;
-        if(_len > _batch_size) {
+        if(remaining() > _batch_size) {
             current_buffer_loc = pj.structural_indexes[next_json - 1];
             next_json = 1;
             load_next_batch = true;

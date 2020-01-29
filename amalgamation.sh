@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   const char * filename2 = argv[2];
   simdjson::padded_string p2 = simdjson::get_corpus(filename2);
   simdjson::ParsedJson pj2;
-  simdjson::JsonStream js{p2.data(), p2.size()};
+  simdjson::JsonStream js{p2};
   int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
