@@ -5,13 +5,49 @@
 
 
 using namespace simdjson;
-void find_the_best_supported_implementation();
+
+
 
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
 stage1_functype best_stage1;
 stage2_functype best_stage2;
+
+
+namespace {
+//// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
+void find_the_best_supported_implementation() {
+    uint32_t supports = detect_supported_architectures();
+    // Order from best to worst (within architecture)
+#ifdef IS_X86_64
+    constexpr uint32_t haswell_flags =
+            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+            instruction_set::BMI1 | instruction_set::BMI2;
+    constexpr uint32_t westmere_flags =
+            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
+    if ((haswell_flags & supports) == haswell_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
+        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
+        return;
+    }
+    if ((westmere_flags & supports) == westmere_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
+        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
+        return;
+    }
+#endif
+#ifdef IS_ARM64
+    if (supports & instruction_set::NEON) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
+        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
+        return;
+    }
+#endif
+    // we throw an exception since this should not be recoverable
+    throw new std::runtime_error("unsupported architecture");
+}
+}
 
 JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
         : _buf(buf), _len(len), _batch_size(batchSize) {
@@ -25,23 +61,6 @@ JsonStream::~JsonStream() {
     }
 #endif
 }
-
-/* // this implementation is untested and unlikely to work
-void JsonStream::set_new_buffer(const char *buf, size_t len) {
-#ifdef SIMDJSON_THREADS_ENABLED
-    if(stage_1_thread.joinable()) {
-      stage_1_thread.join();
-    }
-#endif
-    this->_buf = buf;
-    this->_len = len;
-    _batch_size = 0; // why zero?
-    _batch_size = 0; // waat??
-    next_json = 0;
-    current_buffer_loc = 0;
-    n_parsed_docs = 0;
-    load_next_batch = true;
-}*/
 
 
 #ifdef SIMDJSON_THREADS_ENABLED
@@ -82,10 +101,13 @@ int JsonStream::json_parse(ParsedJson &pj) {
             }
             size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
             if(last_index == 0) {
-              pj.error_code = simdjson::EMPTY;
-              return pj.error_code;
+              if(pj.n_structural_indexes == 0) {
+                pj.error_code = simdjson::EMPTY;
+                return pj.error_code;
+              }
+            } else {
+              pj.n_structural_indexes = last_index + 1;
             }
-            pj.n_structural_indexes = last_index + 1;
         }
         // the second thread is running or done.
         else {
@@ -167,10 +189,13 @@ int JsonStream::json_parse(ParsedJson &pj) {
         }
         size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
         if(last_index == 0) {
-            pj.error_code = simdjson::EMPTY;
-            return pj.error_code;
+            if(pj.n_structural_indexes == 0) {
+              pj.error_code = simdjson::EMPTY;
+              return pj.error_code;
+            }
+        } else {
+            pj.n_structural_indexes = last_index + 1;
         }
-        pj.n_structural_indexes = last_index + 1;
         load_next_batch = false;
     } // load_next_batch
     int res = best_stage2(_buf, _len, pj, next_json);
@@ -202,36 +227,4 @@ size_t JsonStream::get_n_parsed_docs() const {
 
 size_t JsonStream::get_n_bytes_parsed() const {
     return n_bytes_parsed;
-}
-
-//// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
-void find_the_best_supported_implementation() {
-    uint32_t supports = detect_supported_architectures();
-    // Order from best to worst (within architecture)
-#ifdef IS_X86_64
-    constexpr uint32_t haswell_flags =
-            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
-            instruction_set::BMI1 | instruction_set::BMI2;
-    constexpr uint32_t westmere_flags =
-            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
-    if ((haswell_flags & supports) == haswell_flags) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
-        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
-        return;
-    }
-    if ((westmere_flags & supports) == westmere_flags) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
-        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
-        return;
-    }
-#endif
-#ifdef IS_ARM64
-    if (supports & instruction_set::NEON) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
-        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
-        return;
-    }
-#endif
-    // we throw an exception since this should not be recoverable
-    throw new std::runtime_error("unsupported architecture");
 }

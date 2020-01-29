@@ -95,18 +95,6 @@ namespace simdjson {
          * and should be reused for the other documents in the buffer. */
         int json_parse(ParsedJson &pj);
 
-        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
-         * which acts as a reset.  A new JsonStream without initializing again.
-         * */
-        // todo: implement and test this function, note that _batch_size is mutable
-        // void set_new_buffer(const char *buf, size_t len);
-
-        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
-         * which is basically a reset.  A new JsonStream without initializing again.
-         * */
-        // todo: implement and test this function, note that _batch_size is mutable
-        // void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
-
         /* Returns the location (index) of where the next document should be in the buffer.
          * Can be used for debugging, it tells the user the position of the end of the last
          * valid JSON document parsed*/
