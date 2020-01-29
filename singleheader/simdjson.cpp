@@ -1,4 +1,4 @@
-/* auto-generated on Wed Jan 15 15:50:50 EST 2020. Do not edit! */
+/* auto-generated on Wed Jan 29 16:06:12 EST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -1129,7 +1129,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
     break;
 #endif
   default:
-    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    // The processor is not supported by simdjson.
     return simdjson::UNEXPECTED_ERROR;
   }
 
@@ -1145,9 +1145,7 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
   bool ok = pj.allocate_capacity(len);
   if (ok) {
     json_parse(buf, len, pj, realloc);
-  } else {
-    std::cerr << "failure during memory allocation " << std::endl;
-  }
+  } 
   return pj;
 }
 } // namespace simdjson
@@ -1157,13 +1155,49 @@ ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
 
 
 using namespace simdjson;
-void find_the_best_supported_implementation();
+
+
 
 typedef int (*stage1_functype)(const char *buf, size_t len, ParsedJson &pj, bool streaming);
 typedef int (*stage2_functype)(const char *buf, size_t len, ParsedJson &pj, size_t &next_json);
 
 stage1_functype best_stage1;
 stage2_functype best_stage2;
+
+
+namespace {
+//// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
+void find_the_best_supported_implementation() {
+    uint32_t supports = detect_supported_architectures();
+    // Order from best to worst (within architecture)
+#ifdef IS_X86_64
+    constexpr uint32_t haswell_flags =
+            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
+            instruction_set::BMI1 | instruction_set::BMI2;
+    constexpr uint32_t westmere_flags =
+            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
+    if ((haswell_flags & supports) == haswell_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
+        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
+        return;
+    }
+    if ((westmere_flags & supports) == westmere_flags) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
+        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
+        return;
+    }
+#endif
+#ifdef IS_ARM64
+    if (supports & instruction_set::NEON) {
+        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
+        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
+        return;
+    }
+#endif
+    // we throw an exception since this should not be recoverable
+    throw new std::runtime_error("unsupported architecture");
+}
+}
 
 JsonStream::JsonStream(const char *buf, size_t len, size_t batchSize)
         : _buf(buf), _len(len), _batch_size(batchSize) {
@@ -1177,23 +1211,6 @@ JsonStream::~JsonStream() {
     }
 #endif
 }
-
-/* // this implementation is untested and unlikely to work
-void JsonStream::set_new_buffer(const char *buf, size_t len) {
-#ifdef SIMDJSON_THREADS_ENABLED
-    if(stage_1_thread.joinable()) {
-      stage_1_thread.join();
-    }
-#endif
-    this->_buf = buf;
-    this->_len = len;
-    _batch_size = 0; // why zero?
-    _batch_size = 0; // waat??
-    next_json = 0;
-    current_buffer_loc = 0;
-    n_parsed_docs = 0;
-    load_next_batch = true;
-}*/
 
 
 #ifdef SIMDJSON_THREADS_ENABLED
@@ -1234,10 +1251,13 @@ int JsonStream::json_parse(ParsedJson &pj) {
             }
             size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
             if(last_index == 0) {
-              pj.error_code = simdjson::EMPTY;
-              return pj.error_code;
+              if(pj.n_structural_indexes == 0) {
+                pj.error_code = simdjson::EMPTY;
+                return pj.error_code;
+              }
+            } else {
+              pj.n_structural_indexes = last_index + 1;
             }
-            pj.n_structural_indexes = last_index + 1;
         }
         // the second thread is running or done.
         else {
@@ -1319,10 +1339,13 @@ int JsonStream::json_parse(ParsedJson &pj) {
         }
         size_t last_index = find_last_json_buf_idx(_buf, _batch_size, pj);
         if(last_index == 0) {
-            pj.error_code = simdjson::EMPTY;
-            return pj.error_code;
+            if(pj.n_structural_indexes == 0) {
+              pj.error_code = simdjson::EMPTY;
+              return pj.error_code;
+            }
+        } else {
+            pj.n_structural_indexes = last_index + 1;
         }
-        pj.n_structural_indexes = last_index + 1;
         load_next_batch = false;
     } // load_next_batch
     int res = best_stage2(_buf, _len, pj, next_json);
@@ -1354,39 +1377,6 @@ size_t JsonStream::get_n_parsed_docs() const {
 
 size_t JsonStream::get_n_bytes_parsed() const {
     return n_bytes_parsed;
-}
-
-//// TODO: generalize this set of functions.  We don't want to have a copy in jsonparser.cpp
-void find_the_best_supported_implementation() {
-    uint32_t supports = detect_supported_architectures();
-    // Order from best to worst (within architecture)
-#ifdef IS_X86_64
-    constexpr uint32_t haswell_flags =
-            instruction_set::AVX2 | instruction_set::PCLMULQDQ |
-            instruction_set::BMI1 | instruction_set::BMI2;
-    constexpr uint32_t westmere_flags =
-            instruction_set::SSE42 | instruction_set::PCLMULQDQ;
-    if ((haswell_flags & supports) == haswell_flags) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::HASWELL>;
-        best_stage2 = simdjson::unified_machine<Architecture ::HASWELL>;
-        return;
-    }
-    if ((westmere_flags & supports) == westmere_flags) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::WESTMERE>;
-        best_stage2 = simdjson::unified_machine<Architecture ::WESTMERE>;
-        return;
-    }
-#endif
-#ifdef IS_ARM64
-    if (supports & instruction_set::NEON) {
-        best_stage1 = simdjson::find_structural_bits<Architecture ::ARM64>;
-        best_stage2 = simdjson::unified_machine<Architecture ::ARM64>;
-        return;
-    }
-#endif
-    std::cerr << "The processor is not supported by simdjson." << std::endl;
-    // we throw an exception since this should not be recoverable
-    throw new std::runtime_error("unsupported architecture");
 }
 /* end file src/jsonstream.cpp */
 /* begin file src/arm64/bitmanipulation.h */
@@ -3661,7 +3651,7 @@ namespace simdjson::arm64::simd {
     }
 
     // Store to array
-    really_inline void store(uint8_t dst[16]) { return vst1q_u8(dst, *this); }
+    really_inline void store(uint8_t dst[16]) const { return vst1q_u8(dst, *this); }
 
     // Saturated math
     really_inline simd8<uint8_t> saturating_add(const simd8<uint8_t> other) const { return vqaddq_u8(*this, other); }
@@ -3761,7 +3751,7 @@ namespace simdjson::arm64::simd {
     }
 
     // Store to array
-    really_inline void store(int8_t dst[16]) { return vst1q_s8(dst, *this); }
+    really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
     really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
@@ -3819,7 +3809,7 @@ namespace simdjson::arm64::simd {
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
-    really_inline void store(T ptr[64]) {
+    really_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
       this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
@@ -5125,44 +5115,68 @@ public:
   really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
 };
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+// Routines to print masks and text for debugging bitmask operations
+UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  in.store((uint8_t*)buf);
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+UNUSED static char * format_mask(uint64_t mask) {
+  static char *buf = (char*)malloc(64 + 1);
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+//
+// Finds escaped characters (characters following \).
+//
+// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
+//
+// Does this by:
+// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
+// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
+// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
+//
+// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
+// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
+// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
+// the start bit causes a carry), and leaves even-bit sequences alone.
+//
+// Example:
+//
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
+// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
+// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
+// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
+// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
+// escaped        |   x  | x x  x x  x x  x  x  |
+// desired        |   x  | x x  x x  x x  x  x  |
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+//
+really_inline uint64_t find_escaped(uint64_t escape, uint64_t &escaped_overflow) {
+  // If there was overflow, pretend the first character isn't a backslash
+  escape &= ~escaped_overflow;
+  uint64_t follows_escape = escape << 1 | escaped_overflow;
+
+  // Get sequences starting on even bits by clearing out the odd series using +
   const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-  * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
+  uint64_t odd_sequence_starts = escape & ~even_bits & ~follows_escape;
+  uint64_t sequences_starting_on_even_bits;
+  escaped_overflow = add_overflow(odd_sequence_starts, escape, &sequences_starting_on_even_bits);
+  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
 
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-  * indicates whether the sense of any edge going to the next iteration
-  * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
+  // Mask every other backslashed character as an escaped character
+  // Flip the mask for sequences that start on even bits, to correct them
+  return (even_bits ^ invert_mask) & follows_escape;
 }
 
 //
@@ -5211,7 +5225,7 @@ really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool str
 //
 really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x64<uint8_t> in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+  const uint64_t escaped = find_escaped(backslash, prev_escaped);
   const uint64_t quote = in.eq('"') & ~escaped;
   // prefix_xor flips on bits inside the string (and flips off the end quote).
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
@@ -5371,9 +5385,6 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};
@@ -6012,44 +6023,68 @@ public:
   really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
 };
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+// Routines to print masks and text for debugging bitmask operations
+UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  in.store((uint8_t*)buf);
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+UNUSED static char * format_mask(uint64_t mask) {
+  static char *buf = (char*)malloc(64 + 1);
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+//
+// Finds escaped characters (characters following \).
+//
+// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
+//
+// Does this by:
+// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
+// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
+// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
+//
+// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
+// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
+// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
+// the start bit causes a carry), and leaves even-bit sequences alone.
+//
+// Example:
+//
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
+// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
+// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
+// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
+// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
+// escaped        |   x  | x x  x x  x x  x  x  |
+// desired        |   x  | x x  x x  x x  x  x  |
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+//
+really_inline uint64_t find_escaped(uint64_t escape, uint64_t &escaped_overflow) {
+  // If there was overflow, pretend the first character isn't a backslash
+  escape &= ~escaped_overflow;
+  uint64_t follows_escape = escape << 1 | escaped_overflow;
+
+  // Get sequences starting on even bits by clearing out the odd series using +
   const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-  * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
+  uint64_t odd_sequence_starts = escape & ~even_bits & ~follows_escape;
+  uint64_t sequences_starting_on_even_bits;
+  escaped_overflow = add_overflow(odd_sequence_starts, escape, &sequences_starting_on_even_bits);
+  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
 
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-  * indicates whether the sense of any edge going to the next iteration
-  * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
+  // Mask every other backslashed character as an escaped character
+  // Flip the mask for sequences that start on even bits, to correct them
+  return (even_bits ^ invert_mask) & follows_escape;
 }
 
 //
@@ -6098,7 +6133,7 @@ really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool str
 //
 really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x64<uint8_t> in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+  const uint64_t escaped = find_escaped(backslash, prev_escaped);
   const uint64_t quote = in.eq('"') & ~escaped;
   // prefix_xor flips on bits inside the string (and flips off the end quote).
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
@@ -6258,9 +6293,6 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};
@@ -6904,44 +6936,68 @@ public:
   really_inline void scan(const uint8_t *buf, const size_t len, utf8_checker &utf8_checker);
 };
 
-// return a bitvector indicating where we have characters that end an odd-length
-// sequence of backslashes (and thus change the behavior of the next character
-// to follow). A even-length sequence of backslashes, and, for that matter, the
-// largest even-length prefix of our odd-length sequence of backslashes, simply
-// modify the behavior of the backslashes themselves.
-// We also update the prev_iter_ends_odd_backslash reference parameter to
-// indicate whether we end an iteration on an odd-length sequence of
-// backslashes, which modifies our subsequent search for odd-length
-// sequences of backslashes in an obvious way.
-really_inline uint64_t follows_odd_sequence_of(const uint64_t match, uint64_t &overflow) {
+// Routines to print masks and text for debugging bitmask operations
+UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  in.store((uint8_t*)buf);
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+UNUSED static char * format_mask(uint64_t mask) {
+  static char *buf = (char*)malloc(64 + 1);
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
+//
+// Finds escaped characters (characters following \).
+//
+// Handles runs of backslashes like \\\" and \\\\" correctly (yielding 0101 and 01010, respectively).
+//
+// Does this by:
+// - Shift the escape mask to get potentially escaped characters (characters after backslashes).
+// - Mask escaped sequences that start on *even* bits with 1010101010 (odd bits are escaped, even bits are not)
+// - Mask escaped sequences that start on *odd* bits with 0101010101 (even bits are escaped, odd bits are not)
+//
+// To distinguish between escaped sequences starting on even/odd bits, it finds the start of all
+// escape sequences, filters out the ones that start on even bits, and adds that to the mask of
+// escape sequences. This causes the addition to clear out the sequences starting on odd bits (since
+// the start bit causes a carry), and leaves even-bit sequences alone.
+//
+// Example:
+//
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+// escape         |  xxx |  xx xxx  xxx  xx xx  | Removed overflow backslash; will | it into follows_escape
+// odd_starts     |  x   |  x       x       x   | escape & ~even_bits & ~follows_escape
+// even_seq       |     c|    cxxx     c xx   c | c = carry bit -- will be masked out later
+// invert_mask    |      |     cxxx     c xx   c| even_seq << 1
+// follows_escape |   xx | x xx xxx  xxx  xx xx | Includes overflow bit
+// escaped        |   x  | x x  x x  x x  x  x  |
+// desired        |   x  | x x  x x  x x  x  x  |
+// text           |  \\\ | \\\"\\\" \\\" \\"\\" |
+//
+really_inline uint64_t find_escaped(uint64_t escape, uint64_t &escaped_overflow) {
+  // If there was overflow, pretend the first character isn't a backslash
+  escape &= ~escaped_overflow;
+  uint64_t follows_escape = escape << 1 | escaped_overflow;
+
+  // Get sequences starting on even bits by clearing out the odd series using +
   const uint64_t even_bits = 0x5555555555555555ULL;
-  const uint64_t odd_bits = ~even_bits;
-  uint64_t start_edges = match & ~(match << 1);
-  /* flip lowest if we have an odd-length run at the end of the prior
-  * iteration */
-  uint64_t even_start_mask = even_bits ^ overflow;
-  uint64_t even_starts = start_edges & even_start_mask;
-  uint64_t odd_starts = start_edges & ~even_start_mask;
-  uint64_t even_carries = match + even_starts;
+  uint64_t odd_sequence_starts = escape & ~even_bits & ~follows_escape;
+  uint64_t sequences_starting_on_even_bits;
+  escaped_overflow = add_overflow(odd_sequence_starts, escape, &sequences_starting_on_even_bits);
+  uint64_t invert_mask = sequences_starting_on_even_bits << 1; // The mask we want to return is the *escaped* bits, not escapes.
 
-  uint64_t odd_carries;
-  /* must record the carry-out of our odd-carries out of bit 63; this
-  * indicates whether the sense of any edge going to the next iteration
-  * should be flipped */
-  bool new_overflow = add_overflow(match, odd_starts, &odd_carries);
-
-  odd_carries |= overflow; /* push in bit zero as a
-                              * potential end if we had an
-                              * odd-numbered run at the
-                              * end of the previous
-                              * iteration */
-  overflow = new_overflow ? 0x1ULL : 0x0ULL;
-  uint64_t even_carry_ends = even_carries & ~match;
-  uint64_t odd_carry_ends = odd_carries & ~match;
-  uint64_t even_start_odd_end = even_carry_ends & odd_bits;
-  uint64_t odd_start_even_end = odd_carry_ends & even_bits;
-  uint64_t odd_ends = even_start_odd_end | odd_start_even_end;
-  return odd_ends;
+  // Mask every other backslashed character as an escaped character
+  // Flip the mask for sequences that start on even bits, to correct them
+  return (even_bits ^ invert_mask) & follows_escape;
 }
 
 //
@@ -6990,7 +7046,7 @@ really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool str
 //
 really_inline uint64_t json_structural_scanner::find_strings(const simd::simd8x64<uint8_t> in) {
   const uint64_t backslash = in.eq('\\');
-  const uint64_t escaped = follows_odd_sequence_of(backslash, prev_escaped);
+  const uint64_t escaped = find_escaped(backslash, prev_escaped);
   const uint64_t quote = in.eq('"') & ~escaped;
   // prefix_xor flips on bits inside the string (and flips off the end quote).
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
@@ -7150,9 +7206,6 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 template<size_t STEP_SIZE>
 int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
   if (unlikely(len > pj.byte_capacity)) {
-    std::cerr << "Your ParsedJson object only supports documents up to "
-              << pj.byte_capacity << " bytes but you are trying to process "
-              << len << " bytes" << std::endl;
     return simdjson::CAPACITY;
   }
   utf8_checker utf8_checker{};
@@ -7769,7 +7822,6 @@ UNTARGET_REGION
 /* begin file src/stage2_build_tape.cpp */
 #include <cassert>
 #include <cstring>
-#include <iostream>
 
 
 using namespace simdjson;
@@ -9628,7 +9680,7 @@ bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
   if (!string_buf || !tape ||
       !containing_scope_offset || !ret_address ||
       !structural_indexes) {
-    std::cerr << "Could not allocate memory" << std::endl;
+    // Could not allocate memory
     return false;
   }
   /*
@@ -9685,13 +9737,11 @@ bool ParsedJson::print_json(std::ostream &os) const {
   if (type == 'r') {
     how_many = tape_val & JSON_VALUE_MASK;
   } else {
-    fprintf(stderr, "Error: no starting root node?");
+    // Error: no starting root node?
     return false;
   }
   if (how_many > tape_capacity) {
-    fprintf(
-        stderr,
-        "We may be exceeding the tape capacity. Is this a valid document?\n");
+    // We may be exceeding the tape capacity. Is this a valid document?
     return false;
   }
   tape_idx++;
@@ -9778,10 +9828,10 @@ bool ParsedJson::print_json(std::ostream &os) const {
       os << ']';
       break;
     case 'r': // we start and end with the root node
-      fprintf(stderr, "should we be hitting the root node?\n");
+      // should we be hitting the root node?
       return false;
     default:
-      fprintf(stderr, "bug %c\n", type);
+      // bug?
       return false;
     }
   }
@@ -9803,7 +9853,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
   if (type == 'r') {
     how_many = tape_val & JSON_VALUE_MASK;
   } else {
-    fprintf(stderr, "Error: no starting root node?");
+    // Error: no starting root node?
     return false;
   }
   os << "\t// pointing to " << how_many << " (right after last node)\n";
@@ -9871,7 +9921,7 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
          << " (start of the scope) \n";
       break;
     case 'r': // we start and end with the root node
-      fprintf(stderr, "should we be hitting the root node?\n");
+      // should we be hitting the root node?
       return false;
     default:
       return false;
