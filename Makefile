@@ -77,7 +77,7 @@ LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/jsonstream.cpp src/simdjson.c
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
-FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/0-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/utf-8.json jsonexamples/generated/15-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/utf-8-miss.json
+FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/0-structurals.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/15-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/escape-full.json jsonexamples/generated/escape-miss.json jsonexamples/generated/escape.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/utf-8-miss.json jsonexamples/generated/utf-8.json
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include

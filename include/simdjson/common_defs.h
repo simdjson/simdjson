@@ -25,7 +25,7 @@
 #define DEBUG_BLOCK(name, block)
 #endif
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
 // Implemented using Labels as Values which works in GCC and CLANG (and maybe
 // also in Intel's compiler), but won't work in MSVC.
 #define SIMDJSON_USE_COMPUTED_GOTO
