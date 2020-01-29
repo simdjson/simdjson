@@ -112,8 +112,7 @@ Some official formats **(non-exhaustive list)**:
 // Various methods are offered to keep track of the status, like get_current_buffer_loc, 
 // get_n_parsed_docs, 
 // get_n_bytes_parsed, etc.
- JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
- JsonStream(const std::string &s, size_t batch_size = 1000000);
+ JsonStream(const simdjson::padded_string &s, size_t batch_size = 1000000);
  ```  
  **Methods**
 
