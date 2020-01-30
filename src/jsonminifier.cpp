@@ -194,7 +194,7 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
       x4 = skinnycleanm128(x4, mask4);
       int pop1 = hamming(non_whitespace & 0xFFFF);
       int pop2 = hamming(non_whitespace & UINT64_C(0xFFFFFFFF));
-      int pop3 = hamming(non_whitespace) & UINT64_C(0xFFFFFFFFFFFF));
+      int pop3 = hamming(non_whitespace & UINT64_C(0xFFFFFFFFFFFF));
       int pop4 = hamming(non_whitespace);
       _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
       _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
@@ -275,13 +275,13 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     x4 = skinnycleanm128(x4, mask4);
     int pop1 = hamming(non_whitespace & 0xFFFF);
     int pop2 = hamming(non_whitespace & UINT64_C(0xFFFFFFFF));
-      int pop3 = hamming(non_whitespace) & UINT64_C(0xFFFFFFFFFFFF));
-      int pop4 = hamming(non_whitespace);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop2), x3);
-      _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop3), x4);
-      out += pop4;
+    int pop3 = hamming(non_whitespace & UINT64_C(0xFFFFFFFFFFFF));
+    int pop4 = hamming(non_whitespace);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(out), x1);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop1), x2);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop2), x3);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(out + pop3), x4);
+    out += pop4;
   }
   *out = '\0'; // NULL termination
   return out - initout;

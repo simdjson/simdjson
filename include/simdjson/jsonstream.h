@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_JSONSTREAM_H
 #define SIMDJSON_JSONSTREAM_H
 
+#include <stdexcept>
 #include <thread>
 #include "simdjson/isadetection.h"
 #include "simdjson/padded_string.h"

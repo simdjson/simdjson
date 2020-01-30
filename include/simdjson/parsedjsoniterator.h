@@ -1,12 +1,14 @@
 #ifndef SIMDJSON_PARSEDJSONITERATOR_H
 #define SIMDJSON_PARSEDJSONITERATOR_H
 
-#include "simdjson/parsedjson.h"
-#include "simdjson/jsonformatutils.h"
 #include <cstring>
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <stdexcept>
+
+#include "simdjson/parsedjson.h"
+#include "simdjson/jsonformatutils.h"
 
 namespace simdjson {
 template <size_t max_depth> class ParsedJson::BasicIterator {

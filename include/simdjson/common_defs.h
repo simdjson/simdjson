@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_COMMON_DEFS_H
 #define SIMDJSON_COMMON_DEFS_H
 
-#include "simdjson/portability.h"
-
 #include <cassert>
+#include "simdjson/portability.h"
 
 // we support documents up to 4GB
 #define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
