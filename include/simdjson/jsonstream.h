@@ -2,6 +2,7 @@
 #define SIMDJSON_JSONSTREAM_H
 
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <thread>
 #include "simdjson/isadetection.h"
