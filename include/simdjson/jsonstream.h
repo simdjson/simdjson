@@ -132,7 +132,7 @@ private:
   inline size_t remaining() const { return str.size() - str_start; }
 
   const string_container &str;
-  size_t _batch_size;
+  size_t _batch_size; // this is actually variable!
   size_t str_start{0};
   size_t next_json{0};
   bool load_next_batch{true};
@@ -308,7 +308,7 @@ int JsonStream<string_container>::json_parse(ParsedJson &pj) {
   if (unlikely(load_next_batch)) {
     // First time loading
     if (!stage_1_thread.joinable()) {
-      _batch_size = std::min(_batch_size, remaining());
+      _batch_size = (std::min)(_batch_size, remaining());
       _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
       if (_batch_size == 0) {
         pj.error_code = simdjson::UTF8_ERROR;
@@ -345,7 +345,7 @@ int JsonStream<string_container>::json_parse(ParsedJson &pj) {
     if (remaining() - _batch_size > 0) {
       last_json_buffer_loc =
           pj.structural_indexes[find_last_json_buf_idx(buf(), _batch_size, pj)];
-      _batch_size = std::min(_batch_size, remaining() - last_json_buffer_loc);
+      _batch_size = (std::min)(_batch_size, remaining() - last_json_buffer_loc);
       if (_batch_size > 0) {
         _batch_size = trimmed_length_safe_utf8(
             (const char *)(buf() + last_json_buffer_loc), _batch_size);
@@ -401,7 +401,7 @@ int JsonStream<string_container>::json_parse(ParsedJson &pj) {
   if (unlikely(load_next_batch)) {
     advance(current_buffer_loc);
     n_bytes_parsed += current_buffer_loc;
-    _batch_size = std::min(_batch_size, remaining());
+    _batch_size = (std::min)(_batch_size, remaining());
     _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
     int stage1_is_ok = best_stage1(buf(), _batch_size, pj, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
