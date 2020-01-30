@@ -16,13 +16,11 @@ ALLCFILES="
 $SCRIPTPATH/src/arm64/intrinsics.h
 $SCRIPTPATH/src/haswell/intrinsics.h
 $SCRIPTPATH/src/westmere/intrinsics.h
-$SCRIPTPATH/src/jsoncharutils.h
 $SCRIPTPATH/src/simdprune_tables.h
 $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/src/jsonstream.cpp
 $SCRIPTPATH/src/arm64/bitmanipulation.h
 $SCRIPTPATH/src/haswell/bitmanipulation.h
 $SCRIPTPATH/src/westmere/bitmanipulation.h
@@ -66,6 +64,7 @@ $SCRIPTPATH/include/simdjson/parsedjsoniterator.h
 $SCRIPTPATH/include/simdjson/stage1_find_marks.h
 $SCRIPTPATH/include/simdjson/stage2_build_tape.h
 $SCRIPTPATH/include/simdjson/jsonparser.h
+$SCRIPTPATH/src/jsoncharutils.h
 $SCRIPTPATH/include/simdjson/jsonstream.h
 "
 

@@ -1,10 +1,10 @@
 #ifndef SIMDJSON_PARSEDJSON_H
 #define SIMDJSON_PARSEDJSON_H
 
-#include "simdjson/common_defs.h"
-#include "simdjson/simdjson.h"
 #include <cstring>
 #include <memory>
+#include "simdjson/common_defs.h"
+#include "simdjson/simdjson.h"
 
 #define JSON_VALUE_MASK 0xFFFFFFFFFFFFFF
 

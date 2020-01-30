@@ -25,7 +25,6 @@ set(SIMDJSON_SRC
   jsonioutil.cpp
   jsonminifier.cpp
   jsonparser.cpp
-  jsonstream.cpp
   stage1_find_marks.cpp
   stage2_build_tape.cpp
   parsedjson.cpp
