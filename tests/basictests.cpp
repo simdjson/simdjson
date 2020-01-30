@@ -239,6 +239,44 @@ bool stable_test() {
   return newjson == json;
 }
 
+static bool parse_json_message_issue467(char const* message, std::size_t len, size_t expectedcount) {
+    simdjson::ParsedJson pj;
+    size_t count = 0;
+    if (!pj.allocate_capacity(len)) {
+        std::cerr << "Failed to allocated memory for simdjson::ParsedJson" << std::endl;
+        return false;
+    }
+    int res;
+    simdjson::padded_string str(message,len);
+    simdjson::JsonStream js(str, pj.byte_capacity);
+    do  {
+        res = js.json_parse(pj);
+        count++;
+    } while (res == simdjson::SUCCESS_AND_HAS_MORE);
+    if (res != simdjson::SUCCESS) {
+        std::cerr << "Failed with simdjson error= " << simdjson::error_message(res) << std::endl;
+        return false;
+    }
+    if(count != expectedcount) {
+        std::cerr << "bad count" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool json_issue467() {
+    const char * single_message = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
+    const char* two_messages = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
+
+    if(!parse_json_message_issue467(single_message, strlen(single_message),1)) {
+      return false;
+    }
+    if(!parse_json_message_issue467(two_messages, strlen(two_messages),2)) {
+      return false;
+    }
+    return true;
+}
+
 // returns true if successful
 bool navigate_test() {
   std::string json = "{"
@@ -366,7 +404,8 @@ bool stream_utf8_test() {
   for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
-    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    simdjson::padded_string str(data);
+    simdjson::JsonStream js{str, i};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::ParsedJson pj;
@@ -427,7 +466,8 @@ bool stream_test() {
   for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
     printf(".");
     fflush(NULL);
-    simdjson::JsonStream js{data.c_str(), data.size(), i};
+    simdjson::padded_string str(data);
+    simdjson::JsonStream js{str, i};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::ParsedJson pj;
@@ -530,6 +570,8 @@ bool skyprophet_test() {
 
 int main() {
   std::cout << "Running basic tests." << std::endl;
+  if(!json_issue467())
+    return EXIT_FAILURE;
   if(!stream_test())
     return EXIT_FAILURE;
   if(!stream_utf8_test())

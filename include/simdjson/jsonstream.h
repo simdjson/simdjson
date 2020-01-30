@@ -7,6 +7,7 @@
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 #include "simdjson/simdjson.h"
+#include "simdjson/padded_string.h"
 
 namespace simdjson {
     /*************************************************************************************
@@ -46,24 +47,7 @@ namespace simdjson {
          * get_n_parsed_docs, get_n_bytes_parsed, etc.
          *
          * */
-        JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
-
-        /* Create a JsonStream object that can be used to parse sequentially the valid
-         * JSON documents found in the buffer "buf".
-         *
-         * The batch_size must be at least as large as the biggest document in the file, but
-         * not too large to submerge the cached memory.  We found that 1MB is
-         * somewhat a sweet spot for now.
-         *
-         * The user is expected to call the following json_parse method to parse the next
-         * valid JSON document found in the buffer.  This method can and is expected to be
-         * called in a loop.
-         *
-         * Various methods are offered to keep track of the status, like get_current_buffer_loc,
-         * get_n_parsed_docs, get_n_bytes_parsed, etc.
-         *
-         * */
-        JsonStream(const std::string &s, size_t batch_size = 1000000) : JsonStream(s.data(), s.size(), batch_size) {};
+        JsonStream(const padded_string &s, size_t batch_size = 1000000);
 
         ~JsonStream();
 
@@ -95,18 +79,6 @@ namespace simdjson {
          * and should be reused for the other documents in the buffer. */
         int json_parse(ParsedJson &pj);
 
-        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
-         * which acts as a reset.  A new JsonStream without initializing again.
-         * */
-        // todo: implement and test this function, note that _batch_size is mutable
-        // void set_new_buffer(const char *buf, size_t len);
-
-        /* Sets a new buffer for this JsonStream.  Will also reinitialize all the variables,
-         * which is basically a reset.  A new JsonStream without initializing again.
-         * */
-        // todo: implement and test this function, note that _batch_size is mutable
-        // void set_new_buffer(const std::string &s) { set_new_buffer(s.data(), s.size()); }
-
         /* Returns the location (index) of where the next document should be in the buffer.
          * Can be used for debugging, it tells the user the position of the end of the last
          * valid JSON document parsed*/
@@ -121,9 +93,20 @@ namespace simdjson {
         size_t get_n_bytes_parsed() const;
 
     private:
-        const char *_buf;
-        size_t _len;
+
+        inline const char * buf() const {
+            return str.data() + str_start;
+        }
+        inline void advance(size_t offset) {
+            str_start += offset;
+        }
+
+        inline size_t remaining() const {
+            return str.size() - str_start;
+        }
+        const simdjson::padded_string & str;
         size_t _batch_size;
+        size_t str_start{0};
         size_t next_json{0};
         bool load_next_batch{true};
         size_t current_buffer_loc{0};

@@ -80,7 +80,7 @@ if(test_per_batch) {
         for (size_t j = 0; j < 5; j++) {
             //Actual test
             simdjson::ParsedJson pj;
-            simdjson::JsonStream js{p.data(), p.size(), i};
+            simdjson::JsonStream js{p, i};
             int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
             auto start = std::chrono::steady_clock::now();
@@ -118,7 +118,7 @@ if(test_best_batch) {
 
         //Actual test
         simdjson::ParsedJson pj;
-        simdjson::JsonStream js{p.data(), p.size(), 4000000};
+        simdjson::JsonStream js{p, 4000000};
         int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
         auto start = std::chrono::steady_clock::now();
