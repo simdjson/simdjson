@@ -22,7 +22,6 @@ $SCRIPTPATH/src/simdjson.cpp
 $SCRIPTPATH/src/jsonioutil.cpp
 $SCRIPTPATH/src/jsonminifier.cpp
 $SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/src/jsonstream.cpp
 $SCRIPTPATH/src/arm64/bitmanipulation.h
 $SCRIPTPATH/src/haswell/bitmanipulation.h
 $SCRIPTPATH/src/westmere/bitmanipulation.h
