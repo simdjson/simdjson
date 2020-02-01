@@ -24,7 +24,7 @@ typedef char ret_address;
       case 'o': goto object_continue; \
     }                                 \
   }
-// For the more constrained pop_scope() situation
+// For the more constrained end_xxx() situation
 #define CONTINUE(address)             \
   {                                   \
     switch(address) {                 \
@@ -84,6 +84,26 @@ struct ParsedJsonWriter {
   really_inline bool on_start_array(uint32_t depth) {
     pj.containing_scope_offset[depth] = pj.get_current_loc();
     pj.write_tape(0, '[');
+    return true;
+  }
+  // TODO we're not checking this bool
+  really_inline bool on_end_document(uint32_t depth) {
+    // write our tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+    return true;
+  }
+  really_inline bool on_end_object(uint32_t depth) {
+    // write our tape location to the header scope
+    pj.write_tape(pj.containing_scope_offset[depth], '}');
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
+    return true;
+  }
+  really_inline bool on_end_array(uint32_t depth) {
+    // write our tape location to the header scope
+    pj.write_tape(pj.containing_scope_offset[depth], ']');
+    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
     return true;
   }
 };
@@ -158,19 +178,20 @@ struct structural_parser {
     return depth >= visitor.pj.depth_capacity;
   }
 
-  WARN_UNUSED really_inline ret_address pop_scope() {
-    // write our tape location to the header scope
+  really_inline bool end_object() {
     depth--;
-    visitor.pj.write_tape(visitor.pj.containing_scope_offset[depth], c);
-    visitor.pj.annotate_previous_loc(visitor.pj.containing_scope_offset[depth], visitor.pj.get_current_loc());
-    return visitor.pj.ret_address[depth];
+    visitor.on_end_object(depth);
+    return true;
   }
-  really_inline void pop_root_scope() {
-    // write our tape location to the header scope
-    // The root scope gets written *at* the previous location.
+  really_inline bool end_array() {
     depth--;
-    visitor.pj.annotate_previous_loc(visitor.pj.containing_scope_offset[depth], visitor.pj.get_current_loc());
-    visitor.pj.write_tape(visitor.pj.containing_scope_offset[depth], 'r');
+    visitor.on_end_array(depth);
+    return true;
+  }
+  really_inline bool end_document() {
+    depth--;
+    visitor.on_end_document(depth);
+    return true;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
@@ -237,7 +258,7 @@ struct structural_parser {
     if ( i + 1 != visitor.pj.n_structural_indexes ) {
       return visitor.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
       return visitor.on_error(TAPE_ERROR);
     }
@@ -369,7 +390,8 @@ object_begin:
     goto object_key_state;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -386,20 +408,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.visitor.pj.ret_address[parser.depth] );
 
 //
 // Array parser states
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -413,6 +437,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;

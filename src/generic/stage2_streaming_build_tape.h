@@ -22,7 +22,7 @@ struct streaming_structural_parser: structural_parser<JsonVisitor> {
     if ( this->i + 1 > this->visitor.pj.n_structural_indexes ) {
       return this->visitor.on_error(TAPE_ERROR);
     }
-    this->pop_root_scope();
+    this->end_document();
     if (this->depth != 0) {
       return this->visitor.on_error(TAPE_ERROR);
     }
@@ -95,7 +95,8 @@ object_begin:
     goto object_key_parser;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -112,20 +113,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.visitor.pj.ret_address[parser.depth] );
 
 //
 // Array parser parsers
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -139,6 +142,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
