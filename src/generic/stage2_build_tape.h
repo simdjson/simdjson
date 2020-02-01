@@ -61,6 +61,16 @@ really_parse_number(const uint8_t *const buf, JsonVisitor &visitor, const uint32
 
 struct ParsedJsonWriter {
   ParsedJson &pj;
+
+  really_inline ErrorValues on_error(ErrorValues error_code) {
+    pj.error_code = error_code;
+    return error_code;
+  }
+  really_inline ErrorValues on_success(ErrorValues success_code) {
+    pj.error_code = success_code;
+    pj.valid = true;
+    return success_code;
+  }
 };
 
 template<typename JsonVisitor>
@@ -79,11 +89,6 @@ struct structural_parser {
     JsonVisitor &_visitor,
     uint32_t _i = 0
   ) : buf{_buf}, len{_len}, visitor{_visitor}, i{_i} {}
-
-  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
-    visitor.pj.error_code = error_code;
-    return error_code;
-  }
 
   really_inline char advance_char() {
     idx = visitor.pj.structural_indexes[i++];
@@ -211,24 +216,23 @@ struct structural_parser {
     }
   }
 
-  WARN_UNUSED really_inline int finish() {
+  WARN_UNUSED really_inline ErrorValues finish() {
     // the string might not be NULL terminated.
     if ( i + 1 != visitor.pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+      return visitor.on_error(TAPE_ERROR);
     }
     pop_root_scope();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return visitor.on_error(TAPE_ERROR);
     }
     if (visitor.pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+      return visitor.on_error(TAPE_ERROR);
     }
 
-    visitor.pj.valid = true;
-    return set_error_code(SUCCESS);
+    return visitor.on_success(SUCCESS);
   }
 
-  WARN_UNUSED really_inline int error() {
+  WARN_UNUSED really_inline ErrorValues error() {
     /* We do not need the next line because this is done by visitor.pj.init(),
     * pessimistically.
     * visitor.pj.is_valid  = false;
@@ -240,11 +244,11 @@ struct structural_parser {
     * carefully,
     * all without any added cost. */
     if (depth >= visitor.pj.depth_capacity) {
-      return set_error_code(DEPTH_ERROR);
+      return visitor.on_error(DEPTH_ERROR);
     }
     switch (c) {
     case '"':
-      return set_error_code(STRING_ERROR);
+      return visitor.on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -256,19 +260,19 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return set_error_code(NUMBER_ERROR);
+      return visitor.on_error(NUMBER_ERROR);
     case 't':
-      return set_error_code(T_ATOM_ERROR);
+      return visitor.on_error(T_ATOM_ERROR);
     case 'n':
-      return set_error_code(N_ATOM_ERROR);
+      return visitor.on_error(N_ATOM_ERROR);
     case 'f':
-      return set_error_code(F_ATOM_ERROR);
+      return visitor.on_error(F_ATOM_ERROR);
     default:
-      return set_error_code(TAPE_ERROR);
+      return visitor.on_error(TAPE_ERROR);
     }
   }
 
-  WARN_UNUSED really_inline int start(ret_address finish_state) {
+  WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
     visitor.pj.init(); // sets is_valid to false
     if (len > visitor.pj.byte_capacity) {
       return CAPACITY;
@@ -277,7 +281,7 @@ struct structural_parser {
     advance_char();
     // Push the root scope (there is always at least one scope)
     if (push_start_scope(finish_state, 'r')) {
-      return DEPTH_ERROR;
+      return visitor.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }

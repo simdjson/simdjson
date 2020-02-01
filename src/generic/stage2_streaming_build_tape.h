@@ -5,33 +5,32 @@ struct streaming_structural_parser: structural_parser<JsonVisitor> {
   really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, JsonVisitor &_visitor, size_t _i) : structural_parser<JsonVisitor>(_buf, _len, _visitor, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline int start(ret_address finish_parser) {
+  WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
     this->visitor.pj.init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     this->advance_char();
     // Push the root scope (there is always at least one scope)
     if (this->push_start_scope(finish_parser, 'r')) {
-      return DEPTH_ERROR;
+      return this->visitor.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline int finish() {
+  WARN_UNUSED really_inline ErrorValues finish() {
     if ( this->i + 1 > this->visitor.pj.n_structural_indexes ) {
-      return this->set_error_code(TAPE_ERROR);
+      return this->visitor.on_error(TAPE_ERROR);
     }
     this->pop_root_scope();
     if (this->depth != 0) {
-      return this->set_error_code(TAPE_ERROR);
+      return this->visitor.on_error(TAPE_ERROR);
     }
     if (this->visitor.pj.containing_scope_offset[this->depth] != 0) {
-      return this->set_error_code(TAPE_ERROR);
+      return this->visitor.on_error(TAPE_ERROR);
     }
     bool finished = this->i + 1 == this->visitor.pj.n_structural_indexes;
-    this->visitor.pj.valid = true;
-    return this->set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    return this->visitor.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
