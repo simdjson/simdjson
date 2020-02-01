@@ -1,16 +1,17 @@
 namespace stage2 {
 
-struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+template<typename JsonVisitor>
+struct streaming_structural_parser: structural_parser<JsonVisitor> {
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, JsonVisitor &_visitor, size_t _i) : structural_parser<JsonVisitor>(_buf, _len, _visitor, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline int start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+    this->visitor.pj.init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
-    advance_char();
+    this->advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_parser, 'r')) {
+    if (this->push_start_scope(finish_parser, 'r')) {
       return DEPTH_ERROR;
     }
     return SUCCESS;
@@ -18,19 +19,19 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline int finish() {
-    if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+    if ( this->i + 1 > this->visitor.pj.n_structural_indexes ) {
+      return this->set_error_code(TAPE_ERROR);
     }
-    pop_root_scope();
-    if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+    this->pop_root_scope();
+    if (this->depth != 0) {
+      return this->set_error_code(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (this->visitor.pj.containing_scope_offset[this->depth] != 0) {
+      return this->set_error_code(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = this->i + 1 == this->visitor.pj.n_structural_indexes;
+    this->visitor.pj.valid = true;
+    return this->set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -41,7 +42,8 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  streaming_structural_parser parser(buf, len, pj, next_json);
+  ParsedJsonWriter writer{pj};
+  streaming_structural_parser parser(buf, len, writer, next_json);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
   //

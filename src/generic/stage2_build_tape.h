@@ -48,33 +48,45 @@ struct unified_machine_addresses {
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
 // This is just so we can call parse_string() from parser.parse_string() without conflict.
+template<typename JsonVisitor>
 WARN_UNUSED really_inline bool
-really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, pj, depth, idx);
+really_parse_string(const uint8_t *buf, size_t len, JsonVisitor &visitor, uint32_t depth, uint32_t idx) {
+  return parse_string(buf, len, visitor.pj, depth, idx);
 }
+template<typename JsonVisitor>
 WARN_UNUSED really_inline bool
-really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
-  return parse_number(buf, pj, offset, found_minus);
+really_parse_number(const uint8_t *const buf, JsonVisitor &visitor, const uint32_t offset, bool found_minus) {
+  return parse_number(buf, visitor.pj, offset, found_minus);
 }
 
+struct ParsedJsonWriter {
+  ParsedJson &pj;
+};
+
+template<typename JsonVisitor>
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  ParsedJson &pj;
+  JsonVisitor &visitor;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
   uint32_t depth = 0; // could have an arbitrary starting depth
 
-  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
+  really_inline structural_parser(
+    const uint8_t *_buf,
+    size_t _len,
+    JsonVisitor &_visitor,
+    uint32_t _i = 0
+  ) : buf{_buf}, len{_len}, visitor{_visitor}, i{_i} {}
 
   WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
-    pj.error_code = error_code;
+    visitor.pj.error_code = error_code;
     return error_code;
   }
 
   really_inline char advance_char() {
-    idx = pj.structural_indexes[i++];
+    idx = visitor.pj.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -106,11 +118,11 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.ret_address[depth] = continue_state;
+    visitor.pj.containing_scope_offset[depth] = visitor.pj.get_current_loc();
+    visitor.pj.ret_address[depth] = continue_state;
     depth++;
-    pj.write_tape(0, type);
-    return depth >= pj.depth_capacity;
+    visitor.pj.write_tape(0, type);
+    return depth >= visitor.pj.depth_capacity;
   }
 
   WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
@@ -118,34 +130,34 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); // Do this as early as possible
-    pj.ret_address[depth] = continue_state;
+    visitor.pj.containing_scope_offset[depth] = visitor.pj.get_current_loc();
+    visitor.pj.write_tape(0, c); // Do this as early as possible
+    visitor.pj.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= visitor.pj.depth_capacity;
   }
 
   WARN_UNUSED really_inline ret_address pop_scope() {
     // write our tape location to the header scope
     depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    return pj.ret_address[depth];
+    visitor.pj.write_tape(visitor.pj.containing_scope_offset[depth], c);
+    visitor.pj.annotate_previous_loc(visitor.pj.containing_scope_offset[depth], visitor.pj.get_current_loc());
+    return visitor.pj.ret_address[depth];
   }
   really_inline void pop_root_scope() {
     // write our tape location to the header scope
     // The root scope gets written *at* the previous location.
     depth--;
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+    visitor.pj.annotate_previous_loc(visitor.pj.containing_scope_offset[depth], visitor.pj.get_current_loc());
+    visitor.pj.write_tape(visitor.pj.containing_scope_offset[depth], 'r');
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    return !really_parse_string(buf, len, pj, depth, idx);
+    return !really_parse_string(buf, len, visitor, depth, idx);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !really_parse_number(copy, pj, offset, found_minus);
+    return !really_parse_number(copy, visitor, offset, found_minus);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
@@ -165,7 +177,7 @@ struct structural_parser {
       default:
         return false;
     }
-    pj.write_tape(0, c);
+    visitor.pj.write_tape(0, c);
     return false;
   }
 
@@ -201,25 +213,25 @@ struct structural_parser {
 
   WARN_UNUSED really_inline int finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != pj.n_structural_indexes ) {
+    if ( i + 1 != visitor.pj.n_structural_indexes ) {
       return set_error_code(TAPE_ERROR);
     }
     pop_root_scope();
     if (depth != 0) {
       return set_error_code(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
+    if (visitor.pj.containing_scope_offset[depth] != 0) {
       return set_error_code(TAPE_ERROR);
     }
 
-    pj.valid = true;
+    visitor.pj.valid = true;
     return set_error_code(SUCCESS);
   }
 
   WARN_UNUSED really_inline int error() {
-    /* We do not need the next line because this is done by pj.init(),
+    /* We do not need the next line because this is done by visitor.pj.init(),
     * pessimistically.
-    * pj.is_valid  = false;
+    * visitor.pj.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -227,7 +239,7 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= pj.depth_capacity) {
+    if (depth >= visitor.pj.depth_capacity) {
       return set_error_code(DEPTH_ERROR);
     }
     switch (c) {
@@ -257,8 +269,8 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline int start(ret_address finish_state) {
-    pj.init(); // sets is_valid to false
-    if (len > pj.byte_capacity) {
+    visitor.pj.init(); // sets is_valid to false
+    if (len > visitor.pj.byte_capacity) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
@@ -282,7 +294,8 @@ struct structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  structural_parser parser(buf, len, pj);
+  ParsedJsonWriter writer{pj};
+  structural_parser parser(buf, len, writer);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
 
