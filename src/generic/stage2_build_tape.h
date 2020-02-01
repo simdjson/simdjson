@@ -106,6 +106,19 @@ struct ParsedJsonWriter {
     pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
     return true;
   }
+
+  really_inline bool on_true_atom() {
+    pj.write_tape(0, 't');
+    return true;
+  }
+  really_inline bool on_false_atom() {
+    pj.write_tape(0, 'f');
+    return true;
+  }
+  really_inline bool on_null_atom() {
+    pj.write_tape(0, 'n');
+    return true;
+  }
 };
 
 template<typename JsonVisitor>
@@ -208,18 +221,20 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
     switch (c) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; };
+        if (!is_valid_true_atom(copy + offset)) { return true; }
+        visitor.on_true_atom();
         break;
       case 'f':
         if (!is_valid_false_atom(copy + offset)) { return true; }
+        visitor.on_false_atom();
         break;
       case 'n':
         if (!is_valid_null_atom(copy + offset)) { return true; }
+        visitor.on_null_atom();
         break;
       default:
-        return false;
+        return true;
     }
-    visitor.pj.write_tape(0, c);
     return false;
   }
 
