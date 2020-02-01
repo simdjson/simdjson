@@ -71,6 +71,21 @@ struct ParsedJsonWriter {
     pj.valid = true;
     return success_code;
   }
+  really_inline bool on_start_document(uint32_t depth) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, 'r');
+    return true;
+  }
+  really_inline bool on_start_object(uint32_t depth) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, '{');
+    return true;
+  }
+  really_inline bool on_start_array(uint32_t depth) {
+    pj.containing_scope_offset[depth] = pj.get_current_loc();
+    pj.write_tape(0, '[');
+    return true;
+  }
 };
 
 template<typename JsonVisitor>
@@ -122,21 +137,22 @@ struct structural_parser {
     return result;
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
-    visitor.pj.containing_scope_offset[depth] = visitor.pj.get_current_loc();
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    visitor.on_start_document(depth);
     visitor.pj.ret_address[depth] = continue_state;
     depth++;
-    visitor.pj.write_tape(0, type);
     return depth >= visitor.pj.depth_capacity;
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
-    return push_start_scope(continue_state, c);
+  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    visitor.on_start_object(depth);
+    visitor.pj.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= visitor.pj.depth_capacity;
   }
 
-  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
-    visitor.pj.containing_scope_offset[depth] = visitor.pj.get_current_loc();
-    visitor.pj.write_tape(0, c); // Do this as early as possible
+  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    visitor.on_start_array(depth);
     visitor.pj.ret_address[depth] = continue_state;
     depth++;
     return depth >= visitor.pj.depth_capacity;
@@ -206,10 +222,10 @@ struct structural_parser {
       FAIL_IF( parse_number(true) );
       return continue_state;
     case '{':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_object(continue_state) );
       return addresses.object_begin;
     case '[':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_array(continue_state) );
       return addresses.array_begin;
     default:
       return addresses.error;
@@ -280,7 +296,7 @@ struct structural_parser {
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_state, 'r')) {
+    if (start_document(finish_state)) {
       return visitor.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
@@ -308,10 +324,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );

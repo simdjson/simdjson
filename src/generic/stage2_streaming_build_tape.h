@@ -11,7 +11,7 @@ struct streaming_structural_parser: structural_parser<JsonVisitor> {
     // Advance to the first character as soon as possible
     this->advance_char();
     // Push the root scope (there is always at least one scope)
-    if (this->push_start_scope(finish_parser, 'r')) {
+    if (this->start_document(finish_parser)) {
       return this->visitor.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
@@ -50,10 +50,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
