@@ -3,7 +3,7 @@
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
 
-namespace string_parser {
+namespace stringparsing {
 
 // begin copypasta
 // These chars yield themselves: " \ /
@@ -123,4 +123,4 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
   return nullptr;
 }
 
-}
+} // namespace stringparsing

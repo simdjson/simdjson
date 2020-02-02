@@ -47,13 +47,6 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-// This is just so we can call parse_string() from parser.parse_string() without conflict.
-template<typename JsonVisitor>
-WARN_UNUSED really_inline bool
-really_parse_number(const uint8_t *const buf, JsonVisitor &visitor, const uint32_t offset, bool found_minus) {
-  return parse_number(buf, visitor.pj, offset, found_minus);
-}
-
 struct ParsedJsonWriter {
   ParsedJson &pj;
 
@@ -132,6 +125,19 @@ struct ParsedJsonWriter {
     // be NULL terminated? It comes at a small cost
     *dst = 0;
     pj.current_string_buf_loc = dst + 1;
+    return true;
+  }
+
+  really_inline bool on_number_s64(int64_t value) {
+    pj.write_tape_s64(value);
+    return true;
+  }
+  really_inline bool on_number_u64(uint64_t value) {
+    pj.write_tape_u64(value);
+    return true;
+  }
+  really_inline bool on_number_double(double value) {
+    pj.write_tape_double(value);
     return true;
   }
 };
@@ -224,7 +230,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_string() {
     uint8_t *dst = visitor.on_start_string();
-    dst = string_parser::parse_string(buf, idx, dst);
+    dst = stringparsing::parse_string(buf, idx, dst);
     if (dst == nullptr) {
       return true;
     }
@@ -232,7 +238,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !really_parse_number(copy, visitor, offset, found_minus);
+    return !numberparsing::parse_number(copy, visitor.pj, offset, found_minus);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
