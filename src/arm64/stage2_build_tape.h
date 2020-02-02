@@ -5,6 +5,7 @@
 
 #ifdef IS_ARM64
 
+#include "parsed_json_writer.h"
 #include "simdjson/stage2_build_tape.h"
 #include "arm64/stringparsing.h"
 #include "arm64/numberparsing.h"

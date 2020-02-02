@@ -5,6 +5,7 @@
 
 #ifdef IS_X86_64
 
+#include "parsed_json_writer.h"
 #include "simdjson/stage2_build_tape.h"
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
