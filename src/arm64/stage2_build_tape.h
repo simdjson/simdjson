@@ -2,10 +2,15 @@
 #define SIMDJSON_ARM64_STAGE2_BUILD_TAPE_H
 
 #include "simdjson/portability.h"
+#include "parsed_json_writer.h"
 
 #ifdef IS_ARM64
 
-#include "parsed_json_writer.h"
+// Select the output implementation
+namespace simdjson::arm64 {
+  using JsonWriter = ParsedJsonWriter;
+}
+
 #include "simdjson/stage2_build_tape.h"
 #include "arm64/stringparsing.h"
 #include "arm64/numberparsing.h"

@@ -1,35 +1,35 @@
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJsonWriter &_visitor, size_t _i) : structural_parser(_buf, _len, _visitor, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, JsonWriter &_writer, size_t _i) : structural_parser(_buf, _len, _writer, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
-    visitor.pj.init(); // sets is_valid to false
+    writer.pj.init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_parser)) {
-      return visitor.on_error(DEPTH_ERROR);
+      return writer.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues finish() {
-    if ( i + 1 > visitor.pj.n_structural_indexes ) {
-      return visitor.on_error(TAPE_ERROR);
+    if ( i + 1 > writer.pj.n_structural_indexes ) {
+      return writer.on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
-      return visitor.on_error(TAPE_ERROR);
+      return writer.on_error(TAPE_ERROR);
     }
-    if (visitor.pj.containing_scope_offset[depth] != 0) {
-      return visitor.on_error(TAPE_ERROR);
+    if (writer.pj.containing_scope_offset[depth] != 0) {
+      return writer.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == visitor.pj.n_structural_indexes;
-    return visitor.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == writer.pj.n_structural_indexes;
+    return writer.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -40,7 +40,7 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  ParsedJsonWriter writer{pj};
+  JsonWriter writer{pj};
   streaming_structural_parser parser(buf, len, writer, next_json);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
@@ -119,7 +119,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.visitor.pj.ret_address[parser.depth] );
+  CONTINUE( parser.writer.pj.ret_address[parser.depth] );
 
 //
 // Array parser parsers

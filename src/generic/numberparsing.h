@@ -146,7 +146,7 @@ really_inline double subnormal_power10(double base, int64_t negative_exponent) {
 // Note: a redesign could avoid this function entirely.
 //
 never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+                              const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -377,10 +377,10 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
 really_inline bool parse_number(const uint8_t *const buf,
                                 const uint32_t offset,
                                 bool found_minus,
-                                ParsedJsonWriter &visitor) {
+                                JsonWriter &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  visitor.pj.write_tape_s64(0);           // always write zero
+  writer.pj.write_tape_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -526,18 +526,18 @@ really_inline bool parse_number(const uint8_t *const buf,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, visitor.pj, offset, found_minus);
+        return parse_float(buf, writer.pj, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, visitor.pj, offset, found_minus);
+      return parse_float(buf, writer.pj, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    visitor.pj.write_tape_double(d);
+    writer.pj.write_tape_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -545,10 +545,10 @@ really_inline bool parse_number(const uint8_t *const buf,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, visitor.pj, offset, found_minus);
+      return parse_large_integer(buf, writer.pj, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    visitor.pj.write_tape_s64(i);
+    writer.pj.write_tape_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
