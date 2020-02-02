@@ -1,36 +1,35 @@
 namespace stage2 {
 
-template<typename JsonVisitor>
-struct streaming_structural_parser: structural_parser<JsonVisitor> {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, JsonVisitor &_visitor, size_t _i) : structural_parser<JsonVisitor>(_buf, _len, _visitor, _i) {}
+struct streaming_structural_parser: structural_parser {
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJsonWriter &_visitor, size_t _i) : structural_parser(_buf, _len, _visitor, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
-    this->visitor.pj.init(); // sets is_valid to false
+    visitor.pj.init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
-    this->advance_char();
+    advance_char();
     // Push the root scope (there is always at least one scope)
-    if (this->start_document(finish_parser)) {
-      return this->visitor.on_error(DEPTH_ERROR);
+    if (start_document(finish_parser)) {
+      return visitor.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues finish() {
-    if ( this->i + 1 > this->visitor.pj.n_structural_indexes ) {
-      return this->visitor.on_error(TAPE_ERROR);
+    if ( i + 1 > visitor.pj.n_structural_indexes ) {
+      return visitor.on_error(TAPE_ERROR);
     }
-    this->end_document();
-    if (this->depth != 0) {
-      return this->visitor.on_error(TAPE_ERROR);
+    end_document();
+    if (depth != 0) {
+      return visitor.on_error(TAPE_ERROR);
     }
-    if (this->visitor.pj.containing_scope_offset[this->depth] != 0) {
-      return this->visitor.on_error(TAPE_ERROR);
+    if (visitor.pj.containing_scope_offset[depth] != 0) {
+      return visitor.on_error(TAPE_ERROR);
     }
-    bool finished = this->i + 1 == this->visitor.pj.n_structural_indexes;
-    return this->visitor.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == visitor.pj.n_structural_indexes;
+    return visitor.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 

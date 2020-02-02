@@ -47,11 +47,10 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-template<typename JsonVisitor>
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  JsonVisitor &visitor;
+  ParsedJsonWriter &visitor;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
@@ -60,7 +59,7 @@ struct structural_parser {
   really_inline structural_parser(
     const uint8_t *_buf,
     size_t _len,
-    JsonVisitor &_visitor,
+    ParsedJsonWriter &_visitor,
     uint32_t _i = 0
   ) : buf{_buf}, len{_len}, visitor{_visitor}, i{_i} {}
 
