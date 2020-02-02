@@ -238,7 +238,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !numberparsing::parse_number(copy, visitor.pj, offset, found_minus);
+    return !numberparsing::parse_number(copy, offset, found_minus, visitor);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
