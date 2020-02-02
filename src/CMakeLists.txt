@@ -34,6 +34,7 @@ set(SIMDJSON_SRC
 
 # Load headers and sources
 set(SIMDJSON_SRC_HEADERS
+  parsed_json_writer.h
   jsoncharutils.h
   simdprune_tables.h
   arm64/bitmask.h
