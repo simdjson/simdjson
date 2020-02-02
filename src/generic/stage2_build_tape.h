@@ -50,11 +50,6 @@ struct unified_machine_addresses {
 // This is just so we can call parse_string() from parser.parse_string() without conflict.
 template<typename JsonVisitor>
 WARN_UNUSED really_inline bool
-really_parse_string(const uint8_t *buf, size_t len, JsonVisitor &visitor, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, visitor.pj, depth, idx);
-}
-template<typename JsonVisitor>
-WARN_UNUSED really_inline bool
 really_parse_number(const uint8_t *const buf, JsonVisitor &visitor, const uint32_t offset, bool found_minus) {
   return parse_number(buf, visitor.pj, offset, found_minus);
 }
@@ -117,6 +112,26 @@ struct ParsedJsonWriter {
   }
   really_inline bool on_null_atom() {
     pj.write_tape(0, 'n');
+    return true;
+  }
+
+  really_inline uint8_t *on_start_string() {
+    /* we advance the point, accounting for the fact that we have a NULL
+      * termination         */
+    pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
+    return pj.current_string_buf_loc + sizeof(uint32_t);
+  }
+
+  really_inline bool on_end_string(uint8_t *dst) {
+    uint32_t str_length = dst - (pj.current_string_buf_loc + sizeof(uint32_t));
+    // TODO check for overflow in case someone has a crazy string (>=4GB?)
+    // But only add the overflow check when the document itself exceeds 4GB
+    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+    memcpy(pj.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    // NULL termination is still handy if you expect all your strings to
+    // be NULL terminated? It comes at a small cost
+    *dst = 0;
+    pj.current_string_buf_loc = dst + 1;
     return true;
   }
 };
@@ -194,21 +209,26 @@ struct structural_parser {
   really_inline bool end_object() {
     depth--;
     visitor.on_end_object(depth);
-    return true;
+    return false;
   }
   really_inline bool end_array() {
     depth--;
     visitor.on_end_array(depth);
-    return true;
+    return false;
   }
   really_inline bool end_document() {
     depth--;
     visitor.on_end_document(depth);
-    return true;
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    return !really_parse_string(buf, len, visitor, depth, idx);
+    uint8_t *dst = visitor.on_start_string();
+    dst = string_parser::parse_string(buf, idx, dst);
+    if (dst == nullptr) {
+      return true;
+    }
+    return !visitor.on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
