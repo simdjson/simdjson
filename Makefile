@@ -68,7 +68,7 @@ LIBHEADERS_GENERIC=src/generic/numberparsing.h src/generic/stage1_find_marks.h s
 LIBHEADERS_ARM64=      src/arm64/bitmanipulation.h    src/arm64/bitmask.h    src/arm64/intrinsics.h    src/arm64/numberparsing.h    src/arm64/simd.h    src/arm64/stage1_find_marks.h    src/arm64/stage2_build_tape.h    src/arm64/stringparsing.h
 LIBHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/haswell/intrinsics.h  src/haswell/numberparsing.h  src/haswell/simd.h  src/haswell/stage1_find_marks.h  src/haswell/stage2_build_tape.h  src/haswell/stringparsing.h
 LIBHEADERS_WESTMERE=src/westmere/bitmanipulation.h src/westmere/bitmask.h src/westmere/intrinsics.h src/westmere/numberparsing.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
-LIBHEADERS=src/parsed_json_writer.h src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
+LIBHEADERS=src/parsedjsonwriter.h src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
 
 PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)

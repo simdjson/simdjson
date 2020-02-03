@@ -2,7 +2,7 @@
 #define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 
 #include "simdjson/portability.h"
-#include "parsed_json_writer.h"
+#include "parsedjsonwriter.h"
 
 #ifdef IS_X86_64
 
