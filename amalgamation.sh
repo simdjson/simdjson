@@ -11,68 +11,78 @@ echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/
 AMAL_H="simdjson.h"
 AMAL_C="simdjson.cpp"
 
+SRCPATH="$SCRIPTPATH/src"
+INCLUDEPATH="$SCRIPTPATH/include"
+
 # this list excludes the "src/generic headers"
 ALLCFILES="
-$SCRIPTPATH/src/arm64/intrinsics.h
-$SCRIPTPATH/src/haswell/intrinsics.h
-$SCRIPTPATH/src/westmere/intrinsics.h
-$SCRIPTPATH/src/simdprune_tables.h
-$SCRIPTPATH/src/simdjson.cpp
-$SCRIPTPATH/src/jsonioutil.cpp
-$SCRIPTPATH/src/jsonminifier.cpp
-$SCRIPTPATH/src/jsonparser.cpp
-$SCRIPTPATH/src/arm64/bitmanipulation.h
-$SCRIPTPATH/src/haswell/bitmanipulation.h
-$SCRIPTPATH/src/westmere/bitmanipulation.h
-$SCRIPTPATH/src/arm64/numberparsing.h
-$SCRIPTPATH/src/haswell/numberparsing.h
-$SCRIPTPATH/src/westmere/numberparsing.h
-$SCRIPTPATH/src/arm64/bitmask.h
-$SCRIPTPATH/src/haswell/bitmask.h
-$SCRIPTPATH/src/westmere/bitmask.h
-$SCRIPTPATH/src/arm64/simd.h
-$SCRIPTPATH/src/haswell/simd.h
-$SCRIPTPATH/src/westmere/simd.h
-$SCRIPTPATH/src/arm64/stage1_find_marks.h
-$SCRIPTPATH/src/haswell/stage1_find_marks.h
-$SCRIPTPATH/src/westmere/stage1_find_marks.h
-$SCRIPTPATH/src/stage1_find_marks.cpp
-$SCRIPTPATH/src/arm64/stringparsing.h
-$SCRIPTPATH/src/haswell/stringparsing.h
-$SCRIPTPATH/src/westmere/stringparsing.h
-$SCRIPTPATH/src/stage2_build_tape.cpp
-$SCRIPTPATH/src/arm64/stage2_build_tape.h
-$SCRIPTPATH/src/haswell/stage2_build_tape.h
-$SCRIPTPATH/src/westmere/stage2_build_tape.h
-$SCRIPTPATH/src/parsedjson.cpp
-$SCRIPTPATH/src/parsedjsoniterator.cpp
+simdjson.cpp
+jsonioutil.cpp
+jsonminifier.cpp
+jsonparser.cpp
+stage1_find_marks.cpp
+stage2_build_tape.cpp
+parsedjson.cpp
+parsedjsoniterator.cpp
 "
 
 # order matters
 ALLCHEADERS="
-$SCRIPTPATH/include/simdjson/simdjson_version.h
-$SCRIPTPATH/include/simdjson/portability.h
-$SCRIPTPATH/include/simdjson/isadetection.h
-$SCRIPTPATH/include/simdjson/jsonformatutils.h
-$SCRIPTPATH/include/simdjson/simdjson.h
-$SCRIPTPATH/include/simdjson/common_defs.h
-$SCRIPTPATH/include/simdjson/padded_string.h
-$SCRIPTPATH/include/simdjson/jsonioutil.h
-$SCRIPTPATH/include/simdjson/jsonminifier.h
-$SCRIPTPATH/include/simdjson/parsedjson.h
-$SCRIPTPATH/include/simdjson/parsedjsoniterator.h
-$SCRIPTPATH/include/simdjson/stage1_find_marks.h
-$SCRIPTPATH/include/simdjson/stage2_build_tape.h
-$SCRIPTPATH/include/simdjson/jsonparser.h
-$SCRIPTPATH/src/jsoncharutils.h
-$SCRIPTPATH/include/simdjson/jsonstream.h
+simdjson/simdjson_version.h
+simdjson/portability.h
+simdjson/isadetection.h
+simdjson/jsonformatutils.h
+simdjson/simdjson.h
+simdjson/common_defs.h
+simdjson/padded_string.h
+simdjson/jsonioutil.h
+simdjson/jsonminifier.h
+simdjson/parsedjson.h
+simdjson/parsedjsoniterator.h
+simdjson/stage1_find_marks.h
+simdjson/stage2_build_tape.h
+simdjson/jsonparser.h
+simdjson/jsonstream.h
 "
 
-for i in ${ALLCHEADERS} ${ALLCFILES}; do
-    test -e $i && continue
-    echo "FATAL: source file [$i] not found."
+found_includes=()
+
+for file in ${ALLCFILES}; do
+    test -e "$SRCPATH/$file" && continue
+    echo "FATAL: source file [$SRCPATH/$file] not found."
     exit 127
 done
+
+for file in ${ALLCHEADERS}; do
+    test -e "$INCLUDEPATH/$file" && continue
+    echo "FATAL: source file [$INCLUDEPATH/$file] not found."
+    exit 127
+done
+
+function doinclude()
+{
+    file=$1
+    line="${@:2}"
+    if [ -f $INCLUDEPATH/$file ]; then
+        if [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
+            found_includes+=("$file")
+            dofile $INCLUDEPATH/$file
+        fi;
+    elif [ -f $SRCPATH/$file ]; then
+        # generic includes are included multiple times
+        if [[ "${file}" == *'generic/'*'.h' ]]; then
+            dofile $SRCPATH/$file
+        elif [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
+            found_includes+=("$file")
+            dofile $SRCPATH/$file
+        else
+            echo "/* $file already included: $line */"
+        fi
+    else
+      # If we don't recognize it, just emit the #include
+      echo "$line"
+    fi
+}
 
 function dofile()
 {
@@ -86,23 +96,15 @@ function dofile()
             file=$(echo $line| cut -d'"' -f 2)
 
             if [[ "${file}" == '../'* ]]; then
-              file=$(echo $file| cut -d'/' -f 2-)
+                file=$(echo $file| cut -d'/' -f 2-)
             fi;
 
-            # we ignore simdjson headers (except src/generic/*.h); they are handled in the above list
-            if [ -f include/$file ]; then
-              continue;
-            elif [ -f src/$file ]; then
-              # we paste the contents of src/generic/*.h
-              if [[ "${file}" == *'generic/'*'.h' ]]; then
-                echo "$(<src/$file)"
-              fi;
-              continue;
-            fi;
-        fi;
-
-        # Otherwise we simply copy the line
-        echo "$line"
+            # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
+            doinclude $file $line
+        else
+            # Otherwise we simply copy the line
+            echo "$line"
+        fi
     done < "$1"
     echo "/* end file $RELFILE */"
 }
@@ -111,7 +113,7 @@ echo "Creating ${AMAL_H}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_H}"
 {
     for h in ${ALLCHEADERS}; do
-        dofile $h
+        doinclude $h "ERROR $h not found"
     done
 } >> "${AMAL_H}"
 
@@ -128,11 +130,10 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > "${AMAL_C}"
     echo "#endif"
     echo ""
 
-    for h in ${ALLCFILES}; do
-        dofile $h
+    for file in ${ALLCFILES}; do
+        dofile "$SRCPATH/$file"
     done
 } >> "${AMAL_C}"
-
 
 
 DEMOCPP="amalgamation_demo.cpp"
