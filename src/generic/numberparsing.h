@@ -145,7 +145,7 @@ really_inline double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
+never_inline bool parse_float(const uint8_t *const buf, JsonWriter &writer,
                               const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
@@ -269,7 +269,7 @@ never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  writer.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -285,7 +285,7 @@ never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 // This function will almost never be called!!!
 //
 never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             ParsedJson &pj,
+                                             JsonWriter &writer,
                                              const uint32_t offset,
                                              bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -334,14 +334,14 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      writer.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      writer.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -354,12 +354,12 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      writer.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      writer.on_number_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -380,7 +380,7 @@ really_inline bool parse_number(const uint8_t *const buf,
                                 JsonWriter &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.pj.write_tape_s64(0);           // always write zero
+  writer.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -526,18 +526,18 @@ really_inline bool parse_number(const uint8_t *const buf,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, writer.pj, offset, found_minus);
+        return parse_float(buf, writer, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, writer.pj, offset, found_minus);
+      return parse_float(buf, writer, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    writer.pj.write_tape_double(d);
+    writer.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -545,10 +545,10 @@ really_inline bool parse_number(const uint8_t *const buf,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, writer.pj, offset, found_minus);
+      return parse_large_integer(buf, writer, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    writer.pj.write_tape_s64(i);
+    writer.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
