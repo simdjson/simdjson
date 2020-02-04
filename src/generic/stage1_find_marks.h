@@ -321,13 +321,13 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
   utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
   utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
 }
@@ -391,34 +391,34 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.doc.byte_capacity)) {
-    return simdjson::CAPACITY;
+int find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+  if (unlikely(len > parser.byte_capacity)) {
+    return CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.parser.structural_indexes.get()};
+  json_structural_scanner scanner{parser.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
   // we might tolerate an unclosed string if streaming is true
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  ErrorValues error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != SUCCESS)) {
     return error;
   }
-  pj.parser.n_structural_indexes = scanner.structural_indexes.tail - pj.parser.structural_indexes.get();
+  parser.n_structural_indexes = scanner.structural_indexes.tail - parser.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
-  if (unlikely(pj.parser.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+  if (unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
-  if (unlikely(pj.parser.structural_indexes[pj.parser.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+    return UNEXPECTED_ERROR;
   }
-  if (len != pj.parser.structural_indexes[pj.parser.n_structural_indexes - 1]) {
+  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    pj.parser.structural_indexes[pj.parser.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
-  pj.parser.structural_indexes[pj.parser.n_structural_indexes] = 0;
+  parser.structural_indexes[parser.n_structural_indexes] = 0;
   return utf8_checker.errors();
 }
 

@@ -58,7 +58,7 @@ namespace simdjson {
 
 template <>
 int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return westmere::stage1::find_structural_bits<64>(buf, len, pj, streaming);
+  return westmere::stage1::find_structural_bits<64>(buf, len, pj.parser, streaming);
 }
 
 } // namespace simdjson
