@@ -19,11 +19,11 @@ ALLCFILES="
 simdjson.cpp
 jsonioutil.cpp
 jsonminifier.cpp
+document.cpp
 jsonparser.cpp
 stage1_find_marks.cpp
 stage2_build_tape.cpp
 parsedjson.cpp
-parsedjsoniterator.cpp
 "
 
 # order matters
@@ -37,8 +37,9 @@ simdjson/common_defs.h
 simdjson/padded_string.h
 simdjson/jsonioutil.h
 simdjson/jsonminifier.h
+simdjson/document.h
+simdjson/document/iterator.h
 simdjson/parsedjson.h
-simdjson/parsedjsoniterator.h
 simdjson/stage1_find_marks.h
 simdjson/stage2_build_tape.h
 simdjson/jsonparser.h

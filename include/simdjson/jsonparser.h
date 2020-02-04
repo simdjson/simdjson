@@ -4,7 +4,6 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/parsedjson.h"
-#include "simdjson/parsedjsoniterator.h"
 #include "simdjson/simdjson.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
@@ -18,7 +17,7 @@ namespace simdjson {
 template <Architecture T>
 int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
                               bool realloc_if_needed = true) {
-  if (pj.byte_capacity < len) {
+  if (pj.doc.byte_capacity < len) {
     return simdjson::CAPACITY;
   }
   bool reallocated = false;
@@ -30,12 +29,12 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
       memcpy((void *)buf, tmp_buf, len);
       reallocated = true;
   }   // if(realloc_if_needed) {
-  int stage1_is_ok = simdjson::find_structural_bits<T>(buf, len, pj);
-  if (stage1_is_ok != simdjson::SUCCESS) {
+  int stage1_err = simdjson::find_structural_bits<T>(buf, len, pj);
+  if (stage1_err != simdjson::SUCCESS) {
     if (reallocated) { // must free before we exit
       aligned_free((void *)buf);
     }
-    return pj.error_code;
+    return stage1_err;
   }
   int res = unified_machine<T>(buf, len, pj);
   if (reallocated) {

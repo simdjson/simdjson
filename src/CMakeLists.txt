@@ -27,8 +27,8 @@ set(SIMDJSON_SRC
   jsonparser.cpp
   stage1_find_marks.cpp
   stage2_build_tape.cpp
+  document.cpp
   parsedjson.cpp
-  parsedjsoniterator.cpp
   simdjson.cpp
 )
 

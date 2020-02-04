@@ -64,7 +64,7 @@ struct structural_parser {
   ) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
 
   really_inline char advance_char() {
-    idx = pj.structural_indexes[i++];
+    idx = pj.doc.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -97,23 +97,23 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     pj.on_start_document(depth);
-    pj.ret_address[depth] = continue_state;
+    pj.doc.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= pj.doc.depth_capacity;
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
     pj.on_start_object(depth);
-    pj.ret_address[depth] = continue_state;
+    pj.doc.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= pj.doc.depth_capacity;
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
     pj.on_start_array(depth);
-    pj.ret_address[depth] = continue_state;
+    pj.doc.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= pj.doc.depth_capacity;
   }
 
   really_inline bool end_object() {
@@ -200,14 +200,14 @@ struct structural_parser {
 
   WARN_UNUSED really_inline ErrorValues finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != pj.n_structural_indexes ) {
+    if ( i + 1 != pj.doc.n_structural_indexes ) {
       return pj.on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
       return pj.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
+    if (pj.doc.containing_scope_offset[depth] != 0) {
       return pj.on_error(TAPE_ERROR);
     }
 
@@ -225,7 +225,7 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= pj.depth_capacity) {
+    if (depth >= pj.doc.depth_capacity) {
       return pj.on_error(DEPTH_ERROR);
     }
     switch (c) {
@@ -256,7 +256,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
     pj.init(); // sets is_valid to false
-    if (len > pj.byte_capacity) {
+    if (len > pj.doc.byte_capacity) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
@@ -359,7 +359,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.pj.ret_address[parser.depth] );
+  CONTINUE( parser.pj.doc.ret_address[parser.depth] );
 
 //
 // Array parser states
