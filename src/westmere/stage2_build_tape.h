@@ -2,14 +2,8 @@
 #define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 
 #include "simdjson/portability.h"
-#include "parsedjsonwriter.h"
 
 #ifdef IS_X86_64
-
-// Select the output implementation
-namespace simdjson::westmere {
-  using JsonWriter = ParsedJsonWriter;
-}
 
 #include "simdjson/stage2_build_tape.h"
 #include "westmere/stringparsing.h"

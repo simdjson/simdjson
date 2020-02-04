@@ -50,7 +50,7 @@ struct unified_machine_addresses {
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  JsonWriter &writer;
+  ParsedJson &pj;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
@@ -59,12 +59,12 @@ struct structural_parser {
   really_inline structural_parser(
     const uint8_t *_buf,
     size_t _len,
-    JsonWriter &_writer,
+    ParsedJson &_pj,
     uint32_t _i = 0
-  ) : buf{_buf}, len{_len}, writer{_writer}, i{_i} {}
+  ) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
 
   really_inline char advance_char() {
-    idx = writer.pj.structural_indexes[i++];
+    idx = pj.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -96,53 +96,53 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
-    writer.on_start_document(depth);
-    writer.pj.ret_address[depth] = continue_state;
+    pj.on_start_document(depth);
+    pj.ret_address[depth] = continue_state;
     depth++;
-    return depth >= writer.pj.depth_capacity;
+    return depth >= pj.depth_capacity;
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
-    writer.on_start_object(depth);
-    writer.pj.ret_address[depth] = continue_state;
+    pj.on_start_object(depth);
+    pj.ret_address[depth] = continue_state;
     depth++;
-    return depth >= writer.pj.depth_capacity;
+    return depth >= pj.depth_capacity;
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
-    writer.on_start_array(depth);
-    writer.pj.ret_address[depth] = continue_state;
+    pj.on_start_array(depth);
+    pj.ret_address[depth] = continue_state;
     depth++;
-    return depth >= writer.pj.depth_capacity;
+    return depth >= pj.depth_capacity;
   }
 
   really_inline bool end_object() {
     depth--;
-    writer.on_end_object(depth);
+    pj.on_end_object(depth);
     return false;
   }
   really_inline bool end_array() {
     depth--;
-    writer.on_end_array(depth);
+    pj.on_end_array(depth);
     return false;
   }
   really_inline bool end_document() {
     depth--;
-    writer.on_end_document(depth);
+    pj.on_end_document(depth);
     return false;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    uint8_t *dst = writer.on_start_string();
+    uint8_t *dst = pj.on_start_string();
     dst = stringparsing::parse_string(buf, idx, dst);
     if (dst == nullptr) {
       return true;
     }
-    return !writer.on_end_string(dst);
+    return !pj.on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !numberparsing::parse_number(copy, offset, found_minus, writer);
+    return !numberparsing::parse_number(copy, offset, found_minus, pj);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
@@ -152,15 +152,15 @@ struct structural_parser {
     switch (c) {
       case 't':
         if (!is_valid_true_atom(copy + offset)) { return true; }
-        writer.on_true_atom();
+        pj.on_true_atom();
         break;
       case 'f':
         if (!is_valid_false_atom(copy + offset)) { return true; }
-        writer.on_false_atom();
+        pj.on_false_atom();
         break;
       case 'n':
         if (!is_valid_null_atom(copy + offset)) { return true; }
-        writer.on_null_atom();
+        pj.on_null_atom();
         break;
       default:
         return true;
@@ -200,24 +200,24 @@ struct structural_parser {
 
   WARN_UNUSED really_inline ErrorValues finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != writer.pj.n_structural_indexes ) {
-      return writer.on_error(TAPE_ERROR);
+    if ( i + 1 != pj.n_structural_indexes ) {
+      return pj.on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
-      return writer.on_error(TAPE_ERROR);
+      return pj.on_error(TAPE_ERROR);
     }
-    if (writer.pj.containing_scope_offset[depth] != 0) {
-      return writer.on_error(TAPE_ERROR);
+    if (pj.containing_scope_offset[depth] != 0) {
+      return pj.on_error(TAPE_ERROR);
     }
 
-    return writer.on_success(SUCCESS);
+    return pj.on_success(SUCCESS);
   }
 
   WARN_UNUSED really_inline ErrorValues error() {
-    /* We do not need the next line because this is done by writer.pj.init(),
+    /* We do not need the next line because this is done by pj.init(),
     * pessimistically.
-    * writer.pj.is_valid  = false;
+    * pj.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -225,12 +225,12 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= writer.pj.depth_capacity) {
-      return writer.on_error(DEPTH_ERROR);
+    if (depth >= pj.depth_capacity) {
+      return pj.on_error(DEPTH_ERROR);
     }
     switch (c) {
     case '"':
-      return writer.on_error(STRING_ERROR);
+      return pj.on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -242,28 +242,28 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return writer.on_error(NUMBER_ERROR);
+      return pj.on_error(NUMBER_ERROR);
     case 't':
-      return writer.on_error(T_ATOM_ERROR);
+      return pj.on_error(T_ATOM_ERROR);
     case 'n':
-      return writer.on_error(N_ATOM_ERROR);
+      return pj.on_error(N_ATOM_ERROR);
     case 'f':
-      return writer.on_error(F_ATOM_ERROR);
+      return pj.on_error(F_ATOM_ERROR);
     default:
-      return writer.on_error(TAPE_ERROR);
+      return pj.on_error(TAPE_ERROR);
     }
   }
 
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
-    writer.pj.init(); // sets is_valid to false
-    if (len > writer.pj.byte_capacity) {
+    pj.init(); // sets is_valid to false
+    if (len > pj.byte_capacity) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
-      return writer.on_error(DEPTH_ERROR);
+      return pj.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
@@ -280,8 +280,7 @@ struct structural_parser {
 WARN_UNUSED  int
 unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  JsonWriter writer{pj};
-  structural_parser parser(buf, len, writer);
+  structural_parser parser(buf, len, pj);
   int result = parser.start(addresses.finish);
   if (result) { return result; }
 
@@ -360,7 +359,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.writer.pj.ret_address[parser.depth] );
+  CONTINUE( parser.pj.ret_address[parser.depth] );
 
 //
 // Array parser states
