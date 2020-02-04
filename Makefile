@@ -70,10 +70,10 @@ LIBHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/h
 LIBHEADERS_WESTMERE=src/westmere/bitmanipulation.h src/westmere/bitmask.h src/westmere/intrinsics.h src/westmere/numberparsing.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
 LIBHEADERS=src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
 
-PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/document.h include/simdjson/document/iterator.h include/simdjson/parsedjson.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
+PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/document.h include/simdjson/document/iterator.h include/simdjson/document/parser.h include/simdjson/parsedjson.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/document.cpp src/parsedjson.cpp
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/document.cpp src/document/parser.cpp src/parsedjson.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 

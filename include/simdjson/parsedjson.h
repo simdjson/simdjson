@@ -5,6 +5,7 @@
 #include <memory>
 #include "simdjson/common_defs.h"
 #include "simdjson/document.h"
+#include "simdjson/document/parser.h"
 
 namespace simdjson {
 
@@ -60,7 +61,8 @@ public:
     const char *what() const noexcept { return "JSON document is invalid"; }
   };
 
-  using Iterator = document::iterator<DEFAULT_MAX_DEPTH>;
+  template <size_t max_depth>
+  using Iterator = document::iterator<max_depth>;
 
   really_inline ErrorValues on_error(ErrorValues new_error_code) {
     doc.error_code = new_error_code;
@@ -72,17 +74,17 @@ public:
     return success_code;
   }
   really_inline bool on_start_document(uint32_t depth) {
-    doc.containing_scope_offset[depth] = get_current_loc();
+    parser.containing_scope_offset[depth] = get_current_loc();
     write_tape(0, 'r');
     return true;
   }
   really_inline bool on_start_object(uint32_t depth) {
-    doc.containing_scope_offset[depth] = get_current_loc();
+    parser.containing_scope_offset[depth] = get_current_loc();
     write_tape(0, '{');
     return true;
   }
   really_inline bool on_start_array(uint32_t depth) {
-    doc.containing_scope_offset[depth] = get_current_loc();
+    parser.containing_scope_offset[depth] = get_current_loc();
     write_tape(0, '[');
     return true;
   }
@@ -90,20 +92,20 @@ public:
   really_inline bool on_end_document(uint32_t depth) {
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    annotate_previous_loc(doc.containing_scope_offset[depth], get_current_loc());
-    write_tape(doc.containing_scope_offset[depth], 'r');
+    annotate_previous_loc(parser.containing_scope_offset[depth], get_current_loc());
+    write_tape(parser.containing_scope_offset[depth], 'r');
     return true;
   }
   really_inline bool on_end_object(uint32_t depth) {
     // write our doc.tape location to the header scope
-    write_tape(doc.containing_scope_offset[depth], '}');
-    annotate_previous_loc(doc.containing_scope_offset[depth], get_current_loc());
+    write_tape(parser.containing_scope_offset[depth], '}');
+    annotate_previous_loc(parser.containing_scope_offset[depth], get_current_loc());
     return true;
   }
   really_inline bool on_end_array(uint32_t depth) {
     // write our doc.tape location to the header scope
-    write_tape(doc.containing_scope_offset[depth], ']');
-    annotate_previous_loc(doc.containing_scope_offset[depth], get_current_loc());
+    write_tape(parser.containing_scope_offset[depth], ']');
+    annotate_previous_loc(parser.containing_scope_offset[depth], get_current_loc());
     return true;
   }
 
@@ -123,45 +125,46 @@ public:
   really_inline uint8_t *on_start_string() {
     /* we advance the point, accounting for the fact that we have a NULL
       * termination         */
-    write_tape(doc.current_string_buf_loc - doc.string_buf.get(), '"');
-    return doc.current_string_buf_loc + sizeof(uint32_t);
+    write_tape(parser.current_string_buf_loc - doc.string_buf.get(), '"');
+    return parser.current_string_buf_loc + sizeof(uint32_t);
   }
 
   really_inline bool on_end_string(uint8_t *dst) {
-    uint32_t str_length = dst - (doc.current_string_buf_loc + sizeof(uint32_t));
+    uint32_t str_length = dst - (parser.current_string_buf_loc + sizeof(uint32_t));
     // TODO check for overflow in case someone has a crazy string (>=4GB?)
     // But only add the overflow check when the document itself exceeds 4GB
     // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(doc.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    memcpy(parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
     // NULL termination is still handy if you expect all your strings to
     // be NULL terminated? It comes at a small cost
     *dst = 0;
-    doc.current_string_buf_loc = dst + 1;
+    parser.current_string_buf_loc = dst + 1;
     return true;
   }
 
   really_inline bool on_number_s64(int64_t value) {
     write_tape(0, 'l');
-    std::memcpy(&doc.tape[doc.current_loc], &value, sizeof(value));
-    ++doc.current_loc;
+    std::memcpy(&doc.tape[parser.current_loc], &value, sizeof(value));
+    ++parser.current_loc;
     return true;
   }
   really_inline bool on_number_u64(uint64_t value) {
     write_tape(0, 'u');
-    doc.tape[doc.current_loc++] = value;
+    doc.tape[parser.current_loc++] = value;
     return true;
   }
   really_inline bool on_number_double(double value) {
     write_tape(0, 'd');
-    static_assert(sizeof(value) == sizeof(doc.tape[doc.current_loc]), "mismatch size");
-    memcpy(&doc.tape[doc.current_loc++], &value, sizeof(double));
+    static_assert(sizeof(value) == sizeof(doc.tape[parser.current_loc]), "mismatch size");
+    memcpy(&doc.tape[parser.current_loc++], &value, sizeof(double));
     // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
     return true;
   }
 
-  really_inline uint32_t get_current_loc() const { return doc.current_loc; }
+  really_inline uint32_t get_current_loc() const { return parser.current_loc; }
 
   document doc;
+  document::parser parser;
 
 private:
   // all nodes are stored on the doc.tape using a 64-bit word.
@@ -180,7 +183,7 @@ private:
 
   // this should be considered a private function
   really_inline void write_tape(uint64_t val, uint8_t c) {
-    doc.tape[doc.current_loc++] = val | ((static_cast<uint64_t>(c)) << 56);
+    doc.tape[parser.current_loc++] = val | ((static_cast<uint64_t>(c)) << 56);
   }
 
   really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {

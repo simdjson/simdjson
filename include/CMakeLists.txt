@@ -3,6 +3,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/common_defs.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document/iterator.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/document/parser.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/isadetection.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h

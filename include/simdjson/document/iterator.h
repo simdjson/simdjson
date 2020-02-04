@@ -12,7 +12,7 @@
 
 namespace simdjson {
 
-template <size_t max_depth> class document::iterator {
+template <size_t max_depth=DEFAULT_MAX_DEPTH> class document::iterator {
   // might throw InvalidJSON if ParsedJson is invalid
 public:
   explicit iterator(document &doc)

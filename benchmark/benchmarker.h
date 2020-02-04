@@ -86,11 +86,11 @@ struct json_stats {
   size_t blocks_with_16_structurals = 0;
   size_t blocks_with_16_structurals_flipped = 0;
 
-  json_stats(const padded_string& json, const document& doc) {
+  json_stats(const padded_string& json, const document::parser& parser) {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
-    structurals = doc.n_structural_indexes-1;
+    structurals = parser.n_structural_indexes-1;
 
     // Calculate stats on blocks that will trigger utf-8 if statements / mispredictions
     bool last_block_has_utf8 = false;
@@ -147,7 +147,7 @@ struct json_stats {
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
       int block_structurals=0;
-      while (structural < doc.n_structural_indexes && doc.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
+      while (structural < parser.n_structural_indexes && parser.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
         block_structurals++;
         structural++;
       }
@@ -357,7 +357,7 @@ struct benchmarker {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }
       }
-      stats = new json_stats(json, pj.doc);
+      stats = new json_stats(json, pj.parser);
     }
   }
 

@@ -7,9 +7,6 @@ namespace simdjson {
 
 WARN_UNUSED
 bool document::allocate_capacity(size_t len, size_t max_depth) {
-  if (max_depth <= 0) {
-    max_depth = 1; // don't let the user allocate nothing
-  }
   if (len <= 0) {
     len = 64; // allocating 0 bytes is wasteful.
   }
@@ -19,12 +16,10 @@ bool document::allocate_capacity(size_t len, size_t max_depth) {
   if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
     return true;
   }
+  if (max_depth <= 0) {
+    max_depth = 1; // don't let the user allocate nothing
+  }
   deallocate();
-  valid = false;
-  byte_capacity = 0; // will only set it to len after allocations are a success
-  n_structural_indexes = 0;
-  uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]);
 
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
@@ -37,16 +32,7 @@ bool document::allocate_capacity(size_t len, size_t max_depth) {
   size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
   string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
-  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]);
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  //ret_address = new (std::nothrow) void *[max_depth];
-  ret_address.reset(new (std::nothrow) void *[max_depth]);
-#else
-  ret_address.reset(new (std::nothrow) char[max_depth]);
-#endif
-  if (!string_buf || !tape ||
-      !containing_scope_offset || !ret_address ||
-      !structural_indexes) {
+  if (!string_buf || !tape) {
     // Could not allocate memory
     return false;
   }
@@ -54,14 +40,18 @@ bool document::allocate_capacity(size_t len, size_t max_depth) {
   // We do not need to initialize this content for parsing, though we could
   // need to initialize it for safety.
   memset(string_buf, 0 , local_string_capacity);
-  memset(structural_indexes, 0, max_structures * sizeof(uint32_t));
   memset(tape, 0, local_tape_capacity * sizeof(uint64_t));
   */
   byte_capacity = len;
-  depth_capacity = max_depth;
   tape_capacity = local_tape_capacity;
+  depth_capacity = max_depth;
   string_capacity = local_string_capacity;
   return true;
+}
+
+void document::reset() {
+  valid = false;
+  error_code = UNINITIALIZED;
 }
 
 bool document::is_valid() const { return valid; }
@@ -77,12 +67,10 @@ void document::deallocate() {
   depth_capacity = 0;
   tape_capacity = 0;
   string_capacity = 0;
-  ret_address.reset();
-  containing_scope_offset.reset();
   tape.reset();
   string_buf.reset();
-  structural_indexes.reset();
   valid = false;
+  error_code = UNINITIALIZED;
 }
 
 WARN_UNUSED

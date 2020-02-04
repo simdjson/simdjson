@@ -18,17 +18,17 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues finish() {
-    if ( i + 1 > pj.doc.n_structural_indexes ) {
+    if ( i + 1 > pj.parser.n_structural_indexes ) {
       return pj.on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
       return pj.on_error(TAPE_ERROR);
     }
-    if (pj.doc.containing_scope_offset[depth] != 0) {
+    if (pj.parser.containing_scope_offset[depth] != 0) {
       return pj.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.doc.n_structural_indexes;
+    bool finished = i + 1 == pj.parser.n_structural_indexes;
     return pj.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
@@ -118,7 +118,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.pj.doc.ret_address[parser.depth] );
+  CONTINUE( parser.pj.parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers

@@ -4,7 +4,7 @@ namespace simdjson {
 
 WARN_UNUSED
 bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
-  return doc.allocate_capacity(len, max_depth);
+  return doc.allocate_capacity(len, max_depth) && parser.allocate_capacity(len, max_depth);
 }
 
 bool ParsedJson::is_valid() const { return doc.is_valid(); }
@@ -17,12 +17,11 @@ std::string ParsedJson::get_error_message() const {
 
 void ParsedJson::deallocate() {
   doc.deallocate();
+  parser.deallocate();
 }
 
 void ParsedJson::init() {
-  doc.current_string_buf_loc = doc.string_buf.get();
-  doc.current_loc = 0;
-  doc.valid = false;
+  parser.init(doc);
 }
 
 WARN_UNUSED
