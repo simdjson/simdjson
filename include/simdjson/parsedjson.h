@@ -60,48 +60,104 @@ public:
   WARN_UNUSED
   bool dump_raw_tape(std::ostream &os) const;
 
-  // all nodes are stored on the tape using a 64-bit word.
-  //
-  // strings, double and ints are stored as
-  //  a 64-bit word with a pointer to the actual value
-  //
-  //
-  //
-  // for objects or arrays, store [ or {  at the beginning and } and ] at the
-  // end. For the openings ([ or {), we annotate them with a reference to the
-  // location on the tape of the end, and for then closings (} and ]), we
-  // annotate them with a reference to the location of the opening
-  //
-  //
-
-  // this should be considered a private function
-  really_inline void write_tape(uint64_t val, uint8_t c) {
-    tape[current_loc++] = val | ((static_cast<uint64_t>(c)) << 56);
+  really_inline ErrorValues on_error(ErrorValues new_error_code) {
+    error_code = new_error_code;
+    return new_error_code;
+  }
+  really_inline ErrorValues on_success(ErrorValues success_code) {
+    error_code = success_code;
+    valid = true;
+    return success_code;
+  }
+  really_inline bool on_start_document(uint32_t depth) {
+    containing_scope_offset[depth] = get_current_loc();
+    write_tape(0, 'r');
+    return true;
+  }
+  really_inline bool on_start_object(uint32_t depth) {
+    containing_scope_offset[depth] = get_current_loc();
+    write_tape(0, '{');
+    return true;
+  }
+  really_inline bool on_start_array(uint32_t depth) {
+    containing_scope_offset[depth] = get_current_loc();
+    write_tape(0, '[');
+    return true;
+  }
+  // TODO we're not checking this bool
+  really_inline bool on_end_document(uint32_t depth) {
+    // write our tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    annotate_previous_loc(containing_scope_offset[depth], get_current_loc());
+    write_tape(containing_scope_offset[depth], 'r');
+    return true;
+  }
+  really_inline bool on_end_object(uint32_t depth) {
+    // write our tape location to the header scope
+    write_tape(containing_scope_offset[depth], '}');
+    annotate_previous_loc(containing_scope_offset[depth], get_current_loc());
+    return true;
+  }
+  really_inline bool on_end_array(uint32_t depth) {
+    // write our tape location to the header scope
+    write_tape(containing_scope_offset[depth], ']');
+    annotate_previous_loc(containing_scope_offset[depth], get_current_loc());
+    return true;
   }
 
-  really_inline void write_tape_s64(int64_t i) {
+  really_inline bool on_true_atom() {
+    write_tape(0, 't');
+    return true;
+  }
+  really_inline bool on_false_atom() {
+    write_tape(0, 'f');
+    return true;
+  }
+  really_inline bool on_null_atom() {
+    write_tape(0, 'n');
+    return true;
+  }
+
+  really_inline uint8_t *on_start_string() {
+    /* we advance the point, accounting for the fact that we have a NULL
+      * termination         */
+    write_tape(current_string_buf_loc - string_buf.get(), '"');
+    return current_string_buf_loc + sizeof(uint32_t);
+  }
+
+  really_inline bool on_end_string(uint8_t *dst) {
+    uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
+    // TODO check for overflow in case someone has a crazy string (>=4GB?)
+    // But only add the overflow check when the document itself exceeds 4GB
+    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+    // NULL termination is still handy if you expect all your strings to
+    // be NULL terminated? It comes at a small cost
+    *dst = 0;
+    current_string_buf_loc = dst + 1;
+    return true;
+  }
+
+  really_inline bool on_number_s64(int64_t value) {
     write_tape(0, 'l');
-    std::memcpy(&tape[current_loc], &i, sizeof(i));
+    std::memcpy(&tape[current_loc], &value, sizeof(value));
     ++current_loc;
+    return true;
   }
-
-  really_inline void write_tape_u64(uint64_t i) {
+  really_inline bool on_number_u64(uint64_t value) {
     write_tape(0, 'u');
-    tape[current_loc++] = i;
+    tape[current_loc++] = value;
+    return true;
   }
-
-  really_inline void write_tape_double(double d) {
+  really_inline bool on_number_double(double value) {
     write_tape(0, 'd');
-    static_assert(sizeof(d) == sizeof(tape[current_loc]), "mismatch size");
-    memcpy(&tape[current_loc++], &d, sizeof(double));
+    static_assert(sizeof(value) == sizeof(tape[current_loc]), "mismatch size");
+    memcpy(&tape[current_loc++], &value, sizeof(double));
     // tape[current_loc++] = *((uint64_t *)&d);
+    return true;
   }
 
   really_inline uint32_t get_current_loc() const { return current_loc; }
-
-  really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {
-    tape[saved_loc] |= val;
-  }
 
   struct InvalidJSON : public std::exception {
     const char *what() const noexcept { return "JSON document is invalid"; }
@@ -134,6 +190,29 @@ public:
   bool valid{false};
   int error_code{simdjson::UNINITIALIZED};
 
+private:
+  // all nodes are stored on the tape using a 64-bit word.
+  //
+  // strings, double and ints are stored as
+  //  a 64-bit word with a pointer to the actual value
+  //
+  //
+  //
+  // for objects or arrays, store [ or {  at the beginning and } and ] at the
+  // end. For the openings ([ or {), we annotate them with a reference to the
+  // location on the tape of the end, and for then closings (} and ]), we
+  // annotate them with a reference to the location of the opening
+  //
+  //
+
+  // this should be considered a private function
+  really_inline void write_tape(uint64_t val, uint8_t c) {
+    tape[current_loc++] = val | ((static_cast<uint64_t>(c)) << 56);
+  }
+
+  really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {
+    tape[saved_loc] |= val;
+  }
 };
 
 

@@ -35,7 +35,6 @@ int json_parse_implementation(const uint8_t *buf, size_t len, ParsedJson &pj,
     if (reallocated) { // must free before we exit
       aligned_free((void *)buf);
     }
-    pj.error_code = stage1_is_ok;
     return pj.error_code;
   }
   int res = unified_machine<T>(buf, len, pj);
