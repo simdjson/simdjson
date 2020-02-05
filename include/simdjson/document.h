@@ -30,16 +30,6 @@ public:
   class parser;
   using Iterator = document::iterator<DEFAULT_MAX_DEPTH>;
 
-  // returns true if the document parsed was valid
-  bool is_valid() const;
-
-  // return an error code corresponding to the last parsing attempt, see
-  // simdjson.h will return simdjson::UNITIALIZED if no parsing was attempted
-  int get_error_code() const;
-
-  // return the string equivalent of "get_error_code"
-  std::string get_error_message() const;
-
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
@@ -52,8 +42,6 @@ public:
   std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
 
 private:
-  bool valid{false};
-  int error_code{simdjson::UNINITIALIZED};
   void deallocate();
 };
 

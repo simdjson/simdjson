@@ -5,14 +5,6 @@
 
 namespace simdjson {
 
-bool document::is_valid() const { return valid; }
-
-int document::get_error_code() const { return error_code; }
-
-std::string document::get_error_message() const {
-  return error_message(error_code);
-}
-
 void document::deallocate() {
   tape.reset();
   string_buf.reset();
@@ -20,9 +12,6 @@ void document::deallocate() {
 
 WARN_UNUSED
 bool document::print_json(std::ostream &os, size_t max_depth) const {
-  if (!valid) {
-    return false;
-  }
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
@@ -130,9 +119,6 @@ bool document::print_json(std::ostream &os, size_t max_depth) const {
 
 WARN_UNUSED
 bool document::dump_raw_tape(std::ostream &os) const {
-  if (!valid) {
-    return false;
-  }
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];

@@ -22,11 +22,7 @@ public:
   parser &operator=(const parser &o) = delete;
 
   const document* get_document() const {
-      if (doc.is_valid()) {
-          return &doc;
-      } else {
-          return nullptr;
-      }
+    return is_valid() ? &doc : nullptr;
   }
 
   bool take_document(document &doc);
@@ -65,9 +61,8 @@ public:
   // Next place to write a string
   uint8_t *current_string_buf_loc;
 
-  //
-  // for backcompat with ParsedJson
-  //
+  bool valid{false};
+  int error_code{simdjson::UNINITIALIZED};
 
   // returns true if the document parsed was valid
   bool is_valid() const;
@@ -78,6 +73,10 @@ public:
 
   // return the string equivalent of "get_error_code"
   std::string get_error_message() const;
+
+  //
+  // for backcompat with ParsedJson
+  //
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
@@ -91,12 +90,11 @@ public:
   document doc;
 
   really_inline ErrorValues on_error(ErrorValues new_error_code) {
-    doc.error_code = new_error_code;
+    error_code = new_error_code;
     return new_error_code;
   }
   really_inline ErrorValues on_success(ErrorValues success_code) {
-    doc.error_code = success_code;
-    doc.valid = true;
+    error_code = success_code;
     return success_code;
   }
   really_inline bool on_start_document(uint32_t depth) {

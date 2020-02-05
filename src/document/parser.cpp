@@ -69,7 +69,7 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
 
 bool document::parser::take_document(document &dst) {
   dst = (document&&)doc;
-  return dst.valid && allocate_document(tape_capacity, string_capacity);
+  return valid && allocate_document(tape_capacity, string_capacity);
 }
 
 bool document::parser::allocate_document(size_t local_tape_capacity, size_t local_string_capacity) {
@@ -95,16 +95,16 @@ void document::parser::deallocate() {
 void document::parser::init() {
   current_string_buf_loc = doc.string_buf.get();
   current_loc = 0;
-  doc.valid = false;
-  doc.error_code = UNINITIALIZED;
+  valid = false;
+  error_code = UNINITIALIZED;
 }
 
-bool document::parser::is_valid() const { return doc.is_valid(); }
+bool document::parser::is_valid() const { return valid; }
 
-int document::parser::get_error_code() const { return doc.get_error_code(); }
+int document::parser::get_error_code() const { return error_code; }
 
 std::string document::parser::get_error_message() const {
-  return doc.get_error_message();
+  return error_message(error_code);
 }
 
 WARN_UNUSED
