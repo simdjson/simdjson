@@ -5,31 +5,31 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+    doc_parser.init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_parser)) {
-      return pj.on_error(DEPTH_ERROR);
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues finish() {
-    if ( i + 1 > pj.parser.n_structural_indexes ) {
-      return pj.on_error(TAPE_ERROR);
+    if ( i + 1 > doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
-      return pj.on_error(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.parser.containing_scope_offset[depth] != 0) {
-      return pj.on_error(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.parser.n_structural_indexes;
-    return pj.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -118,7 +118,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.pj.parser.ret_address[parser.depth] );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers

@@ -5,55 +5,6 @@
 
 namespace simdjson {
 
-WARN_UNUSED
-bool document::allocate_capacity(size_t len, size_t max_depth) {
-  if (len <= 0) {
-    len = 64; // allocating 0 bytes is wasteful.
-  }
-  if (len > SIMDJSON_MAXSIZE_BYTES) {
-    return false;
-  }
-  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
-    return true;
-  }
-  if (max_depth <= 0) {
-    max_depth = 1; // don't let the user allocate nothing
-  }
-  deallocate();
-
-  // a pathological input like "[[[[..." would generate len tape elements, so
-  // need a capacity of at least len + 1, but it is also possible to do
-  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
-  //where len + 1 tape elements are
-  // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t local_tape_capacity = ROUNDUP_N(len + 2, 64);
-  // a document with only zero-length strings... could have len/3 string
-  // and we would need len/3 * 5 bytes on the string buffer
-  size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
-  if (!string_buf || !tape) {
-    // Could not allocate memory
-    return false;
-  }
-  /*
-  // We do not need to initialize this content for parsing, though we could
-  // need to initialize it for safety.
-  memset(string_buf, 0 , local_string_capacity);
-  memset(tape, 0, local_tape_capacity * sizeof(uint64_t));
-  */
-  byte_capacity = len;
-  tape_capacity = local_tape_capacity;
-  depth_capacity = max_depth;
-  string_capacity = local_string_capacity;
-  return true;
-}
-
-void document::reset() {
-  valid = false;
-  error_code = UNINITIALIZED;
-}
-
 bool document::is_valid() const { return valid; }
 
 int document::get_error_code() const { return error_code; }
@@ -63,18 +14,12 @@ std::string document::get_error_message() const {
 }
 
 void document::deallocate() {
-  byte_capacity = 0;
-  depth_capacity = 0;
-  tape_capacity = 0;
-  string_capacity = 0;
   tape.reset();
   string_buf.reset();
-  valid = false;
-  error_code = UNINITIALIZED;
 }
 
 WARN_UNUSED
-bool document::print_json(std::ostream &os) const {
+bool document::print_json(std::ostream &os, size_t max_depth) const {
   if (!valid) {
     return false;
   }
@@ -89,13 +34,9 @@ bool document::print_json(std::ostream &os) const {
     // Error: no starting root node?
     return false;
   }
-  if (how_many > tape_capacity) {
-    // We may be exceeding the tape capacity. Is this a valid document?
-    return false;
-  }
   tape_idx++;
-  std::unique_ptr<bool[]> in_object(new bool[depth_capacity]);
-  std::unique_ptr<size_t[]> in_object_idx(new size_t[depth_capacity]);
+  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
   int depth = 1; // only root at level 0
   in_object_idx[depth] = 0;
   in_object[depth] = false;

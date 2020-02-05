@@ -37,7 +37,7 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson/document/parser.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 
@@ -306,9 +306,9 @@ struct benchmarker {
   }
 
   really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
-    // Allocate ParsedJson
+    // Allocate document::parser
     collector.start();
-    ParsedJson pj;
+    document::parser pj;
     bool allocok = pj.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
@@ -357,7 +357,7 @@ struct benchmarker {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }
       }
-      stats = new json_stats(json, pj.parser);
+      stats = new json_stats(json, pj);
     }
   }
 

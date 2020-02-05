@@ -13,8 +13,7 @@ namespace simdjson {
 
 class document {
 public:
-  // create a ParsedJson container with zero capacity, call allocate_capacity to
-  // allocate memory
+  // create a document container with zero capacity, parser will allocate capacity as needed
   document()=default;
   ~document()=default;
 
@@ -38,39 +37,24 @@ public:
   // simdjson.h will return simdjson::UNITIALIZED if no parsing was attempted
   int get_error_code() const;
 
-  // if needed, allocate memory so that the object is able to process JSON
-  // documents having up to len bytes and max_depth "depth"
-  WARN_UNUSED
-  bool allocate_capacity(size_t len, size_t max_depth = DEFAULT_MAX_DEPTH);
-
   // return the string equivalent of "get_error_code"
   std::string get_error_message() const;
-
-  // deallocate memory and set capacity to zero, called automatically by the
-  // destructor
-  void deallocate();
-
-  // reset the document, setting it invalid and readying it for parser.parse()
-  void reset();
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
   WARN_UNUSED
-  bool print_json(std::ostream &os) const;
+  bool print_json(std::ostream &os, size_t max_depth=DEFAULT_MAX_DEPTH) const;
   WARN_UNUSED
   bool dump_raw_tape(std::ostream &os) const;
 
-  size_t byte_capacity{0}; // indicates how many bits are meant to be supported
-  size_t tape_capacity{0};
-  size_t depth_capacity{0};
-  size_t string_capacity{0};
-
   std::unique_ptr<uint64_t[]> tape;
-
   std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
+
+private:
   bool valid{false};
   int error_code{simdjson::UNINITIALIZED};
+  void deallocate();
 };
 
 } // namespace simdjson

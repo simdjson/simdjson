@@ -29,7 +29,6 @@ set(SIMDJSON_SRC
   stage2_build_tape.cpp
   document.cpp
   document/parser.cpp
-  parsedjson.cpp
   simdjson.cpp
 )
 
