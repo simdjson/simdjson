@@ -22,7 +22,6 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
   //
   // Initialize the document
   //
-
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
@@ -32,8 +31,7 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
   size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  doc.string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
-  doc.tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
+  bool doc_allocated = allocate_document(local_tape_capacity, local_string_capacity);
 
   //
   // Initialize stage 1 output
@@ -50,7 +48,7 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
 #else
   ret_address.reset(new (std::nothrow) char[max_depth]);
 #endif
-  if (!doc.string_buf || !doc.tape || !ret_address || !structural_indexes || !containing_scope_offset) {
+  if (!doc_allocated || !ret_address || !structural_indexes || !containing_scope_offset) {
     // Could not allocate memory
     return false;
   }
@@ -69,9 +67,26 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
   return true;
 }
 
+bool document::parser::take_document(document &dst) {
+  dst = (document&&)doc;
+  return dst.valid && allocate_document(tape_capacity, string_capacity);
+}
+
+bool document::parser::allocate_document(size_t local_tape_capacity, size_t local_string_capacity) {
+  doc.deallocate();
+  doc.string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
+  doc.tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
+  if (!doc.string_buf || !doc.tape) {
+    deallocate();
+  }
+  return doc.string_buf && doc.tape;
+}
+
 void document::parser::deallocate() {
   byte_capacity = 0;
+  tape_capacity = 0;
   depth_capacity = 0;
+  string_capacity = 0;
   ret_address.reset();
   containing_scope_offset.reset();
   doc.deallocate();

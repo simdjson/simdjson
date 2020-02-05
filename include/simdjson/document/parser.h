@@ -21,6 +21,16 @@ public:
   parser &operator=(parser &&o) = default;
   parser &operator=(const parser &o) = delete;
 
+  const document* get_document() const {
+      if (doc.is_valid()) {
+          return &doc;
+      } else {
+          return nullptr;
+      }
+  }
+
+  bool take_document(document &doc);
+
   // this should be called when parsing (right before writing the tapes)
   void init();
 
@@ -200,6 +210,9 @@ private:
   really_inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) {
     doc.tape[saved_loc] |= val;
   }
+
+  WARN_UNUSED
+  bool allocate_document(size_t local_tape_capacity, size_t local_string_capacity);
 };
 
 } // namespace simdjson
