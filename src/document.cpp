@@ -211,6 +211,12 @@ bool document::dump_raw_tape(std::ostream &os) const {
 }
 
 WARN_UNUSED
+ErrorValues document::try_parse_into(const uint8_t *buf, size_t len, document &dst) noexcept {
+  document::parser parser;
+  return parser.try_parse_into(buf, len, dst);
+}
+
+WARN_UNUSED
 document document::parse(const uint8_t *buf, size_t len) {
   document::parser parser;
   return parser.parse_new(buf, len);

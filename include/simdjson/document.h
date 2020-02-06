@@ -5,6 +5,7 @@
 #include <memory>
 #include "simdjson/common_defs.h"
 #include "simdjson/simdjson.h"
+#include "simdjson/padded_string.h"
 
 #define JSON_VALUE_MASK 0xFFFFFFFFFFFFFF
 #define DEFAULT_MAX_DEPTH 1024 // a JSON document with a depth exceeding 1024 is probably de facto invalid
@@ -32,6 +33,28 @@ public:
   // Throws invalid_json if the JSON is invalid.
   //
   static document parse(const uint8_t *buf, size_t len);
+  static document parse(const char *buf, size_t len) {
+      return parse((const uint8_t *)buf, len);
+  }
+  static document parse(const padded_string &s) {
+      return parse(s.data(), s.length());
+  }
+
+  //
+  // Parse a JSON document.
+  //
+  // If you will be parsing more than one JSON document, it's recommended to create a
+  // document::parser object instead, keeping internal buffers around for efficiency reasons.
+  //
+  // Returns != SUCCESS if the JSON is invalid.
+  //
+  static ErrorValues try_parse_into(const uint8_t *buf, size_t len, document &dst) noexcept;
+  static ErrorValues try_parse_into(const char *buf, size_t len, document &dst) {
+      return try_parse_into((const uint8_t *)buf, len, dst);
+  }
+  static ErrorValues try_parse_into(const padded_string &s, document &dst) {
+      return try_parse_into(s.data(), s.length(), dst);
+  }
 
   // nested class declarations
   class parser;

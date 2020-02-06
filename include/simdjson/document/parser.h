@@ -6,6 +6,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/simdjson.h"
 #include "simdjson/document.h"
+#include "simdjson/padded_string.h"
 
 namespace simdjson {
 
@@ -31,15 +32,59 @@ public:
   // Throws invalid_json if the JSON is invalid.
   //
   const document &parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true);
+  const document &parse(const char *buf, size_t len, bool realloc_if_needed = true) {
+    return parse((const uint8_t *)buf, len, realloc_if_needed);
+  }
+  const document &parse(const padded_string &s, bool realloc_if_needed = true) {
+    return parse(s.data(), s.length(), realloc_if_needed);
+  }
 
   //
   // Parse a JSON document and take the result.
   //
-  // The result can be used even after the parser is deallocated or parse() is called again.
+  // The document can be used even after the parser is deallocated or parse() is called again.
   //
   // Throws invalid_json if the JSON is invalid.
   //
   document parse_new(const uint8_t *buf, size_t len, bool realloc_if_needed = true);
+  document parse_new(const char *buf, size_t len, bool realloc_if_needed = true) {
+    return parse_new((const uint8_t *)buf, len, realloc_if_needed);
+  }
+  document parse_new(const padded_string &s, bool realloc_if_needed = true) {
+    return parse_new(s.data(), s.length(), realloc_if_needed);
+  }
+
+  //
+  // Parse a JSON document and set doc to a pointer to it.
+  //
+  // The JSON document still lives in the parser: this is the most efficient way to parse JSON
+  // documents because it reuses the same buffers, but you *must* use the document before you
+  // destroy the parser or call parse() again.
+  //
+  // Returns != SUCCESS if the JSON is invalid.
+  //
+  ErrorValues try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept;
+  ErrorValues try_parse(const char *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept {
+    return try_parse((const uint8_t *)buf, len, dst, realloc_if_needed);
+  }
+  ErrorValues try_parse(const padded_string &s, const document *&dst, bool realloc_if_needed = true) noexcept {
+    return try_parse(s.data(), s.length(), dst, realloc_if_needed);
+  }
+
+  //
+  // Parse a JSON document and fill in dst.
+  //
+  // The document can be used even after the parser is deallocated or parse() is called again.
+  //
+  // Returns != SUCCESS if the JSON is invalid.
+  //
+  ErrorValues try_parse_into(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
+  ErrorValues try_parse_into(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept {
+    return try_parse_into((const uint8_t *)buf, len, dst, realloc_if_needed);
+  }
+  ErrorValues try_parse_into(const padded_string &s, document &dst, bool realloc_if_needed = true) noexcept {
+    return try_parse_into(s.data(), s.length(), dst, realloc_if_needed);
+  }
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len bytes and max_depth "depth"
