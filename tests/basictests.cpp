@@ -249,7 +249,7 @@ static bool parse_json_message_issue467(char const* message, std::size_t len, si
     }
     int res;
     simdjson::padded_string str(message,len);
-    simdjson::JsonStream<simdjson::padded_string> js(str, parser.byte_capacity);
+    simdjson::JsonStream<simdjson::padded_string> js(str, parser.capacity());
     do  {
         res = js.json_parse(parser);
         count++;

@@ -67,4 +67,4 @@ struct invalid_json : public std::exception {
 };
 
 } // namespace simdjson
-#endif // SIMDJSON_SIMDJSON_H
+#endif // SIMDJSON_H

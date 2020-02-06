@@ -4,9 +4,25 @@
 
 namespace simdjson {
 
-void document::deallocate() {
-  tape.reset();
-  string_buf.reset();
+bool document::set_capacity(size_t capacity) {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
+    return true;
+  }
+
+  // a pathological input like "[[[[..." would generate len tape elements, so
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
+  // a document with only zero-length strings... could have len/3 string
+  // and we would need len/3 * 5 bytes on the string buffer
+  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  return string_buf && tape;
 }
 
 WARN_UNUSED
@@ -208,18 +224,6 @@ bool document::dump_raw_tape(std::ostream &os) const {
   os << tape_idx << " : " << type << "\t// pointing to " << payload
      << " (start root)\n";
   return true;
-}
-
-WARN_UNUSED
-ErrorValues document::try_parse_into(const uint8_t *buf, size_t len, document &dst) noexcept {
-  document::parser parser;
-  return parser.try_parse_into(buf, len, dst);
-}
-
-WARN_UNUSED
-document document::parse(const uint8_t *buf, size_t len) {
-  document::parser parser;
-  return parser.parse_new(buf, len);
 }
 
 } // namespace simdjson

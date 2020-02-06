@@ -12,7 +12,9 @@ namespace simdjson {
 
 class document::parser {
 public:
-  // create a ParsedJson container with zero capacity, call allocate_capacity to allocate memory
+  //
+  // Create a JSON parser with zero capacity. Call allocate_capacity() to initialize it.
+  //
   parser()=default;
   ~parser()=default;
 
@@ -35,8 +37,11 @@ public:
   const document &parse(const char *buf, size_t len, bool realloc_if_needed = true) {
     return parse((const uint8_t *)buf, len, realloc_if_needed);
   }
-  const document &parse(const padded_string &s, bool realloc_if_needed = true) {
+  const document &parse(const std::string &s, bool realloc_if_needed = true) {
     return parse(s.data(), s.length(), realloc_if_needed);
+  }
+  const document &parse(const padded_string &s) {
+    return parse(s.data(), s.length(), false);
   }
 
   //
@@ -50,8 +55,11 @@ public:
   document parse_new(const char *buf, size_t len, bool realloc_if_needed = true) {
     return parse_new((const uint8_t *)buf, len, realloc_if_needed);
   }
-  document parse_new(const padded_string &s, bool realloc_if_needed = true) {
+  document parse_new(const std::string &s, bool realloc_if_needed = true) {
     return parse_new(s.data(), s.length(), realloc_if_needed);
+  }
+  document parse_new(const padded_string &s) {
+    return parse_new(s.data(), s.length(), false);
   }
 
   //
@@ -63,12 +71,15 @@ public:
   //
   // Returns != SUCCESS if the JSON is invalid.
   //
-  ErrorValues try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept;
-  ErrorValues try_parse(const char *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED ErrorValues try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept;
+  WARN_UNUSED ErrorValues try_parse(const char *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept {
     return try_parse((const uint8_t *)buf, len, dst, realloc_if_needed);
   }
-  ErrorValues try_parse(const padded_string &s, const document *&dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED ErrorValues try_parse(const std::string &s, const document *&dst, bool realloc_if_needed = true) noexcept {
     return try_parse(s.data(), s.length(), dst, realloc_if_needed);
+  }
+  WARN_UNUSED ErrorValues try_parse(const padded_string &s, const document *&dst) noexcept {
+    return try_parse(s.data(), s.length(), dst, false);
   }
 
   //
@@ -78,30 +89,40 @@ public:
   //
   // Returns != SUCCESS if the JSON is invalid.
   //
-  ErrorValues try_parse_into(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
-  ErrorValues try_parse_into(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED ErrorValues try_parse_into(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
+  WARN_UNUSED ErrorValues try_parse_into(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept {
     return try_parse_into((const uint8_t *)buf, len, dst, realloc_if_needed);
   }
-  ErrorValues try_parse_into(const padded_string &s, document &dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED ErrorValues try_parse_into(const std::string &s, document &dst, bool realloc_if_needed = true) noexcept {
     return try_parse_into(s.data(), s.length(), dst, realloc_if_needed);
+  }
+  WARN_UNUSED ErrorValues try_parse_into(const padded_string &s, document &dst) noexcept {
+    return try_parse_into(s.data(), s.length(), dst, false);
+  }
+
+  //
+  // Current capacity: the largest document this parser can support without reallocating.
+  //
+  size_t capacity() {
+    return _capacity;
+  }
+
+  //
+  // The maximum level of nested object and arrays supported by this parser.
+  //
+  size_t max_depth() {
+    return _max_depth;
   }
 
   // if needed, allocate memory so that the object is able to process JSON
-  // documents having up to len bytes and max_depth "depth"
-  WARN_UNUSED
-  bool allocate_capacity(size_t len, size_t max_depth = DEFAULT_MAX_DEPTH);
-
-  // deallocate memory and set capacity to zero, called automatically by the destructor
-  void deallocate();
+  // documents having up to capacity bytes and max_depth "depth"
+  WARN_UNUSED bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) {
+    return set_capacity(capacity) && set_max_depth(max_depth);
+  }
 
   // type aliases for backcompat
-  using Iterator = document::iterator<DEFAULT_MAX_DEPTH>;
+  using Iterator = document::iterator;
   using InvalidJSON = invalid_json;
-
-  size_t byte_capacity{0}; // indicates how many bits are meant to be supported
-  size_t tape_capacity{0};
-  size_t depth_capacity{0};
-  size_t string_capacity{0};
 
   // Next location to write to in the tape
   uint32_t current_loc{0};
@@ -123,6 +144,9 @@ public:
 
   bool valid{false};
   int error_code{simdjson::UNINITIALIZED};
+
+  // Document we're writing to
+  document doc;
 
   // returns true if the document parsed was valid
   bool is_valid() const;
@@ -146,11 +170,8 @@ public:
   WARN_UNUSED
   bool dump_raw_tape(std::ostream &os) const;
 
-  // Document we're writing to
-  document doc;
-
   // this should be called when parsing (right before writing the tapes)
-  void init();
+  void init_stage2();
 
   really_inline ErrorValues on_error(ErrorValues new_error_code) {
     error_code = new_error_code;
@@ -249,7 +270,29 @@ public:
     return true;
   }
 
+  //
+  // Called before a parse is initiated.
+  //
+  // - Returns CAPACITY if the document is too large
+  // - Returns MEMALLOC if we needed to allocate memory and could not
+  //
+  WARN_UNUSED ErrorValues init_parse(size_t len);
+
 private:
+  //
+  // The maximum document length this parser supports.
+  //
+  // Buffers are large enough to handle any document up to this length.
+  //
+  size_t _capacity{0};
+
+  //
+  // The maximum depth (number of nested objects and arrays) supported by this parser.
+  //
+  // Defaults to DEFAULT_MAX_DEPTH.
+  //
+  size_t _max_depth{0};
+
   // all nodes are stored on the doc.tape using a 64-bit word.
   //
   // strings, double and ints are stored as
@@ -273,8 +316,25 @@ private:
     doc.tape[saved_loc] |= val;
   }
 
-  WARN_UNUSED
-  bool allocate_document(size_t local_tape_capacity, size_t local_string_capacity);
+  WARN_UNUSED ErrorValues try_parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept;
+
+  //
+  // Set the current capacity: the largest document this parser can support without reallocating.
+  //
+  // This will allocate *or deallocate* as necessary.
+  //
+  // Returns false if allocation fails.
+  //
+  WARN_UNUSED bool set_capacity(size_t capacity);
+
+  //
+  // Set the maximum level of nested object and arrays supported by this parser.
+  //
+  // This will allocate *or deallocate* as necessary.
+  //
+  // Returns false if allocation fails.
+  //
+  WARN_UNUSED bool set_max_depth(size_t max_depth);
 };
 
 } // namespace simdjson

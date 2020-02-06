@@ -17,9 +17,8 @@ namespace simdjson {
 template <Architecture T>
 int json_parse_implementation(const uint8_t *buf, size_t len, document::parser &parser,
                               bool realloc_if_needed = true) {
-  if (parser.byte_capacity < len) {
-    return simdjson::CAPACITY;
-  }
+  int result = parser.init_parse(len);
+  if (result != SUCCESS) { return result; }
   bool reallocated = false;
   if (realloc_if_needed) {
       const uint8_t *tmp_buf = buf;

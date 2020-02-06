@@ -5,7 +5,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
-    doc_parser.init(); // sets is_valid to false
+    doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();

@@ -99,21 +99,21 @@ struct structural_parser {
     doc_parser.on_start_document(depth);
     doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= doc_parser.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
     doc_parser.on_start_object(depth);
     doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= doc_parser.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
     doc_parser.on_start_array(depth);
     doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= doc_parser.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
   really_inline bool end_object() {
@@ -215,7 +215,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline ErrorValues error() {
-    /* We do not need the next line because this is done by doc_parser.init(),
+    /* We do not need the next line because this is done by doc_parser.init_stage2(),
     * pessimistically.
     * doc_parser.is_valid  = false;
     * At this point in the code, we have all the time in the world.
@@ -225,7 +225,7 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= doc_parser.depth_capacity) {
+    if (depth >= doc_parser.max_depth()) {
       return doc_parser.on_error(DEPTH_ERROR);
     }
     switch (c) {
@@ -255,8 +255,8 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
-    doc_parser.init(); // sets is_valid to false
-    if (len > doc_parser.byte_capacity) {
+    doc_parser.init_stage2(); // sets is_valid to false
+    if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible

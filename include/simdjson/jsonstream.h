@@ -290,17 +290,17 @@ template <class string_container> JsonStream<string_container>::~JsonStream() {
 // todo: simplify this code further
 template <class string_container>
 int JsonStream<string_container>::json_parse(document::parser &parser) {
-  if (unlikely(parser.byte_capacity == 0)) {
+  if (unlikely(parser.capacity() == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
       parser.error_code = simdjson::MEMALLOC;
       return parser.error_code;
     }
-  } else if (unlikely(parser.byte_capacity < _batch_size)) {
+  } else if (unlikely(parser.capacity() < _batch_size)) {
     parser.error_code = simdjson::CAPACITY;
     return parser.error_code;
   }
-  if (unlikely(parser_thread.byte_capacity < _batch_size)) {
+  if (unlikely(parser_thread.capacity() < _batch_size)) {
     const bool allocok_thread = parser_thread.allocate_capacity(_batch_size);
     if (!allocok_thread) {
       parser.error_code = simdjson::MEMALLOC;
@@ -390,12 +390,12 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
 // single-threaded version of json_parse
 template <class string_container>
 int JsonStream<string_container>::json_parse(document::parser &parser) {
-  if (unlikely(parser.byte_capacity == 0)) {
+  if (unlikely(parser.capacity() == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
       return parser.on_error(MEMALLOC);
     }
-  } else if (unlikely(parser.byte_capacity < _batch_size)) {
+  } else if (unlikely(parser.capacity() < _batch_size)) {
     return parser.on_error(CAPACITY);
   }
   if (unlikely(load_next_batch)) {

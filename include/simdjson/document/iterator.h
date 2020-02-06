@@ -12,41 +12,287 @@
 
 namespace simdjson {
 
+template <size_t max_depth> class document_iterator {
+public:
+  document_iterator(const document::parser &parser);
+  document_iterator(const document &doc) noexcept;
+  document_iterator(const document_iterator &o) noexcept;
+  document_iterator &operator=(const document_iterator &o) noexcept;
+
+  inline bool is_ok() const;
+
+  // useful for debuging purposes
+  inline size_t get_tape_location() const;
+
+  // useful for debuging purposes
+  inline size_t get_tape_length() const;
+
+  // returns the current depth (start at 1 with 0 reserved for the fictitious
+  // root node)
+  inline size_t get_depth() const;
+
+  // A scope is a series of nodes at the same depth, typically it is either an
+  // object ({) or an array ([). The root node has type 'r'.
+  inline uint8_t get_scope_type() const;
+
+  // move forward in document order
+  inline bool move_forward();
+
+  // retrieve the character code of what we're looking at:
+  // [{"slutfn are the possibilities
+  inline uint8_t get_type() const {
+      return current_type; // short functions should be inlined!
+  }
+
+  // get the int64_t value at this node; valid only if get_type is "l"
+  inline int64_t get_integer() const {
+      if (location + 1 >= tape_length) {
+      return 0; // default value in case of error
+      }
+      return static_cast<int64_t>(doc.tape[location + 1]);
+  }
+
+  // get the value as uint64; valid only if  if get_type is "u"
+  inline uint64_t get_unsigned_integer() const {
+      if (location + 1 >= tape_length) {
+      return 0; // default value in case of error
+      }
+      return doc.tape[location + 1];
+  }
+
+  // get the string value at this node (NULL ended); valid only if get_type is "
+  // note that tabs, and line endings are escaped in the returned value (see
+  // print_with_escapes) return value is valid UTF-8, it may contain NULL chars
+  // within the string: get_string_length determines the true string length.
+  inline const char *get_string() const {
+      return reinterpret_cast<const char *>(
+          doc.string_buf.get() + (current_val & JSON_VALUE_MASK) + sizeof(uint32_t));
+  }
+
+  // return the length of the string in bytes
+  inline uint32_t get_string_length() const {
+      uint32_t answer;
+      memcpy(&answer,
+          reinterpret_cast<const char *>(doc.string_buf.get() +
+                                          (current_val & JSON_VALUE_MASK)),
+          sizeof(uint32_t));
+      return answer;
+  }
+
+  // get the double value at this node; valid only if
+  // get_type() is "d"
+  inline double get_double() const {
+      if (location + 1 >= tape_length) {
+      return std::numeric_limits<double>::quiet_NaN(); // default value in
+                                                      // case of error
+      }
+      double answer;
+      memcpy(&answer, &doc.tape[location + 1], sizeof(answer));
+      return answer;
+  }
+
+  inline bool is_object_or_array() const { return is_object() || is_array(); }
+
+  inline bool is_object() const { return get_type() == '{'; }
+
+  inline bool is_array() const { return get_type() == '['; }
+
+  inline bool is_string() const { return get_type() == '"'; }
+
+  // Returns true if the current type of node is an signed integer.
+  // You can get its value with `get_integer()`.
+  inline bool is_integer() const { return get_type() == 'l'; }
+
+  // Returns true if the current type of node is an unsigned integer.
+  // You can get its value with `get_unsigned_integer()`.
+  //
+  // NOTE:
+  // Only a large value, which is out of range of a 64-bit signed integer, is
+  // represented internally as an unsigned node. On the other hand, a typical
+  // positive integer, such as 1, 42, or 1000000, is as a signed node.
+  // Be aware this function returns false for a signed node.
+  inline bool is_unsigned_integer() const { return get_type() == 'u'; }
+
+  inline bool is_double() const { return get_type() == 'd'; }
+
+  inline bool is_number() const {
+      return is_integer() || is_unsigned_integer() || is_double();
+  }
+
+  inline bool is_true() const { return get_type() == 't'; }
+
+  inline bool is_false() const { return get_type() == 'f'; }
+
+  inline bool is_null() const { return get_type() == 'n'; }
+
+  static bool is_object_or_array(uint8_t type) {
+      return ((type == '[') || (type == '{'));
+  }
+
+  // when at {, go one level deep, looking for a given key
+  // if successful, we are left pointing at the value,
+  // if not, we are still pointing at the object ({)
+  // (in case of repeated keys, this only finds the first one).
+  // We seek the key using C's strcmp so if your JSON strings contain
+  // NULL chars, this would trigger a false positive: if you expect that
+  // to be the case, take extra precautions.
+  // Furthermore, we do the comparison character-by-character
+  // without taking into account Unicode equivalence.
+  inline bool move_to_key(const char *key);
+
+  // as above, but case insensitive lookup (strcmpi instead of strcmp)
+  inline bool move_to_key_insensitive(const char *key);
+
+  // when at {, go one level deep, looking for a given key
+  // if successful, we are left pointing at the value,
+  // if not, we are still pointing at the object ({)
+  // (in case of repeated keys, this only finds the first one).
+  // The string we search for can contain NULL values.
+  // Furthermore, we do the comparison character-by-character
+  // without taking into account Unicode equivalence.
+  inline bool move_to_key(const char *key, uint32_t length);
+
+  // when at a key location within an object, this moves to the accompanying
+  // value (located next to it). This is equivalent but much faster than
+  // calling "next()".
+  inline void move_to_value();
+
+  // when at [, go one level deep, and advance to the given index.
+  // if successful, we are left pointing at the value,
+  // if not, we are still pointing at the array ([)
+  inline bool move_to_index(uint32_t index);
+
+  // Moves the iterator to the value correspoding to the json pointer.
+  // Always search from the root of the document.
+  // if successful, we are left pointing at the value,
+  // if not, we are still pointing the same value we were pointing before the
+  // call. The json pointer follows the rfc6901 standard's syntax:
+  // https://tools.ietf.org/html/rfc6901 However, the standard says "If a
+  // referenced member name is not unique in an object, the member that is
+  // referenced is undefined, and evaluation fails". Here we just return the
+  // first corresponding value. The length parameter is the length of the
+  // jsonpointer string ('pointer').
+  bool move_to(const char *pointer, uint32_t length);
+
+  // Moves the iterator to the value correspoding to the json pointer.
+  // Always search from the root of the document.
+  // if successful, we are left pointing at the value,
+  // if not, we are still pointing the same value we were pointing before the
+  // call. The json pointer implementation follows the rfc6901 standard's
+  // syntax: https://tools.ietf.org/html/rfc6901 However, the standard says
+  // "If a referenced member name is not unique in an object, the member that
+  // is referenced is undefined, and evaluation fails". Here we just return
+  // the first corresponding value.
+  inline bool move_to(const std::string &pointer) {
+      return move_to(pointer.c_str(), pointer.length());
+  }
+
+  private:
+  // Almost the same as move_to(), except it searchs from the current
+  // position. The pointer's syntax is identical, though that case is not
+  // handled by the rfc6901 standard. The '/' is still required at the
+  // beginning. However, contrary to move_to(), the URI Fragment Identifier
+  // Representation is not supported here. Also, in case of failure, we are
+  // left pointing at the closest value it could reach. For these reasons it
+  // is private. It exists because it is used by move_to().
+  bool relative_move_to(const char *pointer, uint32_t length);
+
+  public:
+  // throughout return true if we can do the navigation, false
+  // otherwise
+
+  // Withing a given scope (series of nodes at the same depth within either an
+  // array or an object), we move forward.
+  // Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, {
+  // and [. At the object ({) or at the array ([), you can issue a "down" to
+  // visit their content. valid if we're not at the end of a scope (returns
+  // true).
+  inline bool next();
+
+  // Within a given scope (series of nodes at the same depth within either an
+  // array or an object), we move backward.
+  // Thus, given [true, null, {"a":1}, [1,2]], we would visit ], }, null, true
+  // when starting at the end of the scope. At the object ({) or at the array
+  // ([), you can issue a "down" to visit their content.
+  // Performance warning: This function is implemented by starting again
+  // from the beginning of the scope and scanning forward. You should expect
+  // it to be relatively slow.
+  inline bool prev();
+
+  // Moves back to either the containing array or object (type { or [) from
+  // within a contained scope.
+  // Valid unless we are at the first level of the document
+  inline bool up();
+
+  // Valid if we're at a [ or { and it starts a non-empty scope; moves us to
+  // start of that deeper scope if it not empty. Thus, given [true, null,
+  // {"a":1}, [1,2]], if we are at the { node, we would move to the "a" node.
+  inline bool down();
+
+  // move us to the start of our current scope,
+  // a scope is a series of nodes at the same level
+  inline void to_start_scope();
+
+  inline void rewind() {
+      while (up())
+      ;
+  }
+
+  // void to_end_scope();              // move us to
+  // the start of our current scope; always succeeds
+
+  // print the node we are currently pointing at
+  bool print(std::ostream &os, bool escape_strings = true) const;
+  typedef struct {
+      size_t start_of_scope;
+      uint8_t scope_type;
+  } scopeindex_t;
+
+  private:
+  const document &doc;
+  size_t depth;
+  size_t location; // our current location on a tape
+  size_t tape_length;
+  uint8_t current_type;
+  uint64_t current_val;
+  scopeindex_t depth_index[max_depth];
+};
+
 // Because of template weirdness, the actual class definition is inline in the document class
 
 template <size_t max_depth>
-WARN_UNUSED bool document::iterator<max_depth>::is_ok() const {
+WARN_UNUSED bool document_iterator<max_depth>::is_ok() const {
   return location < tape_length;
 }
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t document::iterator<max_depth>::get_tape_location() const {
+size_t document_iterator<max_depth>::get_tape_location() const {
   return location;
 }
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t document::iterator<max_depth>::get_tape_length() const {
+size_t document_iterator<max_depth>::get_tape_length() const {
   return tape_length;
 }
 
 // returns the current depth (start at 1 with 0 reserved for the fictitious root
 // node)
 template <size_t max_depth>
-size_t document::iterator<max_depth>::get_depth() const {
+size_t document_iterator<max_depth>::get_depth() const {
   return depth;
 }
 
 // A scope is a series of nodes at the same depth, typically it is either an
 // object ({) or an array ([). The root node has type 'r'.
 template <size_t max_depth>
-uint8_t document::iterator<max_depth>::get_scope_type() const {
+uint8_t document_iterator<max_depth>::get_scope_type() const {
   return depth_index[depth].scope_type;
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_forward() {
+bool document_iterator<max_depth>::move_forward() {
   if (location + 1 >= tape_length) {
     return false; // we are at the end!
   }
@@ -72,7 +318,7 @@ bool document::iterator<max_depth>::move_forward() {
 }
 
 template <size_t max_depth>
-void document::iterator<max_depth>::move_to_value() {
+void document_iterator<max_depth>::move_to_value() {
   // assume that we are on a key, so move by 1.
   location += 1;
   current_val = doc.tape[location];
@@ -80,7 +326,7 @@ void document::iterator<max_depth>::move_to_value() {
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_to_key(const char *key) {
+bool document_iterator<max_depth>::move_to_key(const char *key) {
     if (down()) {
       do {
         const bool right_key = (strcmp(get_string(), key) == 0);
@@ -95,7 +341,7 @@ bool document::iterator<max_depth>::move_to_key(const char *key) {
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_to_key_insensitive(
+bool document_iterator<max_depth>::move_to_key_insensitive(
     const char *key) {
     if (down()) {
       do {
@@ -111,7 +357,7 @@ bool document::iterator<max_depth>::move_to_key_insensitive(
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_to_key(const char *key,
+bool document_iterator<max_depth>::move_to_key(const char *key,
                                                        uint32_t length) {
   if (down()) {
     do {
@@ -128,7 +374,7 @@ bool document::iterator<max_depth>::move_to_key(const char *key,
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_to_index(uint32_t index) {
+bool document_iterator<max_depth>::move_to_index(uint32_t index) {
   if (down()) {
     uint32_t i = 0;
     for (; i < index; i++) {
@@ -144,7 +390,7 @@ bool document::iterator<max_depth>::move_to_index(uint32_t index) {
   return false;
 }
 
-template <size_t max_depth> bool document::iterator<max_depth>::prev() {
+template <size_t max_depth> bool document_iterator<max_depth>::prev() {
   size_t target_location = location;
   to_start_scope();
   size_t npos = location;
@@ -168,7 +414,7 @@ template <size_t max_depth> bool document::iterator<max_depth>::prev() {
   return true;
 }
 
-template <size_t max_depth> bool document::iterator<max_depth>::up() {
+template <size_t max_depth> bool document_iterator<max_depth>::up() {
   if (depth == 1) {
     return false; // don't allow moving back to root
   }
@@ -181,7 +427,7 @@ template <size_t max_depth> bool document::iterator<max_depth>::up() {
   return true;
 }
 
-template <size_t max_depth> bool document::iterator<max_depth>::down() {
+template <size_t max_depth> bool document_iterator<max_depth>::down() {
   if (location + 1 >= tape_length) {
     return false;
   }
@@ -203,13 +449,13 @@ template <size_t max_depth> bool document::iterator<max_depth>::down() {
 }
 
 template <size_t max_depth>
-void document::iterator<max_depth>::to_start_scope() {
+void document_iterator<max_depth>::to_start_scope() {
   location = depth_index[depth].start_of_scope;
   current_val = doc.tape[location];
   current_type = (current_val >> 56);
 }
 
-template <size_t max_depth> bool document::iterator<max_depth>::next() {
+template <size_t max_depth> bool document_iterator<max_depth>::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
@@ -229,7 +475,7 @@ template <size_t max_depth> bool document::iterator<max_depth>::next() {
 }
 
 template <size_t max_depth>
-document::iterator<max_depth>::iterator(const document &doc_) noexcept
+document_iterator<max_depth>::document_iterator(const document &doc_) noexcept
     : doc(doc_), depth(0), location(0), tape_length(0) {
   depth_index[0].start_of_scope = location;
   current_val = doc.tape[location++];
@@ -249,16 +495,16 @@ document::iterator<max_depth>::iterator(const document &doc_) noexcept
 }
 
 template <size_t max_depth>
-document::iterator<max_depth>::iterator(const document::parser &parser)
-    : iterator(parser.doc) {
+document_iterator<max_depth>::document_iterator(const document::parser &parser)
+    : document_iterator(parser.doc) {
   if (!parser.is_valid()) {
     throw invalid_json((ErrorValues)parser.error_code);
   }
 }
 
 template <size_t max_depth>
-document::iterator<max_depth>::iterator(
-    const iterator &o) noexcept
+document_iterator<max_depth>::document_iterator(
+    const document_iterator &o) noexcept
     : doc(o.doc), depth(o.depth), location(o.location),
       tape_length(o.tape_length), current_type(o.current_type),
       current_val(o.current_val) {
@@ -266,8 +512,8 @@ document::iterator<max_depth>::iterator(
 }
 
 template <size_t max_depth>
-document::iterator<max_depth> &document::iterator<max_depth>::
-operator=(const iterator &o) noexcept {
+document_iterator<max_depth> &document_iterator<max_depth>::
+operator=(const document_iterator &o) noexcept {
   doc = o.doc;
   depth = o.depth;
   location = o.location;
@@ -279,7 +525,7 @@ operator=(const iterator &o) noexcept {
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::print(std::ostream &os, bool escape_strings) const {
+bool document_iterator<max_depth>::print(std::ostream &os, bool escape_strings) const {
   if (!is_ok()) {
     return false;
   }
@@ -326,7 +572,7 @@ bool document::iterator<max_depth>::print(std::ostream &os, bool escape_strings)
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::move_to(const char *pointer,
+bool document_iterator<max_depth>::move_to(const char *pointer,
                                                    uint32_t length) {
   char *new_pointer = nullptr;
   if (pointer[0] == '#') {
@@ -382,7 +628,7 @@ bool document::iterator<max_depth>::move_to(const char *pointer,
 }
 
 template <size_t max_depth>
-bool document::iterator<max_depth>::relative_move_to(const char *pointer,
+bool document_iterator<max_depth>::relative_move_to(const char *pointer,
                                                             uint32_t length) {
   if (length == 0) {
     // returns the whole document
