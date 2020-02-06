@@ -319,7 +319,7 @@ public:
     uint8_t current_type;
     uint64_t current_val;
     scopeindex_t depth_index[max_depth];
-    };
+  };
 };
 
 } // namespace simdjson
