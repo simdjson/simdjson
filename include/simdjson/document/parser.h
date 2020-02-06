@@ -21,14 +21,25 @@ public:
   parser &operator=(parser &&o) = default;
   parser &operator=(const parser &o) = delete;
 
-  const document* get_document() const {
-    return is_valid() ? &doc : nullptr;
-  }
+  //
+  // Parse a JSON document and return a reference to it.
+  //
+  // The JSON document still lives in the parser: this is the most efficient way to parse JSON
+  // documents because it reuses the same buffers, but you *must* use the document before you
+  // destroy the parser or call parse() again.
+  //
+  // Throws invalid_json if the JSON is invalid.
+  //
+  const document &parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true);
 
-  bool take_document(document &doc);
-
-  // this should be called when parsing (right before writing the tapes)
-  void init();
+  //
+  // Parse a JSON document and take the result.
+  //
+  // The result can be used even after the parser is deallocated or parse() is called again.
+  //
+  // Throws invalid_json if the JSON is invalid.
+  //
+  document parse_new(const uint8_t *buf, size_t len, bool realloc_if_needed = true);
 
   // if needed, allocate memory so that the object is able to process JSON
   // documents having up to len bytes and max_depth "depth"
@@ -37,6 +48,10 @@ public:
 
   // deallocate memory and set capacity to zero, called automatically by the destructor
   void deallocate();
+
+  // type aliases for backcompat
+  using Iterator = document::iterator<DEFAULT_MAX_DEPTH>;
+  using InvalidJSON = invalid_json;
 
   size_t byte_capacity{0}; // indicates how many bits are meant to be supported
   size_t tape_capacity{0};
@@ -89,12 +104,16 @@ public:
   // Document we're writing to
   document doc;
 
+  // this should be called when parsing (right before writing the tapes)
+  void init();
+
   really_inline ErrorValues on_error(ErrorValues new_error_code) {
     error_code = new_error_code;
     return new_error_code;
   }
   really_inline ErrorValues on_success(ErrorValues success_code) {
     error_code = success_code;
+    valid = true;
     return success_code;
   }
   really_inline bool on_start_document(uint32_t depth) {

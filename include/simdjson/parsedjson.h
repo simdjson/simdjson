@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_PARSEDJSON_H
 #define SIMDJSON_PARSEDJSON_H
 
-#include "simdjson/document/parser.h"
+#include "simdjson/document.h"
 
 namespace simdjson {
 

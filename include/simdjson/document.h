@@ -23,12 +23,19 @@ public:
   document &operator=(document &&o) = default;
   document &operator=(const document &o) = delete;
 
+  //
+  // Parse a JSON document.
+  //
+  // If you will be parsing more than one JSON document, it's recommended to create a
+  // document::parser object instead, keeping internal buffers around for efficiency reasons.
+  //
+  // Throws invalid_json if the JSON is invalid.
+  //
   static document parse(const uint8_t *buf, size_t len);
 
   // nested class declarations
-  template <size_t max_depth> class iterator;
   class parser;
-  using Iterator = document::iterator<DEFAULT_MAX_DEPTH>;
+  template <size_t max_depth=DEFAULT_MAX_DEPTH> class iterator;
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
@@ -46,5 +53,8 @@ private:
 };
 
 } // namespace simdjson
+
+#include "simdjson/document/parser.h"
+#include "simdjson/document/iterator.h"
 
 #endif // SIMDJSON_DOCUMENT_H

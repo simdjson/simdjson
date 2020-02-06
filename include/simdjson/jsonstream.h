@@ -393,12 +393,12 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
   if (unlikely(parser.byte_capacity == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
-      parser.error_code = simdjson::MEMALLOC;
-      return parser.error_code;
+      printf("A\n");
+      return parser.on_error(MEMALLOC);
     }
   } else if (unlikely(parser.byte_capacity < _batch_size)) {
-    parser.error_code = simdjson::CAPACITY;
-    return parser.error_code;
+      printf("B\n");
+    return parser.on_error(CAPACITY);
   }
   if (unlikely(load_next_batch)) {
     advance(current_buffer_loc);
@@ -407,14 +407,14 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
     int stage1_is_ok = best_stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
-      parser.error_code = stage1_is_ok;
-      return parser.error_code;
+      printf("C\n");
+      return parser.on_error(stage1_is_ok);
     }
     size_t last_index = find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
-        parser.error_code = simdjson::EMPTY;
-        return parser.error_code;
+      printf("D\n");
+        return parser.on_error(EMPTY);
       }
     } else {
       parser.n_structural_indexes = last_index + 1;
@@ -433,6 +433,8 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
       load_next_batch = true;
       res = simdjson::SUCCESS_AND_HAS_MORE;
     }
+  } else {
+    printf("E\n");
   }
   return res;
 }

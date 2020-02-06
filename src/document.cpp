@@ -1,7 +1,6 @@
 #include "simdjson/document.h"
 #include "simdjson/jsonformatutils.h"
-#include "simdjson/parsedjson.h"
-#include "simdjson/jsonparser.h"
+#include "simdjson/document.h"
 
 namespace simdjson {
 
@@ -213,8 +212,8 @@ bool document::dump_raw_tape(std::ostream &os) const {
 
 WARN_UNUSED
 document document::parse(const uint8_t *buf, size_t len) {
-  ParsedJson pj = build_parsed_json(buf, len);
-  return (document&&)pj.doc;
+  document::parser parser;
+  return parser.parse_new(buf, len);
 }
 
 } // namespace simdjson

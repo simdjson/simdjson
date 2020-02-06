@@ -7,16 +7,14 @@
 #include <limits>
 #include <stdexcept>
 
-#include "simdjson/parsedjson.h"
 #include "simdjson/jsonformatutils.h"
 
 namespace simdjson {
 
 template <size_t max_depth=DEFAULT_MAX_DEPTH> class document::iterator {
-  // might throw InvalidJSON if ParsedJson is invalid
 public:
-  explicit iterator(document &doc)
-
+  iterator(const document::parser &parser);
+  iterator(const document &doc) noexcept;
   iterator(const iterator &o) noexcept;
   iterator &operator=(const iterator &o) noexcept;
 
@@ -250,7 +248,7 @@ public:
   } scopeindex_t;
 
 private:
-  document &doc;
+  const document &doc;
   size_t depth;
   size_t location; // our current location on a tape
   size_t tape_length;
@@ -260,38 +258,38 @@ private:
 };
 
 template <size_t max_depth>
-WARN_UNUSED bool ParsedJson::BasicIterator<max_depth>::is_ok() const {
+WARN_UNUSED bool document::iterator<max_depth>::is_ok() const {
   return location < tape_length;
 }
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_tape_location() const {
+size_t document::iterator<max_depth>::get_tape_location() const {
   return location;
 }
 
 // useful for debuging purposes
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_tape_length() const {
+size_t document::iterator<max_depth>::get_tape_length() const {
   return tape_length;
 }
 
 // returns the current depth (start at 1 with 0 reserved for the fictitious root
 // node)
 template <size_t max_depth>
-size_t ParsedJson::BasicIterator<max_depth>::get_depth() const {
+size_t document::iterator<max_depth>::get_depth() const {
   return depth;
 }
 
 // A scope is a series of nodes at the same depth, typically it is either an
 // object ({) or an array ([). The root node has type 'r'.
 template <size_t max_depth>
-uint8_t ParsedJson::BasicIterator<max_depth>::get_scope_type() const {
+uint8_t document::iterator<max_depth>::get_scope_type() const {
   return depth_index[depth].scope_type;
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_forward() {
+bool document::iterator<max_depth>::move_forward() {
   if (location + 1 >= tape_length) {
     return false; // we are at the end!
   }
@@ -317,7 +315,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_forward() {
 }
 
 template <size_t max_depth>
-void ParsedJson::BasicIterator<max_depth>::move_to_value() {
+void document::iterator<max_depth>::move_to_value() {
   // assume that we are on a key, so move by 1.
   location += 1;
   current_val = doc.tape[location];
@@ -325,7 +323,7 @@ void ParsedJson::BasicIterator<max_depth>::move_to_value() {
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
+bool document::iterator<max_depth>::move_to_key(const char *key) {
     if (down()) {
       do {
         const bool right_key = (strcmp(get_string(), key) == 0);
@@ -340,7 +338,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key) {
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
+bool document::iterator<max_depth>::move_to_key_insensitive(
     const char *key) {
     if (down()) {
       do {
@@ -356,7 +354,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key_insensitive(
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
+bool document::iterator<max_depth>::move_to_key(const char *key,
                                                        uint32_t length) {
   if (down()) {
     do {
@@ -373,7 +371,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_key(const char *key,
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
+bool document::iterator<max_depth>::move_to_index(uint32_t index) {
   if (down()) {
     uint32_t i = 0;
     for (; i < index; i++) {
@@ -389,7 +387,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to_index(uint32_t index) {
   return false;
 }
 
-template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::prev() {
+template <size_t max_depth> bool document::iterator<max_depth>::prev() {
   size_t target_location = location;
   to_start_scope();
   size_t npos = location;
@@ -413,7 +411,7 @@ template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::prev() {
   return true;
 }
 
-template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::up() {
+template <size_t max_depth> bool document::iterator<max_depth>::up() {
   if (depth == 1) {
     return false; // don't allow moving back to root
   }
@@ -426,7 +424,7 @@ template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::up() {
   return true;
 }
 
-template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::down() {
+template <size_t max_depth> bool document::iterator<max_depth>::down() {
   if (location + 1 >= tape_length) {
     return false;
   }
@@ -448,13 +446,13 @@ template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::down() {
 }
 
 template <size_t max_depth>
-void ParsedJson::BasicIterator<max_depth>::to_start_scope() {
+void document::iterator<max_depth>::to_start_scope() {
   location = depth_index[depth].start_of_scope;
   current_val = doc.tape[location];
   current_type = (current_val >> 56);
 }
 
-template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::next() {
+template <size_t max_depth> bool document::iterator<max_depth>::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
@@ -474,46 +472,43 @@ template <size_t max_depth> bool ParsedJson::BasicIterator<max_depth>::next() {
 }
 
 template <size_t max_depth>
-ParsedJson::BasicIterator<max_depth>::BasicIterator(document &doc_)
-    : doc(&doc_), depth(0), location(0), tape_length(0) {
-  if (!doc->is_valid()) {
-    throw InvalidJSON();
-  }
+document::iterator<max_depth>::iterator(const document &doc_) noexcept
+    : doc(doc_), depth(0), location(0), tape_length(0) {
   depth_index[0].start_of_scope = location;
-  current_val = pj->tape[location++];
+  current_val = doc.tape[location++];
   current_type = (current_val >> 56);
   depth_index[0].scope_type = current_type;
-  if (current_type == 'r') {
-    tape_length = current_val & JSON_VALUE_MASK;
-    if (location < tape_length) {
-      // If we make it here, then depth_capacity must >=2, but the compiler
-      // may not know this.
-      current_val = pj->tape[location];
-      current_type = (current_val >> 56);
-      depth++;
-      assert(depth < max_depth);
-      depth_index[depth].start_of_scope = location;
-      depth_index[depth].scope_type = current_type;
-    }
-  } else {
-    // should never happen
-    throw InvalidJSON();
+  tape_length = current_val & JSON_VALUE_MASK;
+  if (location < tape_length) {
+    // If we make it here, then depth_capacity must >=2, but the compiler
+    // may not know this.
+    current_val = doc.tape[location];
+    current_type = (current_val >> 56);
+    depth++;
+    assert(depth < max_depth);
+    depth_index[depth].start_of_scope = location;
+    depth_index[depth].scope_type = current_type;
   }
 }
 
 template <size_t max_depth>
-ParsedJson::BasicIterator<max_depth>::BasicIterator(
-    const BasicIterator &o) noexcept
-    : pj(o.pj), depth(o.depth), location(o.location),
+document::iterator<max_depth>::iterator(const document::parser &parser)
+    : iterator(parser.doc) {
+}
+
+template <size_t max_depth>
+document::iterator<max_depth>::iterator(
+    const iterator &o) noexcept
+    : doc(o.doc), depth(o.depth), location(o.location),
       tape_length(o.tape_length), current_type(o.current_type),
       current_val(o.current_val) {
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
 
 template <size_t max_depth>
-ParsedJson::BasicIterator<max_depth> &ParsedJson::BasicIterator<max_depth>::
-operator=(const BasicIterator &o) noexcept {
-  pj = o.pj;
+document::iterator<max_depth> &document::iterator<max_depth>::
+operator=(const iterator &o) noexcept {
+  doc = o.doc;
   depth = o.depth;
   location = o.location;
   tape_length = o.tape_length;
@@ -524,8 +519,7 @@ operator=(const BasicIterator &o) noexcept {
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os,
-                                                 bool escape_strings) const {
+bool document::iterator<max_depth>::print(std::ostream &os, bool escape_strings) const {
   if (!is_ok()) {
     return false;
   }
@@ -537,8 +531,7 @@ bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os,
     } else {
       // was: os << get_string();, but given that we can include null chars, we
       // have to do something crazier:
-      std::copy(get_string(), get_string() + get_string_length(),
-                std::ostream_iterator<char>(os));
+      std::copy(get_string(), get_string() + get_string_length(), std::ostream_iterator<char>(os));
     }
     os << '"';
     break;
@@ -573,7 +566,7 @@ bool ParsedJson::BasicIterator<max_depth>::print(std::ostream &os,
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::move_to(const char *pointer,
+bool document::iterator<max_depth>::move_to(const char *pointer,
                                                    uint32_t length) {
   char *new_pointer = nullptr;
   if (pointer[0] == '#') {
@@ -629,7 +622,7 @@ bool ParsedJson::BasicIterator<max_depth>::move_to(const char *pointer,
 }
 
 template <size_t max_depth>
-bool ParsedJson::BasicIterator<max_depth>::relative_move_to(const char *pointer,
+bool document::iterator<max_depth>::relative_move_to(const char *pointer,
                                                             uint32_t length) {
   if (length == 0) {
     // returns the whole document

@@ -60,5 +60,11 @@ enum ErrorValues {
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 const std::string &error_message(const int);
+struct invalid_json : public std::exception {
+  invalid_json(ErrorValues _error_code) : error_code{_error_code} {}
+  const char *what() const noexcept { return error_message(error_code).c_str(); }
+  ErrorValues error_code;
+};
+
 } // namespace simdjson
 #endif // SIMDJSON_SIMDJSON_H

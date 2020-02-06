@@ -37,7 +37,7 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
-#include "simdjson/document/parser.h"
+#include "simdjson/document.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 

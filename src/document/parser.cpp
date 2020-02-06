@@ -1,4 +1,5 @@
-#include "simdjson/document/parser.h"
+#include "simdjson/document.h"
+#include "simdjson/jsonparser.h"
 
 namespace simdjson {
 
@@ -67,9 +68,27 @@ bool document::parser::allocate_capacity(size_t len, size_t max_depth) {
   return true;
 }
 
-bool document::parser::take_document(document &dst) {
-  dst = (document&&)doc;
-  return valid && allocate_document(tape_capacity, string_capacity);
+const document &document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) {
+  auto result = (ErrorValues)json_parse(buf, len, *this, realloc_if_needed);
+  if (result) {
+    throw invalid_json(result);
+  }
+  return doc;
+}
+
+document document::parser::parse_new(const uint8_t *buf, size_t len, bool realloc_if_needed) {
+  auto result = (ErrorValues)json_parse(buf, len, *this, realloc_if_needed);
+  if (result) {
+    throw invalid_json(result);
+  }
+  // Take the document and allocate a new one for next time
+  document result_doc = (document&&)doc;
+  if (!allocate_document(tape_capacity, string_capacity)) {
+    // May as well put it back if we couldn't allocate a new one and aren't giving it back to the caller ...
+    doc = (document&&)result_doc;
+    throw invalid_json(MEMALLOC);
+  }
+  return result_doc;
 }
 
 bool document::parser::allocate_document(size_t local_tape_capacity, size_t local_string_capacity) {
