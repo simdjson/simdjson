@@ -60,8 +60,11 @@ objs
 /benchmark/parse_stream
 /benchmark/perfdiff
 /benchmark/statisticalmodel
+/corpus.zip
+/distinctuseridcompetition
 /fuzz/fuzz_dump
 /fuzz/fuzz_parser
+/get_corpus_benchmark
 /json2json
 /jsoncheck
 /jsoncheck_noavx
@@ -73,6 +76,7 @@ objs
 /minify
 /numberparsingcheck
 /parse
+/parse_stream
 /perfdiff
 /pointercheck
 /statisticalmodel
