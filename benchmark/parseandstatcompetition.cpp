@@ -153,11 +153,15 @@ __attribute__((noinline)) stat_t
 sasjon_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
+  if(buffer == nullptr) {
+    return answer;
+  }
   memcpy(buffer, p.data(), p.size());
   auto d = sajson::parse(sajson::dynamic_allocation(),
                          sajson::mutable_string_view(p.size(), buffer));
   answer.valid = d.is_valid();
   if (!answer.valid) {
+    free(buffer);
     return answer;
   }
   answer.number_count = 0;
@@ -211,12 +215,16 @@ __attribute__((noinline)) stat_t
 rapid_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
+  if(buffer == nullptr) {
+    return answer;
+  }
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   rapidjson::Document d;
   d.ParseInsitu<kParseValidateEncodingFlag>(buffer);
   answer.valid = !d.HasParseError();
   if (!answer.valid) {
+    free(buffer);
     return answer;
   }
   answer.number_count = 0;
