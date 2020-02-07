@@ -496,11 +496,7 @@ document_iterator<max_depth>::document_iterator(const document &doc_) noexcept
 
 template <size_t max_depth>
 document_iterator<max_depth>::document_iterator(const document::parser &parser)
-    : document_iterator(parser.doc) {
-  if (!parser.is_valid()) {
-    throw invalid_json((ErrorValues)parser.error_code);
-  }
-}
+    : document_iterator(parser.get_document()) {}
 
 template <size_t max_depth>
 document_iterator<max_depth>::document_iterator(

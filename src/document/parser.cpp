@@ -3,6 +3,7 @@
 
 namespace simdjson {
 
+// This is the internal one all others end up calling
 ErrorValues document::parser::try_parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
   return (ErrorValues)json_parse(buf, len, *this, realloc_if_needed);
 }
@@ -20,6 +21,8 @@ ErrorValues document::parser::try_parse_into(const uint8_t *buf, size_t len, doc
   }
   // Take the document
   dst = (document&&)doc;
+  valid = false; // Document has been taken; there is no valid document anymore
+  error_code = UNINITIALIZED;
   return result;
 }
 
@@ -138,12 +141,12 @@ std::string document::parser::get_error_message() const {
 
 WARN_UNUSED
 bool document::parser::print_json(std::ostream &os) const {
-  return doc.print_json(os);
+  return is_valid() ? doc.print_json(os) : false;
 }
 
 WARN_UNUSED
 bool document::parser::dump_raw_tape(std::ostream &os) const {
-  return doc.dump_raw_tape(os);
+  return is_valid() ? doc.dump_raw_tape(os) : false;
 }
 
 } // namespace simdjson

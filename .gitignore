@@ -60,6 +60,9 @@ objs
 /benchmark/parse_stream
 /benchmark/perfdiff
 /benchmark/statisticalmodel
+/build/
+/build-ossfuzz-*/
+/build-plain-*/
 /corpus.zip
 /distinctuseridcompetition
 /fuzz/fuzz_dump
@@ -75,6 +78,8 @@ objs
 /libsimdjson.so*
 /minify
 /numberparsingcheck
+/ossfuzz-out
+/out
 /parse
 /parse_stream
 /perfdiff

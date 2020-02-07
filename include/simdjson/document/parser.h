@@ -278,6 +278,13 @@ public:
   //
   WARN_UNUSED ErrorValues init_parse(size_t len);
 
+  const document &get_document() const {
+    if (!is_valid()) {
+      throw invalid_json(ErrorValues(error_code));
+    }
+    return doc;
+  }
+
 private:
   //
   // The maximum document length this parser supports.

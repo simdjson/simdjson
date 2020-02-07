@@ -27,7 +27,7 @@ int json_parse_implementation(const uint8_t *buf, size_t len, document::parser &
         return simdjson::MEMALLOC;
       memcpy((void *)buf, tmp_buf, len);
       reallocated = true;
-  }   // if(realloc_if_needed) {
+  }
   int stage1_err = simdjson::find_structural_bits<T>(buf, len, parser);
   if (stage1_err != simdjson::SUCCESS) {
     if (reallocated) { // must free before we exit
