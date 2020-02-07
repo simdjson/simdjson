@@ -315,7 +315,7 @@ struct feature_benchmarker {
     return calc_expected_feature_cost(stage, file) + calc_expected_miss_cost(stage, file);
   }
 
-  void print(const option_struct& options) {
+  void print(const option_struct& options) const {
     printf("\n");
     printf("Features in ns/block (64 bytes):\n");
     printf("\n");

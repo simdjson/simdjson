@@ -66,7 +66,6 @@ ostream& verbose() {
 void exit_error(string message) {
   cerr << message << endl;
   exit(EXIT_FAILURE);
-  abort();
 }
 
 struct json_stats {
@@ -230,7 +229,7 @@ struct progress_bar {
     }
     next_tick = tick;
   }
-  void erase() {
+  void erase() const {
     for (int i=0;i<next_tick+1;i++) {
       fprintf(stderr, "\b");
     }
