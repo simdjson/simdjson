@@ -54,6 +54,7 @@ objs
 
 # Build outputs (TODO build to a subdir so we can exclude that instead)
 /allparserscheckfile
+/allparsingcompetition
 /basictests
 /benchfeatures
 /benchmark/parse
@@ -76,12 +77,18 @@ objs
 /jsonstats
 /integer_tests
 /libsimdjson.so*
+/minifiercompetition
 /minify
 /numberparsingcheck
 /ossfuzz-out
 /out
 /parse
+/parse_nonumberparsing
+/parse_nostringparsing
+/parse_noutf8validation
 /parse_stream
+/parseandstatcompetition
+/parsingcompetition
 /perfdiff
 /pointercheck
 /statisticalmodel
