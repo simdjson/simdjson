@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
             !just_data);
   BEST_TIME("sasjon  ", sasjon_compute_stats(p).size(), size, , repeat, volume,
             !just_data);
-  BEST_TIME("simdjson (just parse)  ", simdjson_just_parse(p), false, , repeat,
+  BEST_TIME("simdjson (just parse)  ", simdjson_just_parse(p), true, , repeat,
             volume, !just_data);
   BEST_TIME("rapid  (just parse) ", rapid_just_parse(p), false, , repeat,
             volume, !just_data);
