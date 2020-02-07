@@ -206,7 +206,7 @@ As needed, the `json_parse` and `build_parsed_json` functions copy the input dat
 
 
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) on [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
+The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
 
 **API and detailed documentation found [here](doc/JsonStream.md).**
 
