@@ -22,8 +22,8 @@ jsonminifier.cpp
 jsonparser.cpp
 stage1_find_marks.cpp
 stage2_build_tape.cpp
-parsedjson.cpp
-parsedjsoniterator.cpp
+document.cpp
+document/parser.cpp
 "
 
 # order matters
@@ -37,8 +37,10 @@ simdjson/common_defs.h
 simdjson/padded_string.h
 simdjson/jsonioutil.h
 simdjson/jsonminifier.h
+simdjson/document.h
+simdjson/document/iterator.h
+simdjson/document/parser.h
 simdjson/parsedjson.h
-simdjson/parsedjsoniterator.h
 simdjson/stage1_find_marks.h
 simdjson/stage2_build_tape.h
 simdjson/jsonparser.h
@@ -149,11 +151,11 @@ int main(int argc, char *argv[]) {
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
-  simdjson::ParsedJson pj = simdjson::build_parsed_json(p); // do the parsing
-  if( ! pj.is_valid() ) {
-    std::cout << "build_parsed_json not valid" << std::endl;
+  simdjson::document doc;
+  if (!simdjson::document::try_parse(p, doc)) { // do the parsing
+    std::cout << "document::try_parse not valid" << std::endl;
   } else {
-    std::cout << "build_parsed_json valid" << std::endl;
+    std::cout << "document::try_parse valid" << std::endl;
   }
   if(argc == 2) {
     return EXIT_SUCCESS;
@@ -162,15 +164,15 @@ int main(int argc, char *argv[]) {
   //JsonStream
   const char * filename2 = argv[2];
   simdjson::padded_string p2 = simdjson::get_corpus(filename2);
-  simdjson::ParsedJson pj2;
+  simdjson::document::parser parser;
   simdjson::JsonStream js{p2};
   int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-            parse_res = js.json_parse(pj2);
+            parse_res = js.json_parse(parser);
   }
 
-  if( ! pj2.is_valid()) {
+  if( ! parser.is_valid()) {
     std::cout << "JsonStream not valid" << std::endl;
   } else {
     std::cout << "JsonStream valid" << std::endl;

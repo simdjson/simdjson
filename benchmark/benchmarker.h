@@ -37,7 +37,7 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson/document.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 
@@ -85,11 +85,11 @@ struct json_stats {
   size_t blocks_with_16_structurals = 0;
   size_t blocks_with_16_structurals_flipped = 0;
 
-  json_stats(const padded_string& json, const ParsedJson& pj) {
+  json_stats(const padded_string& json, const document::parser& parser) {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
-    structurals = pj.n_structural_indexes-1;
+    structurals = parser.n_structural_indexes-1;
 
     // Calculate stats on blocks that will trigger utf-8 if statements / mispredictions
     bool last_block_has_utf8 = false;
@@ -146,7 +146,7 @@ struct json_stats {
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
       int block_structurals=0;
-      while (structural < pj.n_structural_indexes && pj.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
+      while (structural < parser.n_structural_indexes && parser.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
         block_structurals++;
         structural++;
       }
@@ -305,9 +305,9 @@ struct benchmarker {
   }
 
   really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
-    // Allocate ParsedJson
+    // Allocate document::parser
     collector.start();
-    ParsedJson pj;
+    document::parser pj;
     bool allocok = pj.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;

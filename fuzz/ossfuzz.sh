@@ -9,6 +9,7 @@
 # make sure to exit on problems
 set -e
 set -u
+set -x
 
 for prog in zip cmake ninja; do
     if ! which $prog >/dev/null; then
@@ -21,7 +22,7 @@ done
 # build the corpus (all inputs are json, the same corpus can be used for everyone)
 fuzz/build_corpus.sh
 
-mkdir build
+mkdir -p build
 cd build
 
 cmake .. \

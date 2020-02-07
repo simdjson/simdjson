@@ -42,7 +42,7 @@ Architecture parse_architecture(char *architecture);
 enum ErrorValues {
   SUCCESS = 0,
   SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
-  CAPACITY,    // This ParsedJson can't support a document that big
+  CAPACITY,    // This parser can't support a document that big
   MEMALLOC,    // Error allocating memory, most likely out of memory
   TAPE_ERROR,  // Something went wrong while writing to the tape (stage 2), this
                // is a generic error
@@ -60,5 +60,11 @@ enum ErrorValues {
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 const std::string &error_message(const int);
+struct invalid_json : public std::exception {
+  invalid_json(ErrorValues _error_code) : error_code{_error_code} {}
+  const char *what() const noexcept { return error_message(error_code).c_str(); }
+  ErrorValues error_code;
+};
+
 } // namespace simdjson
-#endif // SIMDJSON_SIMDJSON_H
+#endif // SIMDJSON_H

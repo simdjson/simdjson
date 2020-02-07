@@ -58,13 +58,13 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
   answer.true_count = 0;
   answer.false_count = 0;
   size_t tape_idx = 0;
-  uint64_t tape_val = pj.tape[tape_idx++];
+  uint64_t tape_val = pj.doc.tape[tape_idx++];
   uint8_t type = (tape_val >> 56);
   size_t how_many = 0;
   assert(type == 'r');
   how_many = tape_val & JSON_VALUE_MASK;
   for (; tape_idx < how_many; tape_idx++) {
-    tape_val = pj.tape[tape_idx];
+    tape_val = pj.doc.tape[tape_idx];
     // uint64_t payload = tape_val & JSON_VALUE_MASK;
     type = (tape_val >> 56);
     switch (type) {
