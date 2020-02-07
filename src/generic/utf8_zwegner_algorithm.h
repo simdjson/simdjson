@@ -354,7 +354,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline ErrorValues errors() {
+  really_inline error_code errors() {
     return (this->special_case_errors.any_bits_set_anywhere() | this->length_errors) ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

@@ -7,8 +7,6 @@
 
 namespace simdjson {
 
-void init_state_machine();
-
 template <architecture T = architecture::NATIVE>
 WARN_UNUSED int
 unified_machine(const uint8_t *buf, size_t len, document::parser &parser);

@@ -198,7 +198,7 @@ struct structural_parser {
     }
   }
 
-  WARN_UNUSED really_inline ErrorValues finish() {
+  WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
     if ( i + 1 != doc_parser.n_structural_indexes ) {
       return doc_parser.on_error(TAPE_ERROR);
@@ -214,7 +214,7 @@ struct structural_parser {
     return doc_parser.on_success(SUCCESS);
   }
 
-  WARN_UNUSED really_inline ErrorValues error() {
+  WARN_UNUSED really_inline error_code error() {
     /* We do not need the next line because this is done by doc_parser.init_stage2(),
     * pessimistically.
     * doc_parser.is_valid  = false;
@@ -254,7 +254,7 @@ struct structural_parser {
     }
   }
 
-  WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
     doc_parser.init_stage2(); // sets is_valid to false
     if (len > doc_parser.capacity()) {
       return CAPACITY;

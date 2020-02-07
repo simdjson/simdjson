@@ -172,7 +172,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline ErrorValues errors() {
+  really_inline error_code errors() {
     return this->has_error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

@@ -4,7 +4,7 @@ struct streaming_structural_parser: structural_parser {
   really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
     doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
@@ -17,7 +17,7 @@ struct streaming_structural_parser: structural_parser {
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline ErrorValues finish() {
+  WARN_UNUSED really_inline error_code finish() {
     if ( i + 1 > doc_parser.n_structural_indexes ) {
       return doc_parser.on_error(TAPE_ERROR);
     }

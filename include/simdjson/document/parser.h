@@ -71,14 +71,14 @@ public:
   //
   // Returns != SUCCESS if the JSON is invalid.
   //
-  WARN_UNUSED ErrorValues try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept;
-  WARN_UNUSED ErrorValues try_parse(const char *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED error_code try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept;
+  WARN_UNUSED error_code try_parse(const char *buf, size_t len, const document *& dst, bool realloc_if_needed = true) noexcept {
     return try_parse((const uint8_t *)buf, len, dst, realloc_if_needed);
   }
-  WARN_UNUSED ErrorValues try_parse(const std::string &s, const document *&dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED error_code try_parse(const std::string &s, const document *&dst, bool realloc_if_needed = true) noexcept {
     return try_parse(s.data(), s.length(), dst, realloc_if_needed);
   }
-  WARN_UNUSED ErrorValues try_parse(const padded_string &s, const document *&dst) noexcept {
+  WARN_UNUSED error_code try_parse(const padded_string &s, const document *&dst) noexcept {
     return try_parse(s.data(), s.length(), dst, false);
   }
 
@@ -89,14 +89,14 @@ public:
   //
   // Returns != SUCCESS if the JSON is invalid.
   //
-  WARN_UNUSED ErrorValues try_parse_into(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
-  WARN_UNUSED ErrorValues try_parse_into(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED error_code try_parse_into(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
+  WARN_UNUSED error_code try_parse_into(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept {
     return try_parse_into((const uint8_t *)buf, len, dst, realloc_if_needed);
   }
-  WARN_UNUSED ErrorValues try_parse_into(const std::string &s, document &dst, bool realloc_if_needed = true) noexcept {
+  WARN_UNUSED error_code try_parse_into(const std::string &s, document &dst, bool realloc_if_needed = true) noexcept {
     return try_parse_into(s.data(), s.length(), dst, realloc_if_needed);
   }
-  WARN_UNUSED ErrorValues try_parse_into(const padded_string &s, document &dst) noexcept {
+  WARN_UNUSED error_code try_parse_into(const padded_string &s, document &dst) noexcept {
     return try_parse_into(s.data(), s.length(), dst, false);
   }
 
@@ -143,7 +143,7 @@ public:
   uint8_t *current_string_buf_loc;
 
   bool valid{false};
-  int error_code{simdjson::UNINITIALIZED};
+  error_code error{simdjson::UNINITIALIZED};
 
   // Document we're writing to
   document doc;
@@ -173,12 +173,12 @@ public:
   // this should be called when parsing (right before writing the tapes)
   void init_stage2();
 
-  really_inline ErrorValues on_error(ErrorValues new_error_code) {
-    error_code = new_error_code;
+  really_inline error_code on_error(error_code new_error_code) {
+    error = new_error_code;
     return new_error_code;
   }
-  really_inline ErrorValues on_success(ErrorValues success_code) {
-    error_code = success_code;
+  really_inline error_code on_success(error_code success_code) {
+    error = success_code;
     valid = true;
     return success_code;
   }
@@ -276,11 +276,11 @@ public:
   // - Returns CAPACITY if the document is too large
   // - Returns MEMALLOC if we needed to allocate memory and could not
   //
-  WARN_UNUSED ErrorValues init_parse(size_t len);
+  WARN_UNUSED error_code init_parse(size_t len);
 
   const document &get_document() const {
     if (!is_valid()) {
-      throw invalid_json(ErrorValues(error_code));
+      throw invalid_json(error);
     }
     return doc;
   }
@@ -323,7 +323,7 @@ private:
     doc.tape[saved_loc] |= val;
   }
 
-  WARN_UNUSED ErrorValues try_parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept;
+  WARN_UNUSED error_code try_parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept;
 
   //
   // Set the current capacity: the largest document this parser can support without reallocating.

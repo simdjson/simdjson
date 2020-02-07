@@ -26,17 +26,17 @@ enum error_code {
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 
-const std::string &error_message(error_code code);
+const std::string &error_message(error_code error);
 
 struct invalid_json : public std::exception {
-  invalid_json(error_code _code) : code{_code} {}
-  const char *what() const noexcept { return error_message(code).c_str(); }
-  error_code code;
+  invalid_json(error_code _error) : error{_error} {}
+  const char *what() const noexcept { return error_message(error).c_str(); }
+  error_code error;
 };
 
 // backcompat
 using ErrorValues = error_code;
-inline const std::string &error_message(int code) { return error_message(code); }
+inline const std::string &error_message(int error) { return error_message(error_code(error)); }
 
 } // namespace simdjson
 
