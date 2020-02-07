@@ -264,6 +264,8 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     if (len - idx < 64) {
       whitespace |= UINT64_C(0xFFFFFFFFFFFFFFFF) << (len - idx);
     }
+    uint64_t non_whitespace = ~whitespace;
+
     int mask1 = non_whitespace & 0xFFFF;
     int mask2 = (non_whitespace >> 16) & 0xFFFF;
     int mask3 = (non_whitespace >> 32) & 0xFFFF;
