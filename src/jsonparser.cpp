@@ -26,7 +26,7 @@ int json_parse(const char *buf, size_t len, ParsedJson &pj, bool realloc) {
                                                         realloc);
 }
 
-Architecture find_best_supported_architecture() {
+architecture find_best_supported_architecture() {
   constexpr uint32_t haswell_flags =
       instruction_set::AVX2 | instruction_set::PCLMULQDQ |
       instruction_set::BMI1 | instruction_set::BMI2;
@@ -36,38 +36,38 @@ Architecture find_best_supported_architecture() {
   uint32_t supports = detect_supported_architectures();
   // Order from best to worst (within architecture)
   if ((haswell_flags & supports) == haswell_flags)
-    return Architecture::HASWELL;
+    return architecture::HASWELL;
   if ((westmere_flags & supports) == westmere_flags)
-    return Architecture::WESTMERE;
+    return architecture::WESTMERE;
   if (supports & instruction_set::NEON)
-    return Architecture::ARM64;
+    return architecture::ARM64;
 
-  return Architecture::UNSUPPORTED;
+  return architecture::UNSUPPORTED;
 }
 
-Architecture parse_architecture(char *architecture) {
-  if (!strcmp(architecture, "HASWELL")) { return Architecture::HASWELL; }
-  if (!strcmp(architecture, "WESTMERE")) { return Architecture::WESTMERE; }
-  if (!strcmp(architecture, "ARM64")) { return Architecture::ARM64; }
-  return Architecture::UNSUPPORTED;
+architecture parse_architecture(char *arch) {
+  if (!strcmp(arch, "HASWELL")) { return architecture::HASWELL; }
+  if (!strcmp(arch, "WESTMERE")) { return architecture::WESTMERE; }
+  if (!strcmp(arch, "ARM64")) { return architecture::ARM64; }
+  return architecture::UNSUPPORTED;
 }
 
 // Responsible to select the best json_parse implementation
 int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc) {
-  Architecture best_implementation = find_best_supported_architecture();
+  architecture best_implementation = find_best_supported_architecture();
   // Selecting the best implementation
   switch (best_implementation) {
 #ifdef IS_X86_64
-  case Architecture::HASWELL:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::HASWELL>, std::memory_order_relaxed);
+  case architecture::HASWELL:
+    json_parse_ptr.store(&json_parse_implementation<architecture::HASWELL>, std::memory_order_relaxed);
     break;
-  case Architecture::WESTMERE:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::WESTMERE>, std::memory_order_relaxed);
+  case architecture::WESTMERE:
+    json_parse_ptr.store(&json_parse_implementation<architecture::WESTMERE>, std::memory_order_relaxed);
     break;
 #endif
 #ifdef IS_ARM64
-  case Architecture::ARM64:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::ARM64>, std::memory_order_relaxed);
+  case architecture::ARM64:
+    json_parse_ptr.store(&json_parse_implementation<architecture::ARM64>, std::memory_order_relaxed);
     break;
 #endif
   default:

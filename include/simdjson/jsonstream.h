@@ -246,21 +246,21 @@ void find_the_best_supported_implementation() {
       simdjson::instruction_set::SSE42 | simdjson::instruction_set::PCLMULQDQ;
   if ((haswell_flags & supports) == haswell_flags) {
     best_stage1 =
-        simdjson::find_structural_bits<simdjson::Architecture::HASWELL>;
-    best_stage2 = simdjson::unified_machine<simdjson::Architecture::HASWELL>;
+        simdjson::find_structural_bits<simdjson::architecture::HASWELL>;
+    best_stage2 = simdjson::unified_machine<simdjson::architecture::HASWELL>;
     return;
   }
   if ((westmere_flags & supports) == westmere_flags) {
     best_stage1 =
-        simdjson::find_structural_bits<simdjson::Architecture::WESTMERE>;
-    best_stage2 = simdjson::unified_machine<simdjson::Architecture::WESTMERE>;
+        simdjson::find_structural_bits<simdjson::architecture::WESTMERE>;
+    best_stage2 = simdjson::unified_machine<simdjson::architecture::WESTMERE>;
     return;
   }
 #endif
 #ifdef IS_ARM64
   if (supports & instruction_set::NEON) {
-    best_stage1 = simdjson::find_structural_bits<Architecture::ARM64>;
-    best_stage2 = simdjson::unified_machine<Architecture::ARM64>;
+    best_stage1 = simdjson::find_structural_bits<architecture::ARM64>;
+    best_stage2 = simdjson::unified_machine<architecture::ARM64>;
     return;
   }
 #endif

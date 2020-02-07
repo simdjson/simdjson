@@ -55,7 +55,7 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 namespace simdjson {
 
 template <>
-int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+int find_structural_bits<architecture::ARM64>(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
   return arm64::stage1::find_structural_bits<64>(buf, len, parser, streaming);
 }
 
