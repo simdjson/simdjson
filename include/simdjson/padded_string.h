@@ -82,12 +82,11 @@ struct padded_string final {
     *this = std::move(other_);
   }
 
-  padded_string &operator=(padded_string &&o) {
-    aligned_free_char(data_ptr);
-    data_ptr = o.data_ptr;
-    viable_size = o.viable_size;
-    o.data_ptr = nullptr; // we take ownership
-    o.viable_size = 0;
+  // move assignment
+  padded_string &operator=(padded_string && other_ ) {
+    using namespace std;
+    std::swap(data_ptr, other_.data_ptr);
+    std::swap(viable_size, other_.viable_size);
     return *this;
   }
 
