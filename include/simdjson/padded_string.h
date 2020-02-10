@@ -1,12 +1,8 @@
 #ifndef SIMDJSON_PADDING_STRING_H
 #define SIMDJSON_PADDING_STRING_H
 #include "simdjson/portability.h"
-<<<<<<< HEAD
-#include "common_defs.h" // SIMDJSON_PADDING
-=======
 #include "simdjson/common_defs.h" // for SIMDJSON_PADDING
 
->>>>>>> 8e7d1a5f0917422b43342623779321e67439186f
 #include <cstring>
 #include <memory>
 #include <string>
@@ -66,12 +62,7 @@ struct padded_string final {
   }
 
   explicit padded_string(const char *data, size_t length) noexcept
-<<<<<<< HEAD
-      : padded_string(length) 
-  {
-=======
       : viable_size(length), data_ptr(allocate_padded_buffer(length)) {
->>>>>>> 8e7d1a5f0917422b43342623779321e67439186f
     if ((data != nullptr) and (data_ptr != nullptr)) {
       memcpy(data_ptr, data, length);
       // probably not necessary
@@ -91,28 +82,12 @@ struct padded_string final {
     *this = std::move(other_);
   }
 
-<<<<<<< HEAD
-  // move assignment
-  padded_string &operator=(padded_string && other_ ) {
-    using namespace std;
-    std::swap(data_ptr, other_.data_ptr);
-    std::swap(viable_size, other_.viable_size);
-    // free the payload
-    // that other_.data_ptr is pointing to
-    simdjson::aligned_free_char(other_.data_ptr);
-    // technicaly not needed
-    // other_ is moved after this operator exits
-    // and it not to be used any more
-    other_.data_ptr = nullptr;
-    other_.viable_size = 0;
-=======
   padded_string &operator=(padded_string &&o) {
     aligned_free_char(data_ptr);
     data_ptr = o.data_ptr;
     viable_size = o.viable_size;
     o.data_ptr = nullptr; // we take ownership
     o.viable_size = 0;
->>>>>>> 8e7d1a5f0917422b43342623779321e67439186f
     return *this;
   }
 
