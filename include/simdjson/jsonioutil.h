@@ -1,13 +1,14 @@
 #ifndef SIMDJSON_JSONIOUTIL_H
 #define SIMDJSON_JSONIOUTIL_H
 
-#include "simdjson/common_defs.h"
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
+#include "simdjson/common_defs.h"
 #include "simdjson/padded_string.h"
 
 namespace simdjson {

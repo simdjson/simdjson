@@ -58,8 +58,8 @@ endif # ifeq ($(DEBUG),1)
 endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
-MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer
-TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck jsonstream_test
+MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer get_corpus_benchmark
+TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck jsonstream_test basictests
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -70,14 +70,14 @@ LIBHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/h
 LIBHEADERS_WESTMERE=src/westmere/bitmanipulation.h src/westmere/bitmask.h src/westmere/intrinsics.h src/westmere/numberparsing.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
 LIBHEADERS=src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
 
-PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/parsedjson.h include/simdjson/parsedjsoniterator.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
+PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/document.h include/simdjson/document/iterator.h include/simdjson/document/parser.h include/simdjson/parsedjson.h include/simdjson/jsonstream.h include/simdjson/portability.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/jsonstream.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp src/parsedjsoniterator.cpp
+LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/document.cpp src/document/parser.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
-FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/0-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/utf-8.json jsonexamples/generated/15-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/utf-8-miss.json
+FEATURE_JSON_FILES=jsonexamples/generated/0-structurals-full.json jsonexamples/generated/0-structurals-miss.json jsonexamples/generated/0-structurals.json jsonexamples/generated/15-structurals-full.json jsonexamples/generated/15-structurals-miss.json jsonexamples/generated/15-structurals.json jsonexamples/generated/23-structurals-full.json jsonexamples/generated/23-structurals-miss.json jsonexamples/generated/23-structurals.json jsonexamples/generated/7-structurals-full.json jsonexamples/generated/7-structurals-miss.json jsonexamples/generated/7-structurals.json jsonexamples/generated/escape-full.json jsonexamples/generated/escape-miss.json jsonexamples/generated/escape.json jsonexamples/generated/utf-8-full.json jsonexamples/generated/utf-8-miss.json jsonexamples/generated/utf-8.json
 
 RAPIDJSON_INCLUDE:=dependencies/rapidjson/include
 SAJSON_INCLUDE:=dependencies/sajson/include
@@ -205,18 +205,18 @@ basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp       -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
+	$(CXX) $(CXXFLAGS) -o numberparsingcheck src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/document.cpp src/document/parser.cpp tests/numberparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
 
 integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o integer_tests tests/integer_tests.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/parsedjson.cpp       -I. $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS) -o integer_tests $(LIBFILES) tests/integer_tests.cpp -I. $(LIBFLAGS)
 
 
 
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp  src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp      -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
+	$(CXX) $(CXXFLAGS) -o stringparsingcheck src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp src/document.cpp src/document/parser.cpp tests/stringparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
 
 pointercheck:tests/pointercheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o pointercheck tests/pointercheck.cpp src/stage2_build_tape.cpp src/jsonioutil.cpp src/jsonparser.cpp src/simdjson.cpp src/stage1_find_marks.cpp  src/parsedjson.cpp src/parsedjsoniterator.cpp -I. $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS) -o pointercheck $(LIBFILES) tests/pointercheck.cpp -I. $(LIBFLAGS)
 
 minifiercompetition: benchmark/minifiercompetition.cpp $(HEADERS) submodules $(MINIFIERHEADERS) $(LIBFILES) $(MINIFIERLIBFILES)
 	$(CXX) $(CXXFLAGS) -o minifiercompetition $(LIBFILES) $(MINIFIERLIBFILES) benchmark/minifiercompetition.cpp -I. $(LIBFLAGS) $(COREDEPSINCLUDE)

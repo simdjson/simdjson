@@ -1,3 +1,4 @@
+namespace numberparsing {
 
 // Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
@@ -75,7 +76,7 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-static inline bool is_integer(char c) {
+really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
@@ -104,7 +105,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-static inline bool is_made_of_eight_digits_fast(const char *chars) {
+really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -123,7 +124,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int64_t negative_exponent) {
+really_inline double subnormal_power10(double base, int64_t negative_exponent) {
     // avoid integer overflows in the pow expression, those values would
     // become zero anyway.
     if(negative_exponent < -1000) {
@@ -144,8 +145,8 @@ static double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+never_inline bool parse_float(const uint8_t *const buf, document::parser &parser,
+                              const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -268,7 +269,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -283,8 +284,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             ParsedJson &pj,
+never_inline bool parse_large_integer(const uint8_t *const buf,
+                                             document::parser &parser,
                                              const uint32_t offset,
                                              bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -333,14 +334,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -353,12 +354,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      parser.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      parser.on_number_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -373,12 +374,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
-                                       const uint32_t offset,
-                                       bool found_minus) {
+really_inline bool parse_number(const uint8_t *const buf,
+                                const uint32_t offset,
+                                bool found_minus,
+                                document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  pj.write_tape_s64(0);           // always write zero
+  parser.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -524,18 +526,18 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, pj, offset, found_minus);
+        return parse_float(buf, parser, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, found_minus);
+      return parse_float(buf, parser, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    pj.write_tape_double(d);
+    parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -543,10 +545,10 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, pj, offset, found_minus);
+      return parse_large_integer(buf, parser, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    pj.write_tape_s64(i);
+    parser.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
@@ -555,3 +557,4 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
+} // namespace numberparsing

@@ -63,12 +63,12 @@ struct event_count {
   double cache_references() const { return event_counts[CACHE_REFERENCES]; }
   double cache_misses() const { return event_counts[CACHE_MISSES]; }
 
-  event_count& operator=(const event_count other) {
+  event_count& operator=(const event_count& other) {
     this->elapsed = other.elapsed;
     this->event_counts = other.event_counts;
     return *this;
   }
-  event_count operator+(const event_count other) const {
+  event_count operator+(const event_count& other) const {
     return event_count(elapsed+other.elapsed, {
       event_counts[0]+other.event_counts[0],
       event_counts[1]+other.event_counts[1],
@@ -78,7 +78,7 @@ struct event_count {
     });
   }
 
-  void operator+=(const event_count other) {
+  void operator+=(const event_count& other) {
     *this = *this + other;
   }
 };
@@ -91,7 +91,7 @@ struct event_aggregate {
 
   event_aggregate() {}
 
-  void operator<<(const event_count other) {
+  void operator<<(const event_count& other) {
     if (iterations == 0 || other.elapsed < best.elapsed) {
       best = other;
     }

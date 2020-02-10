@@ -4,33 +4,32 @@ struct streaming_structural_parser: structural_parser {
   really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline int start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+  WARN_UNUSED really_inline ErrorValues start(ret_address finish_parser) {
+    doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_parser, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_parser)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline int finish() {
-    if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+  WARN_UNUSED really_inline ErrorValues finish() {
+    if ( i + 1 > doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -49,10 +48,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_jso
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -94,7 +93,8 @@ object_begin:
     goto object_key_parser;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -111,20 +111,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -138,6 +140,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;

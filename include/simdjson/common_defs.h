@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_COMMON_DEFS_H
 #define SIMDJSON_COMMON_DEFS_H
 
-#include "simdjson/portability.h"
-
 #include <cassert>
+#include "simdjson/portability.h"
 
 // we support documents up to 4GB
 #define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
@@ -25,7 +24,7 @@
 #define DEBUG_BLOCK(name, block)
 #endif
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
 // Implemented using Labels as Values which works in GCC and CLANG (and maybe
 // also in Intel's compiler), but won't work in MSVC.
 #define SIMDJSON_USE_COMPUTED_GOTO

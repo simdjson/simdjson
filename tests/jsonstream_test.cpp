@@ -86,7 +86,7 @@ bool validate(const char *dirname) {
             }
 
             simdjson::ParsedJson pj;
-            simdjson::JsonStream js{p.data(), p.size()};
+            simdjson::JsonStream js{p};
 
             ++how_many;
             int parse_res = simdjson::SUCCESS_AND_HAS_MORE;

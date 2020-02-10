@@ -90,6 +90,15 @@ On x64 hardware, you should typically build your code by specifying the oldest/l
 
 We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
 
+## Computed GOTOs
+
+For best performance, we use a technique called "computed goto", it is also sometimes described as "Labels as Values".
+Though it is not part of the C++ standard, it is supported by many major compilers and it brings measurable performance benefits that
+are difficult to achieve otherwise.
+The computed gotos are  automatically disabled under Visual Studio.
+If you wish to forcefully disable computed gotos, you can do so by compiling the code with the macro `SIMDJSON_NO_COMPUTED_GOTO`
+defined. It is not recommended to disable computed gotos if your compiler supports it. In fact, you should almost never need to
+be concerned with computed gotos.
 
 
 ## Thread safety
@@ -197,7 +206,7 @@ As needed, the `json_parse` and `build_parsed_json` functions copy the input dat
 
 
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) on [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
+The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
 
 **API and detailed documentation found [here](doc/JsonStream.md).**
 

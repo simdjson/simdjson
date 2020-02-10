@@ -1,99 +1,32 @@
-#include "simdjson/parsedjson.h"
+#include "simdjson/document.h"
 #include "simdjson/jsonformatutils.h"
+#include "simdjson/document.h"
 
 namespace simdjson {
 
-WARN_UNUSED
-bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
-  if (max_depth <= 0) {
-    max_depth = 1; // don't let the user allocate nothing
-  }
-  if (len <= 0) {
-    len = 64; // allocating 0 bytes is wasteful.
-  }
-  if (len > SIMDJSON_MAXSIZE_BYTES) {
-    return false;
-  }
-  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
+bool document::set_capacity(size_t capacity) {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
     return true;
   }
-  deallocate();
-  valid = false;
-  byte_capacity = 0; // will only set it to len after allocations are a success
-  n_structural_indexes = 0;
-  uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]);
 
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
   //where len + 1 tape elements are
   // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t local_tape_capacity = ROUNDUP_N(len + 2, 64);
+  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
-  size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
-  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]);
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  //ret_address = new (std::nothrow) void *[max_depth];
-  ret_address.reset(new (std::nothrow) void *[max_depth]);
-#else
-  ret_address.reset(new (std::nothrow) char[max_depth]);
-#endif
-  if (!string_buf || !tape ||
-      !containing_scope_offset || !ret_address ||
-      !structural_indexes) {
-    // Could not allocate memory
-    return false;
-  }
-  /*
-  // We do not need to initialize this content for parsing, though we could
-  // need to initialize it for safety.
-  memset(string_buf, 0 , local_string_capacity);
-  memset(structural_indexes, 0, max_structures * sizeof(uint32_t));
-  memset(tape, 0, local_tape_capacity * sizeof(uint64_t));
-  */
-  byte_capacity = len;
-  depth_capacity = max_depth;
-  tape_capacity = local_tape_capacity;
-  string_capacity = local_string_capacity;
-  return true;
-}
-
-bool ParsedJson::is_valid() const { return valid; }
-
-int ParsedJson::get_error_code() const { return error_code; }
-
-std::string ParsedJson::get_error_message() const {
-  return error_message(error_code);
-}
-
-void ParsedJson::deallocate() {
-  byte_capacity = 0;
-  depth_capacity = 0;
-  tape_capacity = 0;
-  string_capacity = 0;
-  ret_address.reset();
-  containing_scope_offset.reset();
-  tape.reset();
-  string_buf.reset();
-  structural_indexes.reset();
-  valid = false;
-}
-
-void ParsedJson::init() {
-  current_string_buf_loc = string_buf.get();
-  current_loc = 0;
-  valid = false;
+  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  return string_buf && tape;
 }
 
 WARN_UNUSED
-bool ParsedJson::print_json(std::ostream &os) const {
-  if (!valid) {
-    return false;
-  }
+bool document::print_json(std::ostream &os, size_t max_depth) const {
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
@@ -105,13 +38,9 @@ bool ParsedJson::print_json(std::ostream &os) const {
     // Error: no starting root node?
     return false;
   }
-  if (how_many > tape_capacity) {
-    // We may be exceeding the tape capacity. Is this a valid document?
-    return false;
-  }
   tape_idx++;
-  std::unique_ptr<bool[]> in_object(new bool[depth_capacity]);
-  std::unique_ptr<size_t[]> in_object_idx(new size_t[depth_capacity]);
+  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
   int depth = 1; // only root at level 0
   in_object_idx[depth] = 0;
   in_object[depth] = false;
@@ -204,10 +133,7 @@ bool ParsedJson::print_json(std::ostream &os) const {
 }
 
 WARN_UNUSED
-bool ParsedJson::dump_raw_tape(std::ostream &os) const {
-  if (!valid) {
-    return false;
-  }
+bool document::dump_raw_tape(std::ostream &os) const {
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
@@ -299,4 +225,5 @@ bool ParsedJson::dump_raw_tape(std::ostream &os) const {
      << " (start root)\n";
   return true;
 }
+
 } // namespace simdjson
