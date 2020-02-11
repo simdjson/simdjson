@@ -28,41 +28,42 @@ It is sometimes useful to start with an example. Consider the following JSON doc
 
 The following is a dump of the content of the tape, with the first number of each line representing the index of a tape element.
 
-```bash
-$ ./json2json -d jsonexamples/small/demo.json
-0 : r	// pointing to 38 (right after last node)
-1 : {	// pointing to next tape location 38 (first node after the scope)
-2 : string "Image"
-3 : {	// pointing to next tape location 37 (first node after the scope)
-4 : string "Width"
-5 : integer 800
-7 : string "Height"
-8 : integer 600
-10 : string "Title"
-11 : string "View from 15th Floor"
-12 : string "Thumbnail"
-13 : {	// pointing to next tape location 23 (first node after the scope)
-14 : string "Url"
-15 : string "http://www.example.com/image/481989943"
-16 : string "Height"
-17 : integer 125
-19 : string "Width"
-20 : integer 100
-22 : }	// pointing to previous tape location 13 (start of the scope)
-23 : string "Animated"
-24 : false
-25 : string "IDs"
-26 : [	// pointing to next tape location 36 (first node after the scope)
-27 : integer 116
-29 : integer 943
-31 : integer 234
-33 : integer 38793
-35 : ]	// pointing to previous tape location 26 (start of the scope)
-36 : }	// pointing to previous tape location 3 (start of the scope)
-37 : }	// pointing to previous tape location 1 (start of the scope)
-38 : r	// pointing to 0 (start root)
+### The Tape
+| index | element (64 bit word)                                               |
+| ----- | ------------------------------------------------------------------- |
+| 0     | r	// pointing to 38 (right after last node)                         |
+| 1     | {	// pointing to next tape location 38 (first node after the scope) |
+| 2     | string "Image"                                                      |
+| 3     | {	// pointing to next tape location 37 (first node after the scope) |
+| 4     | string "Width"                                                      |
+| 5     | integer 800                                                         |
+| 7     | string "Height"                                                     |
+| 8     | integer 600                                                         |
+| 10    | string "Title"                                                      |
+| 11    | string "View from 15th Floor"                                       |
+| 12    | string "Thumbnail"                                                  |
+| 13    | {	// pointing to next tape location 23 (first node after the scope) |
+| 14    | string "Url"                                                        |
+| 15    | string "http://www.example.com/image/481989943"                     |
+| 16    | string "Height"                                                     |
+| 17    | integer 125                                                         |
+| 19    | string "Width"                                                      |
+| 20    | integer 100                                                         |
+| 22    | }	// pointing to previous tape location 13 (start of the scope)     |
+| 23    | string "Animated"                                                   |
+| 24    | false                                                               |
+| 25    | string "IDs"                                                        |
+| 26    | [	// pointing to next tape location 36 (first node after the scope) |
+| 27    | integer 116                                                         |
+| 29    | integer 943                                                         |
+| 31    | integer 234                                                         |
+| 33    | integer 38793                                                       |
+| 35    | ]	// pointing to previous tape location 26 (start of the scope)     |
+| 36    | }	// pointing to previous tape location 3 (start of the scope)      |
+| 37    | }	// pointing to previous tape location 1 (start of the scope)      |
+| 38    | r	// pointing to 0 (start root)                                     |
 
-```
+
 
 ## General formal of the tape elements
 

@@ -37,7 +37,7 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson/document.h"
 #include "simdjson/stage1_find_marks.h"
 #include "simdjson/stage2_build_tape.h"
 
@@ -66,7 +66,6 @@ ostream& verbose() {
 void exit_error(string message) {
   cerr << message << endl;
   exit(EXIT_FAILURE);
-  abort();
 }
 
 struct json_stats {
@@ -75,6 +74,8 @@ struct json_stats {
   size_t structurals = 0;
   size_t blocks_with_utf8 = 0;
   size_t blocks_with_utf8_flipped = 0;
+  size_t blocks_with_escapes = 0;
+  size_t blocks_with_escapes_flipped = 0;
   size_t blocks_with_0_structurals = 0;
   size_t blocks_with_0_structurals_flipped = 0;
   size_t blocks_with_1_structural = 0;
@@ -84,11 +85,11 @@ struct json_stats {
   size_t blocks_with_16_structurals = 0;
   size_t blocks_with_16_structurals_flipped = 0;
 
-  json_stats(const padded_string& json, const ParsedJson& pj) {
+  json_stats(const padded_string& json, const document::parser& parser) {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
-    structurals = pj.n_structural_indexes-1;
+    structurals = parser.n_structural_indexes-1;
 
     // Calculate stats on blocks that will trigger utf-8 if statements / mispredictions
     bool last_block_has_utf8 = false;
@@ -113,6 +114,29 @@ struct json_stats {
       last_block_has_utf8 = block_has_utf8;
     }
 
+    // Calculate stats on blocks that will trigger escape if statements / mispredictions
+    bool last_block_has_escapes = false;
+    for (size_t block=0; block<blocks; block++) {
+      // Find utf-8 in the block
+      size_t block_start = block*BYTES_PER_BLOCK;
+      size_t block_end = block_start+BYTES_PER_BLOCK;
+      if (block_end > json.size()) { block_end = json.size(); }
+      bool block_has_escapes = false;
+      for (size_t i=block_start; i<block_end; i++) {
+        if (json.data()[i] == '\\') {
+          block_has_escapes = true;
+          break;
+        }
+      }
+      if (block_has_escapes) {
+        blocks_with_escapes++;
+      }
+      if (block > 0 && last_block_has_escapes != block_has_escapes) {
+        blocks_with_escapes_flipped++;
+      }
+      last_block_has_escapes = block_has_escapes;
+    }
+
     // Calculate stats on blocks that will trigger structural count if statements / mispredictions
     bool last_block_has_0_structurals = false;
     bool last_block_has_1_structural = false;
@@ -122,7 +146,7 @@ struct json_stats {
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
       int block_structurals=0;
-      while (structural < pj.n_structural_indexes && pj.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
+      while (structural < parser.n_structural_indexes && parser.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
         block_structurals++;
         structural++;
       }
@@ -205,7 +229,7 @@ struct progress_bar {
     }
     next_tick = tick;
   }
-  void erase() {
+  void erase() const {
     for (int i=0;i<next_tick+1;i++) {
       fprintf(stderr, "\b");
     }
@@ -217,6 +241,23 @@ struct progress_bar {
     }
   }
 };
+
+enum class BenchmarkStage {
+  ALL,
+  ALLOCATE,
+  STAGE1,
+  STAGE2
+};
+
+const char* benchmark_stage_name(BenchmarkStage stage) {
+  switch (stage) {
+    case BenchmarkStage::ALL: return "All";
+    case BenchmarkStage::ALLOCATE: return "Allocate";
+    case BenchmarkStage::STAGE1: return "Stage 1";
+    case BenchmarkStage::STAGE2: return "Stage 2";
+    default: return "Unknown";
+  }
+}
 
 struct benchmarker {
   // JSON text from loading the file. Owns the memory.
@@ -249,17 +290,33 @@ struct benchmarker {
     }
   }
 
+  const event_aggregate& operator[](BenchmarkStage stage) const {
+    switch (stage) {
+      case BenchmarkStage::ALL: return this->all_stages;
+      case BenchmarkStage::STAGE1: return this->stage1;
+      case BenchmarkStage::STAGE2: return this->stage2;
+      case BenchmarkStage::ALLOCATE: return this->allocate_stage;
+      default: exit_error("Unknown stage"); return this->all_stages;
+    }
+  }
+
   int iterations() const {
     return all_stages.iterations;
   }
 
-  really_inline void run_iteration(bool stage1_only=false) {
-    // Allocate ParsedJson
+  really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
+    // Allocate document::parser
     collector.start();
-    ParsedJson pj;
+    document::parser pj;
     bool allocok = pj.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
+    if(hotbuffers) {
+      int result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
+      if (result != simdjson::SUCCESS) {
+        exit_error(string("Failed to parse ") + filename + string(":") + pj.get_error_message());
+      }
+    }
 
     if (!allocok) {
       exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result.");
@@ -276,44 +333,42 @@ struct benchmarker {
       exit_error(string("Failed to parse ") + filename + " during stage 1: " + pj.get_error_message());
     }
 
-    // Stage 2 (unified machine)
-    event_count stage2_count;
-    if (!stage1_only || stats == NULL) {
-      if (!stage1_only) {
-        collector.start();
-      }
+    // Stage 2 (unified machine) and the rest
+
+    if (stage1_only) {
+      all_stages << stage1_count;
+    } else {
+      event_count stage2_count;
+      collector.start();
       result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
-      if (!stage1_only) {
-        stage2_count = collector.end();
-        stage2 << stage2_count;
-      }
-
       if (result != simdjson::SUCCESS) {
-        exit_error(string("Failed to parse ") + filename + " during stage 2: " + pj.get_error_message());
+        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + pj.get_error_message());
       }
+      stage2_count = collector.end();
+      stage2 << stage2_count;
+      all_stages << allocate_count + stage1_count + stage2_count;
     }
-
-    all_stages << (stage1_count + stage2_count);
-
     // Calculate stats the first time we parse
     if (stats == NULL) {
+      if (stage1_only) { //  we need stage 2 once
+        result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
+        if (result != simdjson::SUCCESS) {
+          printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
+        }
+      }
       stats = new json_stats(json, pj);
     }
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
+  really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers=false) {
     for (size_t i = 0; i<iterations; i++) {
-      run_iteration(stage1_only);
+      run_iteration(stage1_only, hotbuffers);
     }
-  }
-
-  double stage1_ns_per_block() {
-    return stage1.elapsed_ns() / stats->blocks;
   }
 
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
-    printf("%s%-13s: %8.4f ns per block (%5.1f %%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
+    printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
       prefix,
       "Speed",
       stage.elapsed_ns() / stats->blocks, // per block
@@ -324,7 +379,7 @@ struct benchmarker {
     );
 
     if (collector.has_events()) {
-      printf("%s%-13s: %2.3f per block (%5.2f %%) - %2.3f per byte - %2.3f per structural - %2.3f GHz est. frequency\n",
+      printf("%s%-13s: %8.4f per block    (%6.2f%%) - %8.4f per byte    - %8.4f per structural    - %8.3f GHz est. frequency\n",
         prefix,
         "Cycles",
         stage.cycles() / stats->blocks,
@@ -333,8 +388,7 @@ struct benchmarker {
         stage.cycles() / stats->structurals,
         (stage.cycles() / stage.elapsed_sec()) / 1000000000.0
       );
-
-      printf("%s%-13s: %2.2f per block (%5.2f %%) - %2.2f per byte - %2.2f per structural - %2.2f per cycle\n",
+      printf("%s%-13s: %8.4f per block    (%6.2f%%) - %8.4f per byte    - %8.4f per structural    - %8.3f per cycle\n",
         prefix,
         "Instructions",
         stage.instructions() / stats->blocks,
@@ -345,7 +399,7 @@ struct benchmarker {
       );
 
       // NOTE: removed cycles/miss because it is a somewhat misleading stat
-      printf("%s%-13s: %2.2f branch misses (%5.2f %%) - %2.2f cache misses (%5.2f %%) - %2.2f cache references\n",
+      printf("%s%-13s: %7.0f branch misses (%6.2f%%) - %.0f cache misses (%6.2f%%) - %.2f cache references\n",
         prefix,
         "Misses",
         stage.branch_misses(),
@@ -395,28 +449,46 @@ struct benchmarker {
       printf("%s\n", string(strlen(filename), '=').c_str());
       printf("%9zu blocks - %10zu bytes - %5zu structurals (%5.1f %%)\n", stats->bytes / BYTES_PER_BLOCK, stats->bytes, stats->structurals, 100.0 * stats->structurals / stats->bytes);
       if (stats) {
-        printf("special blocks with: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+        printf("special blocks with: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
           stats->blocks_with_utf8, 100.0 * stats->blocks_with_utf8 / stats->blocks,
+          stats->blocks_with_escapes, 100.0 * stats->blocks_with_escapes / stats->blocks,
           stats->blocks_with_0_structurals, 100.0 * stats->blocks_with_0_structurals / stats->blocks,
           stats->blocks_with_1_structural, 100.0 * stats->blocks_with_1_structural / stats->blocks,
           stats->blocks_with_8_structurals, 100.0 * stats->blocks_with_8_structurals / stats->blocks,
           stats->blocks_with_16_structurals, 100.0 * stats->blocks_with_16_structurals / stats->blocks);
-        printf("special block flips: utf8 %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
+        printf("special block flips: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
           stats->blocks_with_utf8_flipped, 100.0 * stats->blocks_with_utf8_flipped / stats->blocks,
-          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
+          stats->blocks_with_escapes_flipped, 100.0 * stats->blocks_with_escapes_flipped / stats->blocks,
           stats->blocks_with_0_structurals_flipped, 100.0 * stats->blocks_with_0_structurals_flipped / stats->blocks,
+          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
           stats->blocks_with_8_structurals_flipped, 100.0 * stats->blocks_with_8_structurals_flipped / stats->blocks,
           stats->blocks_with_16_structurals_flipped, 100.0 * stats->blocks_with_16_structurals_flipped / stats->blocks);
       }
       printf("\n");
       printf("All Stages\n");
       print_aggregate("|    "   , all_stages.best);
-      //          printf("|- Allocation\n");
-      // print_aggregate("|    ", allocate_stage.best);
+      // frequently, allocation is a tiny fraction of the running time so we omit it
+      if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages.best.elapsed_sec()) {
+        printf("|- Allocation\n");
+        print_aggregate("|    ", allocate_stage.best);
+      }
               printf("|- Stage 1\n");
       print_aggregate("|    ", stage1.best);
               printf("|- Stage 2\n");
       print_aggregate("|    ", stage2.best);
+      if (collector.has_events()) {
+        double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
+        double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
+        double freqall = (all_stages.best.cycles() / all_stages.best.elapsed_sec()) / 1000000000.0;
+        double freqmin = std::min(freq1, freq2);
+        double freqmax = std::max(freq1, freq2);
+        if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
+          printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
+          "Expect the overall speed not to match stage 1 and stage 2 speeds.\n"
+          "Range for stage 1 and stage 2 : [%.3f GHz, %.3f GHz], overall: %.3f GHz.\n",
+          freqmin, freqmax, freqall);
+        }
+      }
     }
   }
 };

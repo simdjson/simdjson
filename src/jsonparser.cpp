@@ -11,20 +11,17 @@ namespace simdjson {
 // instruction sets.
 
 // function pointer type for json_parse
-using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj,
-                                bool realloc);
+using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc);
 
 // Pointer that holds the json_parse implementation corresponding to the
 // available SIMD instruction set
 extern std::atomic<json_parse_functype *> json_parse_ptr;
 
-int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
-               bool realloc) {
+int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc) {
   return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
 }
 
-int json_parse(const char *buf, size_t len, ParsedJson &pj,
-               bool realloc) {
+int json_parse(const char *buf, size_t len, ParsedJson &pj, bool realloc) {
   return json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
                                                         realloc);
 }
@@ -56,8 +53,7 @@ Architecture parse_architecture(char *architecture) {
 }
 
 // Responsible to select the best json_parse implementation
-int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
-                        bool realloc) {
+int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc) {
   Architecture best_implementation = find_best_supported_architecture();
   // Selecting the best implementation
   switch (best_implementation) {
@@ -75,7 +71,7 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
     break;
 #endif
   default:
-    std::cerr << "The processor is not supported by simdjson." << std::endl;
+    // The processor is not supported by simdjson.
     return simdjson::UNEXPECTED_ERROR;
   }
 
@@ -85,15 +81,12 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
 std::atomic<json_parse_functype *> json_parse_ptr{&json_parse_dispatch};
 
 WARN_UNUSED
-ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
-                             bool realloc) {
+ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool realloc) {
   ParsedJson pj;
   bool ok = pj.allocate_capacity(len);
   if (ok) {
     json_parse(buf, len, pj, realloc);
-  } else {
-    std::cerr << "failure during memory allocation " << std::endl;
-  }
+  } 
   return pj;
 }
 } // namespace simdjson

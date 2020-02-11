@@ -74,13 +74,13 @@ if(test_per_batch) {
     std::wclog << "Jsonstream: Speed per batch_size... from " << MIN_BATCH_SIZE
                << " bytes to " << MAX_BATCH_SIZE << " bytes..." << std::endl;
     std::cout << "Batch Size\t" << "Gigabytes/second\t" << "Nb of documents parsed" << std::endl;
-    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 30) {
+    for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 50) {
         batch_size_res.insert(std::pair<size_t, double>(i, 0));
         int count;
         for (size_t j = 0; j < 5; j++) {
             //Actual test
             simdjson::ParsedJson pj;
-            simdjson::JsonStream js{p.data(), p.size(), i};
+            simdjson::JsonStream js{p, i};
             int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
             auto start = std::chrono::steady_clock::now();
@@ -89,7 +89,6 @@ if(test_per_batch) {
                 parse_res = js.json_parse(pj);
                 count++;
             }
-
             auto end = std::chrono::steady_clock::now();
 
             std::chrono::duration<double> secs = end - start;
@@ -102,7 +101,7 @@ if(test_per_batch) {
                 exit(1);
             }
         }
-        std::cout << i << "\t\t" << batch_size_res.at(i) << "\t\t\t\t" << count << std::endl;
+        std::cout << i << "\t\t" << std::fixed << std::setprecision(3) << batch_size_res.at(i) << "\t\t\t\t" << count << std::endl;
 
     }
 }
@@ -119,7 +118,7 @@ if(test_best_batch) {
 
         //Actual test
         simdjson::ParsedJson pj;
-        simdjson::JsonStream js{p.data(), p.size(), 4000000};
+        simdjson::JsonStream js{p, 4000000};
         int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
         auto start = std::chrono::steady_clock::now();

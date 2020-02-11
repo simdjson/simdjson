@@ -1,15 +1,19 @@
-# JsonStream
+# simdjson
+## JsonStream
 An interface providing features to work with files or streams containing multiple JSON documents. 
 As fast and convenient as possible.
 ## Contents
-- [Motivations](#Motivations)
-- [Performance](#Performance)
-- [How it works](#how-it-works)
-- [Support](#Support)
-- [API](#API)
-- [Concurrency mode](#concurrency-mode)
-- [Example](#Example)
-- [Use cases](#use-cases)
+- [simdjson](#simdjson)
+  - [JsonStream](#jsonstream)
+  - [Contents](#contents)
+  - [Motivations](#motivations)
+  - [Performance](#performance)
+  - [How it works](#how-it-works)
+  - [Support](#support)
+  - [API](#api)
+  - [Concurrency mode](#concurrency-mode)
+  - [Example](#example)
+  - [Use cases](#use-cases)
 
 
 ## Motivations
@@ -108,8 +112,7 @@ Some official formats **(non-exhaustive list)**:
 // Various methods are offered to keep track of the status, like get_current_buffer_loc, 
 // get_n_parsed_docs, 
 // get_n_bytes_parsed, etc.
- JsonStream(const char *buf, size_t len, size_t batch_size = 1000000);
- JsonStream(const std::string &s, size_t batch_size = 1000000);
+ JsonStream(const simdjson::padded_string &s, size_t batch_size = 1000000);
  ```  
  **Methods**
 
@@ -177,7 +180,7 @@ To use concurrency mode, tell the compiler to enable threading mode:
 **Note:** The JsonStream API remains the same whether you are using the threaded version or not.
 ## Example
 
-Here is a simple exemple, using single header simdjson:
+Here is a simple example, using single header simdjson:
 ```cpp
 #include "simdjson.h"
 #include "simdjson.cpp"

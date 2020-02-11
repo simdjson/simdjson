@@ -1,3 +1,5 @@
+visual_studio
+
 /benchbranch/
 /submodules/
 
@@ -52,14 +54,21 @@ objs
 
 # Build outputs (TODO build to a subdir so we can exclude that instead)
 /allparserscheckfile
+/allparsingcompetition
 /basictests
 /benchfeatures
 /benchmark/parse
 /benchmark/parse_stream
 /benchmark/perfdiff
 /benchmark/statisticalmodel
+/build/
+/build-ossfuzz-*/
+/build-plain-*/
+/corpus.zip
+/distinctuseridcompetition
 /fuzz/fuzz_dump
 /fuzz/fuzz_parser
+/get_corpus_benchmark
 /json2json
 /jsoncheck
 /jsoncheck_noavx
@@ -68,9 +77,18 @@ objs
 /jsonstats
 /integer_tests
 /libsimdjson.so*
+/minifiercompetition
 /minify
 /numberparsingcheck
+/ossfuzz-out
+/out
 /parse
+/parse_nonumberparsing
+/parse_nostringparsing
+/parse_noutf8validation
+/parse_stream
+/parseandstatcompetition
+/parsingcompetition
 /perfdiff
 /pointercheck
 /statisticalmodel

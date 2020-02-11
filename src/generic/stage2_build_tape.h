@@ -3,515 +3,395 @@
 // We assume the file in which it is include already includes
 // "simdjson/stage2_build_tape.h" (this simplifies amalgation)
 
-// this macro reads the next structural character, updating idx, i and c.
-#define UPDATE_CHAR()                                                          \
-  {                                                                            \
-    idx = pj.structural_indexes[i++];                                          \
-    c = buf[idx];                                                              \
-  }
+namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = &&array_continue;
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = &&object_continue;
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = &&start_continue;
-#define GOTO_CONTINUE() goto *pj.ret_address[depth];
+typedef void* ret_address;
+#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
+#define GOTO(address) { goto *(address); }
+#define CONTINUE(address) { goto *(address); }
 #else
-#define SET_GOTO_ARRAY_CONTINUE() pj.ret_address[depth] = 'a';
-#define SET_GOTO_OBJECT_CONTINUE() pj.ret_address[depth] = 'o';
-#define SET_GOTO_START_CONTINUE() pj.ret_address[depth] = 's';
-#define GOTO_CONTINUE()                                                        \
-  {                                                                            \
-    if (pj.ret_address[depth] == 'a') {                                        \
-      goto array_continue;                                                     \
-    } else if (pj.ret_address[depth] == 'o') {                                 \
-      goto object_continue;                                                    \
-    } else {                                                                   \
-      goto start_continue;                                                     \
-    }                                                                          \
+typedef char ret_address;
+#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
+#define GOTO(address)                 \
+  {                                   \
+    switch(address) {                 \
+      case '[': goto array_begin;     \
+      case 'a': goto array_continue;  \
+      case 'e': goto error;           \
+      case 'f': goto finish;          \
+      case '{': goto object_begin;    \
+      case 'o': goto object_continue; \
+    }                                 \
+  }
+// For the more constrained end_xxx() situation
+#define CONTINUE(address)             \
+  {                                   \
+    switch(address) {                 \
+      case 'a': goto array_continue;  \
+      case 'o': goto object_continue; \
+      case 'f': goto finish;          \
+    }                                 \
   }
 #endif
+
+struct unified_machine_addresses {
+  ret_address array_begin;
+  ret_address array_continue;
+  ret_address error;
+  ret_address finish;
+  ret_address object_begin;
+  ret_address object_continue;
+};
+
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
+
+struct structural_parser {
+  const uint8_t* const buf;
+  const size_t len;
+  document::parser &doc_parser;
+  size_t i; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
+  uint8_t c;    // used to track the (structural) character we are looking at
+  uint32_t depth = 0; // could have an arbitrary starting depth
+
+  really_inline structural_parser(
+    const uint8_t *_buf,
+    size_t _len,
+    document::parser &_doc_parser,
+    uint32_t _i = 0
+  ) : buf{_buf}, len{_len}, doc_parser{_doc_parser}, i{_i} {}
+
+  really_inline char advance_char() {
+    idx = doc_parser.structural_indexes[i++];
+    c = buf[idx];
+    return c;
+  }
+
+  template<typename F>
+  really_inline bool with_space_terminated_copy(const F& f) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    free(copy);
+    return result;
+  }
+
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    doc_parser.on_start_document(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
+  }
+
+  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    doc_parser.on_start_object(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
+  }
+
+  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    doc_parser.on_start_array(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
+  }
+
+  really_inline bool end_object() {
+    depth--;
+    doc_parser.on_end_object(depth);
+    return false;
+  }
+  really_inline bool end_array() {
+    depth--;
+    doc_parser.on_end_array(depth);
+    return false;
+  }
+  really_inline bool end_document() {
+    depth--;
+    doc_parser.on_end_document(depth);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_string() {
+    uint8_t *dst = doc_parser.on_start_string();
+    dst = stringparsing::parse_string(buf, idx, dst);
+    if (dst == nullptr) {
+      return true;
+    }
+    return !doc_parser.on_end_string(dst);
+  }
+
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
+    return !numberparsing::parse_number(copy, offset, found_minus, doc_parser);
+  }
+  WARN_UNUSED really_inline bool parse_number(bool found_minus) {
+    return parse_number(buf, idx, found_minus);
+  }
+
+  WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
+    switch (c) {
+      case 't':
+        if (!is_valid_true_atom(copy + offset)) { return true; }
+        doc_parser.on_true_atom();
+        break;
+      case 'f':
+        if (!is_valid_false_atom(copy + offset)) { return true; }
+        doc_parser.on_false_atom();
+        break;
+      case 'n':
+        if (!is_valid_null_atom(copy + offset)) { return true; }
+        doc_parser.on_null_atom();
+        break;
+      default:
+        return true;
+    }
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_atom() {
+    return parse_atom(buf, idx);
+  }
+
+  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+    switch (c) {
+    case '"':
+      FAIL_IF( parse_string() );
+      return continue_state;
+    case 't': case 'f': case 'n':
+      FAIL_IF( parse_atom() );
+      return continue_state;
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      FAIL_IF( parse_number(false) );
+      return continue_state;
+    case '-':
+      FAIL_IF( parse_number(true) );
+      return continue_state;
+    case '{':
+      FAIL_IF( start_object(continue_state) );
+      return addresses.object_begin;
+    case '[':
+      FAIL_IF( start_array(continue_state) );
+      return addresses.array_begin;
+    default:
+      return addresses.error;
+    }
+  }
+
+  WARN_UNUSED really_inline ErrorValues finish() {
+    // the string might not be NULL terminated.
+    if ( i + 1 != doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
+    }
+    end_document();
+    if (depth != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
+    }
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
+    }
+
+    return doc_parser.on_success(SUCCESS);
+  }
+
+  WARN_UNUSED really_inline ErrorValues error() {
+    /* We do not need the next line because this is done by doc_parser.init_stage2(),
+    * pessimistically.
+    * doc_parser.is_valid  = false;
+    * At this point in the code, we have all the time in the world.
+    * Note that we know exactly where we are in the document so we could,
+    * without any overhead on the processing code, report a specific
+    * location.
+    * We could even trigger special code paths to assess what happened
+    * carefully,
+    * all without any added cost. */
+    if (depth >= doc_parser.max_depth()) {
+      return doc_parser.on_error(DEPTH_ERROR);
+    }
+    switch (c) {
+    case '"':
+      return doc_parser.on_error(STRING_ERROR);
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '-':
+      return doc_parser.on_error(NUMBER_ERROR);
+    case 't':
+      return doc_parser.on_error(T_ATOM_ERROR);
+    case 'n':
+      return doc_parser.on_error(N_ATOM_ERROR);
+    case 'f':
+      return doc_parser.on_error(F_ATOM_ERROR);
+    default:
+      return doc_parser.on_error(TAPE_ERROR);
+    }
+  }
+
+  WARN_UNUSED really_inline ErrorValues start(ret_address finish_state) {
+    doc_parser.init_stage2(); // sets is_valid to false
+    if (len > doc_parser.capacity()) {
+      return CAPACITY;
+    }
+    // Advance to the first character as soon as possible
+    advance_char();
+    // Push the root scope (there is always at least one scope)
+    if (start_document(finish_state)) {
+      return doc_parser.on_error(DEPTH_ERROR);
+    }
+    return SUCCESS;
+  }
+};
+
+// Redefine FAIL_IF to use goto since it'll be used inside the function now
+#undef FAIL_IF
+#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
 WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  uint32_t i = 0; /* index of the structural character (0,1,2,3...) */
-  uint32_t idx; /* location of the structural character in the input (buf)   */
-  uint8_t c;    /* used to track the (structural) character we are looking at,
-                   updated */
-  /* by UPDATE_CHAR macro */
-  uint32_t depth = 0; /* could have an arbitrary starting depth */
-  pj.init();          /* sets is_valid to false          */
-  if (pj.byte_capacity < len) {
-    pj.error_code = simdjson::CAPACITY;
-    return pj.error_code;
-  }
+unified_machine(const uint8_t *buf, size_t len, document::parser &doc_parser) {
+  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
+  structural_parser parser(buf, len, doc_parser);
+  int result = parser.start(addresses.finish);
+  if (result) { return result; }
 
-  /*//////////////////////////// START STATE /////////////////////////////
-   */
-  SET_GOTO_START_CONTINUE()
-  pj.containing_scope_offset[depth] = pj.get_current_loc();
-  pj.write_tape(0, 'r'); /* r for root, 0 is going to get overwritten */
-  /* the root is used, if nothing else, to capture the size of the tape */
-  depth++; /* everything starts at depth = 1, depth = 0 is just for the
-              root, the root may contain an object, an array or something
-              else. */
-  if (depth >= pj.depth_capacity) {
-    goto fail;
-  }
-
-  UPDATE_CHAR();
-  switch (c) {
+  //
+  // Read first value
+  //
+  switch (parser.c) {
   case '{':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(
-        0, c); /* strangely, moving this to object_begin slows things down */
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    SET_GOTO_START_CONTINUE();
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
-    /* #define SIMDJSON_ALLOWANYTHINGINROOT
-     * A JSON text is a serialized value.  Note that certain previous
-     * specifications of JSON constrained a JSON text to be an object or an
-     * array.  Implementations that generate only objects or arrays where a
-     * JSON text is called for will be interoperable in the sense that all
-     * implementations will accept these as conforming JSON texts.
-     * https://tools.ietf.org/html/rfc8259
-     * #ifdef SIMDJSON_ALLOWANYTHINGINROOT */
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the true value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_true_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'f': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the false
-     * value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_false_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case 'n': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this only applies to the JSON document made solely of the null value.
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', sizeof(uint64_t));
-    if (!is_valid_null_atom(reinterpret_cast<const uint8_t *>(copy) + idx)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    pj.write_tape(0, c);
-    break;
-  }
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    /* we need to make a copy to make sure that the string is space
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice. We terminate with a
-     * space
-     * because we do not want to allow NULLs in the middle of a number
-     * (whereas a
-     * space in the middle of a number would be identified in stage 1). */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx,
-                      false)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
-  case '-': {
-    /* we need to make a copy to make sure that the string is NULL
-     * terminated.
-     * this is done only for JSON documents made of a sole number
-     * this will almost never be called in practice */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      goto fail;
-    }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    if (!parse_number(reinterpret_cast<const uint8_t *>(copy), pj, idx, true)) {
-      free(copy);
-      goto fail;
-    }
-    free(copy);
-    break;
-  }
+  case '"':
+    FAIL_IF( parser.parse_string() );
+    goto finish;
+  case 't': case 'f': case 'n':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(copy, idx);
+      })
+    );
+    goto finish;
+  case '0': case '1': case '2': case '3': case '4':
+  case '5': case '6': case '7': case '8': case '9':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, false);
+      })
+    );
+    goto finish;
+  case '-':
+    FAIL_IF(
+      parser.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(copy, idx, true);
+      })
+    );
+    goto finish;
   default:
-    goto fail;
+    goto error;
   }
-start_continue:
-  /* the string might not be NULL terminated. */
-  if (i + 1 == pj.n_structural_indexes) {
-    goto succeed;
-  } else {
-    goto fail;
-  }
-  /*//////////////////////////// OBJECT STATES ///////////////////////////*/
 
+//
+// Object parser states
+//
 object_begin:
-  UPDATE_CHAR();
-  switch (c) {
+  parser.advance_char();
+  switch (parser.c) {
   case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
+    FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
   case '}':
-    goto scope_end; /* could also go to object_continue */
+    parser.end_object();
+    goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
 object_key_state:
-  UPDATE_CHAR();
-  if (c != ':') {
-    goto fail;
-  }
-  UPDATE_CHAR();
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break;
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break;
-  }
-  case '{': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an object inside an object, so we need to increment the
-     * depth                                                             */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    /* we have not yet encountered } so we need to come back for it */
-    SET_GOTO_OBJECT_CONTINUE()
-    /* we found an array inside an object, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  FAIL_IF( parser.advance_char() != ':' );
+  parser.advance_char();
+  GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
-    if (c != '"') {
-      goto fail;
-    } else {
-      if (!parse_string(buf, len, pj, depth, idx)) {
-        goto fail;
-      }
-      goto object_key_state;
-    }
+    FAIL_IF( parser.advance_char() != '"' );
+    FAIL_IF( parser.parse_string() );
+    goto object_key_state;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// COMMON STATE ///////////////////////////*/
-
 scope_end:
-  /* write our tape location to the header scope */
-  depth--;
-  pj.write_tape(pj.containing_scope_offset[depth], c);
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  /* goto saved_state */
-  GOTO_CONTINUE()
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
-  /*//////////////////////////// ARRAY STATES ///////////////////////////*/
+//
+// Array parser states
+//
 array_begin:
-  UPDATE_CHAR();
-  if (c == ']') {
-    goto scope_end; /* could also go to array_continue */
+  if (parser.advance_char() == ']') {
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
-  /* we call update char on all paths in, so we can peek at c on the
+  /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
-  switch (c) {
-  case '"': {
-    if (!parse_string(buf, len, pj, depth, idx)) {
-      goto fail;
-    }
-    break;
-  }
-  case 't':
-    if (!is_valid_true_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'f':
-    if (!is_valid_false_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break;
-  case 'n':
-    if (!is_valid_null_atom(buf + idx)) {
-      goto fail;
-    }
-    pj.write_tape(0, c);
-    break; /* goto array_continue; */
-
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9': {
-    if (!parse_number(buf, pj, idx, false)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '-': {
-    if (!parse_number(buf, pj, idx, true)) {
-      goto fail;
-    }
-    break; /* goto array_continue; */
-  }
-  case '{': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an object inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-
-    goto object_begin;
-  }
-  case '[': {
-    /* we have not yet encountered ] so we need to come back for it */
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); /* here the compilers knows what c is so this gets
-                            optimized */
-    SET_GOTO_ARRAY_CONTINUE()
-    /* we found an array inside an array, so we need to increment the depth
-     */
-    depth++;
-    if (depth >= pj.depth_capacity) {
-      goto fail;
-    }
-    goto array_begin;
-  }
-  default:
-    goto fail;
-  }
+  GOTO( parser.parse_value(addresses, addresses.array_continue) );
 
 array_continue:
-  UPDATE_CHAR();
-  switch (c) {
+  switch (parser.advance_char()) {
   case ',':
-    UPDATE_CHAR();
+    parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
-    goto fail;
+    goto error;
   }
 
-  /*//////////////////////////// FINAL STATES ///////////////////////////*/
+finish:
+  return parser.finish();
 
-succeed:
-  depth--;
-  if (depth != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  if (pj.containing_scope_offset[depth] != 0) {
-    fprintf(stderr, "internal bug\n");
-    abort();
-  }
-  pj.annotate_previous_loc(pj.containing_scope_offset[depth],
-                           pj.get_current_loc());
-  pj.write_tape(pj.containing_scope_offset[depth], 'r'); /* r is root */
-
-  pj.valid = true;
-  pj.error_code = simdjson::SUCCESS;
-  return pj.error_code;
-fail:
-  /* we do not need the next line because this is done by pj.init(),
-   * pessimistically.
-   * pj.is_valid  = false;
-   * At this point in the code, we have all the time in the world.
-   * Note that we know exactly where we are in the document so we could,
-   * without any overhead on the processing code, report a specific
-   * location.
-   * We could even trigger special code paths to assess what happened
-   * carefully,
-   * all without any added cost. */
-  if (depth >= pj.depth_capacity) {
-    pj.error_code = simdjson::DEPTH_ERROR;
-    return pj.error_code;
-  }
-  switch (c) {
-  case '"':
-    pj.error_code = simdjson::STRING_ERROR;
-    return pj.error_code;
-  case '0':
-  case '1':
-  case '2':
-  case '3':
-  case '4':
-  case '5':
-  case '6':
-  case '7':
-  case '8':
-  case '9':
-  case '-':
-    pj.error_code = simdjson::NUMBER_ERROR;
-    return pj.error_code;
-  case 't':
-    pj.error_code = simdjson::T_ATOM_ERROR;
-    return pj.error_code;
-  case 'n':
-    pj.error_code = simdjson::N_ATOM_ERROR;
-    return pj.error_code;
-  case 'f':
-    pj.error_code = simdjson::F_ATOM_ERROR;
-    return pj.error_code;
-  default:
-    break;
-  }
-  pj.error_code = simdjson::TAPE_ERROR;
-  return pj.error_code;
+error:
+  return parser.error();
 }
+
+} // namespace stage2

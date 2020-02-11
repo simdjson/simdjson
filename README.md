@@ -18,17 +18,27 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 
+If you are planning to use simdjson in a product, please work from one of our releases.
+
 ## Research article (VLDB Journal)
 
 A description of the design and implementation of simdjson is in our research article:
 
-* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal (to appear)
+* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
 [<img src="images/halvarflake.png" width="50%">](https://twitter.com/halvarflake/status/1118459536686362625)
+
+
+## Talks
+
+QCon San Francisco 2019 (best voted talk):
+
+[![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)
+
 
 
 ## Performance results
@@ -69,6 +79,43 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 This code is made available under the Apache License 2.0.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
+
+
+
+## Runtime dispatch
+
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better). The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
+
+On x64 hardware, you should typically build your code by specifying the oldest/less-featureful system you want to support so that runtime dispatch may work. The minimum requirement for simdjson is the equivalent of a Westmere processor (SSE 4.2 and PCLMUL). If you build your code by asking the compiler to use more advanced instructions (e.g., `-mavx2`, `/AVX2`  or `-march=haswell`), then it will break runtime dispatch and your binaries will fail to run on older processors.
+
+We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
+
+## Computed GOTOs
+
+For best performance, we use a technique called "computed goto", it is also sometimes described as "Labels as Values".
+Though it is not part of the C++ standard, it is supported by many major compilers and it brings measurable performance benefits that
+are difficult to achieve otherwise.
+The computed gotos are  automatically disabled under Visual Studio.
+If you wish to forcefully disable computed gotos, you can do so by compiling the code with the macro `SIMDJSON_NO_COMPUTED_GOTO`
+defined. It is not recommended to disable computed gotos if your compiler supports it. In fact, you should almost never need to
+be concerned with computed gotos.
+
+
+## Thread safety
+
+The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
+
+If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
+
+The json stream parser is threaded, using exactly two threads. 
+
+## Large files
+
+If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses and/or page allocation. [On some systems, memory allocation runs far slower than we can parse (e.g., 1.4GB/s).](https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/)
+
+You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+
+Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocating memory. You just allocate memory once and reuse the blocks of memory.
 
 ## Code usage and example
 
@@ -154,11 +201,17 @@ if( ! pj.is_valid() ) {
 
 As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
 
-## JSON streaming
+## Newline-Delimited JSON (ndjson) and  JSON lines 
+
+
+
+
+The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
 
 **API and detailed documentation found [here](doc/JsonStream.md).**
 
-Here is a simple exemple, using single header simdjson:
+
+Here is a simple example, using single header simdjson:
 ```cpp
 #include "simdjson.h"
 #include "simdjson.cpp"
@@ -204,23 +257,6 @@ int main(int argc, char *argv[]) {
 
 
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
-
-## Runtime dispatch
-
-On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also
-runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better).
-The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique
-sometimes called runtime dispatch).
-
-
-We also support 64-bit ARM. We assume NEON support, and if the cryptographic extension is available, we leverage it, at compile-time.
-There is no runtime dispatch on ARM.
-
-## Thread safety
-
-The simdjson library is single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
-
-If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
@@ -570,6 +606,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
 - [simdjson-go](https://github.com/fwessels/simdjson-go): Go port.
+- [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
 
 
 ## Various References

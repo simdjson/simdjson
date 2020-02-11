@@ -9,6 +9,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/portability.h"
 #include "westmere/intrinsics.h"
+#include "westmere/bitmanipulation.h"
 #include "simdjson/parsedjson.h"
 #include "jsoncharutils.h"
 #include <cmath>
