@@ -8,8 +8,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "simdjson/common_defs.h"
-#include "simdjson/padded_string.h"
+#include "common_defs.h"
+#include "padded_string.h"
 
 namespace simdjson {
 
