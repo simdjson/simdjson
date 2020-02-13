@@ -21,8 +21,6 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
 #ifndef NDEBUG
   if (padded_buffer == nullptr) {
-    errno = EINVAL;
-    perror("simdjson::allocate_padded_buffer() aligned_malloc_char() failed");
     return nullptr;
   }
 #endif // NDEBUG
