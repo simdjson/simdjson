@@ -23,7 +23,7 @@ jsonparser.cpp
 stage1_find_marks.cpp
 stage2_build_tape.cpp
 document.cpp
-document/parser.cpp
+document_parser.cpp
 "
 
 # order matters
@@ -38,8 +38,8 @@ simdjson/padded_string.h
 simdjson/jsonioutil.h
 simdjson/jsonminifier.h
 simdjson/document.h
-simdjson/document/iterator.h
-simdjson/document/parser.h
+simdjson/document_iterator.h
+simdjson/document_parser.h
 simdjson/parsedjson.h
 simdjson/stage1_find_marks.h
 simdjson/stage2_build_tape.h
@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
-  simdjson::document doc;
-  if (!simdjson::document::try_parse(p, doc)) { // do the parsing
-    std::cout << "document::try_parse not valid" << std::endl;
+  auto [doc, error] = simdjson::document::parse(p); // do the parsing
+  if (error) {
+    std::cout << "document::parse not valid" << std::endl;
   } else {
-    std::cout << "document::try_parse valid" << std::endl;
+    std::cout << "document::parse valid" << std::endl;
   }
   if(argc == 2) {
     return EXIT_SUCCESS;

@@ -3,47 +3,6 @@
 
 namespace simdjson {
 
-// This is the internal one all others end up calling
-error_code document::parser::try_parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
-  return (error_code)json_parse(buf, len, *this, realloc_if_needed);
-}
-
-error_code document::parser::try_parse(const uint8_t *buf, size_t len, const document *& dst, bool realloc_if_needed) noexcept {
-  auto result = try_parse(buf, len, realloc_if_needed);
-  dst = result == SUCCESS ? &doc : nullptr;
-  return result;
-}
-
-error_code document::parser::try_parse_into(const uint8_t *buf, size_t len, document & dst, bool realloc_if_needed) noexcept {
-  auto result = try_parse(buf, len, realloc_if_needed);
-  if (result != SUCCESS) {
-    return result;
-  }
-  // Take the document
-  dst = (document&&)doc;
-  valid = false; // Document has been taken; there is no valid document anymore
-  error = UNINITIALIZED;
-  return result;
-}
-
-const document &document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) {
-  const document *dst;
-  error_code result = try_parse(buf, len, dst, realloc_if_needed);
-  if (result) {
-    throw invalid_json(result);
-  }
-  return *dst;
-}
-
-document document::parser::parse_new(const uint8_t *buf, size_t len, bool realloc_if_needed) {
-  document dst;
-  error_code result = try_parse_into(buf, len, dst, realloc_if_needed);
-  if (result) {
-    throw invalid_json(result);
-  }
-  return dst;
-}
-
 WARN_UNUSED
 error_code document::parser::init_parse(size_t len) {
   if (len > capacity()) {
