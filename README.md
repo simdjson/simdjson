@@ -121,35 +121,29 @@ Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocat
 
 The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::Iterator pjh(pj)`, see 'Navigating the parsed document').
 
-```C
-#include "simdjson/jsonparser.h"
-using namespace simdjson;
+// Samples:
+// Load a document from a file
+// Read a particular key / value from the document
+// Iterate over an array of things
 
-/...
-
-const char * filename = ... //
-
-// use whatever means you want to get a string (UTF-8) of your JSON document
-padded_string p = get_corpus(filename);
-ParsedJson pj;
-pj.allocate_capacity(p.size()); // allocate memory for parsing up to p.size() bytes
-const int res = json_parse(p, pj); // do the parsing, return 0 on success
-// parsing is done!
-if (res != 0) {
-    // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
+```c++
+#include "simdjson.h"
+auto doc = simdjson::document::load("myfile.json");
+cout << doc;
+for (auto i=doc.begin(); i<doc.end(); i++) {
+  cout << doc[i];
 }
-// the ParsedJson document can be used here
-// pj can be reused with other json_parse calls.
 ```
 
-It is also possible to use a simpler API if you do not mind having the overhead
+A slightly simpler API is available if you don't mind having the overhead
 of memory allocation with each new JSON document:
 
 ```C
 #include "simdjson/jsonparser.h"
 using namespace simdjson;
 
+document doc = document::parse("myfile.json");
+cout << doc;
 /...
 
 const char * filename = ... //

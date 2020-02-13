@@ -11,17 +11,17 @@ namespace simdjson {
 // instruction sets.
 
 // function pointer type for json_parse
-using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc);
+using json_parse_functype = int(const uint8_t *buf, size_t len, document::parser &pj, bool realloc);
 
 // Pointer that holds the json_parse implementation corresponding to the
 // available SIMD instruction set
 extern std::atomic<json_parse_functype *> json_parse_ptr;
 
-int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc) {
+int json_parse(const uint8_t *buf, size_t len, document::parser &pj, bool realloc) {
   return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
 }
 
-int json_parse(const char *buf, size_t len, ParsedJson &pj, bool realloc) {
+int json_parse(const char *buf, size_t len, document::parser &pj, bool realloc) {
   return json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
                                                         realloc);
 }
@@ -53,7 +53,7 @@ architecture parse_architecture(char *arch) {
 }
 
 // Responsible to select the best json_parse implementation
-int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc) {
+int json_parse_dispatch(const uint8_t *buf, size_t len, document::parser &pj, bool realloc) {
   architecture best_implementation = find_best_supported_architecture();
   // Selecting the best implementation
   switch (best_implementation) {
@@ -81,12 +81,12 @@ int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj, bool rea
 std::atomic<json_parse_functype *> json_parse_ptr{&json_parse_dispatch};
 
 WARN_UNUSED
-ParsedJson build_parsed_json(const uint8_t *buf, size_t len, bool realloc) {
-  ParsedJson pj;
-  bool ok = pj.allocate_capacity(len);
+document::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc) {
+  document::parser parser;
+  bool ok = parser.allocate_capacity(len);
   if (ok) {
-    json_parse(buf, len, pj, realloc);
+    json_parse(buf, len, parser, realloc);
   } 
-  return pj;
+  return parser;
 }
 } // namespace simdjson
