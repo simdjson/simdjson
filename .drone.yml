@@ -126,12 +126,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -148,12 +149,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -170,12 +172,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
     - apt-get install -y cmake 
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -192,12 +195,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -214,12 +218,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -236,12 +241,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=OFF $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -258,12 +264,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
@@ -280,12 +287,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_BUILD_STATIC=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 
@@ -303,12 +311,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
@@ -325,12 +334,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 
@@ -348,12 +358,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -y
     - apt-get install -y make $CC g++ cmake 
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
@@ -370,12 +381,13 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 
@@ -393,12 +405,13 @@ steps:
   environment:
     CC: clang
     CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON  -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
 ---
@@ -415,11 +428,12 @@ steps:
   environment:
     CC: gcc
     CXX: g++
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
     - $CC --version
     - mkdir build && cd build
-    - cmake -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON $CMAKE_FLAGS ..
+    - cmake $CMAKE_FLAGS ..
     - make -j
     - ASAN_OPTIONS="detect_leaks=0" ctest --output-on-failure
