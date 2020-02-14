@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
 
 if (NOT CMAKE_BUILD_TYPE)
-                message(STATUS "No build type selected, default to Release")
-                set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  message(STATUS "No build type selected, default to Release")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
 project(simdjson 
@@ -15,7 +15,7 @@ project(simdjson
 #include(CheckIPOSupported)
 #check_ipo_supported(RESULT ltoresult)
 #if(ltoresult)
-#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
 # usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
@@ -37,9 +37,9 @@ set(SIMDJSON_LIB_VERSION "0.2.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
 if(NOT MSVC)
-option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 else()
-option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
+  option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
 endif()
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 
@@ -49,7 +49,6 @@ find_package(CTargets)
 find_package(Options)
 
 option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
-
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
@@ -62,10 +61,28 @@ add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
 
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
+if (SIMDJSON_GOOGLE_BENCHMARKS)
+  set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest/CMakeLists.txt)
+    # message(STATUS "Unable to find ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest/CMakeLists.txt")
+    execute_process(COMMAND git submodule update --init -- ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  endif()
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark/CMakeLists.txt)
+    # message(STATUS "Unable to find ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark/CMakeLists.txt")
+    execute_process(COMMAND git submodule update --init -- ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  endif()
+
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark)
+endif()
+
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
 option(ENABLE_FUZZING "enable building the fuzzers" ON)
 if(ENABLE_FUZZING)
- add_subdirectory(fuzz)
+  add_subdirectory(fuzz)
 endif()
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
