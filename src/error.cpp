@@ -1,7 +1,8 @@
-#include "simdjson/simdjson.h"
+#include "simdjson/error.h"
 #include <map>
 
 namespace simdjson {
+
 const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No error"},
     {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
@@ -30,11 +31,12 @@ const std::map<int, const std::string> error_strings = {
 const std::string unexpected_error_msg {"Unexpected error"};
 
 // returns a string matching the error code
-const std::string &error_message(const int error_code) {
-  auto keyvalue = error_strings.find(error_code);
+const std::string &error_message(error_code code) {
+  auto keyvalue = error_strings.find(code);
   if(keyvalue == error_strings.end()) {
     return unexpected_error_msg;
   }
   return keyvalue->second;
 }
+
 } // namespace simdjson

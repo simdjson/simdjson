@@ -23,13 +23,13 @@ namespace simdjson {
 
 template <>
 WARN_UNUSED int
-unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
+unified_machine<architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
   return westmere::stage2::unified_machine(buf, len, pj);
 }
 
 template <>
 WARN_UNUSED int
-unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
+unified_machine<architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
     return westmere::stage2::unified_machine(buf, len, pj, next_json);
 }
 

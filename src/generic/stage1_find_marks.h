@@ -80,7 +80,7 @@ public:
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
   // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
+  really_inline error_code detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -213,7 +213,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+really_inline error_code json_structural_scanner::detect_errors_on_eof(bool streaming) {
   if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
@@ -399,7 +399,7 @@ int find_structural_bits(const uint8_t *buf, size_t len, document::parser &parse
   json_structural_scanner scanner{parser.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
   // we might tolerate an unclosed string if streaming is true
-  ErrorValues error = scanner.detect_errors_on_eof(streaming);
+  error_code error = scanner.detect_errors_on_eof(streaming);
   if (unlikely(error != SUCCESS)) {
     return error;
   }

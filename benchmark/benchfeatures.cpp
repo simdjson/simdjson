@@ -82,7 +82,7 @@ void exit_usage(string message) {
 }
 
 struct option_struct {
-  Architecture architecture = Architecture::UNSUPPORTED;
+  architecture arch = architecture::UNSUPPORTED;
   bool stage1_only = false;
 
   int32_t iterations = 400;
@@ -106,8 +106,8 @@ struct option_struct {
           verbose = true;
           break;
         case 'a':
-          architecture = parse_architecture(optarg);
-          if (architecture == Architecture::UNSUPPORTED) {
+          arch = parse_architecture(optarg);
+          if (arch == architecture::UNSUPPORTED) {
             exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a HASWELL, WESTMERE or ARM64");
           }
           break;
@@ -129,8 +129,8 @@ struct option_struct {
     #endif
 
     // If architecture is not specified, pick the best supported architecture by default
-    if (architecture == Architecture::UNSUPPORTED) {
-      architecture = find_best_supported_architecture();
+    if (arch == architecture::UNSUPPORTED) {
+      arch = find_best_supported_architecture();
     }
   }
 
@@ -410,7 +410,7 @@ int main(int argc, char *argv[]) {
   event_collector collector;
 
   // Set up benchmarkers by reading all files
-  json_parser parser(options.architecture);
+  json_parser parser(options.arch);
 
   feature_benchmarker features(parser, collector);
   benchmarker gsoc_2018("jsonexamples/gsoc-2018.json", parser, collector);

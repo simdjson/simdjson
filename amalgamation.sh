@@ -16,7 +16,7 @@ INCLUDEPATH="$SCRIPTPATH/include"
 
 # this list excludes the "src/generic headers"
 ALLCFILES="
-simdjson.cpp
+error.cpp
 jsonioutil.cpp
 jsonminifier.cpp
 jsonparser.cpp

@@ -72,14 +72,14 @@ public:
   //
   // Returns != SUCCESS if the JSON is invalid.
   //
-  static WARN_UNUSED ErrorValues try_parse(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
-  static WARN_UNUSED ErrorValues try_parse(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) {
+  static WARN_UNUSED error_code try_parse(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed = true) noexcept;
+  static WARN_UNUSED error_code try_parse(const char *buf, size_t len, document &dst, bool realloc_if_needed = true) {
       return try_parse((const uint8_t *)buf, len, dst, realloc_if_needed);
   }
-  static WARN_UNUSED ErrorValues try_parse(const std::string &s, document &dst, bool realloc_if_needed = true) {
+  static WARN_UNUSED error_code try_parse(const std::string &s, document &dst, bool realloc_if_needed = true) {
       return try_parse(s.data(), s.length(), dst, realloc_if_needed);
   }
-  static WARN_UNUSED ErrorValues try_parse(const padded_string &s, document &dst) {
+  static WARN_UNUSED error_code try_parse(const padded_string &s, document &dst) {
       return try_parse(s.data(), s.length(), dst, false);
   }
 
@@ -101,15 +101,15 @@ namespace simdjson {
 inline WARN_UNUSED document document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) {
   document::parser parser;
   if (!parser.allocate_capacity(len)) {
-    throw invalid_json(ErrorValues(parser.error_code = MEMALLOC));
+    throw invalid_json(parser.error = MEMALLOC);
   }
   return parser.parse_new(buf, len, realloc_if_needed);
 }
 
-inline WARN_UNUSED ErrorValues document::try_parse(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed) noexcept {
+inline WARN_UNUSED error_code document::try_parse(const uint8_t *buf, size_t len, document &dst, bool realloc_if_needed) noexcept {
   document::parser parser;
   if (!parser.allocate_capacity(len)) {
-    return ErrorValues(parser.error_code = MEMALLOC);
+    return parser.error = MEMALLOC;
   }
   return parser.try_parse_into(buf, len, dst, realloc_if_needed);
 }

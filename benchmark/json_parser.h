@@ -45,17 +45,17 @@ using stage2_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
 using stage1_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj);
 using jsonparse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, bool streaming);
 
-stage1_functype* get_stage1_func(const Architecture architecture) {
-  switch (architecture) {
+stage1_functype* get_stage1_func(const architecture arch) {
+  switch (arch) {
   #ifdef IS_X86_64
-    case Architecture::HASWELL:
-      return &find_structural_bits<Architecture::HASWELL>;
-    case Architecture::WESTMERE:
-      return &find_structural_bits<Architecture::WESTMERE>;
+    case architecture::HASWELL:
+      return &find_structural_bits<architecture::HASWELL>;
+    case architecture::WESTMERE:
+      return &find_structural_bits<architecture::WESTMERE>;
   #endif
   #ifdef IS_ARM64
-    case Architecture::ARM64:
-      return &find_structural_bits<Architecture::ARM64>;
+    case architecture::ARM64:
+      return &find_structural_bits<architecture::ARM64>;
   #endif
   default:
     std::cerr << "The processor is not supported by simdjson." << std::endl;
@@ -63,19 +63,19 @@ stage1_functype* get_stage1_func(const Architecture architecture) {
   }
 }
 
-stage2_functype* get_stage2_func(const Architecture architecture) {
-  switch (architecture) {
+stage2_functype* get_stage2_func(const architecture arch) {
+  switch (arch) {
 #ifdef IS_X86_64
-  case Architecture::HASWELL:
-    return &unified_machine<Architecture::HASWELL>;
+  case architecture::HASWELL:
+    return &unified_machine<architecture::HASWELL>;
     break;
-  case Architecture::WESTMERE:
-    return &unified_machine<Architecture::WESTMERE>;
+  case architecture::WESTMERE:
+    return &unified_machine<architecture::WESTMERE>;
     break;
 #endif
 #ifdef IS_ARM64
-  case Architecture::ARM64:
-    return &unified_machine<Architecture::ARM64>;
+  case architecture::ARM64:
+    return &unified_machine<architecture::ARM64>;
     break;
 #endif
   default:
@@ -84,19 +84,19 @@ stage2_functype* get_stage2_func(const Architecture architecture) {
   }
 }
 
-jsonparse_functype* get_jsonparse_func(const Architecture architecture) {
-  switch (architecture) {
+jsonparse_functype* get_jsonparse_func(const architecture arch) {
+  switch (arch) {
 #ifdef IS_X86_64
-  case Architecture::HASWELL:
-    return &json_parse_implementation<Architecture::HASWELL>;
+  case architecture::HASWELL:
+    return &json_parse_implementation<architecture::HASWELL>;
     break;
-  case Architecture::WESTMERE:
-    return &json_parse_implementation<Architecture::WESTMERE>;
+  case architecture::WESTMERE:
+    return &json_parse_implementation<architecture::WESTMERE>;
     break;
 #endif
 #ifdef IS_ARM64
-  case Architecture::ARM64:
-    return &json_parse_implementation<Architecture::ARM64>;
+  case architecture::ARM64:
+    return &json_parse_implementation<architecture::ARM64>;
     break;
 #endif
   default:
@@ -106,15 +106,15 @@ jsonparse_functype* get_jsonparse_func(const Architecture architecture) {
 }
 
 struct json_parser {
-  const Architecture architecture;
+  const architecture arch;
   stage1_functype *stage1_func;
   stage2_functype *stage2_func;
   jsonparse_functype *jsonparse_func;
 
-  json_parser(const Architecture _architecture) : architecture(_architecture) {
-    this->stage1_func = get_stage1_func(architecture);
-    this->stage2_func = get_stage2_func(architecture);
-    this->jsonparse_func = get_jsonparse_func(architecture);
+  json_parser(const architecture _arch) : arch(_arch) {
+    this->stage1_func = get_stage1_func(arch);
+    this->stage2_func = get_stage2_func(arch);
+    this->jsonparse_func = get_jsonparse_func(arch);
   }
   json_parser() : json_parser(find_best_supported_architecture()) {}
 

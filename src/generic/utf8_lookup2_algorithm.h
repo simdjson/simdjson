@@ -415,7 +415,7 @@ namespace utf8_validation {
       }
     }
 
-    really_inline ErrorValues errors() {
+    really_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
     }
 

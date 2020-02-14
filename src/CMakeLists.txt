@@ -29,7 +29,7 @@ set(SIMDJSON_SRC
   stage2_build_tape.cpp
   document.cpp
   document/parser.cpp
-  simdjson.cpp
+  error.cpp
 )
 
 # Load headers and sources

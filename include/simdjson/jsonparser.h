@@ -12,9 +12,9 @@
 namespace simdjson {
 // json_parse_implementation is the generic function, it is specialized for
 // various architectures, e.g., as
-// json_parse_implementation<Architecture::HASWELL> or
-// json_parse_implementation<Architecture::ARM64>
-template <Architecture T>
+// json_parse_implementation<architecture::HASWELL> or
+// json_parse_implementation<architecture::ARM64>
+template <architecture T>
 int json_parse_implementation(const uint8_t *buf, size_t len, document::parser &parser,
                               bool realloc_if_needed = true) {
   int result = parser.init_parse(len);
