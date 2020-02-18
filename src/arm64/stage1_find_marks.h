@@ -8,7 +8,7 @@
 #include "arm64/bitmask.h"
 #include "arm64/simd.h"
 #include "arm64/bitmanipulation.h"
-#include "simdjson/stage1_find_marks.h"
+#include "arm64/implementation.h"
 
 namespace simdjson::arm64 {
 
@@ -50,16 +50,12 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 #include "generic/utf8_lookup2_algorithm.h"
 #include "generic/stage1_find_marks.h"
 
-} // namespace simdjson::arm64
-
-namespace simdjson {
-
-template <>
-int find_structural_bits<architecture::ARM64>(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
   return arm64::stage1::find_structural_bits<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson
+} // namespace simdjson::arm64
 
 #endif // IS_ARM64
+
 #endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H

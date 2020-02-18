@@ -1,4 +1,3 @@
-#include "json_parser.h"
 #include "event_counter.h"
 
 #include <cassert>
@@ -34,10 +33,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
-#include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
-#include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_build_tape.h"
+#include "simdjson/document.h"
 
 #include <functional>
 
@@ -132,6 +128,7 @@ struct option_struct {
     if (arch == architecture::UNSUPPORTED) {
       arch = find_best_supported_architecture();
     }
+    document::parser::use_implementation(arch);
   }
 
   template<typename F>
@@ -160,7 +157,7 @@ struct feature_benchmarker {
   benchmarker struct23;
   benchmarker struct23_miss;
 
-  feature_benchmarker(json_parser& parser, event_collector& collector) :
+  feature_benchmarker(const simdjson::implementation &parser, event_collector& collector) :
     utf8               ("jsonexamples/generated/utf-8.json", parser, collector),
     utf8_miss          ("jsonexamples/generated/utf-8-miss.json", parser, collector),
     escape               ("jsonexamples/generated/escape.json", parser, collector),
@@ -410,12 +407,10 @@ int main(int argc, char *argv[]) {
   event_collector collector;
 
   // Set up benchmarkers by reading all files
-  json_parser parser(options.arch);
-
-  feature_benchmarker features(parser, collector);
-  benchmarker gsoc_2018("jsonexamples/gsoc-2018.json", parser, collector);
-  benchmarker twitter("jsonexamples/twitter.json", parser, collector);
-  benchmarker random("jsonexamples/random.json", parser, collector);
+  feature_benchmarker features(collector);
+  benchmarker gsoc_2018("jsonexamples/gsoc-2018.json", collector);
+  benchmarker twitter("jsonexamples/twitter.json", collector);
+  benchmarker random("jsonexamples/random.json", collector);
 
   // Run the benchmarks
   progress_bar progress(options.iterations, 100);

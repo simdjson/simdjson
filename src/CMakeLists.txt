@@ -24,11 +24,10 @@ set(SIMDJSON_SRC_DIR $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 set(SIMDJSON_SRC
   jsonioutil.cpp
   jsonminifier.cpp
-  jsonparser.cpp
   stage1_find_marks.cpp
   stage2_build_tape.cpp
   document.cpp
-  document_parser.cpp
+  implementation.cpp
   error.cpp
 )
 
@@ -39,6 +38,7 @@ set(SIMDJSON_SRC_HEADERS
   arm64/bitmask.h
   arm64/simd.h
   arm64/bitmanipulation.h
+  arm64/implementation.h
   arm64/intrinsics.h
   arm64/stage1_find_marks.h
   arm64/stage2_build_tape.h
@@ -56,12 +56,14 @@ set(SIMDJSON_SRC_HEADERS
   generic/utf8_zwegner_algorithm.h
   haswell/bitmask.h
   haswell/bitmanipulation.h
+  haswell/implementation.h
   haswell/intrinsics.h
   haswell/simd.h
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
   westmere/bitmanipulation.h
+  westmere/implementation.h
   westmere/intrinsics.h
   westmere/bitmask.h
   westmere/simd.h

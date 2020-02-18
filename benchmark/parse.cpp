@@ -1,4 +1,3 @@
-#include "json_parser.h"
 #include "event_counter.h"
 
 #include <cassert>
@@ -33,10 +32,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/isadetection.h"
 #include "simdjson/jsonioutil.h"
-#include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
-#include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_build_tape.h"
+#include "simdjson/document.h"
 
 #include <functional>
 
@@ -63,17 +59,18 @@ void print_usage(ostream& out) {
   out << endl;
   out << "Options:" << endl;
   out << endl;
-  out << "-n #       - Number of iterations per file. Default: 200" << endl;
-  out << "-i #       - Number of times to iterate a single file before moving to the next. Default: 20" << endl;
-  out << "-t         - Tabbed data output" << endl;
-  out << "-v         - Verbose output." << endl;
-  out << "-s STAGE   - Stop after the given stage." << endl;
-  out << "             -s stage1  - Stop after find_structural_bits." << endl;
-  out << "             -s all     - Run all stages." << endl;
-  out << "-H         - Make the buffers hot (reduce page allocation during parsing)" << endl;
-
-  out << "-a ARCH    - Use the parser with the designated architecture (HASWELL, WESTMERE" << endl;
-  out << "             or ARM64). By default, detects best supported architecture." << endl;
+  out << "-n #         - Number of iterations per file. Default: 200" << endl;
+  out << "-i #         - Number of times to iterate a single file before moving to the next. Default: 20" << endl;
+  out << "-t           - Tabbed data output" << endl;
+  out << "-v           - Verbose output." << endl;
+  out << "-s stage1    - Stop after find_structural_bits." << endl;
+  out << "-s all       - Run all stages." << endl;
+  out << "-H           - Make the buffers hot (reduce page allocation during parsing)" << endl;
+  out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
+  out << "               implementation supported on the host machine." << endl;
+  for (auto impl : simdjson::implementation::available_implementations()) {
+    out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << endl;
+  }
 }
 
 void exit_usage(string message) {
@@ -85,7 +82,6 @@ void exit_usage(string message) {
 
 struct option_struct {
   vector<char*> files;
-  architecture arch = architecture::UNSUPPORTED;
   bool stage1_only = false;
 
   int32_t iterations = 200;
@@ -113,12 +109,14 @@ struct option_struct {
         case 'v':
           verbose = true;
           break;
-        case 'a':
-          arch = parse_architecture(optarg);
-          if (arch == architecture::UNSUPPORTED) {
-            exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a HASWELL, WESTMERE or ARM64");
+        case 'a': {
+          const implementation *impl = simdjson::implementation::from_string(optarg);
+          if (!impl) {
+            exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a haswell, westmere or arm64");
           }
+          simdjson::implementation::use(*impl);
           break;
+        }
         case 'H':
           hotbuffers = true;
           break;
@@ -141,11 +139,6 @@ struct option_struct {
     #else
       int optind = 1;
     #endif
-
-    // If architecture is not specified, pick the best supported architecture by default
-    if (arch == architecture::UNSUPPORTED) {
-      arch = find_best_supported_architecture();
-    }
 
     // All remaining arguments are considered to be files
     for (int i=optind; i<argc; i++) {
@@ -174,6 +167,7 @@ int main(int argc, char *argv[]) {
   option_struct options(argc, argv);
   if (options.verbose) {
     verbose_stream = &cout;
+    verbose() << "Implementation: " << simdjson::implementation::active().name() << endl;
   }
 
   // Start collecting events. We put this early so if it prints an error message, it's the
@@ -186,10 +180,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Set up benchmarkers by reading all files
-  json_parser parser(options.arch);
   vector<benchmarker*> benchmarkers;
   for (size_t i=0; i<options.files.size(); i++) {
-    benchmarkers.push_back(new benchmarker(options.files[i], parser, collector));
+    benchmarkers.push_back(new benchmarker(options.files[i], collector));
   }
 
   // Run the benchmarks

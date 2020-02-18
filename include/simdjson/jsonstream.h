@@ -8,8 +8,6 @@
 #include "simdjson/isadetection.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/simdjson.h"
-#include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_build_tape.h"
 #include "jsoncharutils.h"
 
 
@@ -127,7 +125,7 @@ public:
   inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
 
 private:
-  inline const char *buf() const { return str.data() + str_start; }
+  inline const uint8_t *buf() const { return reinterpret_cast<uint8_t*>(str.data()) + str_start; }
 
   inline void advance(size_t offset) { str_start += offset; }
 
@@ -144,6 +142,7 @@ private:
 #endif
   size_t n_parsed_docs{0};
   size_t n_bytes_parsed{0};
+  simdjson::implementation *stage_parser;
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
   std::thread stage_1_thread;
@@ -173,7 +172,7 @@ private:
  * complete
  * document, therefore the last json buffer location is the end of the batch
  * */
-inline size_t find_last_json_buf_idx(const char *buf, size_t size,
+inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size,
                                      const document::parser &parser) {
   // this function can be generally useful
   if (parser.n_structural_indexes == 0)
@@ -221,59 +220,10 @@ inline size_t find_last_json_buf_idx(const char *buf, size_t size,
   return 0;
 }
 
-// Everything in the following anonymous namespace should go.
-// It is a hack.
-namespace {
-
-typedef int (*stage1_functype)(const char *buf, size_t len,
-                               document::parser &parser, bool streaming);
-typedef int (*stage2_functype)(const char *buf, size_t len,
-                               document::parser &parser, size_t &next_json);
-
-stage1_functype best_stage1;
-stage2_functype best_stage2;
-
-//// TODO: generalize this set of functions.  We don't want to have a copy in
-/// jsonparser.cpp
-void find_the_best_supported_implementation() {
-  uint32_t supports = simdjson::detect_supported_architectures();
-// Order from best to worst (within architecture)
-#ifdef IS_X86_64
-  constexpr uint32_t haswell_flags =
-      simdjson::instruction_set::AVX2 | simdjson::instruction_set::PCLMULQDQ |
-      simdjson::instruction_set::BMI1 | simdjson::instruction_set::BMI2;
-  constexpr uint32_t westmere_flags =
-      simdjson::instruction_set::SSE42 | simdjson::instruction_set::PCLMULQDQ;
-  if ((haswell_flags & supports) == haswell_flags) {
-    best_stage1 =
-        simdjson::find_structural_bits<simdjson::architecture::HASWELL>;
-    best_stage2 = simdjson::unified_machine<simdjson::architecture::HASWELL>;
-    return;
-  }
-  if ((westmere_flags & supports) == westmere_flags) {
-    best_stage1 =
-        simdjson::find_structural_bits<simdjson::architecture::WESTMERE>;
-    best_stage2 = simdjson::unified_machine<simdjson::architecture::WESTMERE>;
-    return;
-  }
-#endif
-#ifdef IS_ARM64
-  if (supports & instruction_set::NEON) {
-    best_stage1 = simdjson::find_structural_bits<architecture::ARM64>;
-    best_stage2 = simdjson::unified_machine<architecture::ARM64>;
-    return;
-  }
-#endif
-  // we throw an exception since this should not be recoverable
-  throw new std::runtime_error("unsupported architecture");
-}
-} // anonymous namespace
-
 template <class string_container>
 JsonStream<string_container>::JsonStream(const string_container &s,
                                          size_t batchSize)
     : str(s), _batch_size(batchSize) {
-  find_the_best_supported_implementation();
 }
 
 template <class string_container> JsonStream<string_container>::~JsonStream() {
@@ -312,7 +262,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
       if (_batch_size == 0) {
         return parser.error = simdjson::UTF8_ERROR;
       }
-      auto stage1_is_ok = error_code(best_stage1(buf(), _batch_size, parser, true));
+      auto stage1_is_ok = error_code(simdjson::implementation::active().stage1(buf(), _batch_size, parser, true));
       if (stage1_is_ok != simdjson::SUCCESS) {
         return parser.error = stage1_is_ok;
       }
@@ -348,20 +298,20 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
           return parser.error = simdjson::UTF8_ERROR;
         }
         // let us capture read-only variables
-        const char *const b = buf() + last_json_buffer_loc;
+        const uint8_t *const b = buf() + last_json_buffer_loc;
         const size_t bs = _batch_size;
         // we call the thread on a lambda that will update
         // this->stage1_is_ok_thread
         // there is only one thread that may write to this value
         stage_1_thread = std::thread([this, b, bs] {
-          this->stage1_is_ok_thread = error_code(best_stage1(b, bs, this->parser_thread, true));
+          this->stage1_is_ok_thread = error_code(simdjson::implementation::active().stage1(b, bs, this->parser_thread, true));
         });
       }
     }
     next_json = 0;
     load_next_batch = false;
   } // load_next_batch
-  int res = best_stage2(buf(), remaining(), parser, next_json);
+  int res = simdjson::implementation::active().stage2(buf(), remaining(), parser, next_json);
   if (res == simdjson::SUCCESS_AND_HAS_MORE) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];
@@ -395,7 +345,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     n_bytes_parsed += current_buffer_loc;
     _batch_size = (std::min)(_batch_size, remaining());
     _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
-    auto stage1_is_ok = (error_code)best_stage1(buf(), _batch_size, parser, true);
+    auto stage1_is_ok = (error_code)simdjson::implementation::active().stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
       return parser.on_error(stage1_is_ok);
     }
@@ -409,7 +359,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     }
     load_next_batch = false;
   } // load_next_batch
-  int res = best_stage2(buf(), remaining(), parser, next_json);
+  int res = simdjson::implementation::active().stage2(buf(), remaining(), parser, next_json);
   if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];

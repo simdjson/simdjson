@@ -1,7 +1,6 @@
 #ifndef __BENCHMARKER_H
 #define __BENCHMARKER_H
 
-#include "json_parser.h"
 #include "event_counter.h"
 
 #include <cassert>
@@ -38,8 +37,6 @@
 #include "simdjson/jsonioutil.h"
 #include "simdjson/jsonparser.h"
 #include "simdjson/document.h"
-#include "simdjson/stage1_find_marks.h"
-#include "simdjson/stage2_build_tape.h"
 
 #include <functional>
 
@@ -264,8 +261,6 @@ struct benchmarker {
   const padded_string json;
   // JSON filename
   const char *filename;
-  // Parser that will parse the JSON file
-  const json_parser& parser;
   // Event collector that can be turned on to measure cycles, missed branches, etc.
   event_collector& collector;
 
@@ -281,8 +276,8 @@ struct benchmarker {
   // Speed and event summary for allocation
   event_aggregate allocate_stage;
 
-  benchmarker(const char *_filename, const json_parser& _parser, event_collector& _collector)
-    : json(load_json(_filename)), filename(_filename), parser(_parser), collector(_collector), stats(NULL) {}
+  benchmarker(const char *_filename, event_collector& _collector)
+    : json(load_json(_filename)), filename(_filename), collector(_collector), stats(NULL) {}
 
   ~benchmarker() {
     if (stats) {
@@ -307,14 +302,15 @@ struct benchmarker {
   really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
     // Allocate document::parser
     collector.start();
-    document::parser pj;
-    bool allocok = pj.allocate_capacity(json.size());
+    document::parser parser;
+    bool allocok = parser.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
+    // Run it once to get hot buffers
     if(hotbuffers) {
-      int result = parser.parse((const uint8_t *)json.data(), json.size(), pj);
-      if (result != simdjson::SUCCESS) {
-        exit_error(string("Failed to parse ") + filename + string(":") + pj.get_error_message());
+      auto result = parser.parse((const uint8_t *)json.data(), json.size());
+      if (result.error) {
+        exit_error(string("Failed to parse ") + filename + string(":") + result.get_error_message());
       }
     }
 
@@ -325,12 +321,11 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
-    int result = parser.stage1((const uint8_t *)json.data(), json.size(), pj);
+    error_code error = implementation::active().stage1((const uint8_t *)json.data(), json.size(), parser, false);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
-
-    if (result != simdjson::SUCCESS) {
-      exit_error(string("Failed to parse ") + filename + " during stage 1: " + pj.get_error_message());
+    if (error) {
+      exit_error(string("Failed to parse ") + filename + " during stage 1: " + error_message(error));
     }
 
     // Stage 2 (unified machine) and the rest
@@ -340,9 +335,9 @@ struct benchmarker {
     } else {
       event_count stage2_count;
       collector.start();
-      result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
-      if (result != simdjson::SUCCESS) {
-        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + pj.get_error_message());
+      error = implementation::active().stage2((const uint8_t *)json.data(), json.size(), parser);
+      if (error) {
+        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error_message(error));
       }
       stage2_count = collector.end();
       stage2 << stage2_count;
@@ -351,12 +346,12 @@ struct benchmarker {
     // Calculate stats the first time we parse
     if (stats == NULL) {
       if (stage1_only) { //  we need stage 2 once
-        result = parser.stage2((const uint8_t *)json.data(), json.size(), pj);
-        if (result != simdjson::SUCCESS) {
+        error = implementation::active().stage2((const uint8_t *)json.data(), json.size(), parser);
+        if (error) {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }
       }
-      stats = new json_stats(json, pj);
+      stats = new json_stats(json, parser);
     }
   }
 

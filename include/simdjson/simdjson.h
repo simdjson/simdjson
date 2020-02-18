@@ -17,7 +17,6 @@
 #error simdjson requires a compiler compliant with the C++17 standard
 #endif
 
-#include "simdjson/architecture.h"
 #include "simdjson/error.h"
 
 #endif // SIMDJSON_H

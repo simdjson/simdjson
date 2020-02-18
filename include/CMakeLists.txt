@@ -2,8 +2,10 @@ set(SIMDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/common_defs.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document_iterator.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/document_parser.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/implementation.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/isadetection.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
@@ -14,6 +16,4 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/portability.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson_version.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/stage1_find_marks.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/stage2_build_tape.h
 )

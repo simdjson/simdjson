@@ -40,7 +40,7 @@ bool number_test_small_integers() {
       fflush(NULL);
       auto ok1 = json_parse(buf, n, parser);
       if (ok1 != 0 || !parser.is_valid()) {
-        printf("Could not parse: %s.\n", buf);
+        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(ok1).c_str());
         return false;
       }
       simdjson::document::iterator iter(parser);

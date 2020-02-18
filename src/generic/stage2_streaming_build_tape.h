@@ -1,7 +1,7 @@
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
@@ -33,15 +33,16 @@ struct streaming_structural_parser: structural_parser {
   }
 };
 
+} // namespace stage2
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  streaming_structural_parser parser(buf, len, pj, next_json);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser, size_t &next_json) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
   //
   // Read first value
@@ -153,5 +154,3 @@ finish:
 error:
   return parser.error();
 }
-
-} // namespace stage2

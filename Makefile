@@ -70,10 +70,10 @@ LIBHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/h
 LIBHEADERS_WESTMERE=src/westmere/bitmanipulation.h src/westmere/bitmask.h src/westmere/intrinsics.h src/westmere/numberparsing.h src/westmere/simd.h src/westmere/stage1_find_marks.h src/westmere/stage2_build_tape.h src/westmere/stringparsing.h
 LIBHEADERS=src/jsoncharutils.h src/simdprune_tables.h $(LIBHEADERS_GENERIC) $(LIBHEADERS_ARM64) $(LIBHEADERS_HASWELL) $(LIBHEADERS_WESTMERE)
 
-PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/document.h include/simdjson/document_iterator.h include/simdjson/document_parser.h include/simdjson/parsedjson.h include/simdjson/jsonstream.h include/simdjson/portability.h include/simdjson/architecture.h include/simdjson/error.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h include/simdjson/stage1_find_marks.h include/simdjson/stage2_build_tape.h
+PUBHEADERS=include/simdjson/common_defs.h include/simdjson/isadetection.h include/simdjson/jsonformatutils.h include/simdjson/jsonioutil.h include/simdjson/jsonminifier.h include/simdjson/jsonparser.h include/simdjson/padded_string.h include/simdjson/document.h include/simdjson/inline/document.h include/simdjson/document_iterator.h include/simdjson/inline/document_iterator.h include/simdjson/implementation.h include/simdjson/parsedjson.h include/simdjson/jsonstream.h include/simdjson/portability.h include/simdjson/error.h include/simdjson/simdjson.h include/simdjson/simdjson_version.h
 HEADERS=$(PUBHEADERS) $(LIBHEADERS)
 
-LIBFILES=src/jsonioutil.cpp src/jsonparser.cpp src/error.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp src/document.cpp src/document_parser.cpp
+LIBFILES=src/document.cpp src/error.cpp src/jsonioutil.cpp src/implementation.cpp src/stage1_find_marks.cpp src/stage2_build_tape.cpp
 MINIFIERHEADERS=include/simdjson/jsonminifier.h
 MINIFIERLIBFILES=src/jsonminifier.cpp
 
@@ -160,16 +160,16 @@ submodules:
 
 $(JSON_INCLUDE) $(SAJSON_INCLUDE) $(RAPIDJSON_INCLUDE) $(JSON11_INCLUDE) $(FASTJSON_INCLUDE) $(GASON_INCLUDE) $(UJSON4C_INCLUDE) $(CJSON_INCLUDE) $(JSMN_INCLUDE) : submodules
 
-parse: benchmark/parse.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+parse: benchmark/parse.cpp benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse $(LIBFILES) benchmark/parse.cpp $(LIBFLAGS)
 
 get_corpus_benchmark: benchmark/get_corpus_benchmark.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o get_corpus_benchmark $(LIBFILES) benchmark/get_corpus_benchmark.cpp $(LIBFLAGS)
 
-parse_stream: benchmark/parse_stream.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+parse_stream: benchmark/parse_stream.cpp benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse_stream $(LIBFILES) benchmark/parse_stream.cpp $(LIBFLAGS)
 
-benchfeatures: benchmark/benchfeatures.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
+benchfeatures: benchmark/benchfeatures.cpp benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o benchfeatures $(LIBFILES) benchmark/benchfeatures.cpp $(LIBFLAGS)
 
 perfdiff: benchmark/perfdiff.cpp
@@ -210,7 +210,7 @@ readme_examples: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
 
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o numberparsingcheck src/jsonioutil.cpp src/jsonparser.cpp src/error.cpp src/stage1_find_marks.cpp src/document.cpp src/document_parser.cpp tests/numberparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
+	$(CXX) $(CXXFLAGS) -o numberparsingcheck src/jsonioutil.cpp src/implementation.cpp src/error.cpp src/stage1_find_marks.cpp src/document.cpp tests/numberparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS
 
 integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o integer_tests $(LIBFILES) tests/integer_tests.cpp -I. $(LIBFLAGS)
@@ -218,7 +218,7 @@ integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
 
 
 stringparsingcheck:tests/stringparsingcheck.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o stringparsingcheck src/jsonioutil.cpp src/jsonparser.cpp src/error.cpp src/stage1_find_marks.cpp src/document.cpp src/document_parser.cpp tests/stringparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
+	$(CXX) $(CXXFLAGS) -o stringparsingcheck src/jsonioutil.cpp src/implementation.cpp src/error.cpp src/stage1_find_marks.cpp src/document.cpp tests/stringparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_STRINGS
 
 pointercheck:tests/pointercheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o pointercheck $(LIBFILES) tests/pointercheck.cpp -I. $(LIBFLAGS)

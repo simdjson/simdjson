@@ -168,8 +168,9 @@ int main(int argc, char *argv[]) {
          s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
          s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
-  simdjson::ParsedJson pj;
-  bool allocok = pj.allocate_capacity(p.size());
+  simdjson::document::parser parser;
+  const simdjson::implementation &stage_parser = simdjson::implementation::active();
+  bool allocok = parser.allocate_capacity(p.size());
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
@@ -186,16 +187,14 @@ int main(int argc, char *argv[]) {
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
     // The default template is simdjson::architecture::NATIVE.
-    bool isok = (simdjson::find_structural_bits<>(p.data(), p.size(), pj) ==
-                 simdjson::SUCCESS);
+    bool isok = (stage_parser.stage1((const uint8_t *)p.data(), p.size(), parser, false) == simdjson::SUCCESS);
     unified.end(results);
 
     cy1 += results[0];
     cl1 += results[1];
 
     unified.start();
-    isok =
-        isok && (simdjson::SUCCESS == unified_machine(p.data(), p.size(), pj));
+    isok = isok && (stage_parser.stage2((const uint8_t *)p.data(), p.size(), parser) == simdjson::SUCCESS);
     unified.end(results);
 
     cy2 += results[0];
