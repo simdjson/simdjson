@@ -105,6 +105,9 @@ benchmark:
 run_basictests: basictests
 	./basictests
 
+run_readme_examples: readme_examples
+	./readme_examples
+
 run_numberparsingcheck: numberparsingcheck
 	./numberparsingcheck
 
@@ -138,12 +141,12 @@ $(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
 run_benchfeatures: benchfeatures $(FEATURE_JSON_FILES)
 	./benchfeatures -n 1000
 
-test: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
+test: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
+quiettest: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 
-quicktests: run_basictests run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_jsoncheck_noavx
+quicktests: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_jsoncheck_noavx
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -162,7 +165,6 @@ parse: benchmark/parse.cpp benchmark/json_parser.h benchmark/event_counter.h ben
 
 get_corpus_benchmark: benchmark/get_corpus_benchmark.cpp  $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o get_corpus_benchmark $(LIBFILES) benchmark/get_corpus_benchmark.cpp $(LIBFLAGS)
-
 
 parse_stream: benchmark/parse_stream.cpp benchmark/json_parser.h benchmark/event_counter.h benchmark/benchmarker.h $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o parse_stream $(LIBFILES) benchmark/parse_stream.cpp $(LIBFLAGS)
@@ -202,6 +204,9 @@ jsoncheck_noavx:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 
 basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o basictests $(LIBFILES) tests/basictests.cpp -I. $(LIBFLAGS)
+
+readme_examples: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o readme_examples $(LIBFILES) tests/readme_examples.cpp -I. $(LIBFLAGS)
 
 
 numberparsingcheck:tests/numberparsingcheck.cpp $(HEADERS) $(LIBFILES)
