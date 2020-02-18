@@ -346,7 +346,7 @@ will build and install `simdjson` as a static library.
 
 These commands will also print out instructions on how to use the library from MSBuild or CMake-based projects.
 
-If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submiting an issue or by creating a PR.
+If you find the version of `simdjson` shipped with `vcpkg` is out-of-date, feel free to report it to `vcpkg` community either by submitting an issue or by creating a PR.
 
 
 ## Tools
