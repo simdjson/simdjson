@@ -103,7 +103,7 @@ be concerned with computed gotos.
 
 ## Thread safety
 
-The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a ParsedJson object between different threads.
+The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a document::parser object between different threads.
 
 If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
@@ -117,88 +117,62 @@ You will get best performance with large or huge pages. Under Linux, you can ena
 
 Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocating memory. You just allocate memory once and reuse the blocks of memory.
 
+## Including simdjson
+
+
 ## Code usage and example
 
-The main API involves populating a `ParsedJson` object which hosts a fully navigable document-object-model (DOM) view of the JSON document. The DOM can be accessed using [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, for example. The main function is `json_parse` which takes a string containing the JSON document as well as a reference to pre-allocated `ParsedJson` object (which can be reused multiple time). Once you have populated the `ParsedJson` object you can navigate through the DOM with an iterator (e.g., created by `ParsedJson::Iterator pjh(pj)`, see 'Navigating the parsed document').
+The main API involves allocating a `document::parser`, and calling `parser.parse()` to create a fully navigable document-object-model (DOM) view of a JSON document. The DOM can be accessed via [JSON Pointer](https://tools.ietf.org/html/rfc6901) paths, or as an iterator (`document::iterator(doc)`). See 'Navigating the parsed document' for more.
 
-// Samples:
-// Load a document from a file
-// Read a particular key / value from the document
-// Iterate over an array of things
+All examples below use use `#include "simdjson.h"`, `#include "simdjson.cpp"` and `using namespace simdjson;`.
+
+The simplest API to get started is `document::parse()`, which allocates a new parser, parses a string, and returns the DOM. This is less efficient if you're going to read multiple documents, but as long as you're only parsing a single document, this will do just fine.
 
 ```c++
-#include "simdjson.h"
-auto doc = simdjson::document::load("myfile.json");
-cout << doc;
-for (auto i=doc.begin(); i<doc.end(); i++) {
-  cout << doc[i];
-}
+auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
+if (error) { cerr << "Error: " << error_meesage(error) << endl; exit(1); }
+doc.print_json(cout);
 ```
 
-A slightly simpler API is available if you don't mind having the overhead
-of memory allocation with each new JSON document:
+If you're using exceptions, it gets even simpler (simdjson won't use exceptions internally, so you'll only pay the performance cost of exceptions in your own calling code):
 
-```C
-#include "simdjson/jsonparser.h"
-using namespace simdjson;
-
-document doc = document::parse("myfile.json");
-cout << doc;
-/...
-
-const char * filename = ... //
-padded_string p = get_corpus(filename);
-ParsedJson pj = build_parsed_json(p); // do the parsing
-if( ! pj.is_valid() ) {
-    // something went wrong
-    std::cout << pj.get_error_message() << std::endl;
-}
+```c++
+document doc = document::parse(string("[ 1, 2, 3 ]"));
+doc.print_json(cout);
 ```
 
-Though the `padded_string` class is recommended for best performance, you can call `json_parse` and `build_parsed_json`, passing a standard `std::string` object.
+simdjson requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
 
-
-```C
-#include "simdjson/jsonparser.h"
-using namespace simdjson;
-
-/...
-std::string mystring = ... //
-ParsedJson pj;
-pj.allocate_capacity(mystring.size()); // allocate memory for parsing up to p.size() bytes
-// std::string may not overallocate so a copy will be needed
-const int res = json_parse(mystring, pj); // do the parsing, return 0 on success
-// parsing is done!
-if (res != 0) {
-    // You can use the "simdjson/simdjson.h" header to access the error message
-    std::cout << "Error parsing:" << simdjson::error_message(res) << std::endl;
-}
-// pj can be reused with other json_parse calls.
+```c++
+document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
+doc.print_json(cout);
 ```
 
-or
+You can also load from a file with `get_corpus`:
 
-```C
-#include "simdjson/jsonparser.h"
-using namespace simdjson;
-
-/...
-
-std::string mystring = ... //
-// std::string may not overallocate so a copy will be needed
-ParsedJson pj = build_parsed_json(mystring); // do the parsing
-if( ! pj.is_valid() ) {
-    // something went wrong
-    std::cout << pj.get_error_message() << std::endl;
-}
+```c++
+document doc = document::parse(get_corpus(filename));
+doc.print_json(cout);
 ```
 
-As needed, the `json_parse` and `build_parsed_json` functions copy the input data to a temporary buffer readable up to SIMDJSON_PADDING bytes beyond the end of the data.
+If you're using simdjson to parse multiple documents, or in a loop, you should allocate a parser once and reuse it (allocation is slow, do it as little as possible!):
+
+```c++
+// Allocate a parser big enough for all files
+document::parser parser;
+if (!parser.allocate_capacity(1024*1024)) { exit(1); }
+
+// Read files with the parser, one by one
+for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
+  cout << "Parsing " << json.data() << " ..." << endl;
+  auto [doc, error] = parser.parse(json);
+  if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+  doc.print_json(cout);
+  cout << endl;
+}
+```
 
 ## Newline-Delimited JSON (ndjson) and  JSON lines 
-
-
-
 
 The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
 
@@ -212,14 +186,14 @@ Here is a simple example, using single header simdjson:
 
 int parse_file(const char *filename) {
     simdjson::padded_string p = simdjson::get_corpus(filename);
-    simdjson::ParsedJson pj;
+    simdjson::document::parser parser;
     simdjson::JsonStream js{p};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     
     while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-            parse_res = js.json_parse(pj);
+            parse_res = js.json_parse(parser);
 
-            //Do something with pj...
+            //Do something with parser...
         }
 }
 ```
@@ -230,7 +204,7 @@ See the "singleheader" repository for a single header version. See the included
 file "amalgamation_demo.cpp" for usage. This requires no specific build system: just
 copy the files in your project in your include path. You can then include them quite simply:
 
-```C
+```c++
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
@@ -238,10 +212,10 @@ using namespace simdjson;
 int main(int argc, char *argv[]) {
   const char * filename = argv[1];
   padded_string p = get_corpus(filename);
-  ParsedJson pj = build_parsed_json(p); // do the parsing
-  if( ! pj.is_valid() ) {
+  document::parser parser = build_parsed_json(p); // do the parsing
+  if( ! parser.is_valid() ) {
     std::cout << "not valid" << std::endl;
-    std::cout << pj.get_error_message() << std::endl;
+    std::cout << parser.get_error_message() << std::endl;
   } else {
     std::cout << "valid" << std::endl;
   }
@@ -427,21 +401,21 @@ make jsonpointer
  ./jsonpointer jsonexamples/twitter.json /statuses/0/id /statuses/1/id /statuses/2/id /statuses/3/id /statuses/4/id /statuses/5/id
 ```
 
-In C++, given a `ParsedJson`, we can move to a node with the `move_to` method, passing a `std::string` representing the JSON Pointer query.
+In C++, given a `document::parser`, we can move to a node with the `move_to` method, passing a `std::string` representing the JSON Pointer query.
 
 ## Navigating the parsed document
 
 
 
-From a `simdjson::ParsedJson` instance, you can create an iterator (of type `simdjson::ParsedJson::Iterator` which is in fact `simdjson::ParsedJson::BasicIterator<DEFAULT_MAX_DEPTH>` ) via a constructor:
+From a `simdjson::document::parser` instance, you can create an iterator (of type `simdjson::document::parser::Iterator` which is in fact `simdjson::document::parser::BasicIterator<DEFAULT_MAX_DEPTH>` ) via a constructor:
 
 ```
-ParsedJson::Iterator pjh(pj); // pj is a ParsedJSON
+document::parser::Iterator pjh(parser); // parser is a ParsedJSON
 ```
 
-You then have access to the following methods on the resulting `simdjson::ParsedJson::Iterator`  instance:
+You then have access to the following methods on the resulting `simdjson::document::parser::Iterator`  instance:
 
-* `bool is_ok() const`: whether you have a valid iterator, will be false if your parent parsed ParsedJson is not a valid JSON.
+* `bool is_ok() const`: whether you have a valid iterator, will be false if your parent parsed document::parser is not a valid JSON.
 * `size_t get_depth() const`:  returns the current depth (start at 1 with 0 reserved for the fictitious root node)
 * `int8_t get_scope_type() const`: a scope is a series of nodes at the same depth, typically it is either an object (`{`) or an array (`[`). The root node has type 'r'.
 * `bool move_forward()`:  move forward in document order
@@ -482,17 +456,17 @@ You then have access to the following methods on the resulting `simdjson::Parsed
 
 Here is a code sample to dump back the parsed JSON to a string:
 
-```c
-    ParsedJson::Iterator pjh(pj);
+```c++
+    document::parser::Iterator pjh(parser);
     if (!pjh.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
     }
-    compute_dump(pj);
+    compute_dump(parser);
     //
     // where compute_dump is :
 
-void compute_dump(ParsedJson::Iterator &pjh) {
+void compute_dump(document::parser::Iterator &pjh) {
   if (pjh.is_object()) {
     std::cout << "{";
     if (pjh.down()) {
@@ -529,8 +503,8 @@ void compute_dump(ParsedJson::Iterator &pjh) {
 
 The following function will find all user.id integers:
 
-```C
-void simdjson_scan(std::vector<int64_t> &answer, ParsedJson::Iterator &i) {
+```c++
+void simdjson_scan(std::vector<int64_t> &answer, document::parser::Iterator &i) {
    while(i.move_forward()) {
      if(i.get_scope_type() == '{') {
        bool found_user = (i.get_string_length() == 4) && (memcmp(i.get_string(), "user", 4) == 0);

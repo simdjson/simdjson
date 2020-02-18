@@ -126,7 +126,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -149,7 +149,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -218,7 +218,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -264,7 +264,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -311,7 +311,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -334,7 +334,7 @@ steps:
   environment:
     CC: gcc
     CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
@@ -358,7 +358,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -y
     - apt-get install -y make $CC g++ cmake 
@@ -381,7 +381,7 @@ steps:
   environment:
     CC: gcc
     CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
@@ -405,7 +405,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -428,7 +428,7 @@ steps:
   environment:
     CC: gcc
     CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON
   commands:
     - apt-get update -qq
     - apt-get install -y cmake

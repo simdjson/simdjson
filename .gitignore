@@ -95,6 +95,7 @@ objs
 /parsingcompetition
 /perfdiff
 /pointercheck
+/readme_examples
 /statisticalmodel
 /stringparsingcheck
 /submodules
@@ -108,9 +109,10 @@ objs
 /tests/jsoncheck
 /tests/pointercheck
 /tests/integer_tests
+/tests/jsonstream_test
+/tests/readme_examples
 /tools/json2json
 /tools/jsonstats
-/tests/jsonstream_test
 /tools/minify
 
 # Don't check in generated examples
