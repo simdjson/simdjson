@@ -1,7 +1,7 @@
 #include "simdjson/portability.h"
 #include "simdjson/isadetection.h"
 #include "simdjson/implementation.h"
-#include <vector>
+#include <initializer_list>
 
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
@@ -14,7 +14,7 @@
 namespace simdjson {
   const haswell::implementation haswell_singleton{};
   const westmere::implementation westmere_singleton{};
-  const implementation * const available_implementation_pointers [] { &haswell_singleton, &westmere_singleton };
+  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton };
 }
 
 #endif
@@ -25,7 +25,7 @@ namespace simdjson {
 
 namespace simdjson {
   const arm64::implementation arm64_singleton{};
-  const implementation * const available_implementation_pointers[] { &arm64_singleton };
+  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton };
 }
 
 #endif
@@ -54,25 +54,26 @@ public:
 const unsupported_implementation unsupported_singleton{};
 
 size_t available_implementations::size() const noexcept {
-  return sizeof(available_implementation_pointers) / sizeof(const implementation *);
-}
-const implementation *available_implementations::operator[](size_t i) const noexcept {
-  return available_implementation_pointers[i];
+  return available_implementation_pointers.size();
 }
 const implementation * const *available_implementations::begin() const noexcept {
-  return std::cbegin(available_implementation_pointers);
+  return available_implementation_pointers.begin();
 }
 const implementation * const *available_implementations::end() const noexcept {
-  return std::cend(available_implementation_pointers);
+  return available_implementation_pointers.end();
 }
 const implementation *available_implementations::detect_best_supported() const noexcept {
   // They are prelisted in priority order, so we just go down the list
   uint32_t supported_instruction_sets = detect_supported_architectures();
-  for (const implementation *impl : *this) {
+  for (const implementation *impl : available_implementation_pointers) {
     uint32_t required_instruction_sets = impl->required_instruction_sets();
     if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
   }
   return &unsupported_singleton;
+}
+
+const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  return active_implementation = available_implementations().detect_best_supported();
 }
 
 } // namespace simdjson

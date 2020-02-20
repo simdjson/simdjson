@@ -15,7 +15,7 @@ namespace simdjson {
  * An implementation of simdjson for a particular CPU architecture.
  *
  * Also used to maintain the currently active implementation. The active implementation is
- * automatically initialized on startup to the most advanced implementation supported by the host.
+ * automatically initialized on first use to the most advanced implementation supported by the host.
  */
 class implementation {
 public:
@@ -27,7 +27,7 @@ public:
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
-  const std::string &name() const { return _name; }
+  virtual const std::string &name() const { return _name; }
 
   /**
    * The description of this implementation.
@@ -37,14 +37,14 @@ public:
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
-  const std::string &description() const { return _description; }
+  virtual const std::string &description() const { return _description; }
 
   /**
    * The instruction sets this implementation is compiled against.
    *
    * @return a mask of all required `instruction_set` values
    */
-  uint32_t required_instruction_sets() const { return _required_instruction_sets; };
+  virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
 
   /**
    * Run a full document parse (init_parse, stage1 and stage2).
@@ -134,8 +134,6 @@ public:
   really_inline available_implementations() {}
   /** Number of implementations */
   size_t size() const noexcept;
-  /** nth implementation */
-  const implementation *operator[](size_t i) const noexcept;
   /** STL const begin() iterator */
   const implementation * const *begin() const noexcept;
   /** STL const end() iterator */
@@ -175,12 +173,38 @@ public:
   const implementation *detect_best_supported() const noexcept;
 };
 
+// Detects best supported implementation on first use, and sets it
+class detect_best_supported_implementation_on_first_use final : public implementation {
+public:
+  const std::string& name() const noexcept final { return set_best()->name(); }
+  const std::string& description() const noexcept final { return set_best()->description(); }
+  uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final {
+    return set_best()->parse(buf, len, parser);
+  }
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final {
+    return set_best()->stage1(buf, len, parser, streaming);
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final {
+    return set_best()->stage2(buf, len, parser);
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept final {
+    return set_best()->stage2(buf, len, parser, next_json);
+  }
+
+  really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
+private:
+  const implementation *set_best() const noexcept;
+};
+
+inline const detect_best_supported_implementation_on_first_use _detect_best_supported_implementation_on_first_use_singleton;
+
 /**
   * The active implementation.
   *
-  * Automatically initialized to the most advanced implementation supported by this hardware.
+  * Automatically initialized on first use to the most advanced implementation supported by this hardware.
   */
-inline const implementation * active_implementation = available_implementations().detect_best_supported();
+inline const implementation * active_implementation = &_detect_best_supported_implementation_on_first_use_singleton;
 
 } // namespace simdjson
 
