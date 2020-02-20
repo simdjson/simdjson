@@ -68,7 +68,7 @@ void print_usage(ostream& out) {
   out << "-H           - Make the buffers hot (reduce page allocation during parsing)" << endl;
   out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
   out << "               implementation supported on the host machine." << endl;
-  for (auto impl : simdjson::implementation::available_implementations()) {
+  for (auto impl : simdjson::available_implementations()) {
     out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << endl;
   }
 }
@@ -110,11 +110,11 @@ struct option_struct {
           verbose = true;
           break;
         case 'a': {
-          const implementation *impl = simdjson::implementation::from_string(optarg);
+          const implementation *impl = simdjson::available_implementations()[optarg];
           if (!impl) {
             exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a haswell, westmere or arm64");
           }
-          simdjson::implementation::use(*impl);
+          simdjson::active_implementation = impl;
           break;
         }
         case 'H':
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
   option_struct options(argc, argv);
   if (options.verbose) {
     verbose_stream = &cout;
-    verbose() << "Implementation: " << simdjson::implementation::active().name() << endl;
+    verbose() << "Implementation: " << simdjson::active_implementation->name() << endl;
   }
 
   // Start collecting events. We put this early so if it prints an error message, it's the

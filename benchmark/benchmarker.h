@@ -321,7 +321,7 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
-    error_code error = implementation::active().stage1((const uint8_t *)json.data(), json.size(), parser, false);
+    error_code error = active_implementation->stage1((const uint8_t *)json.data(), json.size(), parser, false);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {
@@ -335,7 +335,7 @@ struct benchmarker {
     } else {
       event_count stage2_count;
       collector.start();
-      error = implementation::active().stage2((const uint8_t *)json.data(), json.size(), parser);
+      error = active_implementation->stage2((const uint8_t *)json.data(), json.size(), parser);
       if (error) {
         exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error_message(error));
       }
@@ -346,7 +346,7 @@ struct benchmarker {
     // Calculate stats the first time we parse
     if (stats == NULL) {
       if (stage1_only) { //  we need stage 2 once
-        error = implementation::active().stage2((const uint8_t *)json.data(), json.size(), parser);
+        error = active_implementation->stage2((const uint8_t *)json.data(), json.size(), parser);
         if (error) {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }

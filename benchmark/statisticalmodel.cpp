@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
          s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
   simdjson::document::parser parser;
-  const simdjson::implementation &stage_parser = simdjson::implementation::active();
+  const simdjson::implementation &stage_parser = *simdjson::active_implementation;
   bool allocok = parser.allocate_capacity(p.size());
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;

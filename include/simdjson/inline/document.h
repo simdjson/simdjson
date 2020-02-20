@@ -26,7 +26,7 @@ document::doc_ref_result document::parser::parse(const uint8_t *buf, size_t len,
     memcpy((void *)buf, tmp_buf, len);
   }
 
-  code = implementation::active().parse(buf, len, *this);
+  code = simdjson::active_implementation->parse(buf, len, *this);
 
   // We're indicating validity via the doc_ref_result, so set the parse state back to invalid
   valid = false;

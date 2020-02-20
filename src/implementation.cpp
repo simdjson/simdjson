@@ -12,12 +12,9 @@
 #include "westmere/implementation.h"
 
 namespace simdjson {
-  static const haswell::implementation haswell_singleton{};
-  static const westmere::implementation westmere_singleton{};
-  const std::vector<const implementation *> implementation::_available_implementations = {
-    &haswell_singleton,
-    &westmere_singleton,
-  };
+  const haswell::implementation haswell_singleton{};
+  const westmere::implementation westmere_singleton{};
+  const implementation * const available_implementation_pointers [] { &haswell_singleton, &westmere_singleton };
 }
 
 #endif
@@ -27,10 +24,8 @@ namespace simdjson {
 #include "arm64/implementation.h"
 
 namespace simdjson {
-  static const arm64::implementation arm64_singleton{};
-  const std::vector<const implementation *> implementation::_available_implementations = {
-    &arm64_singleton
-  };
+  const arm64::implementation arm64_singleton{};
+  const implementation * const available_implementation_pointers[] { &arm64_singleton };
 }
 
 #endif
@@ -40,7 +35,6 @@ namespace simdjson {
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
 public:
-  static const unsupported_implementation singleton();
   WARN_UNUSED virtual error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
@@ -54,28 +48,31 @@ public:
     return UNSUPPORTED_ARCHITECTURE;
   }
 
-  unsupported_implementation() : implementation("unsupported", "CPU without SIMD instructions", 0) {}
+  unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
 };
 
-static const unsupported_implementation unsupported_singleton{};
+const unsupported_implementation unsupported_singleton{};
 
-const implementation * implementation::from_string(const std::string &arch) noexcept {
-  for (const implementation *impl : available_implementations()) {
-    if (impl->name() == arch) { return impl; }
-  }
-  return nullptr;
+size_t available_implementations::size() const noexcept {
+  return sizeof(available_implementation_pointers) / sizeof(const implementation *);
 }
-
-const implementation &implementation::detect() noexcept {
+const implementation *available_implementations::operator[](size_t i) const noexcept {
+  return available_implementation_pointers[i];
+}
+const implementation * const *available_implementations::begin() const noexcept {
+  return std::cbegin(available_implementation_pointers);
+}
+const implementation * const *available_implementations::end() const noexcept {
+  return std::cend(available_implementation_pointers);
+}
+const implementation *available_implementations::detect_best_supported() const noexcept {
   // They are prelisted in priority order, so we just go down the list
   uint32_t supported_instruction_sets = detect_supported_architectures();
-  for (const implementation *impl : available_implementations()) {
+  for (const implementation *impl : *this) {
     uint32_t required_instruction_sets = impl->required_instruction_sets();
-    if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return *impl; }
+    if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
   }
-  return unsupported_singleton;
+  return &unsupported_singleton;
 }
-
-std::atomic<const implementation *> implementation::_active = &detect();
 
 } // namespace simdjson

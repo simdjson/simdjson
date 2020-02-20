@@ -18,93 +18,12 @@ namespace simdjson {
  * automatically initialized on startup to the most advanced implementation supported by the host.
  */
 class implementation {
-
-/*
- * Active implementation management
- */
-public:
-  /**
-   * Get the current active implementation.
-   *
-   * All simdjson parsing will be done using this implementation.
-   *
-   *     const implementation &impl = simdjson::implementation::active();
-   *     cout << "simdjson is optimized for " << impl.name() << "(" << impl.description() << ")" << endl;
-   *
-   * @return the active implementation.
-   */
-  static const implementation & active() noexcept { return *_active.load(); }
-
-  /**
-   * Set the current active implementation.
-   *
-   * All simdjson parsing will be done using this implementation.
-   *
-   *     auto impl = simdjson::implementation::from_string("westmere");
-   *     if (!impl) { exit(1); }
-   *     simdjson::implementation::use(*impl);
-   *
-   * @param arch the implementation to use
-   */
-  static void use(const implementation &arch) noexcept { _active = &arch; }
-
-  /**
-   * Get the implementation with the given name.
-   *
-   * Case sensitive.
-   *
-   *     auto impl = simdjson::implementation::from_string("westmere");
-   *     if (!impl) { exit(1); }
-   *     simdjson::implementation::use(*impl);
-   *
-   * @param arch the implementation string, e.g. "westmere", "haswell", "arm64"
-   * @return the implementation, or nullptr if the parse failed.
-   */
-  static const implementation * from_string(const std::string &arch) noexcept;
-
-  /**
-   * Detect the most advanced implementation supported by the current host.
-   *
-   * This is used to initialize the implementation on startup.
-   *
-   *     const implementation &impl = simdjson::implementation::detect();
-   *     simdjson::implementation::use(impl);
-   *
-   * @return the most advanced supported implementation for the current host.
-   */
-  static const implementation & detect() noexcept;
-
-  /**
-   * Get the list of available implementations supported by simdjson.
-   *
-   * @return available implementations
-   */
-  static const std::vector<const implementation *> &available_implementations() noexcept {
-    return _available_implementations;
-  }
-
-private:
-  /**
-   * The active implementation.
-   *
-   * Automatically initialized to the most advanced implementation supported by this hardware.
-   */
-  static std::atomic<const implementation *> _active;
-
-  /**
-   * Known implementations.
-   */
-  static const std::vector<const implementation *> _available_implementations;
-
-/*
- * Implementation interface
- */
 public:
   /**
    * The name of this implementation.
    *
-   *     const implementation &impl = simdjson::implementation::active();
-   *     cout << "simdjson is optimized for " << impl.name() << "(" << impl.description() << ")" << endl;
+   *     const implementation *impl = simdjson::active_implementation;
+   *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
@@ -113,8 +32,8 @@ public:
   /**
    * The description of this implementation.
    *
-   *     const implementation &impl = simdjson::implementation::active();
-   *     cout << "simdjson is optimized for " << impl.name() << "(" << impl.description() << ")" << endl;
+   *     const implementation *impl = simdjson::active_implementation;
+   *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
    * @return the name of the implementation, e.g. "haswell", "westmere", "arm64"
    */
@@ -205,6 +124,63 @@ private:
    */
   const uint32_t _required_instruction_sets;
 };
+
+/**
+ * The list of available implementations compiled into simdjson.
+ */
+class available_implementations {
+public:
+  /** Get the list of available implementations compiled into simdjson */
+  really_inline available_implementations() {}
+  /** Number of implementations */
+  size_t size() const noexcept;
+  /** nth implementation */
+  const implementation *operator[](size_t i) const noexcept;
+  /** STL const begin() iterator */
+  const implementation * const *begin() const noexcept;
+  /** STL const end() iterator */
+  const implementation * const *end() const noexcept;
+
+  /**
+   * Get the implementation with the given name.
+   *
+   * Case sensitive.
+   *
+   *     const implementation *impl = simdjson::available_implementations["westmere"];
+   *     if (!impl) { exit(1); }
+   *     simdjson::active_implementation = impl;
+   *
+   * @param name the implementation to find, e.g. "westmere", "haswell", "arm64"
+   * @return the implementation, or nullptr if the parse failed.
+   */
+  const implementation * operator[](const std::string& name) const noexcept {
+    for (const implementation * impl : *this) {
+      if (impl->name() == name) { return impl; }
+    }
+    return nullptr;
+  }
+
+  /**
+   * Detect the most advanced implementation supported by the current host.
+   *
+   * This is used to initialize the implementation on startup.
+   *
+   *     const implementation *impl = simdjson::available_implementation::detect_best_supported();
+   *     simdjson::active_implementation = impl;
+   *
+   * @return the most advanced supported implementation for the current host, or an
+   *         implementation that returns UNSUPPORTED_ARCHITECTURE if there is no supported
+   *         implementation. Will never return nullptr.
+   */
+  const implementation *detect_best_supported() const noexcept;
+};
+
+/**
+  * The active implementation.
+  *
+  * Automatically initialized to the most advanced implementation supported by this hardware.
+  */
+inline const implementation * active_implementation = available_implementations().detect_best_supported();
 
 } // namespace simdjson
 
