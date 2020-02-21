@@ -53,16 +53,18 @@ public:
 
 const unsupported_implementation unsupported_singleton{};
 
-size_t available_implementations::size() const noexcept {
+namespace internal {
+
+size_t available_implementation_list::size() const noexcept {
   return available_implementation_pointers.size();
 }
-const implementation * const *available_implementations::begin() const noexcept {
+const implementation * const *available_implementation_list::begin() const noexcept {
   return available_implementation_pointers.begin();
 }
-const implementation * const *available_implementations::end() const noexcept {
+const implementation * const *available_implementation_list::end() const noexcept {
   return available_implementation_pointers.end();
 }
-const implementation *available_implementations::detect_best_supported() const noexcept {
+const implementation *available_implementation_list::detect_best_supported() const noexcept {
   // They are prelisted in priority order, so we just go down the list
   uint32_t supported_instruction_sets = detect_supported_architectures();
   for (const implementation *impl : available_implementation_pointers) {
@@ -73,7 +75,9 @@ const implementation *available_implementations::detect_best_supported() const n
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
-  return active_implementation = available_implementations().detect_best_supported();
+  return active_implementation = available_implementations.detect_best_supported();
 }
+
+} // namespace simdjson::internal
 
 } // namespace simdjson

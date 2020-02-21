@@ -125,13 +125,15 @@ private:
   const uint32_t _required_instruction_sets;
 };
 
+namespace internal {
+
 /**
  * The list of available implementations compiled into simdjson.
  */
-class available_implementations {
+class available_implementation_list {
 public:
   /** Get the list of available implementations compiled into simdjson */
-  really_inline available_implementations() {}
+  really_inline available_implementation_list() {}
   /** Number of implementations */
   size_t size() const noexcept;
   /** STL const begin() iterator */
@@ -197,14 +199,39 @@ private:
   const implementation *set_best() const noexcept;
 };
 
-inline const detect_best_supported_implementation_on_first_use _detect_best_supported_implementation_on_first_use_singleton;
+inline const detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
+
+template<typename T>
+class atomic_ptr {
+public:
+  atomic_ptr(T *_ptr) : ptr{_ptr} {}
+
+  operator const T*() const { return ptr.load(); }
+  const T& operator*() const { return *ptr; }
+  const T* operator->() const { return ptr.load(); }
+
+  operator T*() { return ptr.load(); }
+  T& operator*() { return *ptr; }
+  T* operator->() { return ptr.load(); }
+  T* operator=(T *_ptr) { return ptr = _ptr; }
+
+private:
+  std::atomic<T*> ptr;
+};
+
+} // namespace [simdjson::]internal
+
+/**
+ * The list of available implementations compiled into simdjson.
+ */
+inline const internal::available_implementation_list available_implementations;
 
 /**
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
   */
-inline const implementation * active_implementation = &_detect_best_supported_implementation_on_first_use_singleton;
+inline internal::atomic_ptr<const implementation> active_implementation = &internal::detect_best_supported_implementation_on_first_use_singleton;
 
 } // namespace simdjson
 
