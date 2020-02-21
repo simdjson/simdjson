@@ -23,10 +23,11 @@ enum error_code {
   EMPTY,           // no structural element found
   UNESCAPED_CHARS, // found unescaped characters in a string.
   UNCLOSED_STRING, // missing quote at the end
+  UNSUPPORTED_ARCHITECTURE, // unsupported architecture
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 
-const std::string &error_message(error_code error);
+const std::string &error_message(error_code error) noexcept;
 
 struct invalid_json : public std::exception {
   invalid_json(error_code _error) : error{_error} {}
@@ -34,9 +35,9 @@ struct invalid_json : public std::exception {
   error_code error;
 };
 
-// backcompat
+// TODO these are deprecated, remove
 using ErrorValues = error_code;
-inline const std::string &error_message(int error) { return error_message(error_code(error)); }
+inline const std::string &error_message(int error) noexcept { return error_message(error_code(error)); }
 
 } // namespace simdjson
 

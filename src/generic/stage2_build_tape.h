@@ -273,15 +273,16 @@ struct structural_parser {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+} // namespace stage2
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, document::parser &doc_parser) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  structural_parser parser(buf, len, doc_parser);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::structural_parser parser(buf, len, doc_parser);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
@@ -394,4 +395,10 @@ error:
   return parser.error();
 }
 
-} // namespace stage2
+WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  error_code code = stage1(buf, len, doc_parser, false);
+  if (!code) {
+    code = stage2(buf, len, doc_parser);
+  }
+  return code;
+}

@@ -16,14 +16,13 @@ INCLUDEPATH="$SCRIPTPATH/include"
 
 # this list excludes the "src/generic headers"
 ALLCFILES="
+document.cpp
 error.cpp
+implementation.cpp
 jsonioutil.cpp
 jsonminifier.cpp
-jsonparser.cpp
 stage1_find_marks.cpp
 stage2_build_tape.cpp
-document.cpp
-document_parser.cpp
 "
 
 # order matters
@@ -38,11 +37,7 @@ simdjson/padded_string.h
 simdjson/jsonioutil.h
 simdjson/jsonminifier.h
 simdjson/document.h
-simdjson/document_iterator.h
-simdjson/document_parser.h
 simdjson/parsedjson.h
-simdjson/stage1_find_marks.h
-simdjson/stage2_build_tape.h
 simdjson/jsonparser.h
 simdjson/jsonstream.h
 "

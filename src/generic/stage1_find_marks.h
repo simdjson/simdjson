@@ -391,7 +391,7 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+error_code find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }

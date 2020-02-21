@@ -8,7 +8,7 @@
 #include "westmere/bitmask.h"
 #include "westmere/simd.h"
 #include "westmere/bitmanipulation.h"
-#include "simdjson/stage1_find_marks.h"
+#include "westmere/implementation.h"
 
 TARGET_WESTMERE
 namespace simdjson::westmere {
@@ -50,18 +50,11 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 #include "generic/utf8_lookup2_algorithm.h"
 #include "generic/stage1_find_marks.h"
 
-} // namespace westmere
-UNTARGET_REGION
-
-TARGET_WESTMERE
-namespace simdjson {
-
-template <>
-int find_structural_bits<architecture::WESTMERE>(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
   return westmere::stage1::find_structural_bits<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson
+} // namespace simdjson::westmere
 UNTARGET_REGION
 
 #endif // IS_X86_64
