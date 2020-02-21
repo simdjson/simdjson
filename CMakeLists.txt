@@ -63,20 +63,16 @@ add_subdirectory(benchmark)
 
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 if (SIMDJSON_GOOGLE_BENCHMARKS)
-  set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
-  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest/CMakeLists.txt)
-    # message(STATUS "Unable to find ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest/CMakeLists.txt")
-    execute_process(COMMAND git submodule update --init -- ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest
+  if(NOT EXISTS dependencies/benchmark/CMakeLists.txt)
+    # message(STATUS "Unable to find dependencies/benchmark/CMakeLists.txt")
+    execute_process(COMMAND git submodule update --init -- dependencies/benchmark
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
-  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark/CMakeLists.txt)
-    # message(STATUS "Unable to find ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark/CMakeLists.txt")
-    execute_process(COMMAND git submodule update --init -- ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-  endif()
-
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/googletest)
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependencies/benchmark)
+  option(BENCHMARK_ENABLE_TESTING OFF)
+  set(BENCHMARK_ENABLE_TESTING OFF)
+  option(BENCHMARK_ENABLE_INSTALL OFF)
+  set(BENCHMARK_ENABLE_INSTALL OFF)
+  add_subdirectory(dependencies/benchmark)
 endif()
 
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
