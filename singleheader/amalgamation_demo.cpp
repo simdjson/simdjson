@@ -1,4 +1,4 @@
-/* auto-generated on Sun Feb  2 15:10:09 PST 2020. Do not edit! */
+/* auto-generated on Sat Feb 22 10:41:58 PST 2020. Do not edit! */
 
 #include <iostream>
 #include "simdjson.h"
@@ -9,11 +9,11 @@ int main(int argc, char *argv[]) {
   }
   const char * filename = argv[1];
   simdjson::padded_string p = simdjson::get_corpus(filename);
-  simdjson::ParsedJson pj = simdjson::build_parsed_json(p); // do the parsing
-  if( ! pj.is_valid() ) {
-    std::cout << "build_parsed_json not valid" << std::endl;
+  auto [doc, error] = simdjson::document::parse(p); // do the parsing
+  if (error) {
+    std::cout << "document::parse not valid" << std::endl;
   } else {
-    std::cout << "build_parsed_json valid" << std::endl;
+    std::cout << "document::parse valid" << std::endl;
   }
   if(argc == 2) {
     return EXIT_SUCCESS;
@@ -22,15 +22,15 @@ int main(int argc, char *argv[]) {
   //JsonStream
   const char * filename2 = argv[2];
   simdjson::padded_string p2 = simdjson::get_corpus(filename2);
-  simdjson::ParsedJson pj2;
+  simdjson::document::parser parser;
   simdjson::JsonStream js{p2};
   int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
 
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-            parse_res = js.json_parse(pj2);
+            parse_res = js.json_parse(parser);
   }
 
-  if( ! pj2.is_valid()) {
+  if( ! parser.is_valid()) {
     std::cout << "JsonStream not valid" << std::endl;
   } else {
     std::cout << "JsonStream valid" << std::endl;

@@ -1,4 +1,4 @@
-/* auto-generated on Sun Feb  2 15:10:09 PST 2020. Do not edit! */
+/* auto-generated on Sat Feb 22 10:41:58 PST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -6,10 +6,305 @@
 #include "dmalloc.h"
 #endif
 
-/* begin file src/simdjson.cpp */
+/* begin file src/document.cpp */
+
+namespace simdjson {
+
+bool document::set_capacity(size_t capacity) {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
+    return true;
+  }
+
+  // a pathological input like "[[[[..." would generate len tape elements, so
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
+  // a document with only zero-length strings... could have len/3 string
+  // and we would need len/3 * 5 bytes on the string buffer
+  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  return string_buf && tape;
+}
+
+WARN_UNUSED
+bool document::print_json(std::ostream &os, size_t max_depth) const {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  tape_idx++;
+  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
+  int depth = 1; // only root at level 0
+  in_object_idx[depth] = 0;
+  in_object[depth] = false;
+  for (; tape_idx < how_many; tape_idx++) {
+    tape_val = tape[tape_idx];
+    uint64_t payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    if (!in_object[depth]) {
+      if ((in_object_idx[depth] > 0) && (type != ']')) {
+        os << ",";
+      }
+      in_object_idx[depth]++;
+    } else { // if (in_object) {
+      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
+          (type != '}')) {
+        os << ",";
+      }
+      if (((in_object_idx[depth] & 1) == 1)) {
+        os << ":";
+      }
+      in_object_idx[depth]++;
+    }
+    switch (type) {
+    case '"': // we have a string
+      os << '"';
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+          os, string_length);
+      os << '"';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << static_cast<int64_t>(tape[++tape_idx]);
+      break;
+    case 'u':
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << tape[++tape_idx];
+      break;
+    case 'd': // we have a double
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer;
+      break;
+    case 'n': // we have a null
+      os << "null";
+      break;
+    case 't': // we have a true
+      os << "true";
+      break;
+    case 'f': // we have a false
+      os << "false";
+      break;
+    case '{': // we have an object
+      os << '{';
+      depth++;
+      in_object[depth] = true;
+      in_object_idx[depth] = 0;
+      break;
+    case '}': // we end an object
+      depth--;
+      os << '}';
+      break;
+    case '[': // we start an array
+      os << '[';
+      depth++;
+      in_object[depth] = false;
+      in_object_idx[depth] = 0;
+      break;
+    case ']': // we end an array
+      depth--;
+      os << ']';
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      // bug?
+      return false;
+    }
+  }
+  return true;
+}
+
+WARN_UNUSED
+bool document::dump_raw_tape(std::ostream &os) const {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  os << tape_idx << " : " << type;
+  tape_idx++;
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  os << "\t// pointing to " << how_many << " (right after last node)\n";
+  uint64_t payload;
+  for (; tape_idx < how_many; tape_idx++) {
+    os << tape_idx << " : ";
+    tape_val = tape[tape_idx];
+    payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    switch (type) {
+    case '"': // we have a string
+      os << "string \"";
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+                  os,
+          string_length);
+      os << '"';
+      os << '\n';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
+      break;
+    case 'u': // we have a long uint
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "unsigned integer " << tape[++tape_idx] << "\n";
+      break;
+    case 'd': // we have a double
+      os << "float ";
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer << '\n';
+      break;
+    case 'n': // we have a null
+      os << "null\n";
+      break;
+    case 't': // we have a true
+      os << "true\n";
+      break;
+    case 'f': // we have a false
+      os << "false\n";
+      break;
+    case '{': // we have an object
+      os << "{\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case '}': // we end an object
+      os << "}\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case '[': // we start an array
+      os << "[\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case ']': // we end an array
+      os << "]\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      return false;
+    }
+  }
+  tape_val = tape[tape_idx];
+  payload = tape_val & JSON_VALUE_MASK;
+  type = (tape_val >> 56);
+  os << tape_idx << " : " << type << "\t// pointing to " << payload
+     << " (start root)\n";
+  return true;
+}
+
+WARN_UNUSED
+bool document::parser::set_capacity(size_t capacity) {
+  if (_capacity == capacity) {
+    return true;
+  }
+
+  // Set capacity to 0 until we finish, in case there's an error
+  _capacity = 0;
+
+  //
+  // Reallocate the document
+  //
+  if (!doc.set_capacity(capacity)) {
+    return false;
+  }
+
+  //
+  // Don't allocate 0 bytes, just return.
+  //
+  if (capacity == 0) {
+    structural_indexes.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 1 output
+  //
+  uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
+  if (!structural_indexes) {
+    return false;
+  }
+
+  _capacity = capacity;
+  return true;
+}
+
+WARN_UNUSED
+bool document::parser::set_max_depth(size_t max_depth) {
+  _max_depth = 0;
+
+  if (max_depth == 0) {
+    ret_address.reset();
+    containing_scope_offset.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 2 state
+  //
+  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  ret_address.reset(new (std::nothrow) void *[max_depth]);
+#else
+  ret_address.reset(new (std::nothrow) char[max_depth]);
+#endif
+
+  if (!ret_address || !containing_scope_offset) {
+    // Could not allocate memory
+    return false;
+  }
+
+  _max_depth = max_depth;
+  return true;
+}
+
+} // namespace simdjson
+/* end file src/document.cpp */
+/* begin file src/error.cpp */
 #include <map>
 
 namespace simdjson {
+
 const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No error"},
     {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
@@ -17,36 +312,195 @@ const std::map<int, const std::string> error_strings = {
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
     {STRING_ERROR, "Problem while parsing a string"},
-    {T_ATOM_ERROR,
-     "Problem while parsing an atom starting with the letter 't'"},
-    {F_ATOM_ERROR,
-     "Problem while parsing an atom starting with the letter 'f'"},
-    {N_ATOM_ERROR,
-     "Problem while parsing an atom starting with the letter 'n'"},
+    {T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'"},
+    {F_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'f'"},
+    {N_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'n'"},
     {NUMBER_ERROR, "Problem while parsing a number"},
     {UTF8_ERROR, "The input is not valid UTF-8"},
     {UNINITIALIZED, "Uninitialized"},
     {EMPTY, "Empty: no JSON found"},
-    {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we "
-                      "found unescaped characters"},
+    {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we"
+                      " found unescaped characters"},
     {UNCLOSED_STRING, "A string is opened, but never closed."},
-    {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as "
-                       "you may have found a bug in simdjson"},
+    {UNSUPPORTED_ARCHITECTURE, "simdjson does not have an implementation"
+                               " supported by this CPU architecture (perhaps"
+                               " it's a non-SIMD CPU?)."},
+    {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as"
+                       " you may have found a bug in simdjson"},
 };
 
 // string returned when the error code is not recognized
 const std::string unexpected_error_msg {"Unexpected error"};
 
 // returns a string matching the error code
-const std::string &error_message(const int error_code) {
-  auto keyvalue = error_strings.find(error_code);
+const std::string &error_message(error_code code) noexcept {
+  auto keyvalue = error_strings.find(code);
   if(keyvalue == error_strings.end()) {
     return unexpected_error_msg;
   }
   return keyvalue->second;
 }
+
 } // namespace simdjson
-/* end file src/simdjson.cpp */
+/* end file src/error.cpp */
+/* begin file src/implementation.cpp */
+#include <initializer_list>
+
+// Static array of known implementations. We're hoping these get baked into the executable
+// without requiring a static initializer.
+
+#ifdef IS_X86_64
+
+/* begin file src/haswell/implementation.h */
+#ifndef __SIMDJSON_HASWELL_IMPLEMENTATION_H
+#define __SIMDJSON_HASWELL_IMPLEMENTATION_H
+
+
+#ifdef IS_X86_64
+
+
+namespace simdjson::haswell {
+
+class implementation final : public simdjson::implementation {
+public:
+  really_inline implementation() : simdjson::implementation(
+      "haswell",
+      "Intel/AMD AVX2",
+      instruction_set::AVX2 | instruction_set::PCLMULQDQ | instruction_set::BMI1 | instruction_set::BMI2
+  ) {}
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept final;
+};
+
+} // namespace simdjson::haswell
+
+#endif // IS_X86_64
+
+#endif // __SIMDJSON_HASWELL_IMPLEMENTATION_H
+/* end file src/haswell/implementation.h */
+/* begin file src/westmere/implementation.h */
+#ifndef __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#define __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+
+
+#ifdef IS_X86_64
+
+
+namespace simdjson::westmere {
+
+class implementation final : public simdjson::implementation {
+public:
+  really_inline implementation() : simdjson::implementation("westmere", "Intel/AMD SSE4.2", instruction_set::SSE42 | instruction_set::PCLMULQDQ) {}
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept final;
+};
+
+} // namespace simdjson::westmere
+
+#endif // IS_X86_64
+
+#endif // __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+/* end file src/westmere/implementation.h */
+
+namespace simdjson {
+  const haswell::implementation haswell_singleton{};
+  const westmere::implementation westmere_singleton{};
+  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton };
+}
+
+#endif
+
+#ifdef IS_ARM64
+
+/* begin file src/arm64/implementation.h */
+#ifndef __SIMDJSON_ARM64_IMPLEMENTATION_H
+#define __SIMDJSON_ARM64_IMPLEMENTATION_H
+
+
+#ifdef IS_ARM64
+
+
+namespace simdjson::arm64 {
+
+class implementation final : public simdjson::implementation {
+public:
+  really_inline implementation() : simdjson::implementation("arm64", "ARM NEON", instruction_set::NEON) {}
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept final;
+};
+
+} // namespace simdjson::arm64
+
+#endif // IS_ARM64
+
+#endif // __SIMDJSON_ARM64_IMPLEMENTATION_H
+/* end file src/arm64/implementation.h */
+
+namespace simdjson {
+  const arm64::implementation arm64_singleton{};
+  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton };
+}
+
+#endif
+
+namespace simdjson {
+
+// So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
+class unsupported_implementation final : public implementation {
+public:
+  WARN_UNUSED virtual error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+  WARN_UNUSED error_code stage1(const uint8_t *, size_t, document::parser &, bool) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *, size_t, document::parser &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+  WARN_UNUSED error_code stage2(const uint8_t *, size_t, document::parser &, size_t &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+
+  unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
+};
+
+const unsupported_implementation unsupported_singleton{};
+
+namespace internal {
+
+size_t available_implementation_list::size() const noexcept {
+  return available_implementation_pointers.size();
+}
+const implementation * const *available_implementation_list::begin() const noexcept {
+  return available_implementation_pointers.begin();
+}
+const implementation * const *available_implementation_list::end() const noexcept {
+  return available_implementation_pointers.end();
+}
+const implementation *available_implementation_list::detect_best_supported() const noexcept {
+  // They are prelisted in priority order, so we just go down the list
+  uint32_t supported_instruction_sets = detect_supported_architectures();
+  for (const implementation *impl : available_implementation_pointers) {
+    uint32_t required_instruction_sets = impl->required_instruction_sets();
+    if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
+  }
+  return &unsupported_singleton;
+}
+
+const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  return active_implementation = available_implementations.detect_best_supported();
+}
+
+} // namespace simdjson::internal
+
+} // namespace simdjson
+/* end file src/arm64/implementation.h */
 /* begin file src/jsonioutil.cpp */
 #include <cstdlib>
 #include <cstring>
@@ -481,6 +935,8 @@ size_t json_minify(const uint8_t *buf, size_t len, uint8_t *out) {
     if (len - idx < 64) {
       whitespace |= UINT64_C(0xFFFFFFFFFFFFFFFF) << (len - idx);
     }
+    uint64_t non_whitespace = ~whitespace;
+
     int mask1 = non_whitespace & 0xFFFF;
     int mask2 = (non_whitespace >> 16) & 0xFFFF;
     int mask3 = (non_whitespace >> 32) & 0xFFFF;
@@ -692,100 +1148,6 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
 } // namespace simdjson
 #endif
 /* end file src/simdprune_tables.h */
-/* begin file src/jsonparser.cpp */
-#include <atomic>
-
-namespace simdjson {
-
-// The function that users are expected to call is json_parse.
-// We have more than one such function because we want to support several
-// instruction sets.
-
-// function pointer type for json_parse
-using json_parse_functype = int(const uint8_t *buf, size_t len, ParsedJson &pj, bool realloc);
-
-// Pointer that holds the json_parse implementation corresponding to the
-// available SIMD instruction set
-extern std::atomic<json_parse_functype *> json_parse_ptr;
-
-int json_parse(const uint8_t *buf, size_t len, ParsedJson &pj,
-               bool realloc) {
-  return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
-}
-
-int json_parse(const char *buf, size_t len, ParsedJson &pj,
-               bool realloc) {
-  return json_parse_ptr.load(std::memory_order_relaxed)(reinterpret_cast<const uint8_t *>(buf), len, pj,
-                                                        realloc);
-}
-
-Architecture find_best_supported_architecture() {
-  constexpr uint32_t haswell_flags =
-      instruction_set::AVX2 | instruction_set::PCLMULQDQ |
-      instruction_set::BMI1 | instruction_set::BMI2;
-  constexpr uint32_t westmere_flags =
-      instruction_set::SSE42 | instruction_set::PCLMULQDQ;
-
-  uint32_t supports = detect_supported_architectures();
-  // Order from best to worst (within architecture)
-  if ((haswell_flags & supports) == haswell_flags)
-    return Architecture::HASWELL;
-  if ((westmere_flags & supports) == westmere_flags)
-    return Architecture::WESTMERE;
-  if (supports & instruction_set::NEON)
-    return Architecture::ARM64;
-
-  return Architecture::UNSUPPORTED;
-}
-
-Architecture parse_architecture(char *architecture) {
-  if (!strcmp(architecture, "HASWELL")) { return Architecture::HASWELL; }
-  if (!strcmp(architecture, "WESTMERE")) { return Architecture::WESTMERE; }
-  if (!strcmp(architecture, "ARM64")) { return Architecture::ARM64; }
-  return Architecture::UNSUPPORTED;
-}
-
-// Responsible to select the best json_parse implementation
-int json_parse_dispatch(const uint8_t *buf, size_t len, ParsedJson &pj,
-                        bool realloc) {
-  Architecture best_implementation = find_best_supported_architecture();
-  // Selecting the best implementation
-  switch (best_implementation) {
-#ifdef IS_X86_64
-  case Architecture::HASWELL:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::HASWELL>, std::memory_order_relaxed);
-    break;
-  case Architecture::WESTMERE:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::WESTMERE>, std::memory_order_relaxed);
-    break;
-#endif
-#ifdef IS_ARM64
-  case Architecture::ARM64:
-    json_parse_ptr.store(&json_parse_implementation<Architecture::ARM64>, std::memory_order_relaxed);
-    break;
-#endif
-  default:
-    // The processor is not supported by simdjson.
-    return simdjson::UNEXPECTED_ERROR;
-  }
-
-  return json_parse_ptr.load(std::memory_order_relaxed)(buf, len, pj, realloc);
-}
-
-std::atomic<json_parse_functype *> json_parse_ptr{&json_parse_dispatch};
-
-WARN_UNUSED
-ParsedJson build_parsed_json(const uint8_t *buf, size_t len,
-                             bool realloc) {
-  ParsedJson pj;
-  bool ok = pj.allocate_capacity(len);
-  if (ok) {
-    json_parse(buf, len, pj, realloc);
-  } 
-  return pj;
-}
-} // namespace simdjson
-/* end file src/jsonparser.cpp */
 /* begin file src/stage1_find_marks.cpp */
 /* begin file src/arm64/stage1_find_marks.h */
 #ifndef SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
@@ -1290,6 +1652,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 #endif //IS_ARM64
 #endif //  SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file src/arm64/bitmanipulation.h */
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
 
 namespace simdjson::arm64 {
 
@@ -1746,7 +2109,7 @@ namespace utf8_validation {
       }
     }
 
-    really_inline ErrorValues errors() {
+    really_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
     }
 
@@ -1838,7 +2201,7 @@ public:
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
   // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
+  really_inline error_code detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -1971,7 +2334,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+really_inline error_code json_structural_scanner::detect_errors_on_eof(bool streaming) {
   if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
@@ -2079,13 +2442,13 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
   utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
   utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
 }
@@ -2149,52 +2512,48 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.byte_capacity)) {
-    return simdjson::CAPACITY;
+error_code find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+  if (unlikely(len > parser.capacity())) {
+    return CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes.get()};
+  json_structural_scanner scanner{parser.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
   // we might tolerate an unclosed string if streaming is true
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  error_code error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != SUCCESS)) {
     return error;
   }
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
+  parser.n_structural_indexes = scanner.structural_indexes.tail - parser.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
-  if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+  if (unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
-  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+    return UNEXPECTED_ERROR;
   }
-  if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
+  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    pj.structural_indexes[pj.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
-  pj.structural_indexes[pj.n_structural_indexes] = 0;
+  parser.structural_indexes[parser.n_structural_indexes] = 0;
   return utf8_checker.errors();
 }
 
 } // namespace stage1
 /* end file src/generic/stage1_find_marks.h */
 
-} // namespace simdjson::arm64
-
-namespace simdjson {
-
-template <>
-int find_structural_bits<Architecture::ARM64>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return arm64::stage1::find_structural_bits<64>(buf, len, pj, streaming);
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
+  return arm64::stage1::find_structural_bits<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson
+} // namespace simdjson::arm64
 
 #endif // IS_ARM64
+
 #endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 /* end file src/generic/stage1_find_marks.h */
 /* begin file src/haswell/stage1_find_marks.h */
@@ -2640,6 +2999,7 @@ UNTARGET_REGION
 #endif
 #endif //  SIMDJSON_HASWELL_BITMANIPULATION_H
 /* end file src/haswell/bitmanipulation.h */
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
 
 TARGET_HASWELL
 namespace simdjson::haswell {
@@ -3094,7 +3454,7 @@ namespace utf8_validation {
       }
     }
 
-    really_inline ErrorValues errors() {
+    really_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
     }
 
@@ -3186,7 +3546,7 @@ public:
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
   // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
+  really_inline error_code detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -3319,7 +3679,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+really_inline error_code json_structural_scanner::detect_errors_on_eof(bool streaming) {
   if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
@@ -3427,13 +3787,13 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
   utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
   utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
 }
@@ -3497,52 +3857,45 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.byte_capacity)) {
-    return simdjson::CAPACITY;
+error_code find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+  if (unlikely(len > parser.capacity())) {
+    return CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes.get()};
+  json_structural_scanner scanner{parser.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
   // we might tolerate an unclosed string if streaming is true
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  error_code error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != SUCCESS)) {
     return error;
   }
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
+  parser.n_structural_indexes = scanner.structural_indexes.tail - parser.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
-  if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+  if (unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
-  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+    return UNEXPECTED_ERROR;
   }
-  if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
+  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    pj.structural_indexes[pj.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
-  pj.structural_indexes[pj.n_structural_indexes] = 0;
+  parser.structural_indexes[parser.n_structural_indexes] = 0;
   return utf8_checker.errors();
 }
 
 } // namespace stage1
 /* end file src/generic/stage1_find_marks.h */
 
-} // namespace haswell
-UNTARGET_REGION
-
-TARGET_HASWELL
-namespace simdjson {
-
-template <>
-int find_structural_bits<Architecture::HASWELL>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return haswell::stage1::find_structural_bits<128>(buf, len, pj, streaming);
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
+  return haswell::stage1::find_structural_bits<128>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson
+} // namespace simdjson::haswell
 UNTARGET_REGION
 
 #endif // IS_X86_64
@@ -4001,6 +4354,7 @@ UNTARGET_REGION
 #endif
 #endif //  SIMDJSON_WESTMERE_BITMANIPULATION_H
 /* end file src/westmere/bitmanipulation.h */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 
 TARGET_WESTMERE
 namespace simdjson::westmere {
@@ -4457,7 +4811,7 @@ namespace utf8_validation {
       }
     }
 
-    really_inline ErrorValues errors() {
+    really_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
     }
 
@@ -4549,7 +4903,7 @@ public:
   // This may detect errors as well, such as unclosed string and certain UTF-8 errors.
   // if streaming is set to true, an unclosed string is allowed.
   //
-  really_inline ErrorValues detect_errors_on_eof(bool streaming = false);
+  really_inline error_code detect_errors_on_eof(bool streaming = false);
 
   //
   // Return a mask of all string characters plus end quotes.
@@ -4682,7 +5036,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline ErrorValues json_structural_scanner::detect_errors_on_eof(bool streaming) {
+really_inline error_code json_structural_scanner::detect_errors_on_eof(bool streaming) {
   if ((prev_in_string) and (not streaming)) {
     return UNCLOSED_STRING;
   }
@@ -4790,13 +5144,13 @@ really_inline void json_structural_scanner::scan_step<128>(const uint8_t *buf, c
   //
   uint64_t unescaped_1 = in_1.lteq(0x1F);
   utf8_checker.check_next_input(in_1);
-  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx-64, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_1 & ~string_1;
   this->unescaped_chars_error |= unescaped_1 & string_1;
 
   uint64_t unescaped_2 = in_2.lteq(0x1F);
   utf8_checker.check_next_input(in_2);
-  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to ParsedJson
+  this->structural_indexes.write_indexes(idx, this->prev_structurals); // Output *last* iteration's structurals to the parser
   this->prev_structurals = structurals_2 & ~string_2;
   this->unescaped_chars_error |= unescaped_2 & string_2;
 }
@@ -4860,52 +5214,45 @@ really_inline void json_structural_scanner::scan(const uint8_t *buf, const size_
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-int find_structural_bits(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  if (unlikely(len > pj.byte_capacity)) {
-    return simdjson::CAPACITY;
+error_code find_structural_bits(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) {
+  if (unlikely(len > parser.capacity())) {
+    return CAPACITY;
   }
   utf8_checker utf8_checker{};
-  json_structural_scanner scanner{pj.structural_indexes.get()};
+  json_structural_scanner scanner{parser.structural_indexes.get()};
   scanner.scan<STEP_SIZE>(buf, len, utf8_checker);
   // we might tolerate an unclosed string if streaming is true
-  simdjson::ErrorValues error = scanner.detect_errors_on_eof(streaming);
-  if (unlikely(error != simdjson::SUCCESS)) {
+  error_code error = scanner.detect_errors_on_eof(streaming);
+  if (unlikely(error != SUCCESS)) {
     return error;
   }
-  pj.n_structural_indexes = scanner.structural_indexes.tail - pj.structural_indexes.get();
+  parser.n_structural_indexes = scanner.structural_indexes.tail - parser.structural_indexes.get();
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
-  if (unlikely(pj.n_structural_indexes == 0u)) {
-    return simdjson::EMPTY;
+  if (unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
-  if (unlikely(pj.structural_indexes[pj.n_structural_indexes - 1] > len)) {
-    return simdjson::UNEXPECTED_ERROR;
+  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+    return UNEXPECTED_ERROR;
   }
-  if (len != pj.structural_indexes[pj.n_structural_indexes - 1]) {
+  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    pj.structural_indexes[pj.n_structural_indexes++] = len;
+    parser.structural_indexes[parser.n_structural_indexes++] = len;
   }
   /* make it safe to dereference one beyond this array */
-  pj.structural_indexes[pj.n_structural_indexes] = 0;
+  parser.structural_indexes[parser.n_structural_indexes] = 0;
   return utf8_checker.errors();
 }
 
 } // namespace stage1
 /* end file src/generic/stage1_find_marks.h */
 
-} // namespace westmere
-UNTARGET_REGION
-
-TARGET_WESTMERE
-namespace simdjson {
-
-template <>
-int find_structural_bits<Architecture::WESTMERE>(const uint8_t *buf, size_t len, simdjson::ParsedJson &pj, bool streaming) {
-  return westmere::stage1::find_structural_bits<64>(buf, len, pj, streaming);
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
+  return westmere::stage1::find_structural_bits<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson
+} // namespace simdjson::westmere
 UNTARGET_REGION
 
 #endif // IS_X86_64
@@ -4979,6 +5326,7 @@ void found_bad_string(const uint8_t *buf);
 
 #ifdef IS_ARM64
 
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
 /* begin file src/arm64/stringparsing.h */
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
@@ -5025,6 +5373,8 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
+
+namespace stringparsing {
 
 // begin copypasta
 // These chars yield themselves: " \ /
@@ -5092,14 +5442,10 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
-                                            UNUSED size_t len, ParsedJson &pj,
-                                            UNUSED const uint32_t depth,
-                                            UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
+WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
+                                                uint32_t offset,
+                                                uint8_t *dst) {
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
-  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
-  const uint8_t *const start_of_string = dst;
   while (1) {
     parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
     if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
@@ -5109,26 +5455,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       /* find out where the quote is... */
       auto quote_dist = trailing_zeroes(helper.quote_bits);
 
-      /* NULL termination is still handy if you expect all your strings to
-       * be NULL terminated? */
-      /* It comes at a small cost */
-      dst[quote_dist] = 0;
-
-      uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
-      /*****************************
-       * Above, check for overflow in case someone has a crazy string
-       * (>=4GB?)                 _
-       * But only add the overflow check when the document itself exceeds
-       * 4GB
-       * Currently unneeded because we refuse to parse docs larger or equal
-       * to 4GB.
-       ****************************/
-
-      /* we advance the point, accounting for the fact that we have a NULL
-       * termination         */
-      pj.current_string_buf_loc = dst + quote_dist + 1;
-      return true;
+      return dst + quote_dist;
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
@@ -5141,7 +5468,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
         src += bs_dist;
         dst += bs_dist;
         if (!handle_unicode_codepoint(&src, &dst)) {
-          return false;
+          return nullptr;
         }
       } else {
         /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
@@ -5150,7 +5477,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
          * seen. I think this is ok */
         uint8_t escape_result = escape_map[escape_char];
         if (escape_result == 0u) {
-          return false; /* bogus escape value is an error */
+          return nullptr; /* bogus escape value is an error */
         }
         dst[bs_dist] = escape_result;
         src += bs_dist + 2;
@@ -5164,8 +5491,10 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
   }
   /* can't be reached */
-  return true;
+  return nullptr;
 }
+
+} // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
 }
@@ -5209,6 +5538,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 #define SWAR_NUMBER_PARSING
 
 /* begin file src/generic/numberparsing.h */
+namespace numberparsing {
 
 // Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
@@ -5286,7 +5616,7 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-static inline bool is_integer(char c) {
+really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
@@ -5315,7 +5645,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-static inline bool is_made_of_eight_digits_fast(const char *chars) {
+really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -5334,7 +5664,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int64_t negative_exponent) {
+really_inline double subnormal_power10(double base, int64_t negative_exponent) {
     // avoid integer overflows in the pow expression, those values would
     // become zero anyway.
     if(negative_exponent < -1000) {
@@ -5355,8 +5685,8 @@ static double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+never_inline bool parse_float(const uint8_t *const buf, document::parser &parser,
+                              const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -5479,7 +5809,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -5494,8 +5824,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             ParsedJson &pj,
+never_inline bool parse_large_integer(const uint8_t *const buf,
+                                             document::parser &parser,
                                              const uint32_t offset,
                                              bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -5544,14 +5874,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -5564,12 +5894,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      parser.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      parser.on_number_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -5584,12 +5914,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
-                                       const uint32_t offset,
-                                       bool found_minus) {
+really_inline bool parse_number(const uint8_t *const buf,
+                                const uint32_t offset,
+                                bool found_minus,
+                                document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  pj.write_tape_s64(0);           // always write zero
+  parser.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -5735,18 +6066,18 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, pj, offset, found_minus);
+        return parse_float(buf, parser, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, found_minus);
+      return parse_float(buf, parser, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    pj.write_tape_double(d);
+    parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -5754,10 +6085,10 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, pj, offset, found_minus);
+      return parse_large_integer(buf, parser, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    pj.write_tape_s64(i);
+    parser.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
@@ -5766,6 +6097,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
+} // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
 
@@ -5805,7 +6137,7 @@ typedef char ret_address;
       case 'o': goto object_continue; \
     }                                 \
   }
-// For the more constrained pop_scope() situation
+// For the more constrained end_xxx() situation
 #define CONTINUE(address)             \
   {                                   \
     switch(address) {                 \
@@ -5828,34 +6160,24 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-// This is just so we can call parse_string() from parser.parse_string() without conflict.
-WARN_UNUSED really_inline bool
-really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, pj, depth, idx);
-}
-WARN_UNUSED really_inline bool
-really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
-  return parse_number(buf, pj, offset, found_minus);
-}
-
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  ParsedJson &pj;
+  document::parser &doc_parser;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
   uint32_t depth = 0; // could have an arbitrary starting depth
 
-  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
-
-  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
-    pj.error_code = error_code;
-    return error_code;
-  }
+  really_inline structural_parser(
+    const uint8_t *_buf,
+    size_t _len,
+    document::parser &_doc_parser,
+    uint32_t _i = 0
+  ) : buf{_buf}, len{_len}, doc_parser{_doc_parser}, i{_i} {}
 
   really_inline char advance_char() {
-    idx = pj.structural_indexes[i++];
+    idx = doc_parser.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -5886,47 +6208,54 @@ struct structural_parser {
     return result;
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    doc_parser.on_start_document(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    pj.write_tape(0, type);
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
-    return push_start_scope(continue_state, c);
-  }
-
-  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); // Do this as early as possible
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    doc_parser.on_start_object(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline ret_address pop_scope() {
-    // write our tape location to the header scope
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    return pj.ret_address[depth];
+  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    doc_parser.on_start_array(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
   }
-  really_inline void pop_root_scope() {
-    // write our tape location to the header scope
-    // The root scope gets written *at* the previous location.
+
+  really_inline bool end_object() {
     depth--;
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+    doc_parser.on_end_object(depth);
+    return false;
+  }
+  really_inline bool end_array() {
+    depth--;
+    doc_parser.on_end_array(depth);
+    return false;
+  }
+  really_inline bool end_document() {
+    depth--;
+    doc_parser.on_end_document(depth);
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    return !really_parse_string(buf, len, pj, depth, idx);
+    uint8_t *dst = doc_parser.on_start_string();
+    dst = stringparsing::parse_string(buf, idx, dst);
+    if (dst == nullptr) {
+      return true;
+    }
+    return !doc_parser.on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !really_parse_number(copy, pj, offset, found_minus);
+    return !numberparsing::parse_number(copy, offset, found_minus, doc_parser);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
@@ -5935,18 +6264,20 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
     switch (c) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; };
+        if (!is_valid_true_atom(copy + offset)) { return true; }
+        doc_parser.on_true_atom();
         break;
       case 'f':
         if (!is_valid_false_atom(copy + offset)) { return true; }
+        doc_parser.on_false_atom();
         break;
       case 'n':
         if (!is_valid_null_atom(copy + offset)) { return true; }
+        doc_parser.on_null_atom();
         break;
       default:
-        return false;
+        return true;
     }
-    pj.write_tape(0, c);
     return false;
   }
 
@@ -5970,37 +6301,36 @@ struct structural_parser {
       FAIL_IF( parse_number(true) );
       return continue_state;
     case '{':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_object(continue_state) );
       return addresses.object_begin;
     case '[':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_array(continue_state) );
       return addresses.array_begin;
     default:
       return addresses.error;
     }
   }
 
-  WARN_UNUSED really_inline int finish() {
+  WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+    if ( i + 1 != doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
 
-    pj.valid = true;
-    return set_error_code(SUCCESS);
+    return doc_parser.on_success(SUCCESS);
   }
 
-  WARN_UNUSED really_inline int error() {
-    /* We do not need the next line because this is done by pj.init(),
+  WARN_UNUSED really_inline error_code error() {
+    /* We do not need the next line because this is done by doc_parser.init_stage2(),
     * pessimistically.
-    * pj.is_valid  = false;
+    * doc_parser.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -6008,12 +6338,12 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= pj.depth_capacity) {
-      return set_error_code(DEPTH_ERROR);
+    if (depth >= doc_parser.max_depth()) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     switch (c) {
     case '"':
-      return set_error_code(STRING_ERROR);
+      return doc_parser.on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -6025,28 +6355,28 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return set_error_code(NUMBER_ERROR);
+      return doc_parser.on_error(NUMBER_ERROR);
     case 't':
-      return set_error_code(T_ATOM_ERROR);
+      return doc_parser.on_error(T_ATOM_ERROR);
     case 'n':
-      return set_error_code(N_ATOM_ERROR);
+      return doc_parser.on_error(N_ATOM_ERROR);
     case 'f':
-      return set_error_code(F_ATOM_ERROR);
+      return doc_parser.on_error(F_ATOM_ERROR);
     default:
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
   }
 
-  WARN_UNUSED really_inline int start(ret_address finish_state) {
-    pj.init(); // sets is_valid to false
-    if (len > pj.byte_capacity) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
+    doc_parser.init_stage2(); // sets is_valid to false
+    if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_state, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_state)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
@@ -6056,15 +6386,16 @@ struct structural_parser {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+} // namespace stage2
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  structural_parser parser(buf, len, pj);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::structural_parser parser(buf, len, doc_parser);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
@@ -6072,10 +6403,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -6117,7 +6448,8 @@ object_begin:
     goto object_key_state;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -6134,20 +6466,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser states
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -6161,6 +6495,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -6173,64 +6508,70 @@ error:
   return parser.error();
 }
 
-} // namespace stage2
+WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  error_code code = stage1(buf, len, doc_parser, false);
+  if (!code) {
+    code = stage2(buf, len, doc_parser);
+  }
+  return code;
+}
 /* end file src/generic/stage2_build_tape.h */
 /* begin file src/generic/stage2_streaming_build_tape.h */
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline int start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
+    doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_parser, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_parser)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline int finish() {
-    if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+  WARN_UNUSED really_inline error_code finish() {
+    if ( i + 1 > doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
+
+} // namespace stage2
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  streaming_structural_parser parser(buf, len, pj, next_json);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser, size_t &next_json) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
   //
   // Read first value
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -6272,7 +6613,8 @@ object_begin:
     goto object_key_parser;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -6289,20 +6631,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -6316,6 +6660,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -6328,27 +6673,9 @@ finish:
 error:
   return parser.error();
 }
-
-} // namespace stage2
 /* end file src/generic/stage2_streaming_build_tape.h */
 
 } // namespace simdjson::arm64
-
-namespace simdjson {
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return arm64::stage2::unified_machine(buf, len, pj);
-}
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return arm64::stage2::unified_machine(buf, len, pj, next_json);
-}
-
-} // namespace simdjson
 
 #endif // IS_ARM64
 
@@ -6361,6 +6688,7 @@ unified_machine<Architecture::ARM64>(const uint8_t *buf, size_t len, ParsedJson 
 
 #ifdef IS_X86_64
 
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
 /* begin file src/haswell/stringparsing.h */
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
@@ -6403,6 +6731,8 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
+
+namespace stringparsing {
 
 // begin copypasta
 // These chars yield themselves: " \ /
@@ -6470,14 +6800,10 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
-                                            UNUSED size_t len, ParsedJson &pj,
-                                            UNUSED const uint32_t depth,
-                                            UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
+WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
+                                                uint32_t offset,
+                                                uint8_t *dst) {
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
-  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
-  const uint8_t *const start_of_string = dst;
   while (1) {
     parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
     if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
@@ -6487,26 +6813,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       /* find out where the quote is... */
       auto quote_dist = trailing_zeroes(helper.quote_bits);
 
-      /* NULL termination is still handy if you expect all your strings to
-       * be NULL terminated? */
-      /* It comes at a small cost */
-      dst[quote_dist] = 0;
-
-      uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
-      /*****************************
-       * Above, check for overflow in case someone has a crazy string
-       * (>=4GB?)                 _
-       * But only add the overflow check when the document itself exceeds
-       * 4GB
-       * Currently unneeded because we refuse to parse docs larger or equal
-       * to 4GB.
-       ****************************/
-
-      /* we advance the point, accounting for the fact that we have a NULL
-       * termination         */
-      pj.current_string_buf_loc = dst + quote_dist + 1;
-      return true;
+      return dst + quote_dist;
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
@@ -6519,7 +6826,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
         src += bs_dist;
         dst += bs_dist;
         if (!handle_unicode_codepoint(&src, &dst)) {
-          return false;
+          return nullptr;
         }
       } else {
         /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
@@ -6528,7 +6835,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
          * seen. I think this is ok */
         uint8_t escape_result = escape_map[escape_char];
         if (escape_result == 0u) {
-          return false; /* bogus escape value is an error */
+          return nullptr; /* bogus escape value is an error */
         }
         dst[bs_dist] = escape_result;
         src += bs_dist + 2;
@@ -6542,8 +6849,10 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
   }
   /* can't be reached */
-  return true;
+  return nullptr;
 }
+
+} // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
 } // namespace simdjson::haswell
@@ -6596,6 +6905,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 #define SWAR_NUMBER_PARSING
 
 /* begin file src/generic/numberparsing.h */
+namespace numberparsing {
 
 // Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
@@ -6673,7 +6983,7 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-static inline bool is_integer(char c) {
+really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
@@ -6702,7 +7012,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-static inline bool is_made_of_eight_digits_fast(const char *chars) {
+really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -6721,7 +7031,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int64_t negative_exponent) {
+really_inline double subnormal_power10(double base, int64_t negative_exponent) {
     // avoid integer overflows in the pow expression, those values would
     // become zero anyway.
     if(negative_exponent < -1000) {
@@ -6742,8 +7052,8 @@ static double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+never_inline bool parse_float(const uint8_t *const buf, document::parser &parser,
+                              const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -6866,7 +7176,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -6881,8 +7191,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             ParsedJson &pj,
+never_inline bool parse_large_integer(const uint8_t *const buf,
+                                             document::parser &parser,
                                              const uint32_t offset,
                                              bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -6931,14 +7241,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -6951,12 +7261,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      parser.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      parser.on_number_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -6971,12 +7281,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
-                                       const uint32_t offset,
-                                       bool found_minus) {
+really_inline bool parse_number(const uint8_t *const buf,
+                                const uint32_t offset,
+                                bool found_minus,
+                                document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  pj.write_tape_s64(0);           // always write zero
+  parser.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -7122,18 +7433,18 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, pj, offset, found_minus);
+        return parse_float(buf, parser, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, found_minus);
+      return parse_float(buf, parser, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    pj.write_tape_double(d);
+    parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -7141,10 +7452,10 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, pj, offset, found_minus);
+      return parse_large_integer(buf, parser, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    pj.write_tape_s64(i);
+    parser.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
@@ -7153,6 +7464,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
+} // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
 } // namespace simdjson::haswell
@@ -7197,7 +7509,7 @@ typedef char ret_address;
       case 'o': goto object_continue; \
     }                                 \
   }
-// For the more constrained pop_scope() situation
+// For the more constrained end_xxx() situation
 #define CONTINUE(address)             \
   {                                   \
     switch(address) {                 \
@@ -7220,34 +7532,24 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-// This is just so we can call parse_string() from parser.parse_string() without conflict.
-WARN_UNUSED really_inline bool
-really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, pj, depth, idx);
-}
-WARN_UNUSED really_inline bool
-really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
-  return parse_number(buf, pj, offset, found_minus);
-}
-
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  ParsedJson &pj;
+  document::parser &doc_parser;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
   uint32_t depth = 0; // could have an arbitrary starting depth
 
-  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
-
-  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
-    pj.error_code = error_code;
-    return error_code;
-  }
+  really_inline structural_parser(
+    const uint8_t *_buf,
+    size_t _len,
+    document::parser &_doc_parser,
+    uint32_t _i = 0
+  ) : buf{_buf}, len{_len}, doc_parser{_doc_parser}, i{_i} {}
 
   really_inline char advance_char() {
-    idx = pj.structural_indexes[i++];
+    idx = doc_parser.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -7278,47 +7580,54 @@ struct structural_parser {
     return result;
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    doc_parser.on_start_document(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    pj.write_tape(0, type);
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
-    return push_start_scope(continue_state, c);
-  }
-
-  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); // Do this as early as possible
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    doc_parser.on_start_object(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline ret_address pop_scope() {
-    // write our tape location to the header scope
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    return pj.ret_address[depth];
+  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    doc_parser.on_start_array(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
   }
-  really_inline void pop_root_scope() {
-    // write our tape location to the header scope
-    // The root scope gets written *at* the previous location.
+
+  really_inline bool end_object() {
     depth--;
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+    doc_parser.on_end_object(depth);
+    return false;
+  }
+  really_inline bool end_array() {
+    depth--;
+    doc_parser.on_end_array(depth);
+    return false;
+  }
+  really_inline bool end_document() {
+    depth--;
+    doc_parser.on_end_document(depth);
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    return !really_parse_string(buf, len, pj, depth, idx);
+    uint8_t *dst = doc_parser.on_start_string();
+    dst = stringparsing::parse_string(buf, idx, dst);
+    if (dst == nullptr) {
+      return true;
+    }
+    return !doc_parser.on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !really_parse_number(copy, pj, offset, found_minus);
+    return !numberparsing::parse_number(copy, offset, found_minus, doc_parser);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
@@ -7327,18 +7636,20 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
     switch (c) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; };
+        if (!is_valid_true_atom(copy + offset)) { return true; }
+        doc_parser.on_true_atom();
         break;
       case 'f':
         if (!is_valid_false_atom(copy + offset)) { return true; }
+        doc_parser.on_false_atom();
         break;
       case 'n':
         if (!is_valid_null_atom(copy + offset)) { return true; }
+        doc_parser.on_null_atom();
         break;
       default:
-        return false;
+        return true;
     }
-    pj.write_tape(0, c);
     return false;
   }
 
@@ -7362,37 +7673,36 @@ struct structural_parser {
       FAIL_IF( parse_number(true) );
       return continue_state;
     case '{':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_object(continue_state) );
       return addresses.object_begin;
     case '[':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_array(continue_state) );
       return addresses.array_begin;
     default:
       return addresses.error;
     }
   }
 
-  WARN_UNUSED really_inline int finish() {
+  WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+    if ( i + 1 != doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
 
-    pj.valid = true;
-    return set_error_code(SUCCESS);
+    return doc_parser.on_success(SUCCESS);
   }
 
-  WARN_UNUSED really_inline int error() {
-    /* We do not need the next line because this is done by pj.init(),
+  WARN_UNUSED really_inline error_code error() {
+    /* We do not need the next line because this is done by doc_parser.init_stage2(),
     * pessimistically.
-    * pj.is_valid  = false;
+    * doc_parser.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -7400,12 +7710,12 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= pj.depth_capacity) {
-      return set_error_code(DEPTH_ERROR);
+    if (depth >= doc_parser.max_depth()) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     switch (c) {
     case '"':
-      return set_error_code(STRING_ERROR);
+      return doc_parser.on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -7417,28 +7727,28 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return set_error_code(NUMBER_ERROR);
+      return doc_parser.on_error(NUMBER_ERROR);
     case 't':
-      return set_error_code(T_ATOM_ERROR);
+      return doc_parser.on_error(T_ATOM_ERROR);
     case 'n':
-      return set_error_code(N_ATOM_ERROR);
+      return doc_parser.on_error(N_ATOM_ERROR);
     case 'f':
-      return set_error_code(F_ATOM_ERROR);
+      return doc_parser.on_error(F_ATOM_ERROR);
     default:
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
   }
 
-  WARN_UNUSED really_inline int start(ret_address finish_state) {
-    pj.init(); // sets is_valid to false
-    if (len > pj.byte_capacity) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
+    doc_parser.init_stage2(); // sets is_valid to false
+    if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_state, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_state)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
@@ -7448,15 +7758,16 @@ struct structural_parser {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+} // namespace stage2
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  structural_parser parser(buf, len, pj);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::structural_parser parser(buf, len, doc_parser);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
@@ -7464,10 +7775,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -7509,7 +7820,8 @@ object_begin:
     goto object_key_state;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -7526,20 +7838,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser states
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -7553,6 +7867,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -7565,64 +7880,70 @@ error:
   return parser.error();
 }
 
-} // namespace stage2
+WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  error_code code = stage1(buf, len, doc_parser, false);
+  if (!code) {
+    code = stage2(buf, len, doc_parser);
+  }
+  return code;
+}
 /* end file src/generic/stage2_build_tape.h */
 /* begin file src/generic/stage2_streaming_build_tape.h */
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline int start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
+    doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_parser, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_parser)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline int finish() {
-    if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+  WARN_UNUSED really_inline error_code finish() {
+    if ( i + 1 > doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
+
+} // namespace stage2
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  streaming_structural_parser parser(buf, len, pj, next_json);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser, size_t &next_json) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
   //
   // Read first value
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -7664,7 +7985,8 @@ object_begin:
     goto object_key_parser;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -7681,20 +8003,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -7708,6 +8032,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -7720,27 +8045,7 @@ finish:
 error:
   return parser.error();
 }
-
-} // namespace stage2
 /* end file src/generic/stage2_streaming_build_tape.h */
-
-} // namespace simdjson::haswell
-UNTARGET_REGION
-
-TARGET_HASWELL
-namespace simdjson {
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return haswell::stage2::unified_machine(buf, len, pj);
-}
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::HASWELL>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-  return haswell::stage2::unified_machine(buf, len, pj, next_json);
-}
 
 } // namespace simdjson
 UNTARGET_REGION
@@ -7756,6 +8061,7 @@ UNTARGET_REGION
 
 #ifdef IS_X86_64
 
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 /* begin file src/westmere/stringparsing.h */
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
@@ -7800,6 +8106,8 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
+
+namespace stringparsing {
 
 // begin copypasta
 // These chars yield themselves: " \ /
@@ -7867,14 +8175,10 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
-                                            UNUSED size_t len, ParsedJson &pj,
-                                            UNUSED const uint32_t depth,
-                                            UNUSED uint32_t offset) {
-  pj.write_tape(pj.current_string_buf_loc - pj.string_buf.get(), '"');
+WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
+                                                uint32_t offset,
+                                                uint8_t *dst) {
   const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
-  uint8_t *dst = pj.current_string_buf_loc + sizeof(uint32_t);
-  const uint8_t *const start_of_string = dst;
   while (1) {
     parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
     if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
@@ -7884,26 +8188,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
       /* find out where the quote is... */
       auto quote_dist = trailing_zeroes(helper.quote_bits);
 
-      /* NULL termination is still handy if you expect all your strings to
-       * be NULL terminated? */
-      /* It comes at a small cost */
-      dst[quote_dist] = 0;
-
-      uint32_t str_length = (dst - start_of_string) + quote_dist;
-      memcpy(pj.current_string_buf_loc, &str_length, sizeof(str_length));
-      /*****************************
-       * Above, check for overflow in case someone has a crazy string
-       * (>=4GB?)                 _
-       * But only add the overflow check when the document itself exceeds
-       * 4GB
-       * Currently unneeded because we refuse to parse docs larger or equal
-       * to 4GB.
-       ****************************/
-
-      /* we advance the point, accounting for the fact that we have a NULL
-       * termination         */
-      pj.current_string_buf_loc = dst + quote_dist + 1;
-      return true;
+      return dst + quote_dist;
     }
     if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
       /* find out where the backspace is */
@@ -7916,7 +8201,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
         src += bs_dist;
         dst += bs_dist;
         if (!handle_unicode_codepoint(&src, &dst)) {
-          return false;
+          return nullptr;
         }
       } else {
         /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
@@ -7925,7 +8210,7 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
          * seen. I think this is ok */
         uint8_t escape_result = escape_map[escape_char];
         if (escape_result == 0u) {
-          return false; /* bogus escape value is an error */
+          return nullptr; /* bogus escape value is an error */
         }
         dst[bs_dist] = escape_result;
         src += bs_dist + 2;
@@ -7939,8 +8224,10 @@ WARN_UNUSED really_inline bool parse_string(UNUSED const uint8_t *buf,
     }
   }
   /* can't be reached */
-  return true;
+  return nullptr;
 }
+
+} // namespace stringparsing
 /* end file src/generic/stringparsing.h */
 
 } // namespace simdjson::westmere
@@ -7995,6 +8282,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 #define SWAR_NUMBER_PARSING
 
 /* begin file src/generic/numberparsing.h */
+namespace numberparsing {
 
 // Allowable floating-point values range
 // std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
@@ -8072,7 +8360,7 @@ static const double power_of_ten[] = {
     1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
     1e304,  1e305,  1e306,  1e307,  1e308};
 
-static inline bool is_integer(char c) {
+really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
@@ -8101,7 +8389,7 @@ is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-static inline bool is_made_of_eight_digits_fast(const char *chars) {
+really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -8120,7 +8408,7 @@ static inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function computes base * 10 ^ (- negative_exponent ).
 // It is only even going to be used when negative_exponent is tiny.
-static double subnormal_power10(double base, int64_t negative_exponent) {
+really_inline double subnormal_power10(double base, int64_t negative_exponent) {
     // avoid integer overflows in the pow expression, those values would
     // become zero anyway.
     if(negative_exponent < -1000) {
@@ -8141,8 +8429,8 @@ static double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
-                                     const uint32_t offset, bool found_minus) {
+never_inline bool parse_float(const uint8_t *const buf, document::parser &parser,
+                              const uint32_t offset, bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
   bool negative = false;
   if (found_minus) {
@@ -8265,7 +8553,7 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
         return false;
   }
   double d = negative ? -i : i;
-  pj.write_tape_double(d);
+  parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_float(d, buf + offset);
 #endif
@@ -8280,8 +8568,8 @@ static never_inline bool parse_float(const uint8_t *const buf, ParsedJson &pj,
 //
 // This function will almost never be called!!!
 //
-static never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             ParsedJson &pj,
+never_inline bool parse_large_integer(const uint8_t *const buf,
+                                             document::parser &parser,
                                              const uint32_t offset,
                                              bool found_minus) {
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -8330,14 +8618,14 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
       // as a positive signed integer, but the negative version is 
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      pj.write_tape_s64(signed_answer);
+      parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, buf + offset);
 #endif
@@ -8350,12 +8638,12 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, buf + offset);
 #endif
-      pj.write_tape_s64(i);
+      parser.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, buf + offset);
 #endif
-      pj.write_tape_u64(i);
+      parser.on_number_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -8370,12 +8658,13 @@ static never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
-                                       const uint32_t offset,
-                                       bool found_minus) {
+really_inline bool parse_number(const uint8_t *const buf,
+                                const uint32_t offset,
+                                bool found_minus,
+                                document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  pj.write_tape_s64(0);           // always write zero
+  parser.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(buf + offset);
@@ -8521,18 +8810,18 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, pj, offset, found_minus);
+        return parse_float(buf, parser, offset, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, pj, offset, found_minus);
+      return parse_float(buf, parser, offset, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
-    pj.write_tape_double(d);
+    parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, buf + offset);
 #endif
@@ -8540,10 +8829,10 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, pj, offset, found_minus);
+      return parse_large_integer(buf, parser, offset, found_minus);
     }
     i = negative ? 0 - i : i;
-    pj.write_tape_s64(i);
+    parser.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, buf + offset);
 #endif
@@ -8552,6 +8841,7 @@ static really_inline bool parse_number(const uint8_t *const buf, ParsedJson &pj,
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
+} // namespace numberparsing
 /* end file src/generic/numberparsing.h */
 
 } // namespace simdjson::westmere
@@ -8593,7 +8883,7 @@ typedef char ret_address;
       case 'o': goto object_continue; \
     }                                 \
   }
-// For the more constrained pop_scope() situation
+// For the more constrained end_xxx() situation
 #define CONTINUE(address)             \
   {                                   \
     switch(address) {                 \
@@ -8616,34 +8906,24 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-// This is just so we can call parse_string() from parser.parse_string() without conflict.
-WARN_UNUSED really_inline bool
-really_parse_string(const uint8_t *buf, size_t len, ParsedJson &pj, uint32_t depth, uint32_t idx) {
-  return parse_string(buf, len, pj, depth, idx);
-}
-WARN_UNUSED really_inline bool
-really_parse_number(const uint8_t *const buf, ParsedJson &pj, const uint32_t offset, bool found_minus) {
-  return parse_number(buf, pj, offset, found_minus);
-}
-
 struct structural_parser {
   const uint8_t* const buf;
   const size_t len;
-  ParsedJson &pj;
+  document::parser &doc_parser;
   size_t i; // next structural index
   size_t idx; // location of the structural character in the input (buf)
   uint8_t c;    // used to track the (structural) character we are looking at
   uint32_t depth = 0; // could have an arbitrary starting depth
 
-  really_inline structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, uint32_t _i = 0) : buf{_buf}, len{_len}, pj{_pj}, i{_i} {}
-
-  WARN_UNUSED really_inline int set_error_code(ErrorValues error_code) {
-    pj.error_code = error_code;
-    return error_code;
-  }
+  really_inline structural_parser(
+    const uint8_t *_buf,
+    size_t _len,
+    document::parser &_doc_parser,
+    uint32_t _i = 0
+  ) : buf{_buf}, len{_len}, doc_parser{_doc_parser}, i{_i} {}
 
   really_inline char advance_char() {
-    idx = pj.structural_indexes[i++];
+    idx = doc_parser.structural_indexes[i++];
     c = buf[idx];
     return c;
   }
@@ -8674,47 +8954,54 @@ struct structural_parser {
     return result;
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state, char type) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    doc_parser.on_start_document(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    pj.write_tape(0, type);
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline bool push_start_scope(ret_address continue_state) {
-    return push_start_scope(continue_state, c);
-  }
-
-  WARN_UNUSED really_inline bool push_scope(ret_address continue_state) {
-    pj.containing_scope_offset[depth] = pj.get_current_loc();
-    pj.write_tape(0, c); // Do this as early as possible
-    pj.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    doc_parser.on_start_object(depth);
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= pj.depth_capacity;
+    return depth >= doc_parser.max_depth();
   }
 
-  WARN_UNUSED really_inline ret_address pop_scope() {
-    // write our tape location to the header scope
-    depth--;
-    pj.write_tape(pj.containing_scope_offset[depth], c);
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    return pj.ret_address[depth];
+  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    doc_parser.on_start_array(depth);
+    doc_parser.ret_address[depth] = continue_state;
+    depth++;
+    return depth >= doc_parser.max_depth();
   }
-  really_inline void pop_root_scope() {
-    // write our tape location to the header scope
-    // The root scope gets written *at* the previous location.
+
+  really_inline bool end_object() {
     depth--;
-    pj.annotate_previous_loc(pj.containing_scope_offset[depth], pj.get_current_loc());
-    pj.write_tape(pj.containing_scope_offset[depth], 'r');
+    doc_parser.on_end_object(depth);
+    return false;
+  }
+  really_inline bool end_array() {
+    depth--;
+    doc_parser.on_end_array(depth);
+    return false;
+  }
+  really_inline bool end_document() {
+    depth--;
+    doc_parser.on_end_document(depth);
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    return !really_parse_string(buf, len, pj, depth, idx);
+    uint8_t *dst = doc_parser.on_start_string();
+    dst = stringparsing::parse_string(buf, idx, dst);
+    if (dst == nullptr) {
+      return true;
+    }
+    return !doc_parser.on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !really_parse_number(copy, pj, offset, found_minus);
+    return !numberparsing::parse_number(copy, offset, found_minus, doc_parser);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(buf, idx, found_minus);
@@ -8723,18 +9010,20 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
     switch (c) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; };
+        if (!is_valid_true_atom(copy + offset)) { return true; }
+        doc_parser.on_true_atom();
         break;
       case 'f':
         if (!is_valid_false_atom(copy + offset)) { return true; }
+        doc_parser.on_false_atom();
         break;
       case 'n':
         if (!is_valid_null_atom(copy + offset)) { return true; }
+        doc_parser.on_null_atom();
         break;
       default:
-        return false;
+        return true;
     }
-    pj.write_tape(0, c);
     return false;
   }
 
@@ -8758,37 +9047,36 @@ struct structural_parser {
       FAIL_IF( parse_number(true) );
       return continue_state;
     case '{':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_object(continue_state) );
       return addresses.object_begin;
     case '[':
-      FAIL_IF( push_scope(continue_state) );
+      FAIL_IF( start_array(continue_state) );
       return addresses.array_begin;
     default:
       return addresses.error;
     }
   }
 
-  WARN_UNUSED really_inline int finish() {
+  WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+    if ( i + 1 != doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
 
-    pj.valid = true;
-    return set_error_code(SUCCESS);
+    return doc_parser.on_success(SUCCESS);
   }
 
-  WARN_UNUSED really_inline int error() {
-    /* We do not need the next line because this is done by pj.init(),
+  WARN_UNUSED really_inline error_code error() {
+    /* We do not need the next line because this is done by doc_parser.init_stage2(),
     * pessimistically.
-    * pj.is_valid  = false;
+    * doc_parser.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -8796,12 +9084,12 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= pj.depth_capacity) {
-      return set_error_code(DEPTH_ERROR);
+    if (depth >= doc_parser.max_depth()) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     switch (c) {
     case '"':
-      return set_error_code(STRING_ERROR);
+      return doc_parser.on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -8813,28 +9101,28 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return set_error_code(NUMBER_ERROR);
+      return doc_parser.on_error(NUMBER_ERROR);
     case 't':
-      return set_error_code(T_ATOM_ERROR);
+      return doc_parser.on_error(T_ATOM_ERROR);
     case 'n':
-      return set_error_code(N_ATOM_ERROR);
+      return doc_parser.on_error(N_ATOM_ERROR);
     case 'f':
-      return set_error_code(F_ATOM_ERROR);
+      return doc_parser.on_error(F_ATOM_ERROR);
     default:
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
   }
 
-  WARN_UNUSED really_inline int start(ret_address finish_state) {
-    pj.init(); // sets is_valid to false
-    if (len > pj.byte_capacity) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
+    doc_parser.init_stage2(); // sets is_valid to false
+    if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_state, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_state)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
@@ -8844,15 +9132,16 @@ struct structural_parser {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+} // namespace stage2
+
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  structural_parser parser(buf, len, pj);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::structural_parser parser(buf, len, doc_parser);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
@@ -8860,10 +9149,10 @@ unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj) {
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -8905,7 +9194,8 @@ object_begin:
     goto object_key_state;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -8922,20 +9212,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser states
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -8949,6 +9241,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -8961,64 +9254,70 @@ error:
   return parser.error();
 }
 
-} // namespace stage2
+WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+  error_code code = stage1(buf, len, doc_parser, false);
+  if (!code) {
+    code = stage2(buf, len, doc_parser);
+  }
+  return code;
+}
 /* end file src/generic/stage2_build_tape.h */
 /* begin file src/generic/stage2_streaming_build_tape.h */
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_pj, size_t _i) : structural_parser(_buf, _len, _pj, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline int start(ret_address finish_parser) {
-    pj.init(); // sets is_valid to false
+  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
+    doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
-    if (push_start_scope(finish_parser, 'r')) {
-      return DEPTH_ERROR;
+    if (start_document(finish_parser)) {
+      return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
 
   // override to add streaming
-  WARN_UNUSED really_inline int finish() {
-    if ( i + 1 > pj.n_structural_indexes ) {
-      return set_error_code(TAPE_ERROR);
+  WARN_UNUSED really_inline error_code finish() {
+    if ( i + 1 > doc_parser.n_structural_indexes ) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    pop_root_scope();
+    end_document();
     if (depth != 0) {
-      return set_error_code(TAPE_ERROR);
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    if (pj.containing_scope_offset[depth] != 0) {
-      return set_error_code(TAPE_ERROR);
+    if (doc_parser.containing_scope_offset[depth] != 0) {
+      return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == pj.n_structural_indexes;
-    pj.valid = true;
-    return set_error_code(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
+
+} // namespace stage2
 
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED  int
-unified_machine(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-  static constexpr unified_machine_addresses addresses = INIT_ADDRESSES();
-  streaming_structural_parser parser(buf, len, pj, next_json);
-  int result = parser.start(addresses.finish);
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser, size_t &next_json) const noexcept {
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
   //
   // Read first value
   //
   switch (parser.c) {
   case '{':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
   case '[':
-    FAIL_IF( parser.push_start_scope(addresses.finish) );
+    FAIL_IF( parser.start_array(addresses.finish) );
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
@@ -9060,7 +9359,8 @@ object_begin:
     goto object_key_parser;
   }
   case '}':
-    goto scope_end; // could also go to object_continue
+    parser.end_object();
+    goto scope_end;
   default:
     goto error;
   }
@@ -9077,20 +9377,22 @@ object_continue:
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
   case '}':
+    parser.end_object();
     goto scope_end;
   default:
     goto error;
   }
 
 scope_end:
-  CONTINUE( parser.pop_scope() );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers
 //
 array_begin:
   if (parser.advance_char() == ']') {
-    goto scope_end; // could also go to array_continue
+    parser.end_array();
+    goto scope_end;
   }
 
 main_array_switch:
@@ -9104,6 +9406,7 @@ array_continue:
     parser.advance_char();
     goto main_array_switch;
   case ']':
+    parser.end_array();
     goto scope_end;
   default:
     goto error;
@@ -9116,30 +9419,9 @@ finish:
 error:
   return parser.error();
 }
-
-} // namespace stage2
 /* end file src/generic/stage2_streaming_build_tape.h */
 
 } // namespace simdjson::westmere
-UNTARGET_REGION
-
-TARGET_WESTMERE
-namespace simdjson {
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj) {
-  return westmere::stage2::unified_machine(buf, len, pj);
-}
-
-template <>
-WARN_UNUSED int
-unified_machine<Architecture::WESTMERE>(const uint8_t *buf, size_t len, ParsedJson &pj, size_t &next_json) {
-    return westmere::stage2::unified_machine(buf, len, pj, next_json);
-}
-
-
-} // namespace simdjson
 UNTARGET_REGION
 
 #endif // IS_X86_64
@@ -9147,311 +9429,3 @@ UNTARGET_REGION
 #endif // SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 /* end file src/generic/stage2_streaming_build_tape.h */
 /* end file src/generic/stage2_streaming_build_tape.h */
-/* begin file src/parsedjson.cpp */
-
-namespace simdjson {
-
-WARN_UNUSED
-bool ParsedJson::allocate_capacity(size_t len, size_t max_depth) {
-  if (max_depth <= 0) {
-    max_depth = 1; // don't let the user allocate nothing
-  }
-  if (len <= 0) {
-    len = 64; // allocating 0 bytes is wasteful.
-  }
-  if (len > SIMDJSON_MAXSIZE_BYTES) {
-    return false;
-  }
-  if ((len <= byte_capacity) && (max_depth <= depth_capacity)) {
-    return true;
-  }
-  deallocate();
-  valid = false;
-  byte_capacity = 0; // will only set it to len after allocations are a success
-  n_structural_indexes = 0;
-  uint32_t max_structures = ROUNDUP_N(len, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]);
-
-  // a pathological input like "[[[[..." would generate len tape elements, so
-  // need a capacity of at least len + 1, but it is also possible to do
-  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
-  //where len + 1 tape elements are
-  // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t local_tape_capacity = ROUNDUP_N(len + 2, 64);
-  // a document with only zero-length strings... could have len/3 string
-  // and we would need len/3 * 5 bytes on the string buffer
-  size_t local_string_capacity = ROUNDUP_N(5 * len / 3 + 32, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[local_string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[local_tape_capacity]);
-  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]);
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  //ret_address = new (std::nothrow) void *[max_depth];
-  ret_address.reset(new (std::nothrow) void *[max_depth]);
-#else
-  ret_address.reset(new (std::nothrow) char[max_depth]);
-#endif
-  if (!string_buf || !tape ||
-      !containing_scope_offset || !ret_address ||
-      !structural_indexes) {
-    // Could not allocate memory
-    return false;
-  }
-  /*
-  // We do not need to initialize this content for parsing, though we could
-  // need to initialize it for safety.
-  memset(string_buf, 0 , local_string_capacity);
-  memset(structural_indexes, 0, max_structures * sizeof(uint32_t));
-  memset(tape, 0, local_tape_capacity * sizeof(uint64_t));
-  */
-  byte_capacity = len;
-  depth_capacity = max_depth;
-  tape_capacity = local_tape_capacity;
-  string_capacity = local_string_capacity;
-  return true;
-}
-
-bool ParsedJson::is_valid() const { return valid; }
-
-int ParsedJson::get_error_code() const { return error_code; }
-
-std::string ParsedJson::get_error_message() const {
-  return error_message(error_code);
-}
-
-void ParsedJson::deallocate() {
-  byte_capacity = 0;
-  depth_capacity = 0;
-  tape_capacity = 0;
-  string_capacity = 0;
-  ret_address.reset();
-  containing_scope_offset.reset();
-  tape.reset();
-  string_buf.reset();
-  structural_indexes.reset();
-  valid = false;
-}
-
-void ParsedJson::init() {
-  current_string_buf_loc = string_buf.get();
-  current_loc = 0;
-  valid = false;
-}
-
-WARN_UNUSED
-bool ParsedJson::print_json(std::ostream &os) const {
-  if (!valid) {
-    return false;
-  }
-  uint32_t string_length;
-  size_t tape_idx = 0;
-  uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
-  } else {
-    // Error: no starting root node?
-    return false;
-  }
-  if (how_many > tape_capacity) {
-    // We may be exceeding the tape capacity. Is this a valid document?
-    return false;
-  }
-  tape_idx++;
-  std::unique_ptr<bool[]> in_object(new bool[depth_capacity]);
-  std::unique_ptr<size_t[]> in_object_idx(new size_t[depth_capacity]);
-  int depth = 1; // only root at level 0
-  in_object_idx[depth] = 0;
-  in_object[depth] = false;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = tape[tape_idx];
-    uint64_t payload = tape_val & JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    if (!in_object[depth]) {
-      if ((in_object_idx[depth] > 0) && (type != ']')) {
-        os << ",";
-      }
-      in_object_idx[depth]++;
-    } else { // if (in_object) {
-      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
-          (type != '}')) {
-        os << ",";
-      }
-      if (((in_object_idx[depth] & 1) == 1)) {
-        os << ":";
-      }
-      in_object_idx[depth]++;
-    }
-    switch (type) {
-    case '"': // we have a string
-      os << '"';
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-          os, string_length);
-      os << '"';
-      break;
-    case 'l': // we have a long int
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << static_cast<int64_t>(tape[++tape_idx]);
-      break;
-    case 'u':
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << tape[++tape_idx];
-      break;
-    case 'd': // we have a double
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
-      os << answer;
-      break;
-    case 'n': // we have a null
-      os << "null";
-      break;
-    case 't': // we have a true
-      os << "true";
-      break;
-    case 'f': // we have a false
-      os << "false";
-      break;
-    case '{': // we have an object
-      os << '{';
-      depth++;
-      in_object[depth] = true;
-      in_object_idx[depth] = 0;
-      break;
-    case '}': // we end an object
-      depth--;
-      os << '}';
-      break;
-    case '[': // we start an array
-      os << '[';
-      depth++;
-      in_object[depth] = false;
-      in_object_idx[depth] = 0;
-      break;
-    case ']': // we end an array
-      depth--;
-      os << ']';
-      break;
-    case 'r': // we start and end with the root node
-      // should we be hitting the root node?
-      return false;
-    default:
-      // bug?
-      return false;
-    }
-  }
-  return true;
-}
-
-WARN_UNUSED
-bool ParsedJson::dump_raw_tape(std::ostream &os) const {
-  if (!valid) {
-    return false;
-  }
-  uint32_t string_length;
-  size_t tape_idx = 0;
-  uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
-  os << tape_idx << " : " << type;
-  tape_idx++;
-  size_t how_many = 0;
-  if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
-  } else {
-    // Error: no starting root node?
-    return false;
-  }
-  os << "\t// pointing to " << how_many << " (right after last node)\n";
-  uint64_t payload;
-  for (; tape_idx < how_many; tape_idx++) {
-    os << tape_idx << " : ";
-    tape_val = tape[tape_idx];
-    payload = tape_val & JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case '"': // we have a string
-      os << "string \"";
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-                  os,
-          string_length);
-      os << '"';
-      os << '\n';
-      break;
-    case 'l': // we have a long int
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
-      break;
-    case 'u': // we have a long uint
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << "unsigned integer " << tape[++tape_idx] << "\n";
-      break;
-    case 'd': // we have a double
-      os << "float ";
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
-      os << answer << '\n';
-      break;
-    case 'n': // we have a null
-      os << "null\n";
-      break;
-    case 't': // we have a true
-      os << "true\n";
-      break;
-    case 'f': // we have a false
-      os << "false\n";
-      break;
-    case '{': // we have an object
-      os << "{\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
-      break;
-    case '}': // we end an object
-      os << "}\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
-      break;
-    case '[': // we start an array
-      os << "[\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
-      break;
-    case ']': // we end an array
-      os << "]\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
-      break;
-    case 'r': // we start and end with the root node
-      // should we be hitting the root node?
-      return false;
-    default:
-      return false;
-    }
-  }
-  tape_val = tape[tape_idx];
-  payload = tape_val & JSON_VALUE_MASK;
-  type = (tape_val >> 56);
-  os << tape_idx << " : " << type << "\t// pointing to " << payload
-     << " (start root)\n";
-  return true;
-}
-} // namespace simdjson
-/* end file src/parsedjson.cpp */
-/* begin file src/parsedjsoniterator.cpp */
-
-namespace simdjson {
-template class ParsedJson::BasicIterator<DEFAULT_MAX_DEPTH>;
-} // namespace simdjson
-/* end file src/parsedjsoniterator.cpp */
