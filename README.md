@@ -141,7 +141,7 @@ document doc = document::parse(string("[ 1, 2, 3 ]"));
 doc.print_json(cout);
 ```
 
-simdjson requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
+The simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
 
 ```c++
 document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
