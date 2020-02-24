@@ -90,6 +90,16 @@ On x64 hardware, you should typically build your code by specifying the oldest/l
 
 We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
 
+If you expect your code to run on older processors, you can check that the CPU is supported as follows:
+
+```c++
+if (simdjson::active_implementation->name() == "unsupported") { 
+  printf("unsupported CPU\n"); 
+}
+```
+
+This check is not required on ARM processors.
+
 ## Computed GOTOs
 
 For best performance, we use a technique called "computed goto", it is also sometimes described as "Labels as Values".
@@ -171,6 +181,7 @@ for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true,
   cout << endl;
 }
 ```
+
 
 ## Newline-Delimited JSON (ndjson) and  JSON lines 
 
