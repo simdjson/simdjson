@@ -24,13 +24,16 @@ enum error_code {
   UNESCAPED_CHARS, // found unescaped characters in a string.
   UNCLOSED_STRING, // missing quote at the end
   UNSUPPORTED_ARCHITECTURE, // unsupported architecture
+  INCORRECT_TYPE, // JSON element has a different type than user expected
+  NUMBER_OUT_OF_RANGE, // JSON number does not fit in 64 bits
+  NO_SUCH_FIELD, // JSON field not found in object
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 
 const std::string &error_message(error_code error) noexcept;
 
 struct invalid_json : public std::exception {
-  invalid_json(error_code _error) : error{_error} {}
+  invalid_json(error_code _error) : error{_error} { }
   const char *what() const noexcept { return error_message(error).c_str(); }
   error_code error;
 };

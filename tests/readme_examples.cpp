@@ -5,6 +5,8 @@ using namespace std;
 using namespace simdjson;
 
 void document_parse_error_code() {
+  cout << __func__ << endl;
+
   string json("[ 1, 2, 3 ]");
   auto [doc, error] = document::parse(json);
   if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
@@ -13,6 +15,8 @@ void document_parse_error_code() {
 }
 
 void document_parse_exception() {
+  cout << __func__ << endl;
+
   string json("[ 1, 2, 3 ]");
   document doc = document::parse(json);
   doc.print_json(cout);
@@ -20,6 +24,8 @@ void document_parse_exception() {
 }
 
 void document_parse_padded_string() {
+  cout << __func__ << endl;
+
   padded_string json(string("[ 1, 2, 3 ]"));
   document doc = document::parse(json);
   doc.print_json(cout);
@@ -27,6 +33,8 @@ void document_parse_padded_string() {
 }
 
 void document_parse_get_corpus() {
+  cout << __func__ << endl;
+
   padded_string json(get_corpus("jsonexamples/small/demo.json"));
   document doc = document::parse(json);
   doc.print_json(cout);
@@ -34,6 +42,8 @@ void document_parse_get_corpus() {
 }
 
 void parser_parse() {
+  cout << __func__ << endl;
+
   // Allocate a parser big enough for all files
   document::parser parser;
   if (!parser.allocate_capacity(1024*1024)) { exit(1); }

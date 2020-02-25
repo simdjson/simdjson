@@ -57,6 +57,7 @@ objs
 /allparsingcompetition
 /basictests
 /benchfeatures
+/benchmark/bench_dom_api
 /benchmark/bench_parse_call
 /benchmark/get_corpus_benchmark
 /benchmark/parse
