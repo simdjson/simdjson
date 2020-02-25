@@ -98,7 +98,10 @@ if (simdjson::active_implementation->name() == "unsupported") {
 }
 ```
 
-This check is not required on ARM processors.
+This check is not useful on ARM processors since all 64-bit ARM processors are supported.
+
+It is not necessary to do this check: if you omit it, you will get back the error code `UNSUPPORTED_ARCHITECTURE` when trying to parse documents.
+However, you can call `simdjson::active_implementation->name()` to check which CPU configuration has been detected (e.g., haswell, westmere).
 
 ## Computed GOTOs
 

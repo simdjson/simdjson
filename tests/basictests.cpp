@@ -570,6 +570,11 @@ bool skyprophet_test() {
 }
 
 int main() {
+  // this is put here deliberately to check that the documentation is correct (README),
+  // should this fail to compile, you should update the documentation:
+  if (simdjson::active_implementation->name() == "unsupported") { 
+    printf("unsupported CPU\n"); 
+  }
   std::cout << "Running basic tests." << std::endl;
   if(!json_issue467())
     return EXIT_FAILURE;
