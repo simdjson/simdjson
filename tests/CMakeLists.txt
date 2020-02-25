@@ -18,9 +18,10 @@ add_cpp_test(jsonstream_test)
 add_cpp_test(pointercheck)
 add_cpp_test(integer_tests)
 
+target_compile_definitions(basictests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
+
 ## This causes problems
 # add_executable(singleheader ./singleheadertest.cpp ${PROJECT_SOURCE_DIR}/singleheader/simdjson.cpp)
-# target_compile_definitions(singleheader PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
 # target_link_libraries(singleheader ${SIMDJSON_LIB_NAME})
 # add_test(singleheader singleheader)
 

@@ -12,6 +12,10 @@ add_executable(perfdiff perfdiff.cpp)
 
 # Google Benchmarks
 if (SIMDJSON_GOOGLE_BENCHMARKS)
-  add_cpp_benchmark(bench_parse_call bench_parse_call.cpp)
+  add_cpp_benchmark(bench_parse_call)
   target_link_libraries(bench_parse_call benchmark::benchmark)
+
+  add_cpp_benchmark(bench_dom_api)
+  target_link_libraries(bench_dom_api benchmark::benchmark)
+  target_compile_definitions(bench_dom_api PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
 endif()

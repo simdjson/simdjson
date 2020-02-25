@@ -7,10 +7,16 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <set>
+#include <string_view>
 
 #include "simdjson/jsonparser.h"
 #include "simdjson/jsonstream.h"
 #include "simdjson/document.h"
+
+#ifndef JSON_TEST_PATH
+#define JSON_TEST_PATH "jsonexamples/twitter.json"
+#endif
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -569,6 +575,205 @@ bool skyprophet_test() {
   return true;
 }
 
+namespace dom_api {
+  using namespace std;
+  using namespace simdjson;
+  bool object_iterator() {
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+    const char* expected_key[] = { "a", "b", "c" };
+    uint64_t expected_value[] = { 1, 2, 3 };
+    int i = 0;
+
+    document doc = document::parse(json);
+    for (auto [key, value] : document::object(doc)) {
+      if (key != expected_key[i] || uint64_t(value) != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << uint64_t(value) << endl; return false; }
+      i++;
+    }
+    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool array_iterator() {
+    string json(R"([ 1, 10, 100 ])");
+    uint64_t expected_value[] = { 1, 10, 100 };
+    int i=0;
+
+    document doc = document::parse(json);
+    for (uint64_t value : doc.as_array()) {
+      if (value != expected_value[i]) { cerr << "Expected " << expected_value[i] << ", got " << value << endl; return false; }
+      i++;
+    }
+    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool object_iterator_empty() {
+    string json(R"({})");
+    int i = 0;
+
+    document doc = document::parse(json);
+    for (auto [key, value] : doc.as_object()) {
+      cout << "Unexpected " << key << " = " << uint64_t(value) << endl;
+      i++;
+    }
+    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool array_iterator_empty() {
+    string json(R"([])");
+    int i=0;
+
+    document doc = document::parse(json);
+    for (uint64_t value : doc.as_array()) {
+      cout << "Unexpected value " << value << endl;
+      i++;
+    }
+    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool string_value() {
+    string json(R"([ "hi", "has backslash\\" ])");
+    document doc = document::parse(json);
+    auto val = document::array(doc).begin();
+    if (strcmp((const char*)*val, "hi")) { cerr << "Expected const char*(\"hi\") to be \"hi\", was " << (const char*)*val << endl; return false; }
+    if (string_view(*val) != "hi") { cerr << "Expected string_view(\"hi\") to be \"hi\", was " << string_view(*val) << endl; return false; }
+    ++val;
+    if (strcmp((const char*)*val, "has backslash\\")) { cerr << "Expected const char*(\"has backslash\\\\\") to be \"has backslash\\\", was " << (const char*)*val << endl; return false; }
+    if (string_view(*val) != "has backslash\\") { cerr << "Expected string_view(\"has backslash\\\\\") to be \"has backslash\\\", was " << string_view(*val) << endl; return false; }
+    return true;
+  }
+
+  bool numeric_values() {
+    string json(R"([ 0, 1, -1, 1.1 ])");
+    document doc = document::parse(json);
+    auto val = document::array(doc).begin();
+    if (uint64_t(*val) != 0) { cerr << "Expected uint64_t(0) to be 0, was " << uint64_t(*val) << endl; return false; }
+    if (int64_t(*val) != 0) { cerr << "Expected int64_t(0) to be 0, was " << int64_t(*val) << endl; return false; }
+    if (double(*val) != 0) { cerr << "Expected double(0) to be 0, was " << double(*val) << endl; return false; }
+    ++val;
+    if (uint64_t(*val) != 1) { cerr << "Expected uint64_t(1) to be 1, was " << uint64_t(*val) << endl; return false; }
+    if (int64_t(*val) != 1) { cerr << "Expected int64_t(1) to be 1, was " << int64_t(*val) << endl; return false; }
+    if (double(*val) != 1) { cerr << "Expected double(1) to be 1, was " << double(*val) << endl; return false; }
+    ++val;
+    if (int64_t(*val) != -1) { cerr << "Expected int64_t(-1) to be -1, was " << int64_t(*val) << endl; return false; }
+    if (double(*val) != -1) { cerr << "Expected double(-1) to be -1, was " << double(*val) << endl; return false; }
+    ++val;
+    if (double(*val) != 1.1) { cerr << "Expected double(1.1) to be 1.1, was " << double(*val) << endl; return false; }
+    return true;
+  }
+
+  bool boolean_values() {
+    string json(R"([ true, false ])");
+    document doc = document::parse(json);
+    auto val = document::array(doc).begin();
+    if (bool(*val) != true) { cerr << "Expected bool(true) to be true, was " << bool(*val) << endl; return false; }
+    ++val;
+    if (bool(*val) != false) { cerr << "Expected bool(false) to be false, was " << bool(*val) << endl; return false; }
+    return true;
+  }
+
+  bool null_value() {
+    string json(R"([ null ])");
+    document doc = document::parse(json);
+    auto val = document::array(doc).begin();
+    if (!(*val).is_null()) { cerr << "Expected null to be null!" << endl; return false; }
+    return true;
+  }
+
+  bool document_object_index() {
+    string json(R"({ "a": 1, "b": 2, "c": 3})");
+    document doc = document::parse(json);
+    if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
+    if (uint64_t(doc["b"]) != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << uint64_t(doc["b"]) << endl; return false; }
+    if (uint64_t(doc["c"]) != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << uint64_t(doc["c"]) << endl; return false; }
+    // Check all three again in backwards order, to ensure we can go backwards
+    if (uint64_t(doc["c"]) != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << uint64_t(doc["c"]) << endl; return false; }
+    if (uint64_t(doc["b"]) != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << uint64_t(doc["b"]) << endl; return false; }
+    if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
+
+    auto [val, error] = doc["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error_message(error) << endl; return false; }
+    return true;
+  }
+
+  bool object_index() {
+    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+    document doc = document::parse(json);
+    if (uint64_t(doc["obj"]["a"]) != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << uint64_t(doc["obj"]["a"]) << endl; return false; }
+    document::object obj = doc["obj"];
+    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
+    if (uint64_t(obj["b"]) != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << uint64_t(obj["b"]) << endl; return false; }
+    if (uint64_t(obj["c"]) != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << uint64_t(obj["c"]) << endl; return false; }
+    // Check all three again in backwards order, to ensure we can go backwards
+    if (uint64_t(obj["c"]) != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << uint64_t(obj["c"]) << endl; return false; }
+    if (uint64_t(obj["b"]) != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << uint64_t(obj["b"]) << endl; return false; }
+    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
+
+    auto [val, error] = obj["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error_message(error) << endl; return false; }
+    return true;
+  }
+
+  bool twitter_count() {
+    // Prints the number of results in twitter.json
+    document doc = document::parse(get_corpus(JSON_TEST_PATH));
+    uint64_t result_count = doc["search_metadata"]["count"];
+    if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
+    return true;
+  }
+
+  bool twitter_default_profile() {
+    // Print users with a default profile.
+    set<string_view> default_users;
+    document doc = document::parse(get_corpus(JSON_TEST_PATH));
+    for (document::object tweet : doc["statuses"].as_array()) {
+      document::object user = tweet["user"];
+      if (user["default_profile"]) {
+        default_users.insert(user["screen_name"]);
+      }
+    }
+    if (default_users.size() != 86) { cerr << "Expected twitter.json[statuses][user] to contain 86 default_profile users, got " << default_users.size() << endl; return false; }
+    return true;
+  }
+
+  bool twitter_image_sizes() {
+    // Print image names and sizes
+    set<tuple<uint64_t, uint64_t>> image_sizes;
+    document doc = document::parse(get_corpus(JSON_TEST_PATH));
+    for (document::object tweet : doc["statuses"].as_array()) {
+      auto [media, not_found] = tweet["entities"]["media"];
+      if (!not_found) {
+        for (document::object image : media.as_array()) {
+          for (auto [key, size] : image["sizes"].as_object()) {
+            image_sizes.insert({ size["w"], size["h"] });
+          }
+        }
+      }
+    }
+    if (image_sizes.size() != 15) { cerr << "Expected twitter.json[statuses][entities][media][sizes] to contain 15 different sizes, got " << image_sizes.size() << endl; return false; }
+    return true;
+  }
+
+  bool run_tests() {
+    if (!object_iterator()) { return false; }
+    if (!array_iterator()) { return false; }
+    if (!object_iterator_empty()) { return false; }
+    if (!array_iterator_empty()) { return false; }
+    if (!string_value()) { return false; }
+    if (!numeric_values()) { return false; }
+    if (!boolean_values()) { return false; }
+    if (!null_value()) { return false; }
+    if (!document_object_index()) { return false; }
+    if (!object_index()) { return false; }
+    if (!twitter_count()) { return false; }
+    if (!twitter_default_profile()) { return false; }
+    if (!twitter_image_sizes()) { return false; }
+    return true;
+  }
+}
+
 int main() {
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
@@ -595,6 +800,8 @@ int main() {
   if (!navigate_test())
     return EXIT_FAILURE;
   if (!skyprophet_test())
+    return EXIT_FAILURE;
+  if (!dom_api::run_tests())
     return EXIT_FAILURE;
   std::cout << "Basic tests are ok." << std::endl;
   return EXIT_SUCCESS;
