@@ -458,7 +458,7 @@ You then have access to the following methods on the resulting `simdjson::docume
 * `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
 * `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value correspoding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
 * `bool move_to(const std::string &pointer) `: same as above but with a std::string parameter
-* `bool next()`:   Withing a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
+* `bool next()`:   Within a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
 * `bool prev()`:  Within a given scope (series of nodes at the same depth within either an
    array or an object), we move backward.
 * `bool up()`:  moves back to either the containing array or object (type { or [) from within a contained scope.
