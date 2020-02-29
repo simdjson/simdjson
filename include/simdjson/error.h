@@ -5,6 +5,7 @@
 
 namespace simdjson {
 
+/** An error during simdjson execution */
 enum error_code {
   SUCCESS = 0,
   SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
@@ -30,16 +31,19 @@ enum error_code {
   UNEXPECTED_ERROR // indicative of a bug in simdjson
 };
 
+/** Get the error message for a given error code. */
 const std::string &error_message(error_code error) noexcept;
 
+/** An exception during simdjson execution. */
 struct invalid_json : public std::exception {
   invalid_json(error_code _error) : error{_error} { }
   const char *what() const noexcept { return error_message(error).c_str(); }
   error_code error;
 };
 
-// TODO these are deprecated, remove
+/** @deprecated Use `error_code` instead. */
 using ErrorValues = error_code;
+/** @deprecated Use `error_message(error_code)` instead: we no longer traffic in "plain int" errors. */
 inline const std::string &error_message(int error) noexcept { return error_message(error_code(error)); }
 
 } // namespace simdjson

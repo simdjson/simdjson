@@ -130,18 +130,22 @@ static void twitter_image_sizes(State& state) {
   // Count unique image sizes
   document doc = document::parse(get_corpus(JSON_TEST_PATH));
   for (auto _ : state) {
+
     set<tuple<uint64_t, uint64_t>> image_sizes;
+
     for (document::object tweet : doc["statuses"].as_array()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
         for (document::object image : media.as_array()) {
-          for (auto [key, size] : image["sizes"].as_object()) {
+          for (auto [size_name, size] : image["sizes"].as_object()) {
             image_sizes.insert({ size["w"], size["h"] });
           }
         }
       }
     }
+
     if (image_sizes.size() != 15) { return; };
+
   }
 }
 BENCHMARK(twitter_image_sizes);
@@ -150,7 +154,9 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
   document doc = document::parse(get_corpus(JSON_TEST_PATH));
   for (auto _ : state) {
+
     set<tuple<uint64_t, uint64_t>> image_sizes;
+
     auto [statuses, error] = doc["statuses"].as_array();
     if (error) { return; }
     for (document::element tweet : statuses) {
@@ -168,7 +174,9 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
         }
       }
     }
+
     if (image_sizes.size() != 15) { return; };
+
   }
 }
 BENCHMARK(error_code_twitter_image_sizes);
@@ -176,10 +184,11 @@ BENCHMARK(error_code_twitter_image_sizes);
 static void iterator_twitter_image_sizes(State& state) {
   // Count unique image sizes
   document doc = document::parse(get_corpus(JSON_TEST_PATH));
+
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
-    document::iterator iter(doc);
 
+    document::iterator iter(doc);
     // for (document::object tweet : doc["statuses"].as_array()) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status

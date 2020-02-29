@@ -1,3 +1,8 @@
+/**
+ * @mainpage
+ *
+ * Check the [README.md](https://github.com/lemire/simdjson/blob/master/README.md#simdjson--parsing-gigabytes-of-json-per-second).
+ */
 #ifndef SIMDJSON_SIMDJSON_H
 #define SIMDJSON_SIMDJSON_H
 

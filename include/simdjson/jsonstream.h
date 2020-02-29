@@ -52,7 +52,7 @@ namespace simdjson {
 */
 template <class string_container = padded_string> class JsonStream {
 public:
-  /* Create a JsonStream object that can be used to parse sequentially the valid
+  /** Create a JsonStream object that can be used to parse sequentially the valid
    * JSON documents found in the buffer "buf".
    *
    * The batch_size must be at least as large as the biggest document in the
@@ -70,7 +70,7 @@ public:
    * get_current_buffer_loc,
    * get_n_parsed_docs, get_n_bytes_parsed, etc.
    *
-   * */
+   */
   JsonStream(const string_container &s, size_t batch_size = 1000000);
 
   ~JsonStream();
@@ -109,18 +109,18 @@ public:
    * and should be reused for the other documents in the buffer. */
   int json_parse(document::parser &parser);
 
-  /* Returns the location (index) of where the next document should be in the
+  /** Returns the location (index) of where the next document should be in the
    * buffer.
    * Can be used for debugging, it tells the user the position of the end of the
    * last
    * valid JSON document parsed*/
   inline size_t get_current_buffer_loc() const { return current_buffer_loc; }
 
-  /* Returns the total amount of complete documents parsed by the JsonStream,
+  /** Returns the total amount of complete documents parsed by the JsonStream,
    * in the current buffer, at the given time.*/
   inline size_t get_n_parsed_docs() const { return n_parsed_docs; }
 
-  /* Returns the total amount of data (in bytes) parsed by the JsonStream,
+  /** Returns the total amount of data (in bytes) parsed by the JsonStream,
    * in the current buffer, at the given time.*/
   inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
 
@@ -150,7 +150,9 @@ private:
 #endif
 }; // end of class JsonStream
 
-/* This algorithm is used to quickly identify the buffer position of
+/** @private
+ *
+ * This algorithm is used to quickly identify the buffer position of
  * the last JSON document inside the current batch.
  *
  * It does its work by finding the last pair of structural characters

@@ -1,3 +1,7 @@
+/**
+ * Implementation selection and architecture detection
+ */
+
 // Declaration order requires we get to document.h before implementation.h no matter what
 #include "simdjson/document.h"
 
@@ -125,6 +129,7 @@ private:
   const uint32_t _required_instruction_sets;
 };
 
+/** @private */
 namespace internal {
 
 /**
@@ -175,7 +180,9 @@ public:
   const implementation *detect_best_supported() const noexcept;
 };
 
-// Detects best supported implementation on first use, and sets it
+/**
+ * @private Detects best supported implementation on first use, and sets it
+ */
 class detect_best_supported_implementation_on_first_use final : public implementation {
 public:
   const std::string& name() const noexcept final { return set_best()->name(); }
@@ -230,6 +237,8 @@ inline const internal::available_implementation_list available_implementations;
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
+  *
+  * @hideinitializer
   */
 inline internal::atomic_ptr<const implementation> active_implementation = &internal::detect_best_supported_implementation_on_first_use_singleton;
 

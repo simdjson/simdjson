@@ -56,11 +56,11 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace simdjson {
 // Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      // Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      // bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      // bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    // bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; // bit  1 of ECX for EAX=0x1
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
 
 enum instruction_set {
   DEFAULT = 0x0,
