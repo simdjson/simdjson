@@ -17,6 +17,7 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
+- [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
