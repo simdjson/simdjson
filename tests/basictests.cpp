@@ -10,9 +10,7 @@
 #include <set>
 #include <string_view>
 
-#include "simdjson/jsonparser.h"
-#include "simdjson/jsonstream.h"
-#include "simdjson/document.h"
+#include "simdjson.h"
 
 #ifndef JSON_TEST_PATH
 #define JSON_TEST_PATH "jsonexamples/twitter.json"

@@ -2,8 +2,7 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
-#include "simdjson/jsonioutil.h"
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 #ifdef __linux__
 #include "linux-perf-events.h"
 #endif

@@ -11,9 +11,8 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <simdjson/jsonstream.h>
 
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 
 /**
  * Does the file filename ends with the given extension.

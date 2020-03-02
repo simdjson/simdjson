@@ -1,4 +1,4 @@
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 #include <unistd.h>
 
 #include "benchmark.h"

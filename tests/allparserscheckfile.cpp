@@ -1,6 +1,6 @@
 #include <unistd.h>
 
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
