@@ -290,7 +290,7 @@ void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
 }
 
 #include "simdjson.h"
-#include "src/stage2_build_tape.cpp"
+#include "simdjson.cpp"
 
 /**
  * Does the file filename ends with the given extension.

@@ -22,6 +22,11 @@ include(../include/CMakeLists.txt)
 set(SIMDJSON_SRC_DIR $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
 set(SIMDJSON_SRC
+  simdjson.cpp
+)
+
+# Load headers and sources
+set(SIMDJSON_SRC_HEADERS
   jsonioutil.cpp
   jsonminifier.cpp
   stage1_find_marks.cpp
@@ -29,10 +34,6 @@ set(SIMDJSON_SRC
   document.cpp
   implementation.cpp
   error.cpp
-)
-
-# Load headers and sources
-set(SIMDJSON_SRC_HEADERS
   jsoncharutils.h
   simdprune_tables.h
   arm64/bitmask.h
@@ -72,6 +73,7 @@ set(SIMDJSON_SRC_HEADERS
   westmere/stringparsing.h
   westmere/numberparsing.h
 )
+set_source_files_properties(${SIMDJSON_SRC_HEADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC} ${SIMDJSON_INCLUDE} ${SIMDJSON_SRC_HEADERS})
 

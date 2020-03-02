@@ -9,7 +9,7 @@ void document_parse_error_code() {
   string json("[ 1, 2, 3 ]");
   auto [doc, error] = document::parse(json);
   if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
-  UNUSED doc.print_json(cout);
+  if (!doc.print_json(cout)) { exit(1); }
   cout << endl;
 }
 
@@ -18,7 +18,7 @@ void document_parse_exception() {
 
   string json("[ 1, 2, 3 ]");
   document doc = document::parse(json);
-  UNUSED doc.print_json(cout);
+  if (!doc.print_json(cout)) { exit(1); }
   cout << endl;
 }
 
@@ -27,7 +27,7 @@ void document_parse_padded_string() {
 
   padded_string json(string("[ 1, 2, 3 ]"));
   document doc = document::parse(json);
-  UNUSED doc.print_json(cout);
+  if (!doc.print_json(cout)) { exit(1); }
   cout << endl;
 }
 
@@ -36,7 +36,7 @@ void document_parse_get_corpus() {
 
   padded_string json(get_corpus("jsonexamples/small/demo.json"));
   document doc = document::parse(json);
-  UNUSED doc.print_json(cout);
+  if (!doc.print_json(cout)) { exit(1); }
   cout << endl;
 }
 
@@ -52,7 +52,7 @@ void parser_parse() {
     cout << "Parsing " << json.data() << " ..." << endl;
     auto [doc, error] = parser.parse(json);
     if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
-    UNUSED doc.print_json(cout);
+    if (!doc.print_json(cout)) { exit(1); }
     cout << endl;
   }
 }

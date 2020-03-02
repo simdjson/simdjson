@@ -1,11 +1,13 @@
 set(SIMDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(SIMDJSON_INCLUDE
+    ${SIMDJSON_INCLUDE_DIR}/simdjson.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/compiler_check.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/common_defs.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document_iterator.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/implementation.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/isadetection.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
