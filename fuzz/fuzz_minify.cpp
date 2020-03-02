@@ -1,5 +1,4 @@
 #include "simdjson.h"
-#include "simdjson.h"
 #include <cstddef>
 #include <cstdint>
 #include <string>

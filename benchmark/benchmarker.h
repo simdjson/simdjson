@@ -31,7 +31,6 @@
 #ifdef __linux__
 #include <libgen.h>
 #endif
-//#define DEBUG
 #include "simdjson.h"
 
 #include <functional>
