@@ -11,7 +11,7 @@
 #define JSON_TEST_NUMBERS
 #endif
 
-#include "simdjson/common_defs.h"
+#include "simdjson.h"
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -132,7 +132,7 @@ void found_float(double result, const uint8_t *buf) {
   }
 }
 
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 #include "src/stage2_build_tape.cpp"
 
 /**

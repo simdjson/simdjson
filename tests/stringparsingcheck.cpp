@@ -13,7 +13,7 @@
 #define JSON_TEST_STRINGS
 #endif
 
-#include "simdjson/common_defs.h"
+#include "simdjson.h"
 
 char *fullpath;
 
@@ -289,7 +289,7 @@ void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
   }
 }
 
-#include "simdjson/jsonparser.h"
+#include "simdjson.h"
 #include "src/stage2_build_tape.cpp"
 
 /**

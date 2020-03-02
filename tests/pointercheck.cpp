@@ -1,7 +1,6 @@
 #include <iostream>
 
-#include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson.h"
 
 int main() {
   // {"/~01abc": [0, {"\\\" 0": ["value0", "value1"]}]}"

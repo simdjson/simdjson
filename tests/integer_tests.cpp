@@ -3,8 +3,7 @@
 #include <iostream>
 #include <limits>
 
-#include "simdjson/jsonparser.h"
-#include "simdjson/document.h"
+#include "simdjson.h"
 
 using namespace simdjson;
 

@@ -261,6 +261,4 @@ public:
 
 } // namespace simdjson
 
-#include "simdjson/inline/document_iterator.h"
-
 #endif // SIMDJSON_DOCUMENT_ITERATOR_H
