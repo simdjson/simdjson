@@ -1,15 +1,13 @@
-#ifndef SIMDJSON_JSONFORMATUTILS_H
-#define SIMDJSON_JSONFORMATUTILS_H
+#ifndef SIMDJSON_INTERNAL_JSONFORMATUTILS_H
+#define SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 
 #include <iomanip>
 #include <iostream>
 
-namespace simdjson {
-
+namespace simdjson::internal {
 
 // ends with zero char
-static inline void print_with_escapes(const unsigned char *src,
-                                      std::ostream &os) {
+static inline void print_with_escapes(const unsigned char *src, std::ostream &os) {
   while (*src) {
     switch (*src) {
     case '\b':
@@ -107,10 +105,10 @@ static inline void print_with_escapes(const char *src, std::ostream &os) {
   print_with_escapes(reinterpret_cast<const unsigned char *>(src), os);
 }
 
-static inline void print_with_escapes(const char *src, std::ostream &os,
-                                      size_t len) {
+static inline void print_with_escapes(const char *src, std::ostream &os, size_t len) {
   print_with_escapes(reinterpret_cast<const unsigned char *>(src), os, len);
 }
-} // namespace simdjson
 
-#endif
+} // namespace simdjson::internal
+
+#endif // SIMDJSON_INTERNAL_JSONFORMATUTILS_H

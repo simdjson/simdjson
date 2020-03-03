@@ -9,7 +9,7 @@
 #include <stdexcept>
 
 #include "simdjson/document.h"
-#include "simdjson/jsonformatutils.h"
+#include "simdjson/internal/jsonformatutils.h"
 
 namespace simdjson {
 

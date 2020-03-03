@@ -1,15 +1,13 @@
 #ifndef SIMDJSON_INLINE_DOCUMENT_H
 #define SIMDJSON_INLINE_DOCUMENT_H
 
-
-// Inline implementations go in here if they aren't small enough to go in the class itself or if
-// there are complex header file dependencies that need to be broken by externalizing the
-// implementation.
+// Inline implementations go in here.
 
 #include "simdjson/document.h"
 #include "simdjson/implementation.h"
-#include "simdjson/jsonformatutils.h"
+#include "simdjson/internal/jsonformatutils.h"
 #include <iostream>
+
 namespace simdjson {
 
 //
@@ -278,7 +276,7 @@ inline bool document::print_json(std::ostream &os, size_t max_depth) const noexc
     case '"': // we have a string
       os << '"';
       memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
+      internal::print_with_escapes(
           (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
           os, string_length);
       os << '"';
@@ -368,7 +366,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     case '"': // we have a string
       os << "string \"";
       memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
+      internal::print_with_escapes(
           (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
                   os,
           string_length);

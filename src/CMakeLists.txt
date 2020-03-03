@@ -29,6 +29,7 @@ set(SIMDJSON_SRC
 set(SIMDJSON_SRC_HEADERS
   error.cpp
   implementation.cpp
+  isadetection.h
   jsoncharutils.h
   jsonioutil.cpp
   jsonminifier.cpp

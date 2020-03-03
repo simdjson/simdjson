@@ -6,7 +6,7 @@
 #ifdef IS_X86_64
 
 #include "simdjson/implementation.h"
-#include "simdjson/isadetection.h"
+#include "isadetection.h"
 
 namespace simdjson::haswell {
 
