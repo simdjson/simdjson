@@ -8,8 +8,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/implementation.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/isadetection.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonformatutils.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonminifier.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h

@@ -55,6 +55,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 namespace simdjson {
+
 // Can be found on Intel ISA Reference for CPUID
 constexpr uint32_t cpuid_avx2_bit = 1 << 5;      // Bit 5 of EBX for EAX=0x7
 constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      // bit 3 of EBX for EAX=0x7
@@ -148,5 +149,7 @@ static inline uint32_t detect_supported_architectures() {
 }
 
 #endif // end SIMD extension detection code
-} // namespace simdjson
-#endif
+
+} // namespace simdjson::internal
+
+#endif // SIMDJSON_ISADETECTION_H
