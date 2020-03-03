@@ -1,13 +1,14 @@
 #ifndef SIMDJSON_INLINE_DOCUMENT_H
 #define SIMDJSON_INLINE_DOCUMENT_H
 
-#include "simdjson/document.h"
 
 // Inline implementations go in here if they aren't small enough to go in the class itself or if
 // there are complex header file dependencies that need to be broken by externalizing the
 // implementation.
 
+#include "simdjson/document.h"
 #include "simdjson/implementation.h"
+#include "simdjson/jsonformatutils.h"
 #include <iostream>
 namespace simdjson {
 
@@ -196,6 +197,245 @@ inline document::element_result<document::element> document::operator[](const ch
   return root()[key];
 }
 
+inline document::doc_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
+  document::parser parser;
+  if (!parser.allocate_capacity(len)) {
+    return MEMALLOC;
+  }
+  auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
+  return document::doc_result((document &&)doc, error);
+}
+really_inline document::doc_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
+    return parse((const uint8_t *)buf, len, realloc_if_needed);
+}
+really_inline document::doc_result document::parse(const std::string &s) noexcept {
+    return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
+}
+really_inline document::doc_result document::parse(const padded_string &s) noexcept {
+    return parse(s.data(), s.length(), false);
+}
+
+WARN_UNUSED
+inline bool document::set_capacity(size_t capacity) {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
+    return true;
+  }
+
+  // a pathological input like "[[[[..." would generate len tape elements, so
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
+  // a document with only zero-length strings... could have len/3 string
+  // and we would need len/3 * 5 bytes on the string buffer
+  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  return string_buf && tape;
+}
+
+inline bool document::print_json(std::ostream &os, size_t max_depth) const noexcept {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  tape_idx++;
+  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
+  int depth = 1; // only root at level 0
+  in_object_idx[depth] = 0;
+  in_object[depth] = false;
+  for (; tape_idx < how_many; tape_idx++) {
+    tape_val = tape[tape_idx];
+    uint64_t payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    if (!in_object[depth]) {
+      if ((in_object_idx[depth] > 0) && (type != ']')) {
+        os << ",";
+      }
+      in_object_idx[depth]++;
+    } else { // if (in_object) {
+      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
+          (type != '}')) {
+        os << ",";
+      }
+      if (((in_object_idx[depth] & 1) == 1)) {
+        os << ":";
+      }
+      in_object_idx[depth]++;
+    }
+    switch (type) {
+    case '"': // we have a string
+      os << '"';
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+          os, string_length);
+      os << '"';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << static_cast<int64_t>(tape[++tape_idx]);
+      break;
+    case 'u':
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << tape[++tape_idx];
+      break;
+    case 'd': // we have a double
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer;
+      break;
+    case 'n': // we have a null
+      os << "null";
+      break;
+    case 't': // we have a true
+      os << "true";
+      break;
+    case 'f': // we have a false
+      os << "false";
+      break;
+    case '{': // we have an object
+      os << '{';
+      depth++;
+      in_object[depth] = true;
+      in_object_idx[depth] = 0;
+      break;
+    case '}': // we end an object
+      depth--;
+      os << '}';
+      break;
+    case '[': // we start an array
+      os << '[';
+      depth++;
+      in_object[depth] = false;
+      in_object_idx[depth] = 0;
+      break;
+    case ']': // we end an array
+      depth--;
+      os << ']';
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      // bug?
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  os << tape_idx << " : " << type;
+  tape_idx++;
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  os << "\t// pointing to " << how_many << " (right after last node)\n";
+  uint64_t payload;
+  for (; tape_idx < how_many; tape_idx++) {
+    os << tape_idx << " : ";
+    tape_val = tape[tape_idx];
+    payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    switch (type) {
+    case '"': // we have a string
+      os << "string \"";
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+                  os,
+          string_length);
+      os << '"';
+      os << '\n';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
+      break;
+    case 'u': // we have a long uint
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "unsigned integer " << tape[++tape_idx] << "\n";
+      break;
+    case 'd': // we have a double
+      os << "float ";
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer << '\n';
+      break;
+    case 'n': // we have a null
+      os << "null\n";
+      break;
+    case 't': // we have a true
+      os << "true\n";
+      break;
+    case 'f': // we have a false
+      os << "false\n";
+      break;
+    case '{': // we have an object
+      os << "{\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case '}': // we end an object
+      os << "}\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case '[': // we start an array
+      os << "[\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case ']': // we end an array
+      os << "]\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      return false;
+    }
+  }
+  tape_val = tape[tape_idx];
+  payload = tape_val & JSON_VALUE_MASK;
+  type = (tape_val >> 56);
+  os << tape_idx << " : " << type << "\t// pointing to " << payload
+     << " (start root)\n";
+  return true;
+}
+
 //
 // document::doc_ref_result inline implementation
 //
@@ -244,6 +484,7 @@ inline const document &document::parser::get_document() const noexcept(false) {
   }
   return doc;
 }
+
 inline document::doc_ref_result document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
   error_code code = init_parse(len);
   if (code) { return document::doc_ref_result(doc, code); }
@@ -276,27 +517,70 @@ really_inline document::doc_ref_result document::parser::parse(const padded_stri
   return parse(s.data(), s.length(), false);
 }
 
-inline document::doc_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
-  document::parser parser;
-  if (!parser.allocate_capacity(len)) {
-    return MEMALLOC;
+WARN_UNUSED
+inline bool document::parser::set_capacity(size_t capacity) {
+  if (_capacity == capacity) {
+    return true;
   }
-  auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
-  return document::doc_result((document &&)doc, error);
-}
-really_inline document::doc_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
-    return parse((const uint8_t *)buf, len, realloc_if_needed);
-}
-really_inline document::doc_result document::parse(const std::string &s) noexcept {
-    return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
-}
-really_inline document::doc_result document::parse(const padded_string &s) noexcept {
-    return parse(s.data(), s.length(), false);
+
+  // Set capacity to 0 until we finish, in case there's an error
+  _capacity = 0;
+
+  //
+  // Reallocate the document
+  //
+  if (!doc.set_capacity(capacity)) {
+    return false;
+  }
+
+  //
+  // Don't allocate 0 bytes, just return.
+  //
+  if (capacity == 0) {
+    structural_indexes.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 1 output
+  //
+  uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
+  if (!structural_indexes) {
+    return false;
+  }
+
+  _capacity = capacity;
+  return true;
 }
 
-//
-// Parser callbacks
-//
+WARN_UNUSED inline bool document::parser::set_max_depth(size_t max_depth) {
+  _max_depth = 0;
+
+  if (max_depth == 0) {
+    ret_address.reset();
+    containing_scope_offset.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 2 state
+  //
+  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  ret_address.reset(new (std::nothrow) void *[max_depth]);
+#else
+  ret_address.reset(new (std::nothrow) char[max_depth]);
+#endif
+
+  if (!ret_address || !containing_scope_offset) {
+    // Could not allocate memory
+    return false;
+  }
+
+  _max_depth = max_depth;
+  return true;
+}
 
 WARN_UNUSED
 inline error_code document::parser::init_parse(size_t len) noexcept {
@@ -310,118 +594,6 @@ inline error_code document::parser::init_parse(size_t len) noexcept {
     }
   }
   return SUCCESS;
-}
-
-inline void document::parser::init_stage2() noexcept {
-  current_string_buf_loc = doc.string_buf.get();
-  current_loc = 0;
-  valid = false;
-  error = UNINITIALIZED;
-}
-
-really_inline error_code document::parser::on_error(error_code new_error_code) noexcept {
-  error = new_error_code;
-  return new_error_code;
-}
-really_inline error_code document::parser::on_success(error_code success_code) noexcept {
-  error = success_code;
-  valid = true;
-  return success_code;
-}
-really_inline bool document::parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::ROOT);
-  return true;
-}
-really_inline bool document::parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::START_OBJECT);
-  return true;
-}
-really_inline bool document::parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::START_ARRAY);
-  return true;
-}
-// TODO we're not checking this bool
-really_inline bool document::parser::on_end_document(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  // The root scope gets written *at* the previous location.
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  write_tape(containing_scope_offset[depth], tape_type::ROOT);
-  return true;
-}
-really_inline bool document::parser::on_end_object(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], tape_type::END_OBJECT);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  return true;
-}
-really_inline bool document::parser::on_end_array(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], tape_type::END_ARRAY);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  return true;
-}
-
-really_inline bool document::parser::on_true_atom() noexcept {
-  write_tape(0, tape_type::TRUE_VALUE);
-  return true;
-}
-really_inline bool document::parser::on_false_atom() noexcept {
-  write_tape(0, tape_type::FALSE_VALUE);
-  return true;
-}
-really_inline bool document::parser::on_null_atom() noexcept {
-  write_tape(0, tape_type::NULL_VALUE);
-  return true;
-}
-
-really_inline uint8_t *document::parser::on_start_string() noexcept {
-  /* we advance the point, accounting for the fact that we have a NULL
-    * termination         */
-  write_tape(current_string_buf_loc - doc.string_buf.get(), tape_type::STRING);
-  return current_string_buf_loc + sizeof(uint32_t);
-}
-
-really_inline bool document::parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
-  // TODO check for overflow in case someone has a crazy string (>=4GB?)
-  // But only add the overflow check when the document itself exceeds 4GB
-  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-  // NULL termination is still handy if you expect all your strings to
-  // be NULL terminated? It comes at a small cost
-  *dst = 0;
-  current_string_buf_loc = dst + 1;
-  return true;
-}
-
-really_inline bool document::parser::on_number_s64(int64_t value) noexcept {
-  write_tape(0, tape_type::INT64);
-  std::memcpy(&doc.tape[current_loc], &value, sizeof(value));
-  ++current_loc;
-  return true;
-}
-really_inline bool document::parser::on_number_u64(uint64_t value) noexcept {
-  write_tape(0, tape_type::UINT64);
-  doc.tape[current_loc++] = value;
-  return true;
-}
-really_inline bool document::parser::on_number_double(double value) noexcept {
-  write_tape(0, tape_type::DOUBLE);
-  static_assert(sizeof(value) == sizeof(doc.tape[current_loc]), "mismatch size");
-  memcpy(&doc.tape[current_loc++], &value, sizeof(double));
-  // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
-  return true;
-}
-
-really_inline void document::parser::write_tape(uint64_t val, document::tape_type t) noexcept {
-  doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
-}
-
-really_inline void document::parser::annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept {
-  doc.tape[saved_loc] |= val;
 }
 
 //

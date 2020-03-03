@@ -27,15 +27,14 @@ set(SIMDJSON_SRC
 
 # Load headers and sources
 set(SIMDJSON_SRC_HEADERS
+  error.cpp
+  implementation.cpp
+  jsoncharutils.h
   jsonioutil.cpp
   jsonminifier.cpp
+  simdprune_tables.h
   stage1_find_marks.cpp
   stage2_build_tape.cpp
-  document.cpp
-  implementation.cpp
-  error.cpp
-  jsoncharutils.h
-  simdprune_tables.h
   arm64/bitmask.h
   arm64/simd.h
   arm64/bitmanipulation.h
@@ -63,6 +62,7 @@ set(SIMDJSON_SRC_HEADERS
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
+  inline/document_parser_callbacks.h
   westmere/bitmanipulation.h
   westmere/implementation.h
   westmere/intrinsics.h
