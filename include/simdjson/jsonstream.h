@@ -5,7 +5,6 @@
 #include <limits>
 #include <stdexcept>
 #include <thread>
-#include "simdjson/isadetection.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/simdjson.h"
 #include "jsoncharutils.h"
