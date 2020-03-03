@@ -1,4 +1,3 @@
-#include "document.cpp"
 #include "error.cpp"
 #include "implementation.cpp"
 #include "jsonioutil.cpp"
