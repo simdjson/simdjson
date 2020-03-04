@@ -211,10 +211,12 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
   if (unlikely(parser.capacity() == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
-      return parser.on_error(MEMALLOC);
+      parser.valid = false;
+      return parser.error = MEMALLOC;
     }
   } else if (unlikely(parser.capacity() < _batch_size)) {
-    return parser.on_error(CAPACITY);
+      parser.valid = false;
+      return parser.error = CAPACITY;
   }
   if (unlikely(load_next_batch)) {
     advance(current_buffer_loc);
@@ -223,12 +225,14 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
     auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
-      return parser.on_error(stage1_is_ok);
+      parser.valid = false;
+      return parser.error = stage1_is_ok;
     }
     size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
-        return parser.on_error(EMPTY);
+        parser.valid = false;
+        return parser.error = EMPTY;
       }
     } else {
       parser.n_structural_indexes = last_index + 1;
