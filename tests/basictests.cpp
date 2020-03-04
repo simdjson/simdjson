@@ -270,6 +270,7 @@ static bool parse_json_message_issue467(char const* message, std::size_t len, si
 }
 
 bool json_issue467() {
+    printf("Running json_issue467.\n");
     const char * single_message = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
     const char* two_messages = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
 
@@ -393,8 +394,8 @@ bool navigate_test() {
 }
 
 // returns true if successful
-bool stream_utf8_test() {
-  printf("Running stream_utf8_test");
+bool JsonStream_utf8_test() {
+  printf("Running JsonStream_utf8_test");
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -406,11 +407,11 @@ bool stream_utf8_test() {
                      i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
     data += std::string(buf, n);
   }
-  for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
+  for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
     printf(".");
     fflush(NULL);
     simdjson::padded_string str(data);
-    simdjson::JsonStream<simdjson::padded_string> js{str, i};
+    simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::document::parser parser;
@@ -446,7 +447,7 @@ bool stream_utf8_test() {
       count++;
     }
     if(count != n_records) {
-      printf("Something is wrong in stream_test at window size = %zu.\n", i);
+      printf("Something is wrong in JsonStream_utf8_test at window size = %zu.\n", batch_size);
       return false;
     }
   }
@@ -455,8 +456,8 @@ bool stream_utf8_test() {
 }
 
 // returns true if successful
-bool stream_test() {
-  printf("Running stream_test");
+bool JsonStream_test() {
+  printf("Running JsonStream_test");
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -468,11 +469,11 @@ bool stream_test() {
                      i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
     data += std::string(buf, n);
   }
-  for(size_t i = 1000; i < 2000; i += (i>1050?10:1)) {
+  for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
     printf(".");
     fflush(NULL);
     simdjson::padded_string str(data);
-    simdjson::JsonStream<simdjson::padded_string> js{str, i};
+    simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
     simdjson::document::parser parser;
@@ -508,7 +509,55 @@ bool stream_test() {
       count++;
     }
     if(count != n_records) {
-      printf("Something is wrong in stream_test at window size = %zu.\n", i);
+      printf("Something is wrong in JsonStream_test at window size = %zu.\n", batch_size);
+      return false;
+    }
+  }
+  printf("ok\n");
+  return true;
+}
+
+// returns true if successful
+bool document_stream_test() {
+  printf("Running document_stream_test");
+  fflush(NULL);
+  const size_t n_records = 10000;
+  std::string data;
+  char buf[1024];
+  for (size_t i = 0; i < n_records; ++i) {
+    auto n = sprintf(buf,
+                     "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
+                     "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
+                     i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
+    data += std::string(buf, n);
+  }
+  for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
+    printf(".");
+    fflush(NULL);
+    simdjson::padded_string str(data);
+    simdjson::document::parser parser;
+    size_t count = 0;
+    for (auto [doc, error] : parser.parse_many(str, batch_size)) {
+      if (error) {
+        printf("Error at on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error).c_str());
+        return false;
+      }
+
+      auto [keyid, error2] = doc["id"].as_int64_t();
+      if (error2) {
+        printf("Error getting id as int64 on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error2).c_str());
+        return false;
+      }
+
+      if (keyid != int64_t(count)) {
+        printf("key does not match %ld, expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
+        return false;
+      }
+
+      count++;
+    }
+    if(count != n_records) {
+      printf("Found wrong number of documents %zd, expected %zd at batch size %zu\n", count, n_records, batch_size);
       return false;
     }
   }
@@ -781,9 +830,11 @@ int main() {
   std::cout << "Running basic tests." << std::endl;
   if(!json_issue467())
     return EXIT_FAILURE;
-  if(!stream_test())
+  if(!JsonStream_test())
     return EXIT_FAILURE;
-  if(!stream_utf8_test())
+  if(!JsonStream_utf8_test())
+    return EXIT_FAILURE;
+  if(!document_stream_test())
     return EXIT_FAILURE;
   if(!number_test_small_integers())
     return EXIT_FAILURE;

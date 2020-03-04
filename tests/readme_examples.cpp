@@ -57,6 +57,33 @@ void parser_parse() {
   }
 }
 
+void parser_parse_many_error_code() {
+  cout << __func__ << endl;
+
+  // Read files with the parser
+  padded_string json = string("[1, 2, 3] true [ true, false ]");
+  cout << "Parsing " << json.data() << " ..." << endl;
+  document::parser parser;
+  for (auto [doc, error] : parser.parse_many(json)) {
+    if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+    if (!doc.print_json(cout)) { exit(1); }
+    cout << endl;
+  }
+}
+
+void parser_parse_many_exception() {
+  cout << __func__ << endl;
+
+  // Read files with the parser
+  padded_string json = string("[1, 2, 3] true [ true, false ]");
+  cout << "Parsing " << json.data() << " ..." << endl;
+  document::parser parser;
+  for (const document &doc : parser.parse_many(json)) {
+    if (!doc.print_json(cout)) { exit(1); }
+    cout << endl;
+  }
+}
+
 int main() {
   cout << "Running examples." << endl;
   document_parse_error_code();
@@ -64,6 +91,8 @@ int main() {
   document_parse_padded_string();
   document_parse_get_corpus();
   parser_parse();
+  parser_parse_many_error_code();
+  parser_parse_many_exception();
   cout << "Ran to completion!" << endl;
   return 0;
 }

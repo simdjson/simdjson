@@ -52,11 +52,13 @@ public:
   class object;
   class key_value_pair;
   class parser;
+  class stream;
 
   template<typename T=element>
   class element_result;
   class doc_result;
   class doc_ref_result;
+  class stream_result;
 
   // Nested classes. See definitions later in file.
   using iterator = document_iterator<DEFAULT_MAX_DEPTH>;
@@ -315,6 +317,7 @@ public:
 private:
   doc_ref_result(document &_doc, error_code _error) noexcept;
   friend class document::parser;
+  friend class document::stream;
 }; // class document::doc_ref_result
 
 /**
@@ -926,6 +929,255 @@ public:
 
   // We do not want to allow implicit conversion from C string to std::string.
   really_inline doc_ref_result parse(const char *buf) noexcept = delete;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param len The length of the concatenated JSON.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails.
+   */
+  inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param len The length of the concatenated JSON.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const char *buf, size_t len, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const std::string &s, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param s The concatenated JSON to parse.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const padded_string &s, size_t batch_size = 1000000) noexcept;
+
+  // We do not want to allow implicit conversion from C string to std::string.
+  really_inline doc_ref_result parse_many(const char *buf, size_t batch_size = 1000000) noexcept = delete;
 
   /**
    * Current capacity: the largest document this parser can support without reallocating.

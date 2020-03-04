@@ -4,6 +4,7 @@
 // Inline implementations go in here.
 
 #include "simdjson/document.h"
+#include "simdjson/document_stream.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/jsonformatutils.h"
 #include <iostream>
@@ -513,6 +514,19 @@ really_inline document::doc_ref_result document::parser::parse(const std::string
 }
 really_inline document::doc_ref_result document::parser::parse(const padded_string &s) noexcept {
   return parse(s.data(), s.length(), false);
+}
+
+inline document::stream document::parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+  return stream(*this, buf, len, batch_size);
+}
+inline document::stream document::parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
+  return parse_many((const uint8_t *)buf, len, batch_size);
+}
+inline document::stream document::parser::parse_many(const std::string &s, size_t batch_size) noexcept {
+  return parse_many(s.data(), s.length(), batch_size);
+}
+inline document::stream document::parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
+  return parse_many(s.data(), s.length(), batch_size);
 }
 
 really_inline size_t document::parser::capacity() const noexcept {
