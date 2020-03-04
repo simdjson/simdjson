@@ -1,17 +1,13 @@
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
+#include <simdjson.h>
+
 #ifdef IS_X86_64
 
-#include "simdjson/common_defs.h"
-#include "simdjson/portability.h"
-#include "westmere/intrinsics.h"
-#include "simdjson/common_defs.h"
-#include "simdjson/portability.h"
+#include "jsoncharutils.h"
 #include "westmere/intrinsics.h"
 #include "westmere/bitmanipulation.h"
-#include "simdjson/inline/document.h"
-#include "jsoncharutils.h"
 #include <cmath>
 #include <limits>
 

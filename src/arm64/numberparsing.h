@@ -1,14 +1,13 @@
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
+#include <simdjson.h>
+
 #ifdef IS_ARM64
 
-#include "simdjson/common_defs.h"
-#include "simdjson/portability.h"
+#include "jsoncharutils.h"
 #include "arm64/intrinsics.h"
 #include "arm64/bitmanipulation.h"
-#include "simdjson/inline/document.h"
-#include "jsoncharutils.h"
 #include <cmath>
 #include <limits>
 
