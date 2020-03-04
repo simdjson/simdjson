@@ -1,20 +1,23 @@
 set(SIMDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/compiler_check.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/common_defs.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/compiler_check.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/document_iterator.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/error.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/implementation.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonminifier.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/portability.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson_version.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson.h
 )
