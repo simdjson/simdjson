@@ -1,7 +1,7 @@
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, document::parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(ret_address finish_parser) {

@@ -7,7 +7,6 @@
 #include <thread>
 #include "simdjson/padded_string.h"
 #include "simdjson/simdjson.h"
-#include "jsoncharutils.h"
 
 
 namespace simdjson {
@@ -233,6 +232,22 @@ template <class string_container> JsonStream<string_container>::~JsonStream() {
 #endif
 }
 
+namespace internal {
+// returns true if the provided byte value is an ASCII character
+static inline bool is_ascii(char c) {
+  return ((unsigned char)c) <= 127;
+}
+
+// if the string ends with  UTF-8 values, backtrack 
+// up to the first ASCII character. May return 0.
+static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
+  while ((len > 0) and (not is_ascii(c[len - 1]))) {
+    len--;
+  }
+  return len;
+}
+}
+
 #ifdef SIMDJSON_THREADS_ENABLED
 
 // threaded version of json_parse
@@ -257,7 +272,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     // First time loading
     if (!stage_1_thread.joinable()) {
       _batch_size = (std::min)(_batch_size, remaining());
-      _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
+      _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
       if (_batch_size == 0) {
         return parser.error = simdjson::UTF8_ERROR;
       }
@@ -291,7 +306,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
           parser.structural_indexes[find_last_json_buf_idx(buf(), _batch_size, parser)];
       _batch_size = (std::min)(_batch_size, remaining() - last_json_buffer_loc);
       if (_batch_size > 0) {
-        _batch_size = trimmed_length_safe_utf8(
+        _batch_size = internal::trimmed_length_safe_utf8(
             (const char *)(buf() + last_json_buffer_loc), _batch_size);
         if (_batch_size == 0) {
           return parser.error = simdjson::UTF8_ERROR;
@@ -343,7 +358,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     advance(current_buffer_loc);
     n_bytes_parsed += current_buffer_loc;
     _batch_size = (std::min)(_batch_size, remaining());
-    _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
+    _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
     auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
       return parser.on_error(stage1_is_ok);
