@@ -1,14 +1,12 @@
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
 
-#include "westmere/simd.h"
-#include "simdjson/common_defs.h"
-#include "simdjson/inline/document.h"
 #include "jsoncharutils.h"
+#include "westmere/simd.h"
 #include "westmere/intrinsics.h"
 #include "westmere/bitmanipulation.h"
 
@@ -46,4 +44,4 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 
-#endif
+#endif // SIMDJSON_WESTMERE_STRINGPARSING_H

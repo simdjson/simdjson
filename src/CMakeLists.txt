@@ -62,7 +62,7 @@ set(SIMDJSON_SRC_HEADERS
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
-  inline/document_parser_callbacks.h
+  document_parser_callbacks.h
   westmere/bitmanipulation.h
   westmere/implementation.h
   westmere/intrinsics.h

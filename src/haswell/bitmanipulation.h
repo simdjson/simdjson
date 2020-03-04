@@ -1,9 +1,10 @@
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
-#include "simdjson/common_defs.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
+
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -74,5 +75,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 }
 }// namespace simdjson::haswell
 UNTARGET_REGION
-#endif
-#endif //  SIMDJSON_HASWELL_BITMANIPULATION_H
+
+#endif // IS_X86_64
+
+#endif // SIMDJSON_HASWELL_BITMANIPULATION_H

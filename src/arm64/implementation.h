@@ -1,11 +1,10 @@
-#ifndef __SIMDJSON_ARM64_IMPLEMENTATION_H
-#define __SIMDJSON_ARM64_IMPLEMENTATION_H
+#ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
+#define SIMDJSON_ARM64_IMPLEMENTATION_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_ARM64
 
-#include "simdjson/implementation.h"
 #include "isadetection.h"
 
 namespace simdjson::arm64 {
@@ -23,4 +22,4 @@ public:
 
 #endif // IS_ARM64
 
-#endif // __SIMDJSON_ARM64_IMPLEMENTATION_H
+#endif // SIMDJSON_ARM64_IMPLEMENTATION_H

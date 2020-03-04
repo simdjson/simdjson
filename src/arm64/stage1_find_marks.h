@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 #define SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_ARM64
 

@@ -1,11 +1,10 @@
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
 
-#include "simdjson/common_defs.h"
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -28,4 +27,5 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif
+
+#endif // SIMDJSON_HASWELL_BITMASK_H

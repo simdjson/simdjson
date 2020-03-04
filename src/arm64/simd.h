@@ -1,12 +1,10 @@
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_ARM64
 
-#include "simdjson/common_defs.h"
-#include "simdjson/simdjson.h"
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64::simd {

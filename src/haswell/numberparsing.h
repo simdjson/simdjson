@@ -1,17 +1,15 @@
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
+#include <simdjson.h>
+
 #ifdef IS_X86_64
 
-#include "simdjson/common_defs.h"
-#include "simdjson/portability.h"
+#include "jsoncharutils.h"
 #include "haswell/intrinsics.h"
 #include "haswell/bitmanipulation.h"
-#include "simdjson/inline/document.h"
-#include "jsoncharutils.h"
 #include <cmath>
 #include <limits>
-
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -47,10 +45,6 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 } // namespace simdjson::haswell
 UNTARGET_REGION
 
-
-
-
 #endif // IS_X86_64
 
-
-#endif //  SIMDJSON_HASWELL_NUMBERPARSING_H
+#endif // SIMDJSON_HASWELL_NUMBERPARSING_H
