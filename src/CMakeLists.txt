@@ -30,7 +30,6 @@ set(SIMDJSON_SRC_HEADERS
   error.cpp
   implementation.cpp
   isadetection.h
-  jsoncharutils.h
   jsonioutil.cpp
   jsonminifier.cpp
   simdprune_tables.h
