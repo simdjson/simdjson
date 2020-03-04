@@ -515,6 +515,16 @@ really_inline document::doc_ref_result document::parser::parse(const padded_stri
   return parse(s.data(), s.length(), false);
 }
 
+really_inline size_t document::parser::capacity() const noexcept {
+  return _capacity;
+}
+really_inline size_t document::parser::max_depth() const noexcept {
+  return _max_depth;
+}
+WARN_UNUSED inline bool document::parser::allocate_capacity(size_t capacity, size_t max_depth) {
+  return set_capacity(capacity) && set_max_depth(max_depth);
+}
+
 WARN_UNUSED
 inline bool document::parser::set_capacity(size_t capacity) {
   if (_capacity == capacity) {
