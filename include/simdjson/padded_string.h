@@ -91,7 +91,7 @@ struct padded_string final {
   }
 
   ~padded_string() {
-      aligned_free_char(data_ptr);
+    aligned_free_char(data_ptr);
   }
 
   size_t size() const  { return viable_size; }
