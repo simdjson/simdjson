@@ -149,7 +149,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline static doc_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document.
@@ -165,7 +165,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline static doc_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document.
@@ -178,7 +178,7 @@ public:
    *          a new string will be created with the extra padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const std::string &s) noexcept;
+  really_inline static doc_result parse(const std::string &s) noexcept;
 
   /**
    * Parse a JSON document.
@@ -186,7 +186,7 @@ public:
    * @param s The JSON to parse.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const padded_string &s) noexcept;
+  really_inline static doc_result parse(const padded_string &s) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
   doc_ref_result parse(const char *buf, bool realloc_if_needed = true) noexcept = delete;
@@ -340,13 +340,13 @@ enum class document::tape_type {
  */
 class document::tape_ref {
 protected:
-  tape_ref() noexcept;
-  tape_ref(const document *_doc, size_t _json_index) noexcept;
-  size_t after_element() const noexcept;
-  tape_type type() const noexcept;
-  uint64_t tape_value() const noexcept;
+  really_inline tape_ref() noexcept;
+  really_inline tape_ref(const document *_doc, size_t _json_index) noexcept;
+  inline size_t after_element() const noexcept;
+  really_inline tape_type type() const noexcept;
+  really_inline uint64_t tape_value() const noexcept;
   template<typename T>
-  T next_tape_value() const noexcept;
+  really_inline T next_tape_value() const noexcept;
 
   /** The document this element references. */
   const document *doc;
@@ -366,19 +366,19 @@ protected:
 class document::element : protected document::tape_ref {
 public:
   /** Whether this element is a json `null`. */
-  bool is_null() const noexcept;
+  really_inline bool is_null() const noexcept;
   /** Whether this is a JSON `true` or `false` */
-  bool is_bool() const noexcept;
+  really_inline bool is_bool() const noexcept;
   /** Whether this is a JSON number (e.g. 1, 1.0 or 1e2) */
-  bool is_number() const noexcept;
+  really_inline bool is_number() const noexcept;
   /** Whether this is a JSON integer (e.g. 1 or -1, but *not* 1.0 or 1e2) */
-  bool is_integer() const noexcept;
+  really_inline bool is_integer() const noexcept;
   /** Whether this is a JSON string (e.g. "abc") */
-  bool is_string() const noexcept;
+  really_inline bool is_string() const noexcept;
   /** Whether this is a JSON array (e.g. []) */
-  bool is_array() const noexcept;
+  really_inline bool is_array() const noexcept;
   /** Whether this is a JSON array (e.g. []) */
-  bool is_object() const noexcept;
+  really_inline bool is_object() const noexcept;
 
   /**
    * Read this element as a boolean (json `true` or `false`).
@@ -386,7 +386,7 @@ public:
    * @return The boolean value, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a boolean
    */
-  element_result<bool> as_bool() const noexcept;
+  inline element_result<bool> as_bool() const noexcept;
 
   /**
    * Read this element as a null-terminated string.
@@ -397,7 +397,7 @@ public:
    * @return A `string_view` into the string, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a string
    */
-  element_result<const char *> as_c_str() const noexcept;
+  inline element_result<const char *> as_c_str() const noexcept;
 
   /**
    * Read this element as a C++ string_view (string with length).
@@ -408,7 +408,7 @@ public:
    * @return A `string_view` into the string, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a string
    */
-  element_result<std::string_view> as_string() const noexcept;
+  inline element_result<std::string_view> as_string() const noexcept;
 
   /**
    * Read this element as an unsigned integer.
@@ -417,7 +417,7 @@ public:
    *         - UNEXPECTED_TYPE if the JSON element is not an integer
    *         - NUMBER_OUT_OF_RANGE if the integer doesn't fit in 64 bits or is negative
    */
-  element_result<uint64_t> as_uint64_t() const noexcept;
+  inline element_result<uint64_t> as_uint64_t() const noexcept;
 
   /**
    * Read this element as a signed integer.
@@ -426,7 +426,7 @@ public:
    *         - UNEXPECTED_TYPE if the JSON element is not an integer
    *         - NUMBER_OUT_OF_RANGE if the integer doesn't fit in 64 bits
    */
-  element_result<int64_t> as_int64_t() const noexcept;
+  inline element_result<int64_t> as_int64_t() const noexcept;
 
   /**
    * Read this element as a floating point value.
@@ -434,7 +434,7 @@ public:
    * @return The double value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not a number
    */
-  element_result<double> as_double() const noexcept;
+  inline element_result<double> as_double() const noexcept;
 
   /**
    * Read this element as a JSON array.
@@ -442,7 +442,7 @@ public:
    * @return The array value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not an array
    */
-  element_result<document::array> as_array() const noexcept;
+  inline element_result<document::array> as_array() const noexcept;
 
   /**
    * Read this element as a JSON object (key/value pairs).
@@ -450,7 +450,7 @@ public:
    * @return The object value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not an object
    */
-  element_result<document::object> as_object() const noexcept;
+  inline element_result<document::object> as_object() const noexcept;
 
   /**
    * Read this element as a boolean.
@@ -458,7 +458,7 @@ public:
    * @return The boolean value
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a boolean.
    */
-  operator bool() const noexcept(false);
+  inline operator bool() const noexcept(false);
 
   /**
    * Read this element as a null-terminated string.
@@ -469,7 +469,7 @@ public:
    * @return The string value.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
-  explicit operator const char*() const noexcept(false);
+  inline explicit operator const char*() const noexcept(false);
 
   /**
    * Read this element as a null-terminated string.
@@ -480,7 +480,7 @@ public:
    * @return The string value.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
-  operator std::string_view() const noexcept(false);
+  inline operator std::string_view() const noexcept(false);
 
   /**
    * Read this element as an unsigned integer.
@@ -489,7 +489,7 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
-  operator uint64_t() const noexcept(false);
+  inline operator uint64_t() const noexcept(false);
   /**
    * Read this element as an signed integer.
    *
@@ -497,7 +497,7 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
    */
-  operator int64_t() const noexcept(false);
+  inline operator int64_t() const noexcept(false);
   /**
    * Read this element as an double.
    *
@@ -505,21 +505,21 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a number
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
-  operator double() const noexcept(false);
+  inline operator double() const noexcept(false);
   /**
    * Read this element as a JSON array.
    *
    * @return The JSON array.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
    */
-  operator document::array() const noexcept(false);
+  inline operator document::array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
    */
-  operator document::object() const noexcept(false);
+  inline operator document::object() const noexcept(false);
 
   /**
    * Get the value associated with the given key.
@@ -533,7 +533,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - UNEXPECTED_TYPE if the document is not an object
    */
-  element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -546,11 +546,11 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - UNEXPECTED_TYPE if the document is not an object
    */
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element() noexcept;
-  element(const document *_doc, size_t _json_index) noexcept;
+  really_inline element() noexcept;
+  really_inline element(const document *_doc, size_t _json_index) noexcept;
   friend class document;
   template<typename T>
   friend class document::element_result;
@@ -566,21 +566,21 @@ public:
     /**
      * Get the actual value
      */
-    element operator*() const noexcept;
+    inline element operator*() const noexcept;
     /**
      * Get the next value.
      *
      * Part of the std::iterator interface.
      */
-    void operator++() noexcept;
+    inline void operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
-    bool operator!=(const iterator& other) const noexcept;
+    inline bool operator!=(const iterator& other) const noexcept;
   private:
-    iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
     friend class array;
   };
 
@@ -589,17 +589,17 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  iterator begin() const noexcept;
+  inline iterator begin() const noexcept;
   /**
    * One past the last array element.
    *
    * Part of the std::iterable interface.
    */
-  iterator end() const noexcept;
+  inline iterator end() const noexcept;
 
 private:
-  array() noexcept;
-  array(const document *_doc, size_t _json_index) noexcept;
+  really_inline array() noexcept;
+  really_inline array(const document *_doc, size_t _json_index) noexcept;
   friend class document::element;
   template<typename T>
   friend class document::element_result;
@@ -615,33 +615,33 @@ public:
     /**
      * Get the actual key/value pair
      */
-    const document::key_value_pair operator*() const noexcept;
+    inline const document::key_value_pair operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
      * Part of the std::iterator interface.
      */
-    void operator++() noexcept;
+    inline void operator++() noexcept;
     /**
      * Check if these key value pairs come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
-    bool operator!=(const iterator& other) const noexcept;
+    inline bool operator!=(const iterator& other) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
-    std::string_view key() const noexcept;
+    inline std::string_view key() const noexcept;
     /**
      * Get the key of this key/value pair.
      */
-    const char *key_c_str() const noexcept;
+    inline const char *key_c_str() const noexcept;
     /**
      * Get the value of this key/value pair.
      */
-    element value() const noexcept;
+    inline element value() const noexcept;
   private:
-    iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
     friend class document::object;
   };
 
@@ -650,13 +650,13 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  iterator begin() const noexcept;
+  inline iterator begin() const noexcept;
   /**
    * One past the last key/value pair.
    *
    * Part of the std::iterable interface.
    */
-  iterator end() const noexcept;
+  inline iterator end() const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -669,7 +669,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -681,11 +681,11 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  object() noexcept;
-  object(const document *_doc, size_t _json_index) noexcept;
+  really_inline object() noexcept;
+  really_inline object(const document *_doc, size_t _json_index) noexcept;
   friend class document::element;
   template<typename T>
   friend class document::element_result;
@@ -700,7 +700,7 @@ public:
   document::element value;
 
 private:
-  key_value_pair(std::string_view _key, document::element _value) noexcept;
+  really_inline key_value_pair(std::string_view _key, document::element _value) noexcept;
   friend class document::object;
 };
 
@@ -729,11 +729,11 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator T() const noexcept(false);
+  inline operator T() const noexcept(false);
 
 private:
-  element_result(T value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(T value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -748,31 +748,31 @@ public:
   error_code error;
 
   /** Whether this is a JSON `null` */
-  element_result<bool> is_null() const noexcept;
-  element_result<bool> as_bool() const noexcept;
-  element_result<std::string_view> as_string() const noexcept;
-  element_result<const char *> as_c_str() const noexcept;
-  element_result<uint64_t> as_uint64_t() const noexcept;
-  element_result<int64_t> as_int64_t() const noexcept;
-  element_result<double> as_double() const noexcept;
-  element_result<array> as_array() const noexcept;
-  element_result<object> as_object() const noexcept;
+  inline element_result<bool> is_null() const noexcept;
+  inline element_result<bool> as_bool() const noexcept;
+  inline element_result<std::string_view> as_string() const noexcept;
+  inline element_result<const char *> as_c_str() const noexcept;
+  inline element_result<uint64_t> as_uint64_t() const noexcept;
+  inline element_result<int64_t> as_int64_t() const noexcept;
+  inline element_result<double> as_double() const noexcept;
+  inline element_result<array> as_array() const noexcept;
+  inline element_result<object> as_object() const noexcept;
 
-  operator bool() const noexcept(false);
-  explicit operator const char*() const noexcept(false);
-  operator std::string_view() const noexcept(false);
-  operator uint64_t() const noexcept(false);
-  operator int64_t() const noexcept(false);
-  operator double() const noexcept(false);
-  operator array() const noexcept(false);
-  operator object() const noexcept(false);
+  inline operator bool() const noexcept(false);
+  inline explicit operator const char*() const noexcept(false);
+  inline operator std::string_view() const noexcept(false);
+  inline operator uint64_t() const noexcept(false);
+  inline operator int64_t() const noexcept(false);
+  inline operator double() const noexcept(false);
+  inline operator array() const noexcept(false);
+  inline operator object() const noexcept(false);
 
-  element_result<element> operator[](const std::string_view &s) const noexcept;
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element_result(element value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(element value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -786,14 +786,14 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator array() const noexcept(false);
+  inline operator array() const noexcept(false);
 
-  array::iterator begin() const noexcept(false);
-  array::iterator end() const noexcept(false);
+  inline array::iterator begin() const noexcept(false);
+  inline array::iterator end() const noexcept(false);
 
 private:
-  element_result(array value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(array value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -807,17 +807,17 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator object() const noexcept(false);
+  inline operator object() const noexcept(false);
 
-  object::iterator begin() const noexcept(false);
-  object::iterator end() const noexcept(false);
+  inline object::iterator begin() const noexcept(false);
+  inline object::iterator end() const noexcept(false);
 
-  element_result<element> operator[](const std::string_view &s) const noexcept;
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element_result(object value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(object value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -873,7 +873,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline doc_ref_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -893,7 +893,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline doc_ref_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -910,7 +910,7 @@ public:
    *          a new string will be created with the extra padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const std::string &s) noexcept;
+  really_inline doc_ref_result parse(const std::string &s) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -922,28 +922,26 @@ public:
    * @param s The JSON to parse.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const padded_string &s) noexcept;
+  really_inline doc_ref_result parse(const padded_string &s) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
-  doc_ref_result parse(const char *buf) noexcept = delete;
+  really_inline doc_ref_result parse(const char *buf) noexcept = delete;
 
   /**
    * Current capacity: the largest document this parser can support without reallocating.
    */
-  size_t capacity() const noexcept { return _capacity; }
+  really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    */
-  size_t max_depth() const noexcept { return _max_depth; }
+  really_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    */
-  WARN_UNUSED bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) {
-    return set_capacity(capacity) && set_max_depth(max_depth);
-  }
+  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH);
 
   // type aliases for backcompat
   using Iterator = document::iterator;
@@ -978,20 +976,20 @@ public:
   //
 
   // returns true if the document parsed was valid
-  bool is_valid() const noexcept;
+  inline bool is_valid() const noexcept;
 
   // return an error code corresponding to the last parsing attempt, see
   // simdjson.h will return UNITIALIZED if no parsing was attempted
-  int get_error_code() const noexcept;
+  inline int get_error_code() const noexcept;
 
   // return the string equivalent of "get_error_code"
-  std::string get_error_message() const noexcept;
+  inline std::string get_error_message() const noexcept;
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
-  bool print_json(std::ostream &os) const noexcept;
-  bool dump_raw_tape(std::ostream &os) const noexcept;
+  inline bool print_json(std::ostream &os) const noexcept;
+  inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
   //
   // Parser callbacks: these are internal!
@@ -1000,31 +998,31 @@ public:
   //
 
   // this should be called when parsing (right before writing the tapes)
-  void init_stage2() noexcept;
-  error_code on_error(error_code new_error_code) noexcept;
-  error_code on_success(error_code success_code) noexcept;
-  bool on_start_document(uint32_t depth) noexcept;
-  bool on_start_object(uint32_t depth) noexcept;
-  bool on_start_array(uint32_t depth) noexcept;
+  inline void init_stage2() noexcept;
+  really_inline error_code on_error(error_code new_error_code) noexcept;
+  really_inline error_code on_success(error_code success_code) noexcept;
+  really_inline bool on_start_document(uint32_t depth) noexcept;
+  really_inline bool on_start_object(uint32_t depth) noexcept;
+  really_inline bool on_start_array(uint32_t depth) noexcept;
   // TODO we're not checking this bool
-  bool on_end_document(uint32_t depth) noexcept;
-  bool on_end_object(uint32_t depth) noexcept;
-  bool on_end_array(uint32_t depth) noexcept;
-  bool on_true_atom() noexcept;
-  bool on_false_atom() noexcept;
-  bool on_null_atom() noexcept;
-  uint8_t *on_start_string() noexcept;
-  bool on_end_string(uint8_t *dst) noexcept;
-  bool on_number_s64(int64_t value) noexcept;
-  bool on_number_u64(uint64_t value) noexcept;
-  bool on_number_double(double value) noexcept;
+  really_inline bool on_end_document(uint32_t depth) noexcept;
+  really_inline bool on_end_object(uint32_t depth) noexcept;
+  really_inline bool on_end_array(uint32_t depth) noexcept;
+  really_inline bool on_true_atom() noexcept;
+  really_inline bool on_false_atom() noexcept;
+  really_inline bool on_null_atom() noexcept;
+  really_inline uint8_t *on_start_string() noexcept;
+  really_inline bool on_end_string(uint8_t *dst) noexcept;
+  really_inline bool on_number_s64(int64_t value) noexcept;
+  really_inline bool on_number_u64(uint64_t value) noexcept;
+  really_inline bool on_number_double(double value) noexcept;
   //
   // Called before a parse is initiated.
   //
   // - Returns CAPACITY if the document is too large
   // - Returns MEMALLOC if we needed to allocate memory and could not
   //
-  WARN_UNUSED error_code init_parse(size_t len) noexcept;
+  WARN_UNUSED inline error_code init_parse(size_t len) noexcept;
 
 private:
   //
@@ -1055,8 +1053,8 @@ private:
   //
   //
 
-  void write_tape(uint64_t val, tape_type t) noexcept;
-  void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
+  inline void write_tape(uint64_t val, tape_type t) noexcept;
+  inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
 
   //
   // Set the current capacity: the largest document this parser can support without reallocating.
@@ -1065,7 +1063,7 @@ private:
   //
   // Returns false if allocation fails.
   //
-  WARN_UNUSED bool set_capacity(size_t capacity);
+  inline WARN_UNUSED bool set_capacity(size_t capacity);
 
   //
   // Set the maximum level of nested object and arrays supported by this parser.
@@ -1074,10 +1072,10 @@ private:
   //
   // Returns false if allocation fails.
   //
-  WARN_UNUSED bool set_max_depth(size_t max_depth);
+  inline WARN_UNUSED bool set_max_depth(size_t max_depth);
 
   // Used internally to get the document
-  const document &get_document() const noexcept(false);
+  inline const document &get_document() const noexcept(false);
 
   template<size_t max_depth> friend class document_iterator;
 }; // class parser
