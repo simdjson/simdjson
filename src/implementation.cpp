@@ -1,6 +1,4 @@
-#include "simdjson/portability.h"
-#include "isadetection.h"
-#include "simdjson/implementation.h"
+#include <simdjson.h>
 #include <initializer_list>
 
 // Static array of known implementations. We're hoping these get baked into the executable

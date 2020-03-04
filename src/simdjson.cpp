@@ -1,3 +1,4 @@
+#include <simdjson.h>
 #include "error.cpp"
 #include "implementation.cpp"
 #include "jsonioutil.cpp"

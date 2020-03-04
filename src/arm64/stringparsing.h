@@ -1,14 +1,12 @@
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_ARM64
 
-#include "arm64/simd.h"
-#include "simdjson/common_defs.h"
-#include "simdjson/inline/document.h"
 #include "jsoncharutils.h"
+#include "arm64/simd.h"
 #include "arm64/intrinsics.h"
 #include "arm64/bitmanipulation.h"
 
@@ -47,4 +45,5 @@ really_inline parse_string_helper find_bs_bits_and_quote_bits(const uint8_t *src
 // namespace simdjson::amd64
 
 #endif // IS_ARM64
-#endif
+
+#endif // SIMDJSON_ARM64_STRINGPARSING_H

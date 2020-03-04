@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 #define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
 

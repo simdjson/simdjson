@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_JSONCHARUTILS_H
 #define SIMDJSON_JSONCHARUTILS_H
 
-#include "simdjson/common_defs.h"
+#include <simdjson.h>
 
 namespace simdjson {
 // structural chars here are

@@ -1,14 +1,12 @@
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
 
-#include "haswell/simd.h"
-#include "simdjson/common_defs.h"
-#include "simdjson/inline/document.h"
 #include "jsoncharutils.h"
+#include "haswell/simd.h"
 #include "haswell/intrinsics.h"
 #include "haswell/bitmanipulation.h"
 
@@ -44,4 +42,4 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 
-#endif
+#endif // SIMDJSON_HASWELL_STRINGPARSING_H

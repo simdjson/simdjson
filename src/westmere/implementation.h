@@ -1,7 +1,7 @@
-#ifndef __SIMDJSON_WESTMERE_IMPLEMENTATION_H
-#define __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-#include "simdjson/portability.h"
+#include <simdjson.h>
 
 #ifdef IS_X86_64
 
@@ -23,4 +23,4 @@ public:
 
 #endif // IS_X86_64
 
-#endif // __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H
