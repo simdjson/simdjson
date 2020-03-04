@@ -21,5 +21,6 @@
 // Inline functions
 #include "simdjson/inline/document.h"
 #include "simdjson/inline/document_iterator.h"
+#include "simdjson/inline/jsonstream.h"
 
 #endif // SIMDJSON_H
