@@ -124,7 +124,7 @@ steps:
   image: gcc:8
   environment:
     SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make quicktests ]
+  commands: [ make amalgamate, make quicktests ]
 ---
 kind: pipeline
 name: x64-amalgamated-slowtests
@@ -138,7 +138,7 @@ steps:
   image: gcc:8
   environment:
     SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make slowtests ]
+  commands: [ make amalgamate, make slowtests ]
 ---
 kind: pipeline
 name: stylecheck
