@@ -95,7 +95,7 @@ JSON_INCLUDE:=dependencies/json/single_include/nlohmann/json.hpp
 EXTRAOBJECTS=ujdecode.o
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer get_corpus_benchmark
-TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck jsonstream_test basictests readme_examples
+TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests readme_examples
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -127,8 +127,8 @@ run_stringparsingcheck: stringparsingcheck
 run_jsoncheck: jsoncheck
 	./jsoncheck
 
-run_jsonstream_test: jsonstream_test
-	./jsonstream_test
+run_parse_many_test: parse_many_test
+	./parse_many_test
 
 run_jsoncheck_noavx: jsoncheck_noavx
 	./jsoncheck_noavx
@@ -148,12 +148,12 @@ $(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
 run_benchfeatures: benchfeatures $(FEATURE_JSON_FILES)
 	./benchfeatures -n 1000
 
-test: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
+test: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_parse_many_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
+quiettest: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_noavx
 
-quicktests: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_jsonstream_test run_pointercheck run_jsoncheck_noavx
+quicktests: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_noavx
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -207,8 +207,8 @@ parse_nostringparsing: benchmark/parse.cpp $(HEADERS) $(LIBFILES)
 jsoncheck:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o jsoncheck tests/jsoncheck.cpp -I. $(LIBFILES) $(LIBFLAGS)
 
-jsonstream_test:tests/jsonstream_test.cpp $(HEADERS) $(LIBFILES)
-	$(CXX) $(CXXFLAGS) -o jsonstream_test tests/jsonstream_test.cpp -I. $(LIBFILES) $(LIBFLAGS)
+parse_many_test:tests/parse_many_test.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o parse_many_test tests/parse_many_test.cpp -I. $(LIBFILES) $(LIBFLAGS)
 
 
 jsoncheck_noavx:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)

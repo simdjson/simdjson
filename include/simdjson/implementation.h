@@ -64,7 +64,7 @@ public:
    * @param buf the json document to parse. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
    * @param len the length of the json document.
    * @param parser the parser with the buffers to use. *MUST* have allocated up to at least len capacity.
-   * @param streaming whether this is being called by a JsonStream parser.
+   * @param streaming whether this is being called by document::parser::parse_many.
    * @return the error code, or SUCCESS if there was no error.
    */
   WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept = 0;
@@ -82,7 +82,7 @@ public:
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept = 0;
 
   /**
-   * Stage 2 of the document parser for JsonStream.
+   * Stage 2 of the document parser for document::parser::parse_many.
    *
    * Overridden by each implementation.
    *

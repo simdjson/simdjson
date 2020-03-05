@@ -15,7 +15,7 @@
 #include "simdjson.h"
 
 /**
- * Does the file filename ends with the given extension.
+ * Does the file filename end with the given extension.
  */
 static bool has_extension(const char *filename, const char *extension) {
     const char *ext = strrchr(filename, '.');
@@ -76,37 +76,36 @@ bool validate(const char *dirname) {
 
 
             /* The actual test*/
-            simdjson::padded_string p;
+            simdjson::padded_string json;
             try {
-                simdjson::get_corpus(fullpath).swap(p);
+                simdjson::get_corpus(fullpath).swap(json);
             } catch (const std::exception &) {
                 std::cerr << "Could not load the file " << fullpath << std::endl;
                 return EXIT_FAILURE;
             }
 
-            simdjson::ParsedJson pj;
-            simdjson::JsonStream js{p};
+            simdjson::document::parser parser;
 
             ++how_many;
-            int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-            while(parse_res == simdjson::SUCCESS_AND_HAS_MORE){
-                parse_res = js.json_parse(pj);
+            simdjson::error_code error = simdjson::SUCCESS;
+            for (auto result : parser.parse_many(json)) {
+                error = result.error;
             }
-            printf("%s\n", parse_res == 0 ? "ok" : "invalid");
+            printf("%s\n", error ? "ok" : "invalid");
             /* Check if the file is supposed to pass or not.  Print the results */
             if (contains("EXCLUDE", name)) {
                 // skipping
                 how_many--;
-            } else if (starts_with("pass", name) and (has_extension(extension1, name) or has_extension(extension2, name)) and parse_res != 0) {
+            } else if (starts_with("pass", name) and (has_extension(extension1, name) or has_extension(extension2, name)) and error) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
-                       name, simdjson::error_message(parse_res).data());
-                printf("size of file in bytes: %zu \n", p.size());
+                       name, simdjson::error_message(error).data());
+                printf("size of file in bytes: %zu \n", json.size());
                 everything_fine = false;
-            } else if ( starts_with("fail", name) and (not starts_with("fail10.json", name)) and parse_res == 0) {
+            } else if ( starts_with("fail", name) and (not starts_with("fail10.json", name)) and !error) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should fail but it passes.\n", name);
-                printf("size of file in bytes: %zu \n", p.size());
+                printf("size of file in bytes: %zu \n", json.size());
                 everything_fine = false;
             }
             free(fullpath);

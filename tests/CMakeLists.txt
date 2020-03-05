@@ -14,7 +14,7 @@ add_cpp_test(basictests)
 #endif()
 
 add_cpp_test(jsoncheck)
-add_cpp_test(jsonstream_test)
+add_cpp_test(parse_many_test)
 add_cpp_test(pointercheck)
 add_cpp_test(integer_tests)
 

@@ -1,7 +1,12 @@
 # simdjson
 ## JsonStream
+
+NOTE: The JsonStream API has been deprecated, though its functionality remains! Please use
+`parser.parse_many()` instead. See API documentation for more.
+
 An interface providing features to work with files or streams containing multiple JSON documents. 
 As fast and convenient as possible.
+
 ## Contents
 - [simdjson](#simdjson)
   - [JsonStream](#jsonstream)
