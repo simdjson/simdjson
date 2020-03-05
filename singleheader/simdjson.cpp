@@ -1,4 +1,4 @@
-/* auto-generated on Mon Mar  2 15:35:47 PST 2020. Do not edit! */
+/* auto-generated on Thu Mar  5 10:30:07 PST 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -7,298 +7,6 @@
 #endif
 
 /* begin file src/simdjson.cpp */
-/* begin file src/document.cpp */
-
-namespace simdjson {
-
-bool document::set_capacity(size_t capacity) {
-  if (capacity == 0) {
-    string_buf.reset();
-    tape.reset();
-    return true;
-  }
-
-  // a pathological input like "[[[[..." would generate len tape elements, so
-  // need a capacity of at least len + 1, but it is also possible to do
-  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
-  //where len + 1 tape elements are
-  // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
-  // a document with only zero-length strings... could have len/3 string
-  // and we would need len/3 * 5 bytes on the string buffer
-  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
-  return string_buf && tape;
-}
-
-bool document::print_json(std::ostream &os, size_t max_depth) const noexcept {
-  uint32_t string_length;
-  size_t tape_idx = 0;
-  uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
-  } else {
-    // Error: no starting root node?
-    return false;
-  }
-  tape_idx++;
-  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
-  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
-  int depth = 1; // only root at level 0
-  in_object_idx[depth] = 0;
-  in_object[depth] = false;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = tape[tape_idx];
-    uint64_t payload = tape_val & JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    if (!in_object[depth]) {
-      if ((in_object_idx[depth] > 0) && (type != ']')) {
-        os << ",";
-      }
-      in_object_idx[depth]++;
-    } else { // if (in_object) {
-      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
-          (type != '}')) {
-        os << ",";
-      }
-      if (((in_object_idx[depth] & 1) == 1)) {
-        os << ":";
-      }
-      in_object_idx[depth]++;
-    }
-    switch (type) {
-    case '"': // we have a string
-      os << '"';
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-          os, string_length);
-      os << '"';
-      break;
-    case 'l': // we have a long int
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << static_cast<int64_t>(tape[++tape_idx]);
-      break;
-    case 'u':
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << tape[++tape_idx];
-      break;
-    case 'd': // we have a double
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
-      os << answer;
-      break;
-    case 'n': // we have a null
-      os << "null";
-      break;
-    case 't': // we have a true
-      os << "true";
-      break;
-    case 'f': // we have a false
-      os << "false";
-      break;
-    case '{': // we have an object
-      os << '{';
-      depth++;
-      in_object[depth] = true;
-      in_object_idx[depth] = 0;
-      break;
-    case '}': // we end an object
-      depth--;
-      os << '}';
-      break;
-    case '[': // we start an array
-      os << '[';
-      depth++;
-      in_object[depth] = false;
-      in_object_idx[depth] = 0;
-      break;
-    case ']': // we end an array
-      depth--;
-      os << ']';
-      break;
-    case 'r': // we start and end with the root node
-      // should we be hitting the root node?
-      return false;
-    default:
-      // bug?
-      return false;
-    }
-  }
-  return true;
-}
-
-bool document::dump_raw_tape(std::ostream &os) const noexcept {
-  uint32_t string_length;
-  size_t tape_idx = 0;
-  uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
-  os << tape_idx << " : " << type;
-  tape_idx++;
-  size_t how_many = 0;
-  if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
-  } else {
-    // Error: no starting root node?
-    return false;
-  }
-  os << "\t// pointing to " << how_many << " (right after last node)\n";
-  uint64_t payload;
-  for (; tape_idx < how_many; tape_idx++) {
-    os << tape_idx << " : ";
-    tape_val = tape[tape_idx];
-    payload = tape_val & JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case '"': // we have a string
-      os << "string \"";
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-                  os,
-          string_length);
-      os << '"';
-      os << '\n';
-      break;
-    case 'l': // we have a long int
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
-      break;
-    case 'u': // we have a long uint
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << "unsigned integer " << tape[++tape_idx] << "\n";
-      break;
-    case 'd': // we have a double
-      os << "float ";
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
-      os << answer << '\n';
-      break;
-    case 'n': // we have a null
-      os << "null\n";
-      break;
-    case 't': // we have a true
-      os << "true\n";
-      break;
-    case 'f': // we have a false
-      os << "false\n";
-      break;
-    case '{': // we have an object
-      os << "{\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
-      break;
-    case '}': // we end an object
-      os << "}\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
-      break;
-    case '[': // we start an array
-      os << "[\t// pointing to next tape location " << payload
-         << " (first node after the scope) \n";
-      break;
-    case ']': // we end an array
-      os << "]\t// pointing to previous tape location " << payload
-         << " (start of the scope) \n";
-      break;
-    case 'r': // we start and end with the root node
-      // should we be hitting the root node?
-      return false;
-    default:
-      return false;
-    }
-  }
-  tape_val = tape[tape_idx];
-  payload = tape_val & JSON_VALUE_MASK;
-  type = (tape_val >> 56);
-  os << tape_idx << " : " << type << "\t// pointing to " << payload
-     << " (start root)\n";
-  return true;
-}
-
-WARN_UNUSED
-bool document::parser::set_capacity(size_t capacity) {
-  if (_capacity == capacity) {
-    return true;
-  }
-
-  // Set capacity to 0 until we finish, in case there's an error
-  _capacity = 0;
-
-  //
-  // Reallocate the document
-  //
-  if (!doc.set_capacity(capacity)) {
-    return false;
-  }
-
-  //
-  // Don't allocate 0 bytes, just return.
-  //
-  if (capacity == 0) {
-    structural_indexes.reset();
-    return true;
-  }
-
-  //
-  // Initialize stage 1 output
-  //
-  uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
-  if (!structural_indexes) {
-    return false;
-  }
-
-  _capacity = capacity;
-  return true;
-}
-
-WARN_UNUSED
-bool document::parser::set_max_depth(size_t max_depth) {
-  _max_depth = 0;
-
-  if (max_depth == 0) {
-    ret_address.reset();
-    containing_scope_offset.reset();
-    return true;
-  }
-
-  //
-  // Initialize stage 2 state
-  //
-  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  ret_address.reset(new (std::nothrow) void *[max_depth]);
-#else
-  ret_address.reset(new (std::nothrow) char[max_depth]);
-#endif
-
-  if (!ret_address || !containing_scope_offset) {
-    // Could not allocate memory
-    return false;
-  }
-
-  _max_depth = max_depth;
-  return true;
-}
-
-} // namespace simdjson
-/* end file src/document.cpp */
 /* begin file src/error.cpp */
 #include <map>
 
@@ -307,7 +15,7 @@ namespace simdjson {
 const std::map<int, const std::string> error_strings = {
     {SUCCESS, "No error"},
     {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
-    {CAPACITY, "This ParsedJson can't support a document that big"},
+    {CAPACITY, "This parser can't support a document that big"},
     {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
     {TAPE_ERROR, "Something went wrong while writing to the tape"},
     {STRING_ERROR, "Problem while parsing a string"},
@@ -354,12 +62,169 @@ const std::string &error_message(error_code code) noexcept {
 #ifdef IS_X86_64
 
 /* begin file src/haswell/implementation.h */
-#ifndef __SIMDJSON_HASWELL_IMPLEMENTATION_H
-#define __SIMDJSON_HASWELL_IMPLEMENTATION_H
+#ifndef SIMDJSON_HASWELL_IMPLEMENTATION_H
+#define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
 
 #ifdef IS_X86_64
 
+/* begin file src/isadetection.h */
+/* From
+https://github.com/endorno/pytorch/blob/master/torch/lib/TH/generic/simd/simd.h
+Highly modified.
+
+Copyright (c) 2016-     Facebook, Inc            (Adam Paszke)
+Copyright (c) 2014-     Facebook, Inc            (Soumith Chintala)
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou,
+Iain Melvin, Jason Weston) Copyright (c) 2006      Idiap Research Institute
+(Samy Bengio) Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert,
+Samy Bengio, Johnny Mariethoz)
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+3. Neither the names of Facebook, Deepmind Technologies, NYU, NEC Laboratories
+America and IDIAP Research Institute nor the names of its contributors may be
+   used to endorse or promote products derived from this software without
+   specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef SIMDJSON_ISADETECTION_H
+#define SIMDJSON_ISADETECTION_H
+
+#include <stdint.h>
+#include <stdlib.h>
+#if defined(_MSC_VER)
+#include <intrin.h>
+#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
+#include <cpuid.h>
+#endif
+
+namespace simdjson {
+
+// Can be found on Intel ISA Reference for CPUID
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;      // Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      // bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      // bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;    // bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; // bit  1 of ECX for EAX=0x1
+
+enum instruction_set {
+  DEFAULT = 0x0,
+  NEON = 0x1,
+  AVX2 = 0x4,
+  SSE42 = 0x8,
+  PCLMULQDQ = 0x10,
+  BMI1 = 0x20,
+  BMI2 = 0x40
+};
+
+#if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
+
+#if defined(__ARM_NEON)
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::NEON;
+}
+
+#else // ARM without NEON
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::DEFAULT;
+}
+
+#endif
+
+#else // x86
+static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
+                         uint32_t *edx) {
+#if defined(_MSC_VER)
+  int cpu_info[4];
+  __cpuid(cpu_info, *eax);
+  *eax = cpu_info[0];
+  *ebx = cpu_info[1];
+  *ecx = cpu_info[2];
+  *edx = cpu_info[3];
+#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
+  uint32_t level = *eax;
+  __get_cpuid(level, eax, ebx, ecx, edx);
+#else
+  uint32_t a = *eax, b, c = *ecx, d;
+  asm volatile("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
+  *eax = a;
+  *ebx = b;
+  *ecx = c;
+  *edx = d;
+#endif
+}
+
+static inline uint32_t detect_supported_architectures() {
+  uint32_t eax, ebx, ecx, edx;
+  uint32_t host_isa = 0x0;
+
+  // ECX for EAX=0x7
+  eax = 0x7;
+  ecx = 0x0;
+  cpuid(&eax, &ebx, &ecx, &edx);
+#ifndef SIMDJSON_DISABLE_AVX2_DETECTION
+  if (ebx & cpuid_avx2_bit) {
+    host_isa |= instruction_set::AVX2;
+  }
+#endif 
+  if (ebx & cpuid_bmi1_bit) {
+    host_isa |= instruction_set::BMI1;
+  }
+
+  if (ebx & cpuid_bmi2_bit) {
+    host_isa |= instruction_set::BMI2;
+  }
+
+  // EBX for EAX=0x1
+  eax = 0x1;
+  cpuid(&eax, &ebx, &ecx, &edx);
+
+  if (ecx & cpuid_sse42_bit) {
+    host_isa |= instruction_set::SSE42;
+  }
+
+  if (ecx & cpuid_pclmulqdq_bit) {
+    host_isa |= instruction_set::PCLMULQDQ;
+  }
+
+  return host_isa;
+}
+
+#endif // end SIMD extension detection code
+
+} // namespace simdjson::internal
+
+#endif // SIMDJSON_ISADETECTION_H
+/* end file src/isadetection.h */
 
 namespace simdjson::haswell {
 
@@ -380,15 +245,16 @@ public:
 
 #endif // IS_X86_64
 
-#endif // __SIMDJSON_HASWELL_IMPLEMENTATION_H
-/* end file src/haswell/implementation.h */
+#endif // SIMDJSON_HASWELL_IMPLEMENTATION_H
+/* end file src/isadetection.h */
 /* begin file src/westmere/implementation.h */
-#ifndef __SIMDJSON_WESTMERE_IMPLEMENTATION_H
-#define __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
 
 #ifdef IS_X86_64
 
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson::westmere {
 
@@ -405,13 +271,13 @@ public:
 
 #endif // IS_X86_64
 
-#endif // __SIMDJSON_WESTMERE_IMPLEMENTATION_H
+#endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H
 /* end file src/westmere/implementation.h */
 
-namespace simdjson {
-  const haswell::implementation haswell_singleton{};
-  const westmere::implementation westmere_singleton{};
-  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton };
+namespace simdjson::internal {
+const haswell::implementation haswell_singleton{};
+const westmere::implementation westmere_singleton{};
+constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton };
 }
 
 #endif
@@ -419,12 +285,13 @@ namespace simdjson {
 #ifdef IS_ARM64
 
 /* begin file src/arm64/implementation.h */
-#ifndef __SIMDJSON_ARM64_IMPLEMENTATION_H
-#define __SIMDJSON_ARM64_IMPLEMENTATION_H
+#ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
+#define SIMDJSON_ARM64_IMPLEMENTATION_H
 
 
 #ifdef IS_ARM64
 
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson::arm64 {
 
@@ -441,22 +308,23 @@ public:
 
 #endif // IS_ARM64
 
-#endif // __SIMDJSON_ARM64_IMPLEMENTATION_H
+#endif // SIMDJSON_ARM64_IMPLEMENTATION_H
 /* end file src/arm64/implementation.h */
 
-namespace simdjson {
-  const arm64::implementation arm64_singleton{};
-  constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton };
+namespace simdjson::internal {
+const arm64::implementation arm64_singleton{};
+constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton };
 }
 
 #endif
 
-namespace simdjson {
+
+namespace simdjson::internal {
 
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
 public:
-  WARN_UNUSED virtual error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
+  WARN_UNUSED error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
   WARN_UNUSED error_code stage1(const uint8_t *, size_t, document::parser &, bool) const noexcept final {
@@ -474,21 +342,19 @@ public:
 
 const unsupported_implementation unsupported_singleton{};
 
-namespace internal {
-
 size_t available_implementation_list::size() const noexcept {
-  return available_implementation_pointers.size();
+  return internal::available_implementation_pointers.size();
 }
 const implementation * const *available_implementation_list::begin() const noexcept {
-  return available_implementation_pointers.begin();
+  return internal::available_implementation_pointers.begin();
 }
 const implementation * const *available_implementation_list::end() const noexcept {
-  return available_implementation_pointers.end();
+  return internal::available_implementation_pointers.end();
 }
 const implementation *available_implementation_list::detect_best_supported() const noexcept {
   // They are prelisted in priority order, so we just go down the list
   uint32_t supported_instruction_sets = detect_supported_architectures();
-  for (const implementation *impl : available_implementation_pointers) {
+  for (const implementation *impl : internal::available_implementation_pointers) {
     uint32_t required_instruction_sets = impl->required_instruction_sets();
     if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
   }
@@ -498,8 +364,6 @@ const implementation *available_implementation_list::detect_best_supported() con
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
   return active_implementation = available_implementations.detect_best_supported();
 }
-
-} // namespace simdjson::internal
 
 } // namespace simdjson
 /* end file src/arm64/implementation.h */
@@ -1168,11 +1032,14 @@ size_t oldjson_minify(const uint8_t *buf, size_t len, uint8_t *out) {
 /* begin file src/arm64/intrinsics.h */
 #ifndef SIMDJSON_ARM64_INTRINSICS_H
 #define SIMDJSON_ARM64_INTRINSICS_H
+
+
 #ifdef IS_ARM64
 
 // This should be the correct header whether
 // you use visual studio or other compilers.
 #include <arm_neon.h>
+
 #endif //   IS_ARM64
 #endif //  SIMDJSON_ARM64_INTRINSICS_H
 /* end file src/arm64/intrinsics.h */
@@ -1581,9 +1448,10 @@ namespace simdjson::arm64 {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out. 
 __attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif
+#endif // _MSC_VER
 /* result might be undefined when input_num is zero */
 really_inline int trailing_zeroes(uint64_t input_num) {
+
 #ifdef _MSC_VER
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
@@ -1592,8 +1460,9 @@ really_inline int trailing_zeroes(uint64_t input_num) {
   return (int)ret;
 #else
   return __builtin_ctzll(input_num);
-#endif// _MSC_VER
-}
+#endif // _MSC_VER
+
+} // namespace simdjson::arm64
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -1620,8 +1489,7 @@ really_inline int hamming(uint64_t input_num) {
    return vaddv_u8(vcnt_u8((uint8x8_t)input_num));
 }
 
-really_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
+really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 #ifdef _MSC_VER
   // todo: this might fail under visual studio for ARM
   return _addcarry_u64(0, value1, value2,
@@ -1636,23 +1504,22 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #pragma intrinsic(_umul128) // todo: this might fail under visual studio for ARM
 #endif
 
-really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
+really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 #ifdef _MSC_VER
   // todo: this might fail under visual studio for ARM
   uint64_t high;
   *result = _umul128(value1, value2, &high);
   return high;
 #else
-  return __builtin_umulll_overflow(value1, value2,
-                                   (unsigned long long *)result);
+  return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 #endif
 }
 
-}// namespace simdjson::arm64
+} // namespace simdjson::arm64
 
-#endif //IS_ARM64
-#endif //  SIMDJSON_ARM64_BITMANIPULATION_H
+#endif // IS_ARM64
+
+#endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file src/arm64/bitmanipulation.h */
 /* arm64/implementation.h already included: #include "arm64/implementation.h" */
 
@@ -2576,15 +2443,18 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
 #ifndef SIMDJSON_HASWELL_INTRINSICS_H
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
+
 #ifdef IS_X86_64
 
 #ifdef _MSC_VER
 #include <intrin.h> // visual studio
 #else
 #include <x86intrin.h> // elsewhere
-#endif //  _MSC_VER
-#endif //  IS_X86_64
-#endif //  SIMDJSON_HASWELL_INTRINSICS_H
+#endif // _MSC_VER
+
+#endif // IS_X86_64
+
+#endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file src/haswell/intrinsics.h */
 
 TARGET_HASWELL
@@ -2607,7 +2477,8 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif
+
+#endif // SIMDJSON_HASWELL_BITMASK_H
 /* end file src/haswell/intrinsics.h */
 /* begin file src/haswell/simd.h */
 #ifndef SIMDJSON_HASWELL_SIMD_H
@@ -2923,6 +2794,7 @@ namespace simdjson::haswell::simd {
 UNTARGET_REGION
 
 #endif // IS_X86_64
+
 #endif // SIMDJSON_HASWELL_SIMD_H
 /* end file src/haswell/simd.h */
 /* begin file src/haswell/bitmanipulation.h */
@@ -2931,6 +2803,7 @@ UNTARGET_REGION
 
 
 #ifdef IS_X86_64
+
 /* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
@@ -3001,8 +2874,10 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 }
 }// namespace simdjson::haswell
 UNTARGET_REGION
-#endif
-#endif //  SIMDJSON_HASWELL_BITMANIPULATION_H
+
+#endif // IS_X86_64
+
+#endif // SIMDJSON_HASWELL_BITMANIPULATION_H
 /* end file src/haswell/bitmanipulation.h */
 /* haswell/implementation.h already included: #include "haswell/implementation.h" */
 
@@ -3904,6 +3779,7 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
 UNTARGET_REGION
 
 #endif // IS_X86_64
+
 #endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
 /* end file src/generic/stage1_find_marks.h */
 /* begin file src/westmere/stage1_find_marks.h */
@@ -3929,9 +3805,10 @@ UNTARGET_REGION
 #include <intrin.h> // visual studio
 #else
 #include <x86intrin.h> // elsewhere
-#endif //  _MSC_VER
-#endif //  IS_X86_64
-#endif //  SIMDJSON_WESTMERE_INTRINSICS_H
+#endif // _MSC_VER
+#endif // IS_X86_64
+
+#endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file src/westmere/intrinsics.h */
 
 TARGET_WESTMERE
@@ -3954,7 +3831,8 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 UNTARGET_REGION
 
 #endif // IS_X86_64
-#endif
+
+#endif // SIMDJSON_WESTMERE_BITMASK_H
 /* end file src/westmere/intrinsics.h */
 /* begin file src/westmere/simd.h */
 #ifndef SIMDJSON_WESTMERE_SIMD_H
@@ -4276,7 +4154,9 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
+
 #ifdef IS_X86_64
+
 /* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 TARGET_WESTMERE
@@ -4359,8 +4239,9 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 }// namespace simdjson::westmere
 UNTARGET_REGION
 
-#endif
-#endif //  SIMDJSON_WESTMERE_BITMANIPULATION_H
+#endif // IS_X86_64
+
+#endif // SIMDJSON_WESTMERE_BITMANIPULATION_H
 /* end file src/westmere/bitmanipulation.h */
 /* westmere/implementation.h already included: #include "westmere/implementation.h" */
 
@@ -5270,8 +5151,445 @@ UNTARGET_REGION
 /* begin file src/stage2_build_tape.cpp */
 #include <cassert>
 #include <cstring>
+/* begin file src/jsoncharutils.h */
+#ifndef SIMDJSON_JSONCHARUTILS_H
+#define SIMDJSON_JSONCHARUTILS_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+
+namespace simdjson {
+// structural chars here are
+// they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c (and NULL)
+// we are also interested in the four whitespace characters
+// space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
+
+// these are the chars that can follow a true/false/null or number atom
+// and nothing else
+const uint32_t structural_or_whitespace_or_null_negated[256] = {
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+really_inline uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
+  return structural_or_whitespace_or_null_negated[c];
+}
+
+const uint32_t structural_or_whitespace_negated[256] = {
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
+  return structural_or_whitespace_negated[c];
+}
+
+const uint32_t structural_or_whitespace_or_null[256] = {
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+really_inline uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
+  return structural_or_whitespace_or_null[c];
+}
+
+const uint32_t structural_or_whitespace[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
+  return structural_or_whitespace[c];
+}
+
+const uint32_t digit_to_val32[886] = {
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0x0,        0x1,        0x2,        0x3,        0x4,        0x5,
+    0x6,        0x7,        0x8,        0x9,        0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa,
+    0xb,        0xc,        0xd,        0xe,        0xf,        0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xa,        0xb,        0xc,        0xd,        0xe,
+    0xf,        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0x0,        0x10,       0x20,       0x30,       0x40,       0x50,
+    0x60,       0x70,       0x80,       0x90,       0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa0,
+    0xb0,       0xc0,       0xd0,       0xe0,       0xf0,       0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xa0,       0xb0,       0xc0,       0xd0,       0xe0,
+    0xf0,       0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0x0,        0x100,      0x200,      0x300,      0x400,      0x500,
+    0x600,      0x700,      0x800,      0x900,      0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa00,
+    0xb00,      0xc00,      0xd00,      0xe00,      0xf00,      0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xa00,      0xb00,      0xc00,      0xd00,      0xe00,
+    0xf00,      0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0x0,        0x1000,     0x2000,     0x3000,     0x4000,     0x5000,
+    0x6000,     0x7000,     0x8000,     0x9000,     0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa000,
+    0xb000,     0xc000,     0xd000,     0xe000,     0xf000,     0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xa000,     0xb000,     0xc000,     0xd000,     0xe000,
+    0xf000,     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+// returns a value with the high 16 bits set if not valid
+// otherwise returns the conversion of the 4 hex digits at src into the bottom
+// 16 bits of the 32-bit return register
+//
+// see
+// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
+static inline uint32_t hex_to_u32_nocheck(
+    const uint8_t *src) { // strictly speaking, static inline is a C-ism
+  uint32_t v1 = digit_to_val32[630 + src[0]];
+  uint32_t v2 = digit_to_val32[420 + src[1]];
+  uint32_t v3 = digit_to_val32[210 + src[2]];
+  uint32_t v4 = digit_to_val32[0 + src[3]];
+  return v1 | v2 | v3 | v4;
+}
+
+// returns true if the provided byte value is a 
+// "continuing" UTF-8 value, that is, if it starts with
+// 0b10...
+static inline bool is_utf8_continuing(char c) {
+  // in 2 complement's notation, values start at 0b10000 (-128)... and
+  // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
+  return ((signed char)c) <= -65;
+}
+
+
+
+// given a code point cp, writes to c
+// the utf-8 code, outputting the length in
+// bytes, if the length is zero, the code point
+// is invalid
+//
+// This can possibly be made faster using pdep
+// and clz and table lookups, but JSON documents
+// have few escaped code points, and the following
+// function looks cheap.
+//
+// Note: we assume that surrogates are treated separately
+//
+inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
+  if (cp <= 0x7F) {
+    c[0] = cp;
+    return 1; // ascii
+  }
+  if (cp <= 0x7FF) {
+    c[0] = (cp >> 6) + 192;
+    c[1] = (cp & 63) + 128;
+    return 2; // universal plane
+    //  Surrogates are treated elsewhere...
+    //} //else if (0xd800 <= cp && cp <= 0xdfff) {
+    //  return 0; // surrogates // could put assert here
+  } else if (cp <= 0xFFFF) {
+    c[0] = (cp >> 12) + 224;
+    c[1] = ((cp >> 6) & 63) + 128;
+    c[2] = (cp & 63) + 128;
+    return 3;
+  } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this
+                               // is not needed
+    c[0] = (cp >> 18) + 240;
+    c[1] = ((cp >> 12) & 63) + 128;
+    c[2] = ((cp >> 6) & 63) + 128;
+    c[3] = (cp & 63) + 128;
+    return 4;
+  }
+  // will return 0 when the code point was too large.
+  return 0; // bad r
+}
+} // namespace simdjson
+
+#endif
+/* end file src/jsoncharutils.h */
+/* begin file src/document_parser_callbacks.h */
+#ifndef SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
+#define SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
+
+
+namespace simdjson {
+
+//
+// Parser callbacks
+//
+
+inline void document::parser::init_stage2() noexcept {
+  current_string_buf_loc = doc.string_buf.get();
+  current_loc = 0;
+  valid = false;
+  error = UNINITIALIZED;
+}
+
+really_inline error_code document::parser::on_error(error_code new_error_code) noexcept {
+  error = new_error_code;
+  return new_error_code;
+}
+really_inline error_code document::parser::on_success(error_code success_code) noexcept {
+  error = success_code;
+  valid = true;
+  return success_code;
+}
+really_inline bool document::parser::on_start_document(uint32_t depth) noexcept {
+  containing_scope_offset[depth] = current_loc;
+  write_tape(0, tape_type::ROOT);
+  return true;
+}
+really_inline bool document::parser::on_start_object(uint32_t depth) noexcept {
+  containing_scope_offset[depth] = current_loc;
+  write_tape(0, tape_type::START_OBJECT);
+  return true;
+}
+really_inline bool document::parser::on_start_array(uint32_t depth) noexcept {
+  containing_scope_offset[depth] = current_loc;
+  write_tape(0, tape_type::START_ARRAY);
+  return true;
+}
+// TODO we're not checking this bool
+really_inline bool document::parser::on_end_document(uint32_t depth) noexcept {
+  // write our doc.tape location to the header scope
+  // The root scope gets written *at* the previous location.
+  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  write_tape(containing_scope_offset[depth], tape_type::ROOT);
+  return true;
+}
+really_inline bool document::parser::on_end_object(uint32_t depth) noexcept {
+  // write our doc.tape location to the header scope
+  write_tape(containing_scope_offset[depth], tape_type::END_OBJECT);
+  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  return true;
+}
+really_inline bool document::parser::on_end_array(uint32_t depth) noexcept {
+  // write our doc.tape location to the header scope
+  write_tape(containing_scope_offset[depth], tape_type::END_ARRAY);
+  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  return true;
+}
+
+really_inline bool document::parser::on_true_atom() noexcept {
+  write_tape(0, tape_type::TRUE_VALUE);
+  return true;
+}
+really_inline bool document::parser::on_false_atom() noexcept {
+  write_tape(0, tape_type::FALSE_VALUE);
+  return true;
+}
+really_inline bool document::parser::on_null_atom() noexcept {
+  write_tape(0, tape_type::NULL_VALUE);
+  return true;
+}
+
+really_inline uint8_t *document::parser::on_start_string() noexcept {
+  /* we advance the point, accounting for the fact that we have a NULL
+    * termination         */
+  write_tape(current_string_buf_loc - doc.string_buf.get(), tape_type::STRING);
+  return current_string_buf_loc + sizeof(uint32_t);
+}
+
+really_inline bool document::parser::on_end_string(uint8_t *dst) noexcept {
+  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
+  // TODO check for overflow in case someone has a crazy string (>=4GB?)
+  // But only add the overflow check when the document itself exceeds 4GB
+  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+  // NULL termination is still handy if you expect all your strings to
+  // be NULL terminated? It comes at a small cost
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
+  return true;
+}
+
+really_inline bool document::parser::on_number_s64(int64_t value) noexcept {
+  write_tape(0, tape_type::INT64);
+  std::memcpy(&doc.tape[current_loc], &value, sizeof(value));
+  ++current_loc;
+  return true;
+}
+really_inline bool document::parser::on_number_u64(uint64_t value) noexcept {
+  write_tape(0, tape_type::UINT64);
+  doc.tape[current_loc++] = value;
+  return true;
+}
+really_inline bool document::parser::on_number_double(double value) noexcept {
+  write_tape(0, tape_type::DOUBLE);
+  static_assert(sizeof(value) == sizeof(doc.tape[current_loc]), "mismatch size");
+  memcpy(&doc.tape[current_loc++], &value, sizeof(double));
+  // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+  return true;
+}
+
+really_inline void document::parser::write_tape(uint64_t val, document::tape_type t) noexcept {
+  doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
+}
+
+really_inline void document::parser::annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept {
+  doc.tape[saved_loc] |= val;
+}
+
+} // namespace simdjson
+
+#endif // SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
+/* end file src/document_parser_callbacks.h */
 
 using namespace simdjson;
 
@@ -5342,8 +5660,8 @@ void found_bad_string(const uint8_t *buf);
 
 #ifdef IS_ARM64
 
-/* arm64/simd.h already included: #include "arm64/simd.h" */
 /* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* arm64/simd.h already included: #include "arm64/simd.h" */
 /* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 /* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 
@@ -5509,17 +5827,19 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
 // namespace simdjson::amd64
 
 #endif // IS_ARM64
-#endif
+
+#endif // SIMDJSON_ARM64_STRINGPARSING_H
 /* end file src/generic/stringparsing.h */
 /* begin file src/arm64/numberparsing.h */
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
+
 #ifdef IS_ARM64
 
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 /* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 /* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 #include <cmath>
 #include <limits>
 
@@ -6528,7 +6848,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, doc
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, document::parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
@@ -6704,8 +7024,8 @@ error:
 
 #ifdef IS_X86_64
 
-/* haswell/simd.h already included: #include "haswell/simd.h" */
 /* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* haswell/simd.h already included: #include "haswell/simd.h" */
 /* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 /* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 
@@ -6868,20 +7188,20 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 
-#endif
+#endif // SIMDJSON_HASWELL_STRINGPARSING_H
 /* end file src/generic/stringparsing.h */
 /* begin file src/haswell/numberparsing.h */
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
+
 #ifdef IS_X86_64
 
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 /* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 /* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 #include <cmath>
 #include <limits>
-
 
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
@@ -7478,13 +7798,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
 } // namespace simdjson::haswell
 UNTARGET_REGION
 
-
-
-
 #endif // IS_X86_64
 
-
-#endif //  SIMDJSON_HASWELL_NUMBERPARSING_H
+#endif // SIMDJSON_HASWELL_NUMBERPARSING_H
 /* end file src/generic/numberparsing.h */
 
 TARGET_HASWELL
@@ -7900,7 +8216,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, doc
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, document::parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
@@ -8077,8 +8393,8 @@ UNTARGET_REGION
 
 #ifdef IS_X86_64
 
-/* westmere/simd.h already included: #include "westmere/simd.h" */
 /* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* westmere/simd.h already included: #include "westmere/simd.h" */
 /* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 /* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 
@@ -8243,18 +8559,18 @@ UNTARGET_REGION
 
 #endif // IS_X86_64
 
-#endif
+#endif // SIMDJSON_WESTMERE_STRINGPARSING_H
 /* end file src/generic/stringparsing.h */
 /* begin file src/westmere/numberparsing.h */
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
+
 #ifdef IS_X86_64
 
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 /* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 /* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 #include <cmath>
 #include <limits>
 
@@ -9274,7 +9590,7 @@ WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, doc
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, ParsedJson &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, document::parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(ret_address finish_parser) {

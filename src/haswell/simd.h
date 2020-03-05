@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-#include <simdjson.h>
+#include "simdjson.h"
 
 #ifdef IS_X86_64
 

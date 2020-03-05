@@ -1,4 +1,4 @@
-#include <simdjson.h>
+#include "simdjson.h"
 #include <cstdint>
 
 #ifndef SIMDJSON_ISSUE384RESOLVED // to avoid tripping users

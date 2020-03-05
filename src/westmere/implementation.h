@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-#include <simdjson.h>
+#include "simdjson.h"
 
 #ifdef IS_X86_64
 

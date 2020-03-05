@@ -1,4 +1,4 @@
-/* auto-generated on Mon Mar  2 15:35:47 PST 2020. Do not edit! */
+/* auto-generated on Thu Mar  5 10:30:07 PST 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -567,7 +567,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline static doc_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document.
@@ -583,7 +583,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline static doc_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document.
@@ -596,7 +596,7 @@ public:
    *          a new string will be created with the extra padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const std::string &s) noexcept;
+  really_inline static doc_result parse(const std::string &s) noexcept;
 
   /**
    * Parse a JSON document.
@@ -604,7 +604,7 @@ public:
    * @param s The JSON to parse.
    * @return the document, or an error if the JSON is invalid.
    */
-  static doc_result parse(const padded_string &s) noexcept;
+  really_inline static doc_result parse(const padded_string &s) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
   doc_ref_result parse(const char *buf, bool realloc_if_needed = true) noexcept = delete;
@@ -758,13 +758,13 @@ enum class document::tape_type {
  */
 class document::tape_ref {
 protected:
-  tape_ref() noexcept;
-  tape_ref(const document *_doc, size_t _json_index) noexcept;
-  size_t after_element() const noexcept;
-  tape_type type() const noexcept;
-  uint64_t tape_value() const noexcept;
+  really_inline tape_ref() noexcept;
+  really_inline tape_ref(const document *_doc, size_t _json_index) noexcept;
+  inline size_t after_element() const noexcept;
+  really_inline tape_type type() const noexcept;
+  really_inline uint64_t tape_value() const noexcept;
   template<typename T>
-  T next_tape_value() const noexcept;
+  really_inline T next_tape_value() const noexcept;
 
   /** The document this element references. */
   const document *doc;
@@ -784,19 +784,19 @@ protected:
 class document::element : protected document::tape_ref {
 public:
   /** Whether this element is a json `null`. */
-  bool is_null() const noexcept;
+  really_inline bool is_null() const noexcept;
   /** Whether this is a JSON `true` or `false` */
-  bool is_bool() const noexcept;
+  really_inline bool is_bool() const noexcept;
   /** Whether this is a JSON number (e.g. 1, 1.0 or 1e2) */
-  bool is_number() const noexcept;
+  really_inline bool is_number() const noexcept;
   /** Whether this is a JSON integer (e.g. 1 or -1, but *not* 1.0 or 1e2) */
-  bool is_integer() const noexcept;
+  really_inline bool is_integer() const noexcept;
   /** Whether this is a JSON string (e.g. "abc") */
-  bool is_string() const noexcept;
+  really_inline bool is_string() const noexcept;
   /** Whether this is a JSON array (e.g. []) */
-  bool is_array() const noexcept;
+  really_inline bool is_array() const noexcept;
   /** Whether this is a JSON array (e.g. []) */
-  bool is_object() const noexcept;
+  really_inline bool is_object() const noexcept;
 
   /**
    * Read this element as a boolean (json `true` or `false`).
@@ -804,7 +804,7 @@ public:
    * @return The boolean value, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a boolean
    */
-  element_result<bool> as_bool() const noexcept;
+  inline element_result<bool> as_bool() const noexcept;
 
   /**
    * Read this element as a null-terminated string.
@@ -815,7 +815,7 @@ public:
    * @return A `string_view` into the string, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a string
    */
-  element_result<const char *> as_c_str() const noexcept;
+  inline element_result<const char *> as_c_str() const noexcept;
 
   /**
    * Read this element as a C++ string_view (string with length).
@@ -826,7 +826,7 @@ public:
    * @return A `string_view` into the string, or:
    *         - UNEXPECTED_TYPE error if the JSON element is not a string
    */
-  element_result<std::string_view> as_string() const noexcept;
+  inline element_result<std::string_view> as_string() const noexcept;
 
   /**
    * Read this element as an unsigned integer.
@@ -835,7 +835,7 @@ public:
    *         - UNEXPECTED_TYPE if the JSON element is not an integer
    *         - NUMBER_OUT_OF_RANGE if the integer doesn't fit in 64 bits or is negative
    */
-  element_result<uint64_t> as_uint64_t() const noexcept;
+  inline element_result<uint64_t> as_uint64_t() const noexcept;
 
   /**
    * Read this element as a signed integer.
@@ -844,7 +844,7 @@ public:
    *         - UNEXPECTED_TYPE if the JSON element is not an integer
    *         - NUMBER_OUT_OF_RANGE if the integer doesn't fit in 64 bits
    */
-  element_result<int64_t> as_int64_t() const noexcept;
+  inline element_result<int64_t> as_int64_t() const noexcept;
 
   /**
    * Read this element as a floating point value.
@@ -852,7 +852,7 @@ public:
    * @return The double value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not a number
    */
-  element_result<double> as_double() const noexcept;
+  inline element_result<double> as_double() const noexcept;
 
   /**
    * Read this element as a JSON array.
@@ -860,7 +860,7 @@ public:
    * @return The array value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not an array
    */
-  element_result<document::array> as_array() const noexcept;
+  inline element_result<document::array> as_array() const noexcept;
 
   /**
    * Read this element as a JSON object (key/value pairs).
@@ -868,7 +868,7 @@ public:
    * @return The object value, or:
    *         - UNEXPECTED_TYPE if the JSON element is not an object
    */
-  element_result<document::object> as_object() const noexcept;
+  inline element_result<document::object> as_object() const noexcept;
 
   /**
    * Read this element as a boolean.
@@ -876,7 +876,7 @@ public:
    * @return The boolean value
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a boolean.
    */
-  operator bool() const noexcept(false);
+  inline operator bool() const noexcept(false);
 
   /**
    * Read this element as a null-terminated string.
@@ -887,7 +887,7 @@ public:
    * @return The string value.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
-  explicit operator const char*() const noexcept(false);
+  inline explicit operator const char*() const noexcept(false);
 
   /**
    * Read this element as a null-terminated string.
@@ -898,7 +898,7 @@ public:
    * @return The string value.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
-  operator std::string_view() const noexcept(false);
+  inline operator std::string_view() const noexcept(false);
 
   /**
    * Read this element as an unsigned integer.
@@ -907,7 +907,7 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
-  operator uint64_t() const noexcept(false);
+  inline operator uint64_t() const noexcept(false);
   /**
    * Read this element as an signed integer.
    *
@@ -915,7 +915,7 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
    */
-  operator int64_t() const noexcept(false);
+  inline operator int64_t() const noexcept(false);
   /**
    * Read this element as an double.
    *
@@ -923,21 +923,21 @@ public:
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a number
    * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
-  operator double() const noexcept(false);
+  inline operator double() const noexcept(false);
   /**
    * Read this element as a JSON array.
    *
    * @return The JSON array.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
    */
-  operator document::array() const noexcept(false);
+  inline operator document::array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
    * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
    */
-  operator document::object() const noexcept(false);
+  inline operator document::object() const noexcept(false);
 
   /**
    * Get the value associated with the given key.
@@ -951,7 +951,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - UNEXPECTED_TYPE if the document is not an object
    */
-  element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -964,11 +964,11 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - UNEXPECTED_TYPE if the document is not an object
    */
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element() noexcept;
-  element(const document *_doc, size_t _json_index) noexcept;
+  really_inline element() noexcept;
+  really_inline element(const document *_doc, size_t _json_index) noexcept;
   friend class document;
   template<typename T>
   friend class document::element_result;
@@ -984,21 +984,21 @@ public:
     /**
      * Get the actual value
      */
-    element operator*() const noexcept;
+    inline element operator*() const noexcept;
     /**
      * Get the next value.
      *
      * Part of the std::iterator interface.
      */
-    void operator++() noexcept;
+    inline void operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
-    bool operator!=(const iterator& other) const noexcept;
+    inline bool operator!=(const iterator& other) const noexcept;
   private:
-    iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
     friend class array;
   };
 
@@ -1007,17 +1007,17 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  iterator begin() const noexcept;
+  inline iterator begin() const noexcept;
   /**
    * One past the last array element.
    *
    * Part of the std::iterable interface.
    */
-  iterator end() const noexcept;
+  inline iterator end() const noexcept;
 
 private:
-  array() noexcept;
-  array(const document *_doc, size_t _json_index) noexcept;
+  really_inline array() noexcept;
+  really_inline array(const document *_doc, size_t _json_index) noexcept;
   friend class document::element;
   template<typename T>
   friend class document::element_result;
@@ -1033,33 +1033,33 @@ public:
     /**
      * Get the actual key/value pair
      */
-    const document::key_value_pair operator*() const noexcept;
+    inline const document::key_value_pair operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
      * Part of the std::iterator interface.
      */
-    void operator++() noexcept;
+    inline void operator++() noexcept;
     /**
      * Check if these key value pairs come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
-    bool operator!=(const iterator& other) const noexcept;
+    inline bool operator!=(const iterator& other) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
-    std::string_view key() const noexcept;
+    inline std::string_view key() const noexcept;
     /**
      * Get the key of this key/value pair.
      */
-    const char *key_c_str() const noexcept;
+    inline const char *key_c_str() const noexcept;
     /**
      * Get the value of this key/value pair.
      */
-    element value() const noexcept;
+    inline element value() const noexcept;
   private:
-    iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
     friend class document::object;
   };
 
@@ -1068,13 +1068,13 @@ public:
    *
    * Part of the std::iterable interface.
    */
-  iterator begin() const noexcept;
+  inline iterator begin() const noexcept;
   /**
    * One past the last key/value pair.
    *
    * Part of the std::iterable interface.
    */
-  iterator end() const noexcept;
+  inline iterator end() const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -1087,7 +1087,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -1099,11 +1099,11 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  object() noexcept;
-  object(const document *_doc, size_t _json_index) noexcept;
+  really_inline object() noexcept;
+  really_inline object(const document *_doc, size_t _json_index) noexcept;
   friend class document::element;
   template<typename T>
   friend class document::element_result;
@@ -1118,7 +1118,7 @@ public:
   document::element value;
 
 private:
-  key_value_pair(std::string_view _key, document::element _value) noexcept;
+  really_inline key_value_pair(std::string_view _key, document::element _value) noexcept;
   friend class document::object;
 };
 
@@ -1147,11 +1147,11 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator T() const noexcept(false);
+  inline operator T() const noexcept(false);
 
 private:
-  element_result(T value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(T value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -1166,31 +1166,31 @@ public:
   error_code error;
 
   /** Whether this is a JSON `null` */
-  element_result<bool> is_null() const noexcept;
-  element_result<bool> as_bool() const noexcept;
-  element_result<std::string_view> as_string() const noexcept;
-  element_result<const char *> as_c_str() const noexcept;
-  element_result<uint64_t> as_uint64_t() const noexcept;
-  element_result<int64_t> as_int64_t() const noexcept;
-  element_result<double> as_double() const noexcept;
-  element_result<array> as_array() const noexcept;
-  element_result<object> as_object() const noexcept;
+  inline element_result<bool> is_null() const noexcept;
+  inline element_result<bool> as_bool() const noexcept;
+  inline element_result<std::string_view> as_string() const noexcept;
+  inline element_result<const char *> as_c_str() const noexcept;
+  inline element_result<uint64_t> as_uint64_t() const noexcept;
+  inline element_result<int64_t> as_int64_t() const noexcept;
+  inline element_result<double> as_double() const noexcept;
+  inline element_result<array> as_array() const noexcept;
+  inline element_result<object> as_object() const noexcept;
 
-  operator bool() const noexcept(false);
-  explicit operator const char*() const noexcept(false);
-  operator std::string_view() const noexcept(false);
-  operator uint64_t() const noexcept(false);
-  operator int64_t() const noexcept(false);
-  operator double() const noexcept(false);
-  operator array() const noexcept(false);
-  operator object() const noexcept(false);
+  inline operator bool() const noexcept(false);
+  inline explicit operator const char*() const noexcept(false);
+  inline operator std::string_view() const noexcept(false);
+  inline operator uint64_t() const noexcept(false);
+  inline operator int64_t() const noexcept(false);
+  inline operator double() const noexcept(false);
+  inline operator array() const noexcept(false);
+  inline operator object() const noexcept(false);
 
-  element_result<element> operator[](const std::string_view &s) const noexcept;
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element_result(element value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(element value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -1204,14 +1204,14 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator array() const noexcept(false);
+  inline operator array() const noexcept(false);
 
-  array::iterator begin() const noexcept(false);
-  array::iterator end() const noexcept(false);
+  inline array::iterator begin() const noexcept(false);
+  inline array::iterator end() const noexcept(false);
 
 private:
-  element_result(array value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(array value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -1225,17 +1225,17 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
-  operator object() const noexcept(false);
+  inline operator object() const noexcept(false);
 
-  object::iterator begin() const noexcept(false);
-  object::iterator end() const noexcept(false);
+  inline object::iterator begin() const noexcept(false);
+  inline object::iterator end() const noexcept(false);
 
-  element_result<element> operator[](const std::string_view &s) const noexcept;
-  element_result<element> operator[](const char *s) const noexcept;
+  inline element_result<element> operator[](const std::string_view &s) const noexcept;
+  inline element_result<element> operator[](const char *s) const noexcept;
 
 private:
-  element_result(object value) noexcept;
-  element_result(error_code _error) noexcept;
+  really_inline element_result(object value) noexcept;
+  really_inline element_result(error_code _error) noexcept;
   friend class document;
   friend class element;
 };
@@ -1291,7 +1291,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline doc_ref_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -1311,7 +1311,7 @@ public:
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline doc_ref_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -1328,7 +1328,7 @@ public:
    *          a new string will be created with the extra padding.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const std::string &s) noexcept;
+  really_inline doc_ref_result parse(const std::string &s) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -1340,28 +1340,26 @@ public:
    * @param s The JSON to parse.
    * @return the document, or an error if the JSON is invalid.
    */
-  doc_ref_result parse(const padded_string &s) noexcept;
+  really_inline doc_ref_result parse(const padded_string &s) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
-  doc_ref_result parse(const char *buf) noexcept = delete;
+  really_inline doc_ref_result parse(const char *buf) noexcept = delete;
 
   /**
    * Current capacity: the largest document this parser can support without reallocating.
    */
-  size_t capacity() const noexcept { return _capacity; }
+  really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    */
-  size_t max_depth() const noexcept { return _max_depth; }
+  really_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    */
-  WARN_UNUSED bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) {
-    return set_capacity(capacity) && set_max_depth(max_depth);
-  }
+  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH);
 
   // type aliases for backcompat
   using Iterator = document::iterator;
@@ -1396,20 +1394,20 @@ public:
   //
 
   // returns true if the document parsed was valid
-  bool is_valid() const noexcept;
+  inline bool is_valid() const noexcept;
 
   // return an error code corresponding to the last parsing attempt, see
   // simdjson.h will return UNITIALIZED if no parsing was attempted
-  int get_error_code() const noexcept;
+  inline int get_error_code() const noexcept;
 
   // return the string equivalent of "get_error_code"
-  std::string get_error_message() const noexcept;
+  inline std::string get_error_message() const noexcept;
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
-  bool print_json(std::ostream &os) const noexcept;
-  bool dump_raw_tape(std::ostream &os) const noexcept;
+  inline bool print_json(std::ostream &os) const noexcept;
+  inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
   //
   // Parser callbacks: these are internal!
@@ -1418,31 +1416,31 @@ public:
   //
 
   // this should be called when parsing (right before writing the tapes)
-  void init_stage2() noexcept;
-  error_code on_error(error_code new_error_code) noexcept;
-  error_code on_success(error_code success_code) noexcept;
-  bool on_start_document(uint32_t depth) noexcept;
-  bool on_start_object(uint32_t depth) noexcept;
-  bool on_start_array(uint32_t depth) noexcept;
+  inline void init_stage2() noexcept;
+  really_inline error_code on_error(error_code new_error_code) noexcept;
+  really_inline error_code on_success(error_code success_code) noexcept;
+  really_inline bool on_start_document(uint32_t depth) noexcept;
+  really_inline bool on_start_object(uint32_t depth) noexcept;
+  really_inline bool on_start_array(uint32_t depth) noexcept;
   // TODO we're not checking this bool
-  bool on_end_document(uint32_t depth) noexcept;
-  bool on_end_object(uint32_t depth) noexcept;
-  bool on_end_array(uint32_t depth) noexcept;
-  bool on_true_atom() noexcept;
-  bool on_false_atom() noexcept;
-  bool on_null_atom() noexcept;
-  uint8_t *on_start_string() noexcept;
-  bool on_end_string(uint8_t *dst) noexcept;
-  bool on_number_s64(int64_t value) noexcept;
-  bool on_number_u64(uint64_t value) noexcept;
-  bool on_number_double(double value) noexcept;
+  really_inline bool on_end_document(uint32_t depth) noexcept;
+  really_inline bool on_end_object(uint32_t depth) noexcept;
+  really_inline bool on_end_array(uint32_t depth) noexcept;
+  really_inline bool on_true_atom() noexcept;
+  really_inline bool on_false_atom() noexcept;
+  really_inline bool on_null_atom() noexcept;
+  really_inline uint8_t *on_start_string() noexcept;
+  really_inline bool on_end_string(uint8_t *dst) noexcept;
+  really_inline bool on_number_s64(int64_t value) noexcept;
+  really_inline bool on_number_u64(uint64_t value) noexcept;
+  really_inline bool on_number_double(double value) noexcept;
   //
   // Called before a parse is initiated.
   //
   // - Returns CAPACITY if the document is too large
   // - Returns MEMALLOC if we needed to allocate memory and could not
   //
-  WARN_UNUSED error_code init_parse(size_t len) noexcept;
+  WARN_UNUSED inline error_code init_parse(size_t len) noexcept;
 
 private:
   //
@@ -1473,8 +1471,8 @@ private:
   //
   //
 
-  void write_tape(uint64_t val, tape_type t) noexcept;
-  void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
+  inline void write_tape(uint64_t val, tape_type t) noexcept;
+  inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
 
   //
   // Set the current capacity: the largest document this parser can support without reallocating.
@@ -1483,7 +1481,7 @@ private:
   //
   // Returns false if allocation fails.
   //
-  WARN_UNUSED bool set_capacity(size_t capacity);
+  inline WARN_UNUSED bool set_capacity(size_t capacity);
 
   //
   // Set the maximum level of nested object and arrays supported by this parser.
@@ -1492,10 +1490,10 @@ private:
   //
   // Returns false if allocation fails.
   //
-  WARN_UNUSED bool set_max_depth(size_t max_depth);
+  inline WARN_UNUSED bool set_max_depth(size_t max_depth);
 
   // Used internally to get the document
-  const document &get_document() const noexcept(false);
+  inline const document &get_document() const noexcept(false);
 
   template<size_t max_depth> friend class document_iterator;
 }; // class parser
@@ -1737,506 +1735,10 @@ inline internal::atomic_ptr<const implementation> active_implementation = &inter
 #ifndef SIMDJSON_JSONSTREAM_H
 #define SIMDJSON_JSONSTREAM_H
 
-#include <algorithm>
-#include <limits>
-#include <stdexcept>
 #include <thread>
-/* begin file include/simdjson/isadetection.h */
-/* From
-https://github.com/endorno/pytorch/blob/master/torch/lib/TH/generic/simd/simd.h
-Highly modified.
-
-Copyright (c) 2016-     Facebook, Inc            (Adam Paszke)
-Copyright (c) 2014-     Facebook, Inc            (Soumith Chintala)
-Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
-Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
-Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
-Copyright (c) 2011-2013 NYU                      (Clement Farabet)
-Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou,
-Iain Melvin, Jason Weston) Copyright (c) 2006      Idiap Research Institute
-(Samy Bengio) Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert,
-Samy Bengio, Johnny Mariethoz)
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-
-3. Neither the names of Facebook, Deepmind Technologies, NYU, NEC Laboratories
-America and IDIAP Research Institute nor the names of its contributors may be
-   used to endorse or promote products derived from this software without
-   specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-*/
-
-#ifndef SIMDJSON_ISADETECTION_H
-#define SIMDJSON_ISADETECTION_H
-
-#include <stdint.h>
-#include <stdlib.h>
-#if defined(_MSC_VER)
-#include <intrin.h>
-#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
-#include <cpuid.h>
-#endif
-
-namespace simdjson {
-// Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      // Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      // bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      // bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    // bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; // bit  1 of ECX for EAX=0x1
-
-enum instruction_set {
-  DEFAULT = 0x0,
-  NEON = 0x1,
-  AVX2 = 0x4,
-  SSE42 = 0x8,
-  PCLMULQDQ = 0x10,
-  BMI1 = 0x20,
-  BMI2 = 0x40
-};
-
-#if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
-
-#if defined(__ARM_NEON)
-
-static inline uint32_t detect_supported_architectures() {
-  return instruction_set::NEON;
-}
-
-#else // ARM without NEON
-
-static inline uint32_t detect_supported_architectures() {
-  return instruction_set::DEFAULT;
-}
-
-#endif
-
-#else // x86
-static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
-                         uint32_t *edx) {
-#if defined(_MSC_VER)
-  int cpu_info[4];
-  __cpuid(cpu_info, *eax);
-  *eax = cpu_info[0];
-  *ebx = cpu_info[1];
-  *ecx = cpu_info[2];
-  *edx = cpu_info[3];
-#elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
-  uint32_t level = *eax;
-  __get_cpuid(level, eax, ebx, ecx, edx);
-#else
-  uint32_t a = *eax, b, c = *ecx, d;
-  asm volatile("cpuid\n\t" : "+a"(a), "=b"(b), "+c"(c), "=d"(d));
-  *eax = a;
-  *ebx = b;
-  *ecx = c;
-  *edx = d;
-#endif
-}
-
-static inline uint32_t detect_supported_architectures() {
-  uint32_t eax, ebx, ecx, edx;
-  uint32_t host_isa = 0x0;
-
-  // ECX for EAX=0x7
-  eax = 0x7;
-  ecx = 0x0;
-  cpuid(&eax, &ebx, &ecx, &edx);
-#ifndef SIMDJSON_DISABLE_AVX2_DETECTION
-  if (ebx & cpuid_avx2_bit) {
-    host_isa |= instruction_set::AVX2;
-  }
-#endif 
-  if (ebx & cpuid_bmi1_bit) {
-    host_isa |= instruction_set::BMI1;
-  }
-
-  if (ebx & cpuid_bmi2_bit) {
-    host_isa |= instruction_set::BMI2;
-  }
-
-  // EBX for EAX=0x1
-  eax = 0x1;
-  cpuid(&eax, &ebx, &ecx, &edx);
-
-  if (ecx & cpuid_sse42_bit) {
-    host_isa |= instruction_set::SSE42;
-  }
-
-  if (ecx & cpuid_pclmulqdq_bit) {
-    host_isa |= instruction_set::PCLMULQDQ;
-  }
-
-  return host_isa;
-}
-
-#endif // end SIMD extension detection code
-} // namespace simdjson
-#endif
-/* end file include/simdjson/isadetection.h */
-/* begin file src/jsoncharutils.h */
-#ifndef SIMDJSON_JSONCHARUTILS_H
-#define SIMDJSON_JSONCHARUTILS_H
-
-/* begin file include/simdjson/parsedjson.h */
-// TODO Remove this -- deprecated API and files
-
-#ifndef SIMDJSON_PARSEDJSON_H
-#define SIMDJSON_PARSEDJSON_H
-
 
 namespace simdjson {
 
-using ParsedJson = document::parser;
-
-} // namespace simdjson
-#endif
-/* end file include/simdjson/parsedjson.h */
-
-namespace simdjson {
-// structural chars here are
-// they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c (and NULL)
-// we are also interested in the four whitespace characters
-// space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
-
-// these are the chars that can follow a true/false/null or number atom
-// and nothing else
-const uint32_t structural_or_whitespace_or_null_negated[256] = {
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
-  return structural_or_whitespace_or_null_negated[c];
-}
-
-const uint32_t structural_or_whitespace_negated[256] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
-  return structural_or_whitespace_negated[c];
-}
-
-const uint32_t structural_or_whitespace_or_null[256] = {
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-really_inline uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
-  return structural_or_whitespace_or_null[c];
-}
-
-const uint32_t structural_or_whitespace[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
-  return structural_or_whitespace[c];
-}
-
-const uint32_t digit_to_val32[886] = {
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0x0,        0x1,        0x2,        0x3,        0x4,        0x5,
-    0x6,        0x7,        0x8,        0x9,        0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa,
-    0xb,        0xc,        0xd,        0xe,        0xf,        0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xa,        0xb,        0xc,        0xd,        0xe,
-    0xf,        0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0x0,        0x10,       0x20,       0x30,       0x40,       0x50,
-    0x60,       0x70,       0x80,       0x90,       0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa0,
-    0xb0,       0xc0,       0xd0,       0xe0,       0xf0,       0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xa0,       0xb0,       0xc0,       0xd0,       0xe0,
-    0xf0,       0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0x0,        0x100,      0x200,      0x300,      0x400,      0x500,
-    0x600,      0x700,      0x800,      0x900,      0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa00,
-    0xb00,      0xc00,      0xd00,      0xe00,      0xf00,      0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xa00,      0xb00,      0xc00,      0xd00,      0xe00,
-    0xf00,      0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0x0,        0x1000,     0x2000,     0x3000,     0x4000,     0x5000,
-    0x6000,     0x7000,     0x8000,     0x9000,     0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xa000,
-    0xb000,     0xc000,     0xd000,     0xe000,     0xf000,     0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xa000,     0xb000,     0xc000,     0xd000,     0xe000,
-    0xf000,     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-// returns a value with the high 16 bits set if not valid
-// otherwise returns the conversion of the 4 hex digits at src into the bottom
-// 16 bits of the 32-bit return register
-//
-// see
-// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
-static inline uint32_t hex_to_u32_nocheck(
-    const uint8_t *src) { // strictly speaking, static inline is a C-ism
-  uint32_t v1 = digit_to_val32[630 + src[0]];
-  uint32_t v2 = digit_to_val32[420 + src[1]];
-  uint32_t v3 = digit_to_val32[210 + src[2]];
-  uint32_t v4 = digit_to_val32[0 + src[3]];
-  return v1 | v2 | v3 | v4;
-}
-
-// returns true if the provided byte value is a 
-// "continuing" UTF-8 value, that is, if it starts with
-// 0b10...
-static inline bool is_utf8_continuing(char c) {
-  // in 2 complement's notation, values start at 0b10000 (-128)... and
-  // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
-  return ((signed char)c) <= -65;
-}
-// returns true if the provided byte value is an ASCII character
-static inline bool is_ascii(char c) {
-  return ((unsigned char)c) <= 127;
-}
-
-// if the string ends with  UTF-8 values, backtrack 
-// up to the first ASCII character. May return 0.
-static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
-  while ((len > 0) and (not is_ascii(c[len - 1]))) {
-    len--;
-  }
-  return len;
-}
-
-
-
-// given a code point cp, writes to c
-// the utf-8 code, outputting the length in
-// bytes, if the length is zero, the code point
-// is invalid
-//
-// This can possibly be made faster using pdep
-// and clz and table lookups, but JSON documents
-// have few escaped code points, and the following
-// function looks cheap.
-//
-// Note: we assume that surrogates are treated separately
-//
-inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
-  if (cp <= 0x7F) {
-    c[0] = cp;
-    return 1; // ascii
-  }
-  if (cp <= 0x7FF) {
-    c[0] = (cp >> 6) + 192;
-    c[1] = (cp & 63) + 128;
-    return 2; // universal plane
-    //  Surrogates are treated elsewhere...
-    //} //else if (0xd800 <= cp && cp <= 0xdfff) {
-    //  return 0; // surrogates // could put assert here
-  } else if (cp <= 0xFFFF) {
-    c[0] = (cp >> 12) + 224;
-    c[1] = ((cp >> 6) & 63) + 128;
-    c[2] = (cp & 63) + 128;
-    return 3;
-  } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this
-                               // is not needed
-    c[0] = (cp >> 18) + 240;
-    c[1] = ((cp >> 12) & 63) + 128;
-    c[2] = ((cp >> 6) & 63) + 128;
-    c[3] = (cp & 63) + 128;
-    return 4;
-  }
-  // will return 0 when the code point was too large.
-  return 0; // bad r
-}
-} // namespace simdjson
-
-#endif
-/* end file include/simdjson/parsedjson.h */
-
-
-namespace simdjson {
 /*************************************************************************************
  * The main motivation for this piece of software is to achieve maximum speed
  *and offer
@@ -2375,237 +1877,9 @@ private:
 #endif
 }; // end of class JsonStream
 
-/* This algorithm is used to quickly identify the buffer position of
- * the last JSON document inside the current batch.
- *
- * It does its work by finding the last pair of structural characters
- * that represent the end followed by the start of a document.
- *
- * Simply put, we iterate over the structural characters, starting from
- * the end. We consider that we found the end of a JSON document when the
- * first element of the pair is NOT one of these characters: '{' '[' ';' ','
- * and when the second element is NOT one of these characters: '}' '}' ';' ','.
- *
- * This simple comparison works most of the time, but it does not cover cases
- * where the batch's structural indexes contain a perfect amount of documents.
- * In such a case, we do not have access to the structural index which follows
- * the last document, therefore, we do not have access to the second element in
- * the pair, and means that we cannot identify the last document. To fix this
- * issue, we keep a count of the open and closed curly/square braces we found
- * while searching for the pair. When we find a pair AND the count of open and
- * closed curly/square braces is the same, we know that we just passed a
- * complete
- * document, therefore the last json buffer location is the end of the batch
- * */
-inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size,
-                                     const document::parser &parser) {
-  // this function can be generally useful
-  if (parser.n_structural_indexes == 0)
-    return 0;
-  auto last_i = parser.n_structural_indexes - 1;
-  if (parser.structural_indexes[last_i] == size) {
-    if (last_i == 0)
-      return 0;
-    last_i = parser.n_structural_indexes - 2;
-  }
-  auto arr_cnt = 0;
-  auto obj_cnt = 0;
-  for (auto i = last_i; i > 0; i--) {
-    auto idxb = parser.structural_indexes[i];
-    switch (buf[idxb]) {
-    case ':':
-    case ',':
-      continue;
-    case '}':
-      obj_cnt--;
-      continue;
-    case ']':
-      arr_cnt--;
-      continue;
-    case '{':
-      obj_cnt++;
-      break;
-    case '[':
-      arr_cnt++;
-      break;
-    }
-    auto idxa = parser.structural_indexes[i - 1];
-    switch (buf[idxa]) {
-    case '{':
-    case '[':
-    case ':':
-    case ',':
-      continue;
-    }
-    if (!arr_cnt && !obj_cnt) {
-      return last_i + 1;
-    }
-    return i;
-  }
-  return 0;
-}
-
-template <class string_container>
-JsonStream<string_container>::JsonStream(const string_container &s,
-                                         size_t batchSize)
-    : str(s), _batch_size(batchSize) {
-}
-
-template <class string_container> JsonStream<string_container>::~JsonStream() {
-#ifdef SIMDJSON_THREADS_ENABLED
-  if (stage_1_thread.joinable()) {
-    stage_1_thread.join();
-  }
-#endif
-}
-
-#ifdef SIMDJSON_THREADS_ENABLED
-
-// threaded version of json_parse
-// todo: simplify this code further
-template <class string_container>
-int JsonStream<string_container>::json_parse(document::parser &parser) {
-  if (unlikely(parser.capacity() == 0)) {
-    const bool allocok = parser.allocate_capacity(_batch_size);
-    if (!allocok) {
-      return parser.error = simdjson::MEMALLOC;
-    }
-  } else if (unlikely(parser.capacity() < _batch_size)) {
-    return parser.error = simdjson::CAPACITY;
-  }
-  if (unlikely(parser_thread.capacity() < _batch_size)) {
-    const bool allocok_thread = parser_thread.allocate_capacity(_batch_size);
-    if (!allocok_thread) {
-      return parser.error = simdjson::MEMALLOC;
-    }
-  }
-  if (unlikely(load_next_batch)) {
-    // First time loading
-    if (!stage_1_thread.joinable()) {
-      _batch_size = (std::min)(_batch_size, remaining());
-      _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
-      if (_batch_size == 0) {
-        return parser.error = simdjson::UTF8_ERROR;
-      }
-      auto stage1_is_ok = error_code(simdjson::active_implementation->stage1(buf(), _batch_size, parser, true));
-      if (stage1_is_ok != simdjson::SUCCESS) {
-        return parser.error = stage1_is_ok;
-      }
-      size_t last_index = find_last_json_buf_idx(buf(), _batch_size, parser);
-      if (last_index == 0) {
-        if (parser.n_structural_indexes == 0) {
-          return parser.error = simdjson::EMPTY;
-        }
-      } else {
-        parser.n_structural_indexes = last_index + 1;
-      }
-    }
-    // the second thread is running or done.
-    else {
-      stage_1_thread.join();
-      if (stage1_is_ok_thread != simdjson::SUCCESS) {
-        return parser.error = stage1_is_ok_thread;
-      }
-      std::swap(parser.structural_indexes, parser_thread.structural_indexes);
-      parser.n_structural_indexes = parser_thread.n_structural_indexes;
-      advance(last_json_buffer_loc);
-      n_bytes_parsed += last_json_buffer_loc;
-    }
-    // let us decide whether we will start a new thread
-    if (remaining() - _batch_size > 0) {
-      last_json_buffer_loc =
-          parser.structural_indexes[find_last_json_buf_idx(buf(), _batch_size, parser)];
-      _batch_size = (std::min)(_batch_size, remaining() - last_json_buffer_loc);
-      if (_batch_size > 0) {
-        _batch_size = trimmed_length_safe_utf8(
-            (const char *)(buf() + last_json_buffer_loc), _batch_size);
-        if (_batch_size == 0) {
-          return parser.error = simdjson::UTF8_ERROR;
-        }
-        // let us capture read-only variables
-        const uint8_t *const b = buf() + last_json_buffer_loc;
-        const size_t bs = _batch_size;
-        // we call the thread on a lambda that will update
-        // this->stage1_is_ok_thread
-        // there is only one thread that may write to this value
-        stage_1_thread = std::thread([this, b, bs] {
-          this->stage1_is_ok_thread = error_code(simdjson::active_implementation->stage1(b, bs, this->parser_thread, true));
-        });
-      }
-    }
-    next_json = 0;
-    load_next_batch = false;
-  } // load_next_batch
-  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
-  if (res == simdjson::SUCCESS_AND_HAS_MORE) {
-    n_parsed_docs++;
-    current_buffer_loc = parser.structural_indexes[next_json];
-    load_next_batch = (current_buffer_loc == last_json_buffer_loc);
-  } else if (res == simdjson::SUCCESS) {
-    n_parsed_docs++;
-    if (remaining() > _batch_size) {
-      current_buffer_loc = parser.structural_indexes[next_json - 1];
-      load_next_batch = true;
-      res = simdjson::SUCCESS_AND_HAS_MORE;
-    }
-  }
-  return res;
-}
-
-#else  // SIMDJSON_THREADS_ENABLED
-
-// single-threaded version of json_parse
-template <class string_container>
-int JsonStream<string_container>::json_parse(document::parser &parser) {
-  if (unlikely(parser.capacity() == 0)) {
-    const bool allocok = parser.allocate_capacity(_batch_size);
-    if (!allocok) {
-      return parser.on_error(MEMALLOC);
-    }
-  } else if (unlikely(parser.capacity() < _batch_size)) {
-    return parser.on_error(CAPACITY);
-  }
-  if (unlikely(load_next_batch)) {
-    advance(current_buffer_loc);
-    n_bytes_parsed += current_buffer_loc;
-    _batch_size = (std::min)(_batch_size, remaining());
-    _batch_size = trimmed_length_safe_utf8((const char *)buf(), _batch_size);
-    auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
-    if (stage1_is_ok != simdjson::SUCCESS) {
-      return parser.on_error(stage1_is_ok);
-    }
-    size_t last_index = find_last_json_buf_idx(buf(), _batch_size, parser);
-    if (last_index == 0) {
-      if (parser.n_structural_indexes == 0) {
-        return parser.on_error(EMPTY);
-      }
-    } else {
-      parser.n_structural_indexes = last_index + 1;
-    }
-    load_next_batch = false;
-  } // load_next_batch
-  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
-  if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
-    n_parsed_docs++;
-    current_buffer_loc = parser.structural_indexes[next_json];
-  } else if (res == simdjson::SUCCESS) {
-    n_parsed_docs++;
-    if (remaining() > _batch_size) {
-      current_buffer_loc = parser.structural_indexes[next_json - 1];
-      next_json = 1;
-      load_next_batch = true;
-      res = simdjson::SUCCESS_AND_HAS_MORE;
-    }
-  } else {
-    printf("E\n");
-  }
-  return res;
-}
-#endif // SIMDJSON_THREADS_ENABLED
-
 } // end of namespace simdjson
 #endif // SIMDJSON_JSONSTREAM_H
-/* end file include/simdjson/parsedjson.h */
+/* end file include/simdjson/jsonstream.h */
 /* begin file include/simdjson/jsonminifier.h */
 #ifndef SIMDJSON_JSONMINIFIER_H
 #define SIMDJSON_JSONMINIFIER_H
@@ -2656,19 +1930,17 @@ static inline size_t json_minify(const padded_string &p, char *out) {
 #include <limits>
 #include <stdexcept>
 
-/* begin file include/simdjson/jsonformatutils.h */
-#ifndef SIMDJSON_JSONFORMATUTILS_H
-#define SIMDJSON_JSONFORMATUTILS_H
+/* begin file include/simdjson/internal/jsonformatutils.h */
+#ifndef SIMDJSON_INTERNAL_JSONFORMATUTILS_H
+#define SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 
 #include <iomanip>
 #include <iostream>
 
-namespace simdjson {
-
+namespace simdjson::internal {
 
 // ends with zero char
-static inline void print_with_escapes(const unsigned char *src,
-                                      std::ostream &os) {
+static inline void print_with_escapes(const unsigned char *src, std::ostream &os) {
   while (*src) {
     switch (*src) {
     case '\b':
@@ -2766,14 +2038,14 @@ static inline void print_with_escapes(const char *src, std::ostream &os) {
   print_with_escapes(reinterpret_cast<const unsigned char *>(src), os);
 }
 
-static inline void print_with_escapes(const char *src, std::ostream &os,
-                                      size_t len) {
+static inline void print_with_escapes(const char *src, std::ostream &os, size_t len) {
   print_with_escapes(reinterpret_cast<const unsigned char *>(src), os, len);
 }
-} // namespace simdjson
 
-#endif
-/* end file include/simdjson/jsonformatutils.h */
+} // namespace simdjson::internal
+
+#endif // SIMDJSON_INTERNAL_JSONFORMATUTILS_H
+/* end file include/simdjson/internal/jsonformatutils.h */
 
 namespace simdjson {
 
@@ -3026,16 +2298,30 @@ public:
 } // namespace simdjson
 
 #endif // SIMDJSON_DOCUMENT_ITERATOR_H
-/* end file include/simdjson/jsonformatutils.h */
+/* end file include/simdjson/internal/jsonformatutils.h */
 
 #endif
-/* end file include/simdjson/jsonformatutils.h */
+/* end file include/simdjson/internal/jsonformatutils.h */
 /* begin file include/simdjson/jsonparser.h */
 // TODO Remove this -- deprecated API and files
 
 #ifndef SIMDJSON_JSONPARSER_H
 #define SIMDJSON_JSONPARSER_H
 
+/* begin file include/simdjson/parsedjson.h */
+// TODO Remove this -- deprecated API and files
+
+#ifndef SIMDJSON_PARSEDJSON_H
+#define SIMDJSON_PARSEDJSON_H
+
+
+namespace simdjson {
+
+using ParsedJson = document::parser;
+
+} // namespace simdjson
+#endif
+/* end file include/simdjson/parsedjson.h */
 /* begin file include/simdjson/jsonioutil.h */
 #ifndef SIMDJSON_JSONIOUTIL_H
 #define SIMDJSON_JSONIOUTIL_H
@@ -3130,12 +2416,10 @@ document::parser build_parsed_json(const char *buf) noexcept = delete;
 #ifndef SIMDJSON_INLINE_DOCUMENT_H
 #define SIMDJSON_INLINE_DOCUMENT_H
 
-
-// Inline implementations go in here if they aren't small enough to go in the class itself or if
-// there are complex header file dependencies that need to be broken by externalizing the
-// implementation.
+// Inline implementations go in here.
 
 #include <iostream>
+
 namespace simdjson {
 
 //
@@ -3323,6 +2607,245 @@ inline document::element_result<document::element> document::operator[](const ch
   return root()[key];
 }
 
+inline document::doc_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
+  document::parser parser;
+  if (!parser.allocate_capacity(len)) {
+    return MEMALLOC;
+  }
+  auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
+  return document::doc_result((document &&)doc, error);
+}
+really_inline document::doc_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
+    return parse((const uint8_t *)buf, len, realloc_if_needed);
+}
+really_inline document::doc_result document::parse(const std::string &s) noexcept {
+    return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
+}
+really_inline document::doc_result document::parse(const padded_string &s) noexcept {
+    return parse(s.data(), s.length(), false);
+}
+
+WARN_UNUSED
+inline bool document::set_capacity(size_t capacity) {
+  if (capacity == 0) {
+    string_buf.reset();
+    tape.reset();
+    return true;
+  }
+
+  // a pathological input like "[[[[..." would generate len tape elements, so
+  // need a capacity of at least len + 1, but it is also possible to do
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  //where len + 1 tape elements are
+  // generated, see issue https://github.com/lemire/simdjson/issues/345
+  size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
+  // a document with only zero-length strings... could have len/3 string
+  // and we would need len/3 * 5 bytes on the string buffer
+  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
+  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
+  return string_buf && tape;
+}
+
+inline bool document::print_json(std::ostream &os, size_t max_depth) const noexcept {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  tape_idx++;
+  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
+  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
+  int depth = 1; // only root at level 0
+  in_object_idx[depth] = 0;
+  in_object[depth] = false;
+  for (; tape_idx < how_many; tape_idx++) {
+    tape_val = tape[tape_idx];
+    uint64_t payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    if (!in_object[depth]) {
+      if ((in_object_idx[depth] > 0) && (type != ']')) {
+        os << ",";
+      }
+      in_object_idx[depth]++;
+    } else { // if (in_object) {
+      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
+          (type != '}')) {
+        os << ",";
+      }
+      if (((in_object_idx[depth] & 1) == 1)) {
+        os << ":";
+      }
+      in_object_idx[depth]++;
+    }
+    switch (type) {
+    case '"': // we have a string
+      os << '"';
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      internal::print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+          os, string_length);
+      os << '"';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << static_cast<int64_t>(tape[++tape_idx]);
+      break;
+    case 'u':
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << tape[++tape_idx];
+      break;
+    case 'd': // we have a double
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer;
+      break;
+    case 'n': // we have a null
+      os << "null";
+      break;
+    case 't': // we have a true
+      os << "true";
+      break;
+    case 'f': // we have a false
+      os << "false";
+      break;
+    case '{': // we have an object
+      os << '{';
+      depth++;
+      in_object[depth] = true;
+      in_object_idx[depth] = 0;
+      break;
+    case '}': // we end an object
+      depth--;
+      os << '}';
+      break;
+    case '[': // we start an array
+      os << '[';
+      depth++;
+      in_object[depth] = false;
+      in_object_idx[depth] = 0;
+      break;
+    case ']': // we end an array
+      depth--;
+      os << ']';
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      // bug?
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
+  uint32_t string_length;
+  size_t tape_idx = 0;
+  uint64_t tape_val = tape[tape_idx];
+  uint8_t type = (tape_val >> 56);
+  os << tape_idx << " : " << type;
+  tape_idx++;
+  size_t how_many = 0;
+  if (type == 'r') {
+    how_many = tape_val & JSON_VALUE_MASK;
+  } else {
+    // Error: no starting root node?
+    return false;
+  }
+  os << "\t// pointing to " << how_many << " (right after last node)\n";
+  uint64_t payload;
+  for (; tape_idx < how_many; tape_idx++) {
+    os << tape_idx << " : ";
+    tape_val = tape[tape_idx];
+    payload = tape_val & JSON_VALUE_MASK;
+    type = (tape_val >> 56);
+    switch (type) {
+    case '"': // we have a string
+      os << "string \"";
+      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      internal::print_with_escapes(
+          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
+                  os,
+          string_length);
+      os << '"';
+      os << '\n';
+      break;
+    case 'l': // we have a long int
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "integer " << static_cast<int64_t>(tape[++tape_idx]) << "\n";
+      break;
+    case 'u': // we have a long uint
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      os << "unsigned integer " << tape[++tape_idx] << "\n";
+      break;
+    case 'd': // we have a double
+      os << "float ";
+      if (tape_idx + 1 >= how_many) {
+        return false;
+      }
+      double answer;
+      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
+      os << answer << '\n';
+      break;
+    case 'n': // we have a null
+      os << "null\n";
+      break;
+    case 't': // we have a true
+      os << "true\n";
+      break;
+    case 'f': // we have a false
+      os << "false\n";
+      break;
+    case '{': // we have an object
+      os << "{\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case '}': // we end an object
+      os << "}\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case '[': // we start an array
+      os << "[\t// pointing to next tape location " << payload
+         << " (first node after the scope) \n";
+      break;
+    case ']': // we end an array
+      os << "]\t// pointing to previous tape location " << payload
+         << " (start of the scope) \n";
+      break;
+    case 'r': // we start and end with the root node
+      // should we be hitting the root node?
+      return false;
+    default:
+      return false;
+    }
+  }
+  tape_val = tape[tape_idx];
+  payload = tape_val & JSON_VALUE_MASK;
+  type = (tape_val >> 56);
+  os << tape_idx << " : " << type << "\t// pointing to " << payload
+     << " (start root)\n";
+  return true;
+}
+
 //
 // document::doc_ref_result inline implementation
 //
@@ -3371,6 +2894,7 @@ inline const document &document::parser::get_document() const noexcept(false) {
   }
   return doc;
 }
+
 inline document::doc_ref_result document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
   error_code code = init_parse(len);
   if (code) { return document::doc_ref_result(doc, code); }
@@ -3403,27 +2927,80 @@ really_inline document::doc_ref_result document::parser::parse(const padded_stri
   return parse(s.data(), s.length(), false);
 }
 
-inline document::doc_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
-  document::parser parser;
-  if (!parser.allocate_capacity(len)) {
-    return MEMALLOC;
-  }
-  auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
-  return document::doc_result((document &&)doc, error);
+really_inline size_t document::parser::capacity() const noexcept {
+  return _capacity;
 }
-really_inline document::doc_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
-    return parse((const uint8_t *)buf, len, realloc_if_needed);
+really_inline size_t document::parser::max_depth() const noexcept {
+  return _max_depth;
 }
-really_inline document::doc_result document::parse(const std::string &s) noexcept {
-    return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
-}
-really_inline document::doc_result document::parse(const padded_string &s) noexcept {
-    return parse(s.data(), s.length(), false);
+WARN_UNUSED inline bool document::parser::allocate_capacity(size_t capacity, size_t max_depth) {
+  return set_capacity(capacity) && set_max_depth(max_depth);
 }
 
-//
-// Parser callbacks
-//
+WARN_UNUSED
+inline bool document::parser::set_capacity(size_t capacity) {
+  if (_capacity == capacity) {
+    return true;
+  }
+
+  // Set capacity to 0 until we finish, in case there's an error
+  _capacity = 0;
+
+  //
+  // Reallocate the document
+  //
+  if (!doc.set_capacity(capacity)) {
+    return false;
+  }
+
+  //
+  // Don't allocate 0 bytes, just return.
+  //
+  if (capacity == 0) {
+    structural_indexes.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 1 output
+  //
+  uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
+  if (!structural_indexes) {
+    return false;
+  }
+
+  _capacity = capacity;
+  return true;
+}
+
+WARN_UNUSED inline bool document::parser::set_max_depth(size_t max_depth) {
+  _max_depth = 0;
+
+  if (max_depth == 0) {
+    ret_address.reset();
+    containing_scope_offset.reset();
+    return true;
+  }
+
+  //
+  // Initialize stage 2 state
+  //
+  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  ret_address.reset(new (std::nothrow) void *[max_depth]);
+#else
+  ret_address.reset(new (std::nothrow) char[max_depth]);
+#endif
+
+  if (!ret_address || !containing_scope_offset) {
+    // Could not allocate memory
+    return false;
+  }
+
+  _max_depth = max_depth;
+  return true;
+}
 
 WARN_UNUSED
 inline error_code document::parser::init_parse(size_t len) noexcept {
@@ -3437,118 +3014,6 @@ inline error_code document::parser::init_parse(size_t len) noexcept {
     }
   }
   return SUCCESS;
-}
-
-inline void document::parser::init_stage2() noexcept {
-  current_string_buf_loc = doc.string_buf.get();
-  current_loc = 0;
-  valid = false;
-  error = UNINITIALIZED;
-}
-
-really_inline error_code document::parser::on_error(error_code new_error_code) noexcept {
-  error = new_error_code;
-  return new_error_code;
-}
-really_inline error_code document::parser::on_success(error_code success_code) noexcept {
-  error = success_code;
-  valid = true;
-  return success_code;
-}
-really_inline bool document::parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::ROOT);
-  return true;
-}
-really_inline bool document::parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::START_OBJECT);
-  return true;
-}
-really_inline bool document::parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  write_tape(0, tape_type::START_ARRAY);
-  return true;
-}
-// TODO we're not checking this bool
-really_inline bool document::parser::on_end_document(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  // The root scope gets written *at* the previous location.
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  write_tape(containing_scope_offset[depth], tape_type::ROOT);
-  return true;
-}
-really_inline bool document::parser::on_end_object(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], tape_type::END_OBJECT);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  return true;
-}
-really_inline bool document::parser::on_end_array(uint32_t depth) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], tape_type::END_ARRAY);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
-  return true;
-}
-
-really_inline bool document::parser::on_true_atom() noexcept {
-  write_tape(0, tape_type::TRUE_VALUE);
-  return true;
-}
-really_inline bool document::parser::on_false_atom() noexcept {
-  write_tape(0, tape_type::FALSE_VALUE);
-  return true;
-}
-really_inline bool document::parser::on_null_atom() noexcept {
-  write_tape(0, tape_type::NULL_VALUE);
-  return true;
-}
-
-really_inline uint8_t *document::parser::on_start_string() noexcept {
-  /* we advance the point, accounting for the fact that we have a NULL
-    * termination         */
-  write_tape(current_string_buf_loc - doc.string_buf.get(), tape_type::STRING);
-  return current_string_buf_loc + sizeof(uint32_t);
-}
-
-really_inline bool document::parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
-  // TODO check for overflow in case someone has a crazy string (>=4GB?)
-  // But only add the overflow check when the document itself exceeds 4GB
-  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
-  // NULL termination is still handy if you expect all your strings to
-  // be NULL terminated? It comes at a small cost
-  *dst = 0;
-  current_string_buf_loc = dst + 1;
-  return true;
-}
-
-really_inline bool document::parser::on_number_s64(int64_t value) noexcept {
-  write_tape(0, tape_type::INT64);
-  std::memcpy(&doc.tape[current_loc], &value, sizeof(value));
-  ++current_loc;
-  return true;
-}
-really_inline bool document::parser::on_number_u64(uint64_t value) noexcept {
-  write_tape(0, tape_type::UINT64);
-  doc.tape[current_loc++] = value;
-  return true;
-}
-really_inline bool document::parser::on_number_double(double value) noexcept {
-  write_tape(0, tape_type::DOUBLE);
-  static_assert(sizeof(value) == sizeof(doc.tape[current_loc]), "mismatch size");
-  memcpy(&doc.tape[current_loc++], &value, sizeof(double));
-  // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
-  return true;
-}
-
-really_inline void document::parser::write_tape(uint64_t val, document::tape_type t) noexcept {
-  doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
-}
-
-really_inline void document::parser::annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept {
-  doc.tape[saved_loc] |= val;
 }
 
 //
@@ -4103,7 +3568,7 @@ bool document_iterator<max_depth>::print(std::ostream &os, bool escape_strings) 
   case '"': // we have a string
     os << '"';
     if (escape_strings) {
-      print_with_escapes(get_string(), os, get_string_length());
+      internal::print_with_escapes(get_string(), os, get_string_length());
     } else {
       // was: os << get_string();, but given that we can include null chars, we
       // have to do something crazier:
@@ -4317,6 +3782,269 @@ bool document_iterator<max_depth>::relative_move_to(const char *pointer,
 
 #endif // SIMDJSON_INLINE_DOCUMENT_ITERATOR_H
 /* end file include/simdjson/inline/document_iterator.h */
+/* begin file include/simdjson/inline/jsonstream.h */
+#ifndef SIMDJSON_INLINE_JSONSTREAM_H
+#define SIMDJSON_INLINE_JSONSTREAM_H
+
+#include <algorithm>
+#include <limits>
+#include <stdexcept>
+#include <thread>
+
+namespace simdjson::internal {
+
+/* This algorithm is used to quickly identify the buffer position of
+ * the last JSON document inside the current batch.
+ *
+ * It does its work by finding the last pair of structural characters
+ * that represent the end followed by the start of a document.
+ *
+ * Simply put, we iterate over the structural characters, starting from
+ * the end. We consider that we found the end of a JSON document when the
+ * first element of the pair is NOT one of these characters: '{' '[' ';' ','
+ * and when the second element is NOT one of these characters: '}' '}' ';' ','.
+ *
+ * This simple comparison works most of the time, but it does not cover cases
+ * where the batch's structural indexes contain a perfect amount of documents.
+ * In such a case, we do not have access to the structural index which follows
+ * the last document, therefore, we do not have access to the second element in
+ * the pair, and means that we cannot identify the last document. To fix this
+ * issue, we keep a count of the open and closed curly/square braces we found
+ * while searching for the pair. When we find a pair AND the count of open and
+ * closed curly/square braces is the same, we know that we just passed a
+ * complete
+ * document, therefore the last json buffer location is the end of the batch
+ * */
+inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const document::parser &parser) {
+  // this function can be generally useful
+  if (parser.n_structural_indexes == 0)
+    return 0;
+  auto last_i = parser.n_structural_indexes - 1;
+  if (parser.structural_indexes[last_i] == size) {
+    if (last_i == 0)
+      return 0;
+    last_i = parser.n_structural_indexes - 2;
+  }
+  auto arr_cnt = 0;
+  auto obj_cnt = 0;
+  for (auto i = last_i; i > 0; i--) {
+    auto idxb = parser.structural_indexes[i];
+    switch (buf[idxb]) {
+    case ':':
+    case ',':
+      continue;
+    case '}':
+      obj_cnt--;
+      continue;
+    case ']':
+      arr_cnt--;
+      continue;
+    case '{':
+      obj_cnt++;
+      break;
+    case '[':
+      arr_cnt++;
+      break;
+    }
+    auto idxa = parser.structural_indexes[i - 1];
+    switch (buf[idxa]) {
+    case '{':
+    case '[':
+    case ':':
+    case ',':
+      continue;
+    }
+    if (!arr_cnt && !obj_cnt) {
+      return last_i + 1;
+    }
+    return i;
+  }
+  return 0;
+}
+
+// returns true if the provided byte value is an ASCII character
+static inline bool is_ascii(char c) {
+  return ((unsigned char)c) <= 127;
+}
+
+// if the string ends with  UTF-8 values, backtrack 
+// up to the first ASCII character. May return 0.
+static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
+  while ((len > 0) and (not is_ascii(c[len - 1]))) {
+    len--;
+  }
+  return len;
+}
+
+} // namespace simdjson::internal
+
+namespace simdjson {
+
+template <class string_container>
+JsonStream<string_container>::JsonStream(const string_container &s,
+                                         size_t batchSize)
+    : str(s), _batch_size(batchSize) {
+}
+
+template <class string_container> JsonStream<string_container>::~JsonStream() {
+#ifdef SIMDJSON_THREADS_ENABLED
+  if (stage_1_thread.joinable()) {
+    stage_1_thread.join();
+  }
+#endif
+}
+
+#ifdef SIMDJSON_THREADS_ENABLED
+
+// threaded version of json_parse
+// todo: simplify this code further
+template <class string_container>
+int JsonStream<string_container>::json_parse(document::parser &parser) {
+  if (unlikely(parser.capacity() == 0)) {
+    const bool allocok = parser.allocate_capacity(_batch_size);
+    if (!allocok) {
+      return parser.error = simdjson::MEMALLOC;
+    }
+  } else if (unlikely(parser.capacity() < _batch_size)) {
+    return parser.error = simdjson::CAPACITY;
+  }
+  if (unlikely(parser_thread.capacity() < _batch_size)) {
+    const bool allocok_thread = parser_thread.allocate_capacity(_batch_size);
+    if (!allocok_thread) {
+      return parser.error = simdjson::MEMALLOC;
+    }
+  }
+  if (unlikely(load_next_batch)) {
+    // First time loading
+    if (!stage_1_thread.joinable()) {
+      _batch_size = (std::min)(_batch_size, remaining());
+      _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
+      if (_batch_size == 0) {
+        return parser.error = simdjson::UTF8_ERROR;
+      }
+      auto stage1_is_ok = error_code(simdjson::active_implementation->stage1(buf(), _batch_size, parser, true));
+      if (stage1_is_ok != simdjson::SUCCESS) {
+        return parser.error = stage1_is_ok;
+      }
+      size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+      if (last_index == 0) {
+        if (parser.n_structural_indexes == 0) {
+          return parser.error = simdjson::EMPTY;
+        }
+      } else {
+        parser.n_structural_indexes = last_index + 1;
+      }
+    }
+    // the second thread is running or done.
+    else {
+      stage_1_thread.join();
+      if (stage1_is_ok_thread != simdjson::SUCCESS) {
+        return parser.error = stage1_is_ok_thread;
+      }
+      std::swap(parser.structural_indexes, parser_thread.structural_indexes);
+      parser.n_structural_indexes = parser_thread.n_structural_indexes;
+      advance(last_json_buffer_loc);
+      n_bytes_parsed += last_json_buffer_loc;
+    }
+    // let us decide whether we will start a new thread
+    if (remaining() - _batch_size > 0) {
+      last_json_buffer_loc =
+          parser.structural_indexes[internal::find_last_json_buf_idx(buf(), _batch_size, parser)];
+      _batch_size = (std::min)(_batch_size, remaining() - last_json_buffer_loc);
+      if (_batch_size > 0) {
+        _batch_size = internal::trimmed_length_safe_utf8(
+            (const char *)(buf() + last_json_buffer_loc), _batch_size);
+        if (_batch_size == 0) {
+          return parser.error = simdjson::UTF8_ERROR;
+        }
+        // let us capture read-only variables
+        const uint8_t *const b = buf() + last_json_buffer_loc;
+        const size_t bs = _batch_size;
+        // we call the thread on a lambda that will update
+        // this->stage1_is_ok_thread
+        // there is only one thread that may write to this value
+        stage_1_thread = std::thread([this, b, bs] {
+          this->stage1_is_ok_thread = error_code(simdjson::active_implementation->stage1(b, bs, this->parser_thread, true));
+        });
+      }
+    }
+    next_json = 0;
+    load_next_batch = false;
+  } // load_next_batch
+  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  if (res == simdjson::SUCCESS_AND_HAS_MORE) {
+    n_parsed_docs++;
+    current_buffer_loc = parser.structural_indexes[next_json];
+    load_next_batch = (current_buffer_loc == last_json_buffer_loc);
+  } else if (res == simdjson::SUCCESS) {
+    n_parsed_docs++;
+    if (remaining() > _batch_size) {
+      current_buffer_loc = parser.structural_indexes[next_json - 1];
+      load_next_batch = true;
+      res = simdjson::SUCCESS_AND_HAS_MORE;
+    }
+  }
+  return res;
+}
+
+#else  // SIMDJSON_THREADS_ENABLED
+
+// single-threaded version of json_parse
+template <class string_container>
+int JsonStream<string_container>::json_parse(document::parser &parser) {
+  if (unlikely(parser.capacity() == 0)) {
+    const bool allocok = parser.allocate_capacity(_batch_size);
+    if (!allocok) {
+      parser.valid = false;
+      return parser.error = MEMALLOC;
+    }
+  } else if (unlikely(parser.capacity() < _batch_size)) {
+      parser.valid = false;
+      return parser.error = CAPACITY;
+  }
+  if (unlikely(load_next_batch)) {
+    advance(current_buffer_loc);
+    n_bytes_parsed += current_buffer_loc;
+    _batch_size = (std::min)(_batch_size, remaining());
+    _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
+    auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
+    if (stage1_is_ok != simdjson::SUCCESS) {
+      parser.valid = false;
+      return parser.error = stage1_is_ok;
+    }
+    size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+    if (last_index == 0) {
+      if (parser.n_structural_indexes == 0) {
+        parser.valid = false;
+        return parser.error = EMPTY;
+      }
+    } else {
+      parser.n_structural_indexes = last_index + 1;
+    }
+    load_next_batch = false;
+  } // load_next_batch
+  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
+    n_parsed_docs++;
+    current_buffer_loc = parser.structural_indexes[next_json];
+  } else if (res == simdjson::SUCCESS) {
+    n_parsed_docs++;
+    if (remaining() > _batch_size) {
+      current_buffer_loc = parser.structural_indexes[next_json - 1];
+      next_json = 1;
+      load_next_batch = true;
+      res = simdjson::SUCCESS_AND_HAS_MORE;
+    }
+  } else {
+    printf("E\n");
+  }
+  return res;
+}
+#endif // SIMDJSON_THREADS_ENABLED
+
+} // end of namespace simdjson
+#endif // SIMDJSON_INLINE_JSONSTREAM_H
+/* end file include/simdjson/inline/jsonstream.h */
 
 #endif // SIMDJSON_H
-/* end file include/simdjson/inline/document_iterator.h */
+/* end file include/simdjson/inline/jsonstream.h */

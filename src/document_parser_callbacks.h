@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
 #define SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H
 
-#include <simdjson.h>
+#include "simdjson.h"
 
 namespace simdjson {
 
