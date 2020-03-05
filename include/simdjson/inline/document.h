@@ -20,32 +20,32 @@ template<typename T>
 inline document::element_result<T>::element_result(error_code _error) noexcept : value(), error{_error} {}
 template<>
 inline document::element_result<std::string_view>::operator std::string_view() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<const char *>::operator const char *() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<bool>::operator bool() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<uint64_t>::operator uint64_t() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<int64_t>::operator int64_t() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<double>::operator double() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 
@@ -55,15 +55,15 @@ inline document::element_result<double>::operator double() const noexcept(false)
 inline document::element_result<document::array>::element_result(document::array _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::array>::element_result(error_code _error) noexcept : value(), error{_error} {}
 inline document::element_result<document::array>::operator document::array() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 inline document::array::iterator document::element_result<document::array>::begin() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.begin();
 }
 inline document::array::iterator document::element_result<document::array>::end() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.end();
 }
 
@@ -73,7 +73,7 @@ inline document::array::iterator document::element_result<document::array>::end(
 inline document::element_result<document::object>::element_result(document::object _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::object>::element_result(error_code _error) noexcept : value(), error{_error} {}
 inline document::element_result<document::object>::operator document::object() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 inline document::element_result<document::element> document::element_result<document::object>::operator[](const std::string_view &key) const noexcept {
@@ -85,11 +85,11 @@ inline document::element_result<document::element> document::element_result<docu
   return value[key];
 }
 inline document::object::iterator document::element_result<document::object>::begin() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.begin();
 }
 inline document::object::iterator document::element_result<document::object>::end() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.end();
 }
 
@@ -441,12 +441,12 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 inline document::doc_ref_result::doc_ref_result(document &_doc, error_code _error) noexcept : doc(_doc), error(_error) { }
 inline document::doc_ref_result::operator document&() noexcept(false) {
   if (error) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return doc;
 }
 inline const std::string &document::doc_ref_result::get_error_message() const noexcept {
-  return error_message(error);
+  return error.error_message();
 }
 
 //
@@ -457,12 +457,12 @@ inline document::doc_result::doc_result(document &&_doc) noexcept : doc(std::mov
 inline document::doc_result::doc_result(error_code _error) noexcept : doc(), error(_error) { }
 inline document::doc_result::operator document() noexcept(false) {
   if (error) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return std::move(doc);
 }
 inline const std::string &document::doc_result::get_error_message() const noexcept {
-  return error_message(error);
+  return error.error_message();
 }
 
 //
@@ -470,7 +470,7 @@ inline const std::string &document::doc_result::get_error_message() const noexce
 //
 inline bool document::parser::is_valid() const noexcept { return valid; }
 inline int document::parser::get_error_code() const noexcept { return error; }
-inline std::string document::parser::get_error_message() const noexcept { return error_message(error); }
+inline std::string document::parser::get_error_message() const noexcept { return error.error_message(); }
 inline bool document::parser::print_json(std::ostream &os) const noexcept {
   return is_valid() ? doc.print_json(os) : false;
 }
@@ -479,7 +479,7 @@ inline bool document::parser::dump_raw_tape(std::ostream &os) const noexcept {
 }
 inline const document &document::parser::get_document() const noexcept(false) {
   if (!is_valid()) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return doc;
 }

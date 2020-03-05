@@ -83,14 +83,14 @@ public:
    * Read the root element of this document as a JSON array.
    *
    * @return The JSON array.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
    */
   operator array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   operator object() const noexcept(false);
 
@@ -239,7 +239,7 @@ public:
    * Return the document, or throw an exception if it is invalid.
    *
    * @return the document.
-   * @exception invalid_json if the document is invalid or there was an error parsing it.
+   * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document() noexcept(false);
 
@@ -303,7 +303,7 @@ public:
    * A reference to the document, or throw an exception if it is invalid.
    *
    * @return the document.
-   * @exception invalid_json if the document is invalid or there was an error parsing it.
+   * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document&() noexcept(false);
 
@@ -459,7 +459,7 @@ public:
    * Read this element as a boolean.
    *
    * @return The boolean value
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a boolean.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a boolean.
    */
   inline operator bool() const noexcept(false);
 
@@ -470,7 +470,7 @@ public:
    * an actual string.
    *
    * @return The string value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
   inline explicit operator const char*() const noexcept(false);
 
@@ -481,7 +481,7 @@ public:
    * an actual string.
    *
    * @return The string value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
   inline operator std::string_view() const noexcept(false);
 
@@ -489,38 +489,38 @@ public:
    * Read this element as an unsigned integer.
    *
    * @return The integer value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
   inline operator uint64_t() const noexcept(false);
   /**
    * Read this element as an signed integer.
    *
    * @return The integer value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
    */
   inline operator int64_t() const noexcept(false);
   /**
    * Read this element as an double.
    *
    * @return The double value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a number
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a number
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
   inline operator double() const noexcept(false);
   /**
    * Read this element as a JSON array.
    *
    * @return The JSON array.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
    */
   inline operator document::array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   inline operator document::object() const noexcept(false);
 
@@ -959,7 +959,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1021,7 +1021,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1083,7 +1083,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1144,7 +1144,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1197,7 +1197,7 @@ public:
 
   // type aliases for backcompat
   using Iterator = document::iterator;
-  using InvalidJSON = invalid_json;
+  using InvalidJSON = simdjson_error;
 
   // Next location to write to in the tape
   uint32_t current_loc{0};

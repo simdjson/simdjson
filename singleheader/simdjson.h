@@ -1,4 +1,4 @@
-/* auto-generated on Thu Mar  5 10:30:07 PST 2020. Do not edit! */
+/* auto-generated on Thu Mar  5 15:35:24 PST 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -50,42 +50,115 @@ enum {
 
 namespace simdjson {
 
-enum error_code {
-  SUCCESS = 0,
-  SUCCESS_AND_HAS_MORE, //No errors and buffer still has more data
-  CAPACITY,    // This parser can't support a document that big
-  MEMALLOC,    // Error allocating memory, most likely out of memory
-  TAPE_ERROR,  // Something went wrong while writing to the tape (stage 2), this
-               // is a generic error
-  DEPTH_ERROR, // Your document exceeds the user-specified depth limitation
-  STRING_ERROR,    // Problem while parsing a string
-  T_ATOM_ERROR,    // Problem while parsing an atom starting with the letter 't'
-  F_ATOM_ERROR,    // Problem while parsing an atom starting with the letter 'f'
-  N_ATOM_ERROR,    // Problem while parsing an atom starting with the letter 'n'
-  NUMBER_ERROR,    // Problem while parsing a number
-  UTF8_ERROR,      // the input is not valid UTF-8
-  UNINITIALIZED,     // unknown error, or uninitialized document
-  EMPTY,           // no structural element found
-  UNESCAPED_CHARS, // found unescaped characters in a string.
-  UNCLOSED_STRING, // missing quote at the end
-  UNSUPPORTED_ARCHITECTURE, // unsupported architecture
-  INCORRECT_TYPE, // JSON element has a different type than user expected
-  NUMBER_OUT_OF_RANGE, // JSON number does not fit in 64 bits
-  NO_SUCH_FIELD, // JSON field not found in object
-  UNEXPECTED_ERROR // indicative of a bug in simdjson
+/**
+ * An error somewhere in simdjson.
+ */
+struct error_code {
+public:
+  constexpr error_code &operator=(const error_code &other) noexcept { code = other.code; return *this; }
+
+  /** Get the error message for this error code */
+  inline const std::string &error_message() const noexcept;
+
+  /** Whether this is successful or not */
+  constexpr operator bool() const noexcept;
+  /** Whether this is an error or not */
+  constexpr bool operator!() const noexcept;
+
+  /** Whether these codes represent the same error */
+  constexpr bool operator==(const error_code &other) const noexcept;
+  /** Whether these codes represent different errors */
+  constexpr bool operator!=(const error_code &other) const noexcept;
+
+  /** @deprecated An integer representing the error code */
+  constexpr operator int() const noexcept;
+
+  /** @private */
+  constexpr explicit error_code(int _code) noexcept : code{_code} {}
+
+  /** Initialize this error_code to UNINITIALIZED */
+  constexpr error_code() noexcept;
+
+private:
+
+  int code;
+
+  friend const std::string &error_message(int error) noexcept;
 };
 
-const std::string &error_message(error_code error) noexcept;
+constexpr const error_code SUCCESS                  (0);  ///< No errors
+constexpr const error_code SUCCESS_AND_HAS_MORE     (1);  ///< No errors and buffer still has more data
+constexpr const error_code CAPACITY                 (2);  ///< This parser can't support a document that big
+constexpr const error_code MEMALLOC                 (3);  ///< Error allocating memory, most likely out of memory
+constexpr const error_code TAPE_ERROR               (4);  ///< Something went wrong while writing to the tape (stage 2), this is a generic error
+constexpr const error_code DEPTH_ERROR              (5);  ///< Your document exceeds the user-specified depth limitation
+constexpr const error_code STRING_ERROR             (6);  ///< Problem while parsing a string
+constexpr const error_code T_ATOM_ERROR             (7);  ///< Problem while parsing an atom starting with the letter 't'
+constexpr const error_code F_ATOM_ERROR             (8);  ///< Problem while parsing an atom starting with the letter 'f'
+constexpr const error_code N_ATOM_ERROR             (9);  ///< Problem while parsing an atom starting with the letter 'n'
+constexpr const error_code NUMBER_ERROR             (10); ///< Problem while parsing a number
+constexpr const error_code UTF8_ERROR               (11); ///< the input is not valid UTF-8
+constexpr const error_code UNINITIALIZED            (12); ///< unknown error, or uninitialized document
+constexpr const error_code EMPTY                    (13); ///< no structural element found
+constexpr const error_code UNESCAPED_CHARS          (14); ///< found unescaped characters in a string.
+constexpr const error_code UNCLOSED_STRING          (15); ///< missing quote at the end
+constexpr const error_code UNSUPPORTED_ARCHITECTURE (16); ///< unsupported architecture
+constexpr const error_code INCORRECT_TYPE           (17); ///< JSON element has a different type than user expected
+constexpr const error_code NUMBER_OUT_OF_RANGE      (18); ///< JSON number does not fit in 64 bits
+constexpr const error_code NO_SUCH_FIELD            (19); ///< JSON field not found in object
+constexpr const error_code UNEXPECTED_ERROR         (20); ///< indicative of a bug in simdjson
 
-struct invalid_json : public std::exception {
-  invalid_json(error_code _error) : error{_error} { }
-  const char *what() const noexcept { return error_message(error).c_str(); }
-  error_code error;
+/**
+ * Exception thrown when there is a simdjson error.
+ */
+class simdjson_error : std::exception {
+public:
+  /**
+   * Create a simdjson_error exception with the given code.
+   *
+   * @param code The error code.
+   */
+  inline simdjson_error(error_code code) noexcept;
+
+  /** The error_code for this error. */
+  constexpr error_code code() const noexcept;
+
+  /** Get the error message for this error. */
+  inline const char *what() const noexcept;
+
+  /**
+   * Whether this error has the given error_code.
+   *
+   * @param other The code to compare against.
+   */
+  constexpr bool operator==(const error_code &other) const noexcept;
+
+  /**
+   * Whether this error has a different error code than given.
+   *
+   * @param other The code to compare against.
+   */
+  constexpr bool operator!=(const error_code &other) const noexcept;
+
+  /** Get the error message for this error */
+  inline const std::string & error_message() const noexcept;
+
+private:
+  const error_code _code;
 };
+
+/** @deprecated */
+constexpr bool operator==(int a, const error_code &b) noexcept;
+/** @deprecated */
+constexpr bool operator!=(int a, const error_code &b) noexcept;
+/** Print the error message */
+inline std::ostream& operator<<(std::ostream& o, const error_code &error) noexcept;
 
 // TODO these are deprecated, remove
+/** @deprecated Use error_code instead */
 using ErrorValues = error_code;
-inline const std::string &error_message(int error) noexcept { return error_message(error_code(error)); }
+/** @deprecated use error_code::error_message() instead */
+inline const std::string &error_message(int error) noexcept;
 
 } // namespace simdjson
 
@@ -377,7 +450,7 @@ struct padded_string final {
   }
 
   ~padded_string() {
-      aligned_free_char(data_ptr);
+    aligned_free_char(data_ptr);
   }
 
   size_t size() const  { return viable_size; }
@@ -470,11 +543,13 @@ public:
   class object;
   class key_value_pair;
   class parser;
+  class stream;
 
   template<typename T=element>
   class element_result;
   class doc_result;
   class doc_ref_result;
+  class stream_result;
 
   // Nested classes. See definitions later in file.
   using iterator = document_iterator<DEFAULT_MAX_DEPTH>;
@@ -499,14 +574,14 @@ public:
    * Read the root element of this document as a JSON array.
    *
    * @return The JSON array.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
    */
   operator array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   operator object() const noexcept(false);
 
@@ -655,7 +730,7 @@ public:
    * Return the document, or throw an exception if it is invalid.
    *
    * @return the document.
-   * @exception invalid_json if the document is invalid or there was an error parsing it.
+   * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document() noexcept(false);
 
@@ -719,7 +794,7 @@ public:
    * A reference to the document, or throw an exception if it is invalid.
    *
    * @return the document.
-   * @exception invalid_json if the document is invalid or there was an error parsing it.
+   * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document&() noexcept(false);
 
@@ -733,6 +808,7 @@ public:
 private:
   doc_ref_result(document &_doc, error_code _error) noexcept;
   friend class document::parser;
+  friend class document::stream;
 }; // class document::doc_ref_result
 
 /**
@@ -874,7 +950,7 @@ public:
    * Read this element as a boolean.
    *
    * @return The boolean value
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a boolean.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a boolean.
    */
   inline operator bool() const noexcept(false);
 
@@ -885,7 +961,7 @@ public:
    * an actual string.
    *
    * @return The string value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
   inline explicit operator const char*() const noexcept(false);
 
@@ -896,7 +972,7 @@ public:
    * an actual string.
    *
    * @return The string value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a string.
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
    */
   inline operator std::string_view() const noexcept(false);
 
@@ -904,38 +980,38 @@ public:
    * Read this element as an unsigned integer.
    *
    * @return The integer value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
   inline operator uint64_t() const noexcept(false);
   /**
    * Read this element as an signed integer.
    *
    * @return The integer value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
    */
   inline operator int64_t() const noexcept(false);
   /**
    * Read this element as an double.
    *
    * @return The double value.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not a number
-   * @exception invalid_json(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a number
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
    */
   inline operator double() const noexcept(false);
   /**
    * Read this element as a JSON array.
    *
    * @return The JSON array.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an array
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
    */
   inline operator document::array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
-   * @exception invalid_json(UNEXPECTED_TYPE) if the JSON element is not an object
+   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   inline operator document::object() const noexcept(false);
 
@@ -1346,6 +1422,255 @@ public:
   really_inline doc_ref_result parse(const char *buf) noexcept = delete;
 
   /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param len The length of the concatenated JSON.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails.
+   */
+  inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param len The length of the concatenated JSON.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const char *buf, size_t len, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const std::string &s, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse a buffer containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The buffer must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
+   *     if (error) { cerr << error << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
+   * allocated, it must have a capacity at least as large as batch_size.
+   *
+   * @param s The concatenated JSON to parse.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - MEMALLOC if the parser is unallocated and memory allocation fails
+   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - other json errors if parsing fails
+   */
+  inline stream parse_many(const padded_string &s, size_t batch_size = 1000000) noexcept;
+
+  // We do not want to allow implicit conversion from C string to std::string.
+  really_inline doc_ref_result parse_many(const char *buf, size_t batch_size = 1000000) noexcept = delete;
+
+  /**
    * Current capacity: the largest document this parser can support without reallocating.
    */
   really_inline size_t capacity() const noexcept;
@@ -1363,7 +1688,7 @@ public:
 
   // type aliases for backcompat
   using Iterator = document::iterator;
-  using InvalidJSON = invalid_json;
+  using InvalidJSON = simdjson_error;
 
   // Next location to write to in the tape
   uint32_t current_loc{0};
@@ -1560,7 +1885,7 @@ public:
    * @param buf the json document to parse. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
    * @param len the length of the json document.
    * @param parser the parser with the buffers to use. *MUST* have allocated up to at least len capacity.
-   * @param streaming whether this is being called by a JsonStream parser.
+   * @param streaming whether this is being called by document::parser::parse_many.
    * @return the error code, or SUCCESS if there was no error.
    */
   WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept = 0;
@@ -1578,7 +1903,7 @@ public:
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept = 0;
 
   /**
-   * Stage 2 of the document parser for JsonStream.
+   * Stage 2 of the document parser for document::parser::parse_many.
    *
    * Overridden by each implementation.
    *
@@ -1731,92 +2056,94 @@ inline internal::atomic_ptr<const implementation> active_implementation = &inter
 
 #endif // SIMDJSON_IMPLEMENTATION_H
 /* end file include/simdjson/simdjson.h */
-/* begin file include/simdjson/jsonstream.h */
-#ifndef SIMDJSON_JSONSTREAM_H
-#define SIMDJSON_JSONSTREAM_H
+/* begin file include/simdjson/document_stream.h */
+#ifndef SIMDJSON_DOCUMENT_STREAM_H
+#define SIMDJSON_DOCUMENT_STREAM_H
 
 #include <thread>
 
 namespace simdjson {
 
-/*************************************************************************************
- * The main motivation for this piece of software is to achieve maximum speed
- *and offer
- * good quality of life while parsing files containing multiple JSON documents.
- *
- * Since we want to offer flexibility and not restrict ourselves to a specific
- *file
- * format, we support any file that contains any valid JSON documents separated
- *by one
- * or more character that is considered a whitespace by the JSON spec.
- * Namely: space, nothing, linefeed, carriage return, horizontal tab.
- * Anything that is not whitespace will be parsed as a JSON document and could
- *lead
- * to failure.
- *
- * To offer maximum parsing speed, our implementation processes the data inside
- *the
- * buffer by batches and their size is defined by the parameter "batch_size".
- * By loading data in batches, we can optimize the time spent allocating data in
- *the
- * parser and can also open the possibility of multi-threading.
- * The batch_size must be at least as large as the biggest document in the file,
- *but
- * not too large in order to submerge the chached memory.  We found that 1MB is
- * somewhat a sweet spot for now.  Eventually, this batch_size could be fully
- * automated and be optimal at all times.
- ************************************************************************************/
+template <class string_container = padded_string> class JsonStream;
+
 /**
-*  The template parameter (string_container) must
-* support the data() and size() methods, returning a pointer
-* to a char* and to the number of bytes respectively.
-* The simdjson parser may read up to SIMDJSON_PADDING bytes beyond the end
-* of the string, so if you do not use a padded_string container,
-* you have the responsability to overallocated. If you fail to
-* do so, your software may crash if you cross a page boundary,
-* and you should expect memory checkers to object.
-* Most users should use a simdjson::padded_string.
-*/
-template <class string_container = padded_string> class JsonStream {
+ * A forward-only stream of documents.
+ *
+ * Produced by document::parser::parse_many.
+ *
+ */
+class document::stream {
 public:
-  /* Create a JsonStream object that can be used to parse sequentially the valid
-   * JSON documents found in the buffer "buf".
-   *
-   * The batch_size must be at least as large as the biggest document in the
-   * file, but
-   * not too large to submerge the cached memory.  We found that 1MB is
-   * somewhat a sweet spot for now.
-   *
-   * The user is expected to call the following json_parse method to parse the
-   * next
-   * valid JSON document found in the buffer.  This method can and is expected
-   * to be
-   * called in a loop.
-   *
-   * Various methods are offered to keep track of the status, like
-   * get_current_buffer_loc,
-   * get_n_parsed_docs, get_n_bytes_parsed, etc.
-   *
-   * */
-  JsonStream(const string_container &s, size_t batch_size = 1000000);
+  really_inline ~stream() noexcept;
 
-  ~JsonStream();
+  /**
+   * Take another stream's buffers and state.
+   *
+   * @param other The stream to take. Its capacity is zeroed.
+   */
+  stream(document::stream &&other) = default;
+  stream(const document::stream &) = delete; // Disallow copying
+  /**
+   * Take another stream's buffers and state.
+   *
+   * @param other The stream to take. Its capacity is zeroed.
+   */
+  stream &operator=(document::stream &&other) = default;
+  stream &operator=(const document::stream &) = delete; // Disallow copying
 
-  /* Parse the next document found in the buffer previously given to JsonStream.
+  /**
+   * An iterator through a forward-only stream of documents.
+   */
+  class iterator {
+  public:
+    /**
+     * Get the current document (or error).
+     */
+    really_inline doc_ref_result operator*() noexcept;
+    /**
+     * Advance to the next document.
+     */
+    inline iterator& operator++() noexcept;
+    /**
+     * Check if we're at the end yet.
+     * @param other the end iterator to compare to.
+     */
+    really_inline bool operator!=(const iterator &other) const noexcept;
 
+  private:
+    iterator(stream& stream, bool finished) noexcept;
+    /** The stream parser we're iterating through. */
+    stream& _stream;
+    /** Whether we're finished or not. */
+    bool finished;
+    friend class stream;
+  };
+
+  /**
+   * Start iterating the documents in the stream.
+   */
+  really_inline iterator begin() noexcept;
+  /**
+   * The end of the stream, for iterator comparison purposes.
+   */
+  really_inline iterator end() noexcept;
+
+private:
+  really_inline stream(document::parser &parser, const uint8_t *buf, size_t len, size_t batch_size = 1000000) noexcept;
+
+  /**
+   * Parse the next document found in the buffer previously given to stream.
+   *
    * The content should be a valid JSON document encoded as UTF-8. If there is a
    * UTF-8 BOM, the caller is responsible for omitting it, UTF-8 BOM are
    * discouraged.
    *
    * You do NOT need to pre-allocate a parser.  This function takes care of
-   * pre-allocating a capacity defined by the batch_size defined when creating
-   the
-   * JsonStream object.
+   * pre-allocating a capacity defined by the batch_size defined when creating the
+   * stream object.
    *
-   * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in
-   case
-   * of success and indicates that the buffer still contains more data to be
-   parsed,
+   * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case
+   * of success and indicates that the buffer still contains more data to be parsed,
    * meaning this function can be called again to return the next JSON document
    * after this one.
    *
@@ -1824,43 +2151,46 @@ public:
    * and indicates that the buffer has successfully been parsed to the end.
    * Every document it contained has been parsed without error.
    *
-   * The function returns an error code from simdjson/simdjson.h in case of
-   failure
-   * such as simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and
-   so forth;
-   * the simdjson::error_message function converts these error codes into a
-   * string).
+   * The function returns an error code from simdjson/simdjson.h in case of failure
+   * such as simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and so forth;
+   * the simdjson::error_message function converts these error codes into a string).
    *
-   * You can also check validity by calling parser.is_valid(). The same parser
-   can
+   * You can also check validity by calling parser.is_valid(). The same parser can
    * and should be reused for the other documents in the buffer. */
-  int json_parse(document::parser &parser);
+  inline error_code json_parse() noexcept;
 
-  /* Returns the location (index) of where the next document should be in the
+  /**
+   * Returns the location (index) of where the next document should be in the
    * buffer.
    * Can be used for debugging, it tells the user the position of the end of the
    * last
-   * valid JSON document parsed*/
+   * valid JSON document parsed
+   */
   inline size_t get_current_buffer_loc() const { return current_buffer_loc; }
 
-  /* Returns the total amount of complete documents parsed by the JsonStream,
-   * in the current buffer, at the given time.*/
+  /**
+   * Returns the total amount of complete documents parsed by the stream,
+   * in the current buffer, at the given time.
+   */
   inline size_t get_n_parsed_docs() const { return n_parsed_docs; }
 
-  /* Returns the total amount of data (in bytes) parsed by the JsonStream,
-   * in the current buffer, at the given time.*/
+  /**
+   * Returns the total amount of data (in bytes) parsed by the stream,
+   * in the current buffer, at the given time.
+   */
   inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
 
-private:
-  inline const uint8_t *buf() const { return reinterpret_cast<uint8_t*>(str.data()) + str_start; }
+  inline const uint8_t *buf() const { return _buf + buf_start; }
 
-  inline void advance(size_t offset) { str_start += offset; }
+  inline void advance(size_t offset) { buf_start += offset; }
 
-  inline size_t remaining() const { return str.size() - str_start; }
+  inline size_t remaining() const { return _len - buf_start; }
 
-  const string_container &str;
+  document::parser &parser;
+  const uint8_t *_buf;
+  const size_t _len;
   size_t _batch_size; // this is actually variable!
-  size_t str_start{0};
+  size_t buf_start{0};
   size_t next_json{0};
   bool load_next_batch{true};
   size_t current_buffer_loc{0};
@@ -1869,17 +2199,19 @@ private:
 #endif
   size_t n_parsed_docs{0};
   size_t n_bytes_parsed{0};
-  simdjson::implementation *stage_parser;
+  error_code error{SUCCESS_AND_HAS_MORE};
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
   std::thread stage_1_thread;
   document::parser parser_thread;
 #endif
-}; // end of class JsonStream
+  template <class string_container> friend class JsonStream;
+  friend class document::parser;
+}; // class document::stream
 
 } // end of namespace simdjson
-#endif // SIMDJSON_JSONSTREAM_H
-/* end file include/simdjson/jsonstream.h */
+#endif // SIMDJSON_DOCUMENT_STREAM_H
+/* end file include/simdjson/document_stream.h */
 /* begin file include/simdjson/jsonminifier.h */
 #ifndef SIMDJSON_JSONMINIFIER_H
 #define SIMDJSON_JSONMINIFIER_H
@@ -2410,6 +2742,131 @@ document::parser build_parsed_json(const char *buf) noexcept = delete;
 
 #endif
 /* end file include/simdjson/jsonioutil.h */
+/* begin file include/simdjson/jsonstream.h */
+// TODO Remove this -- deprecated API and files
+
+#ifndef SIMDJSON_JSONSTREAM_H
+#define SIMDJSON_JSONSTREAM_H
+
+
+namespace simdjson {
+
+/**
+ * @deprecated use document::stream instead.
+ *
+ * The main motivation for this piece of software is to achieve maximum speed and offer
+ * good quality of life while parsing files containing multiple JSON documents.
+ *
+ * Since we want to offer flexibility and not restrict ourselves to a specific file
+ * format, we support any file that contains any valid JSON documents separated by one
+ * or more character that is considered a whitespace by the JSON spec.
+ * Namely: space, nothing, linefeed, carriage return, horizontal tab.
+ * Anything that is not whitespace will be parsed as a JSON document and could lead
+ * to failure.
+ *
+ * To offer maximum parsing speed, our implementation processes the data inside the
+ * buffer by batches and their size is defined by the parameter "batch_size".
+ * By loading data in batches, we can optimize the time spent allocating data in the
+ * parser and can also open the possibility of multi-threading.
+ * The batch_size must be at least as large as the biggest document in the file, but
+ * not too large in order to submerge the chached memory.  We found that 1MB is
+ * somewhat a sweet spot for now.  Eventually, this batch_size could be fully
+ * automated and be optimal at all times.
+ *
+ *  The template parameter (string_container) must
+ * support the data() and size() methods, returning a pointer
+ * to a char* and to the number of bytes respectively.
+ * The simdjson parser may read up to SIMDJSON_PADDING bytes beyond the end
+ * of the string, so if you do not use a padded_string container,
+ * you have the responsability to overallocated. If you fail to
+ * do so, your software may crash if you cross a page boundary,
+ * and you should expect memory checkers to object.
+ * Most users should use a simdjson::padded_string.
+ */
+template <class string_container> class JsonStream {
+public:
+  /* Create a JsonStream object that can be used to parse sequentially the valid
+   * JSON documents found in the buffer "buf".
+   *
+   * The batch_size must be at least as large as the biggest document in the
+   * file, but
+   * not too large to submerge the cached memory.  We found that 1MB is
+   * somewhat a sweet spot for now.
+   *
+   * The user is expected to call the following json_parse method to parse the
+   * next
+   * valid JSON document found in the buffer.  This method can and is expected
+   * to be
+   * called in a loop.
+   *
+   * Various methods are offered to keep track of the status, like
+   * get_current_buffer_loc,
+   * get_n_parsed_docs, get_n_bytes_parsed, etc.
+   *
+   * */
+  JsonStream(const string_container &s, size_t _batch_size = 1000000) noexcept;
+
+  ~JsonStream() noexcept;
+
+  /* Parse the next document found in the buffer previously given to JsonStream.
+
+   * The content should be a valid JSON document encoded as UTF-8. If there is a
+   * UTF-8 BOM, the caller is responsible for omitting it, UTF-8 BOM are
+   * discouraged.
+   *
+   * You do NOT need to pre-allocate a parser.  This function takes care of
+   * pre-allocating a capacity defined by the batch_size defined when creating
+   the
+   * JsonStream object.
+   *
+   * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in
+   case
+   * of success and indicates that the buffer still contains more data to be
+   parsed,
+   * meaning this function can be called again to return the next JSON document
+   * after this one.
+   *
+   * The function returns simdjson::SUCCESS (as integer = 0) in case of success
+   * and indicates that the buffer has successfully been parsed to the end.
+   * Every document it contained has been parsed without error.
+   *
+   * The function returns an error code from simdjson/simdjson.h in case of
+   failure
+   * such as simdjson::CAPACITY, simdjson::MEMALLOC, simdjson::DEPTH_ERROR and
+   so forth;
+   * the simdjson::error_message function converts these error codes into a
+   * string).
+   *
+   * You can also check validity by calling parser.is_valid(). The same parser
+   can
+   * and should be reused for the other documents in the buffer. */
+  int json_parse(document::parser &parser) noexcept;
+
+  /* Returns the location (index) of where the next document should be in the
+   * buffer.
+   * Can be used for debugging, it tells the user the position of the end of the
+   * last
+   * valid JSON document parsed*/
+  inline size_t get_current_buffer_loc() const noexcept { return stream ? stream->current_buffer_loc : 0; }
+
+  /* Returns the total amount of complete documents parsed by the JsonStream,
+   * in the current buffer, at the given time.*/
+  inline size_t get_n_parsed_docs() const noexcept { return stream ? stream->n_parsed_docs : 0; }
+
+  /* Returns the total amount of data (in bytes) parsed by the JsonStream,
+   * in the current buffer, at the given time.*/
+  inline size_t get_n_bytes_parsed() const noexcept { return stream ? stream->n_bytes_parsed : 0; }
+
+private:
+  const string_container &str;
+  const size_t batch_size;
+  document::stream *stream{nullptr};
+}; // end of class JsonStream
+
+} // end of namespace simdjson
+
+#endif // SIMDJSON_JSONSTREAM_H
+/* end file include/simdjson/jsonstream.h */
 
 // Inline functions
 /* begin file include/simdjson/inline/document.h */
@@ -2431,32 +2888,32 @@ template<typename T>
 inline document::element_result<T>::element_result(error_code _error) noexcept : value(), error{_error} {}
 template<>
 inline document::element_result<std::string_view>::operator std::string_view() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<const char *>::operator const char *() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<bool>::operator bool() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<uint64_t>::operator uint64_t() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<int64_t>::operator int64_t() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 template<>
 inline document::element_result<double>::operator double() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 
@@ -2466,15 +2923,15 @@ inline document::element_result<double>::operator double() const noexcept(false)
 inline document::element_result<document::array>::element_result(document::array _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::array>::element_result(error_code _error) noexcept : value(), error{_error} {}
 inline document::element_result<document::array>::operator document::array() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 inline document::array::iterator document::element_result<document::array>::begin() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.begin();
 }
 inline document::array::iterator document::element_result<document::array>::end() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.end();
 }
 
@@ -2484,7 +2941,7 @@ inline document::array::iterator document::element_result<document::array>::end(
 inline document::element_result<document::object>::element_result(document::object _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::object>::element_result(error_code _error) noexcept : value(), error{_error} {}
 inline document::element_result<document::object>::operator document::object() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value;
 }
 inline document::element_result<document::element> document::element_result<document::object>::operator[](const std::string_view &key) const noexcept {
@@ -2496,11 +2953,11 @@ inline document::element_result<document::element> document::element_result<docu
   return value[key];
 }
 inline document::object::iterator document::element_result<document::object>::begin() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.begin();
 }
 inline document::object::iterator document::element_result<document::object>::end() const noexcept(false) {
-  if (error) { throw invalid_json(error); }
+  if (error) { throw simdjson_error(error); }
   return value.end();
 }
 
@@ -2852,12 +3309,12 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 inline document::doc_ref_result::doc_ref_result(document &_doc, error_code _error) noexcept : doc(_doc), error(_error) { }
 inline document::doc_ref_result::operator document&() noexcept(false) {
   if (error) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return doc;
 }
 inline const std::string &document::doc_ref_result::get_error_message() const noexcept {
-  return error_message(error);
+  return error.error_message();
 }
 
 //
@@ -2868,12 +3325,12 @@ inline document::doc_result::doc_result(document &&_doc) noexcept : doc(std::mov
 inline document::doc_result::doc_result(error_code _error) noexcept : doc(), error(_error) { }
 inline document::doc_result::operator document() noexcept(false) {
   if (error) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return std::move(doc);
 }
 inline const std::string &document::doc_result::get_error_message() const noexcept {
-  return error_message(error);
+  return error.error_message();
 }
 
 //
@@ -2881,7 +3338,7 @@ inline const std::string &document::doc_result::get_error_message() const noexce
 //
 inline bool document::parser::is_valid() const noexcept { return valid; }
 inline int document::parser::get_error_code() const noexcept { return error; }
-inline std::string document::parser::get_error_message() const noexcept { return error_message(error); }
+inline std::string document::parser::get_error_message() const noexcept { return error.error_message(); }
 inline bool document::parser::print_json(std::ostream &os) const noexcept {
   return is_valid() ? doc.print_json(os) : false;
 }
@@ -2890,7 +3347,7 @@ inline bool document::parser::dump_raw_tape(std::ostream &os) const noexcept {
 }
 inline const document &document::parser::get_document() const noexcept(false) {
   if (!is_valid()) {
-    throw invalid_json(error);
+    throw simdjson_error(error);
   }
   return doc;
 }
@@ -2925,6 +3382,19 @@ really_inline document::doc_ref_result document::parser::parse(const std::string
 }
 really_inline document::doc_ref_result document::parser::parse(const padded_string &s) noexcept {
   return parse(s.data(), s.length(), false);
+}
+
+inline document::stream document::parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+  return stream(*this, buf, len, batch_size);
+}
+inline document::stream document::parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
+  return parse_many((const uint8_t *)buf, len, batch_size);
+}
+inline document::stream document::parser::parse_many(const std::string &s, size_t batch_size) noexcept {
+  return parse_many(s.data(), s.length(), batch_size);
+}
+inline document::stream document::parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
+  return parse_many(s.data(), s.length(), batch_size);
 }
 
 really_inline size_t document::parser::capacity() const noexcept {
@@ -3782,9 +4252,9 @@ bool document_iterator<max_depth>::relative_move_to(const char *pointer,
 
 #endif // SIMDJSON_INLINE_DOCUMENT_ITERATOR_H
 /* end file include/simdjson/inline/document_iterator.h */
-/* begin file include/simdjson/inline/jsonstream.h */
-#ifndef SIMDJSON_INLINE_JSONSTREAM_H
-#define SIMDJSON_INLINE_JSONSTREAM_H
+/* begin file include/simdjson/inline/document_stream.h */
+#ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
+#define SIMDJSON_INLINE_DOCUMENT_STREAM_H
 
 #include <algorithm>
 #include <limits>
@@ -3793,7 +4263,8 @@ bool document_iterator<max_depth>::relative_move_to(const char *pointer,
 
 namespace simdjson::internal {
 
-/* This algorithm is used to quickly identify the buffer position of
+/**
+ * This algorithm is used to quickly identify the buffer position of
  * the last JSON document inside the current batch.
  *
  * It does its work by finding the last pair of structural characters
@@ -3880,13 +4351,16 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson {
 
-template <class string_container>
-JsonStream<string_container>::JsonStream(const string_container &s,
-                                         size_t batchSize)
-    : str(s), _batch_size(batchSize) {
+really_inline document::stream::stream(
+  document::parser &_parser,
+  const uint8_t *buf,
+  size_t len,
+  size_t batch_size
+) noexcept : parser{_parser}, _buf{buf}, _len{len}, _batch_size(batch_size) {
+  error = json_parse();
 }
 
-template <class string_container> JsonStream<string_container>::~JsonStream() {
+inline document::stream::~stream() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   if (stage_1_thread.joinable()) {
     stage_1_thread.join();
@@ -3894,24 +4368,53 @@ template <class string_container> JsonStream<string_container>::~JsonStream() {
 #endif
 }
 
+really_inline document::stream::iterator document::stream::begin() noexcept {
+  return iterator(*this, false);
+}
+
+really_inline document::stream::iterator document::stream::end() noexcept {
+  return iterator(*this, true);
+}
+
+really_inline document::stream::iterator::iterator(stream& stream, bool _is_end) noexcept
+  : _stream{stream}, finished{_is_end} {
+}
+
+really_inline document::doc_ref_result document::stream::iterator::operator*() noexcept {
+  return doc_ref_result(_stream.parser.doc, _stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : _stream.error);
+}
+
+really_inline document::stream::iterator& document::stream::iterator::operator++() noexcept {
+  if (_stream.error == SUCCESS_AND_HAS_MORE) {
+    _stream.error = _stream.json_parse();
+  } else {
+    finished = true;
+  }
+  return *this;
+}
+
+really_inline bool document::stream::iterator::operator!=(const document::stream::iterator &other) const noexcept {
+  return finished != other.finished;
+}
+
 #ifdef SIMDJSON_THREADS_ENABLED
 
 // threaded version of json_parse
 // todo: simplify this code further
-template <class string_container>
-int JsonStream<string_container>::json_parse(document::parser &parser) {
+inline error_code document::stream::json_parse() noexcept {
+  // TODO we should bump the parser *anytime* capacity is less than batch size, not just 0.
   if (unlikely(parser.capacity() == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
-      return parser.error = simdjson::MEMALLOC;
+      return simdjson::MEMALLOC;
     }
   } else if (unlikely(parser.capacity() < _batch_size)) {
-    return parser.error = simdjson::CAPACITY;
+    return simdjson::CAPACITY;
   }
   if (unlikely(parser_thread.capacity() < _batch_size)) {
     const bool allocok_thread = parser_thread.allocate_capacity(_batch_size);
     if (!allocok_thread) {
-      return parser.error = simdjson::MEMALLOC;
+      return simdjson::MEMALLOC;
     }
   }
   if (unlikely(load_next_batch)) {
@@ -3920,16 +4423,16 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
       _batch_size = (std::min)(_batch_size, remaining());
       _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
       if (_batch_size == 0) {
-        return parser.error = simdjson::UTF8_ERROR;
+        return simdjson::UTF8_ERROR;
       }
       auto stage1_is_ok = error_code(simdjson::active_implementation->stage1(buf(), _batch_size, parser, true));
       if (stage1_is_ok != simdjson::SUCCESS) {
-        return parser.error = stage1_is_ok;
+        return stage1_is_ok;
       }
       size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
       if (last_index == 0) {
         if (parser.n_structural_indexes == 0) {
-          return parser.error = simdjson::EMPTY;
+          return simdjson::EMPTY;
         }
       } else {
         parser.n_structural_indexes = last_index + 1;
@@ -3939,7 +4442,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     else {
       stage_1_thread.join();
       if (stage1_is_ok_thread != simdjson::SUCCESS) {
-        return parser.error = stage1_is_ok_thread;
+        return stage1_is_ok_thread;
       }
       std::swap(parser.structural_indexes, parser_thread.structural_indexes);
       parser.n_structural_indexes = parser_thread.n_structural_indexes;
@@ -3955,7 +4458,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
         _batch_size = internal::trimmed_length_safe_utf8(
             (const char *)(buf() + last_json_buffer_loc), _batch_size);
         if (_batch_size == 0) {
-          return parser.error = simdjson::UTF8_ERROR;
+          return simdjson::UTF8_ERROR;
         }
         // let us capture read-only variables
         const uint8_t *const b = buf() + last_json_buffer_loc;
@@ -3971,7 +4474,7 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     next_json = 0;
     load_next_batch = false;
   } // load_next_batch
-  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
   if (res == simdjson::SUCCESS_AND_HAS_MORE) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];
@@ -3990,17 +4493,14 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
 #else  // SIMDJSON_THREADS_ENABLED
 
 // single-threaded version of json_parse
-template <class string_container>
-int JsonStream<string_container>::json_parse(document::parser &parser) {
+inline error_code document::stream::json_parse() noexcept {
   if (unlikely(parser.capacity() == 0)) {
     const bool allocok = parser.allocate_capacity(_batch_size);
     if (!allocok) {
-      parser.valid = false;
-      return parser.error = MEMALLOC;
+      return MEMALLOC;
     }
   } else if (unlikely(parser.capacity() < _batch_size)) {
-      parser.valid = false;
-      return parser.error = CAPACITY;
+      return CAPACITY;
   }
   if (unlikely(load_next_batch)) {
     advance(current_buffer_loc);
@@ -4009,21 +4509,19 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
     _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
     auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
-      parser.valid = false;
-      return parser.error = stage1_is_ok;
+      return stage1_is_ok;
     }
     size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
-        parser.valid = false;
-        return parser.error = EMPTY;
+        return EMPTY;
       }
     } else {
       parser.n_structural_indexes = last_index + 1;
     }
     load_next_batch = false;
   } // load_next_batch
-  int res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
   if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];
@@ -4035,14 +4533,127 @@ int JsonStream<string_container>::json_parse(document::parser &parser) {
       load_next_batch = true;
       res = simdjson::SUCCESS_AND_HAS_MORE;
     }
-  } else {
-    printf("E\n");
   }
   return res;
 }
 #endif // SIMDJSON_THREADS_ENABLED
 
 } // end of namespace simdjson
+#endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
+/* end file include/simdjson/inline/document_stream.h */
+/* begin file include/simdjson/inline/error.h */
+#ifndef SIMDJSON_INLINE_ERROR_H
+#define SIMDJSON_INLINE_ERROR_H
+
+#include <map>
+#include <string>
+
+namespace simdjson {
+
+namespace internal {
+  inline const std::map<int, const std::string> error_messages = {
+    {SUCCESS, "No error"},
+    {SUCCESS_AND_HAS_MORE, "No error and buffer still has more data"},
+    {CAPACITY, "This parser can't support a document that big"},
+    {MEMALLOC, "Error allocating memory, we're most likely out of memory"},
+    {TAPE_ERROR, "Something went wrong while writing to the tape"},
+    {DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)"},
+    {STRING_ERROR, "Problem while parsing a string"},
+    {T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'"},
+    {F_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'f'"},
+    {N_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'n'"},
+    {NUMBER_ERROR, "Problem while parsing a number"},
+    {UTF8_ERROR, "The input is not valid UTF-8"},
+    {UNINITIALIZED, "Uninitialized"},
+    {EMPTY, "Empty: no JSON found"},
+    {UNESCAPED_CHARS, "Within strings, some characters must be escaped, we"
+                        " found unescaped characters"},
+    {UNCLOSED_STRING, "A string is opened, but never closed."},
+    {UNSUPPORTED_ARCHITECTURE, "simdjson does not have an implementation"
+                                " supported by this CPU architecture (perhaps"
+                                " it's a non-SIMD CPU?)."},
+    {INCORRECT_TYPE, "The JSON element does not have the requested type."},
+    {NUMBER_OUT_OF_RANGE, "The JSON number is too large or too small to fit within the requested type."},
+    {NO_SUCH_FIELD, "The JSON field referenced does not exist in this object."},
+    {UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as"
+                        " you may have found a bug in simdjson"},
+  };
+}
+
+//
+// error_code inline implementation
+//
+inline const std::string &error_code::error_message() const noexcept {
+  // It's impossible to construct an error_code without it existing in the map, so this is always safe
+  return internal::error_messages.find(code)->second;
+}
+constexpr error_code::operator bool() const noexcept { return code; }
+constexpr bool error_code::operator!() const noexcept { return !code; }
+constexpr bool error_code::operator==(const error_code &other) const noexcept { return code == other.code; }
+constexpr bool error_code::operator!=(const error_code &other) const noexcept { return code != other.code; }
+constexpr error_code::operator int() const noexcept { return code; }
+constexpr error_code::error_code() noexcept : code{UNINITIALIZED.code} {}
+
+constexpr bool operator==(int a, const error_code &b) noexcept { return a == int(b); }
+constexpr bool operator!=(int a, const error_code &b) noexcept { return a != int(b); }
+inline std::ostream& operator<<(std::ostream& o, const error_code &error) noexcept { return o << error.error_message(); }
+
+//
+// simdjson_error inline implementation
+//
+
+inline simdjson_error::simdjson_error(error_code code) noexcept : _code{code} {}
+constexpr error_code simdjson_error::code() const noexcept { return _code; }
+inline const char *simdjson_error::what() const noexcept { return error_message().c_str(); }
+constexpr bool simdjson_error::operator==(const error_code &other) const noexcept { return code() == other; }
+constexpr bool simdjson_error::operator!=(const error_code &other) const noexcept { return code() == other; }
+inline const std::string & simdjson_error::error_message() const noexcept {
+    return code().error_message();
+}
+
+inline const std::string &error_message(int error) noexcept {
+  if (internal::error_messages.find(error) == internal::error_messages.end()) {
+    return UNEXPECTED_ERROR.error_message();
+  }
+  return error_code(error).error_message();
+}
+
+} // namespace simdjson
+
+#endif // SIMDJSON_INLINE_ERROR_H
+/* end file include/simdjson/inline/error.h */
+/* begin file include/simdjson/inline/jsonstream.h */
+// TODO Remove this -- deprecated API and files
+
+#ifndef SIMDJSON_INLINE_JSONSTREAM_H
+#define SIMDJSON_INLINE_JSONSTREAM_H
+
+
+namespace simdjson {
+
+template <class string_container>
+inline JsonStream<string_container>::JsonStream(const string_container &s, size_t _batch_size) noexcept
+    : str(s), batch_size(_batch_size) {
+}
+
+template <class string_container>
+inline JsonStream<string_container>::~JsonStream() noexcept {
+  if (stream) { delete stream; }
+}
+
+template <class string_container>
+inline int JsonStream<string_container>::json_parse(document::parser &parser) noexcept {
+  if (unlikely(stream == nullptr)) {
+    stream = new document::stream(parser, reinterpret_cast<const uint8_t*>(str.data()), str.length(), batch_size);
+  } else {
+    if (&parser != &stream->parser) { return stream->error = TAPE_ERROR; }
+    stream->error = stream->json_parse();
+  }
+  return stream->error;
+}
+
+} // namespace simdjson
+
 #endif // SIMDJSON_INLINE_JSONSTREAM_H
 /* end file include/simdjson/inline/jsonstream.h */
 

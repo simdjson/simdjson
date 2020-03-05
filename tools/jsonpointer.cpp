@@ -1,37 +1,37 @@
 #include "simdjson.h"
 #include <iostream>
 
-void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-  if (pjh.is_object()) {
+void compute_dump(simdjson::document::iterator &iter) {
+  if (iter.is_object()) {
     std::cout << "{";
-    if (pjh.down()) {
-      pjh.print(std::cout); // must be a string
+    if (iter.down()) {
+      iter.print(std::cout); // must be a string
       std::cout << ":";
-      pjh.next();
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
+      iter.next();
+      compute_dump(iter); // let us recurse
+      while (iter.next()) {
         std::cout << ",";
-        pjh.print(std::cout);
+        iter.print(std::cout);
         std::cout << ":";
-        pjh.next();
-        compute_dump(pjh); // let us recurse
+        iter.next();
+        compute_dump(iter); // let us recurse
       }
-      pjh.up();
+      iter.up();
     }
     std::cout << "}";
-  } else if (pjh.is_array()) {
+  } else if (iter.is_array()) {
     std::cout << "[";
-    if (pjh.down()) {
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
+    if (iter.down()) {
+      compute_dump(iter); // let us recurse
+      while (iter.next()) {
         std::cout << ",";
-        compute_dump(pjh); // let us recurse
+        compute_dump(iter); // let us recurse
       }
-      pjh.up();
+      iter.up();
     }
     std::cout << "]";
   } else {
-    pjh.print(std::cout); // just print the lone value
+    iter.print(std::cout); // just print the lone value
   }
 }
 
@@ -58,27 +58,26 @@ int main(int argc, char *argv[]) {
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  simdjson::ParsedJson pj;
-  bool allocok = pj.allocate_capacity(p.size(), 1024);
+  simdjson::document::parser parser;
+  bool allocok = parser.allocate_capacity(p.size(), 1024);
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res =
-      simdjson::json_parse(p, pj); // do the parsing, return false on error
-  if (res) {
-    std::cerr << " Parsing failed with error " << simdjson::error_message(res)
+  auto [doc, error] = parser.parse(p); // do the parsing
+  if (error) {
+    std::cerr << " Parsing failed with error " << error
               << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << "[" << std::endl;
   for (int idx = 2; idx < argc; idx++) {
     const char *jsonpath = argv[idx];
-    simdjson::ParsedJson::Iterator it(pj);
-    if (it.move_to(std::string(jsonpath))) {
+    simdjson::document::iterator iter(parser);
+    if (iter.move_to(std::string(jsonpath))) {
       std::cout << "{\"jsonpath\": \"" << jsonpath << "\"," << std::endl;
       std::cout << "\"value\":";
-      compute_dump(it);
+      compute_dump(iter);
       std::cout << "}" << std::endl;
     } else {
       std::cout << "null" << std::endl;

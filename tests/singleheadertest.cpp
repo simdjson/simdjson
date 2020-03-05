@@ -15,7 +15,7 @@ int main() {
   }
   const int res = json_parse(p, pj);
   if (res) {
-    std::cerr << error_message(res) << std::endl;
+    std::cerr << res << std::endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

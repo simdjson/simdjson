@@ -4,37 +4,37 @@
 #endif
 #include "simdjson.h"
 
-void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-  if (pjh.is_object()) {
+void compute_dump(simdjson::document::iterator &iter) {
+  if (iter.is_object()) {
     std::cout << "{";
-    if (pjh.down()) {
-      pjh.print(std::cout); // must be a string
+    if (iter.down()) {
+      iter.print(std::cout); // must be a string
       std::cout << ":";
-      pjh.next();
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
+      iter.next();
+      compute_dump(iter); // let us recurse
+      while (iter.next()) {
         std::cout << ",";
-        pjh.print(std::cout);
+        iter.print(std::cout);
         std::cout << ":";
-        pjh.next();
-        compute_dump(pjh); // let us recurse
+        iter.next();
+        compute_dump(iter); // let us recurse
       }
-      pjh.up();
+      iter.up();
     }
     std::cout << "}";
-  } else if (pjh.is_array()) {
+  } else if (iter.is_array()) {
     std::cout << "[";
-    if (pjh.down()) {
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
+    if (iter.down()) {
+      compute_dump(iter); // let us recurse
+      while (iter.next()) {
         std::cout << ",";
-        compute_dump(pjh); // let us recurse
+        compute_dump(iter); // let us recurse
       }
-      pjh.up();
+      iter.up();
     }
     std::cout << "]";
   } else {
-    pjh.print(std::cout); // just print the lone value
+    iter.print(std::cout); // just print the lone value
   }
 }
 
@@ -79,29 +79,28 @@ int main(int argc, char *argv[]) {
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  simdjson::ParsedJson pj;
-  bool allocok = pj.allocate_capacity(p.size(), 1024);
+  simdjson::document::parser parser;
+  bool allocok = parser.allocate_capacity(p.size(), 1024);
   if (!allocok) {
     std::cerr << "failed to allocate memory" << std::endl;
     return EXIT_FAILURE;
   }
-  int res =
-      simdjson::json_parse(p, pj); // do the parsing, return false on error
-  if (res != simdjson::SUCCESS) {
-    std::cerr << " Parsing failed. Error is '" << simdjson::error_message(res)
+  auto [doc, error] = parser.parse(p);
+  if (error) {
+    std::cerr << " Parsing failed. Error is '" << error
               << "'." << std::endl;
     return EXIT_FAILURE;
   }
   if (apidump) {
-    simdjson::ParsedJson::Iterator pjh(pj);
-    if (!pjh.is_ok()) {
+    simdjson::document::iterator iter(parser);
+    if (!iter.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
     }
-    compute_dump(pjh);
+    compute_dump(iter);
   } else {
     const bool is_ok =
-        rawdump ? pj.dump_raw_tape(std::cout) : pj.print_json(std::cout);
+        rawdump ? parser.dump_raw_tape(std::cout) : parser.print_json(std::cout);
     if (!is_ok) {
       std::cerr << " Could not print out parsed result. " << std::endl;
       return EXIT_FAILURE;

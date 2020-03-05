@@ -179,7 +179,7 @@ if (!parser.allocate_capacity(1024*1024)) { exit(1); }
 for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
   cout << "Parsing " << json.data() << " ..." << endl;
   auto [doc, error] = parser.parse(json);
-  if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+  if (error) { cerr << "Error: " << error << endl; exit(1); }
   doc.print_json(cout);
   cout << endl;
 }

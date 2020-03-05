@@ -320,7 +320,7 @@ struct benchmarker {
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {
-      exit_error(string("Failed to parse ") + filename + " during stage 1: " + error_message(error));
+      exit_error(string("Failed to parse ") + filename + " during stage 1: " + error.error_message());
     }
 
     // Stage 2 (unified machine) and the rest
@@ -332,7 +332,7 @@ struct benchmarker {
       collector.start();
       error = active_implementation->stage2((const uint8_t *)json.data(), json.size(), parser);
       if (error) {
-        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error_message(error));
+        exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error.error_message());
       }
       stage2_count = collector.end();
       stage2 << stage2_count;

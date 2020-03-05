@@ -8,7 +8,7 @@ void document_parse_error_code() {
 
   string json("[ 1, 2, 3 ]");
   auto [doc, error] = document::parse(json);
-  if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+  if (error) { cerr << "Error: " << error << endl; exit(1); }
   if (!doc.print_json(cout)) { exit(1); }
   cout << endl;
 }
@@ -51,7 +51,7 @@ void parser_parse() {
   for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
     cout << "Parsing " << json.data() << " ..." << endl;
     auto [doc, error] = parser.parse(json);
-    if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+    if (error) { cerr << "Error: " << error << endl; exit(1); }
     if (!doc.print_json(cout)) { exit(1); }
     cout << endl;
   }
@@ -65,7 +65,7 @@ void parser_parse_many_error_code() {
   cout << "Parsing " << json.data() << " ..." << endl;
   document::parser parser;
   for (auto [doc, error] : parser.parse_many(json)) {
-    if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+    if (error) { cerr << "Error: " << error << endl; exit(1); }
     if (!doc.print_json(cout)) { exit(1); }
     cout << endl;
   }

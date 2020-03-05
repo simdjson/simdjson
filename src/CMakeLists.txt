@@ -27,7 +27,6 @@ set(SIMDJSON_SRC
 
 # Load headers and sources
 set(SIMDJSON_SRC_HEADERS
-  error.cpp
   implementation.cpp
   isadetection.h
   jsonioutil.cpp

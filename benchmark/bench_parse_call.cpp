@@ -30,7 +30,7 @@ static void parser_parse_exception(State& state) {
   for (auto _ : state) {
     try {
       UNUSED document &doc = parser.parse(EMPTY_ARRAY);
-    } catch(invalid_json &j) {
+    } catch(simdjson_error &j) {
       return;
     }
   }
@@ -55,7 +55,7 @@ static void document_parse_exception(State& state) {
   for (auto _ : state) {
     try {
       UNUSED document doc = document::parse(EMPTY_ARRAY);
-    } catch(invalid_json &j) {
+    } catch(simdjson_error &j) {
       return;
     }
   }
