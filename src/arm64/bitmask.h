@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
-#include <simdjson.h>
+#include "simdjson.h"
 
 #ifdef IS_ARM64
 
