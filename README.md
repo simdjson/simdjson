@@ -12,7 +12,6 @@ JSON documents are everywhere on the Internet. Servers spend a lot of time parsi
 
 <img src="images/logo.png" width="10%">
 
-
 ## Real-world usage
 
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
@@ -189,12 +188,10 @@ for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true,
 
 ## Newline-Delimited JSON (ndjson) and  JSON lines 
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. We support files larger than 4GB.
-
-**API and detailed documentation found [here](doc/JsonStream.md).**
-
+The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays or objects, we even support direct file concatenation without whitespace. The concatenated file has no size restrictions (including larger than 4GB), though each individual document must be less than 4GB.
 
 Here is a simple example, using single header simdjson:
+
 ```cpp
 #include "simdjson.h"
 #include "simdjson.cpp"
@@ -202,20 +199,15 @@ Here is a simple example, using single header simdjson:
 int parse_file(const char *filename) {
     simdjson::padded_string p = simdjson::get_corpus(filename);
     simdjson::document::parser parser;
-    simdjson::JsonStream js{p};
-    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-    
-    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-            parse_res = js.json_parse(parser);
-
-            //Do something with parser...
-        }
+    for (const document &doc : parser.parse_many(p)) {
+      // do something with the document ...
+    }
 }
 ```
 
 ## Usage: easy single-header version
 
-See the "singleheader" repository for a single header version. See the included
+See the [singleheader](singleheader) directory for a single header version. See the included
 file "amalgamation_demo.cpp" for usage. This requires no specific build system: just
 copy the files in your project in your include path. You can then include them quite simply:
 
@@ -238,9 +230,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-
 Note: In some settings, it might be desirable to precompile `simdjson.cpp` instead of including it.
-
 
 ## Usage (old-school Makefile on platforms like Linux or macOS)
 

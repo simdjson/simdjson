@@ -111,13 +111,13 @@ private:
   inline size_t get_current_buffer_loc() const { return current_buffer_loc; }
 
   /**
-   * Returns the total amount of complete documents parsed by the JsonStream,
+   * Returns the total amount of complete documents parsed by the stream,
    * in the current buffer, at the given time.
    */
   inline size_t get_n_parsed_docs() const { return n_parsed_docs; }
 
   /**
-   * Returns the total amount of data (in bytes) parsed by the JsonStream,
+   * Returns the total amount of data (in bytes) parsed by the stream,
    * in the current buffer, at the given time.
    */
   inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
@@ -149,7 +149,7 @@ private:
 #endif
   template <class string_container> friend class JsonStream;
   friend class document::parser;
-}; // end of class JsonStream
+}; // class document::stream
 
 } // end of namespace simdjson
 #endif // SIMDJSON_DOCUMENT_STREAM_H

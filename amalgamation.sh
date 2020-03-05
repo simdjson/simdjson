@@ -130,34 +130,30 @@ int main(int argc, char *argv[]) {
   simdjson::padded_string p = simdjson::get_corpus(filename);
   auto [doc, error] = simdjson::document::parse(p); // do the parsing
   if (error) {
-    std::cout << "document::parse failed" << std::endl;
+    std::cout << "parse failed" << std::endl;
     std::cout << "error code: " << error << std::endl;
     std::cout << error_message(error) << std::endl;
   } else {
-    std::cout << "document::parse valid" << std::endl;
+    std::cout << "parse valid" << std::endl;
   }
   if(argc == 2) {
     return EXIT_SUCCESS;
   }
 
-  //JsonStream
+  // parse_many
   const char * filename2 = argv[2];
   simdjson::padded_string p2 = simdjson::get_corpus(filename2);
   simdjson::document::parser parser;
-  simdjson::JsonStream js{p2};
-  int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-
-  while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-            parse_res = js.json_parse(parser);
+  for (auto result : parser.parse_many(p2)) {
+    error = result.error;
   }
-
-  if( ! parser.is_valid()) {
-    std::cout << "JsonStream not valid" << std::endl;
+  if (error) {
+    std::cout << "parse_many failed" << std::endl;
+    std::cout << "error code: " << error << std::endl;
+    std::cout << error_message(error) << std::endl;
   } else {
-    std::cout << "JsonStream valid" << std::endl;
+    std::cout << "parse_many valid" << std::endl;
   }
-
-
   return EXIT_SUCCESS;
 }
 ' >>  "${DEMOCPP}"

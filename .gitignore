@@ -77,7 +77,6 @@ objs
 /json2json
 /jsoncheck
 /jsoncheck_noavx
-/jsonstream_test
 /jsonpointer
 /jsonstats
 /integer_tests
@@ -88,6 +87,7 @@ objs
 /ossfuzz-out
 /out
 /parse
+/parse_many_test
 /parse_nonumberparsing
 /parse_nostringparsing
 /parse_noutf8validation
@@ -110,7 +110,7 @@ objs
 /tests/jsoncheck
 /tests/pointercheck
 /tests/integer_tests
-/tests/jsonstream_test
+/tests/parse_many_test
 /tests/readme_examples
 /tools/json2json
 /tools/jsonstats
