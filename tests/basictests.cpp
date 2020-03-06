@@ -254,7 +254,7 @@ static bool parse_json_message_issue467(char const* message, std::size_t len, si
     simdjson::padded_string str(message,len);
     for (auto [doc, error] : parser.parse_many(str, parser.capacity())) {
       if (error) {
-          std::cerr << "Failed with simdjson error= " << simdjson::error_message(error) << std::endl;
+          std::cerr << "Failed with simdjson error= " << error << std::endl;
           return false;
       }
       count++;
@@ -784,7 +784,7 @@ namespace dom_api {
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
 
     auto [val, error] = doc["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error_message(error) << endl; return false; }
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
     return true;
   }
 
@@ -802,7 +802,7 @@ namespace dom_api {
     if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
 
     auto [val, error] = obj["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error_message(error) << endl; return false; }
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
     return true;
   }
 

@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   if (error) {
     std::cout << "document::parse failed" << std::endl;
     std::cout << "error code: " << error << std::endl;
-    std::cout << error_message(error) << std::endl;
+    std::cout << error << std::endl;
   } else {
     std::cout << "document::parse valid" << std::endl;
   }

@@ -96,7 +96,7 @@ int main (int argc, char *argv[]){
                     batch_size_res[i] = speedinGBs;
 
                 if (error != simdjson::SUCCESS) {
-                    std::wcerr << "Parsing failed with: " << simdjson::error_message(error) << std::endl;
+                    std::wcerr << "Parsing failed with: " << error << std::endl;
                     exit(1);
                 }
             }
@@ -132,7 +132,7 @@ int main (int argc, char *argv[]){
             res.push_back(secs.count());
 
             if (error != simdjson::SUCCESS) {
-                std::wcerr << "Parsing failed with: " << simdjson::error_message(error) << std::endl;
+                std::wcerr << "Parsing failed with: " << error << std::endl;
                 exit(1);
             }
 

@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   if (error) {
     std::cout << "parse failed" << std::endl;
     std::cout << "error code: " << error << std::endl;
-    std::cout << error_message(error) << std::endl;
+    std::cout << error << std::endl;
   } else {
     std::cout << "parse valid" << std::endl;
   }
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   if (error) {
     std::cout << "parse_many failed" << std::endl;
     std::cout << "error code: " << error << std::endl;
-    std::cout << error_message(error) << std::endl;
+    std::cout << error << std::endl;
   } else {
     std::cout << "parse_many valid" << std::endl;
   }

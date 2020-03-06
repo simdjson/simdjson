@@ -949,7 +949,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1011,7 +1011,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1073,7 +1073,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1134,7 +1134,7 @@ public:
    *
    *   document::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error_message(error) << endl; exit(1); }
+   *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
