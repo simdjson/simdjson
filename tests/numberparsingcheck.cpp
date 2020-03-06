@@ -180,11 +180,6 @@ bool validate(const char *dirname) {
       }
       // terrible hack but just to get it working
       simdjson::ParsedJson pj;
-      bool allocok = pj.allocate_capacity(p.size(), 1024);
-      if (!allocok) {
-        std::cerr << "can't allocate memory" << std::endl;
-        return false;
-      }
       float_count = 0;
       int_count = 0;
       invalid_count = 0;

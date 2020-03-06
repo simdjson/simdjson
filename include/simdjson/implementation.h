@@ -45,7 +45,7 @@ public:
   virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
 
   /**
-   * Run a full document parse (init_parse, stage1 and stage2).
+   * Run a full document parse (ensure_capacity, stage1 and stage2).
    *
    * Overridden by each implementation.
    *

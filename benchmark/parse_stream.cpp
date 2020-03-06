@@ -39,9 +39,9 @@ int main (int argc, char *argv[]){
         for (auto i = 0; i < 3; i++) {
             //Actual test
             simdjson::document::parser parser;
-            bool allocok = parser.allocate_capacity(p.size());
-            if (!allocok) {
-                std::cerr << "failed to allocate memory" << std::endl;
+            simdjson::error_code alloc_error = parser.set_capacity(p.size());
+            if (alloc_error) {
+                std::cerr << alloc_error << std::endl;
                 return EXIT_FAILURE;
             }
             std::istringstream ss(std::string(p.data(), p.size()));

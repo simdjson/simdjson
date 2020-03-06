@@ -199,7 +199,7 @@ public:
 private:
   class tape_ref;
   enum class tape_type;
-  bool set_capacity(size_t len);
+  inline error_code set_capacity(size_t len) noexcept;
 }; // class document
 
 /**
@@ -818,8 +818,8 @@ private:
 /**
   * A persistent document parser.
   *
-  * Use this if you intend to parse more than one document. It holds the internal memory necessary
-  * to do parsing, as well as memory for a single document that is overwritten on each parse.
+  * The parser is designed to be reused, holding the internal buffers necessary to do parsing,
+  * as well as memory for a single document. The parsed document is overwritten on each parse.
   *
   * This class cannot be copied, only moved, to avoid unintended allocations.
   *
@@ -828,9 +828,20 @@ private:
 class document::parser {
 public:
   /**
-  * Create a JSON parser with zero capacity. Call allocate_capacity() to initialize it.
+  * Create a JSON parser.
+  *
+  * The new parser will have zero capacity.
+  *
+  * @param max_capacity The maximum document length the parser can automatically handle. The parser
+  *    will allocate more capacity on an as needed basis (when it sees documents too big to handle)
+  *    up to this amount. The parser still starts with zero capacity no matter what this number is:
+  *    to allocate an initial capacity, call set_capacity() after constructing the parser. Defaults
+  *    to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
+  * @param max_depth The maximum depth--number of nested objects and arrays--this parser can handle.
+  *    This will not be allocated until parse() is called for the first time. Defaults to
+  *    DEFAULT_MAX_DEPTH.
   */
-  parser()=default;
+  really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
   ~parser()=default;
 
   /**
@@ -849,71 +860,136 @@ public:
   parser &operator=(const document::parser &) = delete; // Disallow copying
 
   /**
-   * Parse a JSON document and return a reference to it.
+   * Parse a JSON document and return a temporary reference to it.
+   *
+   *   document::parser parser;
+   *   const document &doc = parser.parse(buf, len);
+   *
+   * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
    *
+   * ### REQUIRED: Buffer Padding
+   *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If realloc_if_needed is true,
-   * it is assumed that the buffer does *not* have enough padding, and it is reallocated, enlarged
-   * and copied before parsing.
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * If realloc_if_needed is true, it is assumed that the buffer does *not* have enough padding,
+   * and it is copied into an enlarged temporary buffer before parsing.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than len, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
    *            realloc_if_needed is true.
    * @param len The length of the JSON.
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
-   * @return the document, or an error if the JSON is invalid.
+   * @return The document, or an error:
+   *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
+   *           and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
    */
   inline doc_ref_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
-   * Parse a JSON document and return a reference to it.
+   * Parse a JSON document and return a temporary reference to it.
+   *
+   *   document::parser parser;
+   *   const document &doc = parser.parse(buf, len);
+   *
+   * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
    *
+   * ### REQUIRED: Buffer Padding
+   *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If realloc_if_needed is true,
-   * it is assumed that the buffer does *not* have enough padding, and it is reallocated, enlarged
-   * and copied before parsing.
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * If realloc_if_needed is true, it is assumed that the buffer does *not* have enough padding,
+   * and it is copied into an enlarged temporary buffer before parsing.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than len, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
    *            realloc_if_needed is true.
    * @param len The length of the JSON.
    * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
-   * @return the document, or an error if the JSON is invalid.
+   * @return The document, or an error:
+   *         - MEMALLOC if realloc_if_needed is true or the parser does not have enough capacity,
+   *           and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
    */
   really_inline doc_ref_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
-   * Parse a JSON document and return a reference to it.
+   * Parse a JSON document and return a temporary reference to it.
+   *
+   *   document::parser parser;
+   *   const document &doc = parser.parse(s);
+   *
+   * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
    *
+   * ### REQUIRED: Buffer Padding
+   *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If `str.capacity() - str.size()
-   * < SIMDJSON_PADDING`, the string will be copied to a string with larger capacity before parsing.
+   * those bytes are initialized to, as long as they are allocated.
+   *
+   * If s.capacity() is less than SIMDJSON_PADDING, the string will be copied into an enlarged
+   * temporary buffer before parsing.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than len, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param s The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, or
    *          a new string will be created with the extra padding.
-   * @return the document, or an error if the JSON is invalid.
+   * @return The document, or an error:
+   *         - MEMALLOC if the string does not have enough padding or the parser does not have
+   *           enough capacity, and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
    */
   really_inline doc_ref_result parse(const std::string &s) noexcept;
 
   /**
-   * Parse a JSON document and return a reference to it.
+   * Parse a JSON document and return a temporary reference to it.
+   *
+   *   document::parser parser;
+   *   const document &doc = parser.parse(s);
+   *
+   * ### IMPORTANT: Document Lifetime
    *
    * The JSON document still lives in the parser: this is the most efficient way to parse JSON
    * documents because it reuses the same buffers, but you *must* use the document before you
    * destroy the parser or call parse() again.
    *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
+   *
    * @param s The JSON to parse.
-   * @return the document, or an error if the JSON is invalid.
+   * @return The document, or an error:
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
    */
   really_inline doc_ref_result parse(const padded_string &s) noexcept;
 
@@ -965,8 +1041,8 @@ public:
    *
    * ### Parser Capacity
    *
-   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
-   * allocated, it must have a capacity at least as large as batch_size.
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
    * @param len The length of the concatenated JSON.
@@ -976,8 +1052,8 @@ public:
    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
    * @return The stream. If there is an error, it will be returned during iteration. An empty input
    *         will yield 0 documents rather than an EMPTY error. Errors:
-   *         - MEMALLOC if the parser is unallocated and memory allocation fails
-   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
   inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = 1000000) noexcept;
@@ -1027,8 +1103,8 @@ public:
    *
    * ### Parser Capacity
    *
-   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
-   * allocated, it must have a capacity at least as large as batch_size.
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param buf The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
    * @param len The length of the concatenated JSON.
@@ -1038,8 +1114,8 @@ public:
    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
    * @return The stream. If there is an error, it will be returned during iteration. An empty input
    *         will yield 0 documents rather than an EMPTY error. Errors:
-   *         - MEMALLOC if the parser is unallocated and memory allocation fails
-   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
   inline stream parse_many(const char *buf, size_t len, size_t batch_size = 1000000) noexcept;
@@ -1089,18 +1165,18 @@ public:
    *
    * ### Parser Capacity
    *
-   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
-   * allocated, it must have a capacity at least as large as batch_size.
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
-   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
    *         will yield 0 documents rather than an EMPTY error. Errors:
-   *         - MEMALLOC if the parser is unallocated and memory allocation fails
-   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
   inline stream parse_many(const std::string &s, size_t batch_size = 1000000) noexcept;
@@ -1138,11 +1214,6 @@ public:
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
-   * ### REQUIRED: Buffer Padding
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated.
-   *
    * ### Threads
    *
    * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
@@ -1150,18 +1221,18 @@ public:
    *
    * ### Parser Capacity
    *
-   * If the parser is unallocated, it will be auto-allocated to batch_size. If it is already
-   * allocated, it must have a capacity at least as large as batch_size.
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
    *
    * @param s The concatenated JSON to parse.
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
    *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
-   * @return he stream. If there is an error, it will be returned during iteration. An empty input
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
    *         will yield 0 documents rather than an EMPTY error. Errors:
-   *         - MEMALLOC if the parser is unallocated and memory allocation fails
-   *         - CAPACITY if the parser already has a capacity, and it is less than batch_size
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
   inline stream parse_many(const padded_string &s, size_t batch_size = 1000000) noexcept;
@@ -1170,20 +1241,72 @@ public:
   really_inline doc_ref_result parse_many(const char *buf, size_t batch_size = 1000000) noexcept = delete;
 
   /**
-   * Current capacity: the largest document this parser can support without reallocating.
+   * The largest document this parser can automatically support.
+   *
+   * The parser may reallocate internal buffers as needed up to this amount.
+   *
+   * @return Maximum capacity, in bytes.
+   */
+  really_inline size_t max_capacity() const noexcept;
+
+  /**
+   * The largest document this parser can support without reallocating.
+   *
+   * @return Current capacity, in bytes.
    */
   really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
+   *
+   * @return Maximum depth, in bytes.
    */
   really_inline size_t max_depth() const noexcept;
 
   /**
+   * Set max_capacity. This is the largest document this parser can automatically support.
+   *
+   * The parser may reallocate internal buffers as needed up to this amount.
+   *
+   * This call will not allocate or deallocate, even if capacity is currently above max_capacity.
+   *
+   * @param max_capacity The new maximum capacity, in bytes.
+   */
+  really_inline void set_max_capacity(size_t max_capacity) noexcept;
+
+  /**
+   * Set capacity. This is the largest document this parser can support without reallocating.
+   *
+   * This will allocate or deallocate as necessary.
+   *
+   * @param capacity The new capacity, in bytes.
+   *
+   * @return MEMALLOC if unsuccessful, SUCCESS otherwise.
+   */
+  WARN_UNUSED inline error_code set_capacity(size_t capacity) noexcept;
+
+  /**
+   * Set the maximum level of nested object and arrays supported by this parser.
+   *
+   * This will allocate or deallocate as necessary.
+   *
+   * @param max_depth The new maximum depth, in bytes.
+   *
+   * @return MEMALLOC if unsuccessful, SUCCESS otherwise.
+   */
+  WARN_UNUSED inline error_code set_max_depth(size_t max_depth) noexcept;
+
+  /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
+   *
+   * Equivalent to calling set_capacity() and set_max_depth().
+   *
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @return true if successful, false if allocation failed.
    */
-  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH);
+  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   // type aliases for backcompat
   using Iterator = document::iterator;
@@ -1258,13 +1381,6 @@ public:
   really_inline bool on_number_s64(int64_t value) noexcept;
   really_inline bool on_number_u64(uint64_t value) noexcept;
   really_inline bool on_number_double(double value) noexcept;
-  //
-  // Called before a parse is initiated.
-  //
-  // - Returns CAPACITY if the document is too large
-  // - Returns MEMALLOC if we needed to allocate memory and could not
-  //
-  WARN_UNUSED inline error_code init_parse(size_t len) noexcept;
 
 private:
   //
@@ -1275,11 +1391,18 @@ private:
   size_t _capacity{0};
 
   //
+  // The maximum document length this parser will automatically support.
+  //
+  // The parser will not be automatically allocated above this amount.
+  //
+  size_t _max_capacity;
+
+  //
   // The maximum depth (number of nested objects and arrays) supported by this parser.
   //
   // Defaults to DEFAULT_MAX_DEPTH.
   //
-  size_t _max_depth{0};
+  size_t _max_depth;
 
   // all nodes are stored on the doc.tape using a 64-bit word.
   //
@@ -1298,28 +1421,15 @@ private:
   inline void write_tape(uint64_t val, tape_type t) noexcept;
   inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
 
-  //
-  // Set the current capacity: the largest document this parser can support without reallocating.
-  //
-  // This will allocate *or deallocate* as necessary.
-  //
-  // Returns false if allocation fails.
-  //
-  inline WARN_UNUSED bool set_capacity(size_t capacity);
-
-  //
-  // Set the maximum level of nested object and arrays supported by this parser.
-  //
-  // This will allocate *or deallocate* as necessary.
-  //
-  // Returns false if allocation fails.
-  //
-  inline WARN_UNUSED bool set_max_depth(size_t max_depth);
+  // Ensure we have enough capacity to handle at least desired_capacity bytes,
+  // and auto-allocate if not.
+  inline error_code ensure_capacity(size_t desired_capacity) noexcept;
 
   // Used internally to get the document
   inline const document &get_document() const noexcept(false);
 
   template<size_t max_depth> friend class document_iterator;
+  friend class document::stream;
 }; // class parser
 
 } // namespace simdjson

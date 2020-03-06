@@ -7,7 +7,6 @@ int main() {
   std::string json =
       "{\"/~01abc\": [0, {\"\\\\\\\" 0\": [\"value0\", \"value1\"]}]}";
   simdjson::ParsedJson pj;
-  assert(pj.allocate_capacity(json.length()));
   simdjson::json_parse(json.c_str(), json.length(), pj);
   assert(pj.is_valid());
   simdjson::ParsedJson::Iterator it(pj);

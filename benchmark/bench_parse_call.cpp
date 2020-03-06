@@ -8,7 +8,7 @@ const padded_string EMPTY_ARRAY("[]", 2);
 
 static void json_parse(State& state) {
   document::parser parser;
-  if (!parser.allocate_capacity(EMPTY_ARRAY.length())) { return; }
+  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     auto error = simdjson::json_parse(EMPTY_ARRAY, parser);
     if (error) { return; }
@@ -17,7 +17,7 @@ static void json_parse(State& state) {
 BENCHMARK(json_parse);
 static void parser_parse_error_code(State& state) {
   document::parser parser;
-  if (!parser.allocate_capacity(EMPTY_ARRAY.length())) { return; }
+  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     auto [doc, error] = parser.parse(EMPTY_ARRAY);
     if (error) { return; }
@@ -26,7 +26,7 @@ static void parser_parse_error_code(State& state) {
 BENCHMARK(parser_parse_error_code);
 static void parser_parse_exception(State& state) {
   document::parser parser;
-  if (!parser.allocate_capacity(EMPTY_ARRAY.length())) { return; }
+  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     try {
       UNUSED document &doc = parser.parse(EMPTY_ARRAY);

@@ -10,9 +10,6 @@ int main() {
   if (!pj.is_valid()) {
     return EXIT_FAILURE;
   }
-  if (!pj.allocate_capacity(p.size())) {
-    return EXIT_FAILURE;
-  }
   const int res = json_parse(p, pj);
   if (res) {
     std::cerr << error_message(res) << std::endl;
