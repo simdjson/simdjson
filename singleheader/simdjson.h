@@ -79,7 +79,7 @@ const std::string &error_message(error_code error) noexcept;
 
 struct invalid_json : public std::exception {
   invalid_json(error_code _error) : error{_error} { }
-  const char *what() const noexcept { return error_message(error).c_str(); }
+  const char *what() const noexcept { return error_message(error); }
   error_code error;
 };
 

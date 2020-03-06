@@ -243,11 +243,6 @@ public:
    */
   operator document() noexcept(false);
 
-  /**
-   * Get the error message for the error.
-   */
-  const std::string &get_error_message() const noexcept;
-
   ~doc_result() noexcept=default;
 
 private:
@@ -306,11 +301,6 @@ public:
    * @exception invalid_json if the document is invalid or there was an error parsing it.
    */
   operator document&() noexcept(false);
-
-  /**
-   * Get the error message for the error.
-   */
-  const std::string &get_error_message() const noexcept;
 
   ~doc_ref_result()=default;
 

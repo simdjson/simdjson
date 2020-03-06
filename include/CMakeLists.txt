@@ -11,6 +11,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_stream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_iterator.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/error.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h

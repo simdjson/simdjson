@@ -305,7 +305,7 @@ struct benchmarker {
     if(hotbuffers) {
       auto result = parser.parse((const uint8_t *)json.data(), json.size());
       if (result.error) {
-        exit_error(string("Failed to parse ") + filename + string(":") + result.get_error_message());
+        exit_error(string("Failed to parse ") + filename + string(":") + error_message(result.error));
       }
     }
 
