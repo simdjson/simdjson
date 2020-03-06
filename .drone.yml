@@ -110,7 +110,7 @@ steps:
   image: gcc:8
   environment:
     SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make, make amalgamate ]
+  commands: [ make amalgamate, make ]
 ---
 kind: pipeline
 name: x64-amalgamated-quicktests
