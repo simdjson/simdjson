@@ -50,6 +50,10 @@ inline const std::string &error_message(int error) noexcept {
   return internal::error_codes[error].message;
 }
 
+inline std::ostream& operator<<(std::ostream& out, error_code error) noexcept {
+  return out << error_message(error);
+}
+
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_ERROR_H

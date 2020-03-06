@@ -99,7 +99,7 @@ bool validate(const char *dirname) {
             } else if (starts_with("pass", name) and (has_extension(extension1, name) or has_extension(extension2, name)) and error) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
-                       name, simdjson::error_message(error).data());
+                       name, error_message(error));
                 printf("size of file in bytes: %zu \n", json.size());
                 everything_fine = false;
             } else if ( starts_with("fail", name) and (not starts_with("fail10.json", name)) and !error) {
