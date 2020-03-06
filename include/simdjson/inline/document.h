@@ -198,28 +198,25 @@ inline document::element_result<document::element> document::operator[](const ch
 
 inline document::doc_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
   document::parser parser;
-  if (!parser.allocate_capacity(len)) {
-    return MEMALLOC;
-  }
   auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
   return document::doc_result((document &&)doc, error);
 }
 really_inline document::doc_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
-    return parse((const uint8_t *)buf, len, realloc_if_needed);
+  return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
 really_inline document::doc_result document::parse(const std::string &s) noexcept {
-    return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
+  return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
 really_inline document::doc_result document::parse(const padded_string &s) noexcept {
-    return parse(s.data(), s.length(), false);
+  return parse(s.data(), s.length(), false);
 }
 
 WARN_UNUSED
-inline bool document::set_capacity(size_t capacity) {
+inline error_code document::set_capacity(size_t capacity) noexcept {
   if (capacity == 0) {
     string_buf.reset();
     tape.reset();
-    return true;
+    return SUCCESS;
   }
 
   // a pathological input like "[[[[..." would generate len tape elements, so
@@ -233,7 +230,7 @@ inline bool document::set_capacity(size_t capacity) {
   size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
-  return string_buf && tape;
+  return string_buf && tape ? SUCCESS : MEMALLOC;
 }
 
 inline bool document::print_json(std::ostream &os, size_t max_depth) const noexcept {
@@ -462,6 +459,10 @@ inline document::doc_result::operator document() noexcept(false) {
 //
 // document::parser inline implementation
 //
+really_inline document::parser::parser(size_t max_capacity, size_t max_depth) noexcept
+  : _max_capacity{max_capacity}, _max_depth{max_depth} {
+
+}
 inline bool document::parser::is_valid() const noexcept { return valid; }
 inline int document::parser::get_error_code() const noexcept { return error; }
 inline std::string document::parser::get_error_message() const noexcept { return error_message(int(error)); }
@@ -479,7 +480,7 @@ inline const document &document::parser::get_document() const noexcept(false) {
 }
 
 inline document::doc_ref_result document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
-  error_code code = init_parse(len);
+  error_code code = ensure_capacity(len);
   if (code) { return document::doc_ref_result(doc, code); }
 
   if (realloc_if_needed) {
@@ -526,17 +527,17 @@ inline document::stream document::parser::parse_many(const padded_string &s, siz
 really_inline size_t document::parser::capacity() const noexcept {
   return _capacity;
 }
+really_inline size_t document::parser::max_capacity() const noexcept {
+  return _max_capacity;
+}
 really_inline size_t document::parser::max_depth() const noexcept {
   return _max_depth;
 }
-WARN_UNUSED inline bool document::parser::allocate_capacity(size_t capacity, size_t max_depth) {
-  return set_capacity(capacity) && set_max_depth(max_depth);
-}
 
 WARN_UNUSED
-inline bool document::parser::set_capacity(size_t capacity) {
+inline error_code document::parser::set_capacity(size_t capacity) noexcept {
   if (_capacity == capacity) {
-    return true;
+    return SUCCESS;
   }
 
   // Set capacity to 0 until we finish, in case there's an error
@@ -545,16 +546,15 @@ inline bool document::parser::set_capacity(size_t capacity) {
   //
   // Reallocate the document
   //
-  if (!doc.set_capacity(capacity)) {
-    return false;
-  }
+  error_code err = doc.set_capacity(capacity);
+  if (err) { return err; }
 
   //
   // Don't allocate 0 bytes, just return.
   //
   if (capacity == 0) {
     structural_indexes.reset();
-    return true;
+    return SUCCESS;
   }
 
   //
@@ -563,20 +563,26 @@ inline bool document::parser::set_capacity(size_t capacity) {
   uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
   if (!structural_indexes) {
-    return false;
+    return MEMALLOC;
   }
 
   _capacity = capacity;
-  return true;
+  return SUCCESS;
 }
 
-WARN_UNUSED inline bool document::parser::set_max_depth(size_t max_depth) {
+really_inline void document::parser::set_max_capacity(size_t max_capacity) noexcept {
+  _max_capacity = max_capacity;
+}
+
+WARN_UNUSED inline error_code document::parser::set_max_depth(size_t max_depth) noexcept {
+  if (max_depth == _max_depth && ret_address) { return SUCCESS; }
+
   _max_depth = 0;
 
   if (max_depth == 0) {
     ret_address.reset();
     containing_scope_offset.reset();
-    return true;
+    return SUCCESS;
   }
 
   //
@@ -591,24 +597,38 @@ WARN_UNUSED inline bool document::parser::set_max_depth(size_t max_depth) {
 
   if (!ret_address || !containing_scope_offset) {
     // Could not allocate memory
-    return false;
+    return MEMALLOC;
   }
 
   _max_depth = max_depth;
-  return true;
+  return SUCCESS;
 }
 
-WARN_UNUSED
-inline error_code document::parser::init_parse(size_t len) noexcept {
-  if (len > capacity()) {
-    return error = CAPACITY;
+WARN_UNUSED inline bool document::parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
+  return !set_capacity(capacity) && !set_max_depth(max_depth);
+}
+
+inline error_code document::parser::ensure_capacity(size_t desired_capacity) noexcept {
+  // If we don't have enough capacity, (try to) automatically bump it.
+  if (unlikely(desired_capacity > capacity())) {
+    if (desired_capacity > max_capacity()) {
+      return error = CAPACITY;
+    }
+
+    error = set_capacity(desired_capacity);
+    if (error) { return error; }
   }
+
+  // Allocate depth-based buffers if they aren't already.
+  error = set_max_depth(max_depth());
+  if (error) { return error; }
+
   // If the last doc was taken, we need to allocate a new one
   if (!doc.tape) {
-    if (!doc.set_capacity(len)) {
-      return error = MEMALLOC;
-    }
+    error = doc.set_capacity(desired_capacity);
+    if (error) { return error; }
   }
+
   return SUCCESS;
 }
 

@@ -33,10 +33,6 @@ inline uint64_t f64_ulp_dist(double a, double b) {
 bool number_test_small_integers() {
   char buf[1024];
   simdjson::document::parser parser;
-  if (!parser.allocate_capacity(1024)) {
-    printf("allocation failure in number_test_small_integers\n");
-    return false;
-  }
   for (int m = 10; m < 20; m++) {
     for (int i = -1024; i < 1024; i++) {
       auto n = sprintf(buf, "%*d", m, i);
@@ -71,10 +67,6 @@ bool number_test_small_integers() {
 bool number_test_powers_of_two() {
   char buf[1024];
   simdjson::document::parser parser;
-  if (!parser.allocate_capacity(1024)) {
-    printf("allocation failure in number_test\n");
-    return false;
-  }
   int maxulp = 0;
   for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
     double expected = pow(2, i);
@@ -138,10 +130,6 @@ bool number_test_powers_of_two() {
 bool number_test_powers_of_ten() {
   char buf[1024];
   simdjson::document::parser parser;
-  if (!parser.allocate_capacity(1024)) {
-    printf("allocation failure in number_test\n");
-    return false;
-  }
   for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
     auto n = sprintf(buf,"1e%d", i);
     buf[n] = '\0';
@@ -247,12 +235,8 @@ bool stable_test() {
 static bool parse_json_message_issue467(char const* message, std::size_t len, size_t expectedcount) {
     simdjson::document::parser parser;
     size_t count = 0;
-    if (!parser.allocate_capacity(len)) {
-        std::cerr << "Failed to allocated memory for simdjson::document::parser" << std::endl;
-        return false;
-    }
     simdjson::padded_string str(message,len);
-    for (auto [doc, error] : parser.parse_many(str, parser.capacity())) {
+    for (auto [doc, error] : parser.parse_many(str, len)) {
       if (error) {
           std::cerr << "Failed with simdjson error= " << error << std::endl;
           return false;
@@ -639,10 +623,6 @@ bool skyprophet_test() {
       maxsize = s.size();
   }
   simdjson::document::parser parser;
-  if (!parser.allocate_capacity(maxsize)) {
-    printf("allocation failure in skyprophet_test\n");
-    return false;
-  }
   size_t counter = 0;
   for (auto &rec : data) {
     if ((counter % 10000) == 0) {

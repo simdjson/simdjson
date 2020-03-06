@@ -73,11 +73,6 @@ bool validate(const char *dirname) {
         return EXIT_FAILURE;
       }
       simdjson::ParsedJson pj;
-      bool allocok = pj.allocate_capacity(p.size(), 1024);
-      if (!allocok) {
-        std::cerr << "can't allocate memory" << std::endl;
-        return false;
-      }
       ++how_many;
       const int parse_res = json_parse(p, pj);
       printf("%s\n", parse_res == 0 ? "ok" : "invalid");

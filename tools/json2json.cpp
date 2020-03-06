@@ -80,11 +80,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   simdjson::ParsedJson pj;
-  bool allocok = pj.allocate_capacity(p.size(), 1024);
-  if (!allocok) {
-    std::cerr << "failed to allocate memory" << std::endl;
-    return EXIT_FAILURE;
-  }
   int res =
       simdjson::json_parse(p, pj); // do the parsing, return false on error
   if (res != simdjson::SUCCESS) {

@@ -168,23 +168,48 @@ document doc = document::parse(get_corpus(filename));
 doc.print_json(cout);
 ```
 
-If you're using simdjson to parse multiple documents, or in a loop, you should allocate a parser once and reuse it (allocation is slow, do it as little as possible!):
+### Reusing the parser for maximum efficiency
+
+If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once
+and reuse it. simdjson will allocate and retain internal buffers between parses, keeping buffers
+hot in cache and keeping allocation to a minimum.
 
 ```c++
-// Allocate a parser big enough for all files
 document::parser parser;
-if (!parser.allocate_capacity(1024*1024)) { exit(1); }
-
-// Read files with the parser, one by one
 for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
-  cout << "Parsing " << json.data() << " ..." << endl;
-  auto [doc, error] = parser.parse(json);
-  if (error) { cerr << "Error: " << error << endl; exit(1); }
+  document& doc = parser.parse(json);
   doc.print_json(cout);
-  cout << endl;
 }
 ```
 
+If you are running a server loop and want to limit the document size to keep server memory constant,
+you can set a maximum capacity:
+
+```c++
+document::parser parser(1024*1024); // Set max capacity to 1MB
+for (int i=0;i<argc;i++) {
+  auto [doc, error] = parser.parse(get_corpus(argv[i]));
+  if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
+  if (error) { cerr << error << endl; exit(1); }
+  doc.print_json(cout);
+}
+```
+
+If you want absolutely constant memory usage, you can even allocate the capacity yourself at the
+beginning:
+
+```c++
+document::parser parser(0); // This parser is not allowed to auto-allocate
+auto alloc_error = parser.set_capacity(1024*1024); // Set initial capacity to 1MB
+if (alloc_error) { exit(1); };
+
+for (int i=0;i<argc;i++) {
+  auto [doc, error] = parser.parse(get_corpus(argv[i]));
+  if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
+  if (error) { cerr << error << endl; exit(1); }
+  doc.print_json(cout);
+}
+```
 
 ## Newline-Delimited JSON (ndjson) and  JSON lines
 
