@@ -52,12 +52,12 @@ inline std::ostream& operator<<(std::ostream& out, error_code error) noexcept;
 /**
  * Exception thrown when an exception-supporting simdjson method is called
  */
-struct invalid_json : public std::exception {
+struct simdjson_error : public std::exception {
   /**
    * Create an exception from a simdjson error code.
    * @param error The error code
    */
-  invalid_json(error_code error) noexcept : _error{error} { }
+  simdjson_error(error_code error) noexcept : _error{error} { }
   /** The error message */
   const char *what() const noexcept { return error_message(error()); }
   error_code error() const noexcept { return _error; }
