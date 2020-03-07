@@ -104,7 +104,7 @@ really_inline document::stream::stream(
   size_t batch_size,
   error_code _error
 ) noexcept : parser{_parser}, _buf{buf}, _len{len}, _batch_size(batch_size), error{_error} {
-  error = json_parse();
+  if (!error) { error = json_parse(); }
 }
 
 inline document::stream::~stream() noexcept {

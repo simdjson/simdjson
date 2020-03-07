@@ -5,6 +5,7 @@ if(MSVC)
 endif()
 
 add_cpp_test(basictests)
+add_cpp_test(errortests)
 
 ## Next bit should not be needed!
 #if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
@@ -19,6 +20,7 @@ add_cpp_test(pointercheck)
 add_cpp_test(integer_tests)
 
 target_compile_definitions(basictests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
+target_compile_definitions(errortests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
 
 ## This causes problems
 # add_executable(singleheader ./singleheadertest.cpp ${PROJECT_SOURCE_DIR}/singleheader/simdjson.cpp)

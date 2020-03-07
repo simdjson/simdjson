@@ -23,7 +23,7 @@ ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
 CXXFLAGS = $(ARCHFLAGS) -std=c++17  -pthread -Wall -Wextra -Wshadow -Ibenchmark/linux
-CFLAGS =  $(ARCHFLAGS)  -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
+CFLAGS =  $(ARCHFLAGS) -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
 
 # This is a convenience flag
 ifdef SANITIZEGOLD
@@ -39,16 +39,16 @@ endif
 
 # SANITIZE *implies* DEBUG
 ifeq ($(MEMSANITIZE),1)
-        CXXFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
-        CFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
+	CXXFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
+	CFLAGS += -g3 -O0  -fsanitize=memory -fno-omit-frame-pointer -fsanitize=undefined
 else
 ifeq ($(SANITIZE),1)
 	CXXFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 	CFLAGS += -g3 -O0  -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined
 else
 ifeq ($(DEBUG),1)
-        CXXFLAGS += -g3 -O0
-        CFLAGS += -g3 -O0
+	CXXFLAGS += -g3 -O0
+	CFLAGS += -g3 -O0
 else
 # we opt for  -O3 for regular builds
 	CXXFLAGS += -O3
@@ -95,7 +95,7 @@ JSON_INCLUDE:=dependencies/json/single_include/nlohmann/json.hpp
 EXTRAOBJECTS=ujdecode.o
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer get_corpus_benchmark
-TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests readme_examples
+TESTEXECUTABLES=jsoncheck jsoncheck_noavx integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests errortests readme_examples
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -111,6 +111,9 @@ benchmark:
 
 run_basictests: basictests
 	./basictests
+
+run_errortests: errortests
+	./errortests
 
 run_readme_examples: readme_examples
 	./readme_examples
@@ -216,6 +219,9 @@ jsoncheck_noavx:tests/jsoncheck.cpp $(HEADERS) $(LIBFILES)
 
 basictests:tests/basictests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o basictests tests/basictests.cpp -I. $(LIBFILES) $(LIBFLAGS)
+
+errortests:tests/errortests.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o errortests tests/errortests.cpp -I. $(LIBFILES) $(LIBFLAGS)
 
 readme_examples: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o readme_examples tests/readme_examples.cpp -I. $(LIBFILES) $(LIBFLAGS)
