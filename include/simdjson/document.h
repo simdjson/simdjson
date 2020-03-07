@@ -265,6 +265,33 @@ public:
    */
   operator document() noexcept(false);
 
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - UNEXPECTED_TYPE if the document is not an object
+   */
+  inline element_result<element> operator[](const std::string_view &key) const noexcept;
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - UNEXPECTED_TYPE if the document is not an object
+   */
+  inline element_result<element> operator[](const char *key) const noexcept;
+
   ~doc_result() noexcept=default;
 
 private:
@@ -323,6 +350,34 @@ public:
    * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document&() noexcept(false);
+
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - UNEXPECTED_TYPE if the document is not an object
+   */
+  inline element_result<element> operator[](const std::string_view &key) const noexcept;
+
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - UNEXPECTED_TYPE if the document is not an object
+   */
+  inline element_result<element> operator[](const char *key) const noexcept;
 
   ~doc_ref_result()=default;
 
@@ -549,6 +604,7 @@ public:
    *         - UNEXPECTED_TYPE if the document is not an object
    */
   inline element_result<element> operator[](const std::string_view &s) const noexcept;
+
   /**
    * Get the value associated with the given key.
    *
@@ -685,6 +741,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
   inline element_result<element> operator[](const std::string_view &s) const noexcept;
+
   /**
    * Get the value associated with the given key.
    *

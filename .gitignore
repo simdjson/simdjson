@@ -69,6 +69,7 @@ objs
 /build-plain-*/
 /corpus.zip
 /distinctuseridcompetition
+/errortests
 /fuzz/fuzz_dump
 /fuzz/fuzz_dump_raw_tape
 /fuzz/fuzz_parser
@@ -107,6 +108,7 @@ objs
 /singleheader/amalgamation_demo
 /singleheader/demo
 /tests/basictests
+/tests/errortests
 /tests/jsoncheck
 /tests/pointercheck
 /tests/integer_tests
