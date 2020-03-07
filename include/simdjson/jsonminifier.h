@@ -26,5 +26,7 @@ static inline size_t json_minify(const std::string_view &p, char *out) {
 static inline size_t json_minify(const padded_string &p, char *out) {
   return json_minify(p.data(), p.size(), out);
 }
+
 } // namespace simdjson
-#endif
+
+#endif // SIMDJSON_JSONMINIFIER_H

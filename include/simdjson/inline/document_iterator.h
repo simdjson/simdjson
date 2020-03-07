@@ -150,7 +150,7 @@ template <size_t max_depth> bool document_iterator<max_depth>::prev() {
     oldnpos = npos;
     if ((current_type == '[') || (current_type == '{')) {
       // we need to jump
-      npos = (current_val & JSON_VALUE_MASK);
+      npos = (current_val & internal::JSON_VALUE_MASK);
     } else {
       npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
@@ -179,7 +179,7 @@ template <size_t max_depth> bool document_iterator<max_depth>::down() {
     return false;
   }
   if ((current_type == '[') || (current_type == '{')) {
-    size_t npos = (current_val & JSON_VALUE_MASK);
+    size_t npos = (current_val & internal::JSON_VALUE_MASK);
     if (npos == location + 2) {
       return false; // we have an empty scope
     }
@@ -206,7 +206,7 @@ template <size_t max_depth> bool document_iterator<max_depth>::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
-    npos = (current_val & JSON_VALUE_MASK);
+    npos = (current_val & internal::JSON_VALUE_MASK);
   } else {
     npos = location + (is_number() ? 2 : 1);
   }
@@ -228,7 +228,7 @@ document_iterator<max_depth>::document_iterator(const document &doc_) noexcept
   current_val = doc.tape[location++];
   current_type = (current_val >> 56);
   depth_index[0].scope_type = current_type;
-  tape_length = current_val & JSON_VALUE_MASK;
+  tape_length = current_val & internal::JSON_VALUE_MASK;
   if (location < tape_length) {
     // If we make it here, then depth_capacity must >=2, but the compiler
     // may not know this.
@@ -456,7 +456,7 @@ bool document_iterator<max_depth>::relative_move_to(const char *pointer,
         size_t npos;
         if ((current_type == '[') || (current_type == '{')) {
           // we need to jump
-          npos = (current_val & JSON_VALUE_MASK);
+          npos = (current_val & internal::JSON_VALUE_MASK);
         } else {
           npos =
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);

@@ -9,10 +9,11 @@
 #include "simdjson/simdjson.h"
 #include "simdjson/padded_string.h"
 
-#define JSON_VALUE_MASK 0x00FFFFFFFFFFFFFF
-#define DEFAULT_MAX_DEPTH 1024 // a JSON document with a depth exceeding 1024 is probably de facto invalid
-
 namespace simdjson {
+
+namespace internal {
+  constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
+}
 
 template<size_t max_depth> class document_iterator;
 

@@ -4,14 +4,29 @@
 #include <cassert>
 #include "simdjson/portability.h"
 
-// we support documents up to 4GB
-#define SIMDJSON_MAXSIZE_BYTES 0xFFFFFFFF
+namespace simdjson {
 
-// the input buf should be readable up to buf + SIMDJSON_PADDING
-// this is a stopgap; there should be a better description of the
-// main loop and its behavior that abstracts over this
-// See https://github.com/lemire/simdjson/issues/174
-#define SIMDJSON_PADDING 32
+/** The maximum document size supported by simdjson. */
+constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
+
+/**
+ * The amount of padding needed in a buffer to parse JSON.
+ *
+ * the input buf should be readable up to buf + SIMDJSON_PADDING
+ * this is a stopgap; there should be a better description of the
+ * main loop and its behavior that abstracts over this
+ * See https://github.com/lemire/simdjson/issues/174
+ */
+constexpr size_t SIMDJSON_PADDING = 32;
+
+/**
+ * By default, simdjson supports this many nested objects and arrays.
+ *
+ * This is the default for document::parser::max_depth().
+ */
+constexpr size_t DEFAULT_MAX_DEPTH = 1024;
+
+} // namespace simdjson
 
 #if defined(__GNUC__)
 // Marks a block with a name so that MCA analysis can see it.

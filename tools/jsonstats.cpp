@@ -63,10 +63,10 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   uint8_t type = (tape_val >> 56);
   size_t how_many = 0;
   assert(type == 'r');
-  how_many = tape_val & JSON_VALUE_MASK;
+  how_many = tape_val & simdjson::internal::JSON_VALUE_MASK;
   for (; tape_idx < how_many; tape_idx++) {
     tape_val = pj.doc.tape[tape_idx];
-    // uint64_t payload = tape_val & JSON_VALUE_MASK;
+    // uint64_t payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
     type = (tape_val >> 56);
     switch (type) {
     case 'l': // we have a long int

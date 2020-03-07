@@ -19,4 +19,4 @@ inline padded_string get_corpus(const std::string &filename) {
 
 } // namespace simdjson
 
-#endif
+#endif // SIMDJSON_JSONIOUTIL_H
