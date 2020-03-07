@@ -247,7 +247,7 @@ inline bool document::print_json(std::ostream &os, size_t max_depth) const noexc
   uint8_t type = (tape_val >> 56);
   size_t how_many = 0;
   if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
+    how_many = tape_val & internal::JSON_VALUE_MASK;
   } else {
     // Error: no starting root node?
     return false;
@@ -260,7 +260,7 @@ inline bool document::print_json(std::ostream &os, size_t max_depth) const noexc
   in_object[depth] = false;
   for (; tape_idx < how_many; tape_idx++) {
     tape_val = tape[tape_idx];
-    uint64_t payload = tape_val & JSON_VALUE_MASK;
+    uint64_t payload = tape_val & internal::JSON_VALUE_MASK;
     type = (tape_val >> 56);
     if (!in_object[depth]) {
       if ((in_object_idx[depth] > 0) && (type != ']')) {
@@ -355,7 +355,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   tape_idx++;
   size_t how_many = 0;
   if (type == 'r') {
-    how_many = tape_val & JSON_VALUE_MASK;
+    how_many = tape_val & internal::JSON_VALUE_MASK;
   } else {
     // Error: no starting root node?
     return false;
@@ -365,7 +365,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   for (; tape_idx < how_many; tape_idx++) {
     os << tape_idx << " : ";
     tape_val = tape[tape_idx];
-    payload = tape_val & JSON_VALUE_MASK;
+    payload = tape_val & internal::JSON_VALUE_MASK;
     type = (tape_val >> 56);
     switch (type) {
     case '"': // we have a string
@@ -432,7 +432,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     }
   }
   tape_val = tape[tape_idx];
-  payload = tape_val & JSON_VALUE_MASK;
+  payload = tape_val & internal::JSON_VALUE_MASK;
   type = (tape_val >> 56);
   os << tape_idx << " : " << type << "\t// pointing to " << payload
      << " (start root)\n";
@@ -685,7 +685,7 @@ really_inline document::tape_type document::tape_ref::type() const noexcept {
   return static_cast<tape_type>(doc->tape[json_index] >> 56);
 }
 really_inline uint64_t document::tape_ref::tape_value() const noexcept {
-  return doc->tape[json_index] & JSON_VALUE_MASK;
+  return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
 template<typename T>
 really_inline T document::tape_ref::next_tape_value() const noexcept {
