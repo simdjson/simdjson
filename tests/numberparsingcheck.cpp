@@ -171,11 +171,9 @@ bool validate(const char *dirname) {
       } else {
         strcpy(fullpath + dirlen, name);
       }
-      simdjson::padded_string p;
-      try {
-        simdjson::get_corpus(fullpath).swap(p);
-      } catch (const std::exception &e) {
-        std::cout << "Could not load the file " << fullpath << std::endl;
+      auto [p, error] = simdjson::padded_string::load(fullpath);
+      if (error) {
+        std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
       // terrible hack but just to get it working

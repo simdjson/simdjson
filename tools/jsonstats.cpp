@@ -122,10 +122,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[myoptind + 1]
               << std::endl;
   }
-  simdjson::padded_string p;
-  try {
-    simdjson::get_corpus(filename).swap(p);
-  } catch (const std::exception &) { // caught by reference to base
+  auto [p, error] = simdjson::padded_string::load(filename);
+  if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }

@@ -29,7 +29,6 @@ set(SIMDJSON_SRC
 set(SIMDJSON_SRC_HEADERS
   implementation.cpp
   isadetection.h
-  jsonioutil.cpp
   jsonminifier.cpp
   simdprune_tables.h
   stage1_find_marks.cpp

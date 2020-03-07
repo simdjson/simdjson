@@ -46,6 +46,9 @@ public:
   document &operator=(document &&other) noexcept = default;
   document &operator=(const document &) = delete; // Disallow copying
 
+  /** The default batch size for parse_many and load_many */
+  static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+
   // Nested classes
   class element;
   class array;
@@ -136,6 +139,25 @@ public:
    * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
    */
   bool dump_raw_tape(std::ostream &os) const noexcept;
+
+  /**
+   * Load a JSON document from a file and return it.
+   *
+   *   document doc = document::load("jsonexamples/twitter.json");
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than the file length, it will allocate enough capacity
+   * to handle it (up to max_capacity).
+   *
+   * @param path The path to load.
+   * @return The document, or an error:
+   *         - IO_ERROR if there was an error opening or reading the file.
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
+   */
+  inline static doc_result load(const std::string& path) noexcept;
 
   /**
    * Parse a JSON document and return a reference to it.
@@ -860,6 +882,89 @@ public:
   parser &operator=(const document::parser &) = delete; // Disallow copying
 
   /**
+   * Load a JSON document from a file and return a reference to it.
+   *
+   *   document::parser parser;
+   *   const document &doc = parser.load("jsonexamples/twitter.json");
+   *
+   * ### IMPORTANT: Document Lifetime
+   *
+   * The JSON document still lives in the parser: this is the most efficient way to parse JSON
+   * documents because it reuses the same buffers, but you *must* use the document before you
+   * destroy the parser or call parse() again.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than the file length, it will allocate enough capacity
+   * to handle it (up to max_capacity).
+   *
+   * @param path The path to load.
+   * @return The document, or an error:
+   *         - IO_ERROR if there was an error opening or reading the file.
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
+   */
+  inline doc_ref_result load(const std::string& path) noexcept; 
+
+  /**
+   * Load a file containing many JSON documents.
+   *
+   *   document::parser parser;
+   *   for (const document &doc : parser.parse_many(path)) {
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Format
+   *
+   * The file must contain a series of one or more JSON documents, concatenated into a single
+   * buffer, separated by whitespace. It effectively parses until it has a fully valid document,
+   * then starts parsing the next document at that point. (It does this with more parallelism and
+   * lookahead than you might think, though.)
+   *
+   * documents that consist of an object or array may omit the whitespace between them, concatenating
+   * with no separator. documents that consist of a single primitive (i.e. documents that are not
+   * arrays or objects) MUST be separated with whitespace.
+   *
+   * ### Error Handling
+   *
+   * All errors are returned during iteration: if there is a global error such as memory allocation,
+   * it will be yielded as the first result. Iteration always stops after the first error.
+   *
+   * As with all other simdjson methods, non-exception error handling is readily available through
+   * the same interface, requiring you to check the error before using the document:
+   *
+   *   document::parser parser;
+   *   for (auto [doc, error] : parser.load_many(path)) {
+   *     if (error) { cerr << error << endl; exit(1); }
+   *     cout << std::string(doc["title"]) << endl;
+   *   }
+   *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
+   * ### Parser Capacity
+   *
+   * If the parser's current capacity is less than batch_size, it will allocate enough capacity
+   * to handle it (up to max_capacity).
+   *
+   * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
+   *                   spot is cache-related: small enough to fit in cache, yet big enough to
+   *                   parse as many documents as possible in one tight loop.
+   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   * @return The stream. If there is an error, it will be returned during iteration. An empty input
+   *         will yield 0 documents rather than an EMPTY error. Errors:
+   *         - IO_ERROR if there was an error opening or reading the file.
+   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
+   *         - other json errors if parsing fails.
+   */
+  inline document::stream load_many(const std::string& path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+
+  /**
    * Parse a JSON document and return a temporary reference to it.
    *
    *   document::parser parser;
@@ -1056,7 +1161,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = 1000000) noexcept;
+  inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -1118,7 +1223,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const char *buf, size_t len, size_t batch_size = 1000000) noexcept;
+  inline stream parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -1179,7 +1284,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const std::string &s, size_t batch_size = 1000000) noexcept;
+  inline stream parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -1235,10 +1340,10 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const padded_string &s, size_t batch_size = 1000000) noexcept;
+  inline stream parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
-  really_inline doc_ref_result parse_many(const char *buf, size_t batch_size = 1000000) noexcept = delete;
+  really_inline doc_ref_result parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /**
    * The largest document this parser can automatically support.
