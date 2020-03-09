@@ -164,23 +164,23 @@ All examples below use use `#include "simdjson.h"`, `#include "simdjson.cpp"` an
 The simplest API to get started is `document::parse()`, which allocates a new parser, parses a string, and returns the DOM. This is less efficient if you're going to read multiple documents, but as long as you're only parsing a single document, this will do just fine.
 
 ```c++
-auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
-if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+auto [doc, error] = document::parse("[ 1, 2, 3 ]"_padded);
+if (error) { cerr << "Error: " << error << endl; exit(1); }
 cout << doc;
 ```
 
 If you're using exceptions, it gets even simpler (simdjson won't use exceptions internally, so you'll only pay the performance cost of exceptions in your own calling code):
 
 ```c++
-document doc = document::parse(string("[ 1, 2, 3 ]"));
-cout << doc;
+cout << document::parse("[ 1, 2, 3 ]"_padded);
 ```
 
-The simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
+If you're wondering why the examples above use `_padded`, it's because the simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). `_padded`
+is a way of creating a `padded_string` class, which assures us we have enough allocation.
 
 ```c++
-document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
-cout << doc;
+padded_string json = "[ 1, 2, 3 ]"_padded;
+cout << document::parse(json);
 ```
 
 You can also load from a file with `parser.load()`:
