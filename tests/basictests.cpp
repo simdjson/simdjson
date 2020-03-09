@@ -8,6 +8,7 @@
 #include <cmath>
 #include <set>
 #include <string_view>
+#include <sstream>
 
 #include "simdjson.h"
 
@@ -242,39 +243,40 @@ UNUSED static void parse_many_stream_assign() {
 }
 
 static bool parse_json_message_issue467(char const* message, std::size_t len, size_t expectedcount) {
-    simdjson::document::parser parser;
-    size_t count = 0;
-    simdjson::padded_string str(message,len);
-    for (auto [doc, error] : parser.parse_many(str, len)) {
-      if (error) {
-          std::cerr << "Failed with simdjson error= " << error << std::endl;
-          return false;
-      }
-      count++;
-    }
-    if(count != expectedcount) {
-        std::cerr << "bad count" << std::endl;
+  simdjson::document::parser parser;
+  size_t count = 0;
+  simdjson::padded_string str(message,len);
+  for (auto [doc, error] : parser.parse_many(str, len)) {
+    if (error) {
+        std::cerr << "Failed with simdjson error= " << error << std::endl;
         return false;
     }
-    return true;
+    count++;
+  }
+  if(count != expectedcount) {
+      std::cerr << "bad count" << std::endl;
+      return false;
+  }
+  return true;
 }
 
 bool json_issue467() {
-    printf("Running json_issue467.\n");
-    const char * single_message = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
-    const char* two_messages = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
+  std::cout << "Running " << __func__ << std::endl;
+  const char * single_message = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
+  const char* two_messages = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
 
-    if(!parse_json_message_issue467(single_message, strlen(single_message),1)) {
-      return false;
-    }
-    if(!parse_json_message_issue467(two_messages, strlen(two_messages),2)) {
-      return false;
-    }
-    return true;
+  if(!parse_json_message_issue467(single_message, strlen(single_message),1)) {
+    return false;
+  }
+  if(!parse_json_message_issue467(two_messages, strlen(two_messages),2)) {
+    return false;
+  }
+  return true;
 }
 
 // returns true if successful
 bool navigate_test() {
+  std::cout << "Running " << __func__ << std::endl;
   std::string json = "{"
         "\"Image\": {"
             "\"Width\":  800,"
@@ -385,7 +387,7 @@ bool navigate_test() {
 
 // returns true if successful
 bool JsonStream_utf8_test() {
-  printf("Running JsonStream_utf8_test");
+  std::cout << "Running " << __func__ << std::endl;
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -446,7 +448,7 @@ bool JsonStream_utf8_test() {
 
 // returns true if successful
 bool JsonStream_test() {
-  printf("Running JsonStream_test");
+  std::cout << "Running " << __func__ << std::endl;
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -507,7 +509,7 @@ bool JsonStream_test() {
 
 // returns true if successful
 bool document_stream_test() {
-  printf("Running document_stream_test");
+  std::cout << "Running " << __func__ << std::endl;
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -555,7 +557,7 @@ bool document_stream_test() {
 
 // returns true if successful
 bool document_stream_utf8_test() {
-  printf("Running document_stream_utf8_test");
+  std::cout << "Running " << __func__ << std::endl;
   fflush(NULL);
   const size_t n_records = 10000;
   std::string data;
@@ -603,6 +605,7 @@ bool document_stream_utf8_test() {
 
 // returns true if successful
 bool skyprophet_test() {
+  std::cout << "Running " << __func__ << std::endl;
   const size_t n_records = 100000;
   std::vector<std::string> data;
   char buf[1024];
@@ -658,6 +661,7 @@ namespace dom_api {
   using namespace std;
   using namespace simdjson;
   bool object_iterator() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
@@ -673,6 +677,7 @@ namespace dom_api {
   }
 
   bool array_iterator() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 1, 10, 100 ])");
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
@@ -687,6 +692,7 @@ namespace dom_api {
   }
 
   bool object_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"({})");
     int i = 0;
 
@@ -700,6 +706,7 @@ namespace dom_api {
   }
 
   bool array_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([])");
     int i=0;
 
@@ -713,6 +720,7 @@ namespace dom_api {
   }
 
   bool string_value() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([ "hi", "has backslash\\" ])");
     document doc = document::parse(json);
     auto val = document::array(doc).begin();
@@ -725,6 +733,7 @@ namespace dom_api {
   }
 
   bool numeric_values() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 0, 1, -1, 1.1 ])");
     document doc = document::parse(json);
     auto val = document::array(doc).begin();
@@ -744,6 +753,7 @@ namespace dom_api {
   }
 
   bool boolean_values() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([ true, false ])");
     document doc = document::parse(json);
     auto val = document::array(doc).begin();
@@ -754,6 +764,7 @@ namespace dom_api {
   }
 
   bool null_value() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"([ null ])");
     document doc = document::parse(json);
     auto val = document::array(doc).begin();
@@ -762,6 +773,7 @@ namespace dom_api {
   }
 
   bool document_object_index() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3})");
     document doc = document::parse(json);
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
@@ -778,6 +790,7 @@ namespace dom_api {
   }
 
   bool object_index() {
+    std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
     document doc = document::parse(json);
     if (uint64_t(doc["obj"]["a"]) != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << uint64_t(doc["obj"]["a"]) << endl; return false; }
@@ -796,6 +809,7 @@ namespace dom_api {
   }
 
   bool twitter_count() {
+    std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     document doc = document::load(JSON_TEST_PATH);
     uint64_t result_count = doc["search_metadata"]["count"];
@@ -804,6 +818,7 @@ namespace dom_api {
   }
 
   bool twitter_default_profile() {
+    std::cout << "Running " << __func__ << std::endl;
     // Print users with a default profile.
     set<string_view> default_users;
     document doc = document::load(JSON_TEST_PATH);
@@ -818,6 +833,7 @@ namespace dom_api {
   }
 
   bool twitter_image_sizes() {
+    std::cout << "Running " << __func__ << std::endl;
     // Print image names and sizes
     set<tuple<uint64_t, uint64_t>> image_sizes;
     document doc = document::load(JSON_TEST_PATH);
@@ -853,7 +869,197 @@ namespace dom_api {
   }
 }
 
+namespace format_tests {
+  using namespace simdjson;
+  using namespace std;
+  const padded_string DOCUMENT(string(R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })"));
+  const string MINIFIED(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+  bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
+    if (actual.str() != expected) {
+      cerr << "Failed to correctly minify " << DOCUMENT.data() << endl;
+      cerr << "Expected: " << expected << endl;
+      cerr << "Actual:   " << actual.str() << endl;
+      return false;
+    }
+    return true;
+  }
+
+  bool print_document_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    ostringstream s;
+    s << document::parse(DOCUMENT);
+    return assert_minified(s);
+  }
+  bool print_minify_document_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    ostringstream s;
+    s << minify(document::parse(DOCUMENT));
+    return assert_minified(s);
+  }
+
+  bool print_parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
+    ostringstream s;
+    s << parser.parse(DOCUMENT);
+    return assert_minified(s);
+  }
+  bool print_minify_parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
+    ostringstream s;
+    s << minify(parser.parse(DOCUMENT));
+    return assert_minified(s);
+  }
+
+  bool print_document() {
+    std::cout << "Running " << __func__ << std::endl;
+    document doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << doc;
+    return assert_minified(s);
+  }
+  bool print_minify_document() {
+    std::cout << "Running " << __func__ << std::endl;
+    document doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc);
+    return assert_minified(s);
+  }
+
+  bool print_document_ref() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
+    const document &doc_ref = parser.parse(DOCUMENT);
+    ostringstream s;
+    s << doc_ref;
+    return assert_minified(s);
+  }
+  bool print_minify_document_ref() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
+    const document &doc_ref = parser.parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc_ref);
+    return assert_minified(s);
+  }
+
+  bool print_element_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << doc["foo"];
+    return assert_minified(s, "1");
+  }
+  bool print_minify_element_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc["foo"]);
+    return assert_minified(s, "1");
+  }
+
+  bool print_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::element value = doc["foo"];
+    ostringstream s;
+    s << value;
+    return assert_minified(s, "1");
+  }
+  bool print_minify_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::element value = doc["foo"];
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, "1");
+  }
+
+  bool print_array_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << doc["bar"].as_array();
+    return assert_minified(s, "[1,2,3]");
+  }
+  bool print_minify_array_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc["bar"].as_array());
+    return assert_minified(s, "[1,2,3]");
+  }
+
+  bool print_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::array value = doc["bar"];
+    ostringstream s;
+    s << value;
+    return assert_minified(s, "[1,2,3]");
+  }
+  bool print_minify_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::array value = doc["bar"];
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, "[1,2,3]");
+  }
+
+  bool print_object_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << doc["baz"].as_object();
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+  bool print_minify_object_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc["baz"].as_object());
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+
+  bool print_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::object value = doc["baz"];
+    ostringstream s;
+    s << value;
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+  bool print_minify_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    document::object value = doc["baz"];
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+
+  bool run_tests() {
+    return print_document_parse() && print_minify_document_parse() &&
+           print_parser_parse() && print_minify_parser_parse() &&
+           print_document() && print_minify_document() &&
+           print_document_ref() && print_minify_document_ref() &&
+           print_element_result() && print_minify_element_result() &&
+           print_array_result() && print_minify_array_result() &&
+           print_object_result() && print_minify_object_result() &&
+           print_element() && print_minify_element() &&
+           print_array() && print_minify_array() &&
+           print_object() && print_minify_object();
+  }
+}
+
 bool error_messages_in_correct_order() {
+  std::cout << "Running " << __func__ << std::endl;
   using namespace simdjson;
   using namespace simdjson::internal;
   using namespace std;
@@ -894,6 +1100,8 @@ int main() {
   if (!skyprophet_test())
     return EXIT_FAILURE;
   if (!dom_api::run_tests())
+    return EXIT_FAILURE;
+  if (!format_tests::run_tests())
     return EXIT_FAILURE;
   if(!document_stream_test())
     return EXIT_FAILURE;
