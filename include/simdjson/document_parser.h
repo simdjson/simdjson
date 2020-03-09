@@ -424,6 +424,7 @@ public:
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
+  /** @deprecated Use cout << parser.parse() */
   inline bool print_json(std::ostream &os) const noexcept;
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 

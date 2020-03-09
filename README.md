@@ -144,29 +144,28 @@ The simplest API to get started is `document::parse()`, which allocates a new pa
 ```c++
 auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
 if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
-doc.print_json(cout);
+cout << doc;
 ```
 
 If you're using exceptions, it gets even simpler (simdjson won't use exceptions internally, so you'll only pay the performance cost of exceptions in your own calling code):
 
 ```c++
 document doc = document::parse(string("[ 1, 2, 3 ]"));
-doc.print_json(cout);
+cout << doc;
 ```
 
 The simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
 
 ```c++
 document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
-doc.print_json(cout);
+cout << doc;
 ```
 
 You can also load from a file with `parser.load()`:
 
 ```c++
 document::parser parser;
-document doc = parser.load(filename);
-doc.print_json(cout);
+cout << parser.load(filename);
 ```
 
 ### Reusing the parser for maximum efficiency
@@ -179,7 +178,7 @@ hot in cache and keeping allocation to a minimum.
 document::parser parser;
 for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
   document& doc = parser.parse(json);
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 
@@ -192,7 +191,7 @@ for (int i=0;i<argc;i++) {
   auto [doc, error] = parser.parse(get_corpus(argv[i]));
   if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
   if (error) { cerr << error << endl; exit(1); }
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 
@@ -208,7 +207,7 @@ for (int i=0;i<argc;i++) {
   auto [doc, error] = parser.parse(get_corpus(argv[i]));
   if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
   if (error) { cerr << error << endl; exit(1); }
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 

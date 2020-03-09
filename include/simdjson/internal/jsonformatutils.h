@@ -3,110 +3,59 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 namespace simdjson::internal {
 
-// ends with zero char
-static inline void print_with_escapes(const unsigned char *src, std::ostream &os) {
-  while (*src) {
-    switch (*src) {
+class escape_json_string;
+
+inline std::ostream& operator<<(std::ostream& out, const escape_json_string &str);
+
+class escape_json_string {
+public:
+  escape_json_string(std::string_view _str) noexcept : str{_str} {}
+  operator std::string() const noexcept { std::stringstream s; s << *this; return s.str(); }
+private:
+  std::string_view str;
+  friend std::ostream& operator<<(std::ostream& out, const escape_json_string &unescaped);
+};
+
+inline std::ostream& operator<<(std::ostream& out, const escape_json_string &unescaped) {
+  for (size_t i=0; i<unescaped.str.length(); i++) {
+    switch (unescaped.str[i]) {
     case '\b':
-      os << '\\';
-      os << 'b';
+      out << "\\b";
       break;
     case '\f':
-      os << '\\';
-      os << 'f';
+      out << "\\f";
       break;
     case '\n':
-      os << '\\';
-      os << 'n';
+      out << "\\n";
       break;
     case '\r':
-      os << '\\';
-      os << 'r';
+      out << "\\r";
       break;
     case '\"':
-      os << '\\';
-      os << '"';
+      out << "\\\"";
       break;
     case '\t':
-      os << '\\';
-      os << 't';
+      out << "\\t";
       break;
     case '\\':
-      os << '\\';
-      os << '\\';
+      out << "\\\\";
       break;
     default:
-      if (*src <= 0x1F) {
-        std::ios::fmtflags f(os.flags());
-        os << std::hex << std::setw(4) << std::setfill('0')
-           << static_cast<int>(*src);
-        os.flags(f);
+      if ((unsigned char)unescaped.str[i] <= 0x1F) {
+        // TODO can this be done once at the beginning, or will it mess up << char?
+        std::ios::fmtflags f(out.flags());
+        out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(unescaped.str[i]);
+        out.flags(f);
       } else {
-        os << *src;
+        out << unescaped.str[i];
       }
     }
-    src++;
   }
-}
-
-
-// print len chars
-static inline void print_with_escapes(const unsigned char *src,
-                                      std::ostream &os, size_t len) {
-  const unsigned char *finalsrc = src + len;
-  while (src < finalsrc) {
-    switch (*src) {
-    case '\b':
-      os << '\\';
-      os << 'b';
-      break;
-    case '\f':
-      os << '\\';
-      os << 'f';
-      break;
-    case '\n':
-      os << '\\';
-      os << 'n';
-      break;
-    case '\r':
-      os << '\\';
-      os << 'r';
-      break;
-    case '\"':
-      os << '\\';
-      os << '"';
-      break;
-    case '\t':
-      os << '\\';
-      os << 't';
-      break;
-    case '\\':
-      os << '\\';
-      os << '\\';
-      break;
-    default:
-      if (*src <= 0x1F) {
-        std::ios::fmtflags f(os.flags());
-        os << std::hex << std::setw(4) << std::setfill('0')
-           << static_cast<int>(*src);
-        os.flags(f);
-      } else {
-        os << *src;
-      }
-    }
-    src++;
-  }
-}
-
-static inline void print_with_escapes(const char *src, std::ostream &os) {
-  print_with_escapes(reinterpret_cast<const unsigned char *>(src), os);
-}
-
-static inline void print_with_escapes(const char *src, std::ostream &os, size_t len) {
-  print_with_escapes(reinterpret_cast<const unsigned char *>(src), os, len);
+  return out;
 }
 
 } // namespace simdjson::internal
