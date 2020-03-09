@@ -1603,7 +1603,7 @@ private:
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
  *
- *   document doc = document::parse("   [ 1 , 2 , 3 ] "_pad);
+ *   document doc = document::parse("   [ 1 , 2 , 3 ] "_padded);
  *   cout << minify(doc) << endl; // prints [1,2,3]
  *
  */

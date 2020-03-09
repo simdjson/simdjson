@@ -6,8 +6,7 @@ using namespace simdjson;
 void document_parse_error_code() {
   cout << __func__ << endl;
 
-  string json("[ 1, 2, 3 ]");
-  auto [doc, error] = document::parse(json);
+  auto [doc, error] = document::parse("[ 1, 2, 3 ]"_padded);
   if (error) { cerr << "Error: " << error << endl; exit(1); }
   cout << doc << endl;
 }
@@ -15,14 +14,13 @@ void document_parse_error_code() {
 void document_parse_exception() {
   cout << __func__ << endl;
 
-  string json("[ 1, 2, 3 ]");
-  cout << document::parse(json) << endl;
+  cout << document::parse("[ 1, 2, 3 ]"_padded) << endl;
 }
 
 void document_parse_padded_string() {
   cout << __func__ << endl;
 
-  padded_string json(string("[ 1, 2, 3 ]"));
+  auto json = "[ 1, 2, 3 ]"_padded;
   cout << document::parse(json) << endl;
 }
 
@@ -71,7 +69,7 @@ void parser_parse_many_error_code() {
   cout << __func__ << endl;
 
   // Read files with the parser
-  padded_string json = string("[1, 2, 3] true [ true, false ]");
+  auto json = "[1, 2, 3] true [ true, false ]"_padded;
   cout << "Parsing " << json.data() << " ..." << endl;
   document::parser parser;
   for (auto [doc, error] : parser.parse_many(json)) {
@@ -84,7 +82,7 @@ void parser_parse_many_exception() {
   cout << __func__ << endl;
 
   // Read files with the parser
-  padded_string json = string("[1, 2, 3] true [ true, false ]");
+  auto json = "[1, 2, 3] true [ true, false ]"_padded;
   cout << "Parsing " << json.data() << " ..." << endl;
   document::parser parser;
   for (const document &doc : parser.parse_many(json)) {
