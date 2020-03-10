@@ -72,58 +72,35 @@ size_t sum_line_lengths(char * data, size_t length) {
 }
 
 
-int main(int argc, char *argv[]) {
-  bool verbose = false;
-  bool just_data = false;
-  int c;
-  while ((c = getopt(argc, argv, "vt")) != -1)
-    switch (c) {
-    case 't':
-      just_data = true;
-      break;
-    case 'v':
-      verbose = true;
-      break;
-    default:
-      abort();
-    }
-  if (optind >= argc) {
-    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
-    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
-    std::cerr << "The '-t' flag outputs a table. " << std::endl;
-    exit(1);
-  }
-  const char *filename = argv[optind];
-  if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
-              << std::endl;
-  }
+bool bench(const char *filename, bool verbose, bool just_data, int repeat_multiplier) {
   simdjson::padded_string p;
   try {
     simdjson::get_corpus(filename).swap(p);
   } catch (const std::exception &e) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
-    return EXIT_FAILURE;
+    return false;
   }
 
+  int repeat = (50000000 * repeat_multiplier) / p.size();
+  if (repeat < 10) { repeat = 10; }
+
   if (verbose) {
-    std::cout << "Input has ";
+    std::cout << "Input " << filename << " has ";
     if (p.size() > 1024 * 1024)
-      std::cout << p.size() / (1024 * 1024) << " MB ";
+      std::cout << p.size() / (1024 * 1024) << " MB";
     else if (p.size() > 1024)
-      std::cout << p.size() / 1024 << " KB ";
+      std::cout << p.size() / 1024 << " KB";
     else
-      std::cout << p.size() << " B ";
-    std::cout << std::endl;
+      std::cout << p.size() << " B";
+    std::cout << ": will run " << repeat << " iterations." << std::endl;
   }
   simdjson::ParsedJson pj;
   bool allocok = pj.allocate_capacity(p.size(), 1024);
 
   if (!allocok) {
     std::cerr << "can't allocate memory" << std::endl;
-    return EXIT_FAILURE;
+    return false;
   }
-  int repeat = (p.size() < 1 * 1000 * 1000 ? 1000 : 10);
   int volume = p.size();
   if (just_data) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
@@ -313,4 +290,39 @@ int main(int argc, char *argv[]) {
 
   free(ast_buffer);
   free(buffer);
+  return true;
+}
+
+int main(int argc, char *argv[]) {
+  bool verbose = false;
+  bool just_data = false;
+  double repeat_multiplier = 1;
+  int c;
+  while ((c = getopt(argc, argv, "r:vt")) != -1)
+    switch (c) {
+    case 'r':
+      repeat_multiplier = atof(optarg);
+      break;
+    case 't':
+      just_data = true;
+      break;
+    case 'v':
+      verbose = true;
+      break;
+    default:
+      abort();
+    }
+  if (optind >= argc) {
+    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+    std::cerr << "Or " << argv[0] << " -v <jsonfile>" << std::endl;
+    std::cerr << "The '-t' flag outputs a table." << std::endl;
+    std::cerr << "The '-r <N>' flag sets the repeat multiplier: set it above 1 to do more iterations, and below 1 to do fewer." << std::endl;
+    exit(1);
+  }
+  int result = EXIT_SUCCESS;
+  for (int fileind = optind; fileind < argc; fileind++) {
+    if (!bench(argv[fileind], verbose, just_data, repeat_multiplier)) { result = EXIT_FAILURE; }
+    printf("\n\n");
+  }
+  return result;
 }
