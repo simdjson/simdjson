@@ -93,8 +93,8 @@ We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch
 If you expect your code to run on older processors, you can check that the CPU is supported as follows:
 
 ```c++
-if (simdjson::active_implementation->name() == "unsupported") { 
-  printf("unsupported CPU\n"); 
+if (simdjson::active_implementation->name() == "unsupported") {
+  printf("unsupported CPU\n");
 }
 ```
 
@@ -120,13 +120,13 @@ The simdjson library is mostly single-threaded. Thread safety is the responsabil
 
 If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
-The json stream parser is threaded, using exactly two threads. 
+The json stream parser is threaded, using exactly two threads.
 
 ## Large files
 
 If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses and/or page allocation. [On some systems, memory allocation runs far slower than we can parse (e.g., 1.4GB/s).](https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/)
 
-You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages. 
+You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages.
 
 Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocating memory. You just allocate memory once and reuse the blocks of memory.
 
@@ -186,7 +186,7 @@ for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true,
 ```
 
 
-## Newline-Delimited JSON (ndjson) and  JSON lines 
+## Newline-Delimited JSON (ndjson) and  JSON lines
 
 The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays or objects, we even support direct file concatenation without whitespace. The concatenated file has no size restrictions (including larger than 4GB), though each individual document must be less than 4GB.
 
@@ -371,7 +371,7 @@ To simplify the engineering, we make some assumptions.
 - We support UTF-8 (and thus ASCII), nothing else (no Latin, no UTF-16). We do not believe this is a genuine limitation, because we do not think there is any serious application that needs to process JSON data without an ASCII or UTF-8 encoding. If the UTF-8 contains a leading BOM, it should be omitted: the user is responsible for detecting and skipping the BOM; UTF-8 BOMs are discouraged.
 - All strings in the JSON document may have up to 4294967295 bytes in UTF-8 (4GB). To enforce this constraint, we refuse to parse a document that contains more than 4294967295 bytes (4GB). This should accommodate most JSON documents.
 - As allowed by the specification, we allow repeated keys within an object (other parsers like sajson do the same).
-- Performance is optimized for JSON documents spanning at least a tens kilobytes up to many megabytes: the performance issues with having to parse many tiny JSON documents or one truly enormous JSON document are different.
+- [The simdjson library is fast for JSON documents spanning a few bytes up to many megabytes](https://github.com/lemire/simdjson/issues/312). 
 
 _We do not aim to provide a general-purpose JSON library._ A library like RapidJSON offers much more than just parsing, it helps you generate JSON and offers various other convenient functions. We merely parse the document.
 
@@ -443,7 +443,7 @@ You then have access to the following methods on the resulting `simdjson::docume
 * `bool is_null() const`: self-explanatory
 * `bool is_number() const`: self-explanatory
 * `bool move_to_key(const char *key)`: when at {, go one level deep, looking for a given key, if successful, we are left pointing at the value, if not, we are still pointing at the object ({)  (in case of repeated keys, this only finds the first one). We seek the key using C's strcmp so if your JSON strings contain NULL chars, this would trigger a false positive: if you expect that to be the case, take extra precautions. Furthermore, we do the comparison character-by-character without taking into account Unicode equivalence.
-* `bool move_to_key_insensitive(const char *key)`: as above, but case insensitive lookup 
+* `bool move_to_key_insensitive(const char *key)`: as above, but case insensitive lookup
 * `bool move_to_key(const char *key, uint32_t length)`: as above except that the target can contain NULL characters
 * `void move_to_value()`: when at a key location within an object, this moves to the accompanying, value (located next to it).  This is equivalent but much faster than calling `next()`.
 * `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
