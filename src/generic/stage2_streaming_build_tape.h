@@ -58,11 +58,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
     FAIL_IF( parser.parse_string() );
     goto finish;
   case 't': case 'f': case 'n':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_atom(&copy[idx]);
-      })
-    );
+    FAIL_IF( parser.parse_single_atom() );
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
