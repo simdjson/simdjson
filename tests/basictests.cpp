@@ -232,14 +232,14 @@ bool stable_test() {
   return newjson == json;
 }
 
+static simdjson::document::stream parse_many_stream_return(simdjson::document::parser &parser, simdjson::padded_string &str) {
+  return parser.parse_many(str);
+}
 // this is a compilation test
-static void parse_many_constr_assign() {
+UNUSED static void parse_many_stream_assign() {
     simdjson::document::parser parser;
     simdjson::padded_string str("{}",2);
-    simdjson::document::stream s1 = parser.parse_many(str);
-    simdjson::document::stream s2 = parser.parse_many(str);
-    simdjson::document::stream s3(s1);
-    s2 = s3;
+    simdjson::document::stream s1 = parse_many_stream_return(parser, str);
 }
 
 static bool parse_json_message_issue467(char const* message, std::size_t len, size_t expectedcount) {

@@ -19,21 +19,6 @@ public:
   really_inline ~stream() noexcept;
 
   /**
-   * Take another stream's buffers and state.
-   *
-   * @param other The stream to take. Its capacity is zeroed.
-   */
-  stream(document::stream &&other) = default;
-  stream(const document::stream &) = delete; // Disallow copying
-  /**
-   * Take another stream's buffers and state.
-   *
-   * @param other The stream to take. Its capacity is zeroed.
-   */
-  stream &operator=(document::stream &&other) = default;
-  stream &operator=(const document::stream &) = delete; // Disallow copying
-
-  /**
    * An iterator through a forward-only stream of documents.
    */
   class iterator {
