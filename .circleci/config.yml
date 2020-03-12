@@ -79,6 +79,11 @@ jobs:
     executor: gcc7
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test ]
+  gcc-avx-google-benchmarks:
+    description: Build, run tests and check performance on GCC 7 with google benchmarks enabled
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ cmake_test ]
   gcc-avx-sanitize:
     description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake sanitize build
     executor: gcc7
@@ -120,6 +125,11 @@ jobs:
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ init_clang6, cmake_test ]
+  clang-avx-google-benchmarks:
+    description: Build, run tests and check performance on clang 6 with google benchmarks enabled
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ init_clang6, cmake_test ]
   clang-avx-sanitize:
     description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang6
@@ -154,6 +164,7 @@ workflows:
       - gcc-avx
       - gcc-avx-dynamic
       - gcc-avx-static
+      - gcc-avx-google-benchmarks
       - gcc-avx-sanitize
       - gcc-sse
       - gcc-sse-dynamic
@@ -162,6 +173,7 @@ workflows:
       - clang-avx
       - clang-avx-dynamic
       - clang-avx-static
+      - clang-avx-google-benchmarks
       - clang-avx-sanitize
       - clang-sse
       - clang-sse-dynamic
