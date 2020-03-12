@@ -4,7 +4,7 @@ struct streaming_structural_parser: structural_parser {
   really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, document::parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
+  WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
     doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
@@ -18,7 +18,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
-    if ( i + 1 > doc_parser.n_structural_indexes ) {
+    if ( structurals.past_end(doc_parser.n_structural_indexes) ) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     end_document();
@@ -28,7 +28,7 @@ struct streaming_structural_parser: structural_parser {
     if (doc_parser.containing_scope_offset[depth] != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    bool finished = i + 1 == doc_parser.n_structural_indexes;
+    bool finished = structurals.at_end(doc_parser.n_structural_indexes);
     return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
@@ -42,12 +42,12 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
-  error_code result = parser.start(addresses.finish);
+  error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
   //
   // Read first value
   //
-  switch (parser.c) {
+  switch (parser.structurals.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -59,23 +59,23 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
     goto finish;
   case 't': case 'f': case 'n':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_atom(copy, idx);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(&copy[idx]);
       })
     );
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_number(copy, idx, false);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_number(copy, idx, true);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(&copy[idx], true);
       })
     );
     goto finish;
@@ -87,8 +87,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
 // Object parser parsers
 //
 object_begin:
-  parser.advance_char();
-  switch (parser.c) {
+  switch (parser.advance_char()) {
   case '"': {
     FAIL_IF( parser.parse_string() );
     goto object_key_parser;
@@ -148,7 +147,7 @@ array_continue:
   }
 
 finish:
-  next_json = parser.i;
+  next_json = parser.structurals.next_structural_index();
   return parser.finish();
 
 error:

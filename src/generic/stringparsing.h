@@ -71,10 +71,9 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *buf,
-                                                uint32_t offset,
+WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src,
                                                 uint8_t *dst) {
-  const uint8_t *src = &buf[offset + 1]; /* we know that buf at offset is a " */
+  src++;
   while (1) {
     parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
     if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
