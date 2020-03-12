@@ -47,28 +47,22 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-struct structural_parser {
-  const uint8_t* const buf;
-  const size_t len;
-  document::parser &doc_parser;
-  size_t i; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;    // used to track the (structural) character we are looking at
-  uint32_t depth = 0; // could have an arbitrary starting depth
-
-  really_inline structural_parser(
-    const uint8_t *_buf,
-    size_t _len,
-    document::parser &_doc_parser,
-    uint32_t _i = 0
-  ) : buf{_buf}, len{_len}, doc_parser{_doc_parser}, i{_i} {}
-
+class structural_iterator {
+public:
+  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
+    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
   really_inline char advance_char() {
-    idx = doc_parser.structural_indexes[i++];
-    c = buf[idx];
+    idx = structural_indexes[next_structural];
+    next_structural++;
+    c = *current();
     return c;
   }
-
+  really_inline char current_char() {
+    return c;
+  }
+  really_inline const uint8_t* current() {
+    return &buf[idx];
+  }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
     /**
@@ -94,6 +88,36 @@ struct structural_parser {
     free(copy);
     return result;
   }
+  really_inline bool past_end(uint32_t n_structural_indexes) {
+    return next_structural+1 > n_structural_indexes;
+  }
+  really_inline bool at_end(uint32_t n_structural_indexes) {
+    return next_structural+1 == n_structural_indexes;
+  }
+  really_inline size_t next_structural_index() {
+    return next_structural;
+  }
+
+private:
+  const uint8_t* const buf;
+  const size_t len;
+  const uint32_t* const structural_indexes;
+  size_t next_structural; // next structural index
+  size_t idx; // location of the structural character in the input (buf)
+  uint8_t c;  // used to track the (structural) character we are looking at
+};
+
+struct structural_parser {
+  structural_iterator structurals;
+  document::parser &doc_parser;
+  uint32_t depth;
+
+  really_inline structural_parser(
+    const uint8_t *buf,
+    size_t len,
+    document::parser &_doc_parser,
+    uint32_t next_structural = 0
+  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.on_start_document(depth);
@@ -134,32 +158,32 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_string() {
     uint8_t *dst = doc_parser.on_start_string();
-    dst = stringparsing::parse_string(buf, idx, dst);
+    dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
       return true;
     }
     return !doc_parser.on_end_string(dst);
   }
 
-  WARN_UNUSED really_inline bool parse_number(const uint8_t *copy, uint32_t offset, bool found_minus) {
-    return !numberparsing::parse_number(copy, offset, found_minus, doc_parser);
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
+    return !numberparsing::parse_number(src, found_minus, doc_parser);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(buf, idx, found_minus);
+    return parse_number(structurals.current(), found_minus);
   }
 
-  WARN_UNUSED really_inline bool parse_atom(const uint8_t *copy, uint32_t offset) {
-    switch (c) {
+  WARN_UNUSED really_inline bool parse_atom(const uint8_t *src) {
+    switch (structurals.current_char()) {
       case 't':
-        if (!is_valid_true_atom(copy + offset)) { return true; }
+        if (!is_valid_true_atom(src)) { return true; }
         doc_parser.on_true_atom();
         break;
       case 'f':
-        if (!is_valid_false_atom(copy + offset)) { return true; }
+        if (!is_valid_false_atom(src)) { return true; }
         doc_parser.on_false_atom();
         break;
       case 'n':
-        if (!is_valid_null_atom(copy + offset)) { return true; }
+        if (!is_valid_null_atom(src)) { return true; }
         doc_parser.on_null_atom();
         break;
       default:
@@ -169,11 +193,11 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_atom() {
-    return parse_atom(buf, idx);
+    return parse_atom(structurals.current());
   }
 
   WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
-    switch (c) {
+    switch (structurals.current_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
@@ -200,7 +224,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( i + 1 != doc_parser.n_structural_indexes ) {
+    if ( !structurals.at_end(doc_parser.n_structural_indexes) ) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     end_document();
@@ -228,7 +252,7 @@ struct structural_parser {
     if (depth >= doc_parser.max_depth()) {
       return doc_parser.on_error(DEPTH_ERROR);
     }
-    switch (c) {
+    switch (structurals.current_char()) {
     case '"':
       return doc_parser.on_error(STRING_ERROR);
     case '0':
@@ -254,18 +278,22 @@ struct structural_parser {
     }
   }
 
-  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
     doc_parser.init_stage2(); // sets is_valid to false
     if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
-    advance_char();
+    structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return doc_parser.on_error(DEPTH_ERROR);
     }
     return SUCCESS;
+  }
+
+  really_inline char advance_char() {
+    return structurals.advance_char();
   }
 };
 
@@ -282,13 +310,13 @@ struct structural_parser {
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
-  error_code result = parser.start(addresses.finish);
+  error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
 
   //
   // Read first value
   //
-  switch (parser.c) {
+  switch (parser.structurals.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -300,23 +328,23 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
     goto finish;
   case 't': case 'f': case 'n':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_atom(copy, idx);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_atom(&copy[idx]);
       })
     );
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_number(copy, idx, false);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_number(copy, idx, true);
+      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+        return parser.parse_number(&copy[idx], true);
       })
     );
     goto finish;
@@ -328,8 +356,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
 // Object parser states
 //
 object_begin:
-  parser.advance_char();
-  switch (parser.c) {
+  switch (parser.advance_char()) {
   case '"': {
     FAIL_IF( parser.parse_string() );
     goto object_key_state;

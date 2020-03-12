@@ -145,9 +145,8 @@ really_inline double subnormal_power10(double base, int64_t negative_exponent) {
 //
 // Note: a redesign could avoid this function entirely.
 //
-never_inline bool parse_float(const uint8_t *const buf, document::parser &parser,
-                              const uint32_t offset, bool found_minus) {
-  const char *p = reinterpret_cast<const char *>(buf + offset);
+never_inline bool parse_float(const uint8_t *const src, document::parser &parser, bool found_minus) {
+  const char *p = reinterpret_cast<const char *>(src);
   bool negative = false;
   if (found_minus) {
     ++p;
@@ -179,7 +178,7 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
                                               : 0);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -202,7 +201,7 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
     }
     if (!is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -228,7 +227,7 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
       if (exp_number > 0x100000000) { // we need to check for overflows
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false;
       }
@@ -246,7 +245,7 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
 // We know for sure that we have a number that is too large,
 // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false;
       }
@@ -264,14 +263,14 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
   // check that we can go from long double to double safely.
   if(i > std::numeric_limits<double>::max()) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false;
   }
   double d = negative ? -i : i;
   parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-  found_float(d, buf + offset);
+  found_float(d, src);
 #endif
   return is_structural_or_whitespace(*p);
 }
@@ -284,11 +283,8 @@ never_inline bool parse_float(const uint8_t *const buf, document::parser &parser
 //
 // This function will almost never be called!!!
 //
-never_inline bool parse_large_integer(const uint8_t *const buf,
-                                             document::parser &parser,
-                                             const uint32_t offset,
-                                             bool found_minus) {
-  const char *p = reinterpret_cast<const char *>(buf + offset);
+never_inline bool parse_large_integer(const uint8_t *const src, document::parser &parser, bool found_minus) {
+  const char *p = reinterpret_cast<const char *>(src);
 
   bool negative = false;
   if (found_minus) {
@@ -309,13 +305,13 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
       digit = *p - '0';
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false; // overflow
       }
       if (add_overflow(i, digit, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false; // overflow
       }
@@ -326,7 +322,7 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
     if (i > 0x8000000000000000) {
        // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false; // overflow
     } else if (i == 0x8000000000000000) {
@@ -336,14 +332,14 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
       constexpr int64_t signed_answer = INT64_MIN;
       parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, buf + offset);
+      found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
       parser.on_number_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, buf + offset);
+      found_integer(signed_answer, src);
 #endif
     }
   } else {
@@ -352,12 +348,12 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
     // fallback on unsigned integers if absolutely necessary.
     if(i < 0x8000000000000000) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(i, buf + offset);
+      found_integer(i, src);
 #endif
       parser.on_number_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_unsigned_integer(i, buf + offset);
+      found_unsigned_integer(i, src);
 #endif
       parser.on_number_u64(i);
     }
@@ -365,7 +361,7 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
   return is_structural_or_whitespace(*p);
 }
 
-// parse the number at buf + offset
+// parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
 //
 // It is assumed that the number is followed by a structural ({,},],[) character
@@ -374,8 +370,7 @@ never_inline bool parse_large_integer(const uint8_t *const buf,
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0 or 1) at high speed.
-really_inline bool parse_number(UNUSED const uint8_t *const buf,
-                                UNUSED const uint32_t offset,
+really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
                                 document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
@@ -383,14 +378,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
   parser.on_number_s64(0);           // always write zero
   return true;                    // always succeeds
 #else
-  const char *p = reinterpret_cast<const char *>(buf + offset);
+  const char *p = reinterpret_cast<const char *>(src);
   bool negative = false;
   if (found_minus) {
     ++p;
     negative = true;
     if (!is_integer(*p)) { // a negative sign must be followed by an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -402,7 +397,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
     ++p;
     if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -410,7 +405,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
   } else {
     if (!(is_integer(*p))) { // must start with an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -445,7 +440,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
       // we will handle the overflow later
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -480,7 +475,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
     }
     if (!is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(buf + offset);
+      found_invalid_number(src);
 #endif
       return false;
     }
@@ -501,7 +496,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
       if (exp_number > 0x100000000) { // we need to check for overflows
                                       // we refuse to parse this
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(buf + offset);
+        found_invalid_number(src);
 #endif
         return false;
       }
@@ -526,31 +521,31 @@ really_inline bool parse_number(UNUSED const uint8_t *const buf,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(buf, parser, offset, found_minus);
+        return parse_float(src, parser, found_minus);
       }
     }
     if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(buf, parser, offset, found_minus);
+      return parse_float(src, parser, found_minus);
     }
     double factor = power_of_ten[power_index];
     factor = negative ? -factor : factor;
     double d = i * factor;
     parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    found_float(d, buf + offset);
+    found_float(d, src);
 #endif
   } else {
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(buf, parser, offset, found_minus);
+      return parse_large_integer(src, parser, found_minus);
     }
     i = negative ? 0 - i : i;
     parser.on_number_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    found_integer(i, buf + offset);
+    found_integer(i, src);
 #endif
   }
   return is_structural_or_whitespace(*p);
