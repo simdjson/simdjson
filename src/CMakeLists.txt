@@ -33,43 +33,45 @@ set(SIMDJSON_SRC_HEADERS
   simdprune_tables.h
   stage1_find_marks.cpp
   stage2_build_tape.cpp
-  arm64/bitmask.h
-  arm64/simd.h
   arm64/bitmanipulation.h
+  arm64/bitmask.h
   arm64/implementation.h
   arm64/intrinsics.h
+  arm64/numberparsing.h
+  arm64/simd.h
   arm64/stage1_find_marks.h
   arm64/stage2_build_tape.h
   arm64/stringparsing.h
-  arm64/numberparsing.h
+  generic/atomparsing.h
+  generic/numberparsing.h
   generic/stage1_find_marks.h
   generic/stage2_build_tape.h
   generic/stage2_streaming_build_tape.h
   generic/stringparsing.h
-  generic/numberparsing.h
   generic/utf8_fastvalidate_algorithm.h
   generic/utf8_lookup_algorithm.h
   generic/utf8_lookup2_algorithm.h
   generic/utf8_range_algorithm.h
   generic/utf8_zwegner_algorithm.h
-  haswell/bitmask.h
   haswell/bitmanipulation.h
+  haswell/bitmask.h
   haswell/implementation.h
   haswell/intrinsics.h
+  haswell/numberparsing.h
   haswell/simd.h
   haswell/stage1_find_marks.h
   haswell/stage2_build_tape.h
   haswell/stringparsing.h
   document_parser_callbacks.h
   westmere/bitmanipulation.h
+  westmere/bitmask.h
   westmere/implementation.h
   westmere/intrinsics.h
-  westmere/bitmask.h
+  westmere/numberparsing.h
   westmere/simd.h
   westmere/stage1_find_marks.h
   westmere/stage2_build_tape.h
   westmere/stringparsing.h
-  westmere/numberparsing.h
 )
 set_source_files_properties(${SIMDJSON_SRC_HEADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
 

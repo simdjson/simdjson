@@ -63,6 +63,9 @@ public:
   really_inline const uint8_t* current() {
     return &buf[idx];
   }
+  really_inline size_t remaining_len() {
+    return len - idx;
+  }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
     /**
@@ -172,18 +175,18 @@ struct structural_parser {
     return parse_number(structurals.current(), found_minus);
   }
 
-  WARN_UNUSED really_inline bool parse_atom(const uint8_t *src) {
+  WARN_UNUSED really_inline bool parse_atom() {
     switch (structurals.current_char()) {
       case 't':
-        if (!is_valid_true_atom(src)) { return true; }
+        if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
         doc_parser.on_true_atom();
         break;
       case 'f':
-        if (!is_valid_false_atom(src)) { return true; }
+        if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
         doc_parser.on_false_atom();
         break;
       case 'n':
-        if (!is_valid_null_atom(src)) { return true; }
+        if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
         doc_parser.on_null_atom();
         break;
       default:
@@ -192,8 +195,24 @@ struct structural_parser {
     return false;
   }
 
-  WARN_UNUSED really_inline bool parse_atom() {
-    return parse_atom(structurals.current());
+  WARN_UNUSED really_inline bool parse_single_atom() {
+    switch (structurals.current_char()) {
+      case 't':
+        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        doc_parser.on_true_atom();
+        break;
+      case 'f':
+        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        doc_parser.on_false_atom();
+        break;
+      case 'n':
+        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        doc_parser.on_null_atom();
+        break;
+      default:
+        return true;
+    }
+    return false;
   }
 
   WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
@@ -327,11 +346,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, do
     FAIL_IF( parser.parse_string() );
     goto finish;
   case 't': case 'f': case 'n':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
-        return parser.parse_atom(&copy[idx]);
-      })
-    );
+    FAIL_IF( parser.parse_single_atom() );
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':

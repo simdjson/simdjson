@@ -11,6 +11,7 @@
 
 namespace simdjson::arm64 {
 
+#include "generic/atomparsing.h"
 #include "generic/stage2_build_tape.h"
 #include "generic/stage2_streaming_build_tape.h"
 
