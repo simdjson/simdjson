@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstring>
 #ifndef _MSC_VER
 #include <dirent.h>

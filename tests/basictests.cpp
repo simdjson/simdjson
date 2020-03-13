@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cinttypes>
 #include <cstdio>
 #include <cstdlib>

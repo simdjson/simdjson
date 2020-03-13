@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <climits>
 #include <cstring>
 #include <dirent.h>
