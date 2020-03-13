@@ -538,7 +538,7 @@ bool document_stream_test() {
       }
 
       if (keyid != int64_t(count)) {
-        printf("key does not match %ld, expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
+        printf("key does not match %" PRId64 ", expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
         return false;
       }
 
@@ -586,7 +586,7 @@ bool document_stream_utf8_test() {
       }
 
       if (keyid != int64_t(count)) {
-        printf("key does not match %ld, expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
+        printf("key does not match %" PRId64 ", expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
         return false;
       }
 
