@@ -1076,6 +1076,21 @@ bool error_messages_in_correct_order() {
   return true;
 }
 
+bool lots_of_brackets() {
+  std::string input;
+  for(size_t i = 0; i < 1000; i++) {
+    input += "[";
+  }
+  for(size_t i = 0; i < 1000; i++) {
+    input += "]";
+  }
+  auto [doc, error] = simdjson::document::parse(input);
+  if (error) { std::cerr << "Error: " << simdjson::error_message(error) << std::endl; return false; }
+  std::cout << doc;
+  std::cout << std::endl;
+  return true;
+}
+
 int main() {
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
@@ -1083,6 +1098,8 @@ int main() {
     printf("unsupported CPU\n"); 
   }
   std::cout << "Running basic tests." << std::endl;
+  if(!lots_of_brackets())
+    return EXIT_FAILURE;
   if(!json_issue467())
     return EXIT_FAILURE;
   if(!number_test_small_integers())
