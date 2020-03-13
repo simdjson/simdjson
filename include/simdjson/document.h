@@ -84,6 +84,8 @@ public:
    * Get the root element of this document.
    */
   operator element() const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
   /**
    * Read the root element of this document as a JSON array.
    *
@@ -98,6 +100,7 @@ public:
    * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   operator object() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Get the value associated with the given key.
@@ -253,6 +256,7 @@ public:
    */
   error_code error;
 
+#if SIMDJSON_EXCEPTIONS
   /**
    * Return the document, or throw an exception if it is invalid.
    *
@@ -260,6 +264,7 @@ public:
    * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document() noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Get the value associated with the given key.
@@ -339,6 +344,7 @@ public:
    */
   error_code error;
 
+#if SIMDJSON_EXCEPTIONS
   /**
    * A reference to the document, or throw an exception if it is invalid.
    *
@@ -346,6 +352,7 @@ public:
    * @exception simdjson_error if the document is invalid or there was an error parsing it.
    */
   operator document&() noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Get the value associated with the given key.
@@ -521,6 +528,7 @@ public:
    */
   inline element_result<document::object> as_object() const noexcept;
 
+#if SIMDJSON_EXCEPTIONS
   /**
    * Read this element as a boolean.
    *
@@ -589,6 +597,7 @@ public:
    * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
   inline operator document::object() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Get the value associated with the given key.
@@ -806,7 +815,9 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
+#if SIMDJSON_EXCEPTIONS
   inline operator T() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
 private:
   really_inline element_result(T value) noexcept;
@@ -835,6 +846,7 @@ public:
   inline element_result<array> as_array() const noexcept;
   inline element_result<object> as_object() const noexcept;
 
+#if SIMDJSON_EXCEPTIONS
   inline operator element() const noexcept(false);
   inline operator bool() const noexcept(false);
   inline explicit operator const char*() const noexcept(false);
@@ -844,6 +856,7 @@ public:
   inline operator double() const noexcept(false);
   inline operator array() const noexcept(false);
   inline operator object() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   inline element_result<element> operator[](const std::string_view &s) const noexcept;
   inline element_result<element> operator[](const char *s) const noexcept;
@@ -864,10 +877,12 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
+#if SIMDJSON_EXCEPTIONS
   inline operator array() const noexcept(false);
 
   inline array::iterator begin() const noexcept(false);
   inline array::iterator end() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
 private:
   really_inline element_result(array value) noexcept;
@@ -885,10 +900,12 @@ public:
   /** The error code (or 0 if there is no error) */
   error_code error;
 
+#if SIMDJSON_EXCEPTIONS
   inline operator object() const noexcept(false);
 
   inline object::iterator begin() const noexcept(false);
   inline object::iterator end() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   inline element_result<element> operator[](const std::string_view &s) const noexcept;
   inline element_result<element> operator[](const char *s) const noexcept;
@@ -1593,8 +1610,10 @@ private:
   // and auto-allocate if not.
   inline error_code ensure_capacity(size_t desired_capacity) noexcept;
 
+#if SIMDJSON_EXCEPTIONS
   // Used internally to get the document
   inline const document &get_document() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
   template<size_t max_depth> friend class document_iterator;
   friend class document::stream;

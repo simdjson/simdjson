@@ -18,16 +18,11 @@ project(simdjson
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-# usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
-option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-
 
 set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
@@ -36,19 +31,22 @@ set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.2.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
+option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
 if(NOT MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
 endif()
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
+option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
+option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 find_package(CTargets)
 find_package(Options)
 
-option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
@@ -61,7 +59,6 @@ add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
 
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 if (SIMDJSON_GOOGLE_BENCHMARKS)
   if(NOT EXISTS dependencies/benchmark/CMakeLists.txt)
     # message(STATUS "Unable to find dependencies/benchmark/CMakeLists.txt")
