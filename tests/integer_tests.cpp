@@ -1,9 +1,20 @@
 
-#include <cassert>
 #include <iostream>
 #include <limits>
 
 #include "simdjson.h"
+
+// we define our own asserts to get around NDEBUG
+#ifndef ASSERT
+#define ASSERT(x)                                                       \
+{    if (!(x)) {                                                        \
+        char buf[4096];                                                 \
+        snprintf (buf, 4096, "Failure in \"%s\", line %d\n",            \
+                 __FILE__, __LINE__);                                   \
+        abort ();                                                       \
+    }                                                                   \
+}
+#endif
 
 using namespace simdjson;
 
@@ -23,10 +34,10 @@ static void parse_and_validate(const std::string src, T expected) {
   const padded_string pstr{src};
   auto json = build_parsed_json(pstr);
 
-  assert(json.is_valid());
+  ASSERT(json.is_valid());
   ParsedJson::Iterator it{json};
-  assert(it.down());
-  assert(it.next());
+  ASSERT(it.down());
+  ASSERT(it.next());
   bool result;
   if constexpr (std::is_same<int64_t, T>::value) {
     const auto actual = it.get_integer();
@@ -47,10 +58,10 @@ static bool parse_and_check_signed(const std::string src) {
   const padded_string pstr{src};
   auto json = build_parsed_json(pstr);
 
-  assert(json.is_valid());
+  ASSERT(json.is_valid());
   document::iterator it{json};
-  assert(it.down());
-  assert(it.next());
+  ASSERT(it.down());
+  ASSERT(it.next());
   return it.is_integer() && it.is_number();
 }
 
@@ -59,10 +70,10 @@ static bool parse_and_check_unsigned(const std::string src) {
   const padded_string pstr{src};
   auto json = build_parsed_json(pstr);
 
-  assert(json.is_valid());
+  ASSERT(json.is_valid());
   document::iterator it{json};
-  assert(it.down());
-  assert(it.next());
+  ASSERT(it.down());
+  ASSERT(it.next());
   return it.is_unsigned_integer() && it.is_number();
 }
 

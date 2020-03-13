@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <cstring>
 #include <dirent.h>
 #include <inttypes.h>
