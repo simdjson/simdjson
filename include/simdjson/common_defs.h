@@ -6,6 +6,14 @@
 
 namespace simdjson {
 
+#ifndef SIMDJSON_EXCEPTIONS
+#ifdef __cpp_exceptions
+#define SIMDJSON_EXCEPTIONS 1
+#else
+#define SIMDJSON_EXCEPTIONS 0
+#endif
+#endif
+
 /** The maximum document size supported by simdjson. */
 constexpr size_t SIMDJSON_MAXSIZE_BYTES = 0xFFFFFFFF;
 

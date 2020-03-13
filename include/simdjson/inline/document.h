@@ -19,6 +19,9 @@ template<typename T>
 inline document::element_result<T>::element_result(T _value) noexcept : value(_value), error{SUCCESS} {}
 template<typename T>
 inline document::element_result<T>::element_result(error_code _error) noexcept : value(), error{_error} {}
+
+#if SIMDJSON_EXCEPTIONS
+
 template<>
 inline document::element_result<std::string_view>::operator std::string_view() const noexcept(false) {
   if (error) { throw simdjson_error(error); }
@@ -50,11 +53,16 @@ inline document::element_result<double>::operator double() const noexcept(false)
   return value;
 }
 
+#endif // SIMDJSON_EXCEPTIONS
+
 //
 // document::element_result<document::array> inline implementation
 //
 inline document::element_result<document::array>::element_result(document::array _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::array>::element_result(error_code _error) noexcept : value(), error{_error} {}
+
+#if SIMDJSON_EXCEPTIONS
+
 inline document::element_result<document::array>::operator document::array() const noexcept(false) {
   if (error) { throw simdjson_error(error); }
   return value;
@@ -68,11 +76,16 @@ inline document::array::iterator document::element_result<document::array>::end(
   return value.end();
 }
 
+#endif // SIMDJSON_EXCEPTIONS
+
 //
 // document::element_result<document::object> inline implementation
 //
 inline document::element_result<document::object>::element_result(document::object _value) noexcept : value(_value), error{SUCCESS} {}
 inline document::element_result<document::object>::element_result(error_code _error) noexcept : value(), error{_error} {}
+
+#if SIMDJSON_EXCEPTIONS
+
 inline document::element_result<document::object>::operator document::object() const noexcept(false) {
   if (error) { throw simdjson_error(error); }
   return value;
@@ -93,6 +106,8 @@ inline document::object::iterator document::element_result<document::object>::en
   if (error) { throw simdjson_error(error); }
   return value.end();
 }
+
+#endif // SIMDJSON_EXCEPTIONS
 
 //
 // document::element_result<document::element> inline implementation
@@ -341,6 +356,9 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // document::doc_ref_result inline implementation
 //
 inline document::doc_ref_result::doc_ref_result(document &_doc, error_code _error) noexcept : doc(_doc), error(_error) { }
+
+#if SIMDJSON_EXCEPTIONS
+
 inline document::doc_ref_result::operator document&() noexcept(false) {
   if (error) { throw simdjson_error(error); }
   return doc;
@@ -354,12 +372,17 @@ inline document::element_result<document::element> document::doc_ref_result::ope
   return doc[key];
 }
 
+#endif // SIMDJSON_EXCEPTIONS
+
 //
 // document::doc_result inline implementation
 //
 inline document::doc_result::doc_result(document &&_doc, error_code _error) noexcept : doc(std::move(_doc)), error(_error) { }
 inline document::doc_result::doc_result(document &&_doc) noexcept : doc(std::move(_doc)), error(SUCCESS) { }
 inline document::doc_result::doc_result(error_code _error) noexcept : doc(), error(_error) { }
+
+#if SIMDJSON_EXCEPTIONS
+
 inline document::doc_result::operator document() noexcept(false) {
   if (error) { throw simdjson_error(error); }
   return std::move(doc);
@@ -372,6 +395,8 @@ inline document::element_result<document::element> document::doc_result::operato
   if (error) { return error; }
   return doc[key];
 }
+
+#endif // SIMDJSON_EXCEPTIONS
 
 //
 // document::parser inline implementation
@@ -391,12 +416,17 @@ inline bool document::parser::print_json(std::ostream &os) const noexcept {
 inline bool document::parser::dump_raw_tape(std::ostream &os) const noexcept {
   return is_valid() ? doc.dump_raw_tape(os) : false;
 }
+
+#if SIMDJSON_EXCEPTIONS
+
 inline const document &document::parser::get_document() const noexcept(false) {
   if (!is_valid()) {
     throw simdjson_error(error);
   }
   return doc;
 }
+
+#endif // SIMDJSON_EXCEPTIONS
 
 inline document::doc_ref_result document::parser::load(const std::string &path) noexcept {
   auto [json, _error] = padded_string::load(path);
