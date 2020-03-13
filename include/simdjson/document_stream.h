@@ -56,6 +56,11 @@ public:
   really_inline iterator end() noexcept;
 
 private:
+
+  stream &operator=(const document::stream &) = delete; // Disallow copying
+
+  stream(document::stream &other) = delete;    // Disallow copying
+
   really_inline stream(document::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
 
   /**
