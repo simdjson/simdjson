@@ -25,8 +25,8 @@ int main (int argc, char *argv[]){
         exit(1);
     }
     const char *filename = argv[1];
-    auto [p, error] = simdjson::padded_string::load(filename);
-    if (error) {
+    auto [p, err] = simdjson::padded_string::load(filename);
+    if (err) {
         std::cerr << "Could not load the file " << filename << std::endl;
         return EXIT_FAILURE;
     }

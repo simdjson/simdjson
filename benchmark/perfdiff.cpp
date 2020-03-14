@@ -7,16 +7,27 @@
 #include <array>
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 #ifdef _WIN32
 #define popen _popen
 #define pclose _pclose
 #endif
 
+int closepipe(FILE *pipe) {
+    int exit_code = pclose(pipe);
+    if (exit_code != EXIT_SUCCESS) {
+        std::cerr << "Error " << exit_code << " running benchmark command!" << std::endl;
+        exit(EXIT_FAILURE);
+    };
+    return exit_code;
+}
+
 std::string exec(const char* cmd) {
+    std::cerr << cmd << std::endl;
     std::array<char, 128> buffer;
     std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    std::unique_ptr<FILE, decltype(&closepipe)> pipe(popen(cmd, "r"), closepipe);
     if (!pipe) {
         throw std::runtime_error("popen() failed!");
     }
@@ -42,6 +53,10 @@ double readThroughput(std::string parseOutput) {
         }
         result += std::stod(line.substr(pos));
         numResults++;
+    }
+    if (numResults == 0) {
+        std::cerr << "No results returned from benchmark command!" << std::endl;
+        exit(EXIT_FAILURE);
     }
     return result / numResults;
 }

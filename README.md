@@ -143,7 +143,7 @@ The simplest API to get started is `document::parse()`, which allocates a new pa
 
 ```c++
 auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
-if (error) { cerr << "Error: " << error_meesage(error) << endl; exit(1); }
+if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
 doc.print_json(cout);
 ```
 
