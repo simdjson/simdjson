@@ -81,7 +81,7 @@ bool validate(const char *dirname) {
             ++how_many;
             simdjson::error_code error = simdjson::SUCCESS;
             for (auto result : parser.parse_many(json)) {
-                error = result.error;
+                error = result.error();
             }
             printf("%s\n", error ? "ok" : "invalid");
             /* Check if the file is supposed to pass or not.  Print the results */

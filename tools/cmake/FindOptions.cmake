@@ -35,6 +35,13 @@ if(X64)
   endif()
 endif()
 
+if(SIMDJSON_EXCEPTIONS)
+  set(OPT_FLAGS "${OPT_FLAGS} -DSIMDJSON_EXCEPTIONS=1")
+else()
+  message(STATUS "simdjson exception interface turned off. Code that does not check error codes will not compile.")
+  set(OPT_FLAGS "${OPT_FLAGS} -DSIMDJSON_EXCEPTIONS=0")
+endif()
+
 if(NOT MSVC)
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")
 endif()

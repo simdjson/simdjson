@@ -98,7 +98,7 @@ inline const char *padded_string::data() const noexcept { return data_ptr; }
 
 inline char *padded_string::data() noexcept { return data_ptr; }
 
-inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
+inline simdjson_move_result<padded_string> padded_string::load(const std::string &filename) noexcept {
   // Open the file
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
   if (fp == nullptr) {

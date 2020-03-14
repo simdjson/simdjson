@@ -2,6 +2,7 @@
 #define SIMDJSON_ERROR_H
 
 #include <string>
+#include <utility>
 
 namespace simdjson {
 
@@ -61,6 +62,7 @@ struct simdjson_error : public std::exception {
   simdjson_error(error_code error) noexcept : _error{error} { }
   /** The error message */
   const char *what() const noexcept { return error_message(error()); }
+  /** The error code */
   error_code error() const noexcept { return _error; }
 private:
   /** The error code that was used */
@@ -73,34 +75,90 @@ private:
  * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
  */
 template<typename T>
-struct simdjson_result {
+struct simdjson_result : public std::pair<T, error_code> {
   /**
    * The value of the function.
    *
-   * Undefined if error is true.
+   * @throw simdjson_error if there was an error.
    */
-  T value;
+  T get() noexcept(false) {
+    if (error()) { throw simdjson_error(error()); }
+    return this->first;
+  };
+
   /**
    * The error.
    */
-  error_code error;
+  error_code error() const { return this->second; }
+
   /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  operator T() noexcept(false) {
-    if (error) { throw simdjson_error(error); }
-    return std::move(value);
-  }
+  operator T() noexcept(false) { return get(); }
+
   /**
    * Create a new error result.
    */
-  simdjson_result(error_code _error) noexcept : value{}, error{_error} {}
+  simdjson_result(error_code _error) noexcept : std::pair<T, error_code>({}, _error) {}
+
   /**
    * Create a new successful result.
    */
-  simdjson_result(T _value) noexcept : value{std::move(_value)}, error{SUCCESS} {}
+  simdjson_result(T _value) noexcept : std::pair<T, error_code>(_value, SUCCESS) {}
+
+  /**
+   * Create a new result with both things (use if you don't want to branch when creating the result).
+   */
+  simdjson_result(T value, error_code error) noexcept : std::pair<T, error_code>(value, error) {}
+};
+
+/**
+ * The result of a simd operation that could fail.
+ *
+ * This class is for values that must be *moved*, like padded_string and document.
+ *
+ * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
+ */
+template<typename T>
+struct simdjson_move_result : std::pair<T, error_code> {
+  /**
+   * The error.
+   */
+  error_code error() const { return this->second; }
+
+  /**
+   * The value of the function.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  T move() noexcept(false) {
+    if (error()) { throw simdjson_error(error()); }
+    return std::move(this->first);
+  };
+
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  operator T() noexcept(false) { return move(); }
+
+  /**
+   * Create a new error result.
+   */
+  simdjson_move_result(error_code error) noexcept : std::pair<T, error_code>(T(), error) {}
+
+  /**
+   * Create a new successful result.
+   */
+  simdjson_move_result(T value) noexcept : std::pair<T, error_code>(std::move(value), SUCCESS) {}
+
+  /**
+   * Create a new result with both things (use if you don't want to branch when creating the result).
+   */
+  simdjson_move_result(T value, error_code error) noexcept : std::pair<T, error_code>(std::move(value), error) {}
 };
 
 /**

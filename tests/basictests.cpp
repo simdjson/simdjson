@@ -9,6 +9,7 @@
 #include <set>
 #include <string_view>
 #include <sstream>
+#include <utility>
 
 #include "simdjson.h"
 
@@ -38,12 +39,12 @@ bool number_test_small_integers() {
       auto n = sprintf(buf, "%*d", m, i);
       buf[n] = '\0';
       fflush(NULL);
-      auto ok1 = json_parse(buf, n, parser);
-      if (ok1 != 0 || !parser.is_valid()) {
-        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(ok1).c_str());
+      auto [doc, error] = parser.parse(buf, n);
+      if (error) {
+        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
         return false;
       }
-      simdjson::document::iterator iter(parser);
+      simdjson::document::iterator iter(doc);
       if(!iter.is_number()) {
         printf("Root should be number\n");
         return false;
@@ -73,12 +74,12 @@ bool number_test_powers_of_two() {
     auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
     buf[n] = '\0';
     fflush(NULL);
-    auto ok1 = json_parse(buf, n, parser);
-    if (ok1 != 0 || !parser.is_valid()) {
-      printf("Could not parse: %s.\n", buf);
+    auto [doc, error] = parser.parse(buf, n);
+    if (error) {
+      printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
       return false;
     }
-    simdjson::document::iterator iter(parser);
+    simdjson::document::iterator iter(doc);
     if(!iter.is_number()) {
       printf("Root should be number\n");
       return false;
@@ -207,12 +208,12 @@ bool number_test_powers_of_ten() {
     auto n = sprintf(buf,"1e%d", i);
     buf[n] = '\0';
     fflush(NULL);
-    auto ok1 = json_parse(buf, n, parser);
-    if (ok1 != 0 || !parser.is_valid()) {
-      printf("Could not parse: %s.\n", buf);
+    auto [doc, error] = parser.parse(buf, n);
+    if (error) {
+      printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
       return false;
     }
-    simdjson::document::iterator iter(parser);
+    simdjson::document::iterator iter(doc);
     if(!iter.is_number()) {
       printf("Root should be number\n");
       return false;
@@ -365,12 +366,12 @@ bool navigate_test() {
           "}"
       "}";
 
-  simdjson::document::parser parser = simdjson::build_parsed_json(json);
-  if (!parser.is_valid()) {
-      printf("Something is wrong in navigate: %s.\n", json.c_str());
-      return false;
+  auto [doc, error] = simdjson::document::parse(json);
+  if (error) {
+    printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(error));
+    return false;
   }
-  simdjson::document::iterator iter(parser);
+  simdjson::document::iterator iter(doc);
   if(!iter.is_object()) {
     printf("Root should be object\n");
     return false;
@@ -482,7 +483,10 @@ bool JsonStream_utf8_test() {
   simdjson::document::parser parser;
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
     parse_res = js.json_parse(parser);
-    simdjson::document::iterator iter(parser);
+    if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
+      break;
+    }
+    simdjson::document::iterator iter(parser.doc);
     if(!iter.is_object()) {
       printf("Root should be object\n");
       return false;
@@ -543,7 +547,10 @@ bool JsonStream_test() {
   simdjson::document::parser parser;
   while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
     parse_res = js.json_parse(parser);
-    simdjson::document::iterator iter(parser);
+    if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
+      break;
+    }
+    simdjson::document::iterator iter(parser.doc);
     if(!iter.is_object()) {
       printf("Root should be object\n");
       return false;
@@ -733,6 +740,7 @@ bool skyprophet_test() {
 namespace dom_api {
   using namespace std;
   using namespace simdjson;
+
   bool object_iterator() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
@@ -740,9 +748,11 @@ namespace dom_api {
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
 
-    document doc = document::parse(json);
-    for (auto [key, value] : document::object(doc)) {
-      if (key != expected_key[i] || uint64_t(value) != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << uint64_t(value) << endl; return false; }
+    document::parser parser;
+    auto [object, error] = parser.parse(json).as_object();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto [key, value] : object) {
+      if (key != expected_key[i] || value.as_uint64_t().first != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << value << endl; return false; }
       i++;
     }
     if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
@@ -750,6 +760,246 @@ namespace dom_api {
   }
 
   bool array_iterator() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ 1, 10, 100 ])");
+    uint64_t expected_value[] = { 1, 10, 100 };
+    int i=0;
+
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto value : array) {
+      if (value.as_uint64_t().first != expected_value[i]) { cerr << "Expected " << expected_value[i] << ", got " << value << endl; return false; }
+      i++;
+    }
+    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool object_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({})");
+    int i = 0;
+
+    document::parser parser;
+    auto [object, error] = parser.parse(json).as_object();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto [key, value] : object) {
+      cout << "Unexpected " << key << " = " << value << endl;
+      i++;
+    }
+    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool array_iterator_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([])");
+    int i=0;
+
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto value : array) {
+      cout << "Unexpected value " << value << endl;
+      i++;
+    }
+    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool string_value() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ "hi", "has backslash\\" ])");
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    auto val = array.begin();
+
+    if ((*val).as_string().first != "hi") { cerr << "Expected value to be \"hi\", was " << (*val).as_string().first << endl; return false; }
+    ++val;
+    if ((*val).as_string().first != "has backslash\\") { cerr << "Expected string_view(\"has backslash\\\\\") to be \"has backslash\\\", was " << (*val).as_string().first << endl; return false; }
+    return true;
+  }
+
+  bool numeric_values() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ 0, 1, -1, 1.1 ])");
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    auto val = array.begin();
+
+    if ((*val).as_uint64_t().first != 0) { cerr << "Expected uint64_t(0) to be 0, was " << (*val) << endl; return false; }
+    if ((*val).as_int64_t().first != 0) { cerr << "Expected int64_t(0) to be 0, was " << (*val).as_int64_t().first << endl; return false; }
+    if ((*val).as_double().first != 0) { cerr << "Expected double(0) to be 0, was " << (*val).as_double().first << endl; return false; }
+    ++val;
+    if ((*val).as_uint64_t().first != 1) { cerr << "Expected uint64_t(1) to be 1, was " << (*val) << endl; return false; }
+    if ((*val).as_int64_t().first != 1) { cerr << "Expected int64_t(1) to be 1, was " << (*val).as_int64_t().first << endl; return false; }
+    if ((*val).as_double().first != 1) { cerr << "Expected double(1) to be 1, was " << (*val).as_double().first << endl; return false; }
+    ++val;
+    if ((*val).as_int64_t().first != -1) { cerr << "Expected int64_t(-1) to be -1, was " << (*val).as_int64_t().first << endl; return false; }
+    if ((*val).as_double().first != -1) { cerr << "Expected double(-1) to be -1, was " << (*val).as_double().first << endl; return false; }
+    ++val;
+    if ((*val).as_double().first != 1.1) { cerr << "Expected double(1.1) to be 1.1, was " << (*val).as_double().first << endl; return false; }
+    return true;
+  }
+
+  bool boolean_values() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ true, false ])");
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    auto val = array.begin();
+
+    if ((*val).as_bool().first != true) { cerr << "Expected bool(true) to be true, was " << (*val) << endl; return false; }
+    ++val;
+    if ((*val).as_bool().first != false) { cerr << "Expected bool(false) to be false, was " << (*val) << endl; return false; }
+    return true;
+  }
+
+  bool null_value() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ null ])");
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    auto val = array.begin();
+    if (!(*val).is_null()) { cerr << "Expected null to be null!" << endl; return false; }
+    return true;
+  }
+
+  bool document_object_index() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "a": 1, "b": 2, "c": 3})");
+    document::parser parser;
+    auto [doc, error] = parser.parse(json);
+    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"] << endl; return false; }
+    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"] << endl; return false; }
+    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"] << endl; return false; }
+    // Check all three again in backwards order, to ensure we can go backwards
+    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"] << endl; return false; }
+    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"] << endl; return false; }
+    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"] << endl; return false; }
+
+    UNUSED document::element val;
+    tie(val, error) = doc["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    return true;
+  }
+
+  bool object_index() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+    document::parser parser;
+    auto [doc, error] = parser.parse(json);
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    if (doc["obj"]["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
+
+    document::object obj;
+    tie(obj, error) = doc.as_object();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    if (obj["obj"]["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
+
+    tie(obj, error) = obj["obj"].as_object();
+    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"] << endl; return false; }
+    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["a"] << endl; return false; }
+    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["a"] << endl; return false; }
+    // Check all three again in backwards order, to ensure we can go backwards
+    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["a"] << endl; return false; }
+    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["a"] << endl; return false; }
+    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"] << endl; return false; }
+
+    UNUSED document::element val;
+    tie(val, error) = doc["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
+    return true;
+  }
+
+  bool twitter_count() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Prints the number of results in twitter.json
+    document::parser parser;
+    auto [result_count, error] = parser.load(JSON_TEST_PATH)["search_metadata"]["count"].as_uint64_t();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
+    return true;
+  }
+
+  bool twitter_default_profile() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Print users with a default profile.
+    set<string_view> default_users;
+    document::parser parser;
+    auto [tweets, error] = parser.load(JSON_TEST_PATH)["statuses"].as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto tweet : tweets) {
+      document::object user;
+      tie(user, error) = tweet["user"].as_object();
+      if (error) { cerr << "Error: " << error << endl; return false; }
+      bool default_profile;
+      tie(default_profile, error) = user["default_profile"].as_bool();
+      if (error) { cerr << "Error: " << error << endl; return false; }
+      if (default_profile) {
+        std::string_view screen_name;
+        tie(screen_name, error) = user["screen_name"].as_string();
+        if (error) { cerr << "Error: " << error << endl; return false; }
+        default_users.insert(screen_name);
+      }
+    }
+    if (default_users.size() != 86) { cerr << "Expected twitter.json[statuses][user] to contain 86 default_profile users, got " << default_users.size() << endl; return false; }
+    return true;
+  }
+
+  bool twitter_image_sizes() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Print image names and sizes
+    set<pair<uint64_t, uint64_t>> image_sizes;
+    document::parser parser;
+    auto [tweets, error] = parser.load(JSON_TEST_PATH)["statuses"].as_array();
+    if (error) { cerr << "Error: " << error << endl; return false; }
+    for (auto tweet : tweets) {
+      auto [media, not_found] = tweet["entities"]["media"].as_array();
+      if (!not_found) {
+        for (auto image : media) {
+          document::object sizes;
+          tie(sizes, error) = image["sizes"].as_object();
+          if (error) { cerr << "Error: " << error << endl; return false; }
+          for (auto [key, size] : sizes) {
+            uint64_t width, height;
+            tie(width, error) = size["w"].as_uint64_t();
+            if (error) { cerr << "Error: " << error << endl; return false; }
+            tie(height, error) = size["h"].as_uint64_t();
+            if (error) { cerr << "Error: " << error << endl; return false; }
+            image_sizes.insert(make_pair(width, height));
+          }
+        }
+      }
+    }
+    if (image_sizes.size() != 15) { cerr << "Expected twitter.json[statuses][entities][media][sizes] to contain 15 different sizes, got " << image_sizes.size() << endl; return false; }
+    return true;
+  }
+
+#if SIMDJSON_EXCEPTIONS
+
+  bool object_iterator_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+    const char* expected_key[] = { "a", "b", "c" };
+    uint64_t expected_value[] = { 1, 2, 3 };
+    int i = 0;
+
+    document doc = document::parse(json);
+    for (auto [key, value] : doc.as_object()) {
+      if (key != expected_key[i] || uint64_t(value) != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << uint64_t(value) << endl; return false; }
+      i++;
+    }
+    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    return true;
+  }
+
+  bool array_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 1, 10, 100 ])");
     uint64_t expected_value[] = { 1, 10, 100 };
@@ -764,39 +1014,13 @@ namespace dom_api {
     return true;
   }
 
-  bool object_iterator_empty() {
-    std::cout << "Running " << __func__ << std::endl;
-    string json(R"({})");
-    int i = 0;
-
-    document doc = document::parse(json);
-    for (auto [key, value] : doc.as_object()) {
-      cout << "Unexpected " << key << " = " << uint64_t(value) << endl;
-      i++;
-    }
-    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
-    return true;
-  }
-
-  bool array_iterator_empty() {
-    std::cout << "Running " << __func__ << std::endl;
-    string json(R"([])");
-    int i=0;
-
-    document doc = document::parse(json);
-    for (uint64_t value : doc.as_array()) {
-      cout << "Unexpected value " << value << endl;
-      i++;
-    }
-    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
-    return true;
-  }
-
-  bool string_value() {
+  bool string_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ "hi", "has backslash\\" ])");
-    document doc = document::parse(json);
-    auto val = document::array(doc).begin();
+    document::parser parser;
+    document::array array = parser.parse(json).as_array();
+    auto val = array.begin();
+
     if (strcmp((const char*)*val, "hi")) { cerr << "Expected const char*(\"hi\") to be \"hi\", was " << (const char*)*val << endl; return false; }
     if (string_view(*val) != "hi") { cerr << "Expected string_view(\"hi\") to be \"hi\", was " << string_view(*val) << endl; return false; }
     ++val;
@@ -805,11 +1029,13 @@ namespace dom_api {
     return true;
   }
 
-  bool numeric_values() {
+  bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 0, 1, -1, 1.1 ])");
-    document doc = document::parse(json);
-    auto val = document::array(doc).begin();
+    document::parser parser;
+    document::array array = parser.parse(json).as_array();
+    auto val = array.begin();
+
     if (uint64_t(*val) != 0) { cerr << "Expected uint64_t(0) to be 0, was " << uint64_t(*val) << endl; return false; }
     if (int64_t(*val) != 0) { cerr << "Expected int64_t(0) to be 0, was " << int64_t(*val) << endl; return false; }
     if (double(*val) != 0) { cerr << "Expected double(0) to be 0, was " << double(*val) << endl; return false; }
@@ -825,63 +1051,48 @@ namespace dom_api {
     return true;
   }
 
-  bool boolean_values() {
+  bool boolean_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ true, false ])");
-    document doc = document::parse(json);
-    auto val = document::array(doc).begin();
+    document::parser parser;
+    document::array array = parser.parse(json).as_array();
+    auto val = array.begin();
+
     if (bool(*val) != true) { cerr << "Expected bool(true) to be true, was " << bool(*val) << endl; return false; }
     ++val;
     if (bool(*val) != false) { cerr << "Expected bool(false) to be false, was " << bool(*val) << endl; return false; }
     return true;
   }
 
-  bool null_value() {
+  bool null_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ null ])");
-    document doc = document::parse(json);
-    auto val = document::array(doc).begin();
+    document::parser parser;
+    document::array array = parser.parse(json).as_array();
+    auto val = array.begin();
+
     if (!(*val).is_null()) { cerr << "Expected null to be null!" << endl; return false; }
     return true;
   }
 
-  bool document_object_index() {
+  bool document_object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3})");
     document doc = document::parse(json);
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
-    if (uint64_t(doc["b"]) != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << uint64_t(doc["b"]) << endl; return false; }
-    if (uint64_t(doc["c"]) != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << uint64_t(doc["c"]) << endl; return false; }
-    // Check all three again in backwards order, to ensure we can go backwards
-    if (uint64_t(doc["c"]) != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << uint64_t(doc["c"]) << endl; return false; }
-    if (uint64_t(doc["b"]) != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << uint64_t(doc["b"]) << endl; return false; }
-    if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
-
-    auto [val, error] = doc["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
     return true;
   }
 
-  bool object_index() {
+  bool object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
-    document doc = document::parse(json);
-    if (uint64_t(doc["obj"]["a"]) != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << uint64_t(doc["obj"]["a"]) << endl; return false; }
-    document::object obj = doc["obj"];
-    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
-    if (uint64_t(obj["b"]) != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << uint64_t(obj["b"]) << endl; return false; }
-    if (uint64_t(obj["c"]) != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << uint64_t(obj["c"]) << endl; return false; }
-    // Check all three again in backwards order, to ensure we can go backwards
-    if (uint64_t(obj["c"]) != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << uint64_t(obj["c"]) << endl; return false; }
-    if (uint64_t(obj["b"]) != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << uint64_t(obj["b"]) << endl; return false; }
-    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
-
-    auto [val, error] = obj["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
+    document::parser parser;
+    document::object obj = parser.parse(json)["obj"];
+    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
     return true;
   }
 
-  bool twitter_count() {
+  bool twitter_count_exception() {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     document doc = document::load(JSON_TEST_PATH);
@@ -890,7 +1101,7 @@ namespace dom_api {
     return true;
   }
 
-  bool twitter_default_profile() {
+  bool twitter_default_profile_exception() {
     std::cout << "Running " << __func__ << std::endl;
     // Print users with a default profile.
     set<string_view> default_users;
@@ -905,17 +1116,17 @@ namespace dom_api {
     return true;
   }
 
-  bool twitter_image_sizes() {
+  bool twitter_image_sizes_exception() {
     std::cout << "Running " << __func__ << std::endl;
     // Print image names and sizes
-    set<tuple<uint64_t, uint64_t>> image_sizes;
+    set<pair<uint64_t, uint64_t>> image_sizes;
     document doc = document::load(JSON_TEST_PATH);
     for (document::object tweet : doc["statuses"].as_array()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
         for (document::object image : media.as_array()) {
           for (auto [key, size] : image["sizes"].as_object()) {
-            image_sizes.insert({ size["w"], size["h"] });
+            image_sizes.insert(make_pair(size["w"], size["h"]));
           }
         }
       }
@@ -924,21 +1135,35 @@ namespace dom_api {
     return true;
   }
 
+#endif
+
   bool run_tests() {
-    if (!object_iterator()) { return false; }
-    if (!array_iterator()) { return false; }
-    if (!object_iterator_empty()) { return false; }
-    if (!array_iterator_empty()) { return false; }
-    if (!string_value()) { return false; }
-    if (!numeric_values()) { return false; }
-    if (!boolean_values()) { return false; }
-    if (!null_value()) { return false; }
-    if (!document_object_index()) { return false; }
-    if (!object_index()) { return false; }
-    if (!twitter_count()) { return false; }
-    if (!twitter_default_profile()) { return false; }
-    if (!twitter_image_sizes()) { return false; }
-    return true;
+    return object_iterator() &&
+           array_iterator() &&
+           object_iterator_empty() &&
+           array_iterator_empty() &&
+           string_value() &&
+           numeric_values() &&
+           boolean_values() &&
+           null_value() &&
+           document_object_index() &&
+           object_index() &&
+           twitter_count() &&
+           twitter_default_profile() &&
+           twitter_image_sizes() &&
+#if SIMDJSON_EXCEPTIONS
+           object_iterator_exception() &&
+           array_iterator_exception() &&
+           string_value_exception() &&
+           numeric_values_exception() &&
+           boolean_values_exception() &&
+           null_value_exception() &&
+           document_object_index() &&
+           twitter_count_exception() &&
+           twitter_default_profile_exception() &&
+           twitter_image_sizes_exception() &&
+#endif
+           true;
   }
 }
 
@@ -1068,6 +1293,22 @@ namespace format_tests {
     return assert_minified(s, "[1,2,3]");
   }
 
+  bool print_object_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << doc["baz"].as_object();
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+  bool print_minify_object_result() {
+    std::cout << "Running " << __func__ << std::endl;
+    const document &doc = document::parse(DOCUMENT);
+    ostringstream s;
+    s << minify(doc["baz"].as_object());
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+
+#if SIMDJSON_EXCEPTIONS
   bool print_array() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
@@ -1083,21 +1324,6 @@ namespace format_tests {
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "[1,2,3]");
-  }
-
-  bool print_object_result() {
-    std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
-    ostringstream s;
-    s << doc["baz"].as_object();
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
-  }
-  bool print_minify_object_result() {
-    std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
-    ostringstream s;
-    s << minify(doc["baz"].as_object());
-    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
 
   bool print_object() {
@@ -1116,6 +1342,7 @@ namespace format_tests {
     s << minify(value);
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
+#endif // SIMDJSON_EXCEPTIONS
 
   bool run_tests() {
     return print_document_parse() && print_minify_document_parse() &&
@@ -1126,8 +1353,11 @@ namespace format_tests {
            print_array_result() && print_minify_array_result() &&
            print_object_result() && print_minify_object_result() &&
            print_element() && print_minify_element() &&
+#if SIMDJSON_EXCEPTIONS
            print_array() && print_minify_array() &&
-           print_object() && print_minify_object();
+           print_object() && print_minify_object() &&
+#endif
+           true;
   }
 }
 

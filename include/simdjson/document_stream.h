@@ -26,7 +26,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    really_inline doc_ref_result operator*() noexcept;
+    really_inline doc_result operator*() noexcept;
     /**
      * Advance to the next document.
      */
