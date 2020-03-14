@@ -82,7 +82,7 @@ int main (int argc, char *argv[]){
                 auto start = std::chrono::steady_clock::now();
                 count = 0;
                 for (auto result : parser.parse_many(p, 4000000)) {
-                    error = result.error;
+                    error = result.error();
                     count++;
                 }
                 auto end = std::chrono::steady_clock::now();
@@ -121,7 +121,7 @@ int main (int argc, char *argv[]){
             auto start = std::chrono::steady_clock::now();
             // TODO this includes allocation of the parser; is that intentional?
             for (auto result : parser.parse_many(p, 4000000)) {
-                error = result.error;
+                error = result.error();
             }
             auto end = std::chrono::steady_clock::now();
 

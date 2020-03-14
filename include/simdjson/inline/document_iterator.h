@@ -241,9 +241,13 @@ document_iterator<max_depth>::document_iterator(const document &doc_) noexcept
   }
 }
 
+#if SIMDJSON_EXCEPTIONS
+
 template <size_t max_depth>
-document_iterator<max_depth>::document_iterator(const document::parser &parser)
+document_iterator<max_depth>::document_iterator(const document::parser &parser) noexcept(false)
     : document_iterator(parser.get_document()) {}
+
+#endif
 
 template <size_t max_depth>
 document_iterator<max_depth>::document_iterator(

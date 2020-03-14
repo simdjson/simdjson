@@ -12,6 +12,8 @@ using namespace std;
 
 const padded_string EMPTY_ARRAY("[]", 2);
 
+#if SIMDJSON_EXCEPTIONS
+
 static void twitter_count(State& state) {
   // Prints the number of results in twitter.json
   document doc = document::load(JSON_TEST_PATH);
@@ -21,17 +23,6 @@ static void twitter_count(State& state) {
   }
 }
 BENCHMARK(twitter_count);
-
-static void error_code_twitter_count(State& state) noexcept {
-  // Prints the number of results in twitter.json
-  document doc = document::load(JSON_TEST_PATH);
-  for (auto _ : state) {
-    auto [value, error] = doc["search_metadata"]["count"];
-    if (error) { return; }
-    if (uint64_t(value) != 100) { return; }
-  }
-}
-BENCHMARK(error_code_twitter_count);
 
 static void iterator_twitter_count(State& state) {
   // Prints the number of results in twitter.json
@@ -64,6 +55,39 @@ static void twitter_default_profile(State& state) {
   }
 }
 BENCHMARK(twitter_default_profile);
+
+static void twitter_image_sizes(State& state) {
+  // Count unique image sizes
+  document doc = document::load(JSON_TEST_PATH);
+  for (auto _ : state) {
+    set<tuple<uint64_t, uint64_t>> image_sizes;
+    for (document::object tweet : doc["statuses"].as_array()) {
+      auto [media, not_found] = tweet["entities"]["media"];
+      if (!not_found) {
+        for (document::object image : media.as_array()) {
+          for (auto [key, size] : image["sizes"].as_object()) {
+            image_sizes.insert({ size["w"], size["h"] });
+          }
+        }
+      }
+    }
+    if (image_sizes.size() != 15) { return; };
+  }
+}
+BENCHMARK(twitter_image_sizes);
+
+#endif // SIMDJSON_EXCEPTIONS
+
+static void error_code_twitter_count(State& state) noexcept {
+  // Prints the number of results in twitter.json
+  document doc = document::load(JSON_TEST_PATH);
+  for (auto _ : state) {
+    auto [value, error] = doc["search_metadata"]["count"].as_uint64_t();
+    if (error) { return; }
+    if (value != 100) { return; }
+  }
+}
+BENCHMARK(error_code_twitter_count);
 
 static void error_code_twitter_default_profile(State& state) noexcept {
   // Count unique users with a default profile.
@@ -126,26 +150,6 @@ static void iterator_twitter_default_profile(State& state) {
   }
 }
 BENCHMARK(iterator_twitter_default_profile);
-
-static void twitter_image_sizes(State& state) {
-  // Count unique image sizes
-  document doc = document::load(JSON_TEST_PATH);
-  for (auto _ : state) {
-    set<tuple<uint64_t, uint64_t>> image_sizes;
-    for (document::object tweet : doc["statuses"].as_array()) {
-      auto [media, not_found] = tweet["entities"]["media"];
-      if (!not_found) {
-        for (document::object image : media.as_array()) {
-          for (auto [key, size] : image["sizes"].as_object()) {
-            image_sizes.insert({ size["w"], size["h"] });
-          }
-        }
-      }
-    }
-    if (image_sizes.size() != 15) { return; };
-  }
-}
-BENCHMARK(twitter_image_sizes);
 
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes

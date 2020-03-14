@@ -15,7 +15,9 @@ namespace simdjson {
 
 template <size_t max_depth> class document_iterator {
 public:
-  document_iterator(const document::parser &parser);
+#if SIMDJSON_EXCEPTIONS
+  document_iterator(const document::parser &parser) noexcept(false);
+#endif
   document_iterator(const document &doc) noexcept;
   document_iterator(const document_iterator &o) noexcept;
   document_iterator &operator=(const document_iterator &o) noexcept;

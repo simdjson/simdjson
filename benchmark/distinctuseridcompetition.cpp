@@ -67,7 +67,7 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
 
 __attribute__((noinline)) bool
 simdjson_just_parse(const simdjson::padded_string &p) {
-  return simdjson::document::parse(p).error != simdjson::SUCCESS;
+  return simdjson::document::parse(p).error() != simdjson::SUCCESS;
 }
 
 void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {

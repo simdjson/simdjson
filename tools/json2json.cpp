@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   if (apidump) {
-    simdjson::ParsedJson::Iterator pjh(pj);
+    simdjson::ParsedJson::Iterator pjh(pj.doc);
     if (!pjh.is_ok()) {
       std::cerr << " Could not iterate parsed result. " << std::endl;
       return EXIT_FAILURE;
