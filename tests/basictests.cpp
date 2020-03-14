@@ -875,13 +875,13 @@ namespace dom_api {
     string json(R"({ "a": 1, "b": 2, "c": 3})");
     document::parser parser;
     auto [doc, error] = parser.parse(json);
-    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"] << endl; return false; }
-    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"] << endl; return false; }
-    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"] << endl; return false; }
+    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
+    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
+    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"].first << endl; return false; }
     // Check all three again in backwards order, to ensure we can go backwards
-    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"] << endl; return false; }
-    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"] << endl; return false; }
-    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"] << endl; return false; }
+    if (doc["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"].first << endl; return false; }
+    if (doc["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
+    if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
 
     UNUSED document::element val;
     tie(val, error) = doc["d"];
@@ -903,13 +903,13 @@ namespace dom_api {
     if (obj["obj"]["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
     tie(obj, error) = obj["obj"].as_object();
-    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"] << endl; return false; }
-    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["a"] << endl; return false; }
-    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["a"] << endl; return false; }
+    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
+    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
+    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
     // Check all three again in backwards order, to ensure we can go backwards
-    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["a"] << endl; return false; }
-    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["a"] << endl; return false; }
-    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"] << endl; return false; }
+    if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
+    if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
+    if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
 
     UNUSED document::element val;
     tie(val, error) = doc["d"];
@@ -1184,18 +1184,107 @@ namespace format_tests {
 
   bool print_document_parse() {
     std::cout << "Running " << __func__ << std::endl;
+    auto [doc, error] = document::parse(DOCUMENT);
+    if (error) { cerr << error << endl; return false; }
+    ostringstream s;
+    s << doc;
+    return assert_minified(s);
+  }
+  bool print_minify_document_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto [doc, error] = document::parse(DOCUMENT);
+    if (error) { cerr << error << endl; return false; }
+    ostringstream s;
+    s << minify(doc);
+    return assert_minified(s);
+  }
+
+  bool print_parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [doc, error] = parser.parse(DOCUMENT);
+    if (error) { cerr << error << endl; return false; }
+    ostringstream s;
+    s << doc;
+    return assert_minified(s);
+  }
+  bool print_minify_parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [doc, error] = parser.parse(DOCUMENT);
+    if (error) { cerr << error << endl; return false; }
+    ostringstream s;
+    s << minify(doc);
+    return assert_minified(s);
+  }
+
+  bool print_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["foo"];
+    ostringstream s;
+    s << value;
+    return assert_minified(s, "1");
+  }
+  bool print_minify_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["foo"];
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, "1");
+  }
+
+  bool print_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["bar"].as_array();
+    ostringstream s;
+    s << value;
+    return assert_minified(s, "[1,2,3]");
+  }
+  bool print_minify_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["bar"].as_array();
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, "[1,2,3]");
+  }
+
+  bool print_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["baz"].as_object();
+    ostringstream s;
+    s << value;
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+  bool print_minify_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [value, error] = parser.parse(DOCUMENT)["baz"].as_object();
+    ostringstream s;
+    s << minify(value);
+    return assert_minified(s, R"({"a":1,"b":2,"c":3})");
+  }
+
+#if SIMDJSON_EXCEPTIONS
+
+  bool print_document_parse_exception() {
+    std::cout << "Running " << __func__ << std::endl;
     ostringstream s;
     s << document::parse(DOCUMENT);
     return assert_minified(s);
   }
-  bool print_minify_document_parse() {
+  bool print_minify_document_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     ostringstream s;
     s << minify(document::parse(DOCUMENT));
     return assert_minified(s);
   }
 
-  bool print_parser_parse() {
+  bool print_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
     if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
@@ -1203,7 +1292,7 @@ namespace format_tests {
     s << parser.parse(DOCUMENT);
     return assert_minified(s);
   }
-  bool print_minify_parser_parse() {
+  bool print_minify_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
     if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
@@ -1212,48 +1301,14 @@ namespace format_tests {
     return assert_minified(s);
   }
 
-  bool print_document() {
-    std::cout << "Running " << __func__ << std::endl;
-    document doc = document::parse(DOCUMENT);
-    ostringstream s;
-    s << doc;
-    return assert_minified(s);
-  }
-  bool print_minify_document() {
-    std::cout << "Running " << __func__ << std::endl;
-    document doc = document::parse(DOCUMENT);
-    ostringstream s;
-    s << minify(doc);
-    return assert_minified(s);
-  }
-
-  bool print_document_ref() {
-    std::cout << "Running " << __func__ << std::endl;
-    document::parser parser;
-    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
-    const document &doc_ref = parser.parse(DOCUMENT);
-    ostringstream s;
-    s << doc_ref;
-    return assert_minified(s);
-  }
-  bool print_minify_document_ref() {
-    std::cout << "Running " << __func__ << std::endl;
-    document::parser parser;
-    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
-    const document &doc_ref = parser.parse(DOCUMENT);
-    ostringstream s;
-    s << minify(doc_ref);
-    return assert_minified(s);
-  }
-
-  bool print_element_result() {
+  bool print_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
     s << doc["foo"];
     return assert_minified(s, "1");
   }
-  bool print_minify_element_result() {
+  bool print_minify_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
@@ -1261,7 +1316,7 @@ namespace format_tests {
     return assert_minified(s, "1");
   }
 
-  bool print_element() {
+  bool print_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::element value = doc["foo"];
@@ -1269,7 +1324,7 @@ namespace format_tests {
     s << value;
     return assert_minified(s, "1");
   }
-  bool print_minify_element() {
+  bool print_minify_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::element value = doc["foo"];
@@ -1278,14 +1333,14 @@ namespace format_tests {
     return assert_minified(s, "1");
   }
 
-  bool print_array_result() {
+  bool print_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
     s << doc["bar"].as_array();
     return assert_minified(s, "[1,2,3]");
   }
-  bool print_minify_array_result() {
+  bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
@@ -1293,14 +1348,14 @@ namespace format_tests {
     return assert_minified(s, "[1,2,3]");
   }
 
-  bool print_object_result() {
+  bool print_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
     s << doc["baz"].as_object();
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
-  bool print_minify_object_result() {
+  bool print_minify_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     ostringstream s;
@@ -1308,8 +1363,7 @@ namespace format_tests {
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
 
-#if SIMDJSON_EXCEPTIONS
-  bool print_array() {
+  bool print_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::array value = doc["bar"];
@@ -1317,7 +1371,7 @@ namespace format_tests {
     s << value;
     return assert_minified(s, "[1,2,3]");
   }
-  bool print_minify_array() {
+  bool print_minify_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::array value = doc["bar"];
@@ -1326,7 +1380,7 @@ namespace format_tests {
     return assert_minified(s, "[1,2,3]");
   }
 
-  bool print_object() {
+  bool print_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::object value = doc["baz"];
@@ -1334,7 +1388,7 @@ namespace format_tests {
     s << value;
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
-  bool print_minify_object() {
+  bool print_minify_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
     const document &doc = document::parse(DOCUMENT);
     document::object value = doc["baz"];
@@ -1347,15 +1401,18 @@ namespace format_tests {
   bool run_tests() {
     return print_document_parse() && print_minify_document_parse() &&
            print_parser_parse() && print_minify_parser_parse() &&
-           print_document() && print_minify_document() &&
-           print_document_ref() && print_minify_document_ref() &&
-           print_element_result() && print_minify_element_result() &&
-           print_array_result() && print_minify_array_result() &&
-           print_object_result() && print_minify_object_result() &&
            print_element() && print_minify_element() &&
-#if SIMDJSON_EXCEPTIONS
            print_array() && print_minify_array() &&
            print_object() && print_minify_object() &&
+#if SIMDJSON_EXCEPTIONS
+           print_document_parse_exception() && print_minify_document_parse_exception() &&
+           print_parser_parse_exception() && print_minify_parser_parse_exception() &&
+           print_element_result_exception() && print_minify_element_result_exception() &&
+           print_array_result_exception() && print_minify_array_result_exception() &&
+           print_object_result_exception() && print_minify_object_result_exception() &&
+           print_element_exception() && print_minify_element_exception() &&
+           print_array_exception() && print_minify_array_exception() &&
+           print_object_exception() && print_minify_object_exception() &&
 #endif
            true;
   }

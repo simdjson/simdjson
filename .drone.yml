@@ -49,6 +49,48 @@ steps:
   commands: [ make slowtests ]
 ---
 kind: pipeline
+name: x64-noexceptions-quicktests
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: quicktests
+  image: gcc:8
+  environment:
+    EXTRA_FLAGS: -fno-exceptions
+  commands: [ make quicktests ]
+---
+kind: pipeline
+name: x64-noexceptions-build
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: gcc:8
+  environment:
+    EXTRA_FLAGS: -fno-exceptions
+  commands: [ make, make amalgamate ]
+---
+kind: pipeline
+name: x64-noexceptions-slowtests
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: slowtests
+  image: gcc:8
+  environment:
+    EXTRA_FLAGS: -fno-exceptions
+  commands: [ make slowtests ]
+---
+kind: pipeline
 name: arm64-quicktests
 
 platform:

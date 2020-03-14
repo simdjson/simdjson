@@ -7,7 +7,7 @@
 namespace simdjson {
 
 #ifndef SIMDJSON_EXCEPTIONS
-#ifdef __cpp_exceptions
+#if __cpp_exceptions
 #define SIMDJSON_EXCEPTIONS 1
 #else
 #define SIMDJSON_EXCEPTIONS 0
