@@ -238,6 +238,32 @@ rapid_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
+__attribute__((noinline)) stat_t
+rapid_accurate_compute_stats(const simdjson::padded_string &p) {
+  stat_t answer;
+  char *buffer = (char *)malloc(p.size() + 1);
+  if(buffer == nullptr) {
+    return answer;
+  }
+  memcpy(buffer, p.data(), p.size());
+  buffer[p.size()] = '\0';
+  rapidjson::Document d;
+  d.ParseInsitu<kParseValidateEncodingFlag|kParseFullPrecisionFlag>(buffer);
+  answer.valid = !d.HasParseError();
+  if (!answer.valid) {
+    free(buffer);
+    return answer;
+  }
+  answer.number_count = 0;
+  answer.object_count = 0;
+  answer.array_count = 0;
+  answer.null_count = 0;
+  answer.true_count = 0;
+  answer.false_count = 0;
+  rapid_traverse(answer, d);
+  free(buffer);
+  return answer;
+}
 int main(int argc, char *argv[]) {
   bool verbose = false;
   bool just_data = false;
@@ -292,6 +318,11 @@ int main(int argc, char *argv[]) {
   stat_t s2 = rapid_compute_stats(p);
   if (verbose) {
     printf("rapid:    ");
+    print_stat(s2);
+  }
+  stat_t s2a = rapid_accurate_compute_stats(p);
+  if (verbose) {
+    printf("rapid full:    ");
     print_stat(s2);
   }
   stat_t s3 = sasjon_compute_stats(p);

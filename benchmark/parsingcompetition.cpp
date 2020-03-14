@@ -130,8 +130,21 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
                   .HasParseError(),
               false, memcpy(buffer, p.data(), p.size()), repeat, volume,
               !just_data);
+#ifndef ALLPARSER
+  if (!just_data)
+#endif
+    BEST_TIME("RapidJSON (accurate number parsing)  ",
+              d.Parse<kParseValidateEncodingFlag|kParseFullPrecisionFlag>((const char *)buffer)
+                  .HasParseError(),
+              false, memcpy(buffer, p.data(), p.size()), repeat, volume,
+              !just_data);
   BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
+            false,
+            memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
+            repeat, volume, !just_data);
+  BEST_TIME("RapidJSON (insitu, accurate number parsing)",
+            d.ParseInsitu<kParseValidateEncodingFlag|kParseFullPrecisionFlag>(buffer).HasParseError(),
             false,
             memcpy(buffer, p.data(), p.size()) && (buffer[p.size()] = '\0'),
             repeat, volume, !just_data);
