@@ -182,18 +182,6 @@ struct json_stats {
   }
 };
 
-padded_string load_json(const char *filename) {
-  try {
-    verbose() << "[verbose] loading " << filename << endl;
-    padded_string json = padded_string::load(filename);
-    verbose() << "[verbose] loaded " << filename << " (" << json.size() << " bytes)" << endl;
-    return json;
-  } catch (const exception &) { // caught by reference to base
-    exit_error(string("Could not load the file ") + filename);
-    exit(EXIT_FAILURE); // This is not strictly necessary but removes the warning
-  }
-}
-
 struct progress_bar {
   int max_value;
   int total_ticks;
@@ -253,7 +241,7 @@ const char* benchmark_stage_name(BenchmarkStage stage) {
 
 struct benchmarker {
   // JSON text from loading the file. Owns the memory.
-  const padded_string json;
+  padded_string json;
   // JSON filename
   const char *filename;
   // Event collector that can be turned on to measure cycles, missed branches, etc.
@@ -272,7 +260,15 @@ struct benchmarker {
   event_aggregate allocate_stage;
 
   benchmarker(const char *_filename, event_collector& _collector)
-    : json(load_json(_filename)), filename(_filename), collector(_collector), stats(NULL) {}
+    : filename(_filename), collector(_collector), stats(NULL) {
+    verbose() << "[verbose] loading " << filename << endl;
+    simdjson::error_code error;
+    std::tie(this->json, error) = padded_string::load(filename);
+    if (error) {
+      exit_error(string("Could not load the file ") + filename);
+    }
+    verbose() << "[verbose] loaded " << filename << endl;
+  }
 
   ~benchmarker() {
     if (stats) {

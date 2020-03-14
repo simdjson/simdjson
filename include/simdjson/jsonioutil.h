@@ -13,9 +13,13 @@
 
 namespace simdjson {
 
+#if SIMDJSON_EXCEPTIONS
+
 inline padded_string get_corpus(const std::string &filename) {
   return padded_string::load(filename);
 }
+
+#endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
 

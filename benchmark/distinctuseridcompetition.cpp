@@ -59,7 +59,7 @@ simdjson_just_dom(simdjson::document &doc) {
 __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
-  simdjson::document doc = simdjson::document::parse(p);
+  auto [doc, error] = simdjson::document::parse(p);
   simdjson_scan(answer, doc);
   remove_duplicates(answer);
   return answer;
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
-  simdjson::document dsimdjson = simdjson::document::parse(p);
+  auto [dsimdjson, dsimdjson_error] = simdjson::document::parse(p);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(dsimdjson).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size());

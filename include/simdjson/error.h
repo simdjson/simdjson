@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_ERROR_H
 #define SIMDJSON_ERROR_H
 
+#include "simdjson/common_defs.h"
 #include <string>
 #include <utility>
 
@@ -77,6 +78,13 @@ private:
 template<typename T>
 struct simdjson_result : public std::pair<T, error_code> {
   /**
+   * The error.
+   */
+  error_code error() const { return this->second; }
+
+#if SIMDJSON_EXCEPTIONS
+
+  /**
    * The value of the function.
    *
    * @throw simdjson_error if there was an error.
@@ -87,16 +95,13 @@ struct simdjson_result : public std::pair<T, error_code> {
   };
 
   /**
-   * The error.
-   */
-  error_code error() const { return this->second; }
-
-  /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
   operator T() noexcept(false) { return get(); }
+
+#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Create a new error result.
@@ -128,6 +133,8 @@ struct simdjson_move_result : std::pair<T, error_code> {
    */
   error_code error() const { return this->second; }
 
+#if SIMDJSON_EXCEPTIONS
+
   /**
    * The value of the function.
    *
@@ -144,6 +151,8 @@ struct simdjson_move_result : std::pair<T, error_code> {
    * @throw simdjson_error if there was an error.
    */
   operator T() noexcept(false) { return move(); }
+
+#endif
 
   /**
    * Create a new error result.

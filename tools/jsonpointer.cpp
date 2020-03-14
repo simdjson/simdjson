@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   std::cout << "[" << std::endl;
   for (int idx = 2; idx < argc; idx++) {
     const char *jsonpath = argv[idx];
-    simdjson::ParsedJson::Iterator it(pj);
+    simdjson::ParsedJson::Iterator it(pj.doc);
     if (it.move_to(std::string(jsonpath))) {
       std::cout << "{\"jsonpath\": \"" << jsonpath << "\"," << std::endl;
       std::cout << "\"value\":";

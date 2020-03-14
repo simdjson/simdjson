@@ -2652,10 +2652,18 @@ char const* Exception::what() const JSONCPP_NOEXCEPT { return msg_.c_str(); }
 RuntimeError::RuntimeError(String const& msg) : Exception(msg) {}
 LogicError::LogicError(String const& msg) : Exception(msg) {}
 JSONCPP_NORETURN void throwRuntimeError(String const& msg) {
+#if __cpp_exceptions
   throw RuntimeError(msg);
+#else
+  abort();
+#endif
 }
 JSONCPP_NORETURN void throwLogicError(String const& msg) {
+#if __cpp_exceptions
   throw LogicError(msg);
+#else
+  abort();
+#endif
 }
 
 // //////////////////////////////////////////////////////////////////

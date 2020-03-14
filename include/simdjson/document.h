@@ -1642,6 +1642,9 @@ inline std::ostream& operator<<(std::ostream& out, const document::object &value
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, const document::key_value_pair &value) { return out << minify(value); }
+
+#if SIMDJSON_EXCEPTIONS
+
 /**
  * Print JSON to an output stream.
  *
@@ -1702,6 +1705,8 @@ inline std::ostream& operator<<(std::ostream& out, const document::array_result 
  *        thrown).
  */
 inline std::ostream& operator<<(std::ostream& out, const document::object_result &value) noexcept(false) { return out << minify(value); }
+
+#endif
 
 } // namespace simdjson
 
