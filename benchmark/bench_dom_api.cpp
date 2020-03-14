@@ -1,5 +1,7 @@
 #include <benchmark/benchmark.h>
 #include "simdjson.h"
+#include <sstream>
+
 using namespace simdjson;
 using namespace benchmark;
 using namespace std;
@@ -228,5 +230,18 @@ static void iterator_twitter_image_sizes(State& state) {
   }
 }
 BENCHMARK(iterator_twitter_image_sizes);
+
+static void print_json(State& state) noexcept {
+  // Prints the number of results in twitter.json
+  padded_string json = get_corpus(JSON_TEST_PATH);
+  document::parser parser;
+  if (!parser.allocate_capacity(json.length())) { cerr << "allocation failed" << endl; return; }
+  if (int error = json_parse(json, parser); error != SUCCESS) { cerr << error_message(error) << endl; return; }
+  for (auto _ : state) {
+    std::stringstream s;
+    if (!parser.print_json(s)) { cerr << "print_json failed" << endl; return; }
+  }
+}
+BENCHMARK(print_json);
 
 BENCHMARK_MAIN();

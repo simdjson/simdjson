@@ -276,7 +276,7 @@ bool document_iterator<max_depth>::print(std::ostream &os, bool escape_strings) 
   case '"': // we have a string
     os << '"';
     if (escape_strings) {
-      internal::print_with_escapes(get_string(), os, get_string_length());
+      os << internal::escape_json_string(std::string_view(get_string(), get_string_length()));
     } else {
       // was: os << get_string();, but given that we can include null chars, we
       // have to do something crazier:

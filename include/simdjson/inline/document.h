@@ -136,6 +136,10 @@ inline document::element_result<document::object> document::element_result<docum
   return value.as_object();
 }
 
+inline document::element_result<document::element>::operator document::element() const noexcept(false) {
+  if (error) { throw simdjson_error(error); }
+  return value;
+}
 inline document::element_result<document::element>::operator bool() const noexcept(false) {
   return as_bool();
 }
@@ -240,112 +244,6 @@ inline error_code document::set_capacity(size_t capacity) noexcept {
   return string_buf && tape ? SUCCESS : MEMALLOC;
 }
 
-inline bool document::print_json(std::ostream &os, size_t max_depth) const noexcept {
-  uint32_t string_length;
-  size_t tape_idx = 0;
-  uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  if (type == 'r') {
-    how_many = tape_val & internal::JSON_VALUE_MASK;
-  } else {
-    // Error: no starting root node?
-    return false;
-  }
-  tape_idx++;
-  std::unique_ptr<bool[]> in_object(new bool[max_depth]);
-  std::unique_ptr<size_t[]> in_object_idx(new size_t[max_depth]);
-  int depth = 1; // only root at level 0
-  in_object_idx[depth] = 0;
-  in_object[depth] = false;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = tape[tape_idx];
-    uint64_t payload = tape_val & internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    if (!in_object[depth]) {
-      if ((in_object_idx[depth] > 0) && (type != ']')) {
-        os << ",";
-      }
-      in_object_idx[depth]++;
-    } else { // if (in_object) {
-      if ((in_object_idx[depth] > 0) && ((in_object_idx[depth] & 1) == 0) &&
-          (type != '}')) {
-        os << ",";
-      }
-      if (((in_object_idx[depth] & 1) == 1)) {
-        os << ":";
-      }
-      in_object_idx[depth]++;
-    }
-    switch (type) {
-    case '"': // we have a string
-      os << '"';
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      internal::print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-          os, string_length);
-      os << '"';
-      break;
-    case 'l': // we have a long int
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << static_cast<int64_t>(tape[++tape_idx]);
-      break;
-    case 'u':
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      os << tape[++tape_idx];
-      break;
-    case 'd': // we have a double
-      if (tape_idx + 1 >= how_many) {
-        return false;
-      }
-      double answer;
-      memcpy(&answer, &tape[++tape_idx], sizeof(answer));
-      os << answer;
-      break;
-    case 'n': // we have a null
-      os << "null";
-      break;
-    case 't': // we have a true
-      os << "true";
-      break;
-    case 'f': // we have a false
-      os << "false";
-      break;
-    case '{': // we have an object
-      os << '{';
-      depth++;
-      in_object[depth] = true;
-      in_object_idx[depth] = 0;
-      break;
-    case '}': // we end an object
-      depth--;
-      os << '}';
-      break;
-    case '[': // we start an array
-      os << '[';
-      depth++;
-      in_object[depth] = false;
-      in_object_idx[depth] = 0;
-      break;
-    case ']': // we end an array
-      depth--;
-      os << ']';
-      break;
-    case 'r': // we start and end with the root node
-      // should we be hitting the root node?
-      return false;
-    default:
-      // bug?
-      return false;
-    }
-  }
-  return true;
-}
-
 inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   uint32_t string_length;
   size_t tape_idx = 0;
@@ -371,10 +269,10 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     case '"': // we have a string
       os << "string \"";
       memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      internal::print_with_escapes(
-          (const unsigned char *)(string_buf.get() + payload + sizeof(uint32_t)),
-                  os,
-          string_length);
+      os << internal::escape_json_string(std::string_view(
+        (const char *)(string_buf.get() + payload + sizeof(uint32_t)),
+        string_length
+      ));
       os << '"';
       os << '\n';
       break;
@@ -486,7 +384,9 @@ inline bool document::parser::is_valid() const noexcept { return valid; }
 inline int document::parser::get_error_code() const noexcept { return error; }
 inline std::string document::parser::get_error_message() const noexcept { return error_message(int(error)); }
 inline bool document::parser::print_json(std::ostream &os) const noexcept {
-  return is_valid() ? doc.print_json(os) : false;
+  if (!is_valid()) { return false; }
+  os << minify(doc);
+  return true;
 }
 inline bool document::parser::dump_raw_tape(std::ostream &os) const noexcept {
   return is_valid() ? doc.dump_raw_tape(os) : false;
@@ -692,6 +592,15 @@ really_inline T document::tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t));
   return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
 }
+inline std::string_view document::tape_ref::get_string_view() const noexcept {
+  size_t string_buf_index = tape_value();
+  uint32_t len;
+  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  return std::string_view(
+    reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
+    len
+  );
+}
 
 //
 // document::array inline implementation
@@ -842,15 +751,8 @@ inline document::element_result<const char *> document::element::as_c_str() cons
 }
 inline document::element_result<std::string_view> document::element::as_string() const noexcept {
   switch (type()) {
-    case tape_type::STRING: {
-      size_t string_buf_index = tape_value();
-      uint32_t len;
-      memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
-      return std::string_view(
-        reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
-        len
-      );
-    }
+    case tape_type::STRING:
+      return get_string_view();
     default:
       return INCORRECT_TYPE;
   }
@@ -929,6 +831,195 @@ inline document::element_result<document::element> document::element::operator[]
   auto [obj, error] = as_object();
   if (error) { return error; }
   return obj[key];
+}
+
+//
+// minify inline implementation
+//
+
+template<>
+inline std::ostream& minify<document>::print(std::ostream& out) {
+  return out << minify<document::element>(value.root());
+}
+template<>
+inline std::ostream& minify<document::element>::print(std::ostream& out) {
+  using tape_type=document::tape_type;
+
+  size_t depth = 0;
+  constexpr size_t MAX_DEPTH = 16;
+  bool is_object[MAX_DEPTH];
+  is_object[0] = false;
+  bool after_value = false;
+
+  document::tape_ref iter(value.doc, value.json_index);
+  do {
+    // print commas after each value
+    if (after_value) {
+      out << ",";
+    }
+    // If we are in an object, print the next key and :, and skip to the next value.
+    if (is_object[depth]) {
+      out << '"' << internal::escape_json_string(iter.get_string_view()) << "\":";
+      iter.json_index++;
+    }
+    switch (iter.type()) {
+
+    // Arrays
+    case tape_type::START_ARRAY: {
+      // If we're too deep, we need to recurse to go deeper.
+      depth++;
+      if (unlikely(depth >= MAX_DEPTH)) {
+        out << minify<document::array>(document::array(iter.doc, iter.json_index));
+        iter.json_index = iter.tape_value() - 1; // Jump to the ]
+        depth--;
+        break;
+      }
+
+      // Output start [
+      out << '[';
+      iter.json_index++;
+
+      // Handle empty [] (we don't want to come back around and print commas)
+      if (iter.type() == tape_type::END_ARRAY) {
+        out << ']';
+        depth--;
+        break;
+      }
+
+      is_object[depth] = false;
+      after_value = false;
+      continue;
+    }
+
+    // Objects
+    case tape_type::START_OBJECT: {
+      // If we're too deep, we need to recurse to go deeper.
+      depth++;
+      if (unlikely(depth >= MAX_DEPTH)) {
+        out << minify<document::object>(document::object(iter.doc, iter.json_index));
+        iter.json_index = iter.tape_value() - 1; // Jump to the }
+        depth--;
+        break;
+      }
+
+      // Output start {
+      out << '{';
+      iter.json_index++;
+
+      // Handle empty {} (we don't want to come back around and print commas)
+      if (iter.type() == tape_type::END_OBJECT) {
+        out << '}';
+        depth--;
+        break;
+      }
+
+      is_object[depth] = true;
+      after_value = false;
+      continue;
+    }
+
+    // Scalars
+    case tape_type::STRING:
+      out << '"' << internal::escape_json_string(iter.get_string_view()) << '"';
+      break;
+    case tape_type::INT64:
+      out << iter.next_tape_value<int64_t>();
+      iter.json_index++; // numbers take up 2 spots, so we need to increment extra
+      break;
+    case tape_type::UINT64:
+      out << iter.next_tape_value<uint64_t>();
+      iter.json_index++; // numbers take up 2 spots, so we need to increment extra
+      break;
+    case tape_type::DOUBLE:
+      out << iter.next_tape_value<double>();
+      iter.json_index++; // numbers take up 2 spots, so we need to increment extra
+      break;
+    case tape_type::TRUE_VALUE:
+      out << "true";
+      break;
+    case tape_type::FALSE_VALUE:
+      out << "false";
+      break;
+    case tape_type::NULL_VALUE:
+      out << "null";
+      break;
+
+    // These are impossible
+    case tape_type::END_ARRAY:
+    case tape_type::END_OBJECT:
+    case tape_type::ROOT:
+      abort();
+    }
+    iter.json_index++;
+    after_value = true;
+
+    // Handle multiple ends in a row
+    while (depth != 0 && (iter.type() == tape_type::END_ARRAY || iter.type() == tape_type::END_OBJECT)) {
+      out << char(iter.type());
+      depth--;
+      iter.json_index++;
+    }
+
+    // Stop when we're at depth 0
+  } while (depth != 0);
+
+  return out;
+}
+template<>
+inline std::ostream& minify<document::object>::print(std::ostream& out) {
+  out << '{';
+  auto pair = value.begin();
+  auto end = value.end();
+  if (pair != end) {
+    out << minify<document::key_value_pair>(*pair);
+    for (++pair; pair != end; ++pair) {
+      out << "," << minify<document::key_value_pair>(*pair);
+    }
+  }
+  return out << '}';
+}
+template<>
+inline std::ostream& minify<document::array>::print(std::ostream& out) {
+  out << '[';
+  auto element = value.begin();
+  auto end = value.end();
+  if (element != end) {
+    out << minify<document::element>(*element);
+    for (++element; element != end; ++element) {
+      out << "," << minify<document::element>(*element);
+    }
+  }
+  return out << ']';
+}
+template<>
+inline std::ostream& minify<document::key_value_pair>::print(std::ostream& out) {
+  return out << '"' << internal::escape_json_string(value.key) << "\":" << value.value;
+}
+
+template<>
+inline std::ostream& minify<document::doc_result>::print(std::ostream& out) {
+  if (value.error) { throw simdjson_error(value.error); }
+  return out << minify<document>(value.doc);
+}
+template<>
+inline std::ostream& minify<document::doc_ref_result>::print(std::ostream& out) {
+  if (value.error) { throw simdjson_error(value.error); }
+  return out << minify<document>(value.doc);
+}
+template<>
+inline std::ostream& minify<document::element_result<document::element>>::print(std::ostream& out) {
+  if (value.error) { throw simdjson_error(value.error); }
+  return out << minify<document::element>(value.value);
+}
+template<>
+inline std::ostream& minify<document::element_result<document::array>>::print(std::ostream& out) {
+  if (value.error) { throw simdjson_error(value.error); }
+  return out << minify<document::array>(value.value);
+}
+template<>
+inline std::ostream& minify<document::element_result<document::object>>::print(std::ostream& out) {
+  if (value.error) { throw simdjson_error(value.error); }
+  return out << minify<document::object>(value.value);
 }
 
 } // namespace simdjson
