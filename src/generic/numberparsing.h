@@ -1134,6 +1134,23 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // Some libraries will set errno = ERANGE when the value is subnormal,
   // yet we may want to be able to parse subnormal values.
   // However, we do not want to tolerate NAN or infinite values.
+  //
+  // Values like infinity or NaN are not allowed in the JSON specification.
+  // If you consume a large value and you map it to "infinity", you will no
+  // longer be able to serialize back a standard-compliant JSON. And there is
+  // no realistic application where you might need values so large than they
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 × 10^308
+  // It is an unimaginable large number. There will never be any piece of engineering
+  // involving as many as 10^308 parts.
+  // It is estimated that there are about 10^80 atoms in the universe. 
+  // The estimate for the total number of electrons is similar.
+  // Using a double-precision floating-point value, we can represent easily the number of
+  // atoms in the universe. We could  also represent the number of ways you can pick
+  // any three individual atoms at random in the universe.
+  // If you ever encounter a number much larger than  10^308, you know that you have a bug.
+  // RapidJSON will reject a document with a float that does not fit in binary64.
+  // JSON for Modern C++ (nlohmann/json) will flat out throw an exception.
+  //
   if ((endptr == ptr) || (!std::isfinite(*outDouble))) {
     return false;
   }
