@@ -144,29 +144,28 @@ The simplest API to get started is `document::parse()`, which allocates a new pa
 ```c++
 auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
 if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
-doc.print_json(cout);
+cout << doc;
 ```
 
 If you're using exceptions, it gets even simpler (simdjson won't use exceptions internally, so you'll only pay the performance cost of exceptions in your own calling code):
 
 ```c++
 document doc = document::parse(string("[ 1, 2, 3 ]"));
-doc.print_json(cout);
+cout << doc;
 ```
 
 The simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
 
 ```c++
 document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
-doc.print_json(cout);
+cout << doc;
 ```
 
 You can also load from a file with `parser.load()`:
 
 ```c++
 document::parser parser;
-document doc = parser.load(filename);
-doc.print_json(cout);
+cout << parser.load(filename);
 ```
 
 ### Reusing the parser for maximum efficiency
@@ -179,7 +178,7 @@ hot in cache and keeping allocation to a minimum.
 document::parser parser;
 for (padded_string json : { string("[1, 2, 3]"), string("true"), string("[ true, false ]") }) {
   document& doc = parser.parse(json);
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 
@@ -192,7 +191,7 @@ for (int i=0;i<argc;i++) {
   auto [doc, error] = parser.parse(get_corpus(argv[i]));
   if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
   if (error) { cerr << error << endl; exit(1); }
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 
@@ -208,7 +207,7 @@ for (int i=0;i<argc;i++) {
   auto [doc, error] = parser.parse(get_corpus(argv[i]));
   if (error == CAPACITY) { cerr << "JSON files larger than 1MB are not supported!" << endl; exit(1); }
   if (error) { cerr << error << endl; exit(1); }
-  doc.print_json(cout);
+  cout << doc;
 }
 ```
 
@@ -403,7 +402,7 @@ _We do not aim to provide a general-purpose JSON library._ A library like RapidJ
 - The input string is unmodified. (Parsers like sajson and RapidJSON use the input string as a buffer.)
 - We parse integers and floating-point numbers as separate types which allows us to support large signed 64-bit integers in [-9223372036854775808,9223372036854775808), like a Java `long` or a C/C++ `long long` and large unsigned integers up to the value 18446744073709551615. Among the parsers that differentiate between integers and floating-point numbers, not all support 64-bit integers. (For example, sajson rejects JSON files with integers larger than or equal to 2147483648. RapidJSON will parse a file containing an overly long integer like 18446744073709551616 as a floating-point number.) When we cannot represent exactly an integer as a signed or unsigned 64-bit value, we reject the JSON document.
 - We support the full range of 64-bit floating-point numbers (binary64). The values range from ` std::numeric_limits<double>::lowest()`  to `std::numeric_limits<double>::max()`, so from -1.7976e308 all the way to 1.7975e308. Extreme values (less or equal to -1e308, greater or equal to 1e308) are rejected: we refuse to parse the input document.
-- We test for accurate float parsing with a bound on the [unit of least precision (ULP)](https://en.wikipedia.org/wiki/Unit_in_the_last_place) of one. Practically speaking, this implies 15 digits of accuracy or better.
+- We test for accurate float parsing with a perfect (ULP 0) accuracy. Many parsers offer only approximate floating parsing. RapidJSON also offers the option of accurate float parsing (`kParseFullPrecisionFlag`) but it comes at a significant performance penalty compared to the default settings.
 - We do full UTF-8 validation as part of the parsing. (Parsers like fastjson, gason and dropbox json11 do not do UTF-8 validation. The sajson parser does incomplete UTF-8 validation, accepting code point
 sequences like 0xb1 0x87.)
 - We fully validate the numbers. (Parsers like gason and ultranjson will accept `[0e+]` as valid JSON.)
