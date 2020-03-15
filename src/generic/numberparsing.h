@@ -1494,14 +1494,11 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    double d = 0;
     bool success = true;
-    if (i != 0) {
-      d = compute_float_64(exponent, i, negative, &success);
-      if (!success) {
-        // we are almost never going to get here.
-        success = parse_float_strtod((const char *)src, &d);
-      }
+    double d = compute_float_64(exponent, i, negative, &success);
+    if (!success) {
+      // we are almost never going to get here.
+      success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
       parser.on_number_double(d);
