@@ -1048,12 +1048,16 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
   // also used in RapidJSON: https://rapidjson.org/strtod_8h_source.html
 
+  // The fast path has now failed, so we are failing back on the slower path.
+
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
     return 0.0;
   }
 
+  // We are going to need to do some 64-bit arithmetic to get a more precise product.
+  // We use a table lookup approach.
   components c =
       power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER]; // safe because
                                                                  // power_index
@@ -1119,13 +1123,39 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 1) == 1))) {
-                     printf("BANG\n");
     // It can be triggered with 1e23.
     *success = false;
     return 0;
   }
+
+  // We have to round to even. The "to even" part
+  // is only a problem when we are right in between two floats
+  // which we guard against.
+  // If we have lots of trailing zeros, we may fall right between two
+  // floating-point values.
+  if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
+               ((mantissa & 3) == 1))) {
+      // if mantissa & 1 == 1 we might need to round up.
+      //
+      // Scenarios:
+      // 1. We are not in the middle. Then we should round up.
+      //
+      // 2. We are right in the middle. Whether we round up depends
+      // on the last significant bit: if it is "one" then we round
+      // up (round to even) otherwise, we do not.
+      //
+      // So if the last significant bit is 1, we can safely round up.
+      // Hence we only need to bail out if (mantissa & 3) == 1.
+      // Otherwise we may need more accuracy or analysis to determine whether
+      // we are exactly between two floating-point numbers.
+      // It can be triggered with 1e23.
+      *success = false;
+      return 0;
+  }
+
   mantissa += mantissa & 1;
   mantissa >>= 1;
+
   // Here we have mantissa < (1<<53), unless there was an overflow
   if (mantissa >= (1ULL << 53)) {
     //////////
