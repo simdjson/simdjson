@@ -14,13 +14,12 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   // todo: this might fail under visual studio for ARM
   answer.low = _umul128(value1, value2, &answer.high);
 #else
-  __uint128_t r = ((__uint128_t) value1) * value2;
+  __uint128_t r = ((__uint128_t)value1) * value2;
   answer.low = r;
   answer.high = r >> 64;
 #endif
   return answer;
 }
-
 
 // Precomputed powers of ten from 10^0 to 10^22. These
 // can be represented exactly using the double type.
@@ -1043,13 +1042,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // Is this worth your time?
   // You need  22 < power *and* power <  22 + 16 *and* (i * 10^(x-22) < 2^53)
   // for this second fast path to work.
-  // If you you have 22 < power *and* power <  22 + 16, and then you optimistically
-  // compute "i * 10^(x-22)", there is still a chance that you have wasted your
-  // time if i * 10^(x-22) >= 2^53. It makes the use cases of this optimization
-  // maybe less common than we would like.
-  // Source: http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
+  // If you you have 22 < power *and* power <  22 + 16, and then you
+  // optimistically compute "i * 10^(x-22)", there is still a chance that you
+  // have wasted your time if i * 10^(x-22) >= 2^53. It makes the use cases of
+  // this optimization maybe less common than we would like. Source:
+  // http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
   // also used in RapidJSON: https://rapidjson.org/strtod_8h_source.html
-
 
   components c =
       power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER]; // safe because
@@ -1065,7 +1063,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // We want the most significant 64 bits of the product. We know
   // this will be non-zero because the most significant bit of i is
   // 1.
-  value128 product = full_multiplication(i,factor_mantissa);
+  value128 product = full_multiplication(i, factor_mantissa);
   uint64_t lower = product.low;
   uint64_t upper = product.high;
 
@@ -1082,7 +1080,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
         mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
     // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
     // result (three 64-bit values)
-    product = full_multiplication(i,factor_mantissa_low);
+    product = full_multiplication(i, factor_mantissa_low);
     uint64_t product_low = product.low;
     uint64_t product_middle2 = product.high;
     uint64_t product_middle1 = lower;
@@ -1156,24 +1154,23 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 × 10^308
-  // It is an unimaginable large number. There will never be any piece of engineering
-  // involving as many as 10^308 parts.
-  // It is estimated that there are about 10^80 atoms in the universe. 
-  // The estimate for the total number of electrons is similar.
-  // Using a double-precision floating-point value, we can represent easily the number of
-  // atoms in the universe. We could  also represent the number of ways you can pick
-  // any three individual atoms at random in the universe.
-  // If you ever encounter a number much larger than  10^308, you know that you have a bug.
-  // RapidJSON will reject a document with a float that does not fit in binary64.
-  // JSON for Modern C++ (nlohmann/json) will flat out throw an exception.
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // 10^308 It is an unimaginable large number. There will never be any piece of
+  // engineering involving as many as 10^308 parts. It is estimated that there
+  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // of electrons is similar. Using a double-precision floating-point value, we
+  // can represent easily the number of atoms in the universe. We could  also
+  // represent the number of ways you can pick any three individual atoms at
+  // random in the universe. If you ever encounter a number much larger than
+  // 10^308, you know that you have a bug. RapidJSON will reject a document with
+  // a float that does not fit in binary64. JSON for Modern C++ (nlohmann/json)
+  // will flat out throw an exception.
   //
   if ((endptr == ptr) || (!std::isfinite(*outDouble))) {
     return false;
   }
   return true;
 }
-
 
 really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
@@ -1219,7 +1216,6 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
           0x3333333333333333);
 }
 
-
 // called by parse_number when we know that the output is an integer,
 // but where there might be some integer overflow.
 // we want to catch overflows!
@@ -1228,7 +1224,9 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function will almost never be called!!!
 //
-never_inline bool parse_large_integer(const uint8_t *const src, document::parser &parser, bool found_minus) {
+never_inline bool parse_large_integer(const uint8_t *const src,
+                                      document::parser &parser,
+                                      bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
   bool negative = false;
@@ -1265,14 +1263,14 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
   }
   if (negative) {
     if (i > 0x8000000000000000) {
-       // overflows!
+      // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
       return false; // overflow
     } else if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
-      // as a positive signed integer, but the negative version is 
+      // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
       parser.on_number_s64(signed_answer);
@@ -1289,9 +1287,9 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
     }
   } else {
     // we have a positive integer, the contract is that
-    // we try to represent it as a signed integer and only 
+    // we try to represent it as a signed integer and only
     // fallback on unsigned integers if absolutely necessary.
-    if(i < 0x8000000000000000) {
+    if (i < 0x8000000000000000) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
@@ -1320,7 +1318,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  parser.on_number_s64(0);           // always write zero
+  parser.on_number_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -1466,7 +1464,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
         double d;
-        if(parse_float_strtod((const char*)src, &d)) {
+        if (parse_float_strtod((const char *)src, &d)) {
           parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
           found_float(d, src);
@@ -1480,21 +1478,21 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
-      (exponent > FASTFLOAT_LARGEST_POWER)) {// this is uncommon!!!
+        (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-        double d;
-        if(parse_float_strtod((const char *)src, &d)) {
-          parser.on_number_double(d);
+      double d;
+      if (parse_float_strtod((const char *)src, &d)) {
+        parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-          found_float(d, src);
+        found_float(d, src);
 #endif
-          return true;
-        }
+        return true;
+      }
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
+      found_invalid_number(src);
 #endif
-        return false;
+      return false;
     }
     double d = 0;
     bool success = true;
@@ -1505,7 +1503,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         success = parse_float_strtod((const char *)src, &d);
       }
     }
-    if(success) {
+    if (success) {
       parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
