@@ -1115,10 +1115,11 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // We have to round to even. The "to even" part
   // is only a problem when we are right in between two floats
   // which we guard against.
-  // If we have lots of trailing zeros so we may fall right between two
+  // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 1) == 1))) {
+                     printf("BANG\n");
     // It can be triggered with 1e23.
     *success = false;
     return 0;
