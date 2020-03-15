@@ -1118,14 +1118,28 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
   if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
-               ((mantissa & 1) == 1))) {
-                     printf("BANG\n");
-    // It can be triggered with 1e23.
-    *success = false;
-    return 0;
+               ((mantissa & 3) == 1))) {
+      // if mantissa & 1 == 1 we might need to round up.
+      //
+      // Scenarios:
+      // 1. We are not in the middle. Then we should round up.
+      //
+      // 2. We are right in the middle. Whether we round up depends
+      // on the last significant bit: if it is "one" then we round
+      // up (round to even) otherwise, we do not.
+      //
+      // So if the last significant bit is 1, we can safely round up.
+      // Hence we only need to bail out if (mantissa & 3) == 1.
+      // Otherwise we may need more accuracy or analysis to determine whether
+      // we are exactly between two floating-point numbers.
+      // It can be triggered with 1e23.
+      *success = false;
+      return 0;
   }
+
   mantissa += mantissa & 1;
   mantissa >>= 1;
+
   // Here we have mantissa < (1<<53), unless there was an overflow
   if (mantissa >= (1ULL << 53)) {
     //////////
