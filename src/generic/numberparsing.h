@@ -1003,7 +1003,6 @@ const uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-// We assume that i is non-zero: the caller is responsible for this check.
 really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
                                       bool *success) {
   // we start with a fast path
@@ -1048,6 +1047,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // this optimization maybe less common than we would like. Source:
   // http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
   // also used in RapidJSON: https://rapidjson.org/strtod_8h_source.html
+
+  // In the slow path, we need to adjust i so that it is > 1<<63 which is always
+  // possible, except if i == 0, so we handle i == 0 separately.
+  if(i == 0) {
+    return 0.0;
+  }
 
   components c =
       power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER]; // safe because
