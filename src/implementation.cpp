@@ -8,11 +8,13 @@
 
 #include "haswell/implementation.h"
 #include "westmere/implementation.h"
+#include "fallback/implementation.h"
 
 namespace simdjson::internal {
+const fallback::implementation fallback_singleton{};
 const haswell::implementation haswell_singleton{};
 const westmere::implementation westmere_singleton{};
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton };
+constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton, &fallback_singleton };
 }
 
 #endif
@@ -20,10 +22,12 @@ constexpr const std::initializer_list<const implementation *> available_implemen
 #ifdef IS_ARM64
 
 #include "arm64/implementation.h"
+#include "fallback/implementation.h"
 
 namespace simdjson::internal {
+const fallback::implementation fallback_singleton{};
 const arm64::implementation arm64_singleton{};
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton };
+constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton, &fallback_singleton };
 }
 
 #endif

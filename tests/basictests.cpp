@@ -10,6 +10,7 @@
 #include <string_view>
 #include <sstream>
 #include <utility>
+#include <unistd.h>
 
 #include "simdjson.h"
 
@@ -32,6 +33,7 @@ inline uint64_t f64_ulp_dist(double a, double b) {
 
 
 bool number_test_small_integers() {
+  std::cout << __func__ << std::endl;
   char buf[1024];
   simdjson::document::parser parser;
   for (int m = 10; m < 20; m++) {
@@ -66,6 +68,7 @@ bool number_test_small_integers() {
 
 
 bool number_test_powers_of_two() {
+  std::cout << __func__ << std::endl;
   char buf[1024];
   simdjson::document::parser parser;
   int maxulp = 0;
@@ -202,6 +205,7 @@ static const double testing_power_of_ten[] = {
 
 
 bool number_test_powers_of_ten() {
+  std::cout << __func__ << std::endl;
   char buf[1024];
   simdjson::document::parser parser;
   for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
@@ -267,6 +271,7 @@ bool number_test_powers_of_ten() {
 
 // adversarial example that once triggred overruns, see https://github.com/lemire/simdjson/issues/345
 bool bad_example() {
+  std::cout << __func__ << std::endl;
   std::string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6";
   simdjson::document::parser parser = simdjson::build_parsed_json(badjson);
   if(parser.is_valid()) {
@@ -277,6 +282,7 @@ bool bad_example() {
 }
 // returns true if successful
 bool stable_test() {
+  std::cout << __func__ << std::endl;
   std::string json = "{"
         "\"Image\":{"
             "\"Width\":800,"
@@ -1438,10 +1444,10 @@ bool error_messages_in_correct_order() {
 
 bool lots_of_brackets() {
   std::string input;
-  for(size_t i = 0; i < 1000; i++) {
+  for(size_t i = 0; i < 16; i++) {
     input += "[";
   }
-  for(size_t i = 0; i < 1000; i++) {
+  for(size_t i = 0; i < 16; i++) {
     input += "]";
   }
   auto [doc, error] = simdjson::document::parse(input);
@@ -1451,7 +1457,26 @@ bool lots_of_brackets() {
   return true;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+  std::cout << std::unitbuf;
+  char c;
+  while ((c = getopt(argc, argv, "a:")) != -1) {
+    switch (c) {
+    case 'a': {
+      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      if (!impl) {
+        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      simdjson::active_implementation = impl;
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected argument %c\n", c);
+      return EXIT_FAILURE;
+    }
+  }
+
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
   if (simdjson::active_implementation->name() == "unsupported") { 

@@ -6,7 +6,7 @@
 // are straight up concatenated into the final value. The first byte of a multibyte character is a
 // "leading byte" and starts with N 1's, where N is the total number of bytes (110_____ = 2 byte
 // lead). The remaining bytes of a multibyte character all start with 10. 1-byte characters just
-// start with 0, because that's what ASCII looks like. Here's what each size 
+// start with 0, because that's what ASCII looks like. Here's what each size looks like:
 //
 // - ASCII (7 bits):              0_______
 // - 2 byte character (11 bits):  110_____ 10______

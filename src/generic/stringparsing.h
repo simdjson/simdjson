@@ -71,23 +71,19 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src,
-                                                uint8_t *dst) {
+WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
   src++;
   while (1) {
-    parse_string_helper helper = find_bs_bits_and_quote_bits(src, dst);
-    if (((helper.bs_bits - 1) & helper.quote_bits) != 0) {
-      /* we encountered quotes first. Move dst to point to quotes and exit
-       */
-
-      /* find out where the quote is... */
-      auto quote_dist = trailing_zeroes(helper.quote_bits);
-
-      return dst + quote_dist;
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
     }
-    if (((helper.quote_bits - 1) & helper.bs_bits) != 0) {
+    if (bs_quote.has_backslash()) {
       /* find out where the backspace is */
-      auto bs_dist = trailing_zeroes(helper.bs_bits);
+      auto bs_dist = bs_quote.backslash_index();
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -114,8 +110,8 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src,
     } else {
       /* they are the same. Since they can't co-occur, it means we
        * encountered neither. */
-      src += parse_string_helper::BYTES_PROCESSED;
-      dst += parse_string_helper::BYTES_PROCESSED;
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
     }
   }
   /* can't be reached */
