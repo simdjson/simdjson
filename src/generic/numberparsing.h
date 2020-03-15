@@ -1,7 +1,7 @@
 namespace numberparsing {
 
-#define FASTFLOAT_SMALLEST_POWER -325
-#define FASTFLOAT_LARGEST_POWER 308
+constexpr int FASTFLOAT_SMALLEST_POWER = -325;
+constexpr int FASTFLOAT_LARGEST_POWER = 308;
 
 struct value128 {
   uint64_t low;
@@ -1455,6 +1455,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent += (neg_exp ? -exp_number : exp_number);
   }
   if (is_float) {
+    // If we frequently had to deal with long strings of digits,
+    // we could extend our code by using a 128-bit integer instead
+    // of a 64-bit integer. However, this is uncommon in practice.
     if (unlikely((digit_count >= 19))) { // this is uncommon
       // It is possible that the integer had an overflow.
       // We have to handle the case where we have 0.0000somenumber.
@@ -1468,6 +1471,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
+        // This will happen in the following examples:
+        // 10000000000000000000000000000000000000000000e+308
+        // 3.1415926535897932384626433832795028841971693993751
+        //
         double d;
         if (parse_float_strtod((const char *)src, &d)) {
           parser.on_number_double(d);
