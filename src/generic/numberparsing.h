@@ -142,6 +142,9 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
       // Otherwise we may need more accuracy or analysis to determine whether
       // we are exactly between two floating-point numbers.
       // It can be triggered with 1e23.
+      // Note: because the factor_mantissa and factor_mantissa_low are
+      // almost always rounded down (except for small positive powers),
+      // almost always should round up.
       *success = false;
       return 0;
   }
