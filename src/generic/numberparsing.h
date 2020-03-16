@@ -102,7 +102,8 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
     if (product_middle < product_middle1) {
       product_high++; // overflow carry
     }
-    // we want to check whether mantissa *i + i would affect our result
+    // We want to check whether mantissa *i + i would affect our result.
+    // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
       *success = false;
