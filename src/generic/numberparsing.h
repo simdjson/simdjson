@@ -332,6 +332,21 @@ never_inline bool parse_large_integer(const uint8_t *const src,
   return is_structural_or_whitespace(*p);
 }
 
+bool slow_float_parsing(UNUSED const char * src, document::parser &parser) {
+  double d;
+  if (parse_float_strtod(src, &d)) {
+    parser.on_number_double(d);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    found_float(d, (const uint8_t *)src);
+#endif
+    return true;
+  }
+#ifdef JSON_TEST_NUMBERS // for unit testing
+  found_invalid_number((const uint8_t *)src);
+#endif
+  return false;
+}
+
 // parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
 //
@@ -498,36 +513,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        double d;
-        if (parse_float_strtod((const char *)src, &d)) {
-          parser.on_number_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-          found_float(d, src);
-#endif
-          return true;
-        }
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false;
+        return slow_float_parsing((const char *) src, parser);
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      double d;
-      if (parse_float_strtod((const char *)src, &d)) {
-        parser.on_number_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_float(d, src);
-#endif
-        return true;
-      }
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return slow_float_parsing((const char *) src, parser);
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
