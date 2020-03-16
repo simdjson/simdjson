@@ -1,80 +1,205 @@
 namespace numberparsing {
 
-// Allowable floating-point values range
-// std::numeric_limits<double>::lowest() to std::numeric_limits<double>::max(),
-// so from -1.7976e308 all the way to 1.7975e308 in binary64. The lowest
-// non-zero normal values is std::numeric_limits<double>::min() or
-// about 2.225074e-308.
-static const double power_of_ten[] = {
-    1e-308, 1e-307, 1e-306, 1e-305, 1e-304, 1e-303, 1e-302, 1e-301, 1e-300,
-    1e-299, 1e-298, 1e-297, 1e-296, 1e-295, 1e-294, 1e-293, 1e-292, 1e-291,
-    1e-290, 1e-289, 1e-288, 1e-287, 1e-286, 1e-285, 1e-284, 1e-283, 1e-282,
-    1e-281, 1e-280, 1e-279, 1e-278, 1e-277, 1e-276, 1e-275, 1e-274, 1e-273,
-    1e-272, 1e-271, 1e-270, 1e-269, 1e-268, 1e-267, 1e-266, 1e-265, 1e-264,
-    1e-263, 1e-262, 1e-261, 1e-260, 1e-259, 1e-258, 1e-257, 1e-256, 1e-255,
-    1e-254, 1e-253, 1e-252, 1e-251, 1e-250, 1e-249, 1e-248, 1e-247, 1e-246,
-    1e-245, 1e-244, 1e-243, 1e-242, 1e-241, 1e-240, 1e-239, 1e-238, 1e-237,
-    1e-236, 1e-235, 1e-234, 1e-233, 1e-232, 1e-231, 1e-230, 1e-229, 1e-228,
-    1e-227, 1e-226, 1e-225, 1e-224, 1e-223, 1e-222, 1e-221, 1e-220, 1e-219,
-    1e-218, 1e-217, 1e-216, 1e-215, 1e-214, 1e-213, 1e-212, 1e-211, 1e-210,
-    1e-209, 1e-208, 1e-207, 1e-206, 1e-205, 1e-204, 1e-203, 1e-202, 1e-201,
-    1e-200, 1e-199, 1e-198, 1e-197, 1e-196, 1e-195, 1e-194, 1e-193, 1e-192,
-    1e-191, 1e-190, 1e-189, 1e-188, 1e-187, 1e-186, 1e-185, 1e-184, 1e-183,
-    1e-182, 1e-181, 1e-180, 1e-179, 1e-178, 1e-177, 1e-176, 1e-175, 1e-174,
-    1e-173, 1e-172, 1e-171, 1e-170, 1e-169, 1e-168, 1e-167, 1e-166, 1e-165,
-    1e-164, 1e-163, 1e-162, 1e-161, 1e-160, 1e-159, 1e-158, 1e-157, 1e-156,
-    1e-155, 1e-154, 1e-153, 1e-152, 1e-151, 1e-150, 1e-149, 1e-148, 1e-147,
-    1e-146, 1e-145, 1e-144, 1e-143, 1e-142, 1e-141, 1e-140, 1e-139, 1e-138,
-    1e-137, 1e-136, 1e-135, 1e-134, 1e-133, 1e-132, 1e-131, 1e-130, 1e-129,
-    1e-128, 1e-127, 1e-126, 1e-125, 1e-124, 1e-123, 1e-122, 1e-121, 1e-120,
-    1e-119, 1e-118, 1e-117, 1e-116, 1e-115, 1e-114, 1e-113, 1e-112, 1e-111,
-    1e-110, 1e-109, 1e-108, 1e-107, 1e-106, 1e-105, 1e-104, 1e-103, 1e-102,
-    1e-101, 1e-100, 1e-99,  1e-98,  1e-97,  1e-96,  1e-95,  1e-94,  1e-93,
-    1e-92,  1e-91,  1e-90,  1e-89,  1e-88,  1e-87,  1e-86,  1e-85,  1e-84,
-    1e-83,  1e-82,  1e-81,  1e-80,  1e-79,  1e-78,  1e-77,  1e-76,  1e-75,
-    1e-74,  1e-73,  1e-72,  1e-71,  1e-70,  1e-69,  1e-68,  1e-67,  1e-66,
-    1e-65,  1e-64,  1e-63,  1e-62,  1e-61,  1e-60,  1e-59,  1e-58,  1e-57,
-    1e-56,  1e-55,  1e-54,  1e-53,  1e-52,  1e-51,  1e-50,  1e-49,  1e-48,
-    1e-47,  1e-46,  1e-45,  1e-44,  1e-43,  1e-42,  1e-41,  1e-40,  1e-39,
-    1e-38,  1e-37,  1e-36,  1e-35,  1e-34,  1e-33,  1e-32,  1e-31,  1e-30,
-    1e-29,  1e-28,  1e-27,  1e-26,  1e-25,  1e-24,  1e-23,  1e-22,  1e-21,
-    1e-20,  1e-19,  1e-18,  1e-17,  1e-16,  1e-15,  1e-14,  1e-13,  1e-12,
-    1e-11,  1e-10,  1e-9,   1e-8,   1e-7,   1e-6,   1e-5,   1e-4,   1e-3,
-    1e-2,   1e-1,   1e0,    1e1,    1e2,    1e3,    1e4,    1e5,    1e6,
-    1e7,    1e8,    1e9,    1e10,   1e11,   1e12,   1e13,   1e14,   1e15,
-    1e16,   1e17,   1e18,   1e19,   1e20,   1e21,   1e22,   1e23,   1e24,
-    1e25,   1e26,   1e27,   1e28,   1e29,   1e30,   1e31,   1e32,   1e33,
-    1e34,   1e35,   1e36,   1e37,   1e38,   1e39,   1e40,   1e41,   1e42,
-    1e43,   1e44,   1e45,   1e46,   1e47,   1e48,   1e49,   1e50,   1e51,
-    1e52,   1e53,   1e54,   1e55,   1e56,   1e57,   1e58,   1e59,   1e60,
-    1e61,   1e62,   1e63,   1e64,   1e65,   1e66,   1e67,   1e68,   1e69,
-    1e70,   1e71,   1e72,   1e73,   1e74,   1e75,   1e76,   1e77,   1e78,
-    1e79,   1e80,   1e81,   1e82,   1e83,   1e84,   1e85,   1e86,   1e87,
-    1e88,   1e89,   1e90,   1e91,   1e92,   1e93,   1e94,   1e95,   1e96,
-    1e97,   1e98,   1e99,   1e100,  1e101,  1e102,  1e103,  1e104,  1e105,
-    1e106,  1e107,  1e108,  1e109,  1e110,  1e111,  1e112,  1e113,  1e114,
-    1e115,  1e116,  1e117,  1e118,  1e119,  1e120,  1e121,  1e122,  1e123,
-    1e124,  1e125,  1e126,  1e127,  1e128,  1e129,  1e130,  1e131,  1e132,
-    1e133,  1e134,  1e135,  1e136,  1e137,  1e138,  1e139,  1e140,  1e141,
-    1e142,  1e143,  1e144,  1e145,  1e146,  1e147,  1e148,  1e149,  1e150,
-    1e151,  1e152,  1e153,  1e154,  1e155,  1e156,  1e157,  1e158,  1e159,
-    1e160,  1e161,  1e162,  1e163,  1e164,  1e165,  1e166,  1e167,  1e168,
-    1e169,  1e170,  1e171,  1e172,  1e173,  1e174,  1e175,  1e176,  1e177,
-    1e178,  1e179,  1e180,  1e181,  1e182,  1e183,  1e184,  1e185,  1e186,
-    1e187,  1e188,  1e189,  1e190,  1e191,  1e192,  1e193,  1e194,  1e195,
-    1e196,  1e197,  1e198,  1e199,  1e200,  1e201,  1e202,  1e203,  1e204,
-    1e205,  1e206,  1e207,  1e208,  1e209,  1e210,  1e211,  1e212,  1e213,
-    1e214,  1e215,  1e216,  1e217,  1e218,  1e219,  1e220,  1e221,  1e222,
-    1e223,  1e224,  1e225,  1e226,  1e227,  1e228,  1e229,  1e230,  1e231,
-    1e232,  1e233,  1e234,  1e235,  1e236,  1e237,  1e238,  1e239,  1e240,
-    1e241,  1e242,  1e243,  1e244,  1e245,  1e246,  1e247,  1e248,  1e249,
-    1e250,  1e251,  1e252,  1e253,  1e254,  1e255,  1e256,  1e257,  1e258,
-    1e259,  1e260,  1e261,  1e262,  1e263,  1e264,  1e265,  1e266,  1e267,
-    1e268,  1e269,  1e270,  1e271,  1e272,  1e273,  1e274,  1e275,  1e276,
-    1e277,  1e278,  1e279,  1e280,  1e281,  1e282,  1e283,  1e284,  1e285,
-    1e286,  1e287,  1e288,  1e289,  1e290,  1e291,  1e292,  1e293,  1e294,
-    1e295,  1e296,  1e297,  1e298,  1e299,  1e300,  1e301,  1e302,  1e303,
-    1e304,  1e305,  1e306,  1e307,  1e308};
+
+// Attempts to compute i * 10^(power) exactly; and if "negative" is
+// true, negate the result.
+// This function will only work in some cases, when it does not work, success is
+// set to false. This should work *most of the time* (like 99% of the time).
+// We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
+// FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
+really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
+                                      bool *success) {
+  // we start with a fast path
+  if (-22 <= power && power <= 22 && i <= 9007199254740991) {
+    // convert the integer into a double. This is lossless since
+    // 0 <= i <= 2^53 - 1.
+    double d = i;
+    //
+    // The general idea is as follows.
+    // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
+    // 1) Both s and p can be represented exactly as 64-bit floating-point
+    // values
+    // (binary64).
+    // 2) Because s and p can be represented exactly as floating-point values,
+    // then s * p
+    // and s / p will produce correctly rounded values.
+    //
+    if (power < 0) {
+      d = d / power_of_ten[-power];
+    } else {
+      d = d * power_of_ten[power];
+    }
+    if (negative) {
+      d = -d;
+    }
+    *success = true;
+    return d;
+  }
+
+  // When 22 < power && power <  22 + 16, we could
+  // hope for another, secondary fast path.  If
+  // you need to compute i * 10^(22 + x) for x < 16,
+  // first compute i * 10^x, if you know that result is exact
+  // (e.g., when i * 10^x < 2^53),
+  // then you can still proceed and do (i * 10^x) * 10^22.
+  // Is this worth your time?
+  // You need  22 < power *and* power <  22 + 16 *and* (i * 10^(x-22) < 2^53)
+  // for this second fast path to work.
+  // If you you have 22 < power *and* power <  22 + 16, and then you
+  // optimistically compute "i * 10^(x-22)", there is still a chance that you
+  // have wasted your time if i * 10^(x-22) >= 2^53. It makes the use cases of
+  // this optimization maybe less common than we would like. Source:
+  // http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
+  // also used in RapidJSON: https://rapidjson.org/strtod_8h_source.html
+
+  // The fast path has now failed, so we are failing back on the slower path.
+
+  // In the slow path, we need to adjust i so that it is > 1<<63 which is always
+  // possible, except if i == 0, so we handle i == 0 separately.
+  if(i == 0) {
+    return 0.0;
+  }
+
+  // We are going to need to do some 64-bit arithmetic to get a more precise product.
+  // We use a table lookup approach.
+  components c =
+      power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER]; // safe because
+                                                                 // power_index
+                                                                 // <= 2*308
+  // we recover the mantissa of the power, it has a leading 1. It is always
+  // rounded down.
+  uint64_t factor_mantissa = c.mantissa;
+
+  // We want the most significant bit of i to be 1. Shift if needed.
+  int lz = leading_zeroes(i);
+  i <<= lz;
+  // We want the most significant 64 bits of the product. We know
+  // this will be non-zero because the most significant bit of i is
+  // 1.
+  value128 product = full_multiplication(i, factor_mantissa);
+  uint64_t lower = product.low;
+  uint64_t upper = product.high;
+
+  // We know that upper has at most one leading zero because
+  // both i and  factor_mantissa have a leading one. This means
+  // that the result is at least as large as ((1<<63)*(1<<63))/(1<<64).
+
+  // As long as the first 9 bits of "upper" are not "1", then we
+  // know that we have an exact computed value for the leading
+  // 55 bits because any imprecision would play out as a +1, in
+  // the worst case.
+  if (unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
+    uint64_t factor_mantissa_low =
+        mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
+    // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
+    // result (three 64-bit values)
+    product = full_multiplication(i, factor_mantissa_low);
+    uint64_t product_low = product.low;
+    uint64_t product_middle2 = product.high;
+    uint64_t product_middle1 = lower;
+    uint64_t product_high = upper;
+    uint64_t product_middle = product_middle1 + product_middle2;
+    if (product_middle < product_middle1) {
+      product_high++; // overflow carry
+    }
+    // We want to check whether mantissa *i + i would affect our result.
+    // This does happen, e.g. with 7.3177701707893310e+15.
+    if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
+         (product_low + i < product_low))) { // let us be prudent and bail out.
+      *success = false;
+      return 0;
+    }
+    upper = product_high;
+    lower = product_middle;
+  }
+  // The final mantissa should be 53 bits with a leading 1.
+  // We shift it so that it occupies 54 bits with a leading 1.
+  ///////
+  uint64_t upperbit = upper >> 63;
+  uint64_t mantissa = upper >> (upperbit + 9);
+  lz += 1 ^ upperbit;
+
+  // Here we have mantissa < (1<<54).
+
+  // We have to round to even. The "to even" part
+  // is only a problem when we are right in between two floats
+  // which we guard against.
+  // If we have lots of trailing zeros, we may fall right between two
+  // floating-point values.
+  if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
+               ((mantissa & 3) == 1))) {
+      // if mantissa & 1 == 1 we might need to round up.
+      //
+      // Scenarios:
+      // 1. We are not in the middle. Then we should round up.
+      //
+      // 2. We are right in the middle. Whether we round up depends
+      // on the last significant bit: if it is "one" then we round
+      // up (round to even) otherwise, we do not.
+      //
+      // So if the last significant bit is 1, we can safely round up.
+      // Hence we only need to bail out if (mantissa & 3) == 1.
+      // Otherwise we may need more accuracy or analysis to determine whether
+      // we are exactly between two floating-point numbers.
+      // It can be triggered with 1e23.
+      *success = false;
+      return 0;
+  }
+
+  mantissa += mantissa & 1;
+  mantissa >>= 1;
+
+  // Here we have mantissa < (1<<53), unless there was an overflow
+  if (mantissa >= (1ULL << 53)) {
+    //////////
+    // This will happen when parsing values such as 7.2057594037927933e+16
+    ////////
+    mantissa = (1ULL << 52);
+    lz--; // undo previous addition
+  }
+  mantissa &= ~(1ULL << 52);
+  uint64_t real_exponent = c.exp - lz;
+  // we have to check that real_exponent is in range, otherwise we bail out
+  if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
+    *success = false;
+    return 0;
+  }
+  mantissa |= real_exponent << 52;
+  mantissa |= (((uint64_t)negative) << 63);
+  double d;
+  memcpy(&d, &mantissa, sizeof(d));
+  *success = true;
+  return d;
+}
+
+static bool parse_float_strtod(const char *ptr, double *outDouble) {
+  char *endptr;
+  *outDouble = strtod(ptr, &endptr);
+  // Some libraries will set errno = ERANGE when the value is subnormal,
+  // yet we may want to be able to parse subnormal values.
+  // However, we do not want to tolerate NAN or infinite values.
+  //
+  // Values like infinity or NaN are not allowed in the JSON specification.
+  // If you consume a large value and you map it to "infinity", you will no
+  // longer be able to serialize back a standard-compliant JSON. And there is
+  // no realistic application where you might need values so large than they
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // 10^308 It is an unimaginable large number. There will never be any piece of
+  // engineering involving as many as 10^308 parts. It is estimated that there
+  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // of electrons is similar. Using a double-precision floating-point value, we
+  // can represent easily the number of atoms in the universe. We could  also
+  // represent the number of ways you can pick any three individual atoms at
+  // random in the universe. If you ever encounter a number much larger than
+  // 10^308, you know that you have a bug. RapidJSON will reject a document with
+  // a float that does not fit in binary64. JSON for Modern C++ (nlohmann/json)
+  // will flat out throw an exception.
+  //
+  if ((endptr == ptr) || (!std::isfinite(*outDouble))) {
+    return false;
+  }
+  return true;
+}
 
 really_inline bool is_integer(char c) {
   return (c >= '0' && c <= '9');
@@ -120,161 +245,6 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
           0x3333333333333333);
 }
 
-
-//
-// This function computes base * 10 ^ (- negative_exponent ).
-// It is only even going to be used when negative_exponent is tiny.
-really_inline double subnormal_power10(double base, int64_t negative_exponent) {
-    // avoid integer overflows in the pow expression, those values would
-    // become zero anyway.
-    if(negative_exponent < -1000) {
-        return 0;
-    }
-
-  // this is probably not going to be fast
-  return base * 1e-308 * pow(10, negative_exponent + 308);
-}
-
-// called by parse_number when we know that the output is a float,
-// but where there might be some integer overflow. The trick here is to
-// parse using floats from the start.
-// Do not call this function directly as it skips some of the checks from
-// parse_number
-//
-// This function will almost never be called!!!
-//
-// Note: a redesign could avoid this function entirely.
-//
-never_inline bool parse_float(const uint8_t *const src, document::parser &parser, bool found_minus) {
-  const char *p = reinterpret_cast<const char *>(src);
-  bool negative = false;
-  if (found_minus) {
-    ++p;
-    negative = true;
-  }
-  long double i;
-  if (*p == '0') { // 0 cannot be followed by an integer
-    ++p;
-    i = 0;
-  } else {
-    unsigned char digit = *p - '0';
-    i = digit;
-    p++;
-    while (is_integer(*p)) {
-      digit = *p - '0';
-      i = 10 * i + digit;
-      ++p;
-    }
-  }
-  if ('.' == *p) {
-    ++p;
-    int fractional_weight = 308;
-    if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
-      ++p;
-
-      fractional_weight--;
-      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
-                                              : 0);
-    } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
-    }
-    while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
-      ++p;
-      fractional_weight--;
-      i = i + digit * (fractional_weight >= 0 ? power_of_ten[fractional_weight]
-                                              : 0);
-    }
-  }
-  if (('e' == *p) || ('E' == *p)) {
-    ++p;
-    bool neg_exp = false;
-    if ('-' == *p) {
-      neg_exp = true;
-      ++p;
-    } else if ('+' == *p) {
-      ++p;
-    }
-    if (!is_integer(*p)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
-    }
-    unsigned char digit = *p - '0';
-    int64_t exp_number = digit; // exponential part
-    p++;
-    if (is_integer(*p)) {
-      digit = *p - '0';
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    if (is_integer(*p)) {
-      digit = *p - '0';
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    if (is_integer(*p)) {
-      digit = *p - '0';
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    while (is_integer(*p)) {
-      if (exp_number > 0x100000000) { // we need to check for overflows
-// we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false;
-      }
-      digit = *p - '0';
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    if (unlikely(exp_number > 308)) {
-      // this path is unlikely
-      if (neg_exp) {
-        // We either have zero or a subnormal.
-        // We expect this to be uncommon so we go through a slow path.
-        i = subnormal_power10(i, -exp_number);
-      } else {
-// We know for sure that we have a number that is too large,
-// we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false;
-      }
-    } else {
-      int exponent = (neg_exp ? -exp_number : exp_number);
-      // we have that exp_number is [0,308] so that
-      // exponent is [-308,308] so that
-      // 308 + exponent is in [0, 2 * 308]
-      i *= power_of_ten[308 + exponent];
-    }
-  }
-  if (is_not_structural_or_whitespace(*p)) {
-    return false;
-  }
-  // check that we can go from long double to double safely.
-  if(i > std::numeric_limits<double>::max()) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false;
-  }
-  double d = negative ? -i : i;
-  parser.on_number_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-  found_float(d, src);
-#endif
-  return is_structural_or_whitespace(*p);
-}
-
 // called by parse_number when we know that the output is an integer,
 // but where there might be some integer overflow.
 // we want to catch overflows!
@@ -283,7 +253,9 @@ never_inline bool parse_float(const uint8_t *const src, document::parser &parser
 //
 // This function will almost never be called!!!
 //
-never_inline bool parse_large_integer(const uint8_t *const src, document::parser &parser, bool found_minus) {
+never_inline bool parse_large_integer(const uint8_t *const src,
+                                      document::parser &parser,
+                                      bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
   bool negative = false;
@@ -320,14 +292,14 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
   }
   if (negative) {
     if (i > 0x8000000000000000) {
-       // overflows!
+      // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
       return false; // overflow
     } else if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
-      // as a positive signed integer, but the negative version is 
+      // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
       parser.on_number_s64(signed_answer);
@@ -344,9 +316,9 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
     }
   } else {
     // we have a positive integer, the contract is that
-    // we try to represent it as a signed integer and only 
+    // we try to represent it as a signed integer and only
     // fallback on unsigned integers if absolutely necessary.
-    if(i < 0x8000000000000000) {
+    if (i < 0x8000000000000000) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
@@ -361,6 +333,21 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
   return is_structural_or_whitespace(*p);
 }
 
+bool slow_float_parsing(UNUSED const char * src, document::parser &parser) {
+  double d;
+  if (parse_float_strtod(src, &d)) {
+    parser.on_number_double(d);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    found_float(d, (const uint8_t *)src);
+#endif
+    return true;
+  }
+#ifdef JSON_TEST_NUMBERS // for unit testing
+  found_invalid_number((const uint8_t *)src);
+#endif
+  return false;
+}
+
 // parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
 //
@@ -369,13 +356,13 @@ never_inline bool parse_large_integer(const uint8_t *const src, document::parser
 // document is made of a single number), then it is necessary to copy the
 // content and append a space before calling this function.
 //
-// Our objective is accurate parsing (ULP of 0 or 1) at high speed.
+// Our objective is accurate parsing (ULP of 0) at high speed.
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
                                 document::parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  parser.on_number_s64(0);           // always write zero
+  parser.on_number_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -507,7 +494,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent += (neg_exp ? -exp_number : exp_number);
   }
   if (is_float) {
-    uint64_t power_index = 308 + exponent;
+    // If we frequently had to deal with long strings of digits,
+    // we could extend our code by using a 128-bit integer instead
+    // of a 64-bit integer. However, this is uncommon in practice.
     if (unlikely((digit_count >= 19))) { // this is uncommon
       // It is possible that the integer had an overflow.
       // We have to handle the case where we have 0.0000somenumber.
@@ -521,21 +510,37 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
-        return parse_float(src, parser, found_minus);
+        // This will happen in the following examples:
+        // 10000000000000000000000000000000000000000000e+308
+        // 3.1415926535897932384626433832795028841971693993751
+        //
+        return slow_float_parsing((const char *) src, parser);
       }
     }
-    if (unlikely((power_index > 2 * 308))) { // this is uncommon!!!
+    if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
+        (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return parse_float(src, parser, found_minus);
+      return slow_float_parsing((const char *) src, parser);
     }
-    double factor = power_of_ten[power_index];
-    factor = negative ? -factor : factor;
-    double d = i * factor;
-    parser.on_number_double(d);
+    bool success = true;
+    double d = compute_float_64(exponent, i, negative, &success);
+    if (!success) {
+      // we are almost never going to get here.
+      success = parse_float_strtod((const char *)src, &d);
+    }
+    if (success) {
+      parser.on_number_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-    found_float(d, src);
+      found_float(d, src);
 #endif
+      return true;
+    } else {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_invalid_number(src);
+#endif
+      return false;
+    }
   } else {
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
