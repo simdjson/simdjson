@@ -2,9 +2,6 @@
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "jsoncharutils.h"
 #include "haswell/simd.h"
 #include "haswell/intrinsics.h"
@@ -47,7 +44,5 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_STRINGPARSING_H

@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "westmere/intrinsics.h"
 
 TARGET_WESTMERE
@@ -84,9 +81,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-}// namespace simdjson::westmere
+} // namespace simdjson::westmere
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H

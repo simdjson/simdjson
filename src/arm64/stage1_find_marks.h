@@ -2,9 +2,6 @@
 #define SIMDJSON_ARM64_STAGE1_FIND_MARKS_H
 
 #include "simdjson.h"
-
-#ifdef IS_ARM64
-
 #include "arm64/bitmask.h"
 #include "arm64/simd.h"
 #include "arm64/bitmanipulation.h"
@@ -55,7 +52,5 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
 }
 
 } // namespace simdjson::arm64
-
-#endif // IS_ARM64
 
 #endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H

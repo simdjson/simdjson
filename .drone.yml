@@ -447,7 +447,7 @@ steps:
   environment:
     CC: clang
     CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y clang make cmake
@@ -470,7 +470,7 @@ steps:
   environment:
     CC: gcc
     CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_DISABLE_AVX=ON
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF
   commands:
     - apt-get update -qq
     - apt-get install -y cmake

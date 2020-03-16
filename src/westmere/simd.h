@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_SIMD_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "westmere/intrinsics.h"
 
 TARGET_WESTMERE
@@ -311,5 +308,4 @@ namespace simdjson::westmere::simd {
 } // namespace simdjson::westmere::simd
 UNTARGET_REGION
 
-#endif // IS_X86_64
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

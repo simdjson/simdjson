@@ -18,8 +18,10 @@ project(simdjson
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-# usage: cmake -DSIMDJSON_DISABLE_AVX=on ..
-option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_FALLBACK "Include the fallback implementation" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

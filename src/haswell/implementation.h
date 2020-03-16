@@ -2,9 +2,6 @@
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "isadetection.h"
 
 namespace simdjson::haswell {
@@ -23,7 +20,5 @@ public:
 };
 
 } // namespace simdjson::haswell
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_IMPLEMENTATION_H

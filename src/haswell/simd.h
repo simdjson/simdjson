@@ -2,9 +2,6 @@
 #define SIMDJSON_HASWELL_SIMD_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -310,7 +307,5 @@ namespace simdjson::haswell::simd {
 
 } // namespace simdjson::haswell::simd
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_SIMD_H

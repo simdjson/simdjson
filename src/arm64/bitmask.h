@@ -3,8 +3,6 @@
 
 #include "simdjson.h"
 
-#ifdef IS_ARM64
-
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64 {
@@ -40,5 +38,4 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
 } // namespace simdjson::arm64
 UNTARGET_REGION
 
-#endif // IS_ARM64
 #endif

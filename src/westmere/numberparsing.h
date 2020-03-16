@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "jsoncharutils.h"
 #include "westmere/intrinsics.h"
 #include "westmere/bitmanipulation.h"
@@ -47,7 +44,4 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 } // namespace simdjson::westmere
 UNTARGET_REGION
 
-
-
-#endif // IS_X86_64
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H

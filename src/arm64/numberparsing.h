@@ -2,9 +2,6 @@
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
 #include "simdjson.h"
-
-#ifdef IS_ARM64
-
 #include "jsoncharutils.h"
 #include "arm64/intrinsics.h"
 #include "arm64/bitmanipulation.h"
@@ -35,9 +32,6 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #include "generic/numberparsing.h"
 
+} // namespace simdjson::arm64
 
-}// namespace simdjson::arm64
-
-
-#endif // IS_ARM64
-#endif //  SIMDJSON_ARM64_NUMBERPARSING_H
+#endif // SIMDJSON_ARM64_NUMBERPARSING_H

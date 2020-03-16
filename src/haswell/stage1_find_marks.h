@@ -3,8 +3,6 @@
 
 #include "simdjson.h"
 
-#ifdef IS_X86_64
-
 #include "haswell/bitmask.h"
 #include "haswell/simd.h"
 #include "haswell/bitmanipulation.h"
@@ -54,7 +52,5 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H

@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "simdjson/implementation.h"
 #include "isadetection.h"
 
@@ -20,7 +17,5 @@ public:
 };
 
 } // namespace simdjson::westmere
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H

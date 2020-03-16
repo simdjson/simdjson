@@ -2,9 +2,6 @@
 #define SIMDJSON_ARM64_SIMD_H
 
 #include "simdjson.h"
-
-#ifdef IS_ARM64
-
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64::simd {
@@ -347,5 +344,4 @@ namespace simdjson::arm64::simd {
 
 } // namespace simdjson::arm64::simd
 
-#endif // IS_ARM64
 #endif // SIMDJSON_ARM64_SIMD_H

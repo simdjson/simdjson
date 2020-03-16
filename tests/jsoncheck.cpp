@@ -112,7 +112,28 @@ bool validate(const char *dirname) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+#ifndef _MSC_VER
+  int c;
+  while ((c = getopt(argc, argv, "a:")) != -1) {
+    switch (c) {
+    case 'a': {
+      const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+      if (!impl) {
+        fprintf(stderr, "Unsupported architecture value -a %s\n", optarg);
+        return EXIT_FAILURE;
+      }
+      simdjson::active_implementation = impl;
+      break;
+    }
+    default:
+      fprintf(stderr, "Unexpected argument %c\n", c);
+      return EXIT_FAILURE;
+    }
+  }
+#else
+  int optind = 1;
+#endif
+  if ((argc - optind) != 1) {
     std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
               << std::endl;
 #ifndef SIMDJSON_TEST_DATA_DIR
@@ -126,5 +147,5 @@ int main(int argc, char *argv[]) {
     return validate(SIMDJSON_TEST_DATA_DIR) ? EXIT_SUCCESS : EXIT_FAILURE;
 #endif
   }
-  return validate(argv[1]) ? EXIT_SUCCESS : EXIT_FAILURE;
+  return validate(argv[optind]) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
