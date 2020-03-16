@@ -2,9 +2,6 @@
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
 #include "simdjson.h"
-
-#ifdef IS_ARM64
-
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64 {
@@ -82,7 +79,5 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 }
 
 } // namespace simdjson::arm64
-
-#endif // IS_ARM64
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

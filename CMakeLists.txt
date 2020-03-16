@@ -31,7 +31,10 @@ set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.2.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
-option(SIMDJSON_DISABLE_AVX "Forcefully disable AVX even if hardware supports it" OFF)
+option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
+option(SIMDJSON_IMPLEMENTATION_FALLBACK "Include the fallback implementation" ON)
 if(NOT MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 else()

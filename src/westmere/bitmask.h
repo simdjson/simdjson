@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_BITMASK_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "westmere/intrinsics.h"
 
 TARGET_WESTMERE
@@ -25,7 +22,5 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_WESTMERE_BITMASK_H

@@ -1,39 +1,46 @@
 #include "simdjson.h"
+#include "isadetection.h"
 #include <initializer_list>
 
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 
-#ifdef IS_X86_64
-
+#if SIMDJSON_IMPLEMENTATION_HASWELL
 #include "haswell/implementation.h"
+namespace simdjson::internal { const haswell::implementation haswell_singleton{}; }
+#endif // SIMDJSON_IMPLEMENTATION_HASWELL
+
+#if SIMDJSON_IMPLEMENTATION_WESTMERE
 #include "westmere/implementation.h"
-#include "fallback/implementation.h"
+namespace simdjson::internal { const westmere::implementation westmere_singleton{}; }
+#endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
-namespace simdjson::internal {
-const fallback::implementation fallback_singleton{};
-const haswell::implementation haswell_singleton{};
-const westmere::implementation westmere_singleton{};
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &haswell_singleton, &westmere_singleton, &fallback_singleton };
-}
-
-#endif
-
-#ifdef IS_ARM64
-
+#if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64/implementation.h"
+namespace simdjson::internal { const arm64::implementation arm64_singleton{}; }
+#endif // SIMDJSON_IMPLEMENTATION_ARM64
+
+#if SIMDJSON_IMPLEMENTATION_FALLBACK
 #include "fallback/implementation.h"
+namespace simdjson::internal { const fallback::implementation fallback_singleton{}; }
+#endif // SIMDJSON_IMPLEMENTATION_FALLBACK
 
 namespace simdjson::internal {
-const fallback::implementation fallback_singleton{};
-const arm64::implementation arm64_singleton{};
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers { &arm64_singleton, &fallback_singleton };
-}
 
+constexpr const std::initializer_list<const implementation *> available_implementation_pointers {
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+  &haswell_singleton,
 #endif
-
-
-namespace simdjson::internal {
+#if SIMDJSON_IMPLEMENTATION_WESTMERE
+  &westmere_singleton,
+#endif
+#if SIMDJSON_IMPLEMENTATION_ARM64
+  &arm64_singleton,
+#endif
+#if SIMDJSON_IMPLEMENTATION_FALLBACK
+  &fallback_singleton,
+#endif
+}; // available_implementation_pointers
 
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
@@ -79,4 +86,4 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
   return active_implementation = available_implementations.detect_best_supported();
 }
 
-} // namespace simdjson
+} // namespace simdjson::internal

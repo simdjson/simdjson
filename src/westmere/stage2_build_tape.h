@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "westmere/implementation.h"
 #include "westmere/stringparsing.h"
 #include "westmere/numberparsing.h"
@@ -18,7 +15,4 @@ namespace simdjson::westmere {
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
-
-#endif // IS_X86_64
-
 #endif // SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H

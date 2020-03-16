@@ -2,9 +2,6 @@
 #define SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "haswell/implementation.h"
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
@@ -18,7 +15,5 @@ namespace simdjson::haswell {
 
 } // namespace simdjson
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H

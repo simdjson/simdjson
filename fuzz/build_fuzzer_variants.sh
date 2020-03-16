@@ -25,7 +25,7 @@ if [ ! -d build-$variant ] ; then
 	  -DSIMDJSON_BUILD_STATIC=On \
 	  -DENABLE_FUZZING=On \
 	  -DSIMDJSON_FUZZ_LINKMAIN=On \
-	  -DSIMDJSON_DISABLE_AVX=On
+	  -DSIMDJSON_IMPLEMENTATION_HASWELL=0
     
     ninja
     cd ..
@@ -69,7 +69,7 @@ if [ ! -d build-$variant ] ; then
 	  -DENABLE_FUZZING=On \
 	  -DSIMDJSON_FUZZ_LINKMAIN=Off \
 	  -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE \
-	  -DSIMDJSON_DISABLE_AVX=On
+	  -DSIMDJSON_IMPLEMENTATION_HASWELL=0
     
     ninja
     cd ..
@@ -97,7 +97,7 @@ if which clang++-8 >/dev/null 2>&1 ; then
 	      -DENABLE_FUZZING=On \
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
 	      -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE \
-	      -DSIMDJSON_DISABLE_AVX=On
+	      -DSIMDJSON_IMPLEMENTATION_HASWELL=0
 	
 	ninja
 	cd ..

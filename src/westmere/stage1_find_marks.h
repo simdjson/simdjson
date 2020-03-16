@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "westmere/bitmask.h"
 #include "westmere/simd.h"
 #include "westmere/bitmanipulation.h"
@@ -57,5 +54,4 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
 } // namespace simdjson::westmere
 UNTARGET_REGION
 
-#endif // IS_X86_64
 #endif // SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H

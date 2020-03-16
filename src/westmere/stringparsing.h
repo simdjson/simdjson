@@ -2,9 +2,6 @@
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
 #include "simdjson.h"
-
-#ifdef IS_X86_64
-
 #include "jsoncharutils.h"
 #include "westmere/simd.h"
 #include "westmere/intrinsics.h"
@@ -49,7 +46,5 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 } // namespace simdjson::westmere
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H
