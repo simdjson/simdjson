@@ -3,8 +3,6 @@
 
 #include "simdjson.h"
 
-#ifdef IS_X86_64
-
 #include "jsoncharutils.h"
 #include "haswell/intrinsics.h"
 #include "haswell/bitmanipulation.h"
@@ -44,7 +42,5 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 } // namespace simdjson::haswell
 UNTARGET_REGION
-
-#endif // IS_X86_64
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H

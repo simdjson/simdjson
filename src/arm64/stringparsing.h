@@ -2,9 +2,6 @@
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
 #include "simdjson.h"
-
-#ifdef IS_ARM64
-
 #include "jsoncharutils.h"
 #include "arm64/simd.h"
 #include "arm64/intrinsics.h"
@@ -51,7 +48,5 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 }
 // namespace simdjson::amd64
-
-#endif // IS_ARM64
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_H

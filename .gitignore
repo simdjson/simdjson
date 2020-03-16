@@ -77,7 +77,8 @@ objs
 /get_corpus_benchmark
 /json2json
 /jsoncheck
-/jsoncheck_noavx
+/jsoncheck_westmere
+/jsoncheck_fallback
 /jsonpointer
 /jsonstats
 /integer_tests
