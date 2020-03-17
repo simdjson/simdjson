@@ -7,7 +7,6 @@
 #include "fallback/stringparsing.h"
 #include "fallback/numberparsing.h"
 
-TARGET_FALLBACK
 namespace simdjson::fallback {
 
 #include "generic/atomparsing.h"
@@ -15,6 +14,5 @@ namespace simdjson::fallback {
 #include "generic/stage2_streaming_build_tape.h"
 
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_FALLBACK_STAGE2_BUILD_TAPE_H

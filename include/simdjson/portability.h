@@ -70,7 +70,6 @@
 #endif
 
 // under GCC and CLANG, we use these two macros
-#define TARGET_FALLBACK TARGET_REGION("")
 #define TARGET_HASWELL TARGET_REGION("avx2,bmi,pclmul,lzcnt")
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 #define TARGET_ARM64
