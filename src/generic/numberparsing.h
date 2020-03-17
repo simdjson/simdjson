@@ -10,6 +10,9 @@ namespace numberparsing {
 really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
                                       bool *success) {
   // we start with a fast path
+  // It was described in
+  // Clinger WD. How to read floating point numbers accurately.
+  // ACM SIGPLAN Notices. 1990
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
@@ -35,10 +38,11 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
     *success = true;
     return d;
   }
-
   // When 22 < power && power <  22 + 16, we could
-  // hope for another, secondary fast path.  If
-  // you need to compute i * 10^(22 + x) for x < 16,
+  // hope for another, secondary fast path.  It wa
+  // described by David M. Gay in  "Correctly rounded
+  // binary-decimal and decimal-binary conversions." (1990)
+  // If you need to compute i * 10^(22 + x) for x < 16,
   // first compute i * 10^x, if you know that result is exact
   // (e.g., when i * 10^x < 2^53),
   // then you can still proceed and do (i * 10^x) * 10^22.
