@@ -4,7 +4,6 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-TARGET_FALLBACK
 namespace simdjson::fallback {
 
 class implementation final : public simdjson::implementation {
@@ -21,6 +20,5 @@ public:
 };
 
 } // namespace simdjson::fallback
-UNTARGET_REGION
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H

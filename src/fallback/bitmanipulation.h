@@ -4,7 +4,6 @@
 #include "simdjson.h"
 #include <limits>
 
-TARGET_FALLBACK
 namespace simdjson::fallback {
 
 #ifndef _MSC_VER
@@ -60,6 +59,5 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 }
 
 } // namespace simdjson::fallback
-UNTARGET_REGION
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H
