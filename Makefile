@@ -18,8 +18,9 @@ architecture:=$(shell arch)
 ###
 ifeq ($(architecture),aarch64)
 ARCHFLAGS ?= -march=armv8-a
-else
-ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
+## It should no longer be necessary to specify anything under x64
+# else
+# ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
 endif
 
 CXXFLAGS = $(ARCHFLAGS) -std=c++17  -pthread -Wall -Wextra -Wshadow -Ibenchmark/linux

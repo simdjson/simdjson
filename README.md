@@ -69,7 +69,8 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 - We support 64-bit platforms like Linux or macOS, as well as Windows through Visual Studio 2017 or later.
 - A processor with
   - AVX2 (i.e., Intel processors starting with the Haswell microarchitecture released 2013 and AMD processors starting with the Zen microarchitecture released 2017),
-  - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One)
+  - or SSE 4.2 and CLMUL (i.e., Intel processors going back to Westmere released in 2010 or AMD processors starting with the Jaguar used in the PS4 and XBox One),
+  - or a any other x64 processor (going back to AMD Opteron in 2003 and the Pentium4 Prescott in 2004),
   - or a 64-bit ARM processor (ARMv8-A): this covers a wide range of mobile processors, including all Apple processors currently available for sale, going as far back as the iPhone 5s (2013).
 - A recent C++ compiler (e.g., GNU GCC or LLVM CLANG or Visual Studio 2017), we assume C++17. GNU GCC 7 or better or LLVM's clang 6 or better.
 - Some benchmark scripts assume bash and other common utilities, but they are optional.
@@ -84,28 +85,21 @@ Under Windows, we build some tools using the windows/dirent_portable.h file (whi
 
 ## Runtime dispatch
 
-On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. We require a minimum feature support of SSE 4.2 and CLMUL (2010 Intel Westmere or better). The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
+On Intel and AMD processors, we get best performance by using the hardware support for AVX2 instructions. However, simdjson also runs on older Intel and AMD processors. The code automatically detects the feature set of your processor and switches to the right function at runtime (a technique sometimes called runtime dispatch).
 
-On x64 hardware, you should typically build your code by specifying the oldest/less-featureful system you want to support so that runtime dispatch may work. The minimum requirement for simdjson is the equivalent of a Westmere processor (SSE 4.2 and PCLMUL). If you build your code by asking the compiler to use more advanced instructions (e.g., `-mavx2`, `/AVX2`  or `-march=haswell`), then it will break runtime dispatch and your binaries will fail to run on older processors.
+On x64 hardware, you should typically build your code by specifying the oldest/less-featureful system you want to support so that runtime dispatch may work. If you build your code by asking the compiler to use more advanced instructions (e.g., `-mavx2`, `/AVX2`  or `-march=haswell`), then it may break runtime dispatch and your binaries will fail to run on older processors.
 
-We also support 64-bit ARM. We assume NEON support. There is no runtime dispatch on ARM.
+We also support 64-bit ARM (ARMv8-A). There is no runtime dispatch necessary on ARM.
 
-If you expect your code to run on older processors, you can check that the CPU is supported as follows:
+You can check which CPU is being detected as follows:
 
 ```c++
-if (simdjson::active_implementation->name() == "unsupported") {
-  printf("unsupported CPU\n");
-}
+simdjson::active_implementation->name();  // returns a descriptive string
 ```
-
-This check is not useful on ARM processors since all 64-bit ARM processors are supported.
-
-It is not necessary to do this check: if you omit it, you will get back the error code `UNSUPPORTED_ARCHITECTURE` when trying to parse documents.
-However, you can call `simdjson::active_implementation->name()` to check which CPU configuration has been detected (e.g., haswell, westmere).
 
 ## Computed GOTOs
 
-For best performance, we use a technique called "computed goto", it is also sometimes described as "Labels as Values".
+For best performance, we use a technique called "computed goto" when the compiler supports it, it is also sometimes described as "Labels as Values".
 Though it is not part of the C++ standard, it is supported by many major compilers and it brings measurable performance benefits that
 are difficult to achieve otherwise.
 The computed gotos are  automatically disabled under Visual Studio.
