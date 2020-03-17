@@ -67,9 +67,10 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
   // We use a table lookup approach.
   components c =
-      power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER]; // safe because
-                                                                 // power_index
-                                                                 // <= 2*308
+      power_of_ten_components[power - FASTFLOAT_SMALLEST_POWER];
+      // safe because
+      // power >= FASTFLOAT_SMALLEST_POWER
+      // and power <= FASTFLOAT_LARGEST_POWER
   // we recover the mantissa of the power, it has a leading 1. It is always
   // rounded down.
   uint64_t factor_mantissa = c.mantissa;
