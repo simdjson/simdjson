@@ -11,10 +11,18 @@ namespace simdjson::arm64 {
 
 using namespace simd;
 
-really_inline void find_whitespace_and_operators(
-  const simd::simd8x64<uint8_t> in,
-  uint64_t &whitespace, uint64_t &op) {
+struct json_character_block {
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
 
+  really_inline uint64_t whitespace() const { return _whitespace; }
+  really_inline uint64_t op() const { return _op; }
+  really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+
+  uint64_t _whitespace;
+  uint64_t _op;
+};
+
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
   auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
     auto nib_lo = chunk & 0xf;
     auto nib_hi = chunk.shr<4>();
@@ -23,8 +31,9 @@ really_inline void find_whitespace_and_operators(
     return shuf_lo & shuf_hi;
   });
 
-  op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
-  whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
+  uint64_t op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
+  uint64_t whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
+  return { whitespace, op };
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
@@ -45,10 +54,12 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 }
 
 #include "generic/utf8_lookup2_algorithm.h"
-#include "generic/stage1_find_marks.h"
+#include "generic/json_string_scanner.h"
+#include "generic/json_scanner.h"
+#include "generic/json_structural_indexer.h"
 
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
-  return arm64::stage1::find_structural_bits<64>(buf, len, parser, streaming);
+  return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
 } // namespace simdjson::arm64
