@@ -16,12 +16,6 @@ architecture:=$(shell arch)
 # then define ARCHFLAGS. Otherwise, we set good default.
 # E.g., type ' ARCHFLAGS="-march=westmere" make parse '
 ###
-ifeq ($(architecture),aarch64)
-ARCHFLAGS ?= -march=armv8-a
-## It should no longer be necessary to specify anything under x64
-# else
-# ARCHFLAGS ?= -msse4.2 -mpclmul # lowest supported feature set?
-endif
 
 CXXFLAGS = $(ARCHFLAGS) -std=c++17  -pthread -Wall -Wextra -Wshadow -Ibenchmark/linux
 CFLAGS =  $(ARCHFLAGS) -Idependencies/ujson4c/3rdparty -Idependencies/ujson4c/src $(EXTRAFLAGS)
