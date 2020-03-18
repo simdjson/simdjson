@@ -151,6 +151,10 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
   return scanner.scan();
 }
 
+WARN_UNUSED error_code implementation::minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept {
+  return UNSUPPORTED_ARCHITECTURE;
+}
+
 } // namespace simdjson::fallback
 
 #endif // SIMDJSON_FALLBACK_STAGE1_FIND_MARKS_H

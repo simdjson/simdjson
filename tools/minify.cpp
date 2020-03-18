@@ -13,6 +13,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }
-  simdjson::json_minify(p, p.data());
-  printf("%s", p.data());
+  simdjson::padded_string copy(p.length());
+  size_t copy_len;
+  error = simdjson::active_implementation->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
+  if (error) { std::cerr << error << std::endl; return 1; }
+  printf("%s", copy.data());
 }

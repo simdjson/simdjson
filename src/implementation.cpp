@@ -48,6 +48,9 @@ public:
   WARN_UNUSED error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
+  WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
   WARN_UNUSED error_code stage1(const uint8_t *, size_t, document::parser &, bool) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }

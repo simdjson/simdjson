@@ -53,7 +53,7 @@ endif # ifeq ($(SANITIZE),1)
 endif # ifeq ($(MEMSANITIZE),1)
 
 # Headers and sources
-SRCHEADERS_GENERIC=src/generic/atomparsing.h src/generic/numberparsing.h src/generic/json_scanner.h src/generic/json_string_scanner.h src/generic/json_structural_indexer.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/generic/stage2_streaming_build_tape.h src/generic/utf8_fastvalidate_algorithm.h src/generic/utf8_lookup_algorithm.h src/generic/utf8_lookup2_algorithm.h src/generic/utf8_range_algorithm.h src/generic/utf8_zwegner_algorithm.h
+SRCHEADERS_GENERIC=src/generic/atomparsing.h src/generic/numberparsing.h src/generic/json_scanner.h src/generic/json_string_scanner.h src/generic/json_structural_indexer.h src/generic/json_minifier.h src/generic/buf_block_reader.h src/generic/stage2_build_tape.h src/generic/stringparsing.h src/generic/stage2_streaming_build_tape.h src/generic/utf8_fastvalidate_algorithm.h src/generic/utf8_lookup_algorithm.h src/generic/utf8_lookup2_algorithm.h src/generic/utf8_range_algorithm.h src/generic/utf8_zwegner_algorithm.h
 SRCHEADERS_ARM64=      src/arm64/bitmanipulation.h    src/arm64/bitmask.h    src/arm64/intrinsics.h    src/arm64/numberparsing.h    src/arm64/simd.h    src/arm64/stage1_find_marks.h    src/arm64/stage2_build_tape.h    src/arm64/stringparsing.h
 SRCHEADERS_HASWELL=  src/haswell/bitmanipulation.h  src/haswell/bitmask.h  src/haswell/intrinsics.h  src/haswell/numberparsing.h  src/haswell/simd.h  src/haswell/stage1_find_marks.h  src/haswell/stage2_build_tape.h  src/haswell/stringparsing.h
 SRCHEADERS_FALLBACK=  src/fallback/bitmanipulation.h src/fallback/implementation.h src/fallback/numberparsing.h src/fallback/stage1_find_marks.h src/fallback/stage2_build_tape.h src/fallback/stringparsing.h

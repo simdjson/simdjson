@@ -57,6 +57,19 @@ public:
   WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept = 0;
 
   /**
+   * Run a full document parse (ensure_capacity, stage1 and stage2).
+   *
+   * Overridden by each implementation.
+   *
+   * @param buf the json document to parse. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
+   * @param len the length of the json document.
+   * @param dst the buffer to write the minified document to. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
+   * @param dst_len the number of bytes written. Output only.
+   * @return the error code, or SUCCESS if there was no error.
+   */
+  WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
+
+  /**
    * Stage 1 of the document parser.
    *
    * Overridden by each implementation.
@@ -181,6 +194,9 @@ public:
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
   WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final {
     return set_best()->parse(buf, len, parser);
+  }
+  WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
+    return set_best()->minify(buf, len, dst, dst_len);
   }
   WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final {
     return set_best()->stage1(buf, len, parser, streaming);

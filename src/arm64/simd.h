@@ -339,7 +339,6 @@ namespace simdjson::arm64::simd {
       const simd8<T> mask = simd8<T>::splat(m);
       return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
     }
-
   }; // struct simd8x64<T>
 
 } // namespace simdjson::arm64::simd
