@@ -2,6 +2,7 @@
 #define SIMDJSON_HASWELL_SIMD_H
 
 #include "simdjson.h"
+#include "simdprune_tables.h"
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -109,6 +110,48 @@ namespace simdjson::haswell::simd {
     really_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
       return _mm256_shuffle_epi8(lookup_table, *this);
     }
+    // Copies to 'output" all bytes corresponding to a 1in the mask (interpreted as a bitset)
+    // Only the first count_ones(mask) bytes of the result are significant but up to 32 bytes
+    // get written.
+    template<typename L>
+    really_inline simd8<L> compress(uint32_t mask, char * output) const {
+      // this particular implementation was inspired by work done by @animetosho
+      // we do it in four steps, first 8 bytes and then second 8 bytes...
+      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
+      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // second least significant 8 bits
+      uint8_t mask3 = static_cast<uint8_t>(mask >> 16); // ...
+      uint8_t mask4 = static_cast<uint8_t>(mask >> 24); // ...
+      // next line just loads the 64-bit values thintable_epi8[mask1] and
+      // thintable_epi8[mask2] into a 128-bit register, using only
+      // two instructions on most compilers.
+      __m256i shufmask =  _mm256_set_epi64x(thintable_epi8[mask4], thintable_epi8[mask3], 
+        thintable_epi8[mask2], thintable_epi8[mask1]);
+      // we increment by 0x08 the second half of the mask and so forth
+      shufmask =
+      _mm256_add_epi8(shufmask, _mm256_set_epi32(0x18181818, 0x18181818, 
+         0x10101010, 0x10101010, 0x08080808, 0x08080808, 0, 0));
+      // this is the version "nearly pruned"
+      __m256i pruned = _mm256_shuffle_epi8(*this, shufmask);
+      // we still need to put the  pieces back together.
+      // we compute the popcount of the first words:
+      int pop1 = BitsSetTable256mul2[mask1];
+      int pop2 = BitsSetTable256mul2[mask2];
+      int pop3 = BitsSetTable256mul2[mask3];
+      // then load the corresponding mask
+      // could be done with _mm256_loadu2_m128i but many standard libraries omit this intrinsic.
+      __m256i v256 = _mm256_castsi128_si256(
+        _mm_loadu_si128((const __m128i *)(pshufb_combine_table + pop1 * 8)));
+      __m256i compactmask = _mm256_insertf128_si256(v256,
+         _mm_loadu_si128((const __m128i *)(pshufb_combine_table + pop3 * 8)), 1);
+      __m256i almostthere =  _mm256_shuffle_epi8(pruned, compactmask);
+      // we just need to write out the result
+      __m128i v128;
+      v128 = _mm256_castsi256_si128(almostthere);
+      _mm_storeu_si128( (__m128i *)output, v128);
+      v128 = _mm256_extractf128_si256(almostthere, 1);
+      _mm_storeu_si128( (__m128i *)(output + pop2 + pop1), v128);
+    }
+
     template<typename L>
     really_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,

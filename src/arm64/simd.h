@@ -2,6 +2,7 @@
 #define SIMDJSON_ARM64_SIMD_H
 
 #include "simdjson.h"
+#include "simdprune_tables.h"
 #include "arm64/intrinsics.h"
 
 namespace simdjson::arm64::simd {
