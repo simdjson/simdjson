@@ -3,6 +3,7 @@
 
 #include "simdjson.h"
 #include "simdprune_tables.h"
+#include "haswell/bitmanipulation.h"
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
@@ -291,6 +292,11 @@ namespace simdjson::haswell::simd {
       each(0);
       each(1);
     }
+    
+    really_inline void compress(uint64_t mask, char * output) const {
+      this->chunks[0].compress(mask, output);
+      this->chunks[1].compress(mask >> 32, output + count_ones(mask >> 32));
+    }
 
     really_inline void store(T ptr[64]) const {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
@@ -311,6 +317,8 @@ namespace simdjson::haswell::simd {
         map_chunk(this->chunks[1])
       );
     }
+
+    
 
     template <typename R=bool, typename F>
     really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {

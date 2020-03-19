@@ -3,6 +3,7 @@
 
 #include "simdjson.h"
 #include "simdprune_tables.h"
+#include "westmere/bitmanipulation.h"
 #include "westmere/intrinsics.h"
 
 
@@ -267,6 +268,13 @@ namespace simdjson::westmere::simd {
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
       this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
+    }
+
+    really_inline void compress(uint64_t mask, char * output) const {
+      this->chunks[0].compress(mask, output);
+      this->chunks[1].compress(mask >> 16, output + count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(mask >> 32, output + count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(mask >> 48, output + count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>
