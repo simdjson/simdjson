@@ -163,7 +163,7 @@ namespace simdjson::arm64::simd {
       uint8x16_t shufmask = vreinterpretq_u8_u64(shufmask64);
       // we increment by 0x08 the second half of the mask
       uint8x16_t inc = {0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
-      shufmask = vaddq_u8(shufmask, inc));
+      shufmask = vaddq_u8(shufmask, inc);
       // this is the version "nearly pruned"
       uint8x16_t pruned = vqtbl1q_u8(*this, shufmask);
       // we still need to put the two halves together.
