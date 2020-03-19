@@ -110,9 +110,11 @@ namespace simdjson::westmere::simd {
     really_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
       return _mm_shuffle_epi8(lookup_table, *this);
     }
-    // Copies to 'output" all bytes corresponding to a 1in the mask (interpreted as a bitset)
-    // Only the first count_ones(mask) bytes of the result are significant but 16 bytes
-    // get written. 
+
+    // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
+    // Passing a 0 value for mask would be equivalent to writing out every byte to output.
+    // Only the first 16 - count_ones(mask) bytes of the result are significant but 16 bytes
+    // get written.
     template<typename L>
     really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
