@@ -14,42 +14,16 @@ private:
   really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(const uint8_t *block_buf, json_block block);
+  really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner;
   uint8_t *dst;
 };
 
-struct bitmask_region_iterator {
-  uint64_t bitmask;
-
-  struct region {
-    int start;
-    int end;
-    really_inline int len() { return end - start; }
-  };
-
-  really_inline bool has_next() { return bitmask; }
-  really_inline region next();
-};
-
-really_inline bitmask_region_iterator::region bitmask_region_iterator::next()  {
-  int start = trailing_zeroes(bitmask);
-  // Find the end: adding 1 << start will clear all the ones, setting the next bit after the run to 1.
-  bitmask += uint64_t(1) << start;
-  int end = trailing_zeroes(bitmask);
-  // Clear the end bit
-  bitmask &= ~(uint64_t(1) << end);
-  return { start, end };
-}
-
-really_inline void json_minifier::next(const uint8_t *block_buf, json_block block) {
-  bitmask_region_iterator copy_mask { ~block.whitespace() };
-  while (copy_mask.has_next()) {
-    auto copy_region = copy_mask.next();
-    memcpy(dst, block_buf+copy_region.start, copy_region.len());
-    dst += copy_region.len();
-  }
+really_inline void json_minifier::next(simd::simd8x64<uint8_t> in, json_block block) {
+  uint64_t mask = block.whitespace();
+  in.compress(mask, dst);
+  dst += 64 - count_ones(mask);
 }
 
 really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -66,8 +40,8 @@ really_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_block_
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(block_buf, block_1);
-  this->next(block_buf+64, block_2);
+  this->next(in_1, block_1);
+  this->next(in_2, block_2);
   reader.advance();
 }
 

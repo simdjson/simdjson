@@ -114,7 +114,7 @@ namespace simdjson::westmere::simd {
     // Only the first count_ones(mask) bytes of the result are significant but 16 bytes
     // get written. 
     template<typename L>
-    really_inline void compress(uint16_t mask, char * output) const {
+    really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in two steps, first 8 bytes and then second 8 bytes
       uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
@@ -270,11 +270,11 @@ namespace simdjson::westmere::simd {
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
-    really_inline void compress(uint64_t mask, char * output) const {
+    really_inline void compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 16, output + count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(mask >> 32, output + count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(mask >> 48, output + count_ones(mask & 0xFFFFFFFFFFFF));
+      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>

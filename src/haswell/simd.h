@@ -115,7 +115,7 @@ namespace simdjson::haswell::simd {
     // Only the first count_ones(mask) bytes of the result are significant but up to 32 bytes
     // get written.
     template<typename L>
-    really_inline simd8<L> compress(uint32_t mask, char * output) const {
+    really_inline void compress(uint32_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in four steps, first 8 bytes and then second 8 bytes...
       uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
@@ -136,8 +136,8 @@ namespace simdjson::haswell::simd {
       // we still need to put the  pieces back together.
       // we compute the popcount of the first words:
       int pop1 = BitsSetTable256mul2[mask1];
-      int pop2 = BitsSetTable256mul2[mask2];
       int pop3 = BitsSetTable256mul2[mask3];
+
       // then load the corresponding mask
       // could be done with _mm256_loadu2_m128i but many standard libraries omit this intrinsic.
       __m256i v256 = _mm256_castsi128_si256(
@@ -150,7 +150,7 @@ namespace simdjson::haswell::simd {
       v128 = _mm256_castsi256_si128(almostthere);
       _mm_storeu_si128( (__m128i *)output, v128);
       v128 = _mm256_extractf128_si256(almostthere, 1);
-      _mm_storeu_si128( (__m128i *)(output + pop2 + pop1), v128);
+      _mm_storeu_si128( (__m128i *)(output + 16 - count_ones(mask & 0xFFFF)), v128);
     }
 
     template<typename L>
@@ -292,10 +292,12 @@ namespace simdjson::haswell::simd {
       each(0);
       each(1);
     }
-    
-    really_inline void compress(uint64_t mask, char * output) const {
-      this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 32, output + count_ones(mask >> 32));
+
+    really_inline void compress(uint64_t mask, T * output) const {
+      uint32_t mask1 = static_cast<uint32_t>(mask);
+      uint32_t mask2 = static_cast<uint32_t>(mask >> 32);
+      this->chunks[0].compress(mask1, output);
+      this->chunks[1].compress(mask2, output + 32 - count_ones(mask1));
     }
 
     really_inline void store(T ptr[64]) const {
