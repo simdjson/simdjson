@@ -151,8 +151,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, do
   return scanner.scan();
 }
 
-WARN_UNUSED error_code implementation::minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept {
-  return UNSUPPORTED_ARCHITECTURE;
+WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+  dst_len = json_minify((const unsigned char *)buf, len, (unsigned char *)dst);
+  return SUCCESS;
 }
 
 } // namespace simdjson::fallback
