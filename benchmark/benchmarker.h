@@ -263,7 +263,7 @@ struct benchmarker {
     : filename(_filename), collector(_collector), stats(NULL) {
     verbose() << "[verbose] loading " << filename << endl;
     simdjson::error_code error;
-    std::tie(this->json, error) = padded_string::load(filename);
+    padded_string::load(filename).tie(this->json, error);
     if (error) {
       exit_error(string("Could not load the file ") + filename);
     }
