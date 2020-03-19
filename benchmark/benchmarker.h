@@ -263,7 +263,13 @@ struct benchmarker {
     : filename(_filename), collector(_collector), stats(NULL) {
     verbose() << "[verbose] loading " << filename << endl;
     simdjson::error_code error;
-    std::tie(this->json, error) = padded_string::load(filename);
+    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0), this
+    // next line fails with "benchmark/benchmarker.h:266:33: error: no viable overloaded '='""
+    // std::tie(this->json, error) = padded_string::load(filename);
+    //////// Next bit should be equivalent to std:tie but more portable:
+    auto l = padded_string::load(filename);
+    this->json = std::move(l.first);
+    error = l.second;
     if (error) {
       exit_error(string("Could not load the file ") + filename);
     }
