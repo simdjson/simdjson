@@ -16,7 +16,6 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonminifier.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/padded_string.h

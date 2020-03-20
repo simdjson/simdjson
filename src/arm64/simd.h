@@ -150,6 +150,9 @@ namespace simdjson::arm64::simd {
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
     // Only the first 16 - count_ones(mask) bytes of the result are significant but 16 bytes
     // get written.
+    // Design consideration: it seems like a function with the
+    // signature simd8<L> compress(uint16_t mask) would be
+    // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho

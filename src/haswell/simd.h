@@ -116,6 +116,9 @@ namespace simdjson::haswell::simd {
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
     // Only the first 32 - count_ones(mask) bytes of the result are significant but 32 bytes
     // get written.
+    // Design consideration: it seems like a function with the
+    // signature simd8<L> compress(uint32_t mask) would be
+    // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     really_inline void compress(uint32_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
@@ -147,7 +150,11 @@ namespace simdjson::haswell::simd {
       __m256i compactmask = _mm256_insertf128_si256(v256,
          _mm_loadu_si128((const __m128i *)(pshufb_combine_table + pop3 * 8)), 1);
       __m256i almostthere =  _mm256_shuffle_epi8(pruned, compactmask);
-      // we just need to write out the result
+      // We just need to write out the result.
+      // This is the tricky bit that is hard to do
+      // if we want to return a SIMD register, since there
+      // is no single-instruction approach to recombine
+      // the two 128-bit lanes with an offset.
       __m128i v128;
       v128 = _mm256_castsi256_si128(almostthere);
       _mm_storeu_si128( (__m128i *)output, v128);

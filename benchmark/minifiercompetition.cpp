@@ -98,21 +98,14 @@ int main(int argc, char *argv[]) {
       "despacing with RapidJSON Insitu", rapid_stringme_insitu((char *)buffer),
       memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
   memcpy(buffer, p.data(), p.size());
-
-  size_t outlength = simdjson::json_minify((const uint8_t *)buffer, p.size(),
-                                           (uint8_t *)buffer);
-  if (verbose)
-    std::cout << "json_minify length is " << outlength << std::endl;
-
+  size_t outlength;
   uint8_t *cbuffer = (uint8_t *)buffer;
-  BEST_TIME("json_minify", simdjson::json_minify(cbuffer, p.size(), cbuffer),
-            outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
-            !just_data);
   for (auto imple : simdjson::available_implementations) {
     BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength), outlength),
             outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
   }
+
   printf("minisize = %zu, original size = %zu  (minified down to %.2f percent "
          "of original) \n",
          outlength, p.size(), outlength * 100.0 / p.size());
@@ -126,8 +119,9 @@ int main(int argc, char *argv[]) {
             !just_data);
 
   char *mini_buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
-  size_t minisize = simdjson::json_minify((const uint8_t *)p.data(), p.size(),
-                                          (uint8_t *)mini_buffer);
+  size_t minisize;
+  simdjson::active_implementation->minify((const uint8_t *)p.data(), p.size(),
+                                          (uint8_t *)mini_buffer, minisize);
   mini_buffer[minisize] = '\0';
 
   BEST_TIME("RapidJSON Insitu despaced", d.ParseInsitu(buffer).HasParseError(),

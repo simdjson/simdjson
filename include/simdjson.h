@@ -10,7 +10,6 @@
 #include "simdjson/implementation.h"
 #include "simdjson/document.h"
 #include "simdjson/document_stream.h"
-#include "simdjson/jsonminifier.h"
 
 // Deprecated API
 #include "simdjson/parsedjsoniterator.h"
