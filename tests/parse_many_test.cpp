@@ -105,8 +105,11 @@ bool validate(const char *dirname) {
               // issue 570, we just want to check for segfault
               simdjson::document::parser parser;
               for (const simdjson::document &doc : parser.load_many(fullpath)) {
-                auto iter = simdjson::document::iterator(doc);
-                //do something
+                  std::stringstream ss;
+                  ss << doc;
+                  if(ss.str().empty()) {
+                      std::cout << "found empty JSON document" << std::endl;
+                  }
               }
             }
             free(fullpath);
