@@ -22,7 +22,7 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    uint32_t cnt = hamming(bits);
+    uint32_t cnt = count_ones(bits);
 
     // Do the first 8 all together
     for (int i=0; i<8; i++) {
@@ -55,55 +55,6 @@ public:
   }
 };
 
-// Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-UNUSED static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
-}
-
-// Walks through a buffer in block-sized increments, loading the last part with spaces
-template<size_t STEP_SIZE>
-struct buf_block_reader {
-public:
-  really_inline buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
-  really_inline size_t block_index() { return idx; }
-  really_inline bool has_full_block() const {
-    return idx < lenminusstep;
-  }
-  really_inline const uint8_t *full_block() const {
-    return &buf[idx];
-  }
-  really_inline bool has_remainder() const {
-    return idx < len;
-  }
-  really_inline void get_remainder(uint8_t *tmp_buf) const {
-    memset(tmp_buf, 0x20, STEP_SIZE);
-    memcpy(tmp_buf, buf + idx, len - idx);
-  }
-  really_inline void advance() {
-    idx += STEP_SIZE;
-  }
-private:
-  const uint8_t *buf;
-  const size_t len;
-  const size_t lenminusstep;
-  size_t idx;
-};
-
 class json_structural_indexer {
 public:
   template<size_t STEP_SIZE>
@@ -112,7 +63,7 @@ public:
 private:
   really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
-  really_inline void index_step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
+  really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(document::parser &parser, size_t idx, size_t len, bool streaming);
 
@@ -162,7 +113,7 @@ really_inline error_code json_structural_indexer::finish(document::parser &parse
 }
 
 template<>
-really_inline void json_structural_indexer::index_step<128>(const uint8_t *block, buf_block_reader<128> &reader) noexcept {
+really_inline void json_structural_indexer::step<128>(const uint8_t *block, buf_block_reader<128> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block);
   simd::simd8x64<uint8_t> in_2(block+64);
   json_block block_1 = scanner.next(in_1);
@@ -173,7 +124,7 @@ really_inline void json_structural_indexer::index_step<128>(const uint8_t *block
 }
 
 template<>
-really_inline void json_structural_indexer::index_step<64>(const uint8_t *block, buf_block_reader<64> &reader) noexcept {
+really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_block_reader<64> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block);
   json_block block_1 = scanner.next(in_1);
   this->next(in_1, block_1, reader.block_index());
@@ -209,13 +160,13 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, docume
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_structural_indexer indexer(parser.structural_indexes.get());
   while (reader.has_full_block()) {
-    indexer.index_step<STEP_SIZE>(reader.full_block(), reader);
+    indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }
 
   if (likely(reader.has_remainder())) {
     uint8_t block[STEP_SIZE];
     reader.get_remainder(block);
-    indexer.index_step<STEP_SIZE>(block, reader);
+    indexer.step<STEP_SIZE>(block, reader);
   }
 
   return indexer.finish(parser, reader.block_index(), len, streaming);

@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   // parse_many
   const char * filename2 = argv[2];
   for (auto result : parser.load_many(filename2)) {
-    error = result.error;
+    error = result.error();
   }
   if (error) {
     std::cout << "parse_many failed" << std::endl;
