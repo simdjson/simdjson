@@ -108,9 +108,11 @@ int main(int argc, char *argv[]) {
   BEST_TIME("json_minify", simdjson::json_minify(cbuffer, p.size(), cbuffer),
             outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
-  BEST_TIME("simdjson->minify", (simdjson::active_implementation->minify(cbuffer, p.size(), cbuffer, outlength), outlength),
+  for (auto imple : simdjson::available_implementations) {
+    BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength), outlength),
             outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
+  }
   printf("minisize = %zu, original size = %zu  (minified down to %.2f percent "
          "of original) \n",
          outlength, p.size(), outlength * 100.0 / p.size());
