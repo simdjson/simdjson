@@ -29,6 +29,11 @@ really_inline json_character_block json_character_block::classify(const simd::si
   auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
   auto op_table = simd8<uint8_t>::repeat_16(',', '}', 0, 0, 0xc0u, 0, 0, 0, 0, 0, 0, 0, 0, 0, ':', '{');
 
+  // We compute whitespace and op separately. If the code later only use one or the
+  // other, given the fact that all functions are aggressively inlined, we can
+  // hope that useless computations will be omitted. This is namely case when
+  // minifying (we only need whitespace).
+
   uint64_t whitespace = in.map([&](simd8<uint8_t> _in) {
     return _in == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, _in));
   }).to_bitmask();
@@ -53,11 +58,17 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-#include "generic/utf8_lookup2_algorithm.h"
+#include "generic/buf_block_reader.h"
 #include "generic/json_string_scanner.h"
 #include "generic/json_scanner.h"
-#include "generic/json_structural_indexer.h"
 
+#include "generic/json_minifier.h"
+WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+  return westmere::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
+}
+
+#include "generic/utf8_lookup2_algorithm.h"
+#include "generic/json_structural_indexer.h"
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
   return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }

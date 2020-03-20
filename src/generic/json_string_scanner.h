@@ -14,7 +14,9 @@ struct json_string_block {
   // Only characters inside the string (not including the quotes)
   really_inline uint64_t string_content() const { return _in_string & ~_quote; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
-  really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return _in_string & mask; }
+  really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
+  // Return a mask of whether the given characters are inside a string (only works on non-quotes)
+  really_inline uint64_t non_quote_outside_string(uint64_t mask) const { return mask & ~_in_string; }
   // Tail of string (everything except the start quote)
   really_inline uint64_t string_tail() const { return _in_string ^ _quote; }
 

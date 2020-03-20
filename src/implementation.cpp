@@ -1,5 +1,7 @@
 #include "simdjson.h"
 #include "isadetection.h"
+#include "simdprune_tables.h"
+
 #include <initializer_list>
 
 // Static array of known implementations. We're hoping these get baked into the executable
@@ -46,6 +48,9 @@ constexpr const std::initializer_list<const implementation *> available_implemen
 class unsupported_implementation final : public implementation {
 public:
   WARN_UNUSED error_code parse(const uint8_t *, size_t, document::parser &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+  WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
   WARN_UNUSED error_code stage1(const uint8_t *, size_t, document::parser &, bool) const noexcept final {

@@ -109,7 +109,12 @@ struct option_struct {
         case 'a': {
           const implementation *impl = simdjson::available_implementations[optarg];
           if (!impl) {
-            exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a haswell, westmere or arm64");
+            std::string exit_message = string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
+            for (auto imple : simdjson::available_implementations) {
+              exit_message += imple->name();
+              exit_message += " ";
+            }
+            exit_usage(exit_message);
           }
           simdjson::active_implementation = impl;
           break;
