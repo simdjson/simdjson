@@ -1,5 +1,5 @@
 #  simdjson : Parsing gigabytes of JSON per second
-[![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
+[![Build Status](https://cloud.drone.io/api/badges/simdjson/simdjson/status.svg)](https://cloud.drone.io/simdjson/simdjson)
 [![CircleCI](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson/master.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
