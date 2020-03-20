@@ -1,6 +1,6 @@
 #  simdjson : Parsing gigabytes of JSON per second
 [![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
-[![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
+[![CircleCI](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
 [![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson/master.svg)](https://ci.appveyor.com/project/lemire/simdjson)
 [![][license img]][license]
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
