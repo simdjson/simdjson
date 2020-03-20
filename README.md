@@ -575,7 +575,7 @@ a table-oriented output that can be conventiently parsed by other tools.
 One can run tests and benchmarks using docker. It especially makes sense under Linux. A privileged access may be needed to get performance counters.
 
 ```
-git clone https://github.com/lemire/simdjson.git
+git clone https://github.com/simdjson/simdjson.git
 cd simdjson
 docker build -t simdjson .
 docker run --privileged -t simdjson
