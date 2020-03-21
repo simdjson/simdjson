@@ -2,6 +2,9 @@ version: 2.1
 
 # Reusable image / compiler definitions
 executors:
+  macOS:
+    macos:
+        xcode: "11.3.0"
   gcc7:
     docker:
       - image: gcc:7
@@ -15,6 +18,9 @@ executors:
 
 # Reusable test commands (and initializer for clang 6)
 commands:
+  init_macos:
+    steps:
+      - run: brew update && brew install cmake
   init_clang6:
     steps:
       - run: apt-get update -qq
@@ -64,6 +70,17 @@ jobs:
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
     steps: [ init_clang6, cmake_test ]
+
+  macOS-unthreaded:
+    description: Build, run tests and check performance on macOS *without* threads
+    executor: macOS
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ init_macos, cmake_test ]
+  macOS-threaded:
+    description: Build, run tests and check performance on macOS with threads
+    executor: macOS
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
+    steps: [ init_macos, cmake_test ]
 
   gcc-avx:
     description: Build, run tests and check performance on GCC 7 and AVX 2
