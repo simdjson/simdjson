@@ -77,15 +77,26 @@ private:
  */
 template<typename T>
 struct simdjson_result : public std::pair<T, error_code> {
+
   /**
-   * Move the value and the error to the provided variables.
-   */
-  void tie(T& t, error_code & e) {
-    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
-    // tie(width, error) = size["w"].as_uint64_t();
-    // fails with "error: no viable overloaded '='""
-    t = std::move(this->first);
-    e = std::move(this->second);
+  * Returns a reference to the base class (std::pair). This is
+  * syntaxic sugar to implement a workaround for libc++,
+  * where std:tie(a,b) = simdjson_result instance does not work
+  * because libc++ expects exactly either an std::pair or std::tuple,
+  * and excludes derived classes/struct. It will happily accept
+  * a reference to std::pair pair which this function provides.
+  * So you can do std::tie(a,b) = x.ref() where x is of type
+  * simdjson_result in a portable manner (including libc++).
+  * The alternative is to do std::tie(a,b) =
+  * static_cast<std::pair<T, error_code>&>(x) which is obviously
+  * undesirable.
+  * Note that libc++ is the default standard library under macOS/Xcode.
+  * We have to worry about this, but users who do not need to
+  * support libc++ can omit the ref call.
+  * See https://github.com/simdjson/simdjson/issues/578
+  */
+  std::pair<T, error_code>& ref() {
+    return static_cast<std::pair<T, error_code>&>(*this);
   }
 
   /**
@@ -139,15 +150,26 @@ struct simdjson_result : public std::pair<T, error_code> {
  */
 template<typename T>
 struct simdjson_move_result : std::pair<T, error_code> {
+
   /**
-   * Move the value and the error to the provided variables.
-   */
-  void tie(T& t, error_code & e) {
-    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
-    // std::tie(this->json, error) = padded_string::load(filename);
-    // fails with "benchmark/benchmarker.h:266:33: error: no viable overloaded '='""
-    t = std::move(this->first);
-    e = std::move(this->second);
+  * Returns a reference to the base class (std::pair). This is
+  * syntaxic sugar to implement a workaround for libc++,
+  * where std:tie(a,b) = simdjson_result instance does not work
+  * because libc++ expects exactly either an std::pair or std::tuple,
+  * and excludes derived classes/struct. It will happily accept
+  * a reference to std::pair pair which this function provides.
+  * So you can do std::tie(a,b) = x.ref() where x is of type
+  * simdjson_move_result in a portable manner (including libc++).
+  * The alternative is to do std::tie(a,b) =
+  * static_cast<std::pair<T, error_code>&>(x) which is obviously
+  * undesirable.
+  * Note that libc++ is the default standard library under macOS/Xcode.
+  * We have to worry about this, but users who do not need to
+  * support libc++ can omit the ref call.
+  * See https://github.com/simdjson/simdjson/issues/578
+  */
+  std::pair<T, error_code>& ref() {
+    return static_cast<std::pair<T, error_code>&>(*this);
   }
 
   /**
