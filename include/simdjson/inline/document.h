@@ -9,6 +9,7 @@
 #include "simdjson/padded_string.h"
 #include "simdjson/internal/jsonformatutils.h"
 #include <iostream>
+#include <climits>
 
 namespace simdjson {
 
@@ -361,7 +362,7 @@ inline document::element_result document::doc_move_result::operator[](const char
 // document::parser inline implementation
 //
 really_inline document::parser::parser(size_t max_capacity, size_t max_depth) noexcept
-  : _max_capacity{max_capacity}, _max_depth{max_depth} {
+  : _max_capacity{max_capacity}, _max_depth{max_depth}, loaded_bytes(nullptr, &aligned_free_char) {
 
 }
 inline bool document::parser::is_valid() const noexcept { return valid; }
@@ -387,15 +388,54 @@ inline const document &document::parser::get_document() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
+inline simdjson_result<size_t> document::parser::read_file(const std::string &path) noexcept {
+  // Open the file
+  std::FILE *fp = std::fopen(path.c_str(), "rb");
+  if (fp == nullptr) {
+    return IO_ERROR;
+  }
+
+  // Get the file size
+  if(std::fseek(fp, 0, SEEK_END) < 0) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+  long len = std::ftell(fp);
+  if((len < 0) || (len == LONG_MAX)) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+
+  // Make sure we have enough capacity to load the file
+  if (_loaded_bytes_capacity < size_t(len)) {
+    loaded_bytes.reset( internal::allocate_padded_buffer(len) );
+    if (!loaded_bytes) {
+      std::fclose(fp);
+      return MEMALLOC;
+    }
+    _loaded_bytes_capacity = len;
+  }
+
+  // Read the string
+  std::rewind(fp);
+  size_t bytes_read = std::fread(loaded_bytes.get(), 1, len, fp);
+  if (std::fclose(fp) != 0 || bytes_read != size_t(len)) {
+    return IO_ERROR;
+  }
+
+  return bytes_read;
+}
+
 inline document::doc_result document::parser::load(const std::string &path) noexcept {
-  auto [json, _error] = padded_string::load(path);
-  if (_error) { return doc_result(doc, _error); }
-  return parse(json);
+  auto [len, code] = read_file(path);
+  if (code) { return doc_result(doc, code); }
+
+  return parse(loaded_bytes.get(), len, false);
 }
 
 inline document::stream document::parser::load_many(const std::string &path, size_t batch_size) noexcept {
-  auto [json, _error] = padded_string::load(path);
-  return stream(*this, reinterpret_cast<const uint8_t*>(json.data()), json.length(), batch_size, _error);
+  auto [len, code] = read_file(path);
+  return stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
 }
 
 inline document::doc_result document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
@@ -480,7 +520,7 @@ inline error_code document::parser::set_capacity(size_t capacity) noexcept {
   // Initialize stage 1 output
   //
   uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures]); // TODO realloc
+  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
   if (!structural_indexes) {
     return MEMALLOC;
   }

@@ -1522,6 +1522,14 @@ private:
   //
   size_t _max_depth;
 
+  //
+  // The loaded buffer (reused each time load() is called)
+  //
+  std::unique_ptr<char[], decltype(&aligned_free_char)> loaded_bytes;
+
+  // Capacity of loaded_bytes buffer.
+  size_t _loaded_bytes_capacity{0};
+
   // all nodes are stored on the doc.tape using a 64-bit word.
   //
   // strings, double and ints are stored as
@@ -1542,6 +1550,11 @@ private:
   // Ensure we have enough capacity to handle at least desired_capacity bytes,
   // and auto-allocate if not.
   inline error_code ensure_capacity(size_t desired_capacity) noexcept;
+
+  //
+  // Read the file into loaded_bytes
+  //
+  inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   // Used internally to get the document
