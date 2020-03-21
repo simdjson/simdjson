@@ -178,6 +178,8 @@ workflows:
   version: 2.1
   build_and_test:
     jobs:
+      - macos11-unthreaded
+      - macos11-threaded
       - gcc-avx
       - gcc-avx-dynamic
       - gcc-avx-static
