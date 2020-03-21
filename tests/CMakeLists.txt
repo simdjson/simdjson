@@ -19,7 +19,7 @@ add_cpp_test(parse_many_test)
 add_cpp_test(pointercheck)
 add_cpp_test(integer_tests)
 
-target_compile_definitions(basictests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
+target_compile_definitions(basictests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json" NDJSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/amazon_cellphones.ndjson")
 target_compile_definitions(errortests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json")
 
 ## This causes problems

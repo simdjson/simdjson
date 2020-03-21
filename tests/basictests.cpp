@@ -19,6 +19,9 @@
 #ifndef JSON_TEST_PATH
 #define JSON_TEST_PATH "jsonexamples/twitter.json"
 #endif
+#ifndef NDJSON_TEST_PATH
+#define NDJSON_TEST_PATH "jsonexamples/amazon_cellphones.ndjson"
+#endif
 
 // ulp distance
 // Marc B. Reynolds, 2016-2019
@@ -745,6 +748,154 @@ bool skyprophet_test() {
   return true;
 }
 
+namespace parse_api {
+  using namespace std;
+  using namespace simdjson;
+
+  const padded_string BASIC_JSON = string("[1,2,3]");
+  const padded_string BASIC_NDJSON = string("[1,2,3]\n[4,5,6]");
+  // const padded_string EMPTY_NDJSON = string("");
+
+  bool document_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto [doc, error] = document::parse(BASIC_JSON);
+    if (error) { cerr << error << endl; return false; }
+    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+    return true;
+  }
+  bool parser_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [doc, error] = parser.parse(BASIC_JSON);
+    if (error) { cerr << error << endl; return false; }
+    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+    return true;
+  }
+  bool parser_parse_many() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    int count = 0;
+    for (auto [doc, error] : parser.parse_many(BASIC_NDJSON)) {
+      if (error) { cerr << error << endl; return false; }
+      if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+      count++;
+    }
+    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    return true;
+  }
+  // bool parser_parse_many_empty() {
+  //   std::cout << "Running " << __func__ << std::endl;
+  //   document::parser parser;
+  //   int count = 0;
+  //   for (auto [doc, error] : parser.parse_many(EMPTY_NDJSON)) {
+  //     if (error) { cerr << error << endl; return false; }
+  //     count++;
+  //   }
+  //   if (count != 0) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
+  //   return true;
+  // }
+
+  bool document_load() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto [doc, error] = document::load(JSON_TEST_PATH);
+    if (error) { cerr << error << endl; return false; }
+    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
+    return true;
+  }
+  bool parser_load() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    auto [doc, error] = parser.load(JSON_TEST_PATH);
+    if (error) { cerr << error << endl; return false; }
+    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
+    return true;
+  }
+  bool parser_load_many() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    int count = 0;
+    for (auto [doc, error] : parser.load_many(NDJSON_TEST_PATH)) {
+      if (error) { cerr << error << endl; return false; }
+      if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+      count++;
+    }
+    if (count != 793) { cerr << "Expected 793 documents, but load_many loaded " << count << " documents." << endl; return false; }
+    return true;
+  }
+
+#if SIMDJSON_EXCEPTIONS
+
+  bool document_parse_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document doc = document::parse(BASIC_JSON);
+    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+    return true;
+  }
+  bool parser_parse_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    const document& doc = parser.parse(BASIC_JSON);
+    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+    return true;
+  }
+  bool parser_parse_many_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    int count = 0;
+    for (const document &doc : parser.parse_many(BASIC_NDJSON)) {
+      if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+      count++;
+    }
+    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    return true;
+  }
+
+  bool document_load_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document doc = document::load(JSON_TEST_PATH);
+    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
+    return true;
+  }
+  bool parser_load_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    const document &doc = parser.load(JSON_TEST_PATH);
+    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
+    return true;
+  }
+  bool parser_load_many_exception() {
+    std::cout << "Running " << __func__ << std::endl;
+    document::parser parser;
+    int count = 0;
+    for (const document &doc : parser.load_many(NDJSON_TEST_PATH)) {
+      if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
+      count++;
+    }
+    if (count != 793) { cerr << "Expected 1 document, but load_many loaded " << count << " documents." << endl; return false; }
+    return true;
+  }
+#endif
+
+  bool run_tests() {
+    return document_parse() &&
+           parser_parse() &&
+           parser_parse_many() &&
+//           parser_parse_many_empty() &&
+           document_load() &&
+           parser_load() &&
+           parser_load_many() &&
+#if SIMDJSON_EXCEPTIONS
+           document_parse_exception() &&
+           parser_parse_exception() &&
+           parser_parse_many_exception() &&
+           document_load_exception() &&
+           parser_load_exception() &&
+           parser_load_many_exception() &&
+#endif
+           true;
+  }
+}
+
 namespace dom_api {
   using namespace std;
   using namespace simdjson;
@@ -892,8 +1043,7 @@ namespace dom_api {
     if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
 
     UNUSED document::element val;
-    // tie(val, error) = doc["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0
-    doc["d"].tie(val, error);
+    tie(val, error) = doc["d"];
     if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
     return true;
   }
@@ -907,11 +1057,11 @@ namespace dom_api {
     if (doc["obj"]["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
     document::object obj;
-    doc.as_object().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    tie(obj, error) = doc.as_object();
     if (error) { cerr << "Error: " << error << endl; return false; }
     if (obj["obj"]["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
-    obj["obj"].as_object().tie(obj, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    tie(obj, error) = obj["obj"].as_object();
     if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
     if (obj["b"].as_uint64_t().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
     if (obj["c"].as_uint64_t().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
@@ -921,7 +1071,7 @@ namespace dom_api {
     if (obj["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
 
     UNUSED document::element val;
-    doc["d"].tie(val, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    tie(val, error) = doc["d"];
     if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
     return true;
   }
@@ -945,14 +1095,14 @@ namespace dom_api {
     if (error) { cerr << "Error: " << error << endl; return false; }
     for (auto tweet : tweets) {
       document::object user;
-      tweet["user"].as_object().tie(user, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+      tie(user, error) = tweet["user"].as_object();
       if (error) { cerr << "Error: " << error << endl; return false; }
       bool default_profile;
-      user["default_profile"].as_bool().tie(default_profile, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+      tie(default_profile, error) = user["default_profile"].as_bool();
       if (error) { cerr << "Error: " << error << endl; return false; }
       if (default_profile) {
         std::string_view screen_name;
-        user["screen_name"].as_string().tie(screen_name, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+        tie(screen_name, error) = user["screen_name"].as_string();
         if (error) { cerr << "Error: " << error << endl; return false; }
         default_users.insert(screen_name);
       }
@@ -973,13 +1123,13 @@ namespace dom_api {
       if (!not_found) {
         for (auto image : media) {
           document::object sizes;
-          image["sizes"].as_object().tie(sizes, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+          tie(sizes, error) = image["sizes"].as_object();
           if (error) { cerr << "Error: " << error << endl; return false; }
           for (auto [key, size] : sizes) {
             uint64_t width, height;
-            size["w"].as_uint64_t().tie(width, error);  //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+            tie(width, error) = size["w"].as_uint64_t();
             if (error) { cerr << "Error: " << error << endl; return false; }
-            size["h"].as_uint64_t().tie(height, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+            tie(height, error) = size["h"].as_uint64_t();
             if (error) { cerr << "Error: " << error << endl; return false; }
             image_sizes.insert(make_pair(width, height));
           }
@@ -1507,6 +1657,8 @@ int main(int argc, char *argv[]) {
   if (!navigate_test())
     return EXIT_FAILURE;
   if (!skyprophet_test())
+    return EXIT_FAILURE;
+  if (!parse_api::run_tests())
     return EXIT_FAILURE;
   if (!dom_api::run_tests())
     return EXIT_FAILURE;
