@@ -1,16 +1,45 @@
-#  simdjson : Parsing gigabytes of JSON per second
+# simdjson : Parsing gigabytes of JSON per second
+
+<img src="images/logo.png" width="10%" style="float: right">
+JSON is everywhere on the Internet. Servers spend a *lot* of time parsing it. We need a fresh approach. simdjson uses commonly available SIMD instructions and microparallel algorithms to parse JSON 2.5x faster than anything else out there.
+
+* **Ludicrous Speed:** Over 2.5x faster than other production-grade JSON parsers.
+* **Delightfully Easy:** First-class, easy to use API.
+* **Complete Validation:** Full JSON and UTF-8 validation, with no compromises.
+* **Rock-Solid Reliability:** From memory allocation to error handling, simdjson's design avoids surprises.
+
+This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
+
 [![Build Status](https://cloud.drone.io/api/badges/simdjson/simdjson/status.svg)](https://cloud.drone.io/simdjson/simdjson)
 [![CircleCI](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
 [![Build status](https://ci.appveyor.com/api/projects/status/ae77wp5v3lebmu6n/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/simdjson-jmmti/branch/master)
 [![][license img]][license]
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
 
+## Quick Start
 
-## A C++ library to see how fast we can parse JSON with complete validation.
+simdjson is easily consumable with a single .h and .cpp file.
 
-JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding). This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
+0. Prerequisites: `g++` or `clang++`.
+1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.h) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
+   ```
+   wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
+   ```
+2. Create `parser.cpp`:
 
-<img src="images/logo.png" width="10%">
+   ```c++
+   #include "simdjson.h"
+   int main(void) {
+     simdjson::document::parser parser;
+     simdjson::document& tweets = parser.load("twitter.json");
+     std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
+   }
+   ```
+3. `g++ -o parser parser.cpp` (or clang++)
+4. `./parser`
+   ```
+   100 results.
+   ```
 
 ## Real-world usage
 
