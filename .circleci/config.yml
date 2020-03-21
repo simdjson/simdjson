@@ -2,7 +2,7 @@ version: 2.1
 
 # Reusable image / compiler definitions
 executors:
-  macOS:
+  macos11:
     macos:
         xcode: "11.3.0"
   gcc7:
@@ -71,14 +71,14 @@ jobs:
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
     steps: [ init_clang6, cmake_test ]
 
-  macOS-unthreaded:
+  macos11-unthreaded:
     description: Build, run tests and check performance on macOS *without* threads
-    executor: macOS
+    executor: macos11
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ init_macos, cmake_test ]
-  macOS-threaded:
+  macos11-threaded:
     description: Build, run tests and check performance on macOS with threads
-    executor: macOS
+    executor: macos11
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
     steps: [ init_macos, cmake_test ]
 
