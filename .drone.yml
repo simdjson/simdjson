@@ -8,6 +8,7 @@ platform:
 steps:
 - name: quicktests
   image: conanio/clang8
+  user: root
   commands: [ EXTRAFLAGS=-stdlib=libc++ make quicktests ]
 ---
 kind: pipeline
