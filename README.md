@@ -20,7 +20,7 @@ This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
 simdjson is easily consumable with a single .h and .cpp file.
 
 0. Prerequisites: `g++` or `clang++`.
-1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.h) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
+1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
    ```
    wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
    ```
@@ -138,7 +138,7 @@ be concerned with computed gotos.
 
 ## Thread safety
 
-The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a document::parser object between different threads.
+The simdjson library is mostly single-threaded. Thread safety is the responsibility of the caller: it is unsafe to reuse a document::parser object between different threads.
 
 If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
@@ -491,7 +491,7 @@ You then have access to the following methods on the resulting `simdjson::docume
 * `bool move_to_key(const char *key, uint32_t length)`: as above except that the target can contain NULL characters
 * `void move_to_value()`: when at a key location within an object, this moves to the accompanying, value (located next to it).  This is equivalent but much faster than calling `next()`.
 * `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
-* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value correspoding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value corresponding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
 * `bool move_to(const std::string &pointer) `: same as above but with a std::string parameter
 * `bool next()`:   Within a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
 * `bool prev()`:  Within a given scope (series of nodes at the same depth within either an
@@ -595,7 +595,7 @@ make allparsingcompetition
 ```
 
 Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
-a table-oriented output that can be conventiently parsed by other tools.
+a table-oriented output that can be conveniently parsed by other tools.
 
 
 ## Docker
