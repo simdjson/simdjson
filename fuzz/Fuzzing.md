@@ -6,9 +6,15 @@
  - https://github.com/lemire/simdjson/issues/351
  - https://github.com/lemire/simdjson/issues/345
 
-Simdjson tries to follow [fuzzing best practises](https://google.github.io/oss-fuzz/advanced-topics/ideal-integration/#summary).
+The simdjson library tries to follow [fuzzing best practises](https://google.github.io/oss-fuzz/advanced-topics/ideal-integration/#summary).
 
-Simdjson is continuously fuzzed on [oss-fuzz](https://github.com/google/oss-fuzz).
+The simdjson library is continuously fuzzed on [oss-fuzz](https://github.com/google/oss-fuzz).
+
+
+## Currently open bugs
+
+You can find the currently opened bugs, if any at [bugs.chromium.org](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&q=proj%3Asimdjson&can=2): make sure not to miss the "Open Issues" selector. Bugs that are fixed by follow-up commits are automatically closed.
+
 
 ## Fuzzing as a CI job
 
@@ -29,7 +35,7 @@ The corpus will grow over time and easy to find bugs will be detected already du
 
 ## Corpus
 
-Simdjson does not benefit from a corpus as much as other projects, because the library is very fast and explores the input space very well. With that said, it is still beneficial to have one. The CI job stores the corpus on bintray between runs, and is available here: https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
+The simdjson library does not benefit from a corpus as much as other projects, because the library is very fast and explores the input space very well. With that said, it is still beneficial to have one. The CI job stores the corpus on bintray between runs, and is available here: https://dl.bintray.com/pauldreik/simdjson-fuzz-corpus/corpus/corpus.tar
 
 One can also grab the corpus as an artifact from the github actions job. Pick a run, then go to artifacts and download.
 
