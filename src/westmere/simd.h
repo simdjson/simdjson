@@ -2,7 +2,11 @@
 #define SIMDJSON_WESTMERE_SIMD_H
 
 #include "simdjson.h"
+#include "simdprune_tables.h"
+#include "westmere/bitmanipulation.h"
 #include "westmere/intrinsics.h"
+
+
 
 TARGET_WESTMERE
 namespace simdjson::westmere::simd {
@@ -106,6 +110,42 @@ namespace simdjson::westmere::simd {
     really_inline simd8<L> lookup_16(simd8<L> lookup_table) const {
       return _mm_shuffle_epi8(lookup_table, *this);
     }
+
+    // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
+    // Passing a 0 value for mask would be equivalent to writing out every byte to output.
+    // Only the first 16 - count_ones(mask) bytes of the result are significant but 16 bytes
+    // get written.
+    // Design consideration: it seems like a function with the
+    // signature simd8<L> compress(uint32_t mask) would be
+    // sensible, but the AVX ISA makes this kind of approach difficult.
+    template<typename L>
+    really_inline void compress(uint16_t mask, L * output) const {
+      // this particular implementation was inspired by work done by @animetosho
+      // we do it in two steps, first 8 bytes and then second 8 bytes
+      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
+      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // most significant 8 bits
+      // next line just loads the 64-bit values thintable_epi8[mask1] and
+      // thintable_epi8[mask2] into a 128-bit register, using only
+      // two instructions on most compilers.
+      __m128i shufmask =  _mm_set_epi64x(thintable_epi8[mask2], thintable_epi8[mask1]);
+      // we increment by 0x08 the second half of the mask
+      shufmask =
+      _mm_add_epi8(shufmask, _mm_set_epi32(0x08080808, 0x08080808, 0, 0));
+      // this is the version "nearly pruned"
+      __m128i pruned = _mm_shuffle_epi8(*this, shufmask);
+      // we still need to put the two halves together.
+      // we compute the popcount of the first half:
+      int pop1 = BitsSetTable256mul2[mask1];
+      // then load the corresponding mask, what it does is to write
+      // only the first pop1 bytes from the first 8 bytes, and then
+      // it fills in with the bytes from the second 8 bytes + some filling
+      // at the end.
+      __m128i compactmask =
+      _mm_loadu_si128((const __m128i *)(pshufb_combine_table + pop1 * 8));
+      __m128i answer = _mm_shuffle_epi8(pruned, compactmask);
+      _mm_storeu_si128(( __m128i *)(output), answer);
+    }
+
     template<typename L>
     really_inline simd8<L> lookup_16(
         L replace0,  L replace1,  L replace2,  L replace3,
@@ -235,6 +275,13 @@ namespace simdjson::westmere::simd {
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
+    really_inline void compress(uint64_t mask, T * output) const {
+      this->chunks[0].compress(mask, output);
+      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+    }
+
     template <typename F>
     static really_inline void each_index(F const& each) {
       each(0);
@@ -302,7 +349,6 @@ namespace simdjson::westmere::simd {
       const simd8<T> mask = simd8<T>::splat(m);
       return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
     }
-
   }; // struct simd8x64<T>
 
 } // namespace simdjson::westmere::simd

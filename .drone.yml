@@ -1,4 +1,17 @@
 kind: pipeline
+name: x64-quicktests-libc
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: quicktests
+  image: conanio/clang8
+  user: root
+  commands: [ EXTRAFLAGS=-stdlib=libc++ make quicktests ]
+---
+kind: pipeline
 name: x64-quicktests
 
 platform:

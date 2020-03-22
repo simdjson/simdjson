@@ -37,7 +37,7 @@ really_inline int leading_zeroes(uint64_t input_num) {
   return static_cast<int>(_lzcnt_u64(input_num));
 }
 
-really_inline int hamming(uint64_t input_num) {
+really_inline int count_ones(uint64_t input_num) {
 #ifdef _MSC_VER
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores

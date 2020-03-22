@@ -12,13 +12,13 @@ WARN_UNUSED bool document_iterator<max_depth>::is_ok() const {
   return location < tape_length;
 }
 
-// useful for debuging purposes
+// useful for debugging purposes
 template <size_t max_depth>
 size_t document_iterator<max_depth>::get_tape_location() const {
   return location;
 }
 
-// useful for debuging purposes
+// useful for debugging purposes
 template <size_t max_depth>
 size_t document_iterator<max_depth>::get_tape_length() const {
   return tape_length;

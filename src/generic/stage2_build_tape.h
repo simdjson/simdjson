@@ -101,7 +101,6 @@ public:
     return next_structural;
   }
 
-private:
   const uint8_t* const buf;
   const size_t len;
   const uint32_t* const structural_indexes;

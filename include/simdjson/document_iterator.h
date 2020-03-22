@@ -24,10 +24,10 @@ public:
 
   inline bool is_ok() const;
 
-  // useful for debuging purposes
+  // useful for debugging purposes
   inline size_t get_tape_location() const;
 
-  // useful for debuging purposes
+  // useful for debugging purposes
   inline size_t get_tape_length() const;
 
   // returns the current depth (start at 1 with 0 reserved for the fictitious
@@ -165,7 +165,7 @@ public:
   // if not, we are still pointing at the array ([)
   inline bool move_to_index(uint32_t index);
 
-  // Moves the iterator to the value correspoding to the json pointer.
+  // Moves the iterator to the value corresponding to the json pointer.
   // Always search from the root of the document.
   // if successful, we are left pointing at the value,
   // if not, we are still pointing the same value we were pointing before the
@@ -177,7 +177,7 @@ public:
   // jsonpointer string ('pointer').
   bool move_to(const char *pointer, uint32_t length);
 
-  // Moves the iterator to the value correspoding to the json pointer.
+  // Moves the iterator to the value corresponding to the json pointer.
   // Always search from the root of the document.
   // if successful, we are left pointing at the value,
   // if not, we are still pointing the same value we were pointing before the
@@ -191,7 +191,7 @@ public:
   }
 
   private:
-  // Almost the same as move_to(), except it searchs from the current
+  // Almost the same as move_to(), except it searches from the current
   // position. The pointer's syntax is identical, though that case is not
   // handled by the rfc6901 standard. The '/' is still required at the
   // beginning. However, contrary to move_to(), the URI Fragment Identifier

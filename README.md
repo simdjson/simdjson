@@ -1,16 +1,44 @@
-#  simdjson : Parsing gigabytes of JSON per second
-[![Build Status](https://cloud.drone.io/api/badges/lemire/simdjson/status.svg)](https://cloud.drone.io/lemire/simdjson/)
-[![CircleCI](https://circleci.com/gh/lemire/simdjson.svg?style=svg)](https://circleci.com/gh/lemire/simdjson)
-[![Build Status](https://img.shields.io/appveyor/ci/lemire/simdjson/master.svg)](https://ci.appveyor.com/project/lemire/simdjson)
+# simdjson : Parsing gigabytes of JSON per second
+
+<img src="images/logo.png" width="10%" style="float: right">
+JSON is everywhere on the Internet. Servers spend a *lot* of time parsing it. We need a fresh approach. simdjson uses commonly available SIMD instructions and microparallel algorithms to parse JSON 2.5x faster than anything else out there.
+
+* **Ludicrous Speed:** Over 2.5x faster than other production-grade JSON parsers.
+* **Delightfully Easy:** First-class, easy to use API.
+* **Complete Validation:** Full JSON and UTF-8 validation, with no compromises.
+* **Rock-Solid Reliability:** From memory allocation to error handling, simdjson's design avoids surprises.
+
+This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
+
+[![Build Status](https://cloud.drone.io/api/badges/simdjson/simdjson/status.svg)](https://cloud.drone.io/simdjson/simdjson)
+[![CircleCI](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
+[![Build status](https://ci.appveyor.com/api/projects/status/ae77wp5v3lebmu6n/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/simdjson-jmmti/branch/master)
 [![][license img]][license]
-[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
 
+## Quick Start
 
-## A C++ library to see how fast we can parse JSON with complete validation.
+simdjson is easily consumable with a single .h and .cpp file.
 
-JSON documents are everywhere on the Internet. Servers spend a lot of time parsing these documents. We want to accelerate the parsing of JSON per se using commonly available SIMD instructions as much as possible while doing full validation (including character encoding). This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
+0. Prerequisites: `g++` or `clang++`.
+1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
+   ```
+   wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
+   ```
+2. Create `parser.cpp`:
 
-<img src="images/logo.png" width="10%">
+   ```c++
+   #include "simdjson.h"
+   int main(void) {
+     simdjson::document::parser parser;
+     simdjson::document& tweets = parser.load("twitter.json");
+     std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
+   }
+   ```
+3. `g++ -o parser parser.cpp` (or clang++)
+4. `./parser`
+   ```
+   100 results.
+   ```
 
 ## Real-world usage
 
@@ -110,7 +138,7 @@ be concerned with computed gotos.
 
 ## Thread safety
 
-The simdjson library is mostly single-threaded. Thread safety is the responsability of the caller: it is unsafe to reuse a document::parser object between different threads.
+The simdjson library is mostly single-threaded. Thread safety is the responsibility of the caller: it is unsafe to reuse a document::parser object between different threads.
 
 If you are on an x64 processor, the runtime dispatching assigns the right code path the first time that parsing is attempted. The runtime dispatching is thread-safe.
 
@@ -136,23 +164,23 @@ All examples below use use `#include "simdjson.h"`, `#include "simdjson.cpp"` an
 The simplest API to get started is `document::parse()`, which allocates a new parser, parses a string, and returns the DOM. This is less efficient if you're going to read multiple documents, but as long as you're only parsing a single document, this will do just fine.
 
 ```c++
-auto [doc, error] = document::parse(string("[ 1, 2, 3 ]"));
-if (error) { cerr << "Error: " << error_message(error) << endl; exit(1); }
+auto [doc, error] = document::parse("[ 1, 2, 3 ]"_padded);
+if (error) { cerr << "Error: " << error << endl; exit(1); }
 cout << doc;
 ```
 
 If you're using exceptions, it gets even simpler (simdjson won't use exceptions internally, so you'll only pay the performance cost of exceptions in your own calling code):
 
 ```c++
-document doc = document::parse(string("[ 1, 2, 3 ]"));
-cout << doc;
+cout << document::parse("[ 1, 2, 3 ]"_padded);
 ```
 
-The simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). The `padded_string` class is an easy way to ensure this is accomplished up front and prevent the extra allocation:
+If you're wondering why the examples above use `_padded`, it's because the simdjson library requires SIMDJSON_PADDING extra bytes at the end of a string (it doesn't matter if the bytes are initialized). `_padded`
+is a way of creating a `padded_string` class, which assures us we have enough allocation.
 
 ```c++
-document doc = document::parse(padded_string(string("[ 1, 2, 3 ]")));
-cout << doc;
+padded_string json = "[ 1, 2, 3 ]"_padded;
+cout << document::parse(json);
 ```
 
 You can also load from a file with `parser.load()`:
@@ -463,7 +491,7 @@ You then have access to the following methods on the resulting `simdjson::docume
 * `bool move_to_key(const char *key, uint32_t length)`: as above except that the target can contain NULL characters
 * `void move_to_value()`: when at a key location within an object, this moves to the accompanying, value (located next to it).  This is equivalent but much faster than calling `next()`.
 * `bool move_to_index(uint32_t index)`: when at `[`, go one level deep, and advance to the given index, if successful, we are left pointing at the value,i f not, we are still pointing at the array
-* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value correspoding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
+* `bool move_to(const char *pointer, uint32_t length)`: Moves the iterator to the value corresponding to the json pointer. Always search from the root of the document. If successful, we are left pointing at the value, if not, we are still pointing the same value we were pointing before the call. The json pointer follows the rfc6901 standard's syntax: https://tools.ietf.org/html/rfc6901
 * `bool move_to(const std::string &pointer) `: same as above but with a std::string parameter
 * `bool next()`:   Within a given scope (series of nodes at the same depth within either an array or an object), we move forward. Thus, given [true, null, {"a":1}, [1,2]], we would visit true, null, { and [. At the object ({) or at the array ([), you can issue a "down" to visit their content. valid if we're not at the end of a scope (returns true).
 * `bool prev()`:  Within a given scope (series of nodes at the same depth within either an
@@ -567,7 +595,7 @@ make allparsingcompetition
 ```
 
 Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
-a table-oriented output that can be conventiently parsed by other tools.
+a table-oriented output that can be conveniently parsed by other tools.
 
 
 ## Docker
@@ -575,7 +603,7 @@ a table-oriented output that can be conventiently parsed by other tools.
 One can run tests and benchmarks using docker. It especially makes sense under Linux. A privileged access may be needed to get performance counters.
 
 ```
-git clone https://github.com/lemire/simdjson.git
+git clone https://github.com/simdjson/simdjson.git
 cd simdjson
 docker build -t simdjson .
 docker run --privileged -t simdjson

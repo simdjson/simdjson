@@ -11,10 +11,18 @@ namespace simdjson::arm64 {
 
 using namespace simd;
 
-really_inline void find_whitespace_and_operators(
-  const simd::simd8x64<uint8_t> in,
-  uint64_t &whitespace, uint64_t &op) {
+struct json_character_block {
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
 
+  really_inline uint64_t whitespace() const { return _whitespace; }
+  really_inline uint64_t op() const { return _op; }
+  really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+
+  uint64_t _whitespace;
+  uint64_t _op;
+};
+
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
   auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
     auto nib_lo = chunk & 0xf;
     auto nib_hi = chunk.shr<4>();
@@ -23,8 +31,26 @@ really_inline void find_whitespace_and_operators(
     return shuf_lo & shuf_hi;
   });
 
-  op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
-  whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
+
+  // We compute whitespace and op separately. If the code later only use one or the
+  // other, given the fact that all functions are aggressively inlined, we can
+  // hope that useless computations will be omitted. This is namely case when
+  // minifying (we only need whitespace). *However* if we only need spaces,
+  // it is likely that we will still compute 'v' above with two lookup_16: one
+  // could do it a bit cheaper. This is in contrast with the x64 implementations
+  // where we can, efficiently, do the white space and structural matching
+  // separately. One reason for this difference is that on ARM NEON, the table
+  // lookups either zero or leave unchanged the characters exceeding 0xF whereas
+  // on x64, the equivalent instruction (pshufb) automatically applies a mask,
+  // ignoring the 4 most significant bits. Thus the x64 implementation is
+  // optimized differently. This being said, if you use this code strictly
+  // just for minification (or just to identify the structural characters),
+  // there is a small untaken optimization opportunity here. We deliberately
+  // do not pick it up.
+
+  uint64_t op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
+  uint64_t whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
+  return { whitespace, op };
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
@@ -44,11 +70,19 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-#include "generic/utf8_lookup2_algorithm.h"
-#include "generic/stage1_find_marks.h"
+#include "generic/buf_block_reader.h"
+#include "generic/json_string_scanner.h"
+#include "generic/json_scanner.h"
 
+#include "generic/json_minifier.h"
+WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+  return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
+}
+
+#include "generic/utf8_lookup2_algorithm.h"
+#include "generic/json_structural_indexer.h"
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
-  return arm64::stage1::find_structural_bits<64>(buf, len, parser, streaming);
+  return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
 } // namespace simdjson::arm64

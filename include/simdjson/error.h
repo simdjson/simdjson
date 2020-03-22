@@ -78,6 +78,17 @@ private:
 template<typename T>
 struct simdjson_result : public std::pair<T, error_code> {
   /**
+   * Move the value and the error to the provided variables.
+   */
+  void tie(T& t, error_code & e) {
+    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
+    // tie(width, error) = size["w"].as_uint64_t();
+    // fails with "error: no viable overloaded '='""
+    t = std::move(this->first);
+    e = std::move(this->second);
+  }
+
+  /**
    * The error.
    */
   error_code error() const { return this->second; }
@@ -128,6 +139,17 @@ struct simdjson_result : public std::pair<T, error_code> {
  */
 template<typename T>
 struct simdjson_move_result : std::pair<T, error_code> {
+  /**
+   * Move the value and the error to the provided variables.
+   */
+  void tie(T& t, error_code & e) {
+    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
+    // std::tie(this->json, error) = padded_string::load(filename);
+    // fails with "benchmark/benchmarker.h:266:33: error: no viable overloaded '='""
+    t = std::move(this->first);
+    e = std::move(this->second);
+  }
+
   /**
    * The error.
    */
