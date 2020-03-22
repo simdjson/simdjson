@@ -2846,10 +2846,10 @@ public:
 
   inline bool is_ok() const;
 
-  // useful for debuging purposes
+  // useful for debugging purposes
   inline size_t get_tape_location() const;
 
-  // useful for debuging purposes
+  // useful for debugging purposes
   inline size_t get_tape_length() const;
 
   // returns the current depth (start at 1 with 0 reserved for the fictitious
@@ -2987,7 +2987,7 @@ public:
   // if not, we are still pointing at the array ([)
   inline bool move_to_index(uint32_t index);
 
-  // Moves the iterator to the value correspoding to the json pointer.
+  // Moves the iterator to the value corresponding to the json pointer.
   // Always search from the root of the document.
   // if successful, we are left pointing at the value,
   // if not, we are still pointing the same value we were pointing before the
@@ -2999,7 +2999,7 @@ public:
   // jsonpointer string ('pointer').
   bool move_to(const char *pointer, uint32_t length);
 
-  // Moves the iterator to the value correspoding to the json pointer.
+  // Moves the iterator to the value corresponding to the json pointer.
   // Always search from the root of the document.
   // if successful, we are left pointing at the value,
   // if not, we are still pointing the same value we were pointing before the
@@ -3013,7 +3013,7 @@ public:
   }
 
   private:
-  // Almost the same as move_to(), except it searchs from the current
+  // Almost the same as move_to(), except it searches from the current
   // position. The pointer's syntax is identical, though that case is not
   // handled by the rfc6901 standard. The '/' is still required at the
   // beginning. However, contrary to move_to(), the URI Fragment Identifier
@@ -3222,7 +3222,7 @@ namespace simdjson {
  * to a char* and to the number of bytes respectively.
  * The simdjson parser may read up to SIMDJSON_PADDING bytes beyond the end
  * of the string, so if you do not use a padded_string container,
- * you have the responsability to overallocated. If you fail to
+ * you have the responsibility to overallocated. If you fail to
  * do so, your software may crash if you cross a page boundary,
  * and you should expect memory checkers to object.
  * Most users should use a simdjson::padded_string.
@@ -4350,13 +4350,13 @@ WARN_UNUSED bool document_iterator<max_depth>::is_ok() const {
   return location < tape_length;
 }
 
-// useful for debuging purposes
+// useful for debugging purposes
 template <size_t max_depth>
 size_t document_iterator<max_depth>::get_tape_location() const {
   return location;
 }
 
-// useful for debuging purposes
+// useful for debugging purposes
 template <size_t max_depth>
 size_t document_iterator<max_depth>::get_tape_length() const {
   return tape_length;

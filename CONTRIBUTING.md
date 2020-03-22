@@ -6,7 +6,7 @@ In particular, the following contributions are invited:
 
 - The library is focused on performance. Well-documented performance optimization are invited.
 - Fixes to known or newly discovered bugs are always welcome. Typically, a bug fix should come with a test demonstrating that the bug has been fixed.
-- The simdjson library is advanced software and maintanability and flexibility are always a concern. Specific contributions to improve maintanability and flexibility are invited.
+- The simdjson library is advanced software and maintainability and flexibility are always a concern. Specific contributions to improve maintainability and flexibility are invited.
 
 
 
@@ -28,5 +28,5 @@ Contributors are encouraged to
 
 
 
-Though we do not have a formal code of conduct, we will not tolerate bullying, bigotery or intimidation. Everyone is welcome to contribute.
+Though we do not have a formal code of conduct, we will not tolerate bullying, bigotry or intimidation. Everyone is welcome to contribute.
 
