@@ -34,7 +34,7 @@ simdjson is easily consumable with a single .h and .cpp file.
      std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
    }
    ```
-3. `g++ -o parser parser.cpp` (or clang++)
+3. `g++ -o parser parser.cpp simdjson.cpp -std=c++17`
 4. `./parser`
    ```
    100 results.
