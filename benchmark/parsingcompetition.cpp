@@ -114,9 +114,10 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).is_valid(), true,
               , repeat, volume, !just_data);
   // (static alloc)
-  BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat, volume,
+  simdjson::document::parser parser;
+  BEST_TIME("simdjson ", parser.parse(p).error(), simdjson::SUCCESS, , repeat, volume,
             !just_data);
-
+ 
   rapidjson::Document d;
 
   char *buffer = (char *)malloc(p.size() + 1);
