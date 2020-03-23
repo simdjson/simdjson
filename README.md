@@ -146,11 +146,27 @@ The json stream parser is threaded, using exactly two threads.
 
 ## Large files
 
-If you are processing large files (e.g., 100 MB), it is likely that the performance of simdjson will be limited by page misses and/or page allocation. [On some systems, memory allocation runs far slower than we can parse (e.g., 1.4GB/s).](https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/)
+If you are processing large files (e.g., 100 MB), it is possible that the performance of simdjson will be limited by page misses and/or page allocation. [On some systems, memory allocation runs far slower than we can parse (e.g., 1.4GB/s).](https://lemire.me/blog/2020/01/14/how-fast-can-you-allocate-a-large-block-of-memory-in-c/)
 
-You will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). We recommend that you report performance numbers with and without huge pages.
+A viable strategy is to amortize the cost of page allocation by reusing the same `parser` object over several files:
 
-Another strategy is to reuse pre-allocated buffers. That is, you avoid reallocating memory. You just allocate memory once and reuse the blocks of memory.
+```C++
+// create one parser
+simdjson::document::parser parser;
+...
+// the parser is going to pay a memory allocation price
+auto [doc1, error1] = parser.parse(largestring1);
+...
+// use again the same parser, it will be faster
+auto [doc2, error2] = parser.parse(largestring2);
+...
+auto [doc3, error3] = parser.load("largefilename"); 
+```
+
+If you cannot reuse the same parser instance, maybe because your application just processes one large document once, you will get best performance with large or huge pages. Under Linux, you can enable transparent huge pages with a command like `echo always > /sys/kernel/mm/transparent_hugepage/enabled` (root access may be required). It may be more difficult to achieve the same result under other systems like macOS or Windows.
+
+In general, when running benchmarks over large files, we recommend that you report performance numbers with and without huge pages if possible. Furthermore, you should amortize the parsing (e.g., by parsing several large files) to distinguish the time spent parsing from the time spent allocating memory. 
+
 
 ## Including simdjson
 
