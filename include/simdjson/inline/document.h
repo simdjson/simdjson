@@ -55,13 +55,28 @@ inline document::object_result document::element_result::as_object() const noexc
   return first.as_object();
 }
 
-inline document::element_result document::element_result::operator[](const std::string_view &key) const noexcept {
+inline document::element_result document::element_result::operator[](std::string_view key) const noexcept {
   if (error()) { return *this; }
   return first[key];
 }
-inline document::element_result document::element_result::operator[](const char *key) const noexcept {
+inline document::element_result document::element_result::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::element_result::at(std::string_view key) const noexcept {
   if (error()) { return *this; }
-  return first[key];
+  return first.at(key);
+}
+inline document::element_result document::element_result::at(size_t index) const noexcept {
+  if (error()) { return *this; }
+  return first.at(index);
+}
+inline document::element_result document::element_result::at_key(std::string_view key) const noexcept {
+  if (error()) { return *this; }
+  return first.at_key(key);
+}
+inline document::element_result document::element_result::at_key(const char *key) const noexcept {
+  if (error()) { return *this; }
+  return first.at_key(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
@@ -112,19 +127,46 @@ inline document::array::iterator document::array_result::end() const noexcept(fa
 
 #endif // SIMDJSON_EXCEPTIONS
 
+inline document::element_result document::array_result::operator[](std::string_view json_pointer) const noexcept {
+  if (error()) { return error(); }
+  return first.at(json_pointer);
+}
+inline document::element_result document::array_result::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::array_result::at(std::string_view json_pointer) const noexcept {
+  if (error()) { return error(); }
+  return first.at(json_pointer);
+}
+inline document::element_result document::array_result::at(size_t index) const noexcept {
+  if (error()) { return error(); }
+  return first.at(index);
+}
+
 //
 // object_result inline implementation
 //
 really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>(value) {}
 really_inline document::object_result::object_result(error_code error) noexcept : simdjson_result<object>(error) {}
 
-inline document::element_result document::object_result::operator[](const std::string_view &key) const noexcept {
+inline document::element_result document::object_result::operator[](std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
-  return first[key];
+  return first[json_pointer];
 }
-inline document::element_result document::object_result::operator[](const char *key) const noexcept {
+inline document::element_result document::object_result::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::object_result::at(std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
-  return first[key];
+  return first.at(json_pointer);
+}
+inline document::element_result document::object_result::at_key(std::string_view key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
+}
+inline document::element_result document::object_result::at_key(const char *key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
@@ -167,12 +209,31 @@ inline document::operator document::object() const noexcept(false) {
 
 #endif
 
-inline document::element_result document::operator[](const std::string_view &key) const noexcept {
-  return root()[key];
+//#define REPORT_ERROR(CODE, MESSAGE) ((std::cerr << MESSAGE << std::endl), CODE)
+#define REPORT_ERROR(CODE, MESSAGE) (CODE)
+#define RETURN_ERROR(CODE, MESSAGE) return REPORT_ERROR((CODE), (MESSAGE));
+
+inline document::element_result document::at(std::string_view json_pointer) const noexcept {
+  if (json_pointer == "") { return root(); }
+  // NOTE: JSON pointer requires a / at the beginning of the document; we allow it to be optional.
+  return root().at(json_pointer.substr(json_pointer[0] == '/' ? 1 : 0));
 }
-inline document::element_result document::operator[](const char *key) const noexcept {
-  return root()[key];
+inline document::element_result document::at(size_t index) const noexcept {
+  return as_array().at(index);
 }
+inline document::element_result document::at_key(std::string_view key) const noexcept {
+  return as_object().at_key(key);
+}
+inline document::element_result document::at_key(const char *key) const noexcept {
+  return as_object().at_key(key);
+}
+inline document::element_result document::operator[](std::string_view json_pointer) const noexcept {
+  return at(json_pointer);
+}
+inline document::element_result document::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+
 
 inline document::doc_move_result document::load(const std::string &path) noexcept {
   document::parser parser;
@@ -324,13 +385,28 @@ inline document::object_result document::doc_result::as_object() const noexcept 
   return first.root().as_object();
 }
 
-inline document::element_result document::doc_result::operator[](const std::string_view &key) const noexcept {
+inline document::element_result document::doc_result::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline document::element_result document::doc_result::operator[](const char *key) const noexcept {
+inline document::element_result document::doc_result::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::doc_result::at(std::string_view key) const noexcept {
   if (error()) { return error(); }
-  return first[key];
+  return first.at(key);
+}
+inline document::element_result document::doc_result::at(size_t index) const noexcept {
+  if (error()) { return error(); }
+  return first.at(index);
+}
+inline document::element_result document::doc_result::at_key(std::string_view key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
+}
+inline document::element_result document::doc_result::at_key(const char *key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
 }
 
 //
@@ -349,13 +425,28 @@ inline document::object_result document::doc_move_result::as_object() const noex
   return first.root().as_object();
 }
 
-inline document::element_result document::doc_move_result::operator[](const std::string_view &key) const noexcept {
+inline document::element_result document::doc_move_result::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline document::element_result document::doc_move_result::operator[](const char *key) const noexcept {
+inline document::element_result document::doc_move_result::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::doc_move_result::at(std::string_view key) const noexcept {
   if (error()) { return error(); }
-  return first[key];
+  return first.at(key);
+}
+inline document::element_result document::doc_move_result::at(size_t index) const noexcept {
+  if (error()) { return error(); }
+  return first.at(index);
+}
+inline document::element_result document::doc_move_result::at_key(std::string_view key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
+}
+inline document::element_result document::doc_move_result::at_key(const char *key) const noexcept {
+  if (error()) { return error(); }
+  return first.at_key(key);
 }
 
 //
@@ -643,6 +734,43 @@ inline document::array::iterator document::array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
 
+inline document::element_result document::array::at(std::string_view json_pointer) const noexcept {
+  // - means "the append position" or "the element after the end of the array"
+  // We don't support this, because we're returning a real element, not a position.
+  if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
+
+  // Read the array index
+  size_t array_index = 0;
+  size_t i;
+  for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
+    uint8_t digit = uint8_t(json_pointer[i]) - '0';
+    // Check for non-digit in array index. If it's there, we're trying to get a field in an object
+    if (digit > 9) { return INCORRECT_TYPE; }
+    array_index = array_index*10 + digit;
+  }
+
+  // 0 followed by other digits is invalid
+  if (i > 1 && json_pointer[0] == '0') { RETURN_ERROR(INVALID_JSON_POINTER, "JSON pointer array index has other characters after 0"); }
+
+  // Empty string is invalid; so is a "/" with no digits before it
+  if (i == 0) { RETURN_ERROR(INVALID_JSON_POINTER, "Empty string in JSON pointer array index"); }
+
+  // Get the child
+  auto child = array(doc, json_index).at(array_index);
+  // If there is a /, we're not done yet, call recursively.
+  if (i < json_pointer.length()) {
+    child = child.at(json_pointer.substr(i+1));
+  }
+  return child;
+}
+inline document::element_result document::array::at(size_t index) const noexcept {
+  size_t i=0;
+  for (auto element : *this) {
+    if (i == index) { return element; }
+    i++;
+  }
+  return INDEX_OUT_OF_BOUNDS;
+}
 
 //
 // document::array::iterator inline implementation
@@ -659,7 +787,7 @@ inline void document::array::iterator::operator++() noexcept {
 }
 
 //
-// object inline implementation
+// document::object inline implementation
 //
 really_inline document::object::object() noexcept : internal::tape_ref() {}
 really_inline document::object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { };
@@ -669,7 +797,66 @@ inline document::object::iterator document::object::begin() const noexcept {
 inline document::object::iterator document::object::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-inline document::element_result document::object::operator[](const std::string_view &key) const noexcept {
+
+inline document::element_result document::object::operator[](std::string_view json_pointer) const noexcept {
+  return at(json_pointer);
+}
+inline document::element_result document::object::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::object::at(std::string_view json_pointer) const noexcept {
+  // Unescape the key
+  std::string unescaped;
+  unescaped.reserve(json_pointer.length());
+  size_t i;
+  for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
+    switch (json_pointer[i]) {
+      // Handle ~ escaping: ~0 = ~, ~1 = /
+      case '~': {
+        i++;
+        // ~ at end of string is invalid
+        if (i >= json_pointer.length()) { RETURN_ERROR(INVALID_JSON_POINTER, "~ at end of string in JSON pointer"); }
+        switch (json_pointer[i]) {
+          case '0':
+            unescaped.push_back('~');
+            break;
+          case '1':
+            unescaped.push_back('/');
+            break;
+          default:
+            RETURN_ERROR(INVALID_JSON_POINTER, "Unexpected ~ escape character in JSON pointer");
+        }
+        break;
+      }
+      // TODO backslash doesn't appear to be a thing in JSON pointer
+      case '\\': {
+        i++;
+        // backslash at end of string is invalid
+        if (i >= json_pointer.length()) { RETURN_ERROR(INVALID_JSON_POINTER, "~ at end of string in JSON pointer"); }
+        // Check for invalid escape characters
+        if (json_pointer[i] != '\\' && json_pointer[i] != '"' && json_pointer[i] > 0x1F) {
+          RETURN_ERROR(INVALID_JSON_POINTER, "Invalid backslash escape in JSON pointer");
+        }
+        unescaped.push_back(json_pointer[i]);
+        break;
+      }
+      default:
+        unescaped.push_back(json_pointer[i]);
+        break;
+    }
+  }
+
+  // Grab the child with the given key
+  auto child = at_key(unescaped);
+
+  // If there is a /, we have to recurse and look up more of the path
+  if (i < json_pointer.length()) {
+    child = child.at(json_pointer.substr(i+1));
+  }
+
+  return child;
+}
+inline document::element_result document::object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (key == field.key()) {
@@ -678,7 +865,7 @@ inline document::element_result document::object::operator[](const std::string_v
   }
   return NO_SUCH_FIELD;
 }
-inline document::element_result document::object::operator[](const char *key) const noexcept {
+inline document::element_result document::object::at_key(const char *key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (!strcmp(key, field.key_c_str())) {
@@ -858,15 +1045,30 @@ inline document::object_result document::element::as_object() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-inline document::element_result document::element::operator[](const std::string_view &key) const noexcept {
-  auto [obj, error] = as_object();
-  if (error) { return error; }
-  return obj[key];
+inline document::element_result document::element::operator[](std::string_view json_pointer) const noexcept {
+  return at(json_pointer);
 }
-inline document::element_result document::element::operator[](const char *key) const noexcept {
-  auto [obj, error] = as_object();
-  if (error) { return error; }
-  return obj[key];
+inline document::element_result document::element::operator[](const char *json_pointer) const noexcept {
+  return (*this)[std::string_view(json_pointer)];
+}
+inline document::element_result document::element::at(std::string_view json_pointer) const noexcept {
+  switch (type()) {
+    case internal::tape_type::START_OBJECT:
+      return object(doc, json_index).at(json_pointer);
+    case internal::tape_type::START_ARRAY:
+      return array(doc, json_index).at(json_pointer);
+    default:
+      return INCORRECT_TYPE;
+  }
+}
+inline document::element_result document::element::at(size_t index) const noexcept {
+  return as_array().at(index);
+}
+inline document::element_result document::element::at_key(std::string_view key) const noexcept {
+  return as_object().at_key(key);
+}
+inline document::element_result document::element::at_key(const char *key) const noexcept {
+  return as_object().at_key(key);
 }
 
 //

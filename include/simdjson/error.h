@@ -30,8 +30,11 @@ enum error_code {
   UNSUPPORTED_ARCHITECTURE, ///< unsupported architecture
   INCORRECT_TYPE,           ///< JSON element has a different type than user expected
   NUMBER_OUT_OF_RANGE,      ///< JSON number does not fit in 64 bits
+  INDEX_OUT_OF_BOUNDS,      ///< JSON array index too large
   NO_SUCH_FIELD,            ///< JSON field not found in object
   IO_ERROR,                 ///< Error reading a file
+  INVALID_JSON_POINTER,     ///< Invalid JSON pointer reference
+  INVALID_URI_FRAGMENT,     ///< Invalid URI fragment
   UNEXPECTED_ERROR,         ///< indicative of a bug in simdjson
   /** @private Number of error codes */
   NUM_ERROR_CODES
@@ -77,6 +80,7 @@ private:
  */
 template<typename T>
 struct simdjson_result : public std::pair<T, error_code> {
+
   /**
    * Move the value and the error to the provided variables.
    */

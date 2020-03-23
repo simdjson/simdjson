@@ -40,19 +40,11 @@ simdjson is easily consumable with a single .h and .cpp file.
    100 results.
    ```
 
-## Real-world usage
+## How It Works
 
-- [Microsoft FishStore](https://github.com/microsoft/FishStore)
-- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
-- [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
+simdjson's startling speed is a result of research into the best ways to take advantage of modern superscalar architectures. The biggest factors are using parallel/vector algorithms and SIMD instructions to eliminate branches, reducing data dependency, and careful attention to cache.
 
-If you are planning to use simdjson in a product, please work from one of our releases.
-
-## Research article (VLDB Journal)
-
-A description of the design and implementation of simdjson is in our research article:
-
-* Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
+* A description of the design and implementation of simdjson is in our research article in VLDB journal: Geoff Langdale, Daniel Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
@@ -60,14 +52,19 @@ Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318):
 
 [<img src="images/halvarflake.png" width="50%">](https://twitter.com/halvarflake/status/1118459536686362625)
 
-
 ## Talks
 
 QCon San Francisco 2019 (best voted talk):
 
 [![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)
 
+## Real-world usage
 
+- [Microsoft FishStore](https://github.com/microsoft/FishStore)
+- [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
+- [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
+
+If you are planning to use simdjson in a product, please work from one of our releases.
 
 ## Performance results
 
