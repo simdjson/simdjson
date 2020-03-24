@@ -145,29 +145,16 @@ int main(int argc, char *argv[]) {
           .is_valid(),
       true, memcpy(buffer, mini_buffer, p.size()), repeat, volume, !just_data);
 
-  simdjson::ParsedJson pj;
-  bool is_alloc_ok = pj.allocate_capacity(p.size(), 1024);
-  if (!is_alloc_ok) {
-    fprintf(stderr, "failed to allocate memory\n");
-    return EXIT_FAILURE;
-  }
+  simdjson::document::parser parser;
   bool automated_reallocation = false;
   BEST_TIME("simdjson orig",
-            simdjson::json_parse((const uint8_t *)buffer, p.size(), pj,
-                                 automated_reallocation),
+            parser.parse((const uint8_t *)buffer, p.size(),
+                                 automated_reallocation).error(),
             simdjson::SUCCESS, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
-
-  simdjson::ParsedJson pj2;
-  bool is_alloc_ok2 = pj2.allocate_capacity(p.size(), 1024);
-  if (!is_alloc_ok2) {
-    fprintf(stderr, "failed to allocate memory\n");
-    return EXIT_FAILURE;
-  }
-  automated_reallocation = false;
   BEST_TIME("simdjson despaced",
-            simdjson::json_parse((const uint8_t *)buffer, minisize, pj2,
-                                 automated_reallocation),
+            parser.parse((const uint8_t *)buffer, minisize,
+                                 automated_reallocation).error(),
             simdjson::SUCCESS, memcpy(buffer, mini_buffer, p.size()), repeat, volume,
             !just_data);
 
