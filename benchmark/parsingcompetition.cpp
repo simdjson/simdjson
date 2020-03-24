@@ -92,13 +92,6 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
       std::cout << p.size() << " B";
     std::cout << ": will run " << repeat << " iterations." << std::endl;
   }
-  simdjson::ParsedJson pj;
-  bool allocok = pj.allocate_capacity(p.size(), 1024);
-
-  if (!allocok) {
-    std::cerr << "can't allocate memory" << std::endl;
-    return false;
-  }
   int volume = p.size();
   if (just_data) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
@@ -109,14 +102,15 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     BEST_TIME("getline ",sum_line_lengths(p.data(), p.size()) , lc, , 
        repeat, volume, !just_data);
   }
- 
+
   if (!just_data)
-    BEST_TIME("simdjson (dynamic mem) ", build_parsed_json(p).is_valid(), true,
+    BEST_TIME("simdjson (dynamic mem) ", simdjson::build_parsed_json(p).is_valid(), true,
               , repeat, volume, !just_data);
   // (static alloc)
-  BEST_TIME("simdjson ", json_parse(p, pj), simdjson::SUCCESS, , repeat, volume,
+  simdjson::document::parser parser;
+  BEST_TIME("simdjson ", parser.parse(p).error(), simdjson::SUCCESS, , repeat, volume,
             !just_data);
-
+ 
   rapidjson::Document d;
 
   char *buffer = (char *)malloc(p.size() + 1);
