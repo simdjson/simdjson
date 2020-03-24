@@ -31,8 +31,11 @@ namespace simdjson::internal {
     { UNSUPPORTED_ARCHITECTURE, "simdjson does not have an implementation supported by this CPU architecture (perhaps it's a non-SIMD CPU?)." },
     { INCORRECT_TYPE, "The JSON element does not have the requested type." },
     { NUMBER_OUT_OF_RANGE, "The JSON number is too large or too small to fit within the requested type." },
+    { INDEX_OUT_OF_BOUNDS, "Attempted to access an element of a JSON array that is beyond its length." },
     { NO_SUCH_FIELD, "The JSON field referenced does not exist in this object." },
     { IO_ERROR, "Error reading the file." },
+    { INVALID_JSON_POINTER, "Invalid JSON pointer syntax." },
+    { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
     { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" }
   }; // error_messages[]
 } // namespace simdjson::internal
