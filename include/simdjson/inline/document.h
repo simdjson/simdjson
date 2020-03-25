@@ -16,6 +16,7 @@ namespace simdjson {
 //
 // element_result inline implementation
 //
+really_inline document::element_result::element_result() noexcept : simdjson_result<element>() {}
 really_inline document::element_result::element_result(element value) noexcept : simdjson_result<element>(value) {}
 really_inline document::element_result::element_result(error_code error) noexcept : simdjson_result<element>(error) {}
 inline simdjson_result<bool> document::element_result::is_null() const noexcept {
@@ -111,6 +112,7 @@ inline document::element_result::operator document::object() const noexcept(fals
 //
 // array_result inline implementation
 //
+really_inline document::array_result::array_result() noexcept : simdjson_result<array>() {}
 really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>(value) {}
 really_inline document::array_result::array_result(error_code error) noexcept : simdjson_result<array>(error) {}
 
@@ -146,6 +148,7 @@ inline document::element_result document::array_result::at(size_t index) const n
 //
 // object_result inline implementation
 //
+really_inline document::object_result::object_result() noexcept : simdjson_result<object>() {}
 really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>(value) {}
 really_inline document::object_result::object_result(error_code error) noexcept : simdjson_result<object>(error) {}
 
@@ -805,53 +808,38 @@ inline document::element_result document::object::operator[](const char *json_po
   return (*this)[std::string_view(json_pointer)];
 }
 inline document::element_result document::object::at(std::string_view json_pointer) const noexcept {
-  // Unescape the key
-  std::string unescaped;
-  unescaped.reserve(json_pointer.length());
-  size_t i;
-  for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
-    switch (json_pointer[i]) {
-      // Handle ~ escaping: ~0 = ~, ~1 = /
-      case '~': {
-        i++;
-        // ~ at end of string is invalid
-        if (i >= json_pointer.length()) { RETURN_ERROR(INVALID_JSON_POINTER, "~ at end of string in JSON pointer"); }
-        switch (json_pointer[i]) {
-          case '0':
-            unescaped.push_back('~');
-            break;
-          case '1':
-            unescaped.push_back('/');
-            break;
-          default:
-            RETURN_ERROR(INVALID_JSON_POINTER, "Unexpected ~ escape character in JSON pointer");
-        }
-        break;
-      }
-      // TODO backslash doesn't appear to be a thing in JSON pointer
-      case '\\': {
-        i++;
-        // backslash at end of string is invalid
-        if (i >= json_pointer.length()) { RETURN_ERROR(INVALID_JSON_POINTER, "~ at end of string in JSON pointer"); }
-        // Check for invalid escape characters
-        if (json_pointer[i] != '\\' && json_pointer[i] != '"' && json_pointer[i] > 0x1F) {
-          RETURN_ERROR(INVALID_JSON_POINTER, "Invalid backslash escape in JSON pointer");
-        }
-        unescaped.push_back(json_pointer[i]);
-        break;
-      }
-      default:
-        unescaped.push_back(json_pointer[i]);
-        break;
-    }
-  }
+  size_t slash = json_pointer.find('/');
+  std::string_view key = json_pointer.substr(0, slash);
 
   // Grab the child with the given key
-  auto child = at_key(unescaped);
+  document::element_result child;
+
+  // If there is an escape character in the key, unescape it and then get the child.
+  size_t escape = key.find('~');
+  if (escape != std::string_view::npos) {
+    // Unescape the key
+    std::string unescaped(key);
+    do {
+      switch (unescaped[escape+1]) {
+        case '0':
+          unescaped.replace(escape, 2, "~");
+          break;
+        case '1':
+          unescaped.replace(escape, 2, "/");
+          break;
+        default:
+          RETURN_ERROR(INVALID_JSON_POINTER, "Unexpected ~ escape character in JSON pointer");
+      }
+      escape = unescaped.find('~', escape+1);
+    } while (escape != std::string::npos);
+    child = at_key(unescaped);
+  } else {
+    child = at_key(key);
+  }
 
   // If there is a /, we have to recurse and look up more of the path
-  if (i < json_pointer.length()) {
-    child = child.at(json_pointer.substr(i+1));
+  if (slash != std::string_view::npos) {
+    child = child.at(json_pointer.substr(slash+1));
   }
 
   return child;

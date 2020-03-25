@@ -1110,6 +1110,7 @@ private:
  /** The result of a JSON navigation that may fail. */
 class document::element_result : public simdjson_result<document::element> {
 public:
+  really_inline element_result() noexcept;
   really_inline element_result(element value) noexcept;
   really_inline element_result(error_code error) noexcept;
 
@@ -1146,6 +1147,7 @@ public:
 /** The result of a JSON conversion that may fail. */
 class document::array_result : public simdjson_result<document::array> {
 public:
+  really_inline array_result() noexcept;
   really_inline array_result(array value) noexcept;
   really_inline array_result(error_code error) noexcept;
 
@@ -1163,6 +1165,7 @@ public:
 /** The result of a JSON conversion that may fail. */
 class document::object_result : public simdjson_result<document::object> {
 public:
+  really_inline object_result() noexcept;
   really_inline object_result(object value) noexcept;
   really_inline object_result(error_code error) noexcept;
 

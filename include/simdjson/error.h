@@ -119,6 +119,11 @@ struct simdjson_result : public std::pair<T, error_code> {
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
+   * Create a new empty result with error = UNINITIALIZED.
+   */
+  simdjson_result() noexcept : simdjson_result(UNINITIALIZED) {}
+
+  /**
    * Create a new error result.
    */
   simdjson_result(error_code _error) noexcept : std::pair<T, error_code>({}, _error) {}
@@ -179,6 +184,11 @@ struct simdjson_move_result : std::pair<T, error_code> {
   operator T() noexcept(false) { return move(); }
 
 #endif
+
+  /**
+   * Create a new empty result with error = UNINITIALIZED.
+   */
+  simdjson_move_result() noexcept : simdjson_move_result(UNINITIALIZED) {}
 
   /**
    * Create a new error result.
