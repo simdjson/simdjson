@@ -50,7 +50,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     if (!pj.is_valid()) {
       throw 1;
     }
-    simdjson::ParsedJson::Iterator pjh(pj.doc);
+    simdjson::ParsedJson::Iterator pjh(pj);
     if (pjh.is_ok()) {
       compute_dump(pjh);
     }

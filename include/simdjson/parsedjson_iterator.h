@@ -1,5 +1,7 @@
-#ifndef SIMDJSON_DOCUMENT_ITERATOR_H
-#define SIMDJSON_DOCUMENT_ITERATOR_H
+// TODO Remove this -- deprecated API and files
+
+#ifndef SIMDJSON_PARSEDJSON_ITERATOR_H
+#define SIMDJSON_PARSEDJSON_ITERATOR_H
 
 #include <cstring>
 #include <string>
@@ -9,18 +11,16 @@
 #include <stdexcept>
 
 #include "simdjson/document.h"
+#include "simdjson/parsedjson.h"
 #include "simdjson/internal/jsonformatutils.h"
 
 namespace simdjson {
 
-template <size_t max_depth> class document_iterator {
+class ParsedJson::Iterator {
 public:
-#if SIMDJSON_EXCEPTIONS
-  document_iterator(const document::parser &parser) noexcept(false);
-#endif
-  document_iterator(const document &doc) noexcept;
-  document_iterator(const document_iterator &o) noexcept;
-  document_iterator &operator=(const document_iterator &o) noexcept;
+  inline Iterator(const ParsedJson &parser) noexcept(false);
+  inline Iterator(const Iterator &o) noexcept;
+  inline ~Iterator() noexcept;
 
   inline bool is_ok() const;
 
@@ -175,7 +175,7 @@ public:
   // referenced is undefined, and evaluation fails". Here we just return the
   // first corresponding value. The length parameter is the length of the
   // jsonpointer string ('pointer').
-  bool move_to(const char *pointer, uint32_t length);
+  inline bool move_to(const char *pointer, uint32_t length);
 
   // Moves the iterator to the value corresponding to the json pointer.
   // Always search from the root of the document.
@@ -198,7 +198,7 @@ public:
   // Representation is not supported here. Also, in case of failure, we are
   // left pointing at the closest value it could reach. For these reasons it
   // is private. It exists because it is used by move_to().
-  bool relative_move_to(const char *pointer, uint32_t length);
+  inline bool relative_move_to(const char *pointer, uint32_t length);
 
   public:
   // throughout return true if we can do the navigation, false
@@ -245,7 +245,7 @@ public:
   // the start of our current scope; always succeeds
 
   // print the node we are currently pointing at
-  bool print(std::ostream &os, bool escape_strings = true) const;
+  inline bool print(std::ostream &os, bool escape_strings = true) const;
   typedef struct {
       size_t start_of_scope;
       uint8_t scope_type;
@@ -253,14 +253,15 @@ public:
 
   private:
   const document &doc;
+  size_t max_depth;
   size_t depth;
   size_t location; // our current location on a tape
   size_t tape_length;
   uint8_t current_type;
   uint64_t current_val;
-  scopeindex_t depth_index[max_depth];
+  scopeindex_t *depth_index;
 };
 
 } // namespace simdjson
 
-#endif // SIMDJSON_DOCUMENT_ITERATOR_H
+#endif

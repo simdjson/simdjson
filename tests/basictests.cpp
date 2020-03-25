@@ -42,18 +42,18 @@ namespace number_tests {
   bool small_integers() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    simdjson::document::parser parser;
+    simdjson::ParsedJson pj;
     for (int m = 10; m < 20; m++) {
       for (int i = -1024; i < 1024; i++) {
         auto n = sprintf(buf, "%*d", m, i);
         buf[n] = '\0';
         fflush(NULL);
-        auto [doc, error] = parser.parse(buf, n);
+        auto error = simdjson::json_parse(buf, n, pj);
         if (error) {
-          printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
+          printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error).c_str());
           return false;
         }
-        simdjson::document::iterator iter(doc);
+        simdjson::ParsedJson::Iterator iter(pj);
         if(!iter.is_number()) {
           printf("Root should be number\n");
           return false;
@@ -77,19 +77,19 @@ namespace number_tests {
   bool powers_of_two() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    simdjson::document::parser parser;
+    simdjson::ParsedJson pj;
     int maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
       auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       buf[n] = '\0';
       fflush(NULL);
-      auto [doc, error] = parser.parse(buf, n);
+      auto error = simdjson::json_parse(buf, n, pj);
       if (error) {
-        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
+        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error).c_str());
         return false;
       }
-      simdjson::document::iterator iter(doc);
+      simdjson::ParsedJson::Iterator iter(pj);
       if(!iter.is_number()) {
         printf("Root should be number\n");
         return false;
@@ -214,17 +214,17 @@ namespace number_tests {
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    simdjson::document::parser parser;
+    simdjson::ParsedJson pj;
     for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
       auto n = sprintf(buf,"1e%d", i);
       buf[n] = '\0';
       fflush(NULL);
-      auto [doc, error] = parser.parse(buf, n);
+      auto error = simdjson::json_parse(buf, n, pj);
       if (error) {
-        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
+        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error).c_str());
         return false;
       }
-      simdjson::document::iterator iter(doc);
+      simdjson::ParsedJson::Iterator iter(pj);
       if(!iter.is_number()) {
         printf("Root should be number\n");
         return false;
@@ -363,12 +363,12 @@ namespace document_tests {
         fflush(NULL);
       }
       counter++;
-      auto ok1 = json_parse(rec.c_str(), rec.length(), parser);
+      auto ok1 = simdjson::json_parse(rec.c_str(), rec.length(), parser);
       if (ok1 != 0 || !parser.is_valid()) {
         printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
         return false;
       }
-      auto ok2 = json_parse(rec, parser);
+      auto ok2 = simdjson::json_parse(rec, parser);
       if (ok2 != 0 || !parser.is_valid()) {
         printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
         return false;
@@ -461,13 +461,13 @@ namespace document_stream_tests {
     simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
-    simdjson::document::parser parser;
+    simdjson::ParsedJson pj;
     while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-      parse_res = js.json_parse(parser);
+      parse_res = js.json_parse(pj);
       if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
         break;
       }
-      simdjson::document::iterator iter(parser.doc);
+      simdjson::ParsedJson::Iterator iter(pj);
       if(!iter.is_object()) {
         printf("Root should be object\n");
         return false;
@@ -525,13 +525,13 @@ namespace document_stream_tests {
     simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
     int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
     size_t count = 0;
-    simdjson::document::parser parser;
+    simdjson::ParsedJson pj;
     while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-      parse_res = js.json_parse(parser);
+      parse_res = js.json_parse(pj);
       if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
         break;
       }
-      simdjson::document::iterator iter(parser.doc);
+      simdjson::ParsedJson::Iterator iter(pj);
       if(!iter.is_object()) {
         printf("Root should be object\n");
         return false;
@@ -842,12 +842,12 @@ namespace dom_api_tests {
             "}"
         "}";
 
-    auto [doc, error] = simdjson::document::parse(json);
-    if (error) {
-      printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(error));
+    ParsedJson pj = build_parsed_json(json);
+    if (pj.error) {
+      printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(pj.error));
       return false;
     }
-    simdjson::document::iterator iter(doc);
+    simdjson::ParsedJson::Iterator iter(pj);
     if(!iter.is_object()) {
       printf("Root should be object\n");
       return false;
