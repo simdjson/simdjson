@@ -46,7 +46,8 @@ static void build_parsed_json(State& state) {
 BENCHMARK(build_parsed_json);
 static void document_parse_error_code(State& state) {
   for (auto _ : state) {
-    auto [doc, error] = document::parse(EMPTY_ARRAY);
+    document::parser parser;
+    auto [doc, error] = parser.parse(EMPTY_ARRAY);
     if (error) { return; }
   }
 }
@@ -54,7 +55,8 @@ BENCHMARK(document_parse_error_code);
 static void document_parse_exception(State& state) {
   for (auto _ : state) {
     try {
-      UNUSED document doc = document::parse(EMPTY_ARRAY);
+      document::parser parser;
+      UNUSED document &doc = parser.parse(EMPTY_ARRAY);
     } catch(simdjson_error &j) {
       return;
     }

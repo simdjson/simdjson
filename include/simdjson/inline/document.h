@@ -238,27 +238,6 @@ inline document::element_result document::operator[](const char *json_pointer) c
 }
 
 
-inline document::doc_move_result document::load(const std::string &path) noexcept {
-  document::parser parser;
-  auto [doc, error] = parser.load(path);
-  return doc_move_result((document &&)doc, error);
-}
-
-inline document::doc_move_result document::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
-  document::parser parser;
-  auto [doc, error] = parser.parse(buf, len, realloc_if_needed);
-  return doc_move_result((document &&)doc, error);
-}
-really_inline document::doc_move_result document::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
-  return parse((const uint8_t *)buf, len, realloc_if_needed);
-}
-really_inline document::doc_move_result document::parse(const std::string &s) noexcept {
-  return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
-}
-really_inline document::doc_move_result document::parse(const padded_string &s) noexcept {
-  return parse(s.data(), s.length(), false);
-}
-
 WARN_UNUSED
 inline error_code document::set_capacity(size_t capacity) noexcept {
   if (capacity == 0) {
@@ -408,46 +387,6 @@ inline document::element_result document::doc_result::at_key(std::string_view ke
   return first.at_key(key);
 }
 inline document::element_result document::doc_result::at_key(const char *key) const noexcept {
-  if (error()) { return error(); }
-  return first.at_key(key);
-}
-
-//
-// doc_move_result inline implementation
-//
-inline document::doc_move_result::doc_move_result(document &&doc, error_code error) noexcept : simdjson_move_result<document>(std::move(doc), error) { }
-inline document::doc_move_result::doc_move_result(document &&doc) noexcept : simdjson_move_result<document>(std::move(doc)) { }
-inline document::doc_move_result::doc_move_result(error_code error) noexcept : simdjson_move_result<document>(error) { }
-
-inline document::array_result document::doc_move_result::as_array() const noexcept {
-  if (error()) { return error(); }
-  return first.root().as_array();
-}
-inline document::object_result document::doc_move_result::as_object() const noexcept {
-  if (error()) { return error(); }
-  return first.root().as_object();
-}
-
-inline document::element_result document::doc_move_result::operator[](std::string_view key) const noexcept {
-  if (error()) { return error(); }
-  return first[key];
-}
-inline document::element_result document::doc_move_result::operator[](const char *json_pointer) const noexcept {
-  return (*this)[std::string_view(json_pointer)];
-}
-inline document::element_result document::doc_move_result::at(std::string_view key) const noexcept {
-  if (error()) { return error(); }
-  return first.at(key);
-}
-inline document::element_result document::doc_move_result::at(size_t index) const noexcept {
-  if (error()) { return error(); }
-  return first.at(index);
-}
-inline document::element_result document::doc_move_result::at_key(std::string_view key) const noexcept {
-  if (error()) { return error(); }
-  return first.at_key(key);
-}
-inline document::element_result document::doc_move_result::at_key(const char *key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
@@ -1226,11 +1165,6 @@ inline std::ostream& minify<document::key_value_pair>::print(std::ostream& out) 
 
 #if SIMDJSON_EXCEPTIONS
 
-template<>
-inline std::ostream& minify<document::doc_move_result>::print(std::ostream& out) {
-  if (value.error()) { throw simdjson_error(value.error()); }
-  return out << minify<document>(value.first);
-}
 template<>
 inline std::ostream& minify<document::doc_result>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }

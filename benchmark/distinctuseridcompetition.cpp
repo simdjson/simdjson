@@ -114,7 +114,8 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
 
 __attribute__((noinline)) bool
 simdjson_just_parse(const simdjson::padded_string &p) {
-  return simdjson::document::parse(p).error() == simdjson::SUCCESS;
+  simdjson::document::parser parser;
+  return parser.parse(p).error() != simdjson::SUCCESS;
 }
 
 void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
@@ -368,7 +369,7 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   simdjson::document::parser parser;
   simdjson::document &doc = parser.parse(p);
-  BEST_TIME("simdjson (just dom)", simdjson_just_dom(doc).size(), size,
+  BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size() + 1);
   buffer[p.size()] = '\0';

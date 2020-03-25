@@ -3,14 +3,6 @@
 using namespace std;
 using namespace simdjson;
 
-void document_parse_error_code() {
-  cout << __func__ << endl;
-
-  auto [doc, error] = document::parse("[ 1, 2, 3 ]"_padded);
-  if (error) { cerr << "Error: " << error << endl; exit(1); }
-  cout << doc << endl;
-}
-
 void parser_parse_error_code() {
   cout << __func__ << endl;
 
@@ -71,30 +63,20 @@ void parser_parse_fixed_capacity() {
 
 #if SIMDJSON_EXCEPTIONS
 
-void document_parse_exception() {
-  cout << __func__ << endl;
-
-  cout << document::parse("[ 1, 2, 3 ]"_padded) << endl;
-}
-
-void document_parse_padded_string() {
+void parser_parse_padded_string() {
   cout << __func__ << endl;
 
   auto json = "[ 1, 2, 3 ]"_padded;
-  cout << document::parse(json) << endl;
+  document::parser parser;
+  cout << parser.parse(json) << endl;
 }
 
-void document_parse_get_corpus() {
+void parser_parse_get_corpus() {
   cout << __func__ << endl;
 
   auto json = get_corpus("jsonexamples/small/demo.json");
-  cout << document::parse(json) << endl;
-}
-
-void document_load() {
-  cout << __func__ << endl;
-
-  cout << document::load("jsonexamples/small/demo.json") << endl;
+  document::parser parser;
+  cout << parser.parse(json) << endl;
 }
 
 void parser_parse_exception() {
@@ -126,18 +108,15 @@ void parser_parse_many_exception() {
 
 int main() {
   cout << "Running examples." << endl;
-  document_parse_error_code();
   parser_parse_error_code();
   parser_parse_many_error_code();
   parser_parse_max_capacity();
   parser_parse_fixed_capacity();
 #if SIMDJSON_EXCEPTIONS
-  document_parse_exception();
   parser_parse_exception();
   parser_parse_many_exception();
-  document_parse_padded_string();
-  document_parse_get_corpus();
-  document_load();
+  parser_parse_padded_string();
+  parser_parse_get_corpus();
 #endif // SIMDJSON_EXCEPTIONS
   cout << "Ran to completion!" << endl;
   return 0;
