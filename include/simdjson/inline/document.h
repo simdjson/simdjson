@@ -926,6 +926,9 @@ really_inline bool document::element::is_bool() const noexcept {
 really_inline bool document::element::is_number() const noexcept {
   return type() == internal::tape_type::UINT64 || type() == internal::tape_type::INT64 || type() == internal::tape_type::DOUBLE;
 }
+really_inline bool document::element::is_float() const noexcept {
+  return type() == internal::tape_type::DOUBLE;
+}
 really_inline bool document::element::is_integer() const noexcept {
   return type() == internal::tape_type::UINT64 || type() == internal::tape_type::INT64;
 }

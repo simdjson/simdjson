@@ -613,6 +613,8 @@ public:
   really_inline bool is_number() const noexcept;
   /** Whether this is a JSON integer (e.g. 1 or -1, but *not* 1.0 or 1e2) */
   really_inline bool is_integer() const noexcept;
+  /** Whether this is a JSON number but not an integer */
+  really_inline bool is_float() const noexcept;
   /** Whether this is a JSON string (e.g. "abc") */
   really_inline bool is_string() const noexcept;
   /** Whether this is a JSON array (e.g. []) */
