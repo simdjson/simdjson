@@ -6,8 +6,6 @@
 
 namespace simdjson {
 
-template <class string_container = padded_string> class JsonStream;
-
 /**
  * A forward-only stream of documents.
  *
@@ -137,7 +135,6 @@ private:
   std::thread stage_1_thread;
   document::parser parser_thread;
 #endif
-  template <class string_container> friend class JsonStream;
   friend class document::parser;
 }; // class document::stream
 

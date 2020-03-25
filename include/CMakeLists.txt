@@ -10,13 +10,11 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_stream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/error.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/parsedjson_iterator.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonstream.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson_iterator.h
