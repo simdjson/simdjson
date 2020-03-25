@@ -34,10 +34,23 @@ struct stat_s {
   size_t key_count;
   size_t key_maximum_length;
   size_t maximum_depth;
+  size_t ascii_key_count;
+  size_t ascii_string_count;
+  size_t maximum_object_size;
+  size_t maximum_array_size;
   bool valid;
 };
 
 using stat_t = struct stat_s;
+
+bool is_ascii(const char *p, size_t length) {
+  for (size_t i = 0; i < length; i++) {
+    if (static_cast<unsigned char>(p[i]) >= 128) {
+      return false;
+    }
+  }
+  return true;
+}
 
 void recurse(simdjson::document::iterator &pjh, stat_t &answer, size_t depth) {
   if (depth > answer.maximum_depth) {
@@ -46,7 +59,12 @@ void recurse(simdjson::document::iterator &pjh, stat_t &answer, size_t depth) {
   if (pjh.is_object()) {
     answer.object_count++;
     if (pjh.down()) {
+      size_t object_count = 1;
       depth++;
+      if (is_ascii(pjh.get_string(), pjh.get_string_length())) {
+        answer.ascii_key_count++;
+        answer.ascii_string_count++;
+      }
       answer.string_count++;
       answer.key_count++;
       size_t len = pjh.get_string_length();
@@ -55,18 +73,28 @@ void recurse(simdjson::document::iterator &pjh, stat_t &answer, size_t depth) {
       pjh.next();
       recurse(pjh, answer, depth); // let us recurse
       while (pjh.next()) {
+        object_count++;
         answer.string_count++;
         pjh.next();
         recurse(pjh, answer, depth); // let us recurse
       }
+      if(object_count > answer.maximum_object_size) {
+        answer.maximum_object_size = object_count;
+      }
       pjh.up();
     }
   } else if (pjh.is_array()) {
+    answer.array_count++;
     if (pjh.down()) {
+      size_t array_count = 1;
       depth++;
       recurse(pjh, answer, depth);
       while (pjh.next()) {
+        array_count++;
         recurse(pjh, answer, depth);
+      }
+      if(array_count > answer.maximum_array_size) {
+        answer.maximum_array_size = array_count;
       }
       pjh.up();
     }
@@ -85,6 +113,9 @@ void recurse(simdjson::document::iterator &pjh, stat_t &answer, size_t depth) {
       answer.null_count++;
     } else if (pjh.is_string()) {
       answer.string_count++;
+      if (is_ascii(pjh.get_string(), pjh.get_string_length())) {
+        answer.ascii_string_count++;
+      }
     } else {
       throw std::runtime_error("unrecognized node.");
     }
@@ -117,6 +148,10 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   answer.key_count = 0;
   answer.key_maximum_length = 0;
   answer.maximum_depth = 0;
+  answer.ascii_key_count = 0;
+  answer.ascii_string_count = 0;
+  answer.maximum_object_size = 0;
+  answer.maximum_array_size = 0;
   answer.structural_indexes_count = parser.n_structural_indexes;
 
   simdjson::document::iterator iter(doc);
@@ -152,23 +187,28 @@ int main(int argc, char *argv[]) {
       "integer_count"            = %10zu,
       "float_count"              = %10zu,
       "string_count"             = %10zu,
+      "ascii_string_count"       = %10zu,
       "backslash_count"          = %10zu,
       "non_ascii_byte_count"     = %10zu,
       "object_count"             = %10zu,
+      "maximum_object_size"      = %10zu,
       "array_count"              = %10zu,
+      "maximum_array_size"       = %10zu,
       "null_count"               = %10zu,
       "true_count"               = %10zu,
       "false_count"              = %10zu,
       "byte_count"               = %10zu,
       "structural_indexes_count" = %10zu,
       "key_count"                = %10zu,
+      "ascii_key_count"          = %10zu,
       "key_maximum_length"       = %10zu,
       "maximum_depth"            = %10zu
 }
 )",
-         s.integer_count, s.float_count, s.string_count, s.backslash_count,
-         s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
-         s.true_count, s.false_count, s.byte_count, s.structural_indexes_count,
-         s.key_count, s.key_maximum_length, s.maximum_depth);
+         s.integer_count, s.float_count, s.string_count, s.ascii_string_count,
+         s.backslash_count, s.non_ascii_byte_count, s.object_count, s.maximum_object_size,
+         s.array_count, s.maximum_array_size, s.null_count, s.true_count, s.false_count, s.byte_count,
+         s.structural_indexes_count, s.key_count, s.ascii_key_count,
+         s.key_maximum_length, s.maximum_depth);
   return EXIT_SUCCESS;
 }
