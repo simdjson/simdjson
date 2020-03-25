@@ -31,19 +31,76 @@ struct stat_s {
   size_t false_count;
   size_t byte_count;
   size_t structural_indexes_count;
+  size_t key_count;
+  size_t key_maximum_length;
+  size_t maximum_depth;
   bool valid;
 };
 
 using stat_t = struct stat_s;
 
+void recurse(simdjson::document::iterator &pjh, stat_t &answer, size_t depth) {
+  if (depth > answer.maximum_depth) {
+    answer.maximum_depth = depth;
+  }
+  if (pjh.is_object()) {
+    answer.object_count++;
+    if (pjh.down()) {
+      depth++;
+      answer.string_count++;
+      answer.key_count++;
+      size_t len = pjh.get_string_length();
+      if (len > answer.key_maximum_length)
+        answer.key_maximum_length = len;
+      pjh.next();
+      recurse(pjh, answer, depth); // let us recurse
+      while (pjh.next()) {
+        answer.string_count++;
+        pjh.next();
+        recurse(pjh, answer, depth); // let us recurse
+      }
+      pjh.up();
+    }
+  } else if (pjh.is_array()) {
+    if (pjh.down()) {
+      depth++;
+      recurse(pjh, answer, depth);
+      while (pjh.next()) {
+        recurse(pjh, answer, depth);
+      }
+      pjh.up();
+    }
+  } else {
+    if (pjh.is_double()) {
+      answer.float_count++;
+    } else if (pjh.is_integer() || pjh.is_unsigned_integer()) {
+      answer.integer_count++;
+    } else if (pjh.is_false()) {
+      answer.false_count++;
+    } else if (pjh.is_true()) {
+      answer.true_count++;
+    } else if (pjh.is_false()) {
+      answer.false_count++;
+    } else if (pjh.is_null()) {
+      answer.null_count++;
+    } else if (pjh.is_string()) {
+      answer.string_count++;
+    } else {
+      throw std::runtime_error("unrecognized node.");
+    }
+  }
+}
+
 stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
-  simdjson::ParsedJson pj = simdjson::build_parsed_json(p);
-  answer.valid = pj.is_valid();
-  if (!answer.valid) {
-    std::cerr << pj.get_error_message() << std::endl;
+  simdjson::document::parser parser;
+  auto [doc, error] = parser.parse(p);
+  if (error) {
+    answer.valid = false;
+    std::cerr << error << std::endl;
     return answer;
   }
+  answer.valid = true;
   answer.backslash_count =
       count_backslash(reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.non_ascii_byte_count = count_nonasciibytes(
@@ -57,56 +114,13 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   answer.true_count = 0;
   answer.false_count = 0;
   answer.string_count = 0;
-  answer.structural_indexes_count = pj.n_structural_indexes;
-  size_t tape_idx = 0;
-  uint64_t tape_val = pj.doc.tape[tape_idx++];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  assert(type == 'r');
-  how_many = tape_val & simdjson::internal::JSON_VALUE_MASK;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = pj.doc.tape[tape_idx];
-    // uint64_t payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case 'l': // we have a long int
-      answer.integer_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'u': // we have a long uint
-      answer.integer_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'd': // we have a double
-      answer.float_count++;
-      tape_idx++; // skipping the double
-      break;
-    case 'n': // we have a null
-      answer.null_count++;
-      break;
-    case 't': // we have a true
-      answer.true_count++;
-      break;
-    case 'f': // we have a false
-      answer.false_count++;
-      break;
-    case '{': // we have an object
-      answer.object_count++;
-      break;
-    case '}': // we end an object
-      break;
-    case '[': // we start an array
-      answer.array_count++;
-      break;
-    case ']': // we end an array
-      break;
-    case '"': // we have a string
-      answer.string_count++;
-      break;
-    default:
-      break; // ignore
-    }
-  }
+  answer.key_count = 0;
+  answer.key_maximum_length = 0;
+  answer.maximum_depth = 0;
+  answer.structural_indexes_count = parser.n_structural_indexes;
+
+  simdjson::document::iterator iter(doc);
+  recurse(iter, answer, 0);
   return answer;
 }
 
@@ -122,6 +136,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[myoptind + 1]
               << std::endl;
   }
+
   auto [p, error] = simdjson::padded_string::load(filename);
   if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;
@@ -133,12 +148,27 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  printf("# integer_count float_count string_count backslash_count "
-         "non_ascii_byte_count object_count array_count null_count true_count "
-         "false_count byte_count structural_indexes_count\n");
-  printf("%zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", s.integer_count,
-         s.float_count, s.string_count, s.backslash_count,
+  printf(R"({
+      "integer_count"            = %10zu,
+      "float_count"              = %10zu,
+      "string_count"             = %10zu,
+      "backslash_count"          = %10zu,
+      "non_ascii_byte_count"     = %10zu,
+      "object_count"             = %10zu,
+      "array_count"              = %10zu,
+      "null_count"               = %10zu,
+      "true_count"               = %10zu,
+      "false_count"              = %10zu,
+      "byte_count"               = %10zu,
+      "structural_indexes_count" = %10zu,
+      "key_count"                = %10zu,
+      "key_maximum_length"       = %10zu,
+      "maximum_depth"            = %10zu
+}
+)",
+         s.integer_count, s.float_count, s.string_count, s.backslash_count,
          s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
-         s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
+         s.true_count, s.false_count, s.byte_count, s.structural_indexes_count,
+         s.key_count, s.key_maximum_length, s.maximum_depth);
   return EXIT_SUCCESS;
 }
