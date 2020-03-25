@@ -41,12 +41,6 @@ namespace parser_load {
     TEST_FAIL("No documents returned");
   }
 
-  bool document_load_nonexistent() {
-    TEST_START();
-    auto [doc, error] = document::load(NONEXISTENT_FILE);
-    ASSERT_ERROR(error, IO_ERROR);
-    TEST_SUCCEED();
-  }
   bool parser_load_nonexistent() {
     TEST_START();
     document::parser parser;
@@ -70,12 +64,6 @@ namespace parser_load {
     TEST_SUCCEED();
   }
 
-  bool document_load_chain() {
-    TEST_START();
-    auto [val, error] = document::load(NONEXISTENT_FILE)["foo"].as_uint64_t();
-    ASSERT_ERROR(error, IO_ERROR);
-    TEST_SUCCEED();
-  }
   bool parser_load_chain() {
     TEST_START();
     document::parser parser;
@@ -95,8 +83,8 @@ namespace parser_load {
   }
   bool run() {
     return parser_load_capacity() && parser_load_many_capacity()
-        && parser_load_nonexistent() && parser_load_many_nonexistent() && document_load_nonexistent() && padded_string_load_nonexistent()
-        && document_load_chain() && parser_load_chain() && parser_load_many_chain();
+        && parser_load_nonexistent() && parser_load_many_nonexistent() && padded_string_load_nonexistent()
+        && parser_load_chain() && parser_load_many_chain();
   }
 }
 

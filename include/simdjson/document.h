@@ -59,7 +59,6 @@ public:
   class parser;
   class stream;
 
-  class doc_move_result;
   class doc_result;
   class element_result;
   class array_result;
@@ -109,84 +108,10 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /**
-   * Load a JSON document from a file and return it.
-   *
-   *   document doc = document::load("jsonexamples/twitter.json");
-   *
-   * ### Parser Capacity
-   *
-   * If the parser's current capacity is less than the file length, it will allocate enough capacity
-   * to handle it (up to max_capacity).
-   *
-   * @param path The path to load.
-   * @return The document, or an error:
-   *         - IO_ERROR if there was an error opening or reading the file.
-   *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
-   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
-   *         - other json errors if parsing fails.
-   */
-  inline static doc_move_result load(const std::string& path) noexcept;
-
-  /**
-   * Parse a JSON document and return a reference to it.
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If realloc_if_needed is true,
-   * it is assumed that the buffer does *not* have enough padding, and it is reallocated, enlarged
-   * and copied before parsing.
-   *
-   * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
-   *            realloc_if_needed is true.
-   * @param len The length of the JSON.
-   * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
-   * @return the document, or an error if the JSON is invalid.
-   */
-  inline static doc_move_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
-
-  /**
-   * Parse a JSON document.
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If realloc_if_needed is true,
-   * it is assumed that the buffer does *not* have enough padding, and it is reallocated, enlarged
-   * and copied before parsing.
-   *
-   * @param buf The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, unless
-   *            realloc_if_needed is true.
-   * @param len The length of the JSON.
-   * @param realloc_if_needed Whether to reallocate and enlarge the JSON buffer to add padding.
-   * @return the document, or an error if the JSON is invalid.
-   */
-  really_inline static doc_move_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
-
-  /**
-   * Parse a JSON document.
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. If `str.capacity() - str.size()
-   * < SIMDJSON_PADDING`, the string will be copied to a string with larger capacity before parsing.
-   *
-   * @param s The JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes, or
-   *          a new string will be created with the extra padding.
-   * @return the document, or an error if the JSON is invalid.
-   */
-  really_inline static doc_move_result parse(const std::string &s) noexcept;
-
-  /**
-   * Parse a JSON document.
-   *
-   * @param s The JSON to parse.
-   * @return the document, or an error if the JSON is invalid.
-   */
-  really_inline static doc_move_result parse(const padded_string &s) noexcept;
-
-  // We do not want to allow implicit conversion from C string to std::string.
-  doc_result parse(const char *buf, bool realloc_if_needed = true) noexcept = delete;
-
-  /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -202,7 +127,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -218,7 +144,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -244,8 +171,9 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -257,8 +185,9 @@ public:
    *
    * Note: The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -278,139 +207,10 @@ template<typename T>
 class minify;
 
 /**
- * A parsed, *owned* document, or an error if the parse failed.
- *
- *     document &doc = document::parse(json);
- *
- * Returns an owned `document`. When the doc_move_result (or the document retrieved from it) goes out of
- * scope, the document's memory is deallocated.
- *
- * ## Error Codes vs. Exceptions
- *
- * This result type allows the user to pick whether to use exceptions or not.
- *
- * Use like this to avoid exceptions:
- *
- *     auto [doc, error] = document::parse(json);
- *     if (error) { exit(1); }
- *
- * Use like this if you'd prefer to use exceptions:
- *
- *     document doc = document::parse(json);
- *
- */
-class document::doc_move_result : public simdjson_move_result<document> {
-public:
-
-  /**
-   * Read this document as a JSON objec.
-   *
-   * @return The object value, or:
-   *         - UNEXPECTED_TYPE if the JSON document is not an object
-   */
-  inline object_result as_object() const noexcept;
-
-  /**
-   * Read this document as a JSON array.
-   *
-   * @return The array value, or:
-   *         - UNEXPECTED_TYPE if the JSON document is not an array
-   */
-  inline array_result as_array() const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](const char *json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc.at("/foo/a/1") == 20
-   *   doc.at("/")["foo"]["a"].at(1) == 20
-   *   doc.at("")["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result at(std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value at the given index.
-   *
-   * @return The value at the given index, or:
-   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
-   */
-  inline element_result at(size_t index) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(std::string_view s) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s) const noexcept;
-
-  ~doc_move_result() noexcept=default;
-  doc_move_result(document &&doc, error_code error) noexcept;
-  doc_move_result(document &&doc) noexcept;
-  doc_move_result(error_code error) noexcept;
-  friend class document;
-}; // class document::doc_move_result
-
-/**
  * A parsed document reference, or an error if the parse failed.
  *
- *     document &doc = document::parse(json);
+ *     document::parser parser;
+ *     document &doc = parser.parse(json);
  *
  * ## Document Ownership
  *
@@ -420,7 +220,7 @@ public:
  * This is more efficient for common cases where documents are parsed and used one at a time. If you
  * need to keep the document around longer, you may *take* it from the parser by casting it:
  *
- *     document doc = parser.parse(); // take ownership
+ *     document &doc = parser.parse(); // take ownership
  *
  * If you do this, the parser will automatically allocate a new document on the next `parse()` call.
  *
@@ -435,7 +235,7 @@ public:
  *
  * Use like this if you'd prefer to use exceptions:
  *
- *     document &doc = document::parse(json);
+ *     document &doc = parser.parse(json);
  *
  */
 class document::doc_result : public simdjson_result<document&> {
@@ -459,7 +259,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -475,7 +276,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -491,7 +293,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -517,8 +320,9 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -530,8 +334,9 @@ public:
    *
    * Note: The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -763,7 +568,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -779,7 +585,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -795,7 +602,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document doc = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -821,8 +629,9 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -834,8 +643,9 @@ public:
    *
    * Note: The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -897,9 +707,10 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::array a = document::parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
-   *   a.["0/foo/a/1"] == 20
-   *   a.["0"]["foo"]["a"].at(1) == 20
+   *   document::parser parser;
+   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   a["0/foo/a/1"] == 20
+   *   a["0"]["foo"]["a"].at(1) == 20
    *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
@@ -912,9 +723,10 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::array a = document::parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
-   *   a.["0/foo/a/1"] == 20
-   *   a.["0"]["foo"]["a"].at(1) == 20
+   *   document::parser parser;
+   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   a["0/foo/a/1"] == 20
+   *   a["0"]["foo"]["a"].at(1) == 20
    *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
@@ -927,7 +739,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::array a = document::parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   document::parser parser;
+   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
    *   a.at("0/foo/a/1") == 20
    *   a.at("0")["foo"]["a"].at(1) == 20
    *
@@ -1014,7 +827,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::object obj = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj["foo/a/1"] == 20
    *   obj["foo"]["a"].at(1) == 20
    *
@@ -1029,7 +843,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::object obj = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj["foo/a/1"] == 20
    *   obj["foo"]["a"].at(1) == 20
    *
@@ -1044,7 +859,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::object obj = document::parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::parser parser;
+   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj.at("foo/a/1") == 20
    *   obj.at("foo")["a"].at(1) == 20
    *
@@ -1061,8 +877,9 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -1074,8 +891,9 @@ public:
    *
    * Note: The key will be matched against **unescaped** JSON:
    *
-   *   document::parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   document::parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   *   document::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -1898,7 +1716,8 @@ private:
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
  *
- *   document doc = document::parse("   [ 1 , 2 , 3 ] "_padded);
+ *   document::parser parser;
+ *   document &doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
  *   cout << minify(doc) << endl; // prints [1,2,3]
  *
  */
@@ -1988,18 +1807,6 @@ inline std::ostream& operator<<(std::ostream& out, const document::key_value_pai
 
 #if SIMDJSON_EXCEPTIONS
 
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw simdjson_error if the result being printed has an error. If there is an error with the
- *        underlying output stream, that error will be propagated (simdjson_error will not be
- *        thrown).
- */
-inline std::ostream& operator<<(std::ostream& out, const document::doc_move_result &value) noexcept(false) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *

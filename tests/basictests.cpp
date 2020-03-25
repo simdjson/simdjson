@@ -385,7 +385,8 @@ namespace document_tests {
     for(size_t i = 0; i < 200; i++) {
       input += "]";
     }
-    auto [doc, error] = simdjson::document::parse(input);
+    simdjson::document::parser parser;
+    auto [doc, error] = parser.parse(input);
     if (error) { std::cerr << "Error: " << simdjson::error_message(error) << std::endl; return false; }
     return true;
   }
@@ -550,13 +551,6 @@ namespace parse_api_tests {
   const padded_string BASIC_NDJSON = string("[1,2,3]\n[4,5,6]");
   // const padded_string EMPTY_NDJSON = string("");
 
-  bool document_parse() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto [doc, error] = document::parse(BASIC_JSON);
-    if (error) { cerr << error << endl; return false; }
-    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
-    return true;
-  }
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
@@ -589,13 +583,6 @@ namespace parse_api_tests {
   //   return true;
   // }
 
-  bool document_load() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto [doc, error] = document::load(JSON_TEST_PATH);
-    if (error) { cerr << error << endl; return false; }
-    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
-    return true;
-  }
   bool parser_load() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
@@ -619,12 +606,6 @@ namespace parse_api_tests {
 
 #if SIMDJSON_EXCEPTIONS
 
-  bool document_parse_exception() {
-    std::cout << "Running " << __func__ << std::endl;
-    document doc = document::parse(BASIC_JSON);
-    if (!doc.root().is_array()) { cerr << "Document did not parse as an array" << endl; return false; }
-    return true;
-  }
   bool parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
@@ -644,12 +625,6 @@ namespace parse_api_tests {
     return true;
   }
 
-  bool document_load_exception() {
-    std::cout << "Running " << __func__ << std::endl;
-    document doc = document::load(JSON_TEST_PATH);
-    if (!doc.root().is_object()) { cerr << "Document did not parse as an object" << endl; return false; }
-    return true;
-  }
   bool parser_load_exception() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
@@ -671,18 +646,14 @@ namespace parse_api_tests {
 #endif
 
   bool run() {
-    return document_parse() &&
-           parser_parse() &&
+    return parser_parse() &&
            parser_parse_many() &&
 //           parser_parse_many_empty() &&
-           document_load() &&
            parser_load() &&
            parser_load_many() &&
 #if SIMDJSON_EXCEPTIONS
-           document_parse_exception() &&
            parser_parse_exception() &&
            parser_parse_many_exception() &&
-           document_load_exception() &&
            parser_load_exception() &&
            parser_load_many_exception() &&
 #endif
@@ -1055,7 +1026,8 @@ namespace dom_api_tests {
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
 
-    document doc = document::parse(json);
+    document::parser parser;
+    document &doc = parser.parse(json);
     for (auto [key, value] : doc.as_object()) {
       if (key != expected_key[i] || uint64_t(value) != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << uint64_t(value) << endl; return false; }
       i++;
@@ -1070,7 +1042,8 @@ namespace dom_api_tests {
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
 
-    document doc = document::parse(json);
+    document::parser parser;
+    document &doc = parser.parse(json);
     for (uint64_t value : doc.as_array()) {
       if (value != expected_value[i]) { cerr << "Expected " << expected_value[i] << ", got " << value << endl; return false; }
       i++;
@@ -1143,7 +1116,8 @@ namespace dom_api_tests {
   bool document_object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3})");
-    document doc = document::parse(json);
+    document::parser parser;
+    document &doc = parser.parse(json);
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
     return true;
   }
@@ -1160,7 +1134,8 @@ namespace dom_api_tests {
   bool twitter_count_exception() {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
-    document doc = document::load(JSON_TEST_PATH);
+    document::parser parser;
+    document &doc = parser.load(JSON_TEST_PATH);
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
     return true;
@@ -1170,7 +1145,8 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Print users with a default profile.
     set<string_view> default_users;
-    document doc = document::load(JSON_TEST_PATH);
+    document::parser parser;
+    document &doc = parser.load(JSON_TEST_PATH);
     for (document::object tweet : doc["statuses"].as_array()) {
       document::object user = tweet["user"];
       if (user["default_profile"]) {
@@ -1185,7 +1161,8 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
-    document doc = document::load(JSON_TEST_PATH);
+    document::parser parser;
+    document &doc = parser.load(JSON_TEST_PATH);
     for (document::object tweet : doc["statuses"].as_array()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
@@ -1246,23 +1223,6 @@ namespace format_tests {
       return false;
     }
     return true;
-  }
-
-  bool print_document_parse() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto [doc, error] = document::parse(DOCUMENT);
-    if (error) { cerr << error << endl; return false; }
-    ostringstream s;
-    s << doc;
-    return assert_minified(s);
-  }
-  bool print_minify_document_parse() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto [doc, error] = document::parse(DOCUMENT);
-    if (error) { cerr << error << endl; return false; }
-    ostringstream s;
-    s << minify(doc);
-    return assert_minified(s);
   }
 
   bool print_parser_parse() {
@@ -1337,19 +1297,6 @@ namespace format_tests {
 
 #if SIMDJSON_EXCEPTIONS
 
-  bool print_document_parse_exception() {
-    std::cout << "Running " << __func__ << std::endl;
-    ostringstream s;
-    s << document::parse(DOCUMENT);
-    return assert_minified(s);
-  }
-  bool print_minify_document_parse_exception() {
-    std::cout << "Running " << __func__ << std::endl;
-    ostringstream s;
-    s << minify(document::parse(DOCUMENT));
-    return assert_minified(s);
-  }
-
   bool print_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     document::parser parser;
@@ -1369,14 +1316,16 @@ namespace format_tests {
 
   bool print_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << doc["foo"];
     return assert_minified(s, "1");
   }
   bool print_minify_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << minify(doc["foo"]);
     return assert_minified(s, "1");
@@ -1384,7 +1333,8 @@ namespace format_tests {
 
   bool print_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::element value = doc["foo"];
     ostringstream s;
     s << value;
@@ -1392,7 +1342,8 @@ namespace format_tests {
   }
   bool print_minify_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::element value = doc["foo"];
     ostringstream s;
     s << minify(value);
@@ -1401,14 +1352,16 @@ namespace format_tests {
 
   bool print_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << doc["bar"].as_array();
     return assert_minified(s, "[1,2,3]");
   }
   bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << minify(doc["bar"].as_array());
     return assert_minified(s, "[1,2,3]");
@@ -1416,14 +1369,16 @@ namespace format_tests {
 
   bool print_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << doc["baz"].as_object();
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
   bool print_minify_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     ostringstream s;
     s << minify(doc["baz"].as_object());
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
@@ -1431,7 +1386,8 @@ namespace format_tests {
 
   bool print_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::array value = doc["bar"];
     ostringstream s;
     s << value;
@@ -1439,7 +1395,8 @@ namespace format_tests {
   }
   bool print_minify_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::array value = doc["bar"];
     ostringstream s;
     s << minify(value);
@@ -1448,7 +1405,8 @@ namespace format_tests {
 
   bool print_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::object value = doc["baz"];
     ostringstream s;
     s << value;
@@ -1456,7 +1414,8 @@ namespace format_tests {
   }
   bool print_minify_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    const document &doc = document::parse(DOCUMENT);
+    document::parser parser;
+    document &doc = parser.parse(DOCUMENT);
     document::object value = doc["baz"];
     ostringstream s;
     s << minify(value);
@@ -1465,13 +1424,11 @@ namespace format_tests {
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
-    return print_document_parse() && print_minify_document_parse() &&
-           print_parser_parse() && print_minify_parser_parse() &&
+    return print_parser_parse() && print_minify_parser_parse() &&
            print_element() && print_minify_element() &&
            print_array() && print_minify_array() &&
            print_object() && print_minify_object() &&
 #if SIMDJSON_EXCEPTIONS
-           print_document_parse_exception() && print_minify_document_parse_exception() &&
            print_parser_parse_exception() && print_minify_parser_parse_exception() &&
            print_element_result_exception() && print_minify_element_result_exception() &&
            print_array_result_exception() && print_minify_array_result_exception() &&
