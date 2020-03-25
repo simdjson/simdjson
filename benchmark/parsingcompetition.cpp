@@ -237,7 +237,8 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
     for (int i = 0; i < repeat; i++) {
       unified.start();
-      if (json_parse(p, pj) != simdjson::SUCCESS)
+      auto [doc, error] = parser.parse(p);
+      if (error)
         printf("bug\n");
       unified.end(results);
       std::transform(stats.begin(), stats.end(), results.begin(), stats.begin(),
