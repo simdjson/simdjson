@@ -441,134 +441,6 @@ namespace document_stream_tests {
   }
 
   // returns true if successful
-  bool JsonStream_utf8_test() {
-    std::cout << "Running " << __func__ << std::endl;
-    fflush(NULL);
-    const size_t n_records = 10000;
-    std::string data;
-    char buf[1024];
-    for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
-                      "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
-                      "\"été\": {\"id\": %zu, \"name\": \"éventail%zu\"}}",
-                      i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
-      data += std::string(buf, n);
-    }
-    const size_t batch_size = 1000;
-    printf(".");
-    fflush(NULL);
-    simdjson::padded_string str(data);
-    simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
-    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-    size_t count = 0;
-    simdjson::ParsedJson pj;
-    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-      parse_res = js.json_parse(pj);
-      if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
-        break;
-      }
-      simdjson::ParsedJson::Iterator iter(pj);
-      if(!iter.is_object()) {
-        printf("Root should be object\n");
-        return false;
-      }
-      if(!iter.down()) {
-        printf("Root should not be emtpy\n");
-        return false;
-      }
-      if(!iter.is_string()) {
-        printf("Object should start with string key\n");
-        return false;
-      }
-      if(strcmp(iter.get_string(),"id")!=0) {
-        printf("There should a single key, id.\n");
-        return false;
-      }
-      iter.move_to_value();
-      if(!iter.is_integer()) {
-        printf("Value of image should be integer\n");
-        return false;
-      }
-      int64_t keyid = iter.get_integer();
-      if(keyid != (int64_t)count) {
-        printf("key does not match %d, expected %d\n",(int) keyid, (int) count);
-        return false;
-      }
-      count++;
-    }
-    if(count != n_records) {
-      printf("Something is wrong in JsonStream_utf8_test at window size = %zu.\n", batch_size);
-      return false;
-    }
-    printf("ok\n");
-    return true;
-  }
-
-  // returns true if successful
-  bool JsonStream_test() {
-    std::cout << "Running " << __func__ << std::endl;
-    fflush(NULL);
-    const size_t n_records = 10000;
-    std::string data;
-    char buf[1024];
-    for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
-                      "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
-                      "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
-                      i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
-      data += std::string(buf, n);
-    }
-    const size_t batch_size = 1000;
-    printf(".");
-    fflush(NULL);
-    simdjson::padded_string str(data);
-    simdjson::JsonStream<simdjson::padded_string> js{str, batch_size};
-    int parse_res = simdjson::SUCCESS_AND_HAS_MORE;
-    size_t count = 0;
-    simdjson::ParsedJson pj;
-    while (parse_res == simdjson::SUCCESS_AND_HAS_MORE) {
-      parse_res = js.json_parse(pj);
-      if (parse_res != simdjson::SUCCESS && parse_res != simdjson::SUCCESS_AND_HAS_MORE) {
-        break;
-      }
-      simdjson::ParsedJson::Iterator iter(pj);
-      if(!iter.is_object()) {
-        printf("Root should be object\n");
-        return false;
-      }
-      if(!iter.down()) {
-        printf("Root should not be emtpy\n");
-        return false;
-      }
-      if(!iter.is_string()) {
-        printf("Object should start with string key\n");
-        return false;
-      }
-      if(strcmp(iter.get_string(),"id")!=0) {
-        printf("There should a single key, id.\n");
-        return false;
-      }
-      iter.move_to_value();
-      if(!iter.is_integer()) {
-        printf("Value of image should be integer\n");
-        return false;
-      }
-      int64_t keyid = iter.get_integer();
-      if(keyid != (int64_t)count) {
-        printf("key does not match %d, expected %d\n",(int) keyid, (int) count);
-        return false;
-      }
-      count++;
-    }
-    if(count != n_records) {
-      printf("Something is wrong in JsonStream_test at window size = %zu.\n", batch_size);
-      return false;
-    }
-    printf("ok\n");
-    return true;
-  }
-
-  // returns true if successful
   bool document_stream_test() {
     std::cout << "Running " << __func__ << std::endl;
     fflush(NULL);
@@ -666,9 +538,7 @@ namespace document_stream_tests {
 
   bool run() {
     return document_stream_test() &&
-           document_stream_utf8_test() &&
-           JsonStream_test() &&
-           JsonStream_utf8_test();
+           document_stream_utf8_test();
   }
 }
 
