@@ -18,8 +18,6 @@ class tape_ref;
 
 namespace simdjson {
 
-template<size_t max_depth> class document_iterator;
-
 /**
  * A parsed JSON document.
  *
@@ -67,9 +65,6 @@ public:
   class array_result;
   class object_result;
   class stream_result;
-
-  // Nested classes. See definitions later in file.
-  using iterator = document_iterator<DEFAULT_MAX_DEPTH>;
 
   /**
    * Get the root element of this document as a JSON array.
@@ -1758,7 +1753,9 @@ public:
   WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   // type aliases for backcompat
-  using Iterator = document::iterator;
+  /** @deprecated Use the new DOM API instead */
+  class Iterator;
+  /** @deprecated Use simdjson_error instead */
   using InvalidJSON = simdjson_error;
 
   // Next location to write to in the tape
@@ -1892,7 +1889,7 @@ private:
   inline const document &get_document() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
-  template<size_t max_depth> friend class document_iterator;
+  friend class document::parser::Iterator;
   friend class document::stream;
 }; // class parser
 

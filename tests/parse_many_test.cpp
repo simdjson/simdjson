@@ -101,14 +101,6 @@ bool validate(const char *dirname) {
                 printf("size of file in bytes: %zu \n", json.size());
                 everything_fine = false;
             }
-            if(!error) {
-              // issue 570, we just want to check for segfault
-              simdjson::document::parser parser;
-              for (const simdjson::document &doc : parser.load_many(fullpath)) {
-                auto iter = simdjson::document::iterator(doc);
-                //do something
-              }
-            }
             free(fullpath);
         }
     }

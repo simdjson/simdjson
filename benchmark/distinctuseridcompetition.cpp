@@ -30,7 +30,7 @@ void print_vec(const std::vector<int64_t> &v) {
   std::cout << std::endl;
 }
 
-void simdjson_scan(std::vector<int64_t> &answer, simdjson::document::iterator i) {
+void simdjson_scan(std::vector<int64_t> &answer, simdjson::ParsedJson::Iterator i) {
   while (i.move_forward()) {
     if (i.get_scope_type() == '{') {
       bool found_user = (i.get_string_length() == 4) &&
@@ -49,9 +49,9 @@ void simdjson_scan(std::vector<int64_t> &answer, simdjson::document::iterator i)
 }
 
 __attribute__((noinline)) std::vector<int64_t>
-simdjson_just_dom(simdjson::document &doc) {
+simdjson_just_dom(simdjson::ParsedJson &pj) {
   std::vector<int64_t> answer;
-  simdjson_scan(answer, doc);
+  simdjson_scan(answer, pj);
   remove_duplicates(answer);
   return answer;
 }
@@ -59,8 +59,8 @@ simdjson_just_dom(simdjson::document &doc) {
 __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
-  auto [doc, error] = simdjson::document::parse(p);
-  simdjson_scan(answer, doc);
+  ParsedJson pj = simdjson::build_parsed_json(p);
+  simdjson_scan(answer, pj);
   remove_duplicates(answer);
   return answer;
 }
@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
-  auto [dsimdjson, dsimdjson_error] = simdjson::document::parse(p);
+  ParsedJson dsimdjson = build_parsed_json(p);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(dsimdjson).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size());
