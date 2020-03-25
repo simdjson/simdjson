@@ -4,54 +4,16 @@
 #endif
 #include "simdjson.h"
 
-void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-  if (pjh.is_object()) {
-    std::cout << "{";
-    if (pjh.down()) {
-      pjh.print(std::cout); // must be a string
-      std::cout << ":";
-      pjh.next();
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        std::cout << ",";
-        pjh.print(std::cout);
-        std::cout << ":";
-        pjh.next();
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
-    }
-    std::cout << "}";
-  } else if (pjh.is_array()) {
-    std::cout << "[";
-    if (pjh.down()) {
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        std::cout << ",";
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
-    }
-    std::cout << "]";
-  } else {
-    pjh.print(std::cout); // just print the lone value
-  }
-}
-
 int main(int argc, char *argv[]) {
   bool rawdump = false;
-  bool apidump = false;
 
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "da")) != -1) {
+  while ((c = getopt(argc, argv, "d")) != -1) {
     switch (c) {
     case 'd':
       rawdump = true;
-      break;
-    case 'a':
-      apidump = true;
       break;
     default:
       abort();
@@ -79,9 +41,8 @@ int main(int argc, char *argv[]) {
               << "'." << std::endl;
     return EXIT_FAILURE;
   }
-  if (apidump) {
-    simdjson::document::iterator i(doc);
-    compute_dump(i);
+  if(rawdump) {
+    doc.dump_raw_tape(std::cout);
   } else {
     std::cout << doc;
   }
