@@ -60,9 +60,9 @@ bool json_pointer_failure_test(const char *json_pointer, error_code expected_fai
 
 int main() {
   if (
-    json_pointer_success_test(R"(/~1~001abc/1/\\\" 0/0)", "value0") &&
-    json_pointer_success_test(R"(/~1~001abc/1/\\\" 0/1)", "value1") &&
-    json_pointer_failure_test(R"(/~1~001abc/1/\\\" 0/2)", INDEX_OUT_OF_BOUNDS) && // index actually out of bounds
+    json_pointer_success_test("/~1~001abc/1/\\\" 0/0", "value0") &&
+    json_pointer_success_test("/~1~001abc/1/\\\" 0/1", "value1") &&
+    json_pointer_failure_test("/~1~001abc/1/\\\" 0/2", INDEX_OUT_OF_BOUNDS) && // index actually out of bounds
     json_pointer_success_test("/arr") && // get array
     json_pointer_failure_test("/arr/0", INDEX_OUT_OF_BOUNDS) && // array index 0 out of bounds on empty array
     json_pointer_success_test("/~1~001abc") && // get object
