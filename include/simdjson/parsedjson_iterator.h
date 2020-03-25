@@ -16,7 +16,7 @@
 
 namespace simdjson {
 
-class ParsedJson::Iterator {
+class [[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]] ParsedJson::Iterator {
 public:
   inline Iterator(const ParsedJson &parser) noexcept(false);
   inline Iterator(const Iterator &o) noexcept;
