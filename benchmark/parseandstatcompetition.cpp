@@ -43,6 +43,7 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
+// old API
 __attribute__((noinline)) stat_t
 simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
@@ -104,6 +105,53 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
     }
   }
   return answer;
+}
+
+// new API
+void simdjson_recurse(stat_t &s, simdjson::document::element element) {
+   if (element.is_array()) {
+     s.array_count++;
+     auto [array, array_error] = element.as_array();
+     if (!array_error) {
+       for (auto child : array) {
+         simdjson_recurse(s, child);
+       }
+     }
+   } else if (element.is_object()) {
+     s.object_count++;
+     auto [object, object_error] = element.as_object();
+     if (!object_error) {
+       for (auto [key, value] : object) {
+         simdjson_recurse(s, value);
+       }
+     }
+   } else {
+     if (element.is_number()) {
+       s.number_count++;
+     } else if (element.is_bool()) {
+       if (element.as_bool()) {
+         s.true_count++;
+       } else {
+         s.false_count++;
+       }
+     } else if (element.is_null()) {
+       s.null_count++;
+     }
+   }
+ }
+
+__attribute__((noinline)) stat_t
+simdjson_newapi_compute_stats(const simdjson::padded_string &p) {
+  stat_t s;
+  simdjson::document::parser parser;
+  auto [doc, error] = parser.parse(p);
+  if(error) {
+    s.valid = false;
+    return s;
+  }
+  s.valid = true;
+  simdjson_recurse(s, doc.root());
+  return s;
 }
 
 // see
@@ -337,10 +385,12 @@ int main(int argc, char *argv[]) {
   if (just_data) {
     printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }
-  BEST_TIME("simdjson  ", simdjson_compute_stats(p).valid, true, , repeat,
+  BEST_TIME("simdjson            ", simdjson_compute_stats(p).valid, true, , repeat,
             volume, !just_data);
-  BEST_TIME("RapidJSON  ", rapid_compute_stats(p).valid, true, , repeat, volume,
+  BEST_TIME("simdjson (new API)  ", simdjson_newapi_compute_stats(p).valid, true, , repeat,
+            volume, !just_data);
+  BEST_TIME("RapidJSON           ", rapid_compute_stats(p).valid, true, , repeat, volume,
             !just_data);
-  BEST_TIME("sasjon  ", sasjon_compute_stats(p).valid, true, , repeat, volume,
+  BEST_TIME("sasjon              ", sasjon_compute_stats(p).valid, true, , repeat, volume,
             !just_data);
 }
