@@ -409,11 +409,10 @@ namespace document_stream_tests {
       simdjson::document::stream s1 = parse_many_stream_return(parser, str);
   }
 
-  static bool parse_json_message_issue467(char const* message, std::size_t len, size_t expectedcount) {
+  static bool parse_json_message_issue467(simdjson::padded_string &json, size_t expectedcount) {
     simdjson::document::parser parser;
     size_t count = 0;
-    simdjson::padded_string str(message,len);
-    for (auto [doc, error] : parser.parse_many(str, len)) {
+    for (auto [doc, error] : parser.parse_many(json)) {
       if (error) {
           std::cerr << "Failed with simdjson error= " << error << std::endl;
           return false;
@@ -429,13 +428,13 @@ namespace document_stream_tests {
 
   bool json_issue467() {
     std::cout << "Running " << __func__ << std::endl;
-    const char * single_message = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
-    const char* two_messages = "{\"error\":[],\"result\":{\"token\":\"xxx\"}}{\"error\":[],\"result\":{\"token\":\"xxx\"}}";
+    auto single_message = R"({"error":[],"result":{"token":"xxx"}})"_padded;
+    auto two_messages = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
 
-    if(!parse_json_message_issue467(single_message, strlen(single_message),1)) {
+    if(!parse_json_message_issue467(single_message, 1)) {
       return false;
     }
-    if(!parse_json_message_issue467(two_messages, strlen(two_messages),2)) {
+    if(!parse_json_message_issue467(two_messages, 2)) {
       return false;
     }
     return true;
