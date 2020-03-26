@@ -7,6 +7,11 @@ executors:
       - image: gcc:7
         environment:
           CXX: g++
+  gcc8:
+    docker:
+      - image: gcc:8
+        environment:
+          CXX: g++
   gcc9:
     docker:
       - image: gcc:9
@@ -25,6 +30,18 @@ commands:
       - run: apt-get update -qq
       - run: apt-get install -y clang build-essential git
   make_test:
+    steps:
+      - checkout
+      - run: make
+      - run: make amalgamate
+      - run: ARCHFLAGS=-march=haswell make amalgamate # some users do this: https://github.com/lemire/simdjson/issues/444
+      - run: make test
+      - run: make checkperf
+      - run: make clean
+      - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
+      - run: make clean
+      - run: EXTRAFLAGS=-DSIMDJSON_NO_COMPUTED_GOTO=true make test # this should run tests with computed gotos disabled
+   make_test_strict:
     steps:
       - checkout
       - run: EXTRAFLAGS=-Werror make
@@ -73,7 +90,11 @@ jobs:
   gcc9-avx:
     description: Build, run tests and check performance on GCC 9 and AVX 2
     executor: gcc9
-    steps: [ make_test ]
+    steps: [ make_test_strict ]
+  gcc8-avx:
+    description: Build, run tests and check performance on GCC 8 and AVX 2
+    executor: gcc9
+    steps: [ make_test_strict ]
   gcc-avx:
     description: Build, run tests and check performance on GCC 7 and AVX 2
     executor: gcc7
@@ -170,8 +191,9 @@ workflows:
   version: 2.1
   build_and_test:
     jobs:
-      - gcc-avx
       - gcc9-avx
+      - gcc8-avx
+      - gcc-avx
       - gcc-avx-dynamic
       - gcc-avx-static
       - gcc-avx-google-benchmarks
