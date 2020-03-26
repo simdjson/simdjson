@@ -951,7 +951,7 @@ inline simdjson_result<double> document::element::as_double() const noexcept {
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
-      return result;
+      return double(result);
     }
     case internal::tape_type::DOUBLE:
       return next_tape_value<double>();
