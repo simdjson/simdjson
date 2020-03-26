@@ -41,76 +41,70 @@ struct stat_s {
 
 using stat_t = struct stat_s;
 
+
+
+really_inline void simdjson_process_atom(stat_t &s,
+                                         simdjson::document::element element) {
+  if (element.is_integer()) {
+    s.integer_count++;
+  } else if(element.is_string()) {
+    s.string_count++;
+  } else if(element.is_float()) {
+    s.float_count++;
+  } else if (element.is_bool()) {
+    if (element.as_bool()) {
+      s.true_count++;
+    } else {
+      s.false_count++;
+    }
+  } else if (element.is_null()) {
+    s.null_count++;
+  }
+}
+
+void simdjson_recurse(stat_t &s, simdjson::document::element element) {
+  if (element.is_array()) {
+    s.array_count++;
+    auto [array, array_error] = element.as_array();
+    for (auto child : array) {
+      if (child.is_array() || child.is_object()) {
+        simdjson_recurse(s, child);
+      } else {
+        simdjson_process_atom(s, child);
+      }
+    }
+  } else if (element.is_object()) {
+    s.object_count++;
+    auto [object, object_error] = element.as_object();
+    for (auto [key, value] : object) {
+      s.string_count++; // for key
+      if (value.is_array() || value.is_object()) {
+        simdjson_recurse(s, value);
+      } else {
+        simdjson_process_atom(s, value);
+      }
+    }
+  } else {
+    simdjson_process_atom(s, element);
+  }
+}
+
 stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
-  simdjson::ParsedJson pj = simdjson::build_parsed_json(p);
-  answer.valid = pj.is_valid();
-  if (!answer.valid) {
+  stat_t answer{};
+  simdjson::document::parser parser;
+  auto [doc, error] = parser.parse(p);
+  if (error) {
+    answer.valid = false;
     return answer;
   }
+  answer.valid = true;
   answer.backslash_count =
       count_backslash(reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.non_ascii_byte_count = count_nonasciibytes(
       reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.byte_count = p.size();
-  answer.integer_count = 0;
-  answer.float_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
-  answer.string_count = 0;
-  answer.structural_indexes_count = pj.n_structural_indexes;
-  size_t tape_idx = 0;
-  uint64_t tape_val = pj.doc.tape[tape_idx++];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  assert(type == 'r');
-  how_many = tape_val & simdjson::internal::JSON_VALUE_MASK;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = pj.doc.tape[tape_idx];
-    // uint64_t payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case 'l': // we have a long int
-      answer.integer_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'u': // we have a long uint
-      answer.integer_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'd': // we have a double
-      answer.float_count++;
-      tape_idx++; // skipping the double
-      break;
-    case 'n': // we have a null
-      answer.null_count++;
-      break;
-    case 't': // we have a true
-      answer.true_count++;
-      break;
-    case 'f': // we have a false
-      answer.false_count++;
-      break;
-    case '{': // we have an object
-      answer.object_count++;
-      break;
-    case '}': // we end an object
-      break;
-    case '[': // we start an array
-      answer.array_count++;
-      break;
-    case ']': // we end an array
-      break;
-    case '"': // we have a string
-      answer.string_count++;
-      break;
-    default:
-      break; // ignore
-    }
-  }
+  answer.structural_indexes_count = parser.n_structural_indexes;
+  simdjson_recurse(answer, doc.root());
   return answer;
 }
 
