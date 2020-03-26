@@ -88,8 +88,8 @@ struct simdjson_result : public std::pair<T, error_code> {
     // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
     // tie(width, error) = size["w"].as_uint64_t();
     // fails with "error: no viable overloaded '='""
-    t = std::move(this->first);
-    e = std::move(this->second);
+    t = this->first;
+    e = this->second;
   }
 
   /**
@@ -156,7 +156,7 @@ struct simdjson_move_result : std::pair<T, error_code> {
     // std::tie(this->json, error) = padded_string::load(filename);
     // fails with "benchmark/benchmarker.h:266:33: error: no viable overloaded '='""
     t = std::move(this->first);
-    e = std::move(this->second);
+    e = this->second;
   }
 
   /**
@@ -198,7 +198,7 @@ struct simdjson_move_result : std::pair<T, error_code> {
   /**
    * Create a new successful result.
    */
-  simdjson_move_result(T value) noexcept : std::pair<T, error_code>(std::move(value), SUCCESS) {}
+  simdjson_move_result(T&& value) noexcept : std::pair<T, error_code>(std::forward<T>(value), SUCCESS) {}
 
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).

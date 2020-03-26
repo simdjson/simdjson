@@ -131,7 +131,7 @@ inline simdjson_move_result<padded_string> padded_string::load(const std::string
     return IO_ERROR;
   }
 
-  return std::move(s);
+  return simdjson_move_result<padded_string>(std::move(s));
 }
 
 } // namespace simdjson
