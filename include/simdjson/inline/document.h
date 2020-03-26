@@ -783,6 +783,16 @@ inline document::element_result document::object::at(std::string_view json_point
 
   return child;
 }
+inline document::element_result document::object::at_key(const char *key, size_t length) const noexcept {
+  iterator end_field = end();
+  for (iterator field = begin(); field != end_field; ++field) {
+    std::string_view v{field.key()};
+    if ((v.size() == length) && (!memcmp(v.data(), key, length))) {
+      return field.value();
+    }
+  }
+  return NO_SUCH_FIELD;
+}
 inline document::element_result document::object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
@@ -801,7 +811,18 @@ inline document::element_result document::object::at_key(const char *key) const 
   }
   return NO_SUCH_FIELD;
 }
-
+// In case you wonder why we need this, please see
+// https://github.com/simdjson/simdjson/issues/323
+// People do seek keys in a case-insensitive manner.
+inline document::element_result document::object::at_key_case_insensitive(const char *key) const noexcept {
+  iterator end_field = end();
+  for (iterator field = begin(); field != end_field; ++field) {
+    if (!simdjson_strcasecmp(key, field.key_c_str())) {
+      return field.value();
+    }
+  }
+  return NO_SUCH_FIELD;
+}
 //
 // document::object::iterator inline implementation
 //
@@ -858,6 +879,9 @@ really_inline bool document::element::is_float() const noexcept {
 }
 really_inline bool document::element::is_integer() const noexcept {
   return type() == internal::tape_type::UINT64 || type() == internal::tape_type::INT64;
+}
+really_inline bool document::element::is_unsigned_integer() const noexcept {
+  return type() == internal::tape_type::UINT64;
 }
 really_inline bool document::element::is_string() const noexcept {
   return type() == internal::tape_type::STRING;

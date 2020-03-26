@@ -413,6 +413,11 @@ public:
   really_inline bool is_number() const noexcept;
   /** Whether this is a JSON integer (e.g. 1 or -1, but *not* 1.0 or 1e2) */
   really_inline bool is_integer() const noexcept;
+  /** Whether this is a JSON integer in [9223372036854775808, 18446744073709551616)
+   * that is, a value too large for a signed 64-bit integer, but that still fits
+   * in a 64-bit word. Note that is_integer() is true when is_unsigned_integer()
+   * is true.*/
+  really_inline bool is_unsigned_integer() const noexcept;
   /** Whether this is a JSON number but not an integer */
   really_inline bool is_float() const noexcept;
   /** Whether this is a JSON string (e.g. "abc") */
@@ -889,16 +894,32 @@ public:
   /**
    * Get the value associated with the given key.
    *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   * Note: The key will be matched against **unescaped** JSON.
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
   inline element_result at_key(const char *s) const noexcept;
+
+  /**
+   * Get the value associated with the given key, the provided key is
+   * considered to have length characters.
+   *
+   * Note: The key will be matched against **unescaped** JSON.
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   */
+  inline element_result at_key(const char *s, size_t length) const noexcept;
+  /**
+   * Get the value associated with the given key in a case-insensitive manner.
+   *
+   * Note: The key will be matched against **unescaped** JSON.
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   */
+  inline element_result at_key_case_insensitive(const char *s) const noexcept;
 
 private:
   really_inline object(const document *_doc, size_t _json_index) noexcept;

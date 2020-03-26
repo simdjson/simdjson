@@ -90,6 +90,11 @@ struct padded_string final {
   char *data() noexcept;
 
   /**
+   * Create a new std::string with the same content.
+   */
+  operator std::string() const;
+
+  /**
    * Load this padded string from a file.
    *
    * @param path the path to the file.
