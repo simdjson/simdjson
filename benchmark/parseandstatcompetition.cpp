@@ -43,69 +43,6 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
-// old API
-__attribute__((noinline)) stat_t
-simdjson_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
-  simdjson::ParsedJson pj = build_parsed_json(p);
-  answer.valid = pj.is_valid();
-  if (!answer.valid) {
-    return answer;
-  }
-  answer.number_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
-  size_t tape_idx = 0;
-  uint64_t tape_val = pj.doc.tape[tape_idx++];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  assert(type == 'r');
-  how_many = tape_val & simdjson::internal::JSON_VALUE_MASK;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = pj.doc.tape[tape_idx];
-    // uint64_t payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case 'l': // we have a long int
-      answer.number_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'u': // we have a long uint
-      answer.number_count++;
-      tape_idx++; // skipping the unsigned integer
-      break;
-    case 'd': // we have a double
-      answer.number_count++;
-      tape_idx++; // skipping the double
-      break;
-    case 'n': // we have a null
-      answer.null_count++;
-      break;
-    case 't': // we have a true
-      answer.true_count++;
-      break;
-    case 'f': // we have a false
-      answer.false_count++;
-      break;
-    case '{': // we have an object
-      answer.object_count++;
-      break;
-    case '}': // we end an object
-      break;
-    case '[': // we start an array
-      answer.array_count++;
-      break;
-    case ']': // we end an array
-      break;
-    default:
-      break; // ignore
-    }
-  }
-  return answer;
-}
 
 really_inline void simdjson_process_atom(stat_t &s,
                                          simdjson::document::element element) {
@@ -122,7 +59,6 @@ really_inline void simdjson_process_atom(stat_t &s,
   }
 }
 
-// new API
 void simdjson_recurse(stat_t &s, simdjson::document::element element) {
   if (element.is_array()) {
     s.array_count++;
@@ -150,8 +86,8 @@ void simdjson_recurse(stat_t &s, simdjson::document::element element) {
 }
 
 __attribute__((noinline)) stat_t
-simdjson_newapi_compute_stats(const simdjson::padded_string &p) {
-  stat_t s;
+simdjson_compute_stats(const simdjson::padded_string &p) {
+  stat_t s{};
   simdjson::document::parser parser;
   auto [doc, error] = parser.parse(p);
   if (error) {
@@ -396,8 +332,6 @@ int main(int argc, char *argv[]) {
   }
   BEST_TIME("simdjson            ", simdjson_compute_stats(p).valid, true, ,
             repeat, volume, !just_data);
-  BEST_TIME("simdjson (new API)  ", simdjson_newapi_compute_stats(p).valid,
-            true, , repeat, volume, !just_data);
   BEST_TIME("RapidJSON           ", rapid_compute_stats(p).valid, true, ,
             repeat, volume, !just_data);
   BEST_TIME("RapidJSON (precise) ", rapid_accurate_compute_stats(p).valid, true, ,
