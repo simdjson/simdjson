@@ -212,7 +212,6 @@ namespace number_tests {
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
     char buf[1024];
-    simdjson::ParsedJson pj;
     for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
       auto n = sprintf(buf,"1e%d", i);
       buf[n] = '\0';
