@@ -203,7 +203,7 @@ struct simdjson_move_result : std::pair<T, error_code> {
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  simdjson_move_result(T value, error_code error) noexcept : std::pair<T, error_code>(std::move(value), error) {}
+  simdjson_move_result(T&& value, error_code error) noexcept : std::pair<T, error_code>(std::forward<T>(value), error) {}
 };
 
 /**
