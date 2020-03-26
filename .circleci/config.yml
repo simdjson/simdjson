@@ -7,6 +7,11 @@ executors:
       - image: gcc:7
         environment:
           CXX: g++
+  gcc9:
+    docker:
+      - image: gcc:9
+        environment:
+          CXX: g++
   clang6:
     docker:
       - image: ubuntu:18.04
@@ -22,7 +27,7 @@ commands:
   make_test:
     steps:
       - checkout
-      - run: make
+      - run: EXTRAFLAGS=-Werror make
       - run: make amalgamate
       - run: ARCHFLAGS=-march=haswell make amalgamate # some users do this: https://github.com/lemire/simdjson/issues/444
       - run: make test
@@ -65,6 +70,10 @@ jobs:
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
     steps: [ init_clang6, cmake_test ]
 
+  gcc9-avx:
+    description: Build, run tests and check performance on GCC 9 and AVX 2
+    executor: gcc9
+    steps: [ make_test ]
   gcc-avx:
     description: Build, run tests and check performance on GCC 7 and AVX 2
     executor: gcc7
@@ -162,6 +171,7 @@ workflows:
   build_and_test:
     jobs:
       - gcc-avx
+      - gcc9-avx
       - gcc-avx-dynamic
       - gcc-avx-static
       - gcc-avx-google-benchmarks
