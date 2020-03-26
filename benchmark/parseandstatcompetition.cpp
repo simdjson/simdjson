@@ -95,7 +95,7 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
     return s;
   }
   s.valid = true;
-  simdjson_recurse(s, doc.root());
+  simdjson_recurse(s, doc);
   return s;
 }
 

@@ -74,8 +74,8 @@ namespace parser_load {
   bool parser_load_many_chain() {
     TEST_START();
     document::parser parser;
-    for (auto doc_result : parser.load_many(NONEXISTENT_FILE)) {
-      auto [val, error] = doc_result["foo"].as_uint64_t();
+    for (auto doc : parser.load_many(NONEXISTENT_FILE)) {
+      auto [val, error] = doc["foo"].as_uint64_t();
       ASSERT_ERROR(error, IO_ERROR);
       TEST_SUCCEED();
     }

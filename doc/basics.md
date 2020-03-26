@@ -38,7 +38,7 @@ The simdjson library offers a simple DOM tree API, which you can access by creat
 
 ```c++
 document::parser parser;
-document &doc = parser.load(filename); // load and parse a file
+document::element doc = parser.load(filename); // load and parse a file
 ```
 
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
@@ -46,16 +46,14 @@ SIMDJSON_PADDING bytes at the end) and calling `parse()`:
 
 ```c++
 document::parser parser;
-document &doc = parser.parse("[1,2,3]"_padded); // parse a string
+document::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
 Using the Parsed JSON
 ---------------------
 
-Once you have a document, you can navigate it with idiomatic C++ iterators, operators and casts.
+Once you have an element, you can navigate it with idiomatic C++ iterators, operators and casts.
 
-* **Document Root:** To get the top level JSON element, get `doc.root()`. Many of the
-  methods below will work on the document object itself, as well.
 * **Extracting Values:** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
   document::object and document::array. You can also use is_*typename*()` to test if it is a
@@ -112,7 +110,7 @@ auto cars_json = R"( [
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 document::parser parser;
-document &cars = parser.parse(cars_json);
+document::element cars = parser.parse(cars_json);
 cout << cars["/0/tire_pressure/1"] << endl; // Prints 39.9
 ```
 
@@ -123,7 +121,7 @@ All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;valu
 pair. The error codes and values can be accessed directly, reading the error like so:
 
 ```c++
-auto [doc, error] = parser.parse(json); // doc is a document&
+auto [doc, error] = parser.parse(json); // doc is a document::element
 if (error) { cerr << error << endl; exit(1); }
 // Use document here now that we've checked for the error
 ```
@@ -138,7 +136,7 @@ behavior.
 > circumvent this, you can use this instead:
 > 
 > ```c++
-> document &doc;
+> document::element doc;
 > error_code error;
 > parser.parse(json).tie(doc, error); // <-- Assigns to doc and error just like "auto [doc, error]"
 > ```
@@ -199,7 +197,7 @@ for (document::element car_element : cars) {
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
 
 ```c++
-document &doc = parser.parse(json); // Throws an exception if there was an error!
+document::element doc = parser.parse(json); // Throws an exception if there was an error!
 ```
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
@@ -219,7 +217,7 @@ auto ndjson = R"(
 { "foo": 3 }
 )"_padded;
 document::parser parser;
-for (document &doc : parser.load_many(filename)) {
+for (document::element doc : parser.load_many(filename)) {
   cout << doc["foo"] << endl;
 }
 // Prints 1 2 3

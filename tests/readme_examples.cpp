@@ -99,7 +99,7 @@ void parser_parse_many_exception() {
   auto json = "[1, 2, 3] true [ true, false ]"_padded;
   cout << "Parsing " << json.data() << " ..." << endl;
   document::parser parser;
-  for (const document &doc : parser.parse_many(json)) {
+  for (const document::element doc : parser.parse_many(json)) {
     cout << doc << endl;
   }
 }

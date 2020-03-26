@@ -1526,7 +1526,7 @@ public:
    * Load a JSON document from a file and return a reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.load("jsonexamples/twitter.json");
+   *   const document::element doc = parser.load("jsonexamples/twitter.json");
    *
    * ### IMPORTANT: Document Lifetime
    *

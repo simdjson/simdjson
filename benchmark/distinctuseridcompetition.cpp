@@ -95,9 +95,9 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element elem
 }
 
 __attribute__((noinline)) std::vector<int64_t>
-simdjson_just_dom(simdjson::document &doc) {
+simdjson_just_dom(simdjson::document::element doc) {
   std::vector<int64_t> answer;
-  simdjson_recurse(answer, doc.root());
+  simdjson_recurse(answer, doc);
   remove_duplicates(answer);
   return answer;
 }
@@ -106,8 +106,8 @@ __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   simdjson::document::parser parser;
-  simdjson::document &doc = parser.parse(p);
-  simdjson_recurse(answer, doc.root());
+  simdjson::document::element doc = parser.parse(p);
+  simdjson_recurse(answer, doc);
   remove_duplicates(answer);
   return answer;
 }
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
   simdjson::document::parser parser;
-  simdjson::document &doc = parser.parse(p);
+  simdjson::document::element doc = parser.parse(p);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size() + 1);

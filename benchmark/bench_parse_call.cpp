@@ -29,7 +29,7 @@ static void parser_parse_exception(State& state) {
   if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     try {
-      UNUSED document &doc = parser.parse(EMPTY_ARRAY);
+      UNUSED document::element doc = parser.parse(EMPTY_ARRAY);
     } catch(simdjson_error &j) {
       return;
     }
@@ -56,7 +56,7 @@ static void document_parse_exception(State& state) {
   for (auto _ : state) {
     try {
       document::parser parser;
-      UNUSED document &doc = parser.parse(EMPTY_ARRAY);
+      UNUSED document::element doc = parser.parse(EMPTY_ARRAY);
     } catch(simdjson_error &j) {
       return;
     }
