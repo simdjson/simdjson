@@ -926,7 +926,7 @@ private:
 class document::element_result : public simdjson_result<document::element> {
 public:
   really_inline element_result() noexcept;
-  really_inline element_result(element value) noexcept;
+  really_inline element_result(element &&value) noexcept;
   really_inline element_result(error_code error) noexcept;
 
   /** Whether this is a JSON `null` */

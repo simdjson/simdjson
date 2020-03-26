@@ -17,7 +17,7 @@ namespace simdjson {
 // element_result inline implementation
 //
 really_inline document::element_result::element_result() noexcept : simdjson_result<element>() {}
-really_inline document::element_result::element_result(element value) noexcept : simdjson_result<element>(value) {}
+really_inline document::element_result::element_result(element &&value) noexcept : simdjson_result<element>((element&&)value) {}
 really_inline document::element_result::element_result(error_code error) noexcept : simdjson_result<element>(error) {}
 inline simdjson_result<bool> document::element_result::is_null() const noexcept {
   if (error()) { return error(); }
@@ -113,7 +113,7 @@ inline document::element_result::operator document::object() const noexcept(fals
 // array_result inline implementation
 //
 really_inline document::array_result::array_result() noexcept : simdjson_result<array>() {}
-really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>(value) {}
+really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>((array&&)value) {}
 really_inline document::array_result::array_result(error_code error) noexcept : simdjson_result<array>(error) {}
 
 #if SIMDJSON_EXCEPTIONS
@@ -149,7 +149,7 @@ inline document::element_result document::array_result::at(size_t index) const n
 // object_result inline implementation
 //
 really_inline document::object_result::object_result() noexcept : simdjson_result<object>() {}
-really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>(value) {}
+really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>((object&&)value) {}
 really_inline document::object_result::object_result(error_code error) noexcept : simdjson_result<object>(error) {}
 
 inline document::element_result document::object_result::operator[](std::string_view json_pointer) const noexcept {
