@@ -43,67 +43,60 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
+
+really_inline void simdjson_process_atom(stat_t &s,
+                                         simdjson::document::element element) {
+  if (element.is_number()) {
+    s.number_count++;
+  } else if (element.is_bool()) {
+    if (element.as_bool()) {
+      s.true_count++;
+    } else {
+      s.false_count++;
+    }
+  } else if (element.is_null()) {
+    s.null_count++;
+  }
+}
+
+void simdjson_recurse(stat_t &s, simdjson::document::element element) {
+  if (element.is_array()) {
+    s.array_count++;
+    auto [array, array_error] = element.as_array();
+    for (auto child : array) {
+      if (child.is_array() || child.is_object()) {
+        simdjson_recurse(s, child);
+      } else {
+        simdjson_process_atom(s, child);
+      }
+    }
+  } else if (element.is_object()) {
+    s.object_count++;
+    auto [object, object_error] = element.as_object();
+    for (auto [key, value] : object) {
+      if (value.is_array() || value.is_object()) {
+        simdjson_recurse(s, value);
+      } else {
+        simdjson_process_atom(s, value);
+      }
+    }
+  } else {
+    simdjson_process_atom(s, element);
+  }
+}
+
 __attribute__((noinline)) stat_t
 simdjson_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
-  simdjson::ParsedJson pj = build_parsed_json(p);
-  answer.valid = pj.is_valid();
-  if (!answer.valid) {
-    return answer;
+  stat_t s{};
+  simdjson::document::parser parser;
+  auto [doc, error] = parser.parse(p);
+  if (error) {
+    s.valid = false;
+    return s;
   }
-  answer.number_count = 0;
-  answer.object_count = 0;
-  answer.array_count = 0;
-  answer.null_count = 0;
-  answer.true_count = 0;
-  answer.false_count = 0;
-  size_t tape_idx = 0;
-  uint64_t tape_val = pj.doc.tape[tape_idx++];
-  uint8_t type = (tape_val >> 56);
-  size_t how_many = 0;
-  assert(type == 'r');
-  how_many = tape_val & simdjson::internal::JSON_VALUE_MASK;
-  for (; tape_idx < how_many; tape_idx++) {
-    tape_val = pj.doc.tape[tape_idx];
-    // uint64_t payload = tape_val & simdjson::internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
-    switch (type) {
-    case 'l': // we have a long int
-      answer.number_count++;
-      tape_idx++; // skipping the integer
-      break;
-    case 'u': // we have a long uint
-      answer.number_count++;
-      tape_idx++; // skipping the unsigned integer
-      break;
-    case 'd': // we have a double
-      answer.number_count++;
-      tape_idx++; // skipping the double
-      break;
-    case 'n': // we have a null
-      answer.null_count++;
-      break;
-    case 't': // we have a true
-      answer.true_count++;
-      break;
-    case 'f': // we have a false
-      answer.false_count++;
-      break;
-    case '{': // we have an object
-      answer.object_count++;
-      break;
-    case '}': // we end an object
-      break;
-    case '[': // we start an array
-      answer.array_count++;
-      break;
-    case ']': // we end an array
-      break;
-    default:
-      break; // ignore
-    }
-  }
-  return answer;
+  s.valid = true;
+  simdjson_recurse(s, doc.root());
+  return s;
 }
 
 // see
@@ -153,7 +146,7 @@ __attribute__((noinline)) stat_t
 sasjon_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size());
-  if(buffer == nullptr) {
+  if (buffer == nullptr) {
     return answer;
   }
   memcpy(buffer, p.data(), p.size());
@@ -215,7 +208,7 @@ __attribute__((noinline)) stat_t
 rapid_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
-  if(buffer == nullptr) {
+  if (buffer == nullptr) {
     return answer;
   }
   memcpy(buffer, p.data(), p.size());
@@ -242,13 +235,13 @@ __attribute__((noinline)) stat_t
 rapid_accurate_compute_stats(const simdjson::padded_string &p) {
   stat_t answer;
   char *buffer = (char *)malloc(p.size() + 1);
-  if(buffer == nullptr) {
+  if (buffer == nullptr) {
     return answer;
   }
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
   rapidjson::Document d;
-  d.ParseInsitu<kParseValidateEncodingFlag|kParseFullPrecisionFlag>(buffer);
+  d.ParseInsitu<kParseValidateEncodingFlag | kParseFullPrecisionFlag>(buffer);
   answer.valid = !d.HasParseError();
   if (!answer.valid) {
     free(buffer);
@@ -323,7 +316,7 @@ int main(int argc, char *argv[]) {
   stat_t s2a = rapid_accurate_compute_stats(p);
   if (verbose) {
     printf("rapid full:    ");
-    print_stat(s2);
+    print_stat(s2a);
   }
   stat_t s3 = sasjon_compute_stats(p);
   if (verbose) {
@@ -337,10 +330,12 @@ int main(int argc, char *argv[]) {
   if (just_data) {
     printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }
-  BEST_TIME("simdjson  ", simdjson_compute_stats(p).valid, true, , repeat,
-            volume, !just_data);
-  BEST_TIME("RapidJSON  ", rapid_compute_stats(p).valid, true, , repeat, volume,
-            !just_data);
-  BEST_TIME("sasjon  ", sasjon_compute_stats(p).valid, true, , repeat, volume,
-            !just_data);
+  BEST_TIME("simdjson            ", simdjson_compute_stats(p).valid, true, ,
+            repeat, volume, !just_data);
+  BEST_TIME("RapidJSON           ", rapid_compute_stats(p).valid, true, ,
+            repeat, volume, !just_data);
+  BEST_TIME("RapidJSON (precise) ", rapid_accurate_compute_stats(p).valid, true, ,
+            repeat, volume, !just_data);
+  BEST_TIME("sasjon              ", sasjon_compute_stats(p).valid, true, ,
+            repeat, volume, !just_data);
 }
