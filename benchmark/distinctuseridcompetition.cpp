@@ -30,8 +30,10 @@ void print_vec(const std::vector<int64_t> &v) {
   std::cout << std::endl;
 }
 
+// clang-format off
 
-void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element element) {
+// simdjson_recurse below come be implemented like so but it is slow:
+/*void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element element) {
   if (element.is_array()) {
     auto [array, array_error] = element.as_array();
     for (auto child : array) {
@@ -52,51 +54,50 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element elem
       }
     }
   }
-}
+}*/
+// clang-format on
 
-__attribute__((noinline)) std::vector<int64_t>
-simdjson_newapi_just_dom(simdjson::document &doc) {
-  std::vector<int64_t> answer;
-  simdjson_recurse(answer, doc.root());
-  remove_duplicates(answer);
-  return answer;
-}
 
-__attribute__((noinline)) std::vector<int64_t>
-simdjson_newapi_compute_stats(const simdjson::padded_string &p) {
-  std::vector<int64_t> answer;
-  simdjson::document::parser parser;
-  simdjson::document &doc = parser.parse(p);
-  simdjson_recurse(answer, doc.root());
-  remove_duplicates(answer);
-  return answer;
-}
-
-void simdjson_scan(std::vector<int64_t> &answer, simdjson::ParsedJson::Iterator i) {
-  while (i.move_forward()) {
-    if (i.get_scope_type() == '{') {
-      bool found_user = (i.get_string_length() == 4) &&
-                        (memcmp(i.get_string(), "user", 4) == 0);
-      i.move_to_value();
-      if (found_user) {
-        if (i.is_object() && i.move_to_key("id", 2)) {
-          if (i.is_integer()) {
-            answer.push_back(i.get_integer());
+void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element element) {
+  if (element.is_array()) {
+    auto array = element.as_array();
+    for (auto child : array) {
+      if (child.is_array() || child.is_object()) {
+        simdjson_recurse(v, child);
+      }
+    }
+  } else if (element.is_object()) {
+    auto object = element.as_object();
+    for (auto [key, value] : object) {
+      if((key.size() == 4) && (memcmp(key.data(), "user", 4) == 0)) {
+        // we are in an object under the key "user"
+        if(value.is_object()) {
+          auto child_object = value.as_object();
+          for (auto [child_key, child_value] : child_object) {
+            if((child_key.size() == 2) && (memcmp(child_key.data(), "id", 2) == 0)) {
+              if(child_value.is_integer()) {
+                v.push_back(child_value.as_int64_t());
+              }
+            }
+            if (child_value.is_array() || child_value.is_object()) {
+              simdjson_recurse(v, child_value);
+            }    
           }
-          i.up();
+        } else if (value.is_array()) {
+          simdjson_recurse(v, value);
         }
+        // end of: we are in an object under the key "user"
+      } else if (value.is_array() || value.is_object()) {
+          simdjson_recurse(v, value);
       }
     }
   }
 }
 
-
-
-
 __attribute__((noinline)) std::vector<int64_t>
-simdjson_just_dom(simdjson::ParsedJson &pj) {
+simdjson_just_dom(simdjson::document &doc) {
   std::vector<int64_t> answer;
-  simdjson_scan(answer, pj);
+  simdjson_recurse(answer, doc.root());
   remove_duplicates(answer);
   return answer;
 }
@@ -104,8 +105,9 @@ simdjson_just_dom(simdjson::ParsedJson &pj) {
 __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
-  simdjson::ParsedJson pj = simdjson::build_parsed_json(p);
-  simdjson_scan(answer, pj);
+  simdjson::document::parser parser;
+  simdjson::document &doc = parser.parse(p);
+  simdjson_recurse(answer, doc.root());
   remove_duplicates(answer);
   return answer;
 }
@@ -332,11 +334,6 @@ int main(int argc, char *argv[]) {
     printf("simdjson: ");
     print_vec(s1);
   }
-  std::vector<int64_t> s11 = simdjson_newapi_compute_stats(p);
-  if (verbose) {
-    printf("simdjson: ");
-    print_vec(s11);
-  }
   std::vector<int64_t> s2 = rapid_compute_stats(p);
   if (verbose) {
     printf("rapid:    ");
@@ -348,7 +345,6 @@ int main(int argc, char *argv[]) {
     print_vec(s3);
   }
   assert(s1 == s2);
-  assert(s1 == s11);
   assert(s1 == s3);
   size_t size = s1.size();
 
@@ -358,9 +354,7 @@ int main(int argc, char *argv[]) {
     printf(
         "name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
   }
-  BEST_TIME("simdjson  ", simdjson_compute_stats(p).size(), size, , repeat,
-            volume, !just_data);
-  BEST_TIME("simdjson (newapi)", simdjson_newapi_compute_stats(p).size(), size, , repeat,
+  BEST_TIME("simdjson ", simdjson_compute_stats(p).size(), size, , repeat,
             volume, !just_data);
   BEST_TIME("rapid  ", rapid_compute_stats(p).size(), size, , repeat, volume,
             !just_data);
@@ -372,14 +366,12 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
-  simdjson::ParsedJson dsimdjson = build_parsed_json(p);
-  BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(dsimdjson).size(), size,
-            , repeat, volume, !just_data);
   simdjson::document::parser parser;
   simdjson::document &doc = parser.parse(p);
-  BEST_TIME("simdjson(justdom,newapi)", simdjson_newapi_just_dom(doc).size(), size,
+  BEST_TIME("simdjson (just dom)", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
-  char *buffer = (char *)malloc(p.size());
+  char *buffer = (char *)malloc(p.size() + 1);
+  buffer[p.size()] = '\0';
   memcpy(buffer, p.data(), p.size());
   rapidjson::Document drapid;
   drapid.ParseInsitu<kParseValidateEncodingFlag>(buffer);
