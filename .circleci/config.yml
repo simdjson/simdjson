@@ -41,7 +41,7 @@ commands:
       - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
       - run: make clean
       - run: EXTRAFLAGS=-DSIMDJSON_NO_COMPUTED_GOTO=true make test # this should run tests with computed gotos disabled
-   make_test_strict:
+  make_test_strict:
     steps:
       - checkout
       - run: EXTRAFLAGS=-Werror make
