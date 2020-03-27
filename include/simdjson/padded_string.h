@@ -90,11 +90,16 @@ struct padded_string final {
   char *data() noexcept;
 
   /**
+   * Create a std::string_view with the same content.
+   */
+  operator std::string_view() const;
+
+  /**
    * Load this padded string from a file.
    *
    * @param path the path to the file.
    **/
-  inline static simdjson_move_result<padded_string> load(const std::string &path) noexcept;
+  inline static simdjson_result<padded_string> load(const std::string &path) noexcept;
 
 private:
   padded_string &operator=(const padded_string &o) = delete;

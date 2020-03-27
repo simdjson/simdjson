@@ -32,19 +32,17 @@ template <typename T>
 static void parse_and_validate(const std::string src, T expected) {
   std::cout << "src: " << src << ", ";
   const padded_string pstr{src};
-  auto json = build_parsed_json(pstr);
+  simdjson::document::parser parser;
 
-  ASSERT(json.is_valid());
-  ParsedJson::Iterator it{json};
-  ASSERT(it.down());
-  ASSERT(it.next());
   bool result;
   if constexpr (std::is_same<int64_t, T>::value) {
-    const auto actual = it.get_integer();
-    result = expected == actual;
+    auto [actual, error] = parser.parse(pstr).as_object()["key"].as_int64_t();
+    if (error) { std::cerr << error << std::endl; abort(); }
+    result = (expected == actual);
   } else {
-    const auto actual = it.get_unsigned_integer();
-    result = expected == actual;
+    auto [actual, error] = parser.parse(pstr).as_object()["key"].as_uint64_t();
+    if (error) { std::cerr << error << std::endl; abort(); }
+    result = (expected == actual);
   }
   std::cout << std::boolalpha << "test: " << result << std::endl;
   if(!result) {
@@ -56,28 +54,20 @@ static void parse_and_validate(const std::string src, T expected) {
 static bool parse_and_check_signed(const std::string src) {
   std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
-  auto json = build_parsed_json(pstr);
-
-  ASSERT(json.is_valid());
-  ParsedJson::Iterator it{json};
-  ASSERT(it.down());
-  ASSERT(it.next());
-  return it.is_integer() && it.is_number();
+  simdjson::document::parser parser;
+  auto [value, error] = parser.parse(pstr).as_object()["key"];
+  if (error) { std::cerr << error << std::endl; abort(); }
+  return value.is_integer() && value.is_number();
 }
 
 static bool parse_and_check_unsigned(const std::string src) {
-  std::cout << "src: " << src << ", expecting unsigned" << std::endl;
+  std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
-  auto json = build_parsed_json(pstr);
-
-  ASSERT(json.is_valid());
-  ParsedJson::Iterator it{json};
-  ASSERT(it.down());
-  ASSERT(it.next());
-  return it.is_unsigned_integer() && it.is_number();
+  simdjson::document::parser parser;
+  auto [value, error] = parser.parse(pstr).as_object()["key"];
+  if (error) { std::cerr << error << std::endl; abort(); }
+  return value.is_unsigned_integer() && value.is_number();
 }
-
-
 
 int main() {
   using std::numeric_limits;

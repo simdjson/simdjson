@@ -1,39 +1,6 @@
 #include "simdjson.h"
 #include <iostream>
 
-void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-  if (pjh.is_object()) {
-    std::cout << "{";
-    if (pjh.down()) {
-      pjh.print(std::cout); // must be a string
-      std::cout << ":";
-      pjh.next();
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        std::cout << ",";
-        pjh.print(std::cout);
-        std::cout << ":";
-        pjh.next();
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
-    }
-    std::cout << "}";
-  } else if (pjh.is_array()) {
-    std::cout << "[";
-    if (pjh.down()) {
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        std::cout << ",";
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
-    }
-    std::cout << "]";
-  } else {
-    pjh.print(std::cout); // just print the lone value
-  }
-}
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {

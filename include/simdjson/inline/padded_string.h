@@ -98,7 +98,9 @@ inline const char *padded_string::data() const noexcept { return data_ptr; }
 
 inline char *padded_string::data() noexcept { return data_ptr; }
 
-inline simdjson_move_result<padded_string> padded_string::load(const std::string &filename) noexcept {
+inline padded_string::operator std::string_view() const { return std::string_view(data(), length()); }
+
+inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
   // Open the file
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
   if (fp == nullptr) {
@@ -131,7 +133,7 @@ inline simdjson_move_result<padded_string> padded_string::load(const std::string
     return IO_ERROR;
   }
 
-  return std::move(s);
+  return s;
 }
 
 } // namespace simdjson

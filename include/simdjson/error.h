@@ -85,12 +85,12 @@ struct simdjson_result : public std::pair<T, error_code> {
   /**
    * Move the value and the error to the provided variables.
    */
-  void tie(T& t, error_code & e) {
+  void tie(T& t, error_code & e) && noexcept {
     // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
     // tie(width, error) = size["w"].as_uint64_t();
     // fails with "error: no viable overloaded '='""
-    t = std::move(this->first);
-    e = std::move(this->second);
+    t = std::forward<simdjson_result<T>>(*this).first;
+    e = this->second;
   }
 
   /**
@@ -105,9 +105,19 @@ struct simdjson_result : public std::pair<T, error_code> {
    *
    * @throw simdjson_error if there was an error.
    */
-  T get() noexcept(false) {
+  T& get() noexcept(false) {
     if (error()) { throw simdjson_error(error()); }
     return this->first;
+  };
+
+  /**
+   * The value of the function.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  T&& take() && {
+    if (error()) { throw simdjson_error(error()); }
+    return std::forward<T>(this->first);
   };
 
   /**
@@ -115,7 +125,9 @@ struct simdjson_result : public std::pair<T, error_code> {
    *
    * @throw simdjson_error if there was an error.
    */
-  operator T() noexcept(false) { return get(); }
+  operator T&&() && {
+    return std::forward<simdjson_result<T>>(*this).take();
+  }
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -127,84 +139,17 @@ struct simdjson_result : public std::pair<T, error_code> {
   /**
    * Create a new error result.
    */
-  simdjson_result(error_code _error) noexcept : std::pair<T, error_code>({}, _error) {}
+  simdjson_result(error_code error) noexcept : std::pair<T, error_code>(T{}, error) {}
 
   /**
    * Create a new successful result.
    */
-  simdjson_result(T _value) noexcept : std::pair<T, error_code>(_value, SUCCESS) {}
+  simdjson_result(T &&value) noexcept : std::pair<T, error_code>(std::forward<T>(value), SUCCESS) {}
 
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  simdjson_result(T value, error_code error) noexcept : std::pair<T, error_code>(value, error) {}
-};
-
-/**
- * The result of a simd operation that could fail.
- *
- * This class is for values that must be *moved*, like padded_string and document.
- *
- * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
- */
-template<typename T>
-struct simdjson_move_result : std::pair<T, error_code> {
-  /**
-   * Move the value and the error to the provided variables.
-   */
-  void tie(T& t, error_code & e) {
-    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
-    // std::tie(this->json, error) = padded_string::load(filename);
-    // fails with "benchmark/benchmarker.h:266:33: error: no viable overloaded '='""
-    t = std::move(this->first);
-    e = std::move(this->second);
-  }
-
-  /**
-   * The error.
-   */
-  error_code error() const { return this->second; }
-
-#if SIMDJSON_EXCEPTIONS
-
-  /**
-   * The value of the function.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  T move() noexcept(false) {
-    if (error()) { throw simdjson_error(error()); }
-    return std::move(this->first);
-  };
-
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  operator T() noexcept(false) { return move(); }
-
-#endif
-
-  /**
-   * Create a new empty result with error = UNINITIALIZED.
-   */
-  simdjson_move_result() noexcept : simdjson_move_result(UNINITIALIZED) {}
-
-  /**
-   * Create a new error result.
-   */
-  simdjson_move_result(error_code error) noexcept : std::pair<T, error_code>(T(), error) {}
-
-  /**
-   * Create a new successful result.
-   */
-  simdjson_move_result(T value) noexcept : std::pair<T, error_code>(std::move(value), SUCCESS) {}
-
-  /**
-   * Create a new result with both things (use if you don't want to branch when creating the result).
-   */
-  simdjson_move_result(T value, error_code error) noexcept : std::pair<T, error_code>(std::move(value), error) {}
+  simdjson_result(T &&value, error_code error) noexcept : std::pair<T, error_code>(std::forward<T>(value), error) {}
 };
 
 /**

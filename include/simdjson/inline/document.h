@@ -17,7 +17,7 @@ namespace simdjson {
 // element_result inline implementation
 //
 really_inline document::element_result::element_result() noexcept : simdjson_result<element>() {}
-really_inline document::element_result::element_result(element value) noexcept : simdjson_result<element>(value) {}
+really_inline document::element_result::element_result(element &&value) noexcept : simdjson_result<element>((element&&)value) {}
 really_inline document::element_result::element_result(error_code error) noexcept : simdjson_result<element>(error) {}
 inline simdjson_result<bool> document::element_result::is_null() const noexcept {
   if (error()) { return error(); }
@@ -113,7 +113,7 @@ inline document::element_result::operator document::object() const noexcept(fals
 // array_result inline implementation
 //
 really_inline document::array_result::array_result() noexcept : simdjson_result<array>() {}
-really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>(value) {}
+really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>((array&&)value) {}
 really_inline document::array_result::array_result(error_code error) noexcept : simdjson_result<array>(error) {}
 
 #if SIMDJSON_EXCEPTIONS
@@ -149,7 +149,7 @@ inline document::element_result document::array_result::at(size_t index) const n
 // object_result inline implementation
 //
 really_inline document::object_result::object_result() noexcept : simdjson_result<object>() {}
-really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>(value) {}
+really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>((object&&)value) {}
 really_inline document::object_result::object_result(error_code error) noexcept : simdjson_result<object>(error) {}
 
 inline document::element_result document::object_result::operator[](std::string_view json_pointer) const noexcept {
@@ -359,12 +359,14 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 inline document::doc_result::doc_result(document &doc, error_code error) noexcept : simdjson_result<document&>(doc, error) { }
 
 inline document::array_result document::doc_result::as_array() const noexcept {
-  if (error()) { return error(); }
-  return first.root().as_array();
+  return root().as_array();
 }
 inline document::object_result document::doc_result::as_object() const noexcept {
+  return root().as_object();
+}
+inline document::element_result document::doc_result::root() const noexcept {
   if (error()) { return error(); }
-  return first.root().as_object();
+  return first.root();
 }
 
 inline document::element_result document::doc_result::operator[](std::string_view key) const noexcept {
@@ -783,6 +785,16 @@ inline document::element_result document::object::at(std::string_view json_point
 
   return child;
 }
+inline document::element_result document::object::at_key(const char *key, size_t length) const noexcept {
+  iterator end_field = end();
+  for (iterator field = begin(); field != end_field; ++field) {
+    std::string_view v{field.key()};
+    if ((v.size() == length) && (!memcmp(v.data(), key, length))) {
+      return field.value();
+    }
+  }
+  return NO_SUCH_FIELD;
+}
 inline document::element_result document::object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
@@ -801,7 +813,18 @@ inline document::element_result document::object::at_key(const char *key) const 
   }
   return NO_SUCH_FIELD;
 }
-
+// In case you wonder why we need this, please see
+// https://github.com/simdjson/simdjson/issues/323
+// People do seek keys in a case-insensitive manner.
+inline document::element_result document::object::at_key_case_insensitive(const char *key) const noexcept {
+  iterator end_field = end();
+  for (iterator field = begin(); field != end_field; ++field) {
+    if (!simdjson_strcasecmp(key, field.key_c_str())) {
+      return field.value();
+    }
+  }
+  return NO_SUCH_FIELD;
+}
 //
 // document::object::iterator inline implementation
 //
@@ -858,6 +881,9 @@ really_inline bool document::element::is_float() const noexcept {
 }
 really_inline bool document::element::is_integer() const noexcept {
   return type() == internal::tape_type::UINT64 || type() == internal::tape_type::INT64;
+}
+really_inline bool document::element::is_unsigned_integer() const noexcept {
+  return type() == internal::tape_type::UINT64;
 }
 really_inline bool document::element::is_string() const noexcept {
   return type() == internal::tape_type::STRING;
@@ -951,7 +977,7 @@ inline simdjson_result<double> document::element::as_double() const noexcept {
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
-      return result;
+      return double(result);
     }
     case internal::tape_type::DOUBLE:
       return next_tape_value<double>();

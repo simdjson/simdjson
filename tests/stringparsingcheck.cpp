@@ -338,7 +338,6 @@ bool validate(const char *dirname) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
-      simdjson::ParsedJson pj;
       big_buffer = (char *)malloc(p.size());
       if (big_buffer == NULL) {
         std::cerr << "can't allocate memory" << std::endl;
@@ -348,7 +347,9 @@ bool validate(const char *dirname) {
       good_string = 0;
       total_string_length = 0;
       empty_string = 0;
-      bool isok = json_parse(p, pj);
+      simdjson::document::parser parser;
+      auto [doc, err] = parser.parse(p);
+      bool isok = (err == simdjson::error_code::SUCCESS);
       free(big_buffer);
       if (good_string > 0) {
         printf("File %40s %s --- bad strings: %10zu \tgood strings: %10zu\t "

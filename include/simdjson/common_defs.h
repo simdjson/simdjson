@@ -73,8 +73,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #define unlikely(x) x
 #endif
 
+#define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
+#define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
+#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
+#define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
-#else
+#else // MSC_VER
 
 
 #define really_inline inline __attribute__((always_inline, unused))
@@ -89,6 +93,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #ifndef unlikely
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
+
+#define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
+#define SIMDJSON_PRAGMA(P) _Pragma(#P)
+#define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
+#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
+#define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 
 #endif // MSC_VER
 
