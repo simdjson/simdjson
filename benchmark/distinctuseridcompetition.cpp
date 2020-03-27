@@ -4,6 +4,9 @@
 #include <vector>
 
 #include "benchmark.h"
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+
 // #define RAPIDJSON_SSE2 // bad for performance
 // #define RAPIDJSON_SSE42 // bad for performance
 #include "rapidjson/document.h"
@@ -12,6 +15,8 @@
 #include "rapidjson/writer.h"
 
 #include "sajson.h"
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 using namespace rapidjson;
 

@@ -193,8 +193,8 @@ namespace document_tests {
     std::cout << __func__ << std::endl;
     simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
     simdjson::document::parser parser;
-    parser.parse(badjson);
-    if(parser.is_valid()) {
+    auto [doc, error] = parser.parse(badjson);
+    if (!error) {
       printf("This json should not be valid %s.\n", badjson.data());
       return false;
     }
