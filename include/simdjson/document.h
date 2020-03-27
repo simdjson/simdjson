@@ -1347,18 +1347,22 @@ public:
   //
 
   // returns true if the document parsed was valid
+  [[deprecated("Use the result of parser.parse() instead")]]
   inline bool is_valid() const noexcept;
 
   // return an error code corresponding to the last parsing attempt, see
   // simdjson.h will return UNITIALIZED if no parsing was attempted
+  [[deprecated("Use the result of parser.parse() instead")]]
   inline int get_error_code() const noexcept;
 
   // return the string equivalent of "get_error_code"
+  [[deprecated("Use error_message() on the result of parser.parse() instead, or cout << error")]]
   inline std::string get_error_message() const noexcept;
 
   // print the json to std::ostream (should be valid)
   // return false if the tape is likely wrong (e.g., you did not parse a valid
   // JSON).
+  [[deprecated("Use cout << on the result of parser.parse() instead")]]
   inline bool print_json(std::ostream &os) const noexcept;
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 

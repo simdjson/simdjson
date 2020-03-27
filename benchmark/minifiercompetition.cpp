@@ -4,6 +4,8 @@
 #include "benchmark.h"
 #include "simdjson.h"
 
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
 #include "rapidjson/document.h"
@@ -12,8 +14,10 @@
 #include "rapidjson/writer.h"
 #include "sajson.h"
 
-using namespace simdjson;
+SIMDJSON_POP_DISABLE_WARNINGS
+
 using namespace rapidjson;
+using namespace simdjson;
 
 std::string rapid_stringme_insitu(char *json) {
   Document d;
@@ -40,6 +44,7 @@ std::string rapid_stringme(char *json) {
   d.Accept(writer);
   return buffer.GetString();
 }
+
 
 int main(int argc, char *argv[]) {
   int c;
@@ -101,7 +106,7 @@ int main(int argc, char *argv[]) {
   size_t outlength;
   uint8_t *cbuffer = (uint8_t *)buffer;
   for (auto imple : simdjson::available_implementations) {
-    BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength), outlength),
+    BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength) ? outlength : -1),
             outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
   }
@@ -120,8 +125,9 @@ int main(int argc, char *argv[]) {
 
   char *mini_buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
   size_t minisize;
-  simdjson::active_implementation->minify((const uint8_t *)p.data(), p.size(),
-                                          (uint8_t *)mini_buffer, minisize);
+  auto minierror = simdjson::active_implementation->minify((const uint8_t *)p.data(), p.size(),
+                                                           (uint8_t *)mini_buffer, minisize);
+  if (!minierror) { std::cerr << minierror << std::endl; exit(1); }
   mini_buffer[minisize] = '\0';
 
   BEST_TIME("RapidJSON Insitu despaced", d.ParseInsitu(buffer).HasParseError(),

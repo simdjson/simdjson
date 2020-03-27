@@ -323,12 +323,12 @@ inline bool document::parser::is_valid() const noexcept { return valid; }
 inline int document::parser::get_error_code() const noexcept { return error; }
 inline std::string document::parser::get_error_message() const noexcept { return error_message(int(error)); }
 inline bool document::parser::print_json(std::ostream &os) const noexcept {
-  if (!is_valid()) { return false; }
+  if (!valid) { return false; }
   os << doc.root();
   return true;
 }
 inline bool document::parser::dump_raw_tape(std::ostream &os) const noexcept {
-  return is_valid() ? doc.dump_raw_tape(os) : false;
+  return valid ? doc.dump_raw_tape(os) : false;
 }
 
 inline simdjson_result<size_t> document::parser::read_file(const std::string &path) noexcept {

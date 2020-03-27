@@ -2,6 +2,8 @@
 
 #include "simdjson.h"
 
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+
 // #define RAPIDJSON_SSE2 // bad
 // #define RAPIDJSON_SSE42 // bad
 #include "fastjson.cpp"
@@ -24,8 +26,10 @@ extern "C" {
 #include "jsoncpp.cpp"
 #include "json/json.h"
 
+SIMDJSON_POP_DISABLE_WARNINGS
+
 // fastjson has a tricky interface
-void on_json_error(void *, const fastjson::ErrorContext &ec) {
+void on_json_error(void *, UNUSED const fastjson::ErrorContext &ec) {
   // std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
 }
 bool fastjson_parse(const char *input) {
@@ -59,9 +63,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   const char *filename = argv[optind];
-  auto [p, error] = simdjson::padded_string::load(filename);
-  if (error) {
-    std::cerr << "Could not load the file " << filename << std::endl;
+  auto [p, loaderr] = simdjson::padded_string::load(filename);
+  if (loaderr) {
+    std::cerr << "Could not load the file " << filename << ": " << loaderr << std::endl;
     return EXIT_FAILURE;
   }
   if (verbose) {

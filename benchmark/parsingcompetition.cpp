@@ -1,4 +1,5 @@
 #include "simdjson.h"
+
 #ifndef _MSC_VER
 #include "linux-perf-events.h"
 #include <unistd.h>
@@ -10,6 +11,8 @@
 #include <memory>
 
 #include "benchmark.h"
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 
 // #define RAPIDJSON_SSE2 // bad for performance
 // #define RAPIDJSON_SSE42 // bad for performance
@@ -43,6 +46,8 @@ extern "C" {
 #include "json/json.h"
 
 #endif
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 using namespace rapidjson;
 
@@ -104,7 +109,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
   }
 
   if (!just_data)
-    BEST_TIME("simdjson (dynamic mem) ", simdjson::build_parsed_json(p).is_valid(), true,
+    BEST_TIME("simdjson (dynamic mem) ", !simdjson::document::parser().parse(p).error(), true,
               , repeat, volume, !just_data);
   // (static alloc)
   simdjson::document::parser parser;
@@ -161,6 +166,8 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
                     sajson::mutable_string_view(p.size(), buffer))
           .is_valid(),
       true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+
+
   size_t expected = json::parse(p.data(), p.data() + p.size()).size();
   BEST_TIME("nlohmann-json", json::parse(buffer, buffer + p.size()).size(),
             expected, memcpy(buffer, p.data(), p.size()), repeat, volume,
@@ -291,6 +298,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
            stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,
            stats[4] * 1.0 / repeat, volume * repeat * 1.0 / stats[2],
            stats[1] * 1.0 / stats[0], stats[1] * 1.0 / (volume * repeat));
+
   }
 #endif //  __linux__
 
