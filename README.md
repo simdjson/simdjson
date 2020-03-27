@@ -86,7 +86,8 @@ number parsing and partial unicode validation. In this data set, the file
 sizes range from 65KB (github_events) all the way to 3.3GB (gsoc-2018).
 Many files are mostly made of numbers: canada, mesh.pretty, mesh, random
 and numbers: in such instances, we see lower JSON parsing speeds due to the
-high cost of number parsing.
+high cost of number parsing. The simdjson library uses exact number parsing which
+is particular taxing.
 
 <img src="doc/gbps.png" width="90%">
 
