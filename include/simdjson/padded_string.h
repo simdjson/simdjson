@@ -90,9 +90,9 @@ struct padded_string final {
   char *data() noexcept;
 
   /**
-   * Create a new std::string with the same content.
+   * Create a std::string_view with the same content.
    */
-  operator std::string() const;
+  operator std::string_view() const;
 
   /**
    * Load this padded string from a file.
