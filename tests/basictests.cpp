@@ -567,7 +567,7 @@ namespace parse_api_tests {
   }
 }
 
-namespace deprecated_tests {
+namespace dom_api_tests {
   using namespace std;
   using namespace simdjson;
 
@@ -674,22 +674,11 @@ namespace deprecated_tests {
     }
     return true;
   }
-
   SIMDJSON_POP_DISABLE_WARNINGS
-
-  bool run() {
-    return ParsedJson_Iterator_test() &&
-           true;
-  }
-}
-
-namespace dom_api_tests {
-  using namespace std;
-  using namespace simdjson;
 
   bool object_iterator() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
@@ -707,7 +696,7 @@ namespace dom_api_tests {
 
   bool array_iterator() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ 1, 10, 100 ])"_padded;
+    string json(R"([ 1, 10, 100 ])");
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
 
@@ -724,7 +713,7 @@ namespace dom_api_tests {
 
   bool object_iterator_empty() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({})"_padded;
+    string json(R"({})");
     int i = 0;
 
     document::parser parser;
@@ -740,7 +729,7 @@ namespace dom_api_tests {
 
   bool array_iterator_empty() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([])"_padded;
+    string json(R"([])");
     int i=0;
 
     document::parser parser;
@@ -754,108 +743,9 @@ namespace dom_api_tests {
     return true;
   }
 
-  bool array_at() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ 1, 10, 100 ])"_padded;
-    uint64_t expected[] = { 1, 10, 100 };
-
-    document::parser parser;
-    auto [array, error] = parser.parse(json).as_array();
-    uint64_t actual;
-    {
-      int i = 2;
-      array.at(i).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
-    }
-    {
-      int i = 0;
-      array.at(i).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
-    }
-    {
-      int i = 1;
-      array.at(i).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
-    }
-    {
-      int i = 3;
-      array.at(i).as_uint64_t().tie(actual, error);
-      if (!error) { cerr << "Expected error accessing [" << i << "], got " << actual << " instead!" << endl; return false; }
-    }
-    return true;
-  }
-
-  bool object_at_key() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "foo": 1, "bar": 2 })"_padded;
-
-    document::parser parser;
-    auto [object, error] = parser.parse(json).as_object();
-    uint64_t actual;
-    {
-      string key = "bar";
-      uint64_t expected = 2;
-      object.at_key(key).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
-    }
-    {
-      string key = "foo";
-      uint64_t expected = 1;
-      object.at_key(key).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
-    }
-    {
-      string key = "baz";
-      object.at_key(key).as_uint64_t().tie(actual, error);
-      if (!error) { cerr << "Expected error accessing " << key << ", got " << actual << " instead!" << endl; return false; }
-    }
-    return true;
-  }
-
-  bool object_at_key_case_insensitive() {
-    std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "foo": 1, "Bar": 2 })"_padded;
-
-    document::parser parser;
-    auto [object, error] = parser.parse(json).as_object();
-    uint64_t actual;
-    {
-      string key = "bar";
-      uint64_t expected = 2;
-      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
-    }
-    {
-      string key = "BAR";
-      uint64_t expected = 2;
-      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
-    }
-    {
-      string key = "Bar";
-      uint64_t expected = 2;
-      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
-      if (error) { cerr << error << endl; return false; }
-      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
-    }
-    {
-      string key = "baz";
-      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
-      if (!error) { cerr << "Expected error accessing " << key << ", got " << actual << " instead!" << endl; return false; }
-    }
-    return true;
-  }
-
   bool string_value() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ "hi", "has backslash\\" ])"_padded;
+    string json(R"([ "hi", "has backslash\\" ])");
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -869,7 +759,7 @@ namespace dom_api_tests {
 
   bool numeric_values() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
+    string json(R"([ 0, 1, -1, 1.1 ])");
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -892,7 +782,7 @@ namespace dom_api_tests {
 
   bool boolean_values() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ true, false ])"_padded;
+    string json(R"([ true, false ])");
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -906,7 +796,7 @@ namespace dom_api_tests {
 
   bool null_value() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ null ])"_padded;
+    string json(R"([ null ])");
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -917,7 +807,7 @@ namespace dom_api_tests {
 
   bool document_object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
+    string json(R"({ "a": 1, "b": 2, "c": 3})");
     document::parser parser;
     auto [doc, error] = parser.parse(json);
     if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
@@ -937,7 +827,7 @@ namespace dom_api_tests {
 
   bool object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
+    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
     document::parser parser;
     auto [doc, error] = parser.parse(json);
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -1031,7 +921,7 @@ namespace dom_api_tests {
 
   bool object_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
@@ -1048,7 +938,7 @@ namespace dom_api_tests {
 
   bool array_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ 1, 10, 100 ])"_padded;
+    string json(R"([ 1, 10, 100 ])");
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
 
@@ -1064,7 +954,7 @@ namespace dom_api_tests {
 
   bool string_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ "hi", "has backslash\\" ])"_padded;
+    string json(R"([ "hi", "has backslash\\" ])");
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1079,7 +969,7 @@ namespace dom_api_tests {
 
   bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
+    string json(R"([ 0, 1, -1, 1.1 ])");
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1101,7 +991,7 @@ namespace dom_api_tests {
 
   bool boolean_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ true, false ])"_padded;
+    string json(R"([ true, false ])");
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1114,7 +1004,7 @@ namespace dom_api_tests {
 
   bool null_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"([ null ])"_padded;
+    string json(R"([ null ])");
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1125,7 +1015,7 @@ namespace dom_api_tests {
 
   bool document_object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
+    string json(R"({ "a": 1, "b": 2, "c": 3})");
     document::parser parser;
     document &doc = parser.parse(json);
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
@@ -1134,7 +1024,7 @@ namespace dom_api_tests {
 
   bool object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
+    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
     document::parser parser;
     document::object obj = parser.parse(json)["obj"];
     if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
@@ -1190,13 +1080,11 @@ namespace dom_api_tests {
 #endif
 
   bool run() {
-    return object_iterator() &&
+    return ParsedJson_Iterator_test() &&
+           object_iterator() &&
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
-           array_at() &&
-           object_at_key() &&
-           object_at_key_case_insensitive() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&
@@ -1506,10 +1394,8 @@ int main(int argc, char *argv[]) {
       format_tests::run() &&
       document_tests::run() &&
       number_tests::run() &&
-      error_messages_in_correct_order() &&
-      deprecated_tests::run() &&
       document_stream_tests::run() &&
-      true
+      error_messages_in_correct_order()
   ) {
     std::cout << "Basic tests are ok." << std::endl;
     return EXIT_SUCCESS;
