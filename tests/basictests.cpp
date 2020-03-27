@@ -48,22 +48,11 @@ namespace number_tests {
         auto n = sprintf(buf, "%*d", m, i);
         buf[n] = '\0';
         fflush(NULL);
-        auto [pj, error] = parser.parse(buf, n);
-        if (error) {
-          printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
-          return false;
-        }
-        if(!pj.root().is_number()) {
-          printf("Root should be number\n");
-          return false;
-        }
-        if(!pj.root().is_integer()) {
-          printf("Root should be an integer\n");
-          return false;
-        }
-        int64_t x = pj.root().as_int64_t();
-        if(x != i) {
-          printf("failed to parse %s. \n", buf);
+
+        auto [actual, error] = parser.parse(buf, n).root().as_int64_t();
+        if (error) { std::cerr << error << std::endl; return false; }
+        if (actual != i) {
+          std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << i << std::endl;
           return false;
         }
       } 
@@ -83,53 +72,14 @@ namespace number_tests {
       auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       buf[n] = '\0';
       fflush(NULL);
-      auto [pj, error] = parser.parse(buf, n);
-      if (error) {
-        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
+
+      auto [actual, error] = parser.parse(buf, n).root().as_double();
+      if (error) { std::cerr << error << std::endl; return false; }
+      int ulp = f64_ulp_dist(actual,expected);  
+      if(ulp > maxulp) maxulp = ulp;
+      if(ulp > 0) {
+        std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
         return false;
-      }
-      if(!pj.root().is_number()) {
-        printf("Root should be number\n");
-        return false;
-      }
-      if(pj.root().is_unsigned_integer()) {
-        uint64_t x = pj.root().as_uint64_t();
-        int power = 0;
-        while(x > 1) {
-          if((x % 2) != 0) {
-            printf("failed to parse %s. \n", buf);
-            return false;
-          }
-          x = x / 2;
-          power ++;
-        }
-        if(power != i) {
-          printf("failed to parse %s. \n", buf);
-          return false;
-        }
-      } else if(pj.root().is_integer()) {
-        int64_t x = pj.root().as_int64_t();
-        int power = 0;
-        while(x > 1) {
-          if((x % 2) != 0) {
-              printf("failed to parse %s. \n", buf);
-              return false;
-          }
-          x = x / 2;
-          power ++;
-        }
-        if(power != i)  {
-          printf("failed to parse %s. \n", buf);
-          return false;
-        }
-      } else {
-        double x = pj.root().as_double();
-        int ulp = f64_ulp_dist(x,expected);  
-        if(ulp > maxulp) maxulp = ulp;
-        if(ulp > 0) {
-          printf("failed to parse %s. ULP = %d i = %d \n", buf, ulp, i);
-          return false;
-        }
       }
     }
     printf("Powers of 2 can be parsed, maxulp = %d.\n", maxulp);
@@ -212,60 +162,19 @@ namespace number_tests {
   bool powers_of_ten() {
     std::cout << __func__ << std::endl;
     char buf[1024];
+    simdjson::document::parser parser;
     for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
       auto n = sprintf(buf,"1e%d", i);
       buf[n] = '\0';
       fflush(NULL);
-      simdjson::document::parser parser;
-      auto [pj, error] = parser.parse(buf, n);
-      if (error) {
-        printf("Could not parse '%s': %s\n", buf, simdjson::error_message(error));
+
+      auto [actual, error] = parser.parse(buf, n).root().as_double();
+      if (error) { std::cerr << error << std::endl; return false; }
+      double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
+      int ulp = (int) f64_ulp_dist(actual, expected);
+      if(ulp > 0) {
+        std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
         return false;
-      }
-      if(!pj.root().is_number()) {
-        printf("Root should be number\n");
-        return false;
-      }
-      if(pj.root().is_unsigned_integer()) {
-        uint64_t x = pj.root().as_uint64_t();
-        int power = 0;
-        while(x > 1) {
-          if((x % 10) != 0) {
-            printf("failed to parse %s. \n", buf);
-            return false;
-          }
-          x = x / 10;
-          power ++;
-        }
-        if(power != i) {
-          printf("failed to parse %s. \n", buf);
-          return false;
-        }
-      } if(pj.root().is_integer()) {
-        int64_t x = pj.root().as_int64_t();
-        int power = 0;
-        while(x > 1) {
-          if((x % 10) != 0) {
-              printf("failed to parse %s. \n", buf);
-              return false;
-          }
-          x = x / 10;
-          power ++;
-        }
-        if(power != i)  {
-          printf("failed to parse %s. \n", buf);
-          return false;
-        }
-      } else  {
-        double x = pj.root().as_double();
-        double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
-        int ulp = (int) f64_ulp_dist(x, expected);
-        if(ulp > 0) {
-          printf("failed to parse %s. \n", buf);
-          printf("actual: %.20g expected: %.20g \n", x, expected);
-          printf("ULP: %d \n", ulp);
-          return false;
-        }
       }
     }
     printf("Powers of 10 can be parsed.\n");
@@ -309,9 +218,8 @@ namespace document_tests {
             "}"
         "}"_padded;
     simdjson::document::parser parser;
-    auto [pj, error] = parser.parse(json);
     std::ostringstream myStream;
-    myStream << pj;
+    myStream << parser.parse(json);
     std::string newjson = myStream.str();
     if(static_cast<std::string>(json) != newjson) {
       std::cout << "serialized json differs!" << std::endl;
@@ -659,110 +567,129 @@ namespace parse_api_tests {
   }
 }
 
-namespace dom_api_tests {
+namespace deprecated_tests {
   using namespace std;
   using namespace simdjson;
 
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING
   // returns true if successful
-  bool document_iterator_test() {
+  bool ParsedJson_Iterator_test() {
     std::cout << "Running " << __func__ << std::endl;
-    simdjson::padded_string json = "{"
-          "\"Image\": {"
-              "\"Width\":  800,"
-              "\"Height\": 600,"
-              "\"Title\":  \"View from 15th Floor\","
-              "\"Thumbnail\": {"
-              "    \"Url\":    \"http://www.example.com/image/481989943\","
-              "    \"Height\": 125,"
-              "    \"Width\":  100"
-              "},"
-              "\"Animated\" : false,"
-              "\"IDs\": [116, 943, 234, 38793]"
-            "}"
-        "}"_padded;
-    simdjson::document::parser parser;
-    auto [pj, error] = parser.parse(json);
-    if (error) {
-      printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(error));
+    simdjson::padded_string json = R"({
+          "Image": {
+              "Width":  800,
+              "Height": 600,
+              "Title":  "View from 15th Floor",
+              "Thumbnail": {
+                  "Url":    "http://www.example.com/image/481989943",
+                  "Height": 125,
+                  "Width":  100
+              },
+              "Animated" : false,
+              "IDs": [116, 943, 234, 38793]
+            }
+        })"_padded;
+    simdjson::ParsedJson pj = build_parsed_json(json);
+    if (pj.error) {
+      printf("Could not parse '%s': %s\n", json.data(), simdjson::error_message(pj.error));
       return false;
     }
-    if(!pj.root().is_object()) {
+    simdjson::ParsedJson::Iterator iter(pj);
+    if (!iter.is_object()) {
       printf("Root should be object\n");
       return false;
     }
-    auto [object, err] = pj.root().as_object();
-    if(err) {
-      printf("can't convert to object?\n");
+    if (iter.move_to_key("bad key")) {
+      printf("We should not move to a non-existing key\n");
       return false;
     }
-    auto [b1, e1] = object.at_key("bad key");
-    if(!e1) {
-      printf("We should not move to a non-existing key\n");
-      return false;    
-    }
-    auto [b2, e2] = object.at_key_case_insensitive("bad key");
-    if(!e2) {
-      printf("We should not move to a non-existing key\n");
-      return false;    
-    }
-    if(!pj.root().is_object()) {
+    if (!iter.is_object()) {
       printf("We should have remained at the object.\n");
       return false;
     }
-    auto [b3, e3] = object.at_key("bad key", 7);
-
-    if(!e3) {
+    if (iter.move_to_key_insensitive("bad key")) {
       printf("We should not move to a non-existing key\n");
       return false;    
     }
-    if(!pj.root().is_object()) {
+    if (!iter.is_object()) {
       printf("We should have remained at the object.\n");
       return false;
     }
-    auto img_element = object.at_key("Image");
-    if(!img_element.get().is_object()) {
+    if (!iter.down()) {
+      printf("Root should not be emtpy\n");
+      return false;
+    }
+    if (!iter.is_string()) {
+      printf("Object should start with string key\n");
+      return false;
+    }
+    if (iter.prev()) {
+      printf("We should not be able to go back from the start of the scope.\n");
+      return false;
+    }
+    if (strcmp(iter.get_string(),"Image")!=0) {
+      printf("There should be a single key, image.\n");
+      return false;
+    }
+    iter.move_to_value();
+    if(!iter.is_object()) {
       printf("Value of image should be object\n");
       return false;
     }
-    auto root_object = pj.root().as_object();
-
-    auto img_object = img_element.get().as_object();
-    size_t co = 0;
-    for(auto [k,v]: root_object) {
-      co++;
-      if(strcmp(k.data(),"Image")!=0) {
-        printf("There should be a single key, Image.\n");
-        return false;
-      }
-    }
-    if( co != 1 ) {
-      printf("There should be a single key, Image, I found %zu.\n", co);
+    if(!iter.down()) {
+      printf("Image key should not be emtpy\n");
       return false;
     }
-    if( img_object.at_key("Width").as_int64_t() != 800) {
-      printf("There should be a Width element and its value should be 800\n");
+    if(!iter.next()) {
+      printf("key should have a value\n");
       return false;
     }
-    auto ids_element = img_object.at_key("IDs");
-    if(!ids_element.get().is_array()) {
-      printf("Value of IDs should be array.\n");
+    if(!iter.prev()) {
+      printf("We should go back to the key.\n");
       return false;
     }
-    std::vector<int64_t> val;
-    for(int64_t v : ids_element.as_array()) {
-      val.push_back(v);
+    if (strcmp(iter.get_string(),"Width")!=0) {
+      printf("There should be a  key Width.\n");
+      return false;
     }
-    std::vector<int64_t> tv = {116, 943, 234, 38793};
-    if(val != tv) {
-      printf("The values do not match.\n");
+    if (!iter.up()) {
+      return false;
+    }
+    if (!iter.move_to_key("IDs")) {
+      printf("We should be able to move to an existing key\n");
+      return false;    
+    }
+    if (!iter.is_array()) {
+      printf("Value of IDs should be array, it is %c \n", iter.get_type());
+      return false;
+    }
+    if (iter.move_to_index(4)) {
+      printf("We should not be able to move to a non-existing index\n");
+      return false;    
+    }
+    if (!iter.is_array()) {
+      printf("We should have remained at the array\n");
       return false;
     }
     return true;
   }
 
+  SIMDJSON_POP_DISABLE_WARNINGS
+
+  bool run() {
+    return ParsedJson_Iterator_test() &&
+           true;
+  }
+}
+
+namespace dom_api_tests {
+  using namespace std;
+  using namespace simdjson;
+
   bool object_iterator() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
@@ -780,7 +707,7 @@ namespace dom_api_tests {
 
   bool array_iterator() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ 1, 10, 100 ])");
+    auto json = R"([ 1, 10, 100 ])"_padded;
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
 
@@ -797,7 +724,7 @@ namespace dom_api_tests {
 
   bool object_iterator_empty() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({})");
+    auto json = R"({})"_padded;
     int i = 0;
 
     document::parser parser;
@@ -813,7 +740,7 @@ namespace dom_api_tests {
 
   bool array_iterator_empty() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([])");
+    auto json = R"([])"_padded;
     int i=0;
 
     document::parser parser;
@@ -827,9 +754,108 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool array_at() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"([ 1, 10, 100 ])"_padded;
+    uint64_t expected[] = { 1, 10, 100 };
+
+    document::parser parser;
+    auto [array, error] = parser.parse(json).as_array();
+    uint64_t actual;
+    {
+      int i = 2;
+      array.at(i).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
+    }
+    {
+      int i = 0;
+      array.at(i).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
+    }
+    {
+      int i = 1;
+      array.at(i).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected[i]) { cerr << "Got [" << i << "] = " << actual << ", expected " << expected[i] << endl; return false; }
+    }
+    {
+      int i = 3;
+      array.at(i).as_uint64_t().tie(actual, error);
+      if (!error) { cerr << "Expected error accessing [" << i << "], got " << actual << " instead!" << endl; return false; }
+    }
+    return true;
+  }
+
+  bool object_at_key() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({ "foo": 1, "bar": 2 })"_padded;
+
+    document::parser parser;
+    auto [object, error] = parser.parse(json).as_object();
+    uint64_t actual;
+    {
+      string key = "bar";
+      uint64_t expected = 2;
+      object.at_key(key).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
+    }
+    {
+      string key = "foo";
+      uint64_t expected = 1;
+      object.at_key(key).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
+    }
+    {
+      string key = "baz";
+      object.at_key(key).as_uint64_t().tie(actual, error);
+      if (!error) { cerr << "Expected error accessing " << key << ", got " << actual << " instead!" << endl; return false; }
+    }
+    return true;
+  }
+
+  bool object_at_key_case_insensitive() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({ "foo": 1, "Bar": 2 })"_padded;
+
+    document::parser parser;
+    auto [object, error] = parser.parse(json).as_object();
+    uint64_t actual;
+    {
+      string key = "bar";
+      uint64_t expected = 2;
+      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
+    }
+    {
+      string key = "BAR";
+      uint64_t expected = 2;
+      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
+    }
+    {
+      string key = "Bar";
+      uint64_t expected = 2;
+      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
+      if (error) { cerr << error << endl; return false; }
+      if (actual != expected) { cerr << "Got " << key << " = " << actual << ", expected " << expected << endl; return false; }
+    }
+    {
+      string key = "baz";
+      object.at_key_case_insensitive(key).as_uint64_t().tie(actual, error);
+      if (!error) { cerr << "Expected error accessing " << key << ", got " << actual << " instead!" << endl; return false; }
+    }
+    return true;
+  }
+
   bool string_value() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ "hi", "has backslash\\" ])");
+    auto json = R"([ "hi", "has backslash\\" ])"_padded;
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -843,7 +869,7 @@ namespace dom_api_tests {
 
   bool numeric_values() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ 0, 1, -1, 1.1 ])");
+    auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -866,7 +892,7 @@ namespace dom_api_tests {
 
   bool boolean_values() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ true, false ])");
+    auto json = R"([ true, false ])"_padded;
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -880,7 +906,7 @@ namespace dom_api_tests {
 
   bool null_value() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ null ])");
+    auto json = R"([ null ])"_padded;
     document::parser parser;
     auto [array, error] = parser.parse(json).as_array();
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -891,7 +917,7 @@ namespace dom_api_tests {
 
   bool document_object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "a": 1, "b": 2, "c": 3})");
+    auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
     document::parser parser;
     auto [doc, error] = parser.parse(json);
     if (doc["a"].as_uint64_t().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
@@ -911,7 +937,7 @@ namespace dom_api_tests {
 
   bool object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+    auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
     document::parser parser;
     auto [doc, error] = parser.parse(json);
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -1005,7 +1031,7 @@ namespace dom_api_tests {
 
   bool object_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+    auto json = R"({ "a": 1, "b": 2, "c": 3 })"_padded;
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
@@ -1022,7 +1048,7 @@ namespace dom_api_tests {
 
   bool array_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ 1, 10, 100 ])");
+    auto json = R"([ 1, 10, 100 ])"_padded;
     uint64_t expected_value[] = { 1, 10, 100 };
     int i=0;
 
@@ -1038,7 +1064,7 @@ namespace dom_api_tests {
 
   bool string_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ "hi", "has backslash\\" ])");
+    auto json = R"([ "hi", "has backslash\\" ])"_padded;
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1053,7 +1079,7 @@ namespace dom_api_tests {
 
   bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ 0, 1, -1, 1.1 ])");
+    auto json = R"([ 0, 1, -1, 1.1 ])"_padded;
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1075,7 +1101,7 @@ namespace dom_api_tests {
 
   bool boolean_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ true, false ])");
+    auto json = R"([ true, false ])"_padded;
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1088,7 +1114,7 @@ namespace dom_api_tests {
 
   bool null_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ null ])");
+    auto json = R"([ null ])"_padded;
     document::parser parser;
     document::array array = parser.parse(json).as_array();
     auto val = array.begin();
@@ -1099,7 +1125,7 @@ namespace dom_api_tests {
 
   bool document_object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "a": 1, "b": 2, "c": 3})");
+    auto json = R"({ "a": 1, "b": 2, "c": 3})"_padded;
     document::parser parser;
     document &doc = parser.parse(json);
     if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
@@ -1108,7 +1134,7 @@ namespace dom_api_tests {
 
   bool object_index_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+    auto json = R"({ "obj": { "a": 1, "b": 2, "c": 3 } })"_padded;
     document::parser parser;
     document::object obj = parser.parse(json)["obj"];
     if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
@@ -1164,11 +1190,13 @@ namespace dom_api_tests {
 #endif
 
   bool run() {
-    return document_iterator_test() &&
-           object_iterator() &&
+    return object_iterator() &&
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
+           array_at() &&
+           object_at_key() &&
+           object_at_key_case_insensitive() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&
@@ -1478,8 +1506,10 @@ int main(int argc, char *argv[]) {
       format_tests::run() &&
       document_tests::run() &&
       number_tests::run() &&
+      error_messages_in_correct_order() &&
+      deprecated_tests::run() &&
       document_stream_tests::run() &&
-      error_messages_in_correct_order()
+      true
   ) {
     std::cout << "Basic tests are ok." << std::endl;
     return EXIT_SUCCESS;

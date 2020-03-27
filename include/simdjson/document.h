@@ -180,20 +180,6 @@ public:
    */
   inline element_result at_key(std::string_view s) const noexcept;
 
-  /**
-   * Get the value associated with the given key.
-   *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s) const noexcept;
-
   std::unique_ptr<uint64_t[]> tape;
   std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
 
@@ -255,6 +241,11 @@ public:
    *         - UNEXPECTED_TYPE if the JSON document is not an array
    */
   inline array_result as_array() const noexcept;
+
+  /**
+   * Get the root element of this document.
+   */
+  inline element_result root() const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -644,18 +635,14 @@ public:
   inline element_result at_key(std::string_view s) const noexcept;
 
   /**
-   * Get the value associated with the given key.
+   * Get the value associated with the given key in a case-insensitive manner.
    *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   * Note: The key will be matched against **unescaped** JSON.
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(const char *s) const noexcept;
+  inline element_result at_key_case_insensitive(std::string_view s) const noexcept;
 
 private:
   really_inline element(const document *_doc, size_t _json_index) noexcept;
@@ -889,7 +876,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(std::string_view s) const noexcept;
+  inline element_result at_key(std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -899,18 +886,8 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(const char *s) const noexcept;
+  inline element_result at_key(const char *key) const noexcept;
 
-  /**
-   * Get the value associated with the given key, the provided key is
-   * considered to have length characters.
-   *
-   * Note: The key will be matched against **unescaped** JSON.
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s, size_t length) const noexcept;
   /**
    * Get the value associated with the given key in a case-insensitive manner.
    *
@@ -919,7 +896,17 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key_case_insensitive(const char *s) const noexcept;
+  inline element_result at_key_case_insensitive(std::string_view key) const noexcept;
+
+  /**
+   * Get the value associated with the given key in a case-insensitive manner.
+   *
+   * Note: The key will be matched against **unescaped** JSON.
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   */
+  inline element_result at_key_case_insensitive(const char *key) const noexcept;
 
 private:
   really_inline object(const document *_doc, size_t _json_index) noexcept;
@@ -967,6 +954,8 @@ public:
   inline element_result at(size_t index) const noexcept;
   inline element_result at_key(std::string_view key) const noexcept;
   inline element_result at_key(const char *key) const noexcept;
+  inline element_result at_key_case_insensitive(std::string_view key) const noexcept;
+  inline element_result at_key_case_insensitive(const char *key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline operator bool() const noexcept(false);
@@ -1009,7 +998,7 @@ public:
   inline element_result operator[](const char *json_pointer) const noexcept;
   inline element_result at(std::string_view json_pointer) const noexcept;
   inline element_result at_key(std::string_view key) const noexcept;
-  inline element_result at_key(const char *key) const noexcept;
+  inline element_result at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline object::iterator begin() const noexcept(false);
