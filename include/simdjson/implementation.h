@@ -164,7 +164,7 @@ public:
    * @param name the implementation to find, e.g. "westmere", "haswell", "arm64"
    * @return the implementation, or nullptr if the parse failed.
    */
-  const implementation * operator[](const std::string& name) const noexcept {
+  const implementation * operator[](const std::string_view &name) const noexcept {
     for (const implementation * impl : *this) {
       if (impl->name() == name) { return impl; }
     }
