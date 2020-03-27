@@ -83,7 +83,7 @@ are as follows.
 
 | parser                                | GB/s |
 | ------------------------------------- | ---- |
-| simdjson                              | 2.2  |
+| simdjson                              | 2.5  |
 | RapidJSON encoding-validation         | 0.51 |
 | RapidJSON encoding-validation, insitu | 0.71 |
 | sajson (insitu, dynamic)              | 0.70 |
