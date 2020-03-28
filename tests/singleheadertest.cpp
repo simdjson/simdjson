@@ -7,7 +7,7 @@ using namespace simdjson;
 int main() {
   const char *filename = JSON_TEST_PATH;
   padded_string p = get_corpus(filename);
-  document::parser parser;
+  dom::parser parser;
   auto [doc, error] = parser.parse(p);
   if(error) {
     std::cerr << error << std::endl;

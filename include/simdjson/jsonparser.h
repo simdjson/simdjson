@@ -13,8 +13,8 @@ namespace simdjson {
 // C API (json_parse and build_parsed_json) declarations
 //
 
-[[deprecated("Use document::parser.parse() instead")]]
-inline int json_parse(const uint8_t *buf, size_t len, document::parser &parser, bool realloc_if_needed = true) noexcept {
+[[deprecated("Use parser.parse() instead")]]
+inline int json_parse(const uint8_t *buf, size_t len, dom::parser &parser, bool realloc_if_needed = true) noexcept {
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -24,8 +24,8 @@ inline int json_parse(const uint8_t *buf, size_t len, document::parser &parser, 
   parser.error = code;
   return code;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-inline int json_parse(const char *buf, size_t len, document::parser &parser, bool realloc_if_needed = true) noexcept {
+[[deprecated("Use parser.parse() instead")]]
+inline int json_parse(const char *buf, size_t len, dom::parser &parser, bool realloc_if_needed = true) noexcept {
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -35,8 +35,8 @@ inline int json_parse(const char *buf, size_t len, document::parser &parser, boo
   parser.error = code;
   return code;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-inline int json_parse(const std::string &s, document::parser &parser, bool realloc_if_needed = true) noexcept {
+[[deprecated("Use parser.parse() instead")]]
+inline int json_parse(const std::string &s, dom::parser &parser, bool realloc_if_needed = true) noexcept {
   error_code code = parser.parse(s.data(), s.length(), realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -46,8 +46,8 @@ inline int json_parse(const std::string &s, document::parser &parser, bool reall
   parser.error = code;
   return code;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-inline int json_parse(const padded_string &s, document::parser &parser) noexcept {
+[[deprecated("Use parser.parse() instead")]]
+inline int json_parse(const padded_string &s, dom::parser &parser) noexcept {
   error_code code = parser.parse(s).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -58,9 +58,9 @@ inline int json_parse(const padded_string &s, document::parser &parser) noexcept
   return code;
 }
 
-[[deprecated("Use document::parser.parse() instead")]]
-WARN_UNUSED inline document::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
-  document::parser parser;
+[[deprecated("Use parser.parse() instead")]]
+WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
+  dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -70,9 +70,9 @@ WARN_UNUSED inline document::parser build_parsed_json(const uint8_t *buf, size_t
   parser.error = code;
   return parser;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-WARN_UNUSED inline document::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
-  document::parser parser;
+[[deprecated("Use parser.parse() instead")]]
+WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
+  dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -82,9 +82,9 @@ WARN_UNUSED inline document::parser build_parsed_json(const char *buf, size_t le
   parser.error = code;
   return parser;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-WARN_UNUSED inline document::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
-  document::parser parser;
+[[deprecated("Use parser.parse() instead")]]
+WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
+  dom::parser parser;
   error_code code = parser.parse(s.data(), s.length(), realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -94,9 +94,9 @@ WARN_UNUSED inline document::parser build_parsed_json(const std::string &s, bool
   parser.error = code;
   return parser;
 }
-[[deprecated("Use document::parser.parse() instead")]]
-WARN_UNUSED inline document::parser build_parsed_json(const padded_string &s) noexcept {
-  document::parser parser;
+[[deprecated("Use parser.parse() instead")]]
+WARN_UNUSED inline dom::parser build_parsed_json(const padded_string &s) noexcept {
+  dom::parser parser;
   error_code code = parser.parse(s).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
   // bits in the parser instead of heeding the result code. The normal parser unsets those in
@@ -108,8 +108,8 @@ WARN_UNUSED inline document::parser build_parsed_json(const padded_string &s) no
 }
 
 // We do not want to allow implicit conversion from C string to std::string.
-int json_parse(const char *buf, document::parser &parser) noexcept = delete;
-document::parser build_parsed_json(const char *buf) noexcept = delete;
+int json_parse(const char *buf, dom::parser &parser) noexcept = delete;
+dom::parser build_parsed_json(const char *buf) noexcept = delete;
 
 } // namespace simdjson
 

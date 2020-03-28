@@ -34,19 +34,19 @@ The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
 
 The simdjson library offers a simple DOM tree API, which you can access by creating a
-`document::parser` and calling the `load()` method:
+`dom::parser` and calling the `load()` method:
 
 ```c++
-document::parser parser;
-document::element doc = parser.load(filename); // load and parse a file
+dom::parser parser;
+dom::element doc = parser.load(filename); // load and parse a file
 ```
 
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
 SIMDJSON_PADDING bytes at the end) and calling `parse()`:
 
 ```c++
-document::parser parser;
-document::element doc = parser.parse("[1,2,3]"_padded); // parse a string
+dom::parser parser;
+dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
 Using the Parsed JSON
@@ -56,7 +56,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 
 * **Extracting Values:** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  document::object and document::array. You can also use is_*typename*()` to test if it is a
+  dom::object and dom::array. You can also use is_*typename*()` to test if it is a
   given type, and as_*typename*() to do the cast and return an error code on failure instead of an
   exception.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
@@ -72,11 +72,11 @@ auto cars_json = R"( [
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
-document::parser parser;
-document::array cars = parser.parse(cars_json).as_array();
+dom::parser parser;
+dom::array cars = parser.parse(cars_json).as_array();
 
 // Iterating through an array of objects
-for (document::object car : cars) {
+for (dom::object car : cars) {
   // Accessing a field by name
   cout << "Make/Model: " << car["make"] << "/" << car["model"] << endl;
 
@@ -109,8 +109,8 @@ auto cars_json = R"( [
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
-document::parser parser;
-document::element cars = parser.parse(cars_json);
+dom::parser parser;
+dom::element cars = parser.parse(cars_json);
 cout << cars["/0/tire_pressure/1"] << endl; // Prints 39.9
 ```
 
@@ -121,7 +121,7 @@ All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;valu
 pair. The error codes and values can be accessed directly, reading the error like so:
 
 ```c++
-auto [doc, error] = parser.parse(json); // doc is a document::element
+auto [doc, error] = parser.parse(json); // doc is a dom::element
 if (error) { cerr << error << endl; exit(1); }
 // Use document here now that we've checked for the error
 ```
@@ -136,7 +136,7 @@ behavior.
 > circumvent this, you can use this instead:
 > 
 > ```c++
-> document::element doc;
+> dom::element doc;
 > error_code error;
 > parser.parse(json).tie(doc, error); // <-- Assigns to doc and error just like "auto [doc, error]"
 > ```
@@ -151,18 +151,18 @@ auto cars_json = R"( [
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
-document::parser parser;
+dom::parser parser;
 auto [doc, error] = parser.parse(cars_json);
 if (error) { cerr << error << endl; exit(1); }
 
 // Iterating through an array of objects
-for (document::element car_element : cars) {
-  document::object car;
+for (dom::element car_element : cars) {
+  dom::object car;
   car_element.as_object().tie(car, error);
   if (error) { cerr << error << endl; exit(1); }
 
   // Accessing a field by name
-  document::element make, model;
+  dom::element make, model;
   car["make"].tie(make, error);
   if (error) { cerr << error << endl; exit(1); }
   car["model"].tie(model, error);
@@ -177,7 +177,7 @@ for (document::element car_element : cars) {
 
   // Iterating through an array of floats
   double total_tire_pressure = 0;
-  for (document::element tire_pressure_element : car["tire_pressure"]) {
+  for (dom::element tire_pressure_element : car["tire_pressure"]) {
     double tire_pressure;
     tire_pressure_element.as_uint64_t().tie(tire_pressure, error);
     if (error) { cerr << error << endl; exit(1); }
@@ -197,7 +197,7 @@ for (document::element car_element : cars) {
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
 
 ```c++
-document::element doc = parser.parse(json); // Throws an exception if there was an error!
+dom::element doc = parser.parse(json); // Throws an exception if there was an error!
 ```
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
@@ -216,8 +216,8 @@ auto ndjson = R"(
 { "foo": 2 }
 { "foo": 3 }
 )"_padded;
-document::parser parser;
-for (document::element doc : parser.load_many(filename)) {
+dom::parser parser;
+for (dom::element doc : parser.load_many(filename)) {
   cout << doc["foo"] << endl;
 }
 // Prints 1 2 3
@@ -229,7 +229,7 @@ Thread Safety
 -------------
 
 The simdjson library is mostly single-threaded. Thread safety is the responsibility of the caller:
-it is unsafe to reuse a document::parser object between different threads.
+it is unsafe to reuse a dom::parser object between different threads.
 
 simdjson's CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.

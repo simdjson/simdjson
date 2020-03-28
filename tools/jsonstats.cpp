@@ -53,7 +53,7 @@ bool is_ascii(const std::string_view &v) {
   return true;
 }
 
-void recurse(simdjson::document::element element, stat_t &s, size_t depth) {
+void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
   if (depth > s.maximum_depth) {
     s.maximum_depth = depth;
   }
@@ -125,7 +125,7 @@ void recurse(simdjson::document::element element, stat_t &s, size_t depth) {
 
 stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t s{};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, error] = parser.parse(p);
   if (error) {
     s.valid = false;

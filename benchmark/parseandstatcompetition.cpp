@@ -50,7 +50,7 @@ void print_stat(const stat_t &s) {
 
 
 really_inline void simdjson_process_atom(stat_t &s,
-                                         simdjson::document::element element) {
+                                         simdjson::dom::element element) {
   if (element.is_number()) {
     s.number_count++;
   } else if (element.is_bool()) {
@@ -64,7 +64,7 @@ really_inline void simdjson_process_atom(stat_t &s,
   }
 }
 
-void simdjson_recurse(stat_t &s, simdjson::document::element element) {
+void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   if (element.is_array()) {
     s.array_count++;
     auto [array, array_error] = element.as_array();
@@ -93,7 +93,7 @@ void simdjson_recurse(stat_t &s, simdjson::document::element element) {
 __attribute__((noinline)) stat_t
 simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t s{};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, error] = parser.parse(p);
   if (error) {
     s.valid = false;

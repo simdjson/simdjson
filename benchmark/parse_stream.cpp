@@ -35,7 +35,7 @@ int main (int argc, char *argv[]){
         std::cout << "Gigabytes/second\t" << "Nb of documents parsed" << std::endl;
         for (auto i = 0; i < 3; i++) {
             //Actual test
-            simdjson::document::parser parser;
+            simdjson::dom::parser parser;
             simdjson::error_code alloc_error = parser.set_capacity(p.size());
             if (alloc_error) {
                 std::cerr << alloc_error << std::endl;
@@ -76,7 +76,7 @@ int main (int argc, char *argv[]){
             int count;
             for (size_t j = 0; j < 5; j++) {
                 //Actual test
-                simdjson::document::parser parser;
+                simdjson::dom::parser parser;
                 simdjson::error_code error;
 
                 auto start = std::chrono::steady_clock::now();
@@ -115,7 +115,7 @@ int main (int argc, char *argv[]){
         for (int i = 0; i < NB_ITERATION; i++) {
 
             // Actual test
-            simdjson::document::parser parser;
+            simdjson::dom::parser parser;
             simdjson::error_code error;
 
             auto start = std::chrono::steady_clock::now();

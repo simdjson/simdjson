@@ -111,13 +111,13 @@ public:
 
 struct structural_parser {
   structural_iterator structurals;
-  document::parser &doc_parser;
+  parser &doc_parser;
   uint32_t depth;
 
   really_inline structural_parser(
     const uint8_t *buf,
     size_t len,
-    document::parser &_doc_parser,
+    parser &_doc_parser,
     uint32_t next_structural = 0
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
@@ -325,7 +325,7 @@ struct structural_parser {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
   error_code result = parser.start(len, addresses.finish);
@@ -436,7 +436,7 @@ error:
   return parser.error();
 }
 
-WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, document::parser &doc_parser) const noexcept {
+WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   error_code code = stage1(buf, len, doc_parser, false);
   if (!code) {
     code = stage2(buf, len, doc_parser);

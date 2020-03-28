@@ -54,7 +54,7 @@ public:
    * @param parser the parser with the buffers to use. *MUST* have allocated up to at least len capacity.
    * @return the error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept = 0;
+  WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept = 0;
 
   /**
    * Run a full document parse (ensure_capacity, stage1 and stage2).
@@ -77,10 +77,10 @@ public:
    * @param buf the json document to parse. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
    * @param len the length of the json document.
    * @param parser the parser with the buffers to use. *MUST* have allocated up to at least len capacity.
-   * @param streaming whether this is being called by document::parser::parse_many.
+   * @param streaming whether this is being called by parser::parse_many.
    * @return the error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept = 0;
+  WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept = 0;
 
   /**
    * Stage 2 of the document parser.
@@ -92,10 +92,10 @@ public:
    * @param parser the parser with the buffers to use. *MUST* have allocated up to at least len capacity.
    * @return the error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept = 0;
+  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept = 0;
 
   /**
-   * Stage 2 of the document parser for document::parser::parse_many.
+   * Stage 2 of the document parser for parser::parse_many.
    *
    * Overridden by each implementation.
    *
@@ -105,7 +105,7 @@ public:
    * @param next_json the next structural index. Start this at 0 the first time, and it will be updated to the next value to pass each time.
    * @return the error code, SUCCESS if there was no error, or SUCCESS_AND_HAS_MORE if there was no error and stage2 can be called again.
    */
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept = 0;
+  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept = 0;
 
 protected:
   really_inline implementation(
@@ -192,19 +192,19 @@ public:
   const std::string& name() const noexcept final { return set_best()->name(); }
   const std::string& description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
-  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final {
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
     return set_best()->parse(buf, len, parser);
   }
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
   }
-  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept final {
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept final {
     return set_best()->stage1(buf, len, parser, streaming);
   }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser) const noexcept final {
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
     return set_best()->stage2(buf, len, parser);
   }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, document::parser &parser, size_t &next_json) const noexcept final {
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept final {
     return set_best()->stage2(buf, len, parser, next_json);
   }
 

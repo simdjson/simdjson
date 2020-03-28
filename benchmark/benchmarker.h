@@ -77,7 +77,7 @@ struct json_stats {
   size_t blocks_with_16_structurals = 0;
   size_t blocks_with_16_structurals_flipped = 0;
 
-  json_stats(const padded_string& json, const document::parser& parser) {
+  json_stats(const padded_string& json, const dom::parser& parser) {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
@@ -291,9 +291,9 @@ struct benchmarker {
   }
 
   really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
-    // Allocate document::parser
+    // Allocate dom::parser
     collector.start();
-    document::parser parser;
+    dom::parser parser;
     bool alloc_ok = parser.allocate_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;

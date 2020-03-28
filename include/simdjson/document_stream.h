@@ -4,17 +4,17 @@
 #include <thread>
 #include "simdjson/document.h"
 
-namespace simdjson {
+namespace simdjson::dom {
 
 /**
  * A forward-only stream of documents.
  *
- * Produced by document::parser::parse_many.
+ * Produced by parser::parse_many.
  *
  */
-class document::stream {
+class document_stream {
 public:
-  really_inline ~stream() noexcept;
+  really_inline ~document_stream() noexcept;
 
   /**
    * An iterator through a forward-only stream of documents.
@@ -36,12 +36,12 @@ public:
     really_inline bool operator!=(const iterator &other) const noexcept;
 
   private:
-    iterator(stream& stream, bool finished) noexcept;
-    /** The stream parser we're iterating through. */
-    stream& _stream;
+    iterator(document_stream& stream, bool finished) noexcept;
+    /** The document_stream we're iterating through. */
+    document_stream& stream;
     /** Whether we're finished or not. */
     bool finished;
-    friend class stream;
+    friend class document_stream;
   };
 
   /**
@@ -55,14 +55,14 @@ public:
 
 private:
 
-  stream &operator=(const document::stream &) = delete; // Disallow copying
+  document_stream &operator=(const document_stream &) = delete; // Disallow copying
 
-  stream(document::stream &other) = delete;    // Disallow copying
+  document_stream(document_stream &other) = delete;    // Disallow copying
 
-  really_inline stream(document::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
+  really_inline document_stream(dom::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
 
   /**
-   * Parse the next document found in the buffer previously given to stream.
+   * Parse the next document found in the buffer previously given to document_stream.
    *
    * The content should be a valid JSON document encoded as UTF-8. If there is a
    * UTF-8 BOM, the caller is responsible for omitting it, UTF-8 BOM are
@@ -70,7 +70,7 @@ private:
    *
    * You do NOT need to pre-allocate a parser.  This function takes care of
    * pre-allocating a capacity defined by the batch_size defined when creating the
-   * stream object.
+   * document_stream object.
    *
    * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case
    * of success and indicates that the buffer still contains more data to be parsed,
@@ -99,13 +99,13 @@ private:
   inline size_t get_current_buffer_loc() const { return current_buffer_loc; }
 
   /**
-   * Returns the total amount of complete documents parsed by the stream,
+   * Returns the total amount of complete documents parsed by the document_stream,
    * in the current buffer, at the given time.
    */
   inline size_t get_n_parsed_docs() const { return n_parsed_docs; }
 
   /**
-   * Returns the total amount of data (in bytes) parsed by the stream,
+   * Returns the total amount of data (in bytes) parsed by the document_stream,
    * in the current buffer, at the given time.
    */
   inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
@@ -116,7 +116,7 @@ private:
 
   inline size_t remaining() const { return _len - buf_start; }
 
-  document::parser &parser;
+  dom::parser &parser;
   const uint8_t *_buf;
   const size_t _len;
   size_t _batch_size; // this is actually variable!
@@ -133,10 +133,11 @@ private:
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
   std::thread stage_1_thread;
-  document::parser parser_thread;
+  dom::parser parser_thread;
 #endif
-  friend class document::parser;
-}; // class document::stream
+  friend class dom::parser;
+}; // class document_stream
 
-} // end of namespace simdjson
+} // end of namespace simdjson::dom
+
 #endif // SIMDJSON_DOCUMENT_STREAM_H

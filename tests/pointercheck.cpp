@@ -34,7 +34,7 @@ const padded_string TEST_JSON = R"(
 
 bool json_pointer_success_test(const char *json_pointer, std::string_view expected_value) {
   std::cout << "Running successful JSON pointer test '" << json_pointer << "' ..." << std::endl;
-  document::parser parser;
+  dom::parser parser;
   auto [value, error] = parser.parse(TEST_JSON)[json_pointer].as_string();
   if (error) { std::cerr << "Unexpected Error: " << error << std::endl; return false; }
   ASSERT(value == expected_value);
@@ -43,7 +43,7 @@ bool json_pointer_success_test(const char *json_pointer, std::string_view expect
 
 bool json_pointer_success_test(const char *json_pointer) {
   std::cout << "Running successful JSON pointer test '" << json_pointer << "' ..." << std::endl;
-  document::parser parser;
+  dom::parser parser;
   auto [value, error] = parser.parse(TEST_JSON)[json_pointer];
   if (error) { std::cerr << "Unexpected Error: " << error << std::endl; return false; }
   return true;
@@ -52,7 +52,7 @@ bool json_pointer_success_test(const char *json_pointer) {
 
 bool json_pointer_failure_test(const char *json_pointer, error_code expected_failure_test) {
   std::cout << "Running invalid JSON pointer test '" << json_pointer << "' ..." << std::endl;
-  document::parser parser;
+  dom::parser parser;
   auto [value, error] = parser.parse(TEST_JSON)[json_pointer];
   ASSERT(error == expected_failure_test);
   return true;

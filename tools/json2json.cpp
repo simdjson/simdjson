@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, error] = parser.load(filename); // do the parsing, return false on error
   if (error != simdjson::SUCCESS) {
     std::cerr << " Parsing failed. Error is '" << simdjson::error_message(error)

@@ -16,8 +16,8 @@ const padded_string EMPTY_ARRAY("[]", 2);
 
 static void twitter_count(State& state) {
   // Prints the number of results in twitter.json
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { return; }
@@ -44,12 +44,12 @@ BENCHMARK(iterator_twitter_count);
 
 static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<string_view> default_users;
-    for (document::object tweet : doc["statuses"].as_array()) {
-      document::object user = tweet["user"];
+    for (dom::object tweet : doc["statuses"].as_array()) {
+      dom::object user = tweet["user"];
       if (user["default_profile"]) {
         default_users.insert(user["screen_name"]);
       }
@@ -61,14 +61,14 @@ BENCHMARK(twitter_default_profile);
 
 static void twitter_image_sizes(State& state) {
   // Count unique image sizes
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
-    for (document::object tweet : doc["statuses"].as_array()) {
+    for (dom::object tweet : doc["statuses"].as_array()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
-        for (document::object image : media.as_array()) {
+        for (dom::object image : media.as_array()) {
           for (auto [key, size] : image["sizes"].as_object()) {
             image_sizes.insert({ size["w"], size["h"] });
           }
@@ -84,8 +84,8 @@ BENCHMARK(twitter_image_sizes);
 
 static void error_code_twitter_count(State& state) noexcept {
   // Prints the number of results in twitter.json
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     auto [value, error] = doc["search_metadata"]["count"].as_uint64_t();
     if (error) { return; }
@@ -96,14 +96,14 @@ BENCHMARK(error_code_twitter_count);
 
 static void error_code_twitter_default_profile(State& state) noexcept {
   // Count unique users with a default profile.
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<string_view> default_users;
 
     auto [tweets, error] = doc["statuses"].as_array();
     if (error) { return; }
-    for (document::element tweet : tweets) {
+    for (dom::element tweet : tweets) {
       auto [user, error2] = tweet["user"].as_object();
       if (error2) { return; }
       auto [default_profile, error3] = user["default_profile"].as_bool();
@@ -128,12 +128,12 @@ static void iterator_twitter_default_profile(State& state) {
     set<string_view> default_users;
     ParsedJson::Iterator iter(pj);
 
-    // for (document::object tweet : doc["statuses"].as_array()) {
+    // for (dom::object tweet : doc["statuses"].as_array()) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
 
-        // document::object user = tweet["user"];
+        // dom::object user = tweet["user"];
         if (!(iter.move_to_key("user") && iter.is_object())) { return; }
 
         // if (user["default_profile"]) {
@@ -160,16 +160,16 @@ BENCHMARK(iterator_twitter_default_profile);
 
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
-  document::parser parser;
-  document::element doc = parser.load(JSON_TEST_PATH);
+  dom::parser parser;
+  dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     auto [statuses, error] = doc["statuses"].as_array();
     if (error) { return; }
-    for (document::element tweet : statuses) {
+    for (dom::element tweet : statuses) {
       auto [images, not_found] = tweet["entities"]["media"].as_array();
       if (!not_found) {
-        for (document::element image : images) {
+        for (dom::element image : images) {
           auto [sizes, error2] = image["sizes"].as_object();
           if (error2) { return; }
           for (auto [key, size] : sizes) {
@@ -194,7 +194,7 @@ static void iterator_twitter_image_sizes(State& state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     ParsedJson::Iterator iter(pj);
 
-    // for (document::object tweet : doc["statuses"].as_array()) {
+    // for (dom::object tweet : doc["statuses"].as_array()) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
@@ -206,7 +206,7 @@ static void iterator_twitter_image_sizes(State& state) {
           if (iter.move_to_key("media")) {
             if (!iter.is_array()) { return; }
 
-            //   for (document::object image : media.as_array()) {
+            //   for (dom::object image : media.as_array()) {
             if (iter.down()) { // first media
               do {
 
@@ -247,7 +247,7 @@ BENCHMARK(iterator_twitter_image_sizes);
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
   padded_string json = get_corpus(JSON_TEST_PATH);
-  document::parser parser;
+  dom::parser parser;
   if (!parser.allocate_capacity(json.length())) { cerr << "allocation failed" << endl; return; }
   if (int error = json_parse(json, parser); error != SUCCESS) { cerr << error_message(error) << endl; return; }
   for (auto _ : state) {

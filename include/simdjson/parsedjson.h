@@ -7,7 +7,7 @@
 
 namespace simdjson {
 
-using ParsedJson = document::parser;
+using ParsedJson = dom::parser;
 
 } // namespace simdjson
 #endif

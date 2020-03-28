@@ -69,7 +69,7 @@ bool validate(const char *dirname) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;
       }
-      simdjson::document::parser parser;
+      simdjson::dom::parser parser;
       auto [doc, errorcode] = parser.parse(p);
       ++how_many;
       printf("%s\n", errorcode == simdjson::error_code::SUCCESS ? "ok" : "invalid");

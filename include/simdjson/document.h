@@ -10,13 +10,80 @@
 #include "simdjson/simdjson.h"
 #include "simdjson/padded_string.h"
 
+namespace simdjson::dom {
+
+class parser;
+class element;
+class array;
+class object;
+class key_value_pair;
+class document;
+class document_stream;
+
+/** The default batch size for parser.parse_many() and parser.load_many() */
+static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+
+} // namespace simdjson::dom
+
+namespace simdjson {
+
+template<> struct simdjson_result<dom::element>;
+template<> struct simdjson_result<dom::array>;
+template<> struct simdjson_result<dom::object>;
+
+template<typename T>
+class minify;
+
+} // namespace simdjson
+
 namespace simdjson::internal {
+
+using namespace simdjson::dom;
+
 constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
 enum class tape_type;
 class tape_ref;
+  /**
+    * The possible types in the tape. Internal only.
+    */
+  enum class tape_type {
+    ROOT = 'r',
+    START_ARRAY = '[',
+    START_OBJECT = '{',
+    END_ARRAY = ']',
+    END_OBJECT = '}',
+    STRING = '"',
+    INT64 = 'l',
+    UINT64 = 'u',
+    DOUBLE = 'd',
+    TRUE_VALUE = 't',
+    FALSE_VALUE = 'f',
+    NULL_VALUE = 'n'
+  };
+
+  /**
+  * A reference to an element on the tape. Internal only.
+  */
+  class tape_ref {
+  public:
+    really_inline tape_ref() noexcept;
+    really_inline tape_ref(const document *doc, size_t json_index) noexcept;
+    inline size_t after_element() const noexcept;
+    really_inline tape_type type() const noexcept;
+    really_inline uint64_t tape_value() const noexcept;
+    template<typename T>
+    really_inline T next_tape_value() const noexcept;
+    inline std::string_view get_string_view() const noexcept;
+
+    /** The document this element references. */
+    const document *doc;
+
+    /** The index of this element on `doc.tape[]` */
+    size_t json_index;
+  };
 } // namespace simdjson::internal
 
-namespace simdjson {
+namespace simdjson::dom {
 
 /**
  * A parsed JSON document.
@@ -48,17 +115,6 @@ public:
   document &operator=(document &&other) noexcept = default;
   document &operator=(const document &) = delete; // Disallow copying
 
-  /** The default batch size for parse_many and load_many */
-  static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
-
-  // Nested classes
-  class element;
-  class array;
-  class object;
-  class key_value_pair;
-  class parser;
-  class stream;
-
   /**
    * Get the root element of this document as a JSON array.
    */
@@ -78,56 +134,9 @@ public:
 private:
   inline error_code set_capacity(size_t len) noexcept;
   template<typename T>
-  friend class minify;
+  friend class simdjson::minify;
+  friend class parser;
 }; // class document
-
-template<typename T>
-class minify;
-
-namespace internal {
-  /**
-    * The possible types in the tape. Internal only.
-    */
-  enum class tape_type {
-    ROOT = 'r',
-    START_ARRAY = '[',
-    START_OBJECT = '{',
-    END_ARRAY = ']',
-    END_OBJECT = '}',
-    STRING = '"',
-    INT64 = 'l',
-    UINT64 = 'u',
-    DOUBLE = 'd',
-    TRUE_VALUE = 't',
-    FALSE_VALUE = 'f',
-    NULL_VALUE = 'n'
-  };
-
-  /**
-  * A reference to an element on the tape. Internal only.
-  */
-  class tape_ref {
-  protected:
-    really_inline tape_ref() noexcept;
-    really_inline tape_ref(const document *_doc, size_t _json_index) noexcept;
-    inline size_t after_element() const noexcept;
-    really_inline tape_type type() const noexcept;
-    really_inline uint64_t tape_value() const noexcept;
-    template<typename T>
-    really_inline T next_tape_value() const noexcept;
-    inline std::string_view get_string_view() const noexcept;
-
-    /** The document this element references. */
-    const document *doc;
-
-    /** The index of this element on `doc.tape[]` */
-    size_t json_index;
-
-    friend class document::key_value_pair;
-    template<typename T>
-    friend class simdjson::minify;
-  };
-} // namespace simdjson::internal
 
 /**
  * A JSON element.
@@ -135,7 +144,7 @@ namespace internal {
  * References an element in a JSON document, representing a JSON null, boolean, string, number,
  * array or object.
  */
-class document::element : protected internal::tape_ref {
+class element : protected internal::tape_ref {
 public:
   /** Create a new, invalid element. */
   really_inline element() noexcept;
@@ -295,21 +304,21 @@ public:
    * @return The JSON array.
    * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
    */
-  inline operator document::array() const noexcept(false);
+  inline operator array() const noexcept(false);
   /**
    * Read this element as a JSON object (key/value pairs).
    *
    * @return The JSON object.
    * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
    */
-  inline operator document::object() const noexcept(false);
+  inline operator object() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -325,8 +334,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -342,8 +351,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -369,7 +378,7 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
    *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
@@ -392,9 +401,11 @@ public:
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
-  really_inline element(const document *_doc, size_t _json_index) noexcept;
+  really_inline element(const document *doc, size_t json_index) noexcept;
   friend class document;
-  friend struct simdjson_result<document::element>;
+  friend class object;
+  friend class array;
+  friend struct simdjson_result<element>;
   template<typename T>
   friend class simdjson::minify;
 };
@@ -402,12 +413,12 @@ private:
 /**
  * Represents a JSON array.
  */
-class document::array : protected internal::tape_ref {
+class array : protected internal::tape_ref {
 public:
   /** Create a new, invalid array */
   really_inline array() noexcept;
 
-  class iterator : tape_ref {
+  class iterator : protected internal::tape_ref {
   public:
     /**
      * Get the actual value
@@ -426,7 +437,7 @@ public:
      */
     inline bool operator!=(const iterator& other) const noexcept;
   private:
-    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *doc, size_t json_index) noexcept;
     friend class array;
   };
 
@@ -446,8 +457,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   dom::parser parser;
+   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
    *   a["0/foo/a/1"] == 20
    *   a["0"]["foo"]["a"].at(1) == 20
    *
@@ -462,8 +473,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   dom::parser parser;
+   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
    *   a["0/foo/a/1"] == 20
    *   a["0"]["foo"]["a"].at(1) == 20
    *
@@ -478,8 +489,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   dom::parser parser;
+   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
    *   a.at("0/foo/a/1") == 20
    *   a.at("0")["foo"]["a"].at(1) == 20
    *
@@ -500,7 +511,7 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
 private:
-  really_inline array(const document *_doc, size_t _json_index) noexcept;
+  really_inline array(const document *doc, size_t json_index) noexcept;
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
@@ -510,7 +521,7 @@ private:
 /**
  * Represents a JSON object.
  */
-class document::object : protected internal::tape_ref {
+class object : protected internal::tape_ref {
 public:
   /** Create a new, invalid object */
   really_inline object() noexcept;
@@ -520,7 +531,7 @@ public:
     /**
      * Get the actual key/value pair
      */
-    inline const document::key_value_pair operator*() const noexcept;
+    inline const key_value_pair operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
@@ -546,7 +557,7 @@ public:
      */
     inline element value() const noexcept;
   private:
-    really_inline iterator(const document *_doc, size_t _json_index) noexcept;
+    really_inline iterator(const document *doc, size_t json_index) noexcept;
     friend class object;
   };
 
@@ -566,8 +577,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj["foo/a/1"] == 20
    *   obj["foo"]["a"].at(1) == 20
    *
@@ -582,8 +593,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj["foo/a/1"] == 20
    *   obj["foo"]["a"].at(1) == 20
    *
@@ -598,8 +609,8 @@ public:
   /**
    * Get the value associated with the given JSON pointer.
    *
-   *   document::parser parser;
-   *   document::object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   dom::parser parser;
+   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   obj.at("foo/a/1") == 20
    *   obj.at("foo")["a"].at(1) == 20
    *
@@ -616,7 +627,7 @@ public:
    *
    * The key will be matched against **unescaped** JSON:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
    *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
    *
@@ -636,7 +647,7 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 private:
-  really_inline object(const document *_doc, size_t _json_index) noexcept;
+  really_inline object(const document *doc, size_t json_index) noexcept;
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
@@ -646,91 +657,14 @@ private:
 /**
  * Key/value pair in an object.
  */
-class document::key_value_pair {
+class key_value_pair {
 public:
   std::string_view key;
-  document::element value;
+  element value;
 
 private:
-  really_inline key_value_pair(const std::string_view &_key, document::element _value) noexcept;
+  really_inline key_value_pair(const std::string_view &_key, element _value) noexcept;
   friend class object;
-};
-
-/** The result of a JSON navigation that may fail. */
-template<>
-struct simdjson_result<document::element> : public internal::simdjson_result_base<document::element> {
-public:
-  really_inline simdjson_result() noexcept;
-  really_inline simdjson_result(document::element &&value) noexcept;
-  really_inline simdjson_result(error_code error) noexcept;
-
-  /** Whether this is a JSON `null` */
-  inline simdjson_result<bool> is_null() const noexcept;
-  inline simdjson_result<bool> as_bool() const noexcept;
-  inline simdjson_result<std::string_view> as_string() const noexcept;
-  inline simdjson_result<const char *> as_c_str() const noexcept;
-  inline simdjson_result<uint64_t> as_uint64_t() const noexcept;
-  inline simdjson_result<int64_t> as_int64_t() const noexcept;
-  inline simdjson_result<double> as_double() const noexcept;
-  inline simdjson_result<document::array> as_array() const noexcept;
-  inline simdjson_result<document::object>  as_object() const noexcept;
-
-  inline simdjson_result<document::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> operator[](const char *json_pointer) const noexcept;
-  inline simdjson_result<document::element> at(const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> at(size_t index) const noexcept;
-  inline simdjson_result<document::element> at_key(const std::string_view &key) const noexcept;
-  inline simdjson_result<document::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
-
-#if SIMDJSON_EXCEPTIONS
-  inline operator bool() const noexcept(false);
-  inline explicit operator const char*() const noexcept(false);
-  inline operator std::string_view() const noexcept(false);
-  inline operator uint64_t() const noexcept(false);
-  inline operator int64_t() const noexcept(false);
-  inline operator double() const noexcept(false);
-  inline operator document::array() const noexcept(false);
-  inline operator document::object() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
-};
-
-/** The result of a JSON conversion that may fail. */
-template<>
-struct simdjson_result<document::array> : public internal::simdjson_result_base<document::array> {
-public:
-  really_inline simdjson_result() noexcept;
-  really_inline simdjson_result(document::array value) noexcept;
-  really_inline simdjson_result(error_code error) noexcept;
-
-  inline simdjson_result<document::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> operator[](const char *json_pointer) const noexcept;
-  inline simdjson_result<document::element> at(const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> at(size_t index) const noexcept;
-
-#if SIMDJSON_EXCEPTIONS
-  inline document::array::iterator begin() const noexcept(false);
-  inline document::array::iterator end() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
-};
-
-/** The result of a JSON conversion that may fail. */
-template<>
-struct simdjson_result<document::object> : public internal::simdjson_result_base<document::object> {
-public:
-  really_inline simdjson_result() noexcept;
-  really_inline simdjson_result(document::object value) noexcept;
-  really_inline simdjson_result(error_code error) noexcept;
-
-  inline simdjson_result<document::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> operator[](const char *json_pointer) const noexcept;
-  inline simdjson_result<document::element> at(const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<document::element> at_key(const std::string_view &key) const noexcept;
-  inline simdjson_result<document::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
-
-#if SIMDJSON_EXCEPTIONS
-  inline document::object::iterator begin() const noexcept(false);
-  inline document::object::iterator end() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
 };
 
 /**
@@ -743,7 +677,7 @@ public:
   *
   * @note This is not thread safe: one parser cannot produce two documents at the same time!
   */
-class document::parser {
+class parser {
 public:
   /**
   * Create a JSON parser.
@@ -767,21 +701,21 @@ public:
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  parser(document::parser &&other) = default;
-  parser(const document::parser &) = delete; // Disallow copying
+  parser(parser &&other) = default;
+  parser(const parser &) = delete; // Disallow copying
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  parser &operator=(document::parser &&other) = default;
-  parser &operator=(const document::parser &) = delete; // Disallow copying
+  parser &operator=(parser &&other) = default;
+  parser &operator=(const parser &) = delete; // Disallow copying
 
   /**
    * Load a JSON document from a file and return a reference to it.
    *
-   *   document::parser parser;
-   *   const document::element doc = parser.load("jsonexamples/twitter.json");
+   *   dom::parser parser;
+   *   const element doc = parser.load("jsonexamples/twitter.json");
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -806,8 +740,8 @@ public:
   /**
    * Load a file containing many JSON documents.
    *
-   *   document::parser parser;
-   *   for (const document::element doc : parser.parse_many(path)) {
+   *   dom::parser parser;
+   *   for (const element doc : parser.parse_many(path)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -830,7 +764,7 @@ public:
    * As with all other simdjson methods, non-exception error handling is readily available through
    * the same interface, requiring you to check the error before using the document:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   for (auto [doc, error] : parser.load_many(path)) {
    *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
@@ -858,13 +792,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline document::stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
 
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
-   *   document::parser parser;
-   *   document::element doc = parser.parse(buf, len);
+   *   dom::parser parser;
+   *   element doc = parser.parse(buf, len);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -900,8 +834,8 @@ public:
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
-   *   document::parser parser;
-   *   const document::element doc = parser.parse(buf, len);
+   *   dom::parser parser;
+   *   const element doc = parser.parse(buf, len);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -937,8 +871,8 @@ public:
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
-   *   document::parser parser;
-   *   const document::element doc = parser.parse(s);
+   *   dom::parser parser;
+   *   const element doc = parser.parse(s);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -972,8 +906,8 @@ public:
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
-   *   document::parser parser;
-   *   const document::element doc = parser.parse(s);
+   *   dom::parser parser;
+   *   const element doc = parser.parse(s);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1000,8 +934,8 @@ public:
   /**
    * Parse a buffer containing many JSON documents.
    *
-   *   document::parser parser;
-   *   for (const document::element doc : parser.parse_many(buf, len)) {
+   *   dom::parser parser;
+   *   for (const element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1024,7 +958,7 @@ public:
    * As with all other simdjson methods, non-exception error handling is readily available through
    * the same interface, requiring you to check the error before using the document:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
    *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
@@ -1057,13 +991,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline document_stream parse_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
    *
-   *   document::parser parser;
-   *   for (const document::element doc : parser.parse_many(buf, len)) {
+   *   dom::parser parser;
+   *   for (const element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1086,7 +1020,7 @@ public:
    * As with all other simdjson methods, non-exception error handling is readily available through
    * the same interface, requiring you to check the error before using the document:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
    *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
@@ -1119,13 +1053,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline document_stream parse_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
    *
-   *   document::parser parser;
-   *   for (const document::element doc : parser.parse_many(buf, len)) {
+   *   dom::parser parser;
+   *   for (const element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1148,7 +1082,7 @@ public:
    * As with all other simdjson methods, non-exception error handling is readily available through
    * the same interface, requiring you to check the error before using the document:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
    *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
@@ -1180,13 +1114,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline document_stream parse_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
    *
-   *   document::parser parser;
-   *   for (const document::element doc : parser.parse_many(buf, len)) {
+   *   dom::parser parser;
+   *   for (const element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1209,7 +1143,7 @@ public:
    * As with all other simdjson methods, non-exception error handling is readily available through
    * the same interface, requiring you to check the error before using the document:
    *
-   *   document::parser parser;
+   *   dom::parser parser;
    *   for (auto [doc, error] : parser.parse_many(buf, len)) {
    *     if (error) { cerr << error << endl; exit(1); }
    *     cout << std::string(doc["title"]) << endl;
@@ -1236,7 +1170,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails
    */
-  inline stream parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
+  inline document_stream parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
   really_inline simdjson_result<element> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
@@ -1446,14 +1380,18 @@ private:
   inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
 
   friend class parser::Iterator;
-  friend class stream;
+  friend class document_stream;
 }; // class parser
+
+} // namespace simdjson::dom
+
+namespace simdjson {
 
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
  *
- *   document::parser parser;
- *   document::element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   dom::parser parser;
+ *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
  *   cout << minify(doc) << endl; // prints [1,2,3]
  *
  */
@@ -1490,6 +1428,11 @@ private:
 template<typename T>
 inline std::ostream& operator<<(std::ostream& out, minify<T> formatter) { return formatter.print(out); }
 
+namespace dom {
+
+// << operators need to be in the same namespace as the class being output, so C++ can find them
+// automatically
+
 /**
  * Print JSON to an output stream.
  *
@@ -1499,7 +1442,7 @@ inline std::ostream& operator<<(std::ostream& out, minify<T> formatter) { return
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const document::element &value) { return out << minify(value); };
+inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify(value); };
 /**
  * Print JSON to an output stream.
  *
@@ -1509,7 +1452,7 @@ inline std::ostream& operator<<(std::ostream& out, const document::element &valu
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const document::array &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const array &value) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1519,7 +1462,7 @@ inline std::ostream& operator<<(std::ostream& out, const document::array &value)
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const document::object &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const object &value) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1529,7 +1472,9 @@ inline std::ostream& operator<<(std::ostream& out, const document::object &value
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const document::key_value_pair &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify(value); }
+
+} // namespace dom
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -1544,7 +1489,7 @@ inline std::ostream& operator<<(std::ostream& out, const document::key_value_pai
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<document::element> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1556,7 +1501,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<documen
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<document::array> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1568,9 +1513,86 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<documen
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<document::object> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify(value); }
 
 #endif
+
+/** The result of a JSON navigation that may fail. */
+template<>
+struct simdjson_result<dom::element> : public internal::simdjson_result_base<dom::element> {
+public:
+  really_inline simdjson_result() noexcept;
+  really_inline simdjson_result(dom::element &&value) noexcept;
+  really_inline simdjson_result(error_code error) noexcept;
+
+  /** Whether this is a JSON `null` */
+  inline simdjson_result<bool> is_null() const noexcept;
+  inline simdjson_result<bool> as_bool() const noexcept;
+  inline simdjson_result<std::string_view> as_string() const noexcept;
+  inline simdjson_result<const char *> as_c_str() const noexcept;
+  inline simdjson_result<uint64_t> as_uint64_t() const noexcept;
+  inline simdjson_result<int64_t> as_int64_t() const noexcept;
+  inline simdjson_result<double> as_double() const noexcept;
+  inline simdjson_result<dom::array> as_array() const noexcept;
+  inline simdjson_result<dom::object>  as_object() const noexcept;
+
+  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+  inline operator bool() const noexcept(false);
+  inline explicit operator const char*() const noexcept(false);
+  inline operator std::string_view() const noexcept(false);
+  inline operator uint64_t() const noexcept(false);
+  inline operator int64_t() const noexcept(false);
+  inline operator double() const noexcept(false);
+  inline operator dom::array() const noexcept(false);
+  inline operator dom::object() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
+};
+
+/** The result of a JSON conversion that may fail. */
+template<>
+struct simdjson_result<dom::array> : public internal::simdjson_result_base<dom::array> {
+public:
+  really_inline simdjson_result() noexcept;
+  really_inline simdjson_result(dom::array value) noexcept;
+  really_inline simdjson_result(error_code error) noexcept;
+
+  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(size_t index) const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+  inline dom::array::iterator begin() const noexcept(false);
+  inline dom::array::iterator end() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
+};
+
+/** The result of a JSON conversion that may fail. */
+template<>
+struct simdjson_result<dom::object> : public internal::simdjson_result_base<dom::object> {
+public:
+  really_inline simdjson_result() noexcept;
+  really_inline simdjson_result(dom::object value) noexcept;
+  really_inline simdjson_result(error_code error) noexcept;
+
+  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+  inline dom::object::iterator begin() const noexcept(false);
+  inline dom::object::iterator end() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
+};
 
 } // namespace simdjson
 

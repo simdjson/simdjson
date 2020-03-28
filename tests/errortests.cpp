@@ -26,14 +26,14 @@ namespace parser_load {
   const char * NONEXISTENT_FILE = "this_file_does_not_exit.json";
   bool parser_load_capacity() {
     TEST_START();
-    document::parser parser(1); // 1 byte max capacity
+    dom::parser parser(1); // 1 byte max capacity
     auto [doc, error] = parser.load(JSON_TEST_PATH);
     ASSERT_ERROR(error, CAPACITY);
     TEST_SUCCEED();
   }
   bool parser_load_many_capacity() {
     TEST_START();
-    document::parser parser(1); // 1 byte max capacity
+    dom::parser parser(1); // 1 byte max capacity
     for (auto [doc, error] : parser.load_many(JSON_TEST_PATH)) {
       ASSERT_ERROR(error, CAPACITY);
       TEST_SUCCEED();
@@ -43,14 +43,14 @@ namespace parser_load {
 
   bool parser_load_nonexistent() {
     TEST_START();
-    document::parser parser;
+    dom::parser parser;
     auto [doc, error] = parser.load(NONEXISTENT_FILE);
     ASSERT_ERROR(error, IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_nonexistent() {
     TEST_START();
-    document::parser parser;
+    dom::parser parser;
     for (auto [doc, error] : parser.load_many(NONEXISTENT_FILE)) {
       ASSERT_ERROR(error, IO_ERROR);
       TEST_SUCCEED();
@@ -66,14 +66,14 @@ namespace parser_load {
 
   bool parser_load_chain() {
     TEST_START();
-    document::parser parser;
+    dom::parser parser;
     auto [val, error] = parser.load(NONEXISTENT_FILE)["foo"].as_uint64_t();
     ASSERT_ERROR(error, IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_chain() {
     TEST_START();
-    document::parser parser;
+    dom::parser parser;
     for (auto doc : parser.load_many(NONEXISTENT_FILE)) {
       auto [val, error] = doc["foo"].as_uint64_t();
       ASSERT_ERROR(error, IO_ERROR);
