@@ -57,9 +57,9 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
   if (depth > s.maximum_depth) {
     s.maximum_depth = depth;
   }
-  if (element.is_array()) {
+  if (element.is<simdjson::dom::array>()) {
     s.array_count++;
-    auto [array, array_error] = element.as_array();
+    auto [array, array_error] = element.get<simdjson::dom::array>();
     if (!array_error) {
       size_t counter = 0;
       for (auto child : array) {
@@ -70,9 +70,9 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
         s.maximum_array_size = counter;
       }
     }
-  } else if (element.is_object()) {
+  } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
-    auto [object, object_error] = element.as_object();
+    auto [object, object_error] = element.get<simdjson::dom::object>();
     if (!object_error) {
       size_t counter = 0;
       for (auto [key, value] : object) {
@@ -96,24 +96,24 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       }
     }
   } else {
-    if (element.is_float()) {
+    if (element.is<double>()) {
       s.float_count++;
-    } else if (element.is_integer()) {
+    } else if (element.is<int64_t>()) {
       s.integer_count++;
-    } else if (element.is_bool()) {
-      if (element.as_bool()) {
+    } else if (element.is<bool>()) {
+      if (element.get<bool>()) {
         s.true_count++;
       } else {
         s.false_count++;
       }
     } else if (element.is_null()) {
       s.null_count++;
-    } else if (element.is_string()) {
+    } else if (element.is<std::string_view>()) {
       s.string_count++;
-      if (is_ascii(element.as_string())) {
+      if (is_ascii(element.get<std::string_view>())) {
         s.ascii_string_count++;
       }
-      const std::string_view strval = element.as_string();
+      const std::string_view strval = element.get<std::string_view>();
       if (strval.size() > s.string_maximum_length) {
         s.string_maximum_length = strval.size();
       }

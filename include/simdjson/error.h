@@ -132,18 +132,18 @@ struct simdjson_result_base : public std::pair<T, error_code> {
 #if SIMDJSON_EXCEPTIONS
 
   /**
-   * The value of the function.
+   * Get the result value.
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T& get() noexcept(false);
+  really_inline T& value() noexcept(false);
 
   /**
-   * The value of the function.
+   * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T&& take() && noexcept(false);
+  really_inline T&& take_value() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).
@@ -194,18 +194,18 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 #if SIMDJSON_EXCEPTIONS
 
   /**
-   * The value of the function.
+   * Get the result value.
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T& get() noexcept(false);
+  really_inline T& value() noexcept(false);
 
   /**
-   * The value of the function.
+   * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T&& take() && noexcept(false);
+  really_inline T&& take_value() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).

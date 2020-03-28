@@ -51,10 +51,10 @@ void print_stat(const stat_t &s) {
 
 really_inline void simdjson_process_atom(stat_t &s,
                                          simdjson::dom::element element) {
-  if (element.is_number()) {
+  if (element.is<double>()) {
     s.number_count++;
-  } else if (element.is_bool()) {
-    if (element.as_bool()) {
+  } else if (element.is<bool>()) {
+    if (element.get<bool>()) {
       s.true_count++;
     } else {
       s.false_count++;
@@ -65,21 +65,21 @@ really_inline void simdjson_process_atom(stat_t &s,
 }
 
 void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
-  if (element.is_array()) {
+  if (element.is<simdjson::dom::array>()) {
     s.array_count++;
-    auto [array, array_error] = element.as_array();
+    auto [array, array_error] = element.get<simdjson::dom::array>();
     for (auto child : array) {
-      if (child.is_array() || child.is_object()) {
+      if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
         simdjson_recurse(s, child);
       } else {
         simdjson_process_atom(s, child);
       }
     }
-  } else if (element.is_object()) {
+  } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
-    auto [object, object_error] = element.as_object();
+    auto [object, object_error] = element.get<simdjson::dom::object>();
     for (auto [key, value] : object) {
-      if (value.is_array() || value.is_object()) {
+      if (value.is<simdjson::dom::array>() || value.is<simdjson::dom::object>()) {
         simdjson_recurse(s, value);
       } else {
         simdjson_process_atom(s, value);

@@ -73,7 +73,7 @@ auto cars_json = R"( [
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
-dom::array cars = parser.parse(cars_json).as_array();
+dom::array cars = parser.parse(cars_json).get<dom::array>();
 
 // Iterating through an array of objects
 for (dom::object car : cars) {
@@ -158,7 +158,7 @@ if (error) { cerr << error << endl; exit(1); }
 // Iterating through an array of objects
 for (dom::element car_element : cars) {
   dom::object car;
-  car_element.as_object().tie(car, error);
+  car_element.get<dom::object>().tie(car, error);
   if (error) { cerr << error << endl; exit(1); }
 
   // Accessing a field by name
@@ -171,7 +171,7 @@ for (dom::element car_element : cars) {
 
   // Casting a JSON element to an integer
   uint64_t year;
-  car["year"].as_uint64_t().tie(year, error);
+  car["year"].get<uint64_t>().tie(year, error);
   if (error) { cerr << error << endl; exit(1); }
   cout << "- This car is " << 2020 - year << "years old." << endl;
 
@@ -179,7 +179,7 @@ for (dom::element car_element : cars) {
   double total_tire_pressure = 0;
   for (dom::element tire_pressure_element : car["tire_pressure"]) {
     double tire_pressure;
-    tire_pressure_element.as_uint64_t().tie(tire_pressure, error);
+    tire_pressure_element.get<uint64_t>().tie(tire_pressure, error);
     if (error) { cerr << error << endl; exit(1); }
     total_tire_pressure += tire_pressure;
   }

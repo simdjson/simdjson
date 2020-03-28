@@ -35,7 +35,7 @@ const padded_string TEST_JSON = R"(
 bool json_pointer_success_test(const char *json_pointer, std::string_view expected_value) {
   std::cout << "Running successful JSON pointer test '" << json_pointer << "' ..." << std::endl;
   dom::parser parser;
-  auto [value, error] = parser.parse(TEST_JSON)[json_pointer].as_string();
+  auto [value, error] = parser.parse(TEST_JSON)[json_pointer].get<std::string_view>();
   if (error) { std::cerr << "Unexpected Error: " << error << std::endl; return false; }
   ASSERT(value == expected_value);
   return true;
