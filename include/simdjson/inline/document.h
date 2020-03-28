@@ -10,178 +10,188 @@
 #include "simdjson/internal/jsonformatutils.h"
 #include <iostream>
 #include <climits>
+#include <cctype>
 
 namespace simdjson {
 
 //
-// element_result inline implementation
+// simdjson_result<document::element> inline implementation
 //
-really_inline document::element_result::element_result() noexcept : simdjson_result<element>() {}
-really_inline document::element_result::element_result(element &&value) noexcept : simdjson_result<element>((element&&)value) {}
-really_inline document::element_result::element_result(error_code error) noexcept : simdjson_result<element>(error) {}
-inline simdjson_result<bool> document::element_result::is_null() const noexcept {
+really_inline simdjson_result<document::element>::simdjson_result() noexcept
+    : internal::simdjson_result_base<document::element>() {}
+really_inline simdjson_result<document::element>::simdjson_result(document::element &&value) noexcept
+    : internal::simdjson_result_base<document::element>(std::forward<document::element>(value)) {}
+really_inline simdjson_result<document::element>::simdjson_result(error_code error) noexcept
+    : internal::simdjson_result_base<document::element>(error) {}
+inline simdjson_result<bool> simdjson_result<document::element>::is_null() const noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
-inline simdjson_result<bool> document::element_result::as_bool() const noexcept {
+inline simdjson_result<bool> simdjson_result<document::element>::as_bool() const noexcept {
   if (error()) { return error(); }
   return first.as_bool();
 }
-inline simdjson_result<const char*> document::element_result::as_c_str() const noexcept {
+inline simdjson_result<const char*> simdjson_result<document::element>::as_c_str() const noexcept {
   if (error()) { return error(); }
   return first.as_c_str();
 }
-inline simdjson_result<std::string_view> document::element_result::as_string() const noexcept {
+inline simdjson_result<std::string_view> simdjson_result<document::element>::as_string() const noexcept {
   if (error()) { return error(); }
   return first.as_string();
 }
-inline simdjson_result<uint64_t> document::element_result::as_uint64_t() const noexcept {
+inline simdjson_result<uint64_t> simdjson_result<document::element>::as_uint64_t() const noexcept {
   if (error()) { return error(); }
   return first.as_uint64_t();
 }
-inline simdjson_result<int64_t> document::element_result::as_int64_t() const noexcept {
+inline simdjson_result<int64_t> simdjson_result<document::element>::as_int64_t() const noexcept {
   if (error()) { return error(); }
   return first.as_int64_t();
 }
-inline simdjson_result<double> document::element_result::as_double() const noexcept {
+inline simdjson_result<double> simdjson_result<document::element>::as_double() const noexcept {
   if (error()) { return error(); }
   return first.as_double();
 }
-inline document::array_result document::element_result::as_array() const noexcept {
+inline simdjson_result<document::array> simdjson_result<document::element>::as_array() const noexcept {
   if (error()) { return error(); }
   return first.as_array();
 }
-inline document::object_result document::element_result::as_object() const noexcept {
+inline simdjson_result<document::object> simdjson_result<document::element>::as_object() const noexcept {
   if (error()) { return error(); }
   return first.as_object();
 }
 
-inline document::element_result document::element_result::operator[](const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::operator[](const std::string_view &json_pointer) const noexcept {
   if (error()) { return *this; }
   return first[json_pointer];
 }
-inline document::element_result document::element_result::operator[](const char *json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::operator[](const char *json_pointer) const noexcept {
   if (error()) { return *this; }
   return first[json_pointer];
 }
-inline document::element_result document::element_result::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::at(const std::string_view &json_pointer) const noexcept {
   if (error()) { return *this; }
   return first.at(json_pointer);
 }
-inline document::element_result document::element_result::at(size_t index) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::at(size_t index) const noexcept {
   if (error()) { return *this; }
   return first.at(index);
 }
-inline document::element_result document::element_result::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::at_key(const std::string_view &key) const noexcept {
   if (error()) { return *this; }
   return first.at_key(key);
 }
-inline document::element_result document::element_result::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::element>::at_key_case_insensitive(const std::string_view &key) const noexcept {
   if (error()) { return *this; }
   return first.at_key_case_insensitive(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
 
-inline document::element_result::operator bool() const noexcept(false) {
+inline simdjson_result<document::element>::operator bool() const noexcept(false) {
   return as_bool();
 }
-inline document::element_result::operator const char *() const noexcept(false) {
+inline simdjson_result<document::element>::operator const char *() const noexcept(false) {
   return as_c_str();
 }
-inline document::element_result::operator std::string_view() const noexcept(false) {
+inline simdjson_result<document::element>::operator std::string_view() const noexcept(false) {
   return as_string();
 }
-inline document::element_result::operator uint64_t() const noexcept(false) {
+inline simdjson_result<document::element>::operator uint64_t() const noexcept(false) {
   return as_uint64_t();
 }
-inline document::element_result::operator int64_t() const noexcept(false) {
+inline simdjson_result<document::element>::operator int64_t() const noexcept(false) {
   return as_int64_t();
 }
-inline document::element_result::operator double() const noexcept(false) {
+inline simdjson_result<document::element>::operator double() const noexcept(false) {
   return as_double();
 }
-inline document::element_result::operator document::array() const noexcept(false) {
+inline simdjson_result<document::element>::operator document::array() const noexcept(false) {
   return as_array();
 }
-inline document::element_result::operator document::object() const noexcept(false) {
+inline simdjson_result<document::element>::operator document::object() const noexcept(false) {
   return as_object();
 }
 
 #endif
 
 //
-// array_result inline implementation
+// simdjson_result<document::array> inline implementation
 //
-really_inline document::array_result::array_result() noexcept : simdjson_result<array>() {}
-really_inline document::array_result::array_result(array value) noexcept : simdjson_result<array>((array&&)value) {}
-really_inline document::array_result::array_result(error_code error) noexcept : simdjson_result<array>(error) {}
+really_inline simdjson_result<document::array>::simdjson_result() noexcept
+    : internal::simdjson_result_base<document::array>() {}
+really_inline simdjson_result<document::array>::simdjson_result(document::array value) noexcept
+    : internal::simdjson_result_base<document::array>(std::forward<document::array>(value)) {}
+really_inline simdjson_result<document::array>::simdjson_result(error_code error) noexcept
+    : internal::simdjson_result_base<document::array>(error) {}
 
 #if SIMDJSON_EXCEPTIONS
 
-inline document::array::iterator document::array_result::begin() const noexcept(false) {
+inline document::array::iterator simdjson_result<document::array>::begin() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-inline document::array::iterator document::array_result::end() const noexcept(false) {
+inline document::array::iterator simdjson_result<document::array>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
 
-inline document::element_result document::array_result::operator[](const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::array>::operator[](const std::string_view &json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
-inline document::element_result document::array_result::operator[](const char *json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::array>::operator[](const char *json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
-inline document::element_result document::array_result::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::array>::at(const std::string_view &json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
-inline document::element_result document::array_result::at(size_t index) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::array>::at(size_t index) const noexcept {
   if (error()) { return error(); }
   return first.at(index);
 }
 
 //
-// object_result inline implementation
+// simdjson_result<document::object> inline implementation
 //
-really_inline document::object_result::object_result() noexcept : simdjson_result<object>() {}
-really_inline document::object_result::object_result(object value) noexcept : simdjson_result<object>((object&&)value) {}
-really_inline document::object_result::object_result(error_code error) noexcept : simdjson_result<object>(error) {}
+really_inline simdjson_result<document::object>::simdjson_result() noexcept
+    : internal::simdjson_result_base<document::object>() {}
+really_inline simdjson_result<document::object>::simdjson_result(document::object value) noexcept
+    : internal::simdjson_result_base<document::object>(std::forward<document::object>(value)) {}
+really_inline simdjson_result<document::object>::simdjson_result(error_code error) noexcept
+    : internal::simdjson_result_base<document::object>(error) {}
 
-inline document::element_result document::object_result::operator[](const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::object>::operator[](const std::string_view &json_pointer) const noexcept {
   if (error()) { return error(); }
   return first[json_pointer];
 }
-inline document::element_result document::object_result::operator[](const char *json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::object>::operator[](const char *json_pointer) const noexcept {
   if (error()) { return error(); }
   return first[json_pointer];
 }
-inline document::element_result document::object_result::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::object>::at(const std::string_view &json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
-inline document::element_result document::object_result::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::object>::at_key(const std::string_view &key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-inline document::element_result document::object_result::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> simdjson_result<document::object>::at_key_case_insensitive(const std::string_view &key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
 
-inline document::object::iterator document::object_result::begin() const noexcept(false) {
+inline document::object::iterator simdjson_result<document::object>::begin() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-inline document::object::iterator document::object_result::end() const noexcept(false) {
+inline document::object::iterator simdjson_result<document::object>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
@@ -369,7 +379,7 @@ inline simdjson_result<size_t> document::parser::read_file(const std::string &pa
   return bytes_read;
 }
 
-inline document::element_result document::parser::load(const std::string &path) noexcept {
+inline simdjson_result<document::element> document::parser::load(const std::string &path) noexcept {
   auto [len, code] = read_file(path);
   if (code) { return code; }
 
@@ -381,7 +391,7 @@ inline document::stream document::parser::load_many(const std::string &path, siz
   return stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
 }
 
-inline document::element_result document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
+inline simdjson_result<document::element> document::parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
   error_code code = ensure_capacity(len);
   if (code) { return code; }
 
@@ -399,18 +409,18 @@ inline document::element_result document::parser::parse(const uint8_t *buf, size
   }
   if (code) { return code; }
 
-  // We're indicating validity via the element_result, so set the parse state back to invalid
+  // We're indicating validity via the simdjson_result<element>, so set the parse state back to invalid
   valid = false;
   error = UNINITIALIZED;
   return doc.root();
 }
-really_inline document::element_result document::parser::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
+really_inline simdjson_result<document::element> document::parser::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
   return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
-really_inline document::element_result document::parser::parse(const std::string &s) noexcept {
+really_inline simdjson_result<document::element> document::parser::parse(const std::string &s) noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-really_inline document::element_result document::parser::parse(const padded_string &s) noexcept {
+really_inline simdjson_result<document::element> document::parser::parse(const padded_string &s) noexcept {
   return parse(s.data(), s.length(), false);
 }
 
@@ -587,7 +597,7 @@ inline document::array::iterator document::array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
 
-inline document::element_result document::array::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> document::array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
   if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
@@ -616,7 +626,7 @@ inline document::element_result document::array::at(const std::string_view &json
   }
   return child;
 }
-inline document::element_result document::array::at(size_t index) const noexcept {
+inline simdjson_result<document::element> document::array::at(size_t index) const noexcept {
   size_t i=0;
   for (auto element : *this) {
     if (i == index) { return element; }
@@ -651,18 +661,18 @@ inline document::object::iterator document::object::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
 
-inline document::element_result document::object::operator[](const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> document::object::operator[](const std::string_view &json_pointer) const noexcept {
   return at(json_pointer);
 }
-inline document::element_result document::object::operator[](const char *json_pointer) const noexcept {
+inline simdjson_result<document::element> document::object::operator[](const char *json_pointer) const noexcept {
   return at(json_pointer);
 }
-inline document::element_result document::object::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> document::object::at(const std::string_view &json_pointer) const noexcept {
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
 
   // Grab the child with the given key
-  document::element_result child;
+  simdjson_result<document::element> child;
 
   // If there is an escape character in the key, unescape it and then get the child.
   size_t escape = key.find('~');
@@ -694,7 +704,7 @@ inline document::element_result document::object::at(const std::string_view &jso
 
   return child;
 }
-inline document::element_result document::object::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> document::object::at_key(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (key == field.key()) {
@@ -706,7 +716,7 @@ inline document::element_result document::object::at_key(const std::string_view 
 // In case you wonder why we need this, please see
 // https://github.com/simdjson/simdjson/issues/323
 // People do seek keys in a case-insensitive manner.
-inline document::element_result document::object::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> document::object::at_key_case_insensitive(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     auto field_key = field.key();
@@ -881,7 +891,7 @@ inline simdjson_result<double> document::element::as_double() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-inline document::array_result document::element::as_array() const noexcept {
+inline simdjson_result<document::array> document::element::as_array() const noexcept {
   switch (type()) {
     case internal::tape_type::START_ARRAY:
       return array(doc, json_index);
@@ -889,7 +899,7 @@ inline document::array_result document::element::as_array() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-inline document::object_result document::element::as_object() const noexcept {
+inline simdjson_result<document::object> document::element::as_object() const noexcept {
   switch (type()) {
     case internal::tape_type::START_OBJECT:
       return object(doc, json_index);
@@ -897,13 +907,13 @@ inline document::object_result document::element::as_object() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-inline document::element_result document::element::operator[](const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> document::element::operator[](const std::string_view &json_pointer) const noexcept {
   return at(json_pointer);
 }
-inline document::element_result document::element::operator[](const char *json_pointer) const noexcept {
+inline simdjson_result<document::element> document::element::operator[](const char *json_pointer) const noexcept {
   return at(json_pointer);
 }
-inline document::element_result document::element::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<document::element> document::element::at(const std::string_view &json_pointer) const noexcept {
   switch (type()) {
     case internal::tape_type::START_OBJECT:
       return object(doc, json_index).at(json_pointer);
@@ -913,13 +923,13 @@ inline document::element_result document::element::at(const std::string_view &js
       return INCORRECT_TYPE;
   }
 }
-inline document::element_result document::element::at(size_t index) const noexcept {
+inline simdjson_result<document::element> document::element::at(size_t index) const noexcept {
   return as_array().at(index);
 }
-inline document::element_result document::element::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> document::element::at_key(const std::string_view &key) const noexcept {
   return as_object().at_key(key);
 }
-inline document::element_result document::element::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<document::element> document::element::at_key_case_insensitive(const std::string_view &key) const noexcept {
   return as_object().at_key_case_insensitive(key);
 }
 
@@ -1088,17 +1098,17 @@ inline std::ostream& minify<document::key_value_pair>::print(std::ostream& out) 
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-inline std::ostream& minify<document::element_result>::print(std::ostream& out) {
+inline std::ostream& minify<simdjson_result<document::element>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<document::element>(value.first);
 }
 template<>
-inline std::ostream& minify<document::array_result>::print(std::ostream& out) {
+inline std::ostream& minify<simdjson_result<document::array>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<document::array>(value.first);
 }
 template<>
-inline std::ostream& minify<document::object_result>::print(std::ostream& out) {
+inline std::ostream& minify<simdjson_result<document::object>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<document::object>(value.first);
 }
