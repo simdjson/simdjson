@@ -128,8 +128,8 @@ really_inline document_stream::iterator::iterator(document_stream& _stream, bool
 }
 
 really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
-  error_code error = stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : stream.error;
-  if (error) { return error; }
+  error_code err = stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : stream.error;
+  if (err) { return err; }
   return stream.parser.doc.root();
 }
 

@@ -36,11 +36,11 @@ static void parse_and_validate(const std::string src, T expected) {
 
   bool result;
   if constexpr (std::is_same<int64_t, T>::value) {
-    auto [actual, error] = parser.parse(pstr).as_object()["key"].as_int64_t();
+    auto [actual, error] = parser.parse(pstr).get<dom::object>()["key"].get<int64_t>();
     if (error) { std::cerr << error << std::endl; abort(); }
     result = (expected == actual);
   } else {
-    auto [actual, error] = parser.parse(pstr).as_object()["key"].as_uint64_t();
+    auto [actual, error] = parser.parse(pstr).get<dom::object>()["key"].get<uint64_t>();
     if (error) { std::cerr << error << std::endl; abort(); }
     result = (expected == actual);
   }
@@ -55,18 +55,18 @@ static bool parse_and_check_signed(const std::string src) {
   std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
   simdjson::dom::parser parser;
-  auto [value, error] = parser.parse(pstr).as_object()["key"];
+  auto [value, error] = parser.parse(pstr).get<dom::object>()["key"];
   if (error) { std::cerr << error << std::endl; abort(); }
-  return value.is_integer() && value.is_number();
+  return value.is<int64_t>();
 }
 
 static bool parse_and_check_unsigned(const std::string src) {
   std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
   simdjson::dom::parser parser;
-  auto [value, error] = parser.parse(pstr).as_object()["key"];
+  auto [value, error] = parser.parse(pstr).get<dom::object>()["key"];
   if (error) { std::cerr << error << std::endl; abort(); }
-  return value.is_unsigned_integer() && value.is_number();
+  return value.is<uint64_t>();
 }
 
 int main() {

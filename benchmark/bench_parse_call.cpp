@@ -6,6 +6,8 @@ using namespace std;
 
 const padded_string EMPTY_ARRAY("[]", 2);
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void json_parse(State& state) {
   dom::parser parser;
   if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
@@ -14,6 +16,7 @@ static void json_parse(State& state) {
     if (error) { return; }
   }
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(json_parse);
 static void parser_parse_error_code(State& state) {
   dom::parser parser;
@@ -37,12 +40,15 @@ static void parser_parse_exception(State& state) {
 }
 BENCHMARK(parser_parse_exception);
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void build_parsed_json(State& state) {
   for (auto _ : state) {
     dom::parser parser = simdjson::build_parsed_json(EMPTY_ARRAY);
     if (!parser.valid) { return; }
   }
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(build_parsed_json);
 static void document_parse_error_code(State& state) {
   for (auto _ : state) {

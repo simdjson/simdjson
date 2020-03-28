@@ -25,6 +25,8 @@ static void twitter_count(State& state) {
 }
 BENCHMARK(twitter_count);
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_count(State& state) {
   // Prints the number of results in twitter.json
   padded_string json = padded_string::load(JSON_TEST_PATH);
@@ -41,6 +43,7 @@ static void iterator_twitter_count(State& state) {
   }
 }
 BENCHMARK(iterator_twitter_count);
+SIMDJSON_POP_DISABLE_WARNINGS
 
 static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
@@ -48,7 +51,7 @@ static void twitter_default_profile(State& state) {
   dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<string_view> default_users;
-    for (dom::object tweet : doc["statuses"].as_array()) {
+    for (dom::object tweet : doc["statuses"].get<dom::array>()) {
       dom::object user = tweet["user"];
       if (user["default_profile"]) {
         default_users.insert(user["screen_name"]);
@@ -65,11 +68,11 @@ static void twitter_image_sizes(State& state) {
   dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
-    for (dom::object tweet : doc["statuses"].as_array()) {
+    for (dom::object tweet : doc["statuses"].get<dom::array>()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
-        for (dom::object image : media.as_array()) {
-          for (auto [key, size] : image["sizes"].as_object()) {
+        for (dom::object image : media.get<dom::array>()) {
+          for (auto [key, size] : image["sizes"].get<dom::object>()) {
             image_sizes.insert({ size["w"], size["h"] });
           }
         }
@@ -87,7 +90,7 @@ static void error_code_twitter_count(State& state) noexcept {
   dom::parser parser;
   dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
-    auto [value, error] = doc["search_metadata"]["count"].as_uint64_t();
+    auto [value, error] = doc["search_metadata"]["count"].get<uint64_t>();
     if (error) { return; }
     if (value != 100) { return; }
   }
@@ -101,15 +104,15 @@ static void error_code_twitter_default_profile(State& state) noexcept {
   for (auto _ : state) {
     set<string_view> default_users;
 
-    auto [tweets, error] = doc["statuses"].as_array();
+    auto [tweets, error] = doc["statuses"].get<dom::array>();
     if (error) { return; }
     for (dom::element tweet : tweets) {
-      auto [user, error2] = tweet["user"].as_object();
+      auto [user, error2] = tweet["user"].get<dom::object>();
       if (error2) { return; }
-      auto [default_profile, error3] = user["default_profile"].as_bool();
+      auto [default_profile, error3] = user["default_profile"].get<bool>();
       if (error3) { return; }
       if (default_profile) {
-        auto [screen_name, error4] = user["screen_name"].as_string();
+        auto [screen_name, error4] = user["screen_name"].get<std::string_view>();
         if (error4) { return; }
         default_users.insert(screen_name);
       }
@@ -120,6 +123,8 @@ static void error_code_twitter_default_profile(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_default_profile);
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_default_profile(State& state) {
   // Count unique users with a default profile.
   padded_string json = padded_string::load(JSON_TEST_PATH);
@@ -128,7 +133,7 @@ static void iterator_twitter_default_profile(State& state) {
     set<string_view> default_users;
     ParsedJson::Iterator iter(pj);
 
-    // for (dom::object tweet : doc["statuses"].as_array()) {
+    // for (dom::object tweet : doc["statuses"].get<dom::array>()) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
@@ -156,6 +161,7 @@ static void iterator_twitter_default_profile(State& state) {
     if (default_users.size() != 86) { return; }
   }
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(iterator_twitter_default_profile);
 
 static void error_code_twitter_image_sizes(State& state) noexcept {
@@ -164,17 +170,17 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
   dom::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
-    auto [statuses, error] = doc["statuses"].as_array();
+    auto [statuses, error] = doc["statuses"].get<dom::array>();
     if (error) { return; }
     for (dom::element tweet : statuses) {
-      auto [images, not_found] = tweet["entities"]["media"].as_array();
+      auto [images, not_found] = tweet["entities"]["media"].get<dom::array>();
       if (!not_found) {
         for (dom::element image : images) {
-          auto [sizes, error2] = image["sizes"].as_object();
+          auto [sizes, error2] = image["sizes"].get<dom::object>();
           if (error2) { return; }
           for (auto [key, size] : sizes) {
-            auto [width, error3] = size["w"].as_uint64_t();
-            auto [height, error4] = size["h"].as_uint64_t();
+            auto [width, error3] = size["w"].get<uint64_t>();
+            auto [height, error4] = size["h"].get<uint64_t>();
             if (error3 || error4) { return; }
             image_sizes.insert({ width, height });
           }
@@ -186,6 +192,8 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
 }
 BENCHMARK(error_code_twitter_image_sizes);
 
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_image_sizes(State& state) {
   // Count unique image sizes
   padded_string json = padded_string::load(JSON_TEST_PATH);
@@ -194,7 +202,7 @@ static void iterator_twitter_image_sizes(State& state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     ParsedJson::Iterator iter(pj);
 
-    // for (dom::object tweet : doc["statuses"].as_array()) {
+    // for (dom::object tweet : doc["statuses"].get<dom::array>()) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
@@ -206,11 +214,11 @@ static void iterator_twitter_image_sizes(State& state) {
           if (iter.move_to_key("media")) {
             if (!iter.is_array()) { return; }
 
-            //   for (dom::object image : media.as_array()) {
+            //   for (dom::object image : media.get<dom::array>()) {
             if (iter.down()) { // first media
               do {
 
-                // for (auto [key, size] : image["sizes"].as_object()) {
+                // for (auto [key, size] : image["sizes"].get<dom::object>()) {
                 if (!(iter.move_to_key("sizes") && iter.is_object())) { return; }
                 if (iter.down()) { // first size
                   do {
@@ -256,5 +264,6 @@ static void print_json(State& state) noexcept {
   }
 }
 BENCHMARK(print_json);
+SIMDJSON_POP_DISABLE_WARNINGS
 
 BENCHMARK_MAIN();

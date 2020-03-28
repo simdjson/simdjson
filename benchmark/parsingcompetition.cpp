@@ -109,7 +109,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
   }
 
   if (!just_data)
-    BEST_TIME("simdjson (dynamic mem) ", !simdjson::dom::parser().parse(p).error(), true,
+    BEST_TIME("simdjson (dynamic mem) ", simdjson::dom::parser().parse(p).error(), simdjson::SUCCESS,
               , repeat, volume, !just_data);
   // (static alloc)
   simdjson::dom::parser parser;
@@ -197,14 +197,14 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
   {
     std::unique_ptr<jsmntok_t[]> tokens =
         std::make_unique<jsmntok_t[]>(p.size());
-    jsmn_parser parser;
-    jsmn_init(&parser);
+    jsmn_parser jparser;
+    jsmn_init(&jparser);
     memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
     BEST_TIME(
         "jsmn           ",
-        (jsmn_parse(&parser, buffer, p.size(), tokens.get(), p.size()) > 0),
-        true, jsmn_init(&parser), repeat, volume, !just_data);
+        (jsmn_parse(&jparser, buffer, p.size(), tokens.get(), p.size()) > 0),
+        true, jsmn_init(&jparser), repeat, volume, !just_data);
   }
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
@@ -244,8 +244,8 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
     for (int i = 0; i < repeat; i++) {
       unified.start();
-      auto [doc, error] = parser.parse(p);
-      if (error)
+      auto [doc, parse_error] = parser.parse(p);
+      if (parse_error)
         printf("bug\n");
       unified.end(results);
       std::transform(stats.begin(), stats.end(), results.begin(), stats.begin(),

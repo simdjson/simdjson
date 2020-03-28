@@ -81,20 +81,20 @@ really_inline error_code simdjson_result_base<T>::error() const noexcept {
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline T& simdjson_result_base<T>::get() noexcept(false) {
+really_inline T& simdjson_result_base<T>::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return this->first;
 };
 
 template<typename T>
-really_inline T&& simdjson_result_base<T>::take() && noexcept(false) {
+really_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<T>(this->first);
 };
 
 template<typename T>
 really_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<simdjson_result_base<T>>(*this).take();
+  return std::forward<simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -131,18 +131,18 @@ really_inline error_code simdjson_result<T>::error() const noexcept {
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline T& simdjson_result<T>::get() noexcept(false) {
-  return internal::simdjson_result_base<T>::get();
+really_inline T& simdjson_result<T>::value() noexcept(false) {
+  return internal::simdjson_result_base<T>::value();
 }
 
 template<typename T>
-really_inline T&& simdjson_result<T>::take() && noexcept(false) {
-  return std::forward<internal::simdjson_result_base<T>>(*this).take();
+really_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
+  return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
 template<typename T>
 really_inline simdjson_result<T>::operator T&&() && noexcept(false) {
-  return std::forward<internal::simdjson_result_base<T>>(*this).take();
+  return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
