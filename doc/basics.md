@@ -63,6 +63,10 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
 * **Object Iteration:** You can iterate through an object's fields, too: `for (auto [key, value] : object)`
+* **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
+  first element.
+  > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
+  > O(1) operation, which it is not presently in simdjson.
 
 Here are some examples of all of the above:
 
@@ -98,10 +102,13 @@ for (dom::object car : cars) {
 }
 ```
 
+
+
 JSON Pointer
 ------------
 
-The simdjson library also supports JSON pointer, letting you reach further down into the document:
+The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the
+at() method, letting you reach further down into the document in a single call:
 
 ```c++
 auto cars_json = R"( [
@@ -111,7 +118,7 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
-cout << cars["/0/tire_pressure/1"] << endl; // Prints 39.9
+cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
 Error Handling

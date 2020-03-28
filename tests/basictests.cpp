@@ -805,14 +805,14 @@ namespace dom_api_tests {
 
   bool document_object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "a": 1, "b": 2, "c": 3})");
+    string json(R"({ "a": 1, "b": 2, "c/d": 3})");
     dom::parser parser;
     auto [doc, error] = parser.parse(json);
     if (doc["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
     if (doc["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
-    if (doc["c"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"].first << endl; return false; }
+    if (doc["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c/d\"]) to be 3, was " << doc["c"].first << endl; return false; }
     // Check all three again in backwards order, to ensure we can go backwards
-    if (doc["c"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c\"]) to be 3, was " << doc["c"].first << endl; return false; }
+    if (doc["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c/d\"]) to be 3, was " << doc["c"].first << endl; return false; }
     if (doc["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
     if (doc["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
 
@@ -825,7 +825,7 @@ namespace dom_api_tests {
 
   bool object_index() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
+    string json(R"({ "obj": { "a": 1, "b": 2, "c/d": 3 } })");
     dom::parser parser;
     auto [doc, error] = parser.parse(json);
     if (error) { cerr << "Error: " << error << endl; return false; }
@@ -839,9 +839,9 @@ namespace dom_api_tests {
     obj["obj"].get<dom::object>().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
     if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
     if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
-    if (obj["c"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
+    if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
     // Check all three again in backwards order, to ensure we can go backwards
-    if (obj["c"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
+    if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
     if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
     if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
 

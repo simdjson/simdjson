@@ -251,38 +251,34 @@ public:
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> operator[](const std::string_view &key) const noexcept;
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<element> operator[](const char *key) const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -395,38 +391,6 @@ public:
    *
    *   dom::parser parser;
    *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
-   *   a["0/foo/a/1"] == 20
-   *   a["0"]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline simdjson_result<element> operator[](const std::string_view &json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   dom::parser parser;
-   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
-   *   a["0/foo/a/1"] == 20
-   *   a["0"]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline simdjson_result<element> operator[](const char *json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   dom::parser parser;
-   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
    *   a.at("0/foo/a/1") == 20
    *   a.at("0")["foo"]["a"].at(1) == 20
    *
@@ -511,36 +475,34 @@ public:
   inline iterator end() const noexcept;
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   obj["foo/a/1"] == 20
-   *   obj["foo"]["a"].at(1) == 20
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> operator[](const std::string_view &key) const noexcept;
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   obj["foo/a/1"] == 20
-   *   obj["foo"]["a"].at(1) == 20
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<element> operator[](const char *key) const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -1467,8 +1429,8 @@ public:
   template<typename T>
   inline simdjson_result<T> get() const noexcept;
 
-  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
   inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
@@ -1494,8 +1456,6 @@ public:
   really_inline simdjson_result(dom::array value) noexcept;
   really_inline simdjson_result(error_code error) noexcept;
 
-  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
 
@@ -1513,8 +1473,8 @@ public:
   really_inline simdjson_result(dom::object value) noexcept;
   really_inline simdjson_result(error_code error) noexcept;
 
-  inline simdjson_result<dom::element> operator[](const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<dom::element> operator[](const char *json_pointer) const noexcept;
+  inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
   inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
   inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
