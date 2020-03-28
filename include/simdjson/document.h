@@ -326,7 +326,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -360,7 +360,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result at(std::string_view json_pointer) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value at the given index.
@@ -382,21 +382,17 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(std::string_view s) const noexcept;
+  inline element_result at_key(const std::string_view &key) const noexcept;
 
   /**
-   * Get the value associated with the given key.
+   * Get the value associated with the given key in a case-insensitive manner.
    *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
+   * Note: The key will be matched against **unescaped** JSON.
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(const char *s) const noexcept;
+  inline element_result at_key_case_insensitive(const std::string_view &key) const noexcept;
 
   /** @private for debugging. Prints out the root element. */
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
@@ -467,7 +463,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -499,7 +495,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result at(std::string_view json_pointer) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value at the given index.
@@ -587,7 +583,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -619,7 +615,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline element_result at(std::string_view json_pointer) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -633,28 +629,8 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key(std::string_view s) const noexcept;
+  inline element_result at_key(const std::string_view &key) const noexcept;
 
-  /**
-   * Get the value associated with the given key.
-   *
-   * Note: The key will be matched against **unescaped** JSON.
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s) const noexcept;
-
-  /**
-   * Get the value associated with the given key, the provided key is
-   * considered to have length characters.
-   *
-   * Note: The key will be matched against **unescaped** JSON.
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s, size_t length) const noexcept;
   /**
    * Get the value associated with the given key in a case-insensitive manner.
    *
@@ -663,7 +639,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline element_result at_key_case_insensitive(const char *s) const noexcept;
+  inline element_result at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 private:
   really_inline object(const document *_doc, size_t _json_index) noexcept;
@@ -682,7 +658,7 @@ public:
   document::element value;
 
 private:
-  really_inline key_value_pair(std::string_view _key, document::element _value) noexcept;
+  really_inline key_value_pair(const std::string_view &_key, document::element _value) noexcept;
   friend class document::object;
 };
 
@@ -704,12 +680,12 @@ public:
   inline array_result as_array() const noexcept;
   inline object_result as_object() const noexcept;
 
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
   inline element_result operator[](const char *json_pointer) const noexcept;
-  inline element_result at(std::string_view json_pointer) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
   inline element_result at(size_t index) const noexcept;
-  inline element_result at_key(std::string_view key) const noexcept;
-  inline element_result at_key(const char *key) const noexcept;
+  inline element_result at_key(const std::string_view &key) const noexcept;
+  inline element_result at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline operator bool() const noexcept(false);
@@ -730,9 +706,9 @@ public:
   really_inline array_result(array value) noexcept;
   really_inline array_result(error_code error) noexcept;
 
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
   inline element_result operator[](const char *json_pointer) const noexcept;
-  inline element_result at(std::string_view json_pointer) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
   inline element_result at(size_t index) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
@@ -748,11 +724,11 @@ public:
   really_inline object_result(object value) noexcept;
   really_inline object_result(error_code error) noexcept;
 
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
+  inline element_result operator[](const std::string_view &json_pointer) const noexcept;
   inline element_result operator[](const char *json_pointer) const noexcept;
-  inline element_result at(std::string_view json_pointer) const noexcept;
-  inline element_result at_key(std::string_view key) const noexcept;
-  inline element_result at_key(const char *key) const noexcept;
+  inline element_result at(const std::string_view &json_pointer) const noexcept;
+  inline element_result at_key(const std::string_view &key) const noexcept;
+  inline element_result at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline object::iterator begin() const noexcept(false);
@@ -828,7 +804,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline element_result load(const std::string& path) noexcept; 
+  inline element_result load(const std::string &path) noexcept; 
 
   /**
    * Load a file containing many JSON documents.
@@ -885,7 +861,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline document::stream load_many(const std::string& path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+  inline document::stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
 
   /**
    * Parse a JSON document and return a temporary reference to it.
