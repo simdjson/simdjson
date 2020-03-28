@@ -32,7 +32,7 @@ template <typename T>
 static void parse_and_validate(const std::string src, T expected) {
   std::cout << "src: " << src << ", ";
   const padded_string pstr{src};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
 
   bool result;
   if constexpr (std::is_same<int64_t, T>::value) {
@@ -54,7 +54,7 @@ static void parse_and_validate(const std::string src, T expected) {
 static bool parse_and_check_signed(const std::string src) {
   std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [value, error] = parser.parse(pstr).as_object()["key"];
   if (error) { std::cerr << error << std::endl; abort(); }
   return value.is_integer() && value.is_number();
@@ -63,7 +63,7 @@ static bool parse_and_check_signed(const std::string src) {
 static bool parse_and_check_unsigned(const std::string src) {
   std::cout << "src: " << src << ", expecting signed" << std::endl;
   const padded_string pstr{src};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [value, error] = parser.parse(pstr).as_object()["key"];
   if (error) { std::cerr << error << std::endl; abort(); }
   return value.is_unsigned_integer() && value.is_number();

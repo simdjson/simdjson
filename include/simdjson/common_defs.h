@@ -30,7 +30,7 @@ constexpr size_t SIMDJSON_PADDING = 32;
 /**
  * By default, simdjson supports this many nested objects and arrays.
  *
- * This is the default for document::parser::max_depth().
+ * This is the default for parser::max_depth().
  */
 constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 

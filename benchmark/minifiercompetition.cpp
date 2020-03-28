@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
           .is_valid(),
       true, memcpy(buffer, mini_buffer, p.size()), repeat, volume, !just_data);
 
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   bool automated_reallocation = false;
   BEST_TIME("simdjson orig",
             parser.parse((const uint8_t *)buffer, p.size(),

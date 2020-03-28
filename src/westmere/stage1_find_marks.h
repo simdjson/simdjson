@@ -69,7 +69,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 #include "generic/utf8_lookup2_algorithm.h"
 #include "generic/json_structural_indexer.h"
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 

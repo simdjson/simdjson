@@ -9,7 +9,7 @@ namespace simdjson::fallback::stage1 {
 class structural_scanner {
 public:
 
-really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, document::parser &_doc_parser, bool _streaming)
+really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, parser &_doc_parser, bool _streaming)
   : buf{_buf}, next_structural_index{_doc_parser.structural_indexes.get()}, doc_parser{_doc_parser}, idx{0}, len{_len}, error{SUCCESS}, streaming{_streaming} {}
 
 really_inline void add_structural() {
@@ -132,7 +132,7 @@ really_inline error_code scan() {
 private:
   const uint8_t *buf;
   uint32_t *next_structural_index;
-  document::parser &doc_parser;
+  parser &doc_parser;
   uint32_t idx;
   uint32_t len;
   error_code error;
@@ -143,7 +143,7 @@ private:
 
 namespace simdjson::fallback {
 
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) const noexcept {
+WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }

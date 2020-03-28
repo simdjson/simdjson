@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
       std::cout << p.size() << " B ";
     std::cout << std::endl;
   }
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, err] = parser.parse(p);
 
   rapidjson::Document d;

@@ -18,10 +18,10 @@ and reuse it. The simdjson library will allocate and retain internal buffers bet
 buffers hot in cache and keeping memory allocation and initialization to a minimum.
 
 ```c++
-document::parser parser;
+dom::parser parser;
 
 // This initializes buffers and a document big enough to handle this JSON.
-document::element doc = parser.parse("[ true, false ]"_padded);
+dom::element doc = parser.parse("[ true, false ]"_padded);
 cout << doc << endl;
 
 // This reuses the existing buffers, and reuses and *overwrites* the old document
@@ -29,20 +29,20 @@ doc = parser.parse("[1, 2, 3]"_padded);
 cout << doc << endl;
 
 // This also reuses the existing buffers, and reuses and *overwrites* the old document
-document::element doc2 = parser.parse("true"_padded);
+dom::element doc2 = parser.parse("true"_padded);
 // Even if you keep the old reference around, doc and doc2 refer to the same document.
 cout << doc << endl;
 cout << doc2 << endl;
 ```
 
-It's not just internal buffers though. The simdjson library reuses the document itself. document::element, document::object and document::array are *references* to the internal document.
+It's not just internal buffers though. The simdjson library reuses the document itself. dom::element, dom::object and dom::array are *references* to the internal document.
 You are only *borrowing* the document from simdjson, which purposely reuses and overwrites it each
 time you call parse. This prevent wasteful and unnecessary memory allocation in 99% of cases where
 JSON is just read, used, and converted to native values or thrown away.
 
 > **You are only borrowing the document from the simdjson parser. Don't keep it long term!**
 
-This is key: don't keep the `document&`, `document::element`, `document::array`, `document::object`
+This is key: don't keep the `document&`, `dom::element`, `dom::array`, `dom::object`
 or `string_view` objects you get back from the API. Convert them to C++ native values, structs and
 arrays that you own.
 
@@ -61,7 +61,7 @@ without bound:
 * You can set a *max capacity* when constructing a parser:
 
   ```c++
-  document::parser parser(1024*1024); // Never grow past documents > 1MB
+  dom::parser parser(1024*1024); // Never grow past documents > 1MB
   for (web_request request : listen()) {
     auto [doc, error] = parser.parse(request.body);
     // If the document was above our limit, emit 413 = payload too large
@@ -76,7 +76,7 @@ without bound:
   predictability and reliability, since simdjson will never call malloc after startup!
 
   ```c++
-  document::parser parser(0); // This parser will refuse to automatically grow capacity
+  dom::parser parser(0); // This parser will refuse to automatically grow capacity
   parser.set_capacity(1024*1024); // This allocates enough capacity to handle documents <= 1MB
   for (web_request request : listen()) {
     auto [doc, error] = parser.parse(request.body);

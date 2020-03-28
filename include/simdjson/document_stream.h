@@ -4,15 +4,15 @@
 #include <thread>
 #include "simdjson/document.h"
 
-namespace simdjson {
+namespace simdjson::dom {
 
 /**
  * A forward-only stream of documents.
  *
- * Produced by document::parser::parse_many.
+ * Produced by parser::parse_many.
  *
  */
-class document::stream {
+class stream {
 public:
   really_inline ~stream() noexcept;
 
@@ -55,11 +55,11 @@ public:
 
 private:
 
-  stream &operator=(const document::stream &) = delete; // Disallow copying
+  stream &operator=(const stream &) = delete; // Disallow copying
 
-  stream(document::stream &other) = delete;    // Disallow copying
+  stream(stream &other) = delete;    // Disallow copying
 
-  really_inline stream(document::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
+  really_inline stream(dom::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
 
   /**
    * Parse the next document found in the buffer previously given to stream.
@@ -116,7 +116,7 @@ private:
 
   inline size_t remaining() const { return _len - buf_start; }
 
-  document::parser &parser;
+  dom::parser &parser;
   const uint8_t *_buf;
   const size_t _len;
   size_t _batch_size; // this is actually variable!
@@ -133,10 +133,11 @@ private:
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
   std::thread stage_1_thread;
-  document::parser parser_thread;
+  dom::parser parser_thread;
 #endif
-  friend class document::parser;
-}; // class document::stream
+  friend class dom::parser;
+}; // class stream
 
-} // end of namespace simdjson
+} // end of namespace simdjson::dom
+
 #endif // SIMDJSON_DOCUMENT_STREAM_H

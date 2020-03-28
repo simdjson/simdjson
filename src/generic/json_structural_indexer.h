@@ -58,14 +58,14 @@ public:
 class json_structural_indexer {
 public:
   template<size_t STEP_SIZE>
-  static error_code index(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) noexcept;
+  static error_code index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept;
 
 private:
   really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
-  really_inline error_code finish(document::parser &parser, size_t idx, size_t len, bool streaming);
+  really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
   json_scanner scanner;
   utf8_checker checker{};
@@ -82,7 +82,7 @@ really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, jso
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
-really_inline error_code json_structural_indexer::finish(document::parser &parser, size_t idx, size_t len, bool streaming) {
+really_inline error_code json_structural_indexer::finish(parser &parser, size_t idx, size_t len, bool streaming) {
   // Write out the final iteration's structurals
   indexer.write(idx-64, prev_structurals);
 
@@ -154,7 +154,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
 // The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
 // you may want to call on a function like trimmed_length_safe_utf8.
 template<size_t STEP_SIZE>
-error_code json_structural_indexer::index(const uint8_t *buf, size_t len, document::parser &parser, bool streaming) noexcept {
+error_code json_structural_indexer::index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept {
   if (unlikely(len > parser.capacity())) { return CAPACITY; }
 
   buf_block_reader<STEP_SIZE> reader(buf, len);

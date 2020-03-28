@@ -43,7 +43,7 @@ enum error_code {
 /**
  * Get the error message for the given error code.
  *
- *   document::parser parser;
+ *   dom::parser parser;
  *   auto [doc, error] = parser.parse("foo");
  *   if (error) { printf("Error: %s\n", error_message(error)); }
  *

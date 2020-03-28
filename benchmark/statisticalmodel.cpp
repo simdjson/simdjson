@@ -44,7 +44,7 @@ using stat_t = struct stat_s;
 
 
 really_inline void simdjson_process_atom(stat_t &s,
-                                         simdjson::document::element element) {
+                                         simdjson::dom::element element) {
   if (element.is_integer()) {
     s.integer_count++;
   } else if(element.is_string()) {
@@ -62,7 +62,7 @@ really_inline void simdjson_process_atom(stat_t &s,
   }
 }
 
-void simdjson_recurse(stat_t &s, simdjson::document::element element) {
+void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   if (element.is_array()) {
     s.array_count++;
     auto [array, array_error] = element.as_array();
@@ -91,7 +91,7 @@ void simdjson_recurse(stat_t &s, simdjson::document::element element) {
 
 stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t answer{};
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, error] = parser.parse(p);
   if (error) {
     answer.valid = false;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
          s.non_ascii_byte_count, s.object_count, s.array_count, s.null_count,
          s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   const simdjson::implementation &stage_parser = *simdjson::active_implementation;
   bool allocok = parser.allocate_capacity(p.size());
   if (!allocok) {

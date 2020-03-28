@@ -178,7 +178,7 @@ bool validate(const char *dirname) {
       int_count = 0;
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
-      simdjson::document::parser parser;
+      simdjson::dom::parser parser;
       auto [doc, err] = parser.parse(p);
       bool isok = (err == simdjson::error_code::SUCCESS);
       if (int_count + float_count + invalid_count > 0) {

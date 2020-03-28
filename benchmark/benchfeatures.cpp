@@ -125,7 +125,7 @@ struct option_struct {
     if (arch == architecture::UNSUPPORTED) {
       arch = find_best_supported_architecture();
     }
-    document::parser::use_implementation(arch);
+    dom::parser::use_implementation(arch);
   }
 
   template<typename F>

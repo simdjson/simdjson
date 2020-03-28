@@ -262,7 +262,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 // This function will almost never be called!!!
 //
 never_inline bool parse_large_integer(const uint8_t *const src,
-                                      document::parser &parser,
+                                      parser &parser,
                                       bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
@@ -341,7 +341,7 @@ never_inline bool parse_large_integer(const uint8_t *const src,
   return is_structural_or_whitespace(*p);
 }
 
-bool slow_float_parsing(UNUSED const char * src, document::parser &parser) {
+bool slow_float_parsing(UNUSED const char * src, parser &parser) {
   double d;
   if (parse_float_strtod(src, &d)) {
     parser.on_number_double(d);
@@ -367,7 +367,7 @@ bool slow_float_parsing(UNUSED const char * src, document::parser &parser) {
 // Our objective is accurate parsing (ULP of 0) at high speed.
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                document::parser &parser) {
+                                parser &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
   parser.on_number_s64(0);        // always write zero

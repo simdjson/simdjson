@@ -11,7 +11,7 @@
 namespace simdjson {
 
 /**
- * String with extra allocation for ease of use with document::parser::parse()
+ * String with extra allocation for ease of use with parser::parse()
  *
  * This is a move-only class, it cannot be copied.
  */

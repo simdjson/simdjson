@@ -38,7 +38,7 @@ void print_vec(const std::vector<int64_t> &v) {
 // clang-format off
 
 // simdjson_recurse below come be implemented like so but it is slow:
-/*void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element element) {
+/*void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
   if (element.is_array()) {
     auto [array, array_error] = element.as_array();
     for (auto child : array) {
@@ -63,7 +63,7 @@ void print_vec(const std::vector<int64_t> &v) {
 // clang-format on
 
 
-void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element element) {
+void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
   if (element.is_array()) {
     auto array = element.as_array();
     for (auto child : array) {
@@ -100,7 +100,7 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::document::element elem
 }
 
 __attribute__((noinline)) std::vector<int64_t>
-simdjson_just_dom(simdjson::document::element doc) {
+simdjson_just_dom(simdjson::dom::element doc) {
   std::vector<int64_t> answer;
   simdjson_recurse(answer, doc);
   remove_duplicates(answer);
@@ -110,8 +110,8 @@ simdjson_just_dom(simdjson::document::element doc) {
 __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
-  simdjson::document::parser parser;
-  simdjson::document::element doc = parser.parse(p);
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc = parser.parse(p);
   simdjson_recurse(answer, doc);
   remove_duplicates(answer);
   return answer;
@@ -119,7 +119,7 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
 
 __attribute__((noinline)) simdjson::error_code
 simdjson_just_parse(const simdjson::padded_string &p) {
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   return parser.parse(p).error();
 }
 
@@ -372,8 +372,8 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
-  simdjson::document::parser parser;
-  simdjson::document::element doc = parser.parse(p);
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc = parser.parse(p);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size() + 1);

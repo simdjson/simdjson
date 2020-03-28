@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   }
 
   const char *filename = argv[1];
-  simdjson::document::parser parser;
+  simdjson::dom::parser parser;
   auto [doc, error] = parser.load(filename);
   if (error) { std::cerr << "Error parsing " << filename << ": " << error << std::endl; }
 
