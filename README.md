@@ -157,7 +157,8 @@ Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318)
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
-For the video inclined, [![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)
+For the video inclined, <br />
+[![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)<br />
 (it was the best voted talk, we're kinda proud of it).
 
 Funding
