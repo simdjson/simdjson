@@ -17,7 +17,7 @@ const padded_string EMPTY_ARRAY("[]", 2);
 static void twitter_count(State& state) {
   // Prints the number of results in twitter.json
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { return; }
@@ -45,7 +45,7 @@ BENCHMARK(iterator_twitter_count);
 static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<string_view> default_users;
     for (document::object tweet : doc["statuses"].as_array()) {
@@ -62,7 +62,7 @@ BENCHMARK(twitter_default_profile);
 static void twitter_image_sizes(State& state) {
   // Count unique image sizes
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     for (document::object tweet : doc["statuses"].as_array()) {
@@ -85,7 +85,7 @@ BENCHMARK(twitter_image_sizes);
 static void error_code_twitter_count(State& state) noexcept {
   // Prints the number of results in twitter.json
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     auto [value, error] = doc["search_metadata"]["count"].as_uint64_t();
     if (error) { return; }
@@ -97,7 +97,7 @@ BENCHMARK(error_code_twitter_count);
 static void error_code_twitter_default_profile(State& state) noexcept {
   // Count unique users with a default profile.
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<string_view> default_users;
 
@@ -161,7 +161,7 @@ BENCHMARK(iterator_twitter_default_profile);
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
   document::parser parser;
-  document &doc = parser.load(JSON_TEST_PATH);
+  document::element doc = parser.load(JSON_TEST_PATH);
   for (auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     auto [statuses, error] = doc["statuses"].as_array();

@@ -127,8 +127,10 @@ really_inline document::stream::iterator::iterator(stream& stream, bool _is_end)
   : _stream{stream}, finished{_is_end} {
 }
 
-really_inline document::doc_result document::stream::iterator::operator*() noexcept {
-  return doc_result(_stream.parser.doc, _stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : _stream.error);
+really_inline document::element_result document::stream::iterator::operator*() noexcept {
+  error_code error = _stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : _stream.error;
+  if (error) { return error; }
+  return _stream.parser.doc.root();
 }
 
 really_inline document::stream::iterator& document::stream::iterator::operator++() noexcept {

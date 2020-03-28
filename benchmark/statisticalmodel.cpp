@@ -104,7 +104,7 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
       reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.byte_count = p.size();
   answer.structural_indexes_count = parser.n_structural_indexes;
-  simdjson_recurse(answer, doc.root());
+  simdjson_recurse(answer, doc);
   return answer;
 }
 

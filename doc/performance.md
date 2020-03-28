@@ -21,7 +21,7 @@ buffers hot in cache and keeping memory allocation and initialization to a minim
 document::parser parser;
 
 // This initializes buffers and a document big enough to handle this JSON.
-document &doc = parser.parse("[ true, false ]"_padded);
+document::element doc = parser.parse("[ true, false ]"_padded);
 cout << doc << endl;
 
 // This reuses the existing buffers, and reuses and *overwrites* the old document
@@ -29,55 +29,22 @@ doc = parser.parse("[1, 2, 3]"_padded);
 cout << doc << endl;
 
 // This also reuses the existing buffers, and reuses and *overwrites* the old document
-document &doc2 = parser.parse("true"_padded);
+document::element doc2 = parser.parse("true"_padded);
 // Even if you keep the old reference around, doc and doc2 refer to the same document.
 cout << doc << endl;
 cout << doc2 << endl;
 ```
 
-It's not just internal buffers though. The simdjson library reuses the document itself. Notice that reference?
-`document &doc`? That's key. You are only *borrowing* the document from simdjson, which purposely
-reuses and overwrites it each time you call parse. This prevent wasteful and unnecessary memory
-allocation in 99% of cases where JSON is just read, used, and converted to native values
-or thrown away.
+It's not just internal buffers though. The simdjson library reuses the document itself. document::element, document::object and document::array are *references* to the internal document.
+You are only *borrowing* the document from simdjson, which purposely reuses and overwrites it each
+time you call parse. This prevent wasteful and unnecessary memory allocation in 99% of cases where
+JSON is just read, used, and converted to native values or thrown away.
 
 > **You are only borrowing the document from the simdjson parser. Don't keep it long term!**
 
 This is key: don't keep the `document&`, `document::element`, `document::array`, `document::object`
 or `string_view` objects you get back from the API. Convert them to C++ native values, structs and
 arrays that you own.
-
-### Keeping documents around for longer
-
-If you really need to keep parsed JSON documents around for a long time, you can **take** the
-document by declaring an actual `document` value.
-
-```c++
-document::parser parser;
-
-// This initializes buffers and a document big enough to handle this JSON.
-// By casting to document instead of document&, it "steals" the document from the parser so that it
-// cannot be overwritten.
-document keep_doc = parser.parse("[ true, false ]"_padded);
-
-// This reuses the existing buffers, but initializes a new document.
-document &doc = parser.parse("[1, 2, 3]"_padded);
-
-// Now keep_doc and doc refer to different documents.
-cout << keep_doc << endl;
-cout << doc << endl;
-```
-
-If you're using error codes, it can be done like this:
-
-```c++
-auto [doc_ref, error] = parser.parse(json); // doc_ref is a document&
-if (error) { cerr << error << endl; exit(1); }
-document keep_doc = doc_ref; // "steal" the document from the parser
-```
-
-This won't allocate anything or copy document memory: instead, it will *steal* the document memory
-from the parser. The parser will simply allocate new document memory the next time you call parse.
 
 Server Loops: Long-Running Processes and Memory Capacity
 --------------------------------------------------------

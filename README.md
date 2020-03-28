@@ -49,7 +49,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    #include "simdjson.h"
    int main(void) {
      simdjson::document::parser parser;
-     simdjson::document& tweets = parser.load("twitter.json");
+     simdjson::document::element tweets = parser.load("twitter.json");
      std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
    }
    ```

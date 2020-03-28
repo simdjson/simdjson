@@ -59,7 +59,7 @@ public:
   class parser;
   class stream;
 
-  class doc_result;
+  class element_result;
   class element_result;
   class array_result;
   class object_result;
@@ -69,35 +69,6 @@ public:
    * Get the root element of this document as a JSON array.
    */
   element root() const noexcept;
-  /**
-   * Get the root element of this document as a JSON array.
-   */
-  array_result as_array() const noexcept;
-  /**
-   * Get the root element of this document as a JSON object.
-   */
-  object_result as_object() const noexcept;
-  /**
-   * Get the root element of this document.
-   */
-  operator element() const noexcept;
-
-#if SIMDJSON_EXCEPTIONS
-  /**
-   * Read the root element of this document as a JSON array.
-   *
-   * @return The JSON array.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
-   */
-  operator array() const noexcept(false);
-  /**
-   * Read this element as a JSON object (key/value pairs).
-   *
-   * @return The JSON object.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
-   */
-  operator object() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
 
   /**
    * Dump the raw tape for debugging.
@@ -106,93 +77,6 @@ public:
    * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
    */
   bool dump_raw_tape(std::ostream &os) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](const char *json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc.at("/foo/a/1") == 20
-   *   doc.at("/")["foo"]["a"].at(1) == 20
-   *   doc.at("")["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result at(std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value at the given index.
-   *
-   * @return The value at the given index, or:
-   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
-   */
-  inline element_result at(size_t index) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(std::string_view s) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s) const noexcept;
 
   std::unique_ptr<uint64_t[]> tape;
   std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
@@ -205,154 +89,6 @@ private:
 
 template<typename T>
 class minify;
-
-/**
- * A parsed document reference, or an error if the parse failed.
- *
- *     document::parser parser;
- *     document &doc = parser.parse(json);
- *
- * ## Document Ownership
- *
- * The `document &` refers to an internal document the parser reuses on each `parse()` call. It will
- * become invalidated on the next `parse()`.
- *
- * This is more efficient for common cases where documents are parsed and used one at a time. If you
- * need to keep the document around longer, you may *take* it from the parser by casting it:
- *
- *     document &doc = parser.parse(); // take ownership
- *
- * If you do this, the parser will automatically allocate a new document on the next `parse()` call.
- *
- * ## Error Codes vs. Exceptions
- *
- * This result type allows the user to pick whether to use exceptions or not.
- *
- * Use like this to avoid exceptions:
- *
- *     auto [doc, error] = parser.parse(json);
- *     if (error) { exit(1); }
- *
- * Use like this if you'd prefer to use exceptions:
- *
- *     document &doc = parser.parse(json);
- *
- */
-class document::doc_result : public simdjson_result<document&> {
-public:
-  /**
-   * Read this document as a JSON objec.
-   *
-   * @return The object value, or:
-   *         - UNEXPECTED_TYPE if the JSON document is not an object
-   */
-  inline object_result as_object() const noexcept;
-
-  /**
-   * Read this document as a JSON array.
-   *
-   * @return The array value, or:
-   *         - UNEXPECTED_TYPE if the JSON document is not an array
-   */
-  inline array_result as_array() const noexcept;
-
-  /**
-   * Get the root element of this document.
-   */
-  inline element_result root() const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc["/foo/a/1"] == 20
-   *   doc["/"]["foo"]["a"].at(1) == 20
-   *   doc[""]["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result operator[](const char *json_pointer) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc.at("/foo/a/1") == 20
-   *   doc.at("/")["foo"]["a"].at(1) == 20
-   *   doc.at("")["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline element_result at(std::string_view json_pointer) const noexcept;
-
-  /**
-   * Get the value at the given index.
-   *
-   * @return The value at the given index, or:
-   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
-   */
-  inline element_result at(size_t index) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(std::string_view s) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * Note: The key will be matched against **unescaped** JSON:
-   *
-   *   document::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].as_uint64_t().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].as_uint64_t().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline element_result at_key(const char *s) const noexcept;
-
-  ~doc_result()=default;
-  doc_result(document &doc, error_code error) noexcept;
-  friend class document::parser;
-  friend class document::stream;
-}; // class document::doc_result
 
 namespace internal {
   /**
@@ -579,7 +315,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -596,7 +332,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc["/foo/a/1"] == 20
    *   doc["/"]["foo"]["a"].at(1) == 20
    *   doc[""]["foo"]["a"].at(1) == 20
@@ -613,7 +349,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   document::parser parser;
-   *   document &doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   document::element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -661,6 +397,9 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
   inline element_result at_key(const char *s) const noexcept;
+
+  /** @private for debugging. Prints out the root element. */
+  inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
   really_inline element(const document *_doc, size_t _json_index) noexcept;
@@ -947,8 +686,7 @@ private:
   friend class document::object;
 };
 
-
- /** The result of a JSON navigation that may fail. */
+/** The result of a JSON navigation that may fail. */
 class document::element_result : public simdjson_result<document::element> {
 public:
   really_inline element_result() noexcept;
@@ -1070,7 +808,7 @@ public:
    * Load a JSON document from a file and return a reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.load("jsonexamples/twitter.json");
+   *   const document::element doc = parser.load("jsonexamples/twitter.json");
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1090,13 +828,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline doc_result load(const std::string& path) noexcept; 
+  inline element_result load(const std::string& path) noexcept; 
 
   /**
    * Load a file containing many JSON documents.
    *
    *   document::parser parser;
-   *   for (const document &doc : parser.parse_many(path)) {
+   *   for (const document::element doc : parser.parse_many(path)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1153,7 +891,7 @@ public:
    * Parse a JSON document and return a temporary reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.parse(buf, len);
+   *   document::element doc = parser.parse(buf, len);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1184,13 +922,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline doc_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline element_result parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.parse(buf, len);
+   *   const document::element doc = parser.parse(buf, len);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1221,13 +959,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  really_inline doc_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline element_result parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
 
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.parse(s);
+   *   const document::element doc = parser.parse(s);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1256,13 +994,13 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  really_inline doc_result parse(const std::string &s) noexcept;
+  really_inline element_result parse(const std::string &s) noexcept;
 
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
    *   document::parser parser;
-   *   const document &doc = parser.parse(s);
+   *   const document::element doc = parser.parse(s);
    *
    * ### IMPORTANT: Document Lifetime
    *
@@ -1281,16 +1019,16 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  really_inline doc_result parse(const padded_string &s) noexcept;
+  really_inline element_result parse(const padded_string &s) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
-  really_inline doc_result parse(const char *buf) noexcept = delete;
+  really_inline element_result parse(const char *buf) noexcept = delete;
 
   /**
    * Parse a buffer containing many JSON documents.
    *
    *   document::parser parser;
-   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *   for (const document::element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1352,7 +1090,7 @@ public:
    * Parse a buffer containing many JSON documents.
    *
    *   document::parser parser;
-   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *   for (const document::element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1414,7 +1152,7 @@ public:
    * Parse a buffer containing many JSON documents.
    *
    *   document::parser parser;
-   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *   for (const document::element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1475,7 +1213,7 @@ public:
    * Parse a buffer containing many JSON documents.
    *
    *   document::parser parser;
-   *   for (const document &doc : parser.parse_many(buf, len)) {
+   *   for (const document::element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *
@@ -1528,7 +1266,7 @@ public:
   inline stream parse_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   // We do not want to allow implicit conversion from C string to std::string.
-  really_inline doc_result parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
+  really_inline element_result parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /**
    * The largest document this parser can automatically support.
@@ -1730,11 +1468,6 @@ private:
   //
   inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
 
-#if SIMDJSON_EXCEPTIONS
-  // Used internally to get the document
-  inline const document &get_document() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
-
   friend class document::parser::Iterator;
   friend class document::stream;
 }; // class parser
@@ -1743,7 +1476,7 @@ private:
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
  *
  *   document::parser parser;
- *   document &doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
+ *   document::element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
  *   cout << minify(doc) << endl; // prints [1,2,3]
  *
  */
@@ -1780,16 +1513,6 @@ private:
 template<typename T>
 inline std::ostream& operator<<(std::ostream& out, minify<T> formatter) { return formatter.print(out); }
 
-/**
- * Print JSON to an output stream.
- *
- * By default, the document will be printed minified.
- *
- * @param out The output stream.
- * @param value The document to print.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
- */
-inline std::ostream& operator<<(std::ostream& out, const document &value) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1833,18 +1556,6 @@ inline std::ostream& operator<<(std::ostream& out, const document::key_value_pai
 
 #if SIMDJSON_EXCEPTIONS
 
-/**
- * Print JSON to an output stream.
- *
- * By default, the value will be printed minified.
- *
- * @param out The output stream.
- * @param value The value to print.
- * @throw simdjson_error if the result being printed has an error. If there is an error with the
- *        underlying output stream, that error will be propagated (simdjson_error will not be
- *        thrown).
- */
-inline std::ostream& operator<<(std::ostream& out, const document::doc_result &value) noexcept(false) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *

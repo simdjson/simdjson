@@ -141,7 +141,7 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   s.structural_indexes_count = parser.n_structural_indexes;
 
   //  simdjson::document::iterator iter(doc);
-  recurse(doc.root(), s, 0);
+  recurse(doc, s, 0);
   return s;
 }
 
