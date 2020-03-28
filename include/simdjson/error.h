@@ -74,29 +74,60 @@ private:
   error_code _error;
 };
 
+namespace internal {
+
 /**
- * The result of a simd operation that could fail.
+ * The result of a simdjson operation that could fail.
  *
  * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
+ *
+ * This is a base class for implementations that want to add functions to the result type for
+ * chaining.
+ *
+ * Override like:
+ *
+ *   struct simdjson_result<T> : public internal::simdjson_result_base<T> {
+ *     simdjson_result() noexcept : internal::simdjson_result_base<T>() {}
+ *     simdjson_result(error_code error) noexcept : internal::simdjson_result_base<T>(error) {}
+ *     simdjson_result(T &&value) noexcept : internal::simdjson_result_base<T>(std::forward(value)) {}
+ *     simdjson_result(T &&value, error_code error) noexcept : internal::simdjson_result_base<T>(value, error) {}
+ *     // Your extra methods here
+ *   }
+ *
+ * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct simdjson_result : public std::pair<T, error_code> {
+struct simdjson_result_base : public std::pair<T, error_code> {
+
+  /**
+   * Create a new empty result with error = UNINITIALIZED.
+   */
+  really_inline simdjson_result_base() noexcept;
+
+  /**
+   * Create a new error result.
+   */
+  really_inline simdjson_result_base(error_code error) noexcept;
+
+  /**
+   * Create a new successful result.
+   */
+  really_inline simdjson_result_base(T &&value) noexcept;
+
+  /**
+   * Create a new result with both things (use if you don't want to branch when creating the result).
+   */
+  really_inline simdjson_result_base(T &&value, error_code error) noexcept;
 
   /**
    * Move the value and the error to the provided variables.
    */
-  void tie(T& t, error_code & e) && noexcept {
-    // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
-    // tie(width, error) = size["w"].as_uint64_t();
-    // fails with "error: no viable overloaded '='""
-    t = std::forward<simdjson_result<T>>(*this).first;
-    e = this->second;
-  }
+  really_inline void tie(T &value, error_code &error) && noexcept;
 
   /**
    * The error.
    */
-  error_code error() const { return this->second; }
+  really_inline error_code error() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -105,52 +136,86 @@ struct simdjson_result : public std::pair<T, error_code> {
    *
    * @throw simdjson_error if there was an error.
    */
-  T& get() noexcept(false) {
-    if (error()) { throw simdjson_error(error()); }
-    return this->first;
-  };
+  really_inline T& get() noexcept(false);
 
   /**
    * The value of the function.
    *
    * @throw simdjson_error if there was an error.
    */
-  T&& take() && {
-    if (error()) { throw simdjson_error(error()); }
-    return std::forward<T>(this->first);
-  };
+  really_inline T&& take() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  operator T&&() && {
-    return std::forward<simdjson_result<T>>(*this).take();
-  }
+  really_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
+}; // struct simdjson_result_base
 
+} // namespace internal
+
+/**
+ * The result of a simdjson operation that could fail.
+ *
+ * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
+ */
+template<typename T>
+struct simdjson_result : public internal::simdjson_result_base<T> {
   /**
    * Create a new empty result with error = UNINITIALIZED.
    */
-  simdjson_result() noexcept : simdjson_result(UNINITIALIZED) {}
-
+  really_inline simdjson_result() noexcept;
   /**
    * Create a new error result.
    */
-  simdjson_result(error_code error) noexcept : std::pair<T, error_code>(T{}, error) {}
-
+  really_inline simdjson_result(T &&value) noexcept;
   /**
    * Create a new successful result.
    */
-  simdjson_result(T &&value) noexcept : std::pair<T, error_code>(std::forward<T>(value), SUCCESS) {}
-
+  really_inline simdjson_result(error_code error_code) noexcept;
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  simdjson_result(T &&value, error_code error) noexcept : std::pair<T, error_code>(std::forward<T>(value), error) {}
-};
+  really_inline simdjson_result(T &&value, error_code error) noexcept;
+
+  /**
+   * Move the value and the error to the provided variables.
+   */
+  really_inline void tie(T& t, error_code & e) && noexcept;
+
+  /**
+   * The error.
+   */
+  really_inline error_code error() const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+
+  /**
+   * The value of the function.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  really_inline T& get() noexcept(false);
+
+  /**
+   * The value of the function.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  really_inline T&& take() && noexcept(false);
+
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  really_inline operator T&&() && noexcept(false);
+
+#endif // SIMDJSON_EXCEPTIONS
+}; // struct simdjson_result
 
 /**
  * @deprecated This is an alias and will be removed, use error_code instead
