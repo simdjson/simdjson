@@ -117,10 +117,10 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-__attribute__((noinline)) bool
+__attribute__((noinline)) simdjson::error_code
 simdjson_just_parse(const simdjson::padded_string &p) {
   simdjson::document::parser parser;
-  return parser.parse(p).error() != simdjson::SUCCESS;
+  return parser.parse(p).error();
 }
 
 void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
             !just_data);
   BEST_TIME("sasjon  ", sasjon_compute_stats(p).size(), size, , repeat, volume,
             !just_data);
-  BEST_TIME("simdjson (just parse)  ", simdjson_just_parse(p), true, , repeat,
+  BEST_TIME("simdjson (just parse)  ", simdjson_just_parse(p), simdjson::error_code::SUCCESS, , repeat,
             volume, !just_data);
   BEST_TIME("rapid  (just parse) ", rapid_just_parse(p), false, , repeat,
             volume, !just_data);
