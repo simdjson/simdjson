@@ -390,9 +390,9 @@ inline simdjson_result<element> parser::load(const std::string &path) noexcept {
   return parse(loaded_bytes.get(), len, false);
 }
 
-inline stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
+inline document_stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
   auto [len, code] = read_file(path);
-  return stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
+  return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
 }
 
 inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
@@ -428,16 +428,16 @@ really_inline simdjson_result<element> parser::parse(const padded_string &s) noe
   return parse(s.data(), s.length(), false);
 }
 
-inline stream parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
-  return stream(*this, buf, len, batch_size);
+inline document_stream parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+  return document_stream(*this, buf, len, batch_size);
 }
-inline stream parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
+inline document_stream parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
   return parse_many((const uint8_t *)buf, len, batch_size);
 }
-inline stream parser::parse_many(const std::string &s, size_t batch_size) noexcept {
+inline document_stream parser::parse_many(const std::string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
-inline stream parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
+inline document_stream parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
 

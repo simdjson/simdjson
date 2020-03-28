@@ -97,7 +97,7 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson::dom {
 
-really_inline stream::stream(
+really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *buf,
   size_t len,
@@ -107,7 +107,7 @@ really_inline stream::stream(
   if (!error) { error = json_parse(); }
 }
 
-inline stream::~stream() noexcept {
+inline document_stream::~document_stream() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   if (stage_1_thread.joinable()) {
     stage_1_thread.join();
@@ -115,34 +115,34 @@ inline stream::~stream() noexcept {
 #endif
 }
 
-really_inline stream::iterator stream::begin() noexcept {
+really_inline document_stream::iterator document_stream::begin() noexcept {
   return iterator(*this, false);
 }
 
-really_inline stream::iterator stream::end() noexcept {
+really_inline document_stream::iterator document_stream::end() noexcept {
   return iterator(*this, true);
 }
 
-really_inline stream::iterator::iterator(stream& stream, bool _is_end) noexcept
-  : _stream{stream}, finished{_is_end} {
+really_inline document_stream::iterator::iterator(document_stream& _stream, bool is_end) noexcept
+  : stream{_stream}, finished{is_end} {
 }
 
-really_inline simdjson_result<element> stream::iterator::operator*() noexcept {
-  error_code error = _stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : _stream.error;
+really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
+  error_code error = stream.error == SUCCESS_AND_HAS_MORE ? SUCCESS : stream.error;
   if (error) { return error; }
-  return _stream.parser.doc.root();
+  return stream.parser.doc.root();
 }
 
-really_inline stream::iterator& stream::iterator::operator++() noexcept {
-  if (_stream.error == SUCCESS_AND_HAS_MORE) {
-    _stream.error = _stream.json_parse();
+really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+  if (stream.error == SUCCESS_AND_HAS_MORE) {
+    stream.error = stream.json_parse();
   } else {
     finished = true;
   }
   return *this;
 }
 
-really_inline bool stream::iterator::operator!=(const stream::iterator &other) const noexcept {
+really_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
   return finished != other.finished;
 }
 
@@ -150,7 +150,7 @@ really_inline bool stream::iterator::operator!=(const stream::iterator &other) c
 
 // threaded version of json_parse
 // todo: simplify this code further
-inline error_code stream::json_parse() noexcept {
+inline error_code document_stream::json_parse() noexcept {
   error = parser.ensure_capacity(_batch_size);
   if (error) { return error; }
   error = parser_thread.ensure_capacity(_batch_size);
@@ -232,7 +232,7 @@ inline error_code stream::json_parse() noexcept {
 #else  // SIMDJSON_THREADS_ENABLED
 
 // single-threaded version of json_parse
-inline error_code stream::json_parse() noexcept {
+inline error_code document_stream::json_parse() noexcept {
   error = parser.ensure_capacity(_batch_size);
   if (error) { return error; }
 

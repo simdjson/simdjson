@@ -302,14 +302,14 @@ namespace document_tests {
 
 namespace document_stream_tests {
 
-  static simdjson::dom::stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
+  static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
     return parser.parse_many(str);
   }
   // this is a compilation test
   UNUSED static void parse_many_stream_assign() {
       simdjson::dom::parser parser;
       simdjson::padded_string str("{}",2);
-      simdjson::dom::stream s1 = parse_many_stream_return(parser, str);
+      simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
 
   static bool parse_json_message_issue467(simdjson::padded_string &json, size_t expectedcount) {
