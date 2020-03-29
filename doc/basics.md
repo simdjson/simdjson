@@ -102,8 +102,6 @@ for (dom::object car : cars) {
 }
 ```
 
-
-
 JSON Pointer
 ------------
 
