@@ -1,8 +1,6 @@
 #include <iostream>
 #include "simdjson.h"
 
-namespace compile_tests {
-
 using namespace std;
 using namespace simdjson;
 using error_code=simdjson::error_code;
@@ -74,7 +72,26 @@ void basics_ndjson() {
   // Prints 1 2 3
 }
 
-} // namespace basics
+void implementation_selection_1() {
+  cout << "simdjson v" << STRINGIFY(SIMDJSON_VERSION) << endl;
+  cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();
+  cout << "(" << simdjson::active_implementation->description() << ")" << endl;
+}
+
+void implementation_selection_2() {
+  for (auto implementation : simdjson::available_implementations) {
+    cout << implementation->name() << ": " << implementation->description() << endl;
+  }
+}
+
+void implementation_selection_3() {
+  cout << simdjson::available_implementations["fallback"]->description() << endl;
+}
+
+void implementation_selection_4() {
+  // Use the fallback implementation, even though my machine is fast enough for anything
+  simdjson::active_implementation = simdjson::available_implementations["fallback"];
+}
 
 int main() {
   return 0;
