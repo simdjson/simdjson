@@ -211,7 +211,11 @@ bool ParsedJson::Iterator::next() {
 
 ParsedJson::Iterator::Iterator(const ParsedJson &pj) noexcept(false)
     : doc(pj.doc), depth(0), location(0), tape_length(0) {
+#if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
+#else
+  if (!pj.valid) { abort(); }
+#endif
 
   max_depth = pj.max_depth();
   depth_index = new scopeindex_t[max_depth + 1];

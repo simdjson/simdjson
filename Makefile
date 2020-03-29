@@ -91,7 +91,7 @@ JSON_INCLUDE:=dependencies/json/single_include/nlohmann/json.hpp
 EXTRAOBJECTS=ujdecode.o
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer get_corpus_benchmark
-TESTEXECUTABLES=jsoncheck jsoncheck_westmere jsoncheck_fallback integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests errortests readme_examples
+TESTEXECUTABLES=jsoncheck jsoncheck_westmere jsoncheck_fallback integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests errortests readme_examples readme_examples_noexceptions
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -110,9 +110,6 @@ run_basictests: basictests
 
 run_errortests: errortests
 	./errortests
-
-run_readme_examples: readme_examples
-	./readme_examples
 
 run_numberparsingcheck: numberparsingcheck
 	./numberparsingcheck
@@ -161,7 +158,7 @@ test: quicktests slowtests
 
 quiettest: quicktests slowtests
 
-quicktests: run_basictests run_quickstart run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback
+quicktests: run_basictests run_quickstart readme_examples readme_examples_noexceptions run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -234,6 +231,8 @@ errortests:tests/errortests.cpp $(HEADERS) $(LIBFILES)
 readme_examples: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o readme_examples tests/readme_examples.cpp -I. $(LIBFILES) $(LIBFLAGS)
 
+readme_examples_noexceptions: tests/readme_examples_noexceptions.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o readme_examples_noexceptions tests/readme_examples_noexceptions.cpp -I. $(LIBFILES) $(LIBFLAGS) -fno-exceptions
 
 numberparsingcheck: tests/numberparsingcheck.cpp $(HEADERS) src/simdjson.cpp
 	$(CXX) $(CXXFLAGS) -o numberparsingcheck tests/numberparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_NUMBERS

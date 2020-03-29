@@ -103,6 +103,7 @@ objs
 /perfdiff
 /pointercheck
 /readme_examples
+/readme_examples_noexceptions
 /statisticalmodel
 /stringparsingcheck
 /submodules
@@ -119,6 +120,7 @@ objs
 /tests/integer_tests
 /tests/parse_many_test
 /tests/readme_examples
+/tests/readme_examples_noexceptions
 /tools/json2json
 /tools/jsonstats
 /tools/minify
