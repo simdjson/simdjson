@@ -141,6 +141,12 @@ run_pointercheck: pointercheck
 run_issue150_sh: allparserscheckfile
 	./scripts/issue150.sh
 
+quickstart:
+	cd examples/quickstart && make quickstart
+
+run_quickstart:
+	cd examples/quickstart && make test
+
 run_testjson2json_sh: minify json2json
 	./scripts/testjson2json.sh
 
@@ -150,12 +156,12 @@ $(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
 run_benchfeatures: benchfeatures $(FEATURE_JSON_FILES)
 	./benchfeatures -n 1000
 
-test: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck  run_parse_many_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_westmere run_jsoncheck_fallback
+test: quicktests slowtests
 	@echo "It looks like the code is good!"
 
-quiettest: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_testjson2json_sh run_issue150_sh run_jsoncheck_westmere run_jsoncheck_fallback
+quiettest: quicktests slowtests
 
-quicktests: run_basictests run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback
+quicktests: run_basictests run_quickstart run_readme_examples run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -283,10 +289,11 @@ allparserscheckfile: tests/allparserscheckfile.cpp $(HEADERS) $(LIBFILES) $(EXTR
 cppcheck:
 	cppcheck --enable=all src/*.cpp  benchmarks/*.cpp tests/*.cpp -Iinclude -I. -Ibenchmark/linux
 
-everything: $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)
+everything: $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES) quickstart
 
 clean:
 	rm -f submodules $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)
+	cd examples/quickstart && make clean
 
 cleandist:
 	rm -f submodules $(EXTRAOBJECTS) $(MAINEXECUTABLES) $(EXTRA_EXECUTABLES) $(TESTEXECUTABLES) $(COMPARISONEXECUTABLES) $(SUPPLEMENTARYEXECUTABLES)

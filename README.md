@@ -43,7 +43,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    ```
    wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
    ```
-2. Create `parser.cpp`:
+2. Create `quickstart.cpp`:
 
    ```c++
    #include "simdjson.h"
@@ -53,8 +53,8 @@ The simdjson library is easily consumable with a single .h and .cpp file.
      std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
    }
    ```
-3. `c++ -o parser parser.cpp simdjson.cpp -std=c++17`
-4. `./parser`
+3. `c++ -o quickstart quickstart.cpp simdjson.cpp -std=c++17`
+4. `./quickstart`
    ```
    100 results.
    ```
