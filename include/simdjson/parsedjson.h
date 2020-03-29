@@ -7,6 +7,9 @@
 
 namespace simdjson {
 
+/**
+ * @deprecated Use `document::parser` instead.
+ */
 using ParsedJson = dom::parser;
 
 } // namespace simdjson

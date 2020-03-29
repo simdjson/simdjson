@@ -119,6 +119,9 @@ objs
 /tools/jsonstats
 /tools/minify
 
+# Don't check in generated API docs
+/doc/api
+
 # Don't check in generated examples
 /jsonexamples/generated
 

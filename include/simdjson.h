@@ -1,6 +1,12 @@
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
 
+/**
+ * @mainpage
+ *
+ * Check the [README.md](https://github.com/lemire/simdjson/blob/master/README.md#simdjson--parsing-gigabytes-of-json-per-second).
+ */
+
 #include "simdjson/compiler_check.h"
 
 // Public API

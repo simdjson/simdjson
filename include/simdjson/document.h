@@ -97,8 +97,8 @@ public:
    *
    * The parser will allocate capacity as needed.
    */
-  document() noexcept=default;
-  ~document() noexcept=default;
+  document() noexcept = default;
+  ~document() noexcept = default;
 
   /**
    * Take another document's buffers.
@@ -106,6 +106,7 @@ public:
    * @param other The document to take. Its capacity is zeroed and it is invalidated.
    */
   document(document &&other) noexcept = default;
+  /** @private */
   document(const document &) = delete; // Disallow copying
   /**
    * Take another document's buffers.
@@ -113,6 +114,7 @@ public:
    * @param other The document to take. Its capacity is zeroed.
    */
   document &operator=(document &&other) noexcept = default;
+  /** @private */
   document &operator=(const document &) = delete; // Disallow copying
 
   /**
@@ -121,7 +123,7 @@ public:
   element root() const noexcept;
 
   /**
-   * Dump the raw tape for debugging.
+   * @private Dump the raw tape for debugging.
    *
    * @param os the stream to output to.
    * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
@@ -129,7 +131,11 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   std::unique_ptr<uint64_t[]> tape;
-  std::unique_ptr<uint8_t[]> string_buf;// should be at least byte_capacity
+  /** @private String values.
+   *
+   * Should be at least byte_capacity.
+   */
+  std::unique_ptr<uint8_t[]> string_buf;
 
 private:
   inline error_code set_capacity(size_t len) noexcept;
@@ -592,6 +598,7 @@ public:
   *    DEFAULT_MAX_DEPTH.
   */
   really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  /** Deallocate the JSON parser. */
   ~parser()=default;
 
   /**
@@ -600,14 +607,14 @@ public:
    * @param other The parser to take. Its capacity is zeroed.
    */
   parser(parser &&other) = default;
-  parser(const parser &) = delete; // Disallow copying
+  parser(const parser &) = delete; ///< @private Disallow copying
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
   parser &operator=(parser &&other) = default;
-  parser &operator=(const parser &) = delete; // Disallow copying
+  parser &operator=(const parser &) = delete; ///< @private Disallow copying
 
   /**
    * Load a JSON document from a file and return a reference to it.
@@ -1147,33 +1154,34 @@ public:
   /** @deprecated Use simdjson_error instead */
   using InvalidJSON = simdjson_error;
 
-  // Next location to write to in the tape
+  /** @private Next location to write to in the tape */
   uint32_t current_loc{0};
 
-  // structural indices passed from stage 1 to stage 2
+  /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
+  /** @private Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes;
 
-  // location and return address of each open { or [
+  /** @private Tape location of each open { or [ */
   std::unique_ptr<uint32_t[]> containing_scope_offset;
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
+  /** @private Return address of each open { or [ */
   std::unique_ptr<void*[]> ret_address;
 #else
+  /** @private Return address of each open { or [ */
   std::unique_ptr<char[]> ret_address;
 #endif
 
-  // Next place to write a string
+  /** @private Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
+  /** @deprecated Use `if (parser.parse(...).error)` instead */
   bool valid{false};
+  /** @deprecated Use `parser.parse(...).error` instead */
   error_code error{UNINITIALIZED};
 
-  // Document we're writing to
+  /** @deprecated Use `parser.parse(...).doc` instead */
   document doc;
-
-  //
-  // TODO these are deprecated; use the results of parse instead.
-  //
 
   // returns true if the document parsed was valid
   [[deprecated("Use the result of parser.parse() instead")]]
@@ -1188,11 +1196,9 @@ public:
   [[deprecated("Use error_message() on the result of parser.parse() instead, or cout << error")]]
   inline std::string get_error_message() const noexcept;
 
-  // print the json to std::ostream (should be valid)
-  // return false if the tape is likely wrong (e.g., you did not parse a valid
-  // JSON).
   [[deprecated("Use cout << on the result of parser.parse() instead")]]
   inline bool print_json(std::ostream &os) const noexcept;
+  /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
   //
@@ -1201,54 +1207,54 @@ public:
   // TODO find a way to do this without exposing the interface or crippling performance
   //
 
-  // this should be called when parsing (right before writing the tapes)
+  /** @private this should be called when parsing (right before writing the tapes) */
   inline void init_stage2() noexcept;
-  really_inline error_code on_error(error_code new_error_code) noexcept;
-  really_inline error_code on_success(error_code success_code) noexcept;
-  really_inline bool on_start_document(uint32_t depth) noexcept;
-  really_inline bool on_start_object(uint32_t depth) noexcept;
-  really_inline bool on_start_array(uint32_t depth) noexcept;
+  really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
+  really_inline error_code on_success(error_code success_code) noexcept; ///< @private
+  really_inline bool on_start_document(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_start_object(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_start_array(uint32_t depth) noexcept; ///< @private
   // TODO we're not checking this bool
-  really_inline bool on_end_document(uint32_t depth) noexcept;
-  really_inline bool on_end_object(uint32_t depth) noexcept;
-  really_inline bool on_end_array(uint32_t depth) noexcept;
-  really_inline bool on_true_atom() noexcept;
-  really_inline bool on_false_atom() noexcept;
-  really_inline bool on_null_atom() noexcept;
-  really_inline uint8_t *on_start_string() noexcept;
-  really_inline bool on_end_string(uint8_t *dst) noexcept;
-  really_inline bool on_number_s64(int64_t value) noexcept;
-  really_inline bool on_number_u64(uint64_t value) noexcept;
-  really_inline bool on_number_double(double value) noexcept;
+  really_inline bool on_end_document(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_end_object(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_end_array(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_true_atom() noexcept; ///< @private
+  really_inline bool on_false_atom() noexcept; ///< @private
+  really_inline bool on_null_atom() noexcept; ///< @private
+  really_inline uint8_t *on_start_string() noexcept; ///< @private
+  really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
+  really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
+  really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
+  really_inline bool on_number_double(double value) noexcept; ///< @private
 
 private:
-  //
-  // The maximum document length this parser supports.
-  //
-  // Buffers are large enough to handle any document up to this length.
-  //
+  /**
+   * The maximum document length this parser supports.
+   *
+   * Buffers are large enough to handle any document up to this length.
+   */
   size_t _capacity{0};
 
-  //
-  // The maximum document length this parser will automatically support.
-  //
-  // The parser will not be automatically allocated above this amount.
-  //
+  /**
+   * The maximum document length this parser will automatically support.
+   *
+   * The parser will not be automatically allocated above this amount.
+   */
   size_t _max_capacity;
 
-  //
-  // The maximum depth (number of nested objects and arrays) supported by this parser.
-  //
-  // Defaults to DEFAULT_MAX_DEPTH.
-  //
+  /**
+   * The maximum depth (number of nested objects and arrays) supported by this parser.
+   *
+   * Defaults to DEFAULT_MAX_DEPTH.
+   */
   size_t _max_depth;
 
-  //
-  // The loaded buffer (reused each time load() is called)
-  //
+  /**
+   * The loaded buffer (reused each time load() is called)
+   */
   std::unique_ptr<char[], decltype(&aligned_free_char)> loaded_bytes;
 
-  // Capacity of loaded_bytes buffer.
+  /** Capacity of loaded_bytes buffer. */
   size_t _loaded_bytes_capacity{0};
 
   // all nodes are stored on the doc.tape using a 64-bit word.
@@ -1268,13 +1274,13 @@ private:
   inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
   inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
 
-  // Ensure we have enough capacity to handle at least desired_capacity bytes,
-  // and auto-allocate if not.
+  /**
+   * Ensure we have enough capacity to handle at least desired_capacity bytes,
+   * and auto-allocate if not.
+   */
   inline error_code ensure_capacity(size_t desired_capacity) noexcept;
 
-  //
-  // Read the file into loaded_bytes
-  //
+  /** Read the file into loaded_bytes */
   inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
 
   friend class parser::Iterator;
