@@ -99,7 +99,8 @@ double diff(timespec start, timespec end) {
     double min_sumclockdiff = DBL_MAX;                                         \
     uint64_t sum_diff = 0;                                                     \
     double sumclockdiff = 0;                                                   \
-    struct timespec time1, time2;                                              \
+    struct timespec time1, time2, timet1, timet2;                              \
+    clock_gettime(CLOCK_REALTIME, &timet1);                                    \
     for (int i = 0; i < repeat; i++) {                                         \
       pre;                                                                     \
       __asm volatile("" ::: /* pretend to clobber */ "memory");                \
@@ -120,6 +121,9 @@ double diff(timespec start, timespec end) {
         min_diff = cycles_diff;                                                \
       sum_diff += cycles_diff;                                                 \
     }                                                                          \
+    clock_gettime(CLOCK_REALTIME, &timet2);                                    \
+    double totaltime = diff(time1, time2);                                     \
+    double throughput = repeat / totaltime / (1);       \
     uint64_t S = size;                                                         \
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
@@ -130,12 +134,14 @@ double diff(timespec start, timespec end) {
     if (verbose)                                                               \
       printf(" %7.3f %s per input byte (best) ", cycle_per_op, unitname);      \
     if (verbose)                                                               \
-      printf(" %7.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);   \
+      printf(" %7.3f %s (avg) ", avg_cycle_per_op, unitname);   \
     if (verbose)                                                               \
-      printf(" %7.3f GB/s (error margin: %.3f GB/s)", max_gb_per_s,            \
+      printf(" %7.3f GB/s (error margin: %5.3f GB/s)", max_gb_per_s,            \
              -avg_gb_per_s + max_gb_per_s);                                    \
+    if (verbose)                                                               \
+      printf(" %13.0f Kdocuments/s", throughput/1000.0);                       \
     if (!verbose)                                                              \
-      printf(" %20.3f %20.3f %20.3f %20.3f ", cycle_per_op,                    \
+      printf(" %20.3f %20.3f %20.3f %20.3f", cycle_per_op,                     \
              avg_cycle_per_op - cycle_per_op, max_gb_per_s,                    \
              -avg_gb_per_s + max_gb_per_s);                                    \
     printf("\n");                                                              \

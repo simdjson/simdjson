@@ -65,7 +65,7 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
-size_t sum_line_lengths(char * data, size_t length) {
+never_inline size_t sum_line_lengths(char * data, size_t length) {
   std::stringstream is;
   is.rdbuf()->pubsetbuf(data, length);
   std::string line;
