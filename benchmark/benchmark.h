@@ -122,8 +122,8 @@ double diff(timespec start, timespec end) {
       sum_diff += cycles_diff;                                                 \
     }                                                                          \
     clock_gettime(CLOCK_REALTIME, &timet2);                                    \
-    double totaltime = diff(time1, time2);                                     \
-    double throughput = repeat / totaltime / (1);       \
+    double totaltime = diff(timet1, timet2);                                   \
+    double throughput = repeat / totaltime ;                                   \
     uint64_t S = size;                                                         \
     float cycle_per_op = (min_diff) / (double)S;                               \
     float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
@@ -139,7 +139,7 @@ double diff(timespec start, timespec end) {
       printf(" %7.3f GB/s (error margin: %5.3f GB/s)", max_gb_per_s,            \
              -avg_gb_per_s + max_gb_per_s);                                    \
     if (verbose)                                                               \
-      printf(" %13.0f Kdocuments/s", throughput/1000.0);                       \
+      printf(" %15.1f Kdocuments/s", throughput/1000.0);                       \
     if (!verbose)                                                              \
       printf(" %20.3f %20.3f %20.3f %20.3f", cycle_per_op,                     \
              avg_cycle_per_op - cycle_per_op, max_gb_per_s,                    \
