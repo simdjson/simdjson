@@ -70,6 +70,10 @@ objs
 /corpus.zip
 /distinctuseridcompetition
 /errortests
+/examples/quickstart/quickstart
+/examples/quickstart/simdjson.cpp
+/examples/quickstart/simdjson.h
+/examples/quickstart/twitter.json
 /fuzz/fuzz_dump
 /fuzz/fuzz_dump_raw_tape
 /fuzz/fuzz_parser
@@ -99,6 +103,7 @@ objs
 /perfdiff
 /pointercheck
 /readme_examples
+/readme_examples_noexceptions
 /statisticalmodel
 /stringparsingcheck
 /submodules
@@ -115,6 +120,7 @@ objs
 /tests/integer_tests
 /tests/parse_many_test
 /tests/readme_examples
+/tests/readme_examples_noexceptions
 /tools/json2json
 /tools/jsonstats
 /tools/minify

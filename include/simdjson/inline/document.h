@@ -90,6 +90,15 @@ inline simdjson_result<dom::element>::operator dom::object() const noexcept(fals
   return get<dom::object>();
 }
 
+inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.begin();
+}
+inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.end();
+}
+
 #endif
 
 //
@@ -829,6 +838,13 @@ inline element::operator int64_t() const noexcept(false) { return get<int64_t>()
 inline element::operator double() const noexcept(false) { return get<double>(); }
 inline element::operator array() const noexcept(false) { return get<array>(); }
 inline element::operator object() const noexcept(false) { return get<object>(); }
+
+inline dom::array::iterator dom::element::begin() const noexcept(false) {
+  return get<array>().begin();
+}
+inline dom::array::iterator dom::element::end() const noexcept(false) {
+  return get<array>().end();
+}
 
 #endif
 

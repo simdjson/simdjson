@@ -86,269 +86,6 @@ class tape_ref;
 namespace simdjson::dom {
 
 /**
- * A parsed JSON document.
- *
- * This class cannot be copied, only moved, to avoid unintended allocations.
- */
-class document {
-public:
-  /**
-   * Create a document container with zero capacity.
-   *
-   * The parser will allocate capacity as needed.
-   */
-  document() noexcept = default;
-  ~document() noexcept = default;
-
-  /**
-   * Take another document's buffers.
-   *
-   * @param other The document to take. Its capacity is zeroed and it is invalidated.
-   */
-  document(document &&other) noexcept = default;
-  /** @private */
-  document(const document &) = delete; // Disallow copying
-  /**
-   * Take another document's buffers.
-   *
-   * @param other The document to take. Its capacity is zeroed.
-   */
-  document &operator=(document &&other) noexcept = default;
-  /** @private */
-  document &operator=(const document &) = delete; // Disallow copying
-
-  /**
-   * Get the root element of this document as a JSON array.
-   */
-  element root() const noexcept;
-
-  /**
-   * @private Dump the raw tape for debugging.
-   *
-   * @param os the stream to output to.
-   * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
-   */
-  bool dump_raw_tape(std::ostream &os) const noexcept;
-
-  std::unique_ptr<uint64_t[]> tape;
-  /** @private String values.
-   *
-   * Should be at least byte_capacity.
-   */
-  std::unique_ptr<uint8_t[]> string_buf;
-
-private:
-  inline error_code set_capacity(size_t len) noexcept;
-  template<typename T>
-  friend class simdjson::minify;
-  friend class parser;
-}; // class document
-
-/**
- * A JSON element.
- *
- * References an element in a JSON document, representing a JSON null, boolean, string, number,
- * array or object.
- */
-class element : protected internal::tape_ref {
-public:
-  /** Create a new, invalid element. */
-  really_inline element() noexcept;
-
-  /** Whether this element is a json `null`. */
-  really_inline bool is_null() const noexcept;
-
-  /**
-   * Tell whether the value can be cast to the given primitive type.
-   *
-   * Supported types:
-   * - Boolean: bool
-   * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
-   * - Array: array
-   */
-  template<typename T>
-  really_inline bool is() const noexcept;
-
-  /**
-   * Get the value as the given primitive type.
-   *
-   * Supported types:
-   * - Boolean: bool
-   * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
-   * - Array: array
-   *
-   * @returns The value cast to the given type, or:
-   *          INCORRECT_TYPE if the value cannot be cast to the given type.
-   */
-  template<typename T>
-  really_inline simdjson_result<T> get() const noexcept;
-
-#if SIMDJSON_EXCEPTIONS
-  /**
-   * Read this element as a boolean.
-   *
-   * @return The boolean value
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a boolean.
-   */
-  inline operator bool() const noexcept(false);
-
-  /**
-   * Read this element as a null-terminated string.
-   *
-   * Does *not* convert other types to a string; requires that the JSON type of the element was
-   * an actual string.
-   *
-   * @return The string value.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
-   */
-  inline explicit operator const char*() const noexcept(false);
-
-  /**
-   * Read this element as a null-terminated string.
-   *
-   * Does *not* convert other types to a string; requires that the JSON type of the element was
-   * an actual string.
-   *
-   * @return The string value.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a string.
-   */
-  inline operator std::string_view() const noexcept(false);
-
-  /**
-   * Read this element as an unsigned integer.
-   *
-   * @return The integer value.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
-   */
-  inline operator uint64_t() const noexcept(false);
-  /**
-   * Read this element as an signed integer.
-   *
-   * @return The integer value.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an integer
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
-   */
-  inline operator int64_t() const noexcept(false);
-  /**
-   * Read this element as an double.
-   *
-   * @return The double value.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not a number
-   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
-   */
-  inline operator double() const noexcept(false);
-  /**
-   * Read this element as a JSON array.
-   *
-   * @return The JSON array.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an array
-   */
-  inline operator array() const noexcept(false);
-  /**
-   * Read this element as a JSON object (key/value pairs).
-   *
-   * @return The JSON object.
-   * @exception simdjson_error(UNEXPECTED_TYPE) if the JSON element is not an object
-   */
-  inline operator object() const noexcept(false);
-#endif // SIMDJSON_EXCEPTIONS
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   *         - INCORRECT_TYPE if this is not an object
-   */
-  inline simdjson_result<element> operator[](const std::string_view &key) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   *         - INCORRECT_TYPE if this is not an object
-   */
-  inline simdjson_result<element> operator[](const char *key) const noexcept;
-
-  /**
-   * Get the value associated with the given JSON pointer.
-   *
-   *   dom::parser parser;
-   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
-   *   doc.at("/foo/a/1") == 20
-   *   doc.at("/")["foo"]["a"].at(1) == 20
-   *   doc.at("")["foo"]["a"].at(1) == 20
-   *
-   * @return The value associated with the given JSON pointer, or:
-   *         - NO_SUCH_FIELD if a field does not exist in an object
-   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
-   *         - INCORRECT_TYPE if a non-integer is used to access an array
-   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
-   */
-  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
-
-  /**
-   * Get the value at the given index.
-   *
-   * @return The value at the given index, or:
-   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
-   */
-  inline simdjson_result<element> at(size_t index) const noexcept;
-
-  /**
-   * Get the value associated with the given key.
-   *
-   * The key will be matched against **unescaped** JSON:
-   *
-   *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline simdjson_result<element> at_key(const std::string_view &key) const noexcept;
-
-  /**
-   * Get the value associated with the given key in a case-insensitive manner.
-   *
-   * Note: The key will be matched against **unescaped** JSON.
-   *
-   * @return The value associated with this field, or:
-   *         - NO_SUCH_FIELD if the field does not exist in the object
-   */
-  inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
-
-  /** @private for debugging. Prints out the root element. */
-  inline bool dump_raw_tape(std::ostream &out) const noexcept;
-
-private:
-  really_inline element(const document *doc, size_t json_index) noexcept;
-  friend class document;
-  friend class object;
-  friend class array;
-  friend struct simdjson_result<element>;
-  template<typename T>
-  friend class simdjson::minify;
-};
-
-/**
  * Represents a JSON array.
  */
 class array : protected internal::tape_ref {
@@ -553,6 +290,285 @@ public:
 private:
   really_inline object(const document *doc, size_t json_index) noexcept;
   friend class element;
+  friend struct simdjson_result<element>;
+  template<typename T>
+  friend class simdjson::minify;
+};
+
+/**
+ * A parsed JSON document.
+ *
+ * This class cannot be copied, only moved, to avoid unintended allocations.
+ */
+class document {
+public:
+  /**
+   * Create a document container with zero capacity.
+   *
+   * The parser will allocate capacity as needed.
+   */
+  document() noexcept = default;
+  ~document() noexcept = default;
+
+  /**
+   * Take another document's buffers.
+   *
+   * @param other The document to take. Its capacity is zeroed and it is invalidated.
+   */
+  document(document &&other) noexcept = default;
+  /** @private */
+  document(const document &) = delete; // Disallow copying
+  /**
+   * Take another document's buffers.
+   *
+   * @param other The document to take. Its capacity is zeroed.
+   */
+  document &operator=(document &&other) noexcept = default;
+  /** @private */
+  document &operator=(const document &) = delete; // Disallow copying
+
+  /**
+   * Get the root element of this document as a JSON array.
+   */
+  element root() const noexcept;
+
+  /**
+   * @private Dump the raw tape for debugging.
+   *
+   * @param os the stream to output to.
+   * @return false if the tape is likely wrong (e.g., you did not parse a valid JSON).
+   */
+  bool dump_raw_tape(std::ostream &os) const noexcept;
+
+  std::unique_ptr<uint64_t[]> tape;
+  /** @private String values.
+   *
+   * Should be at least byte_capacity.
+   */
+  std::unique_ptr<uint8_t[]> string_buf;
+
+private:
+  inline error_code set_capacity(size_t len) noexcept;
+  template<typename T>
+  friend class simdjson::minify;
+  friend class parser;
+}; // class document
+
+/**
+ * A JSON element.
+ *
+ * References an element in a JSON document, representing a JSON null, boolean, string, number,
+ * array or object.
+ */
+class element : protected internal::tape_ref {
+public:
+  /** Create a new, invalid element. */
+  really_inline element() noexcept;
+
+  /** Whether this element is a json `null`. */
+  really_inline bool is_null() const noexcept;
+
+  /**
+   * Tell whether the value can be cast to the given primitive type.
+   *
+   * Supported types:
+   * - Boolean: bool
+   * - Number: double, uint64_t, int64_t
+   * - String: std::string_view, const char *
+   * - Array: array
+   */
+  template<typename T>
+  really_inline bool is() const noexcept;
+
+  /**
+   * Get the value as the given primitive type.
+   *
+   * Supported types:
+   * - Boolean: bool
+   * - Number: double, uint64_t, int64_t
+   * - String: std::string_view, const char *
+   * - Array: array
+   *
+   * @returns The value cast to the given type, or:
+   *          INCORRECT_TYPE if the value cannot be cast to the given type.
+   */
+  template<typename T>
+  really_inline simdjson_result<T> get() const noexcept;
+
+#if SIMDJSON_EXCEPTIONS
+  /**
+   * Read this element as a boolean.
+   *
+   * @return The boolean value
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a boolean.
+   */
+  inline operator bool() const noexcept(false);
+
+  /**
+   * Read this element as a null-terminated string.
+   *
+   * Does *not* convert other types to a string; requires that the JSON type of the element was
+   * an actual string.
+   *
+   * @return The string value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a string.
+   */
+  inline explicit operator const char*() const noexcept(false);
+
+  /**
+   * Read this element as a null-terminated string.
+   *
+   * Does *not* convert other types to a string; requires that the JSON type of the element was
+   * an actual string.
+   *
+   * @return The string value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a string.
+   */
+  inline operator std::string_view() const noexcept(false);
+
+  /**
+   * Read this element as an unsigned integer.
+   *
+   * @return The integer value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   */
+  inline operator uint64_t() const noexcept(false);
+  /**
+   * Read this element as an signed integer.
+   *
+   * @return The integer value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an integer
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits
+   */
+  inline operator int64_t() const noexcept(false);
+  /**
+   * Read this element as an double.
+   *
+   * @return The double value.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a number
+   * @exception simdjson_error(NUMBER_OUT_OF_RANGE) if the integer doesn't fit in 64 bits or is negative
+   */
+  inline operator double() const noexcept(false);
+  /**
+   * Read this element as a JSON array.
+   *
+   * @return The JSON array.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
+   */
+  inline operator array() const noexcept(false);
+  /**
+   * Read this element as a JSON object (key/value pairs).
+   *
+   * @return The JSON object.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an object
+   */
+  inline operator object() const noexcept(false);
+
+  /**
+   * Iterate over each element in this array.
+   *
+   * @return The beginning of the iteration.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
+   */
+  inline dom::array::iterator begin() const noexcept(false);
+
+  /**
+   * Iterate over each element in this array.
+   *
+   * @return The end of the iteration.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
+   */
+  inline dom::array::iterator end() const noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
+
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   dom::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
+   */
+  inline simdjson_result<element> operator[](const std::string_view &key) const noexcept;
+
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   dom::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   *         - INCORRECT_TYPE if this is not an object
+   */
+  inline simdjson_result<element> operator[](const char *key) const noexcept;
+
+  /**
+   * Get the value associated with the given JSON pointer.
+   *
+   *   dom::parser parser;
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   doc.at("/foo/a/1") == 20
+   *   doc.at("/")["foo"]["a"].at(1) == 20
+   *   doc.at("")["foo"]["a"].at(1) == 20
+   *
+   * @return The value associated with the given JSON pointer, or:
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   */
+  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
+
+  /**
+   * Get the value at the given index.
+   *
+   * @return The value at the given index, or:
+   *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
+   */
+  inline simdjson_result<element> at(size_t index) const noexcept;
+
+  /**
+   * Get the value associated with the given key.
+   *
+   * The key will be matched against **unescaped** JSON:
+   *
+   *   dom::parser parser;
+   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
+   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   */
+  inline simdjson_result<element> at_key(const std::string_view &key) const noexcept;
+
+  /**
+   * Get the value associated with the given key in a case-insensitive manner.
+   *
+   * Note: The key will be matched against **unescaped** JSON.
+   *
+   * @return The value associated with this field, or:
+   *         - NO_SUCH_FIELD if the field does not exist in the object
+   */
+  inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+
+  /** @private for debugging. Prints out the root element. */
+  inline bool dump_raw_tape(std::ostream &out) const noexcept;
+
+private:
+  really_inline element(const document *doc, size_t json_index) noexcept;
+  friend class document;
+  friend class object;
+  friend class array;
   friend struct simdjson_result<element>;
   template<typename T>
   friend class simdjson::minify;
@@ -1451,6 +1467,9 @@ public:
   inline operator double() const noexcept(false);
   inline operator dom::array() const noexcept(false);
   inline operator dom::object() const noexcept(false);
+
+  inline dom::array::iterator begin() const noexcept(false);
+  inline dom::array::iterator end() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
