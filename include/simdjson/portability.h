@@ -100,7 +100,7 @@
 #endif
 
 namespace simdjson {
-// portable version of  posix_memalign
+/** @private portable version of  posix_memalign */
 static inline void *aligned_malloc(size_t alignment, size_t size) {
   void *p;
 #ifdef _MSC_VER
@@ -117,10 +117,12 @@ static inline void *aligned_malloc(size_t alignment, size_t size) {
   return p;
 }
 
+/** @private */
 static inline char *aligned_malloc_char(size_t alignment, size_t size) {
   return (char *)aligned_malloc(alignment, size);
 }
 
+/** @private */
 static inline void aligned_free(void *mem_block) {
   if (mem_block == nullptr) {
     return;
@@ -134,6 +136,7 @@ static inline void aligned_free(void *mem_block) {
 #endif
 }
 
+/** @private */
 static inline void aligned_free_char(char *mem_block) {
   aligned_free((void *)mem_block);
 }

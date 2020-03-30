@@ -1195,7 +1195,6 @@ namespace format_tests {
   bool print_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
     ostringstream s;
     s << parser.parse(DOCUMENT);
     return assert_minified(s);
@@ -1203,7 +1202,6 @@ namespace format_tests {
   bool print_minify_parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    if (!parser.allocate_capacity(DOCUMENT.length())) { cerr << "Couldn't allocate!" << endl; return false; }
     ostringstream s;
     s << minify(parser.parse(DOCUMENT));
     return assert_minified(s);

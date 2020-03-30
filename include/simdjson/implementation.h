@@ -38,6 +38,8 @@ public:
   virtual const std::string &description() const { return _description; }
 
   /**
+   * @private For internal implementation use
+   *
    * The instruction sets this implementation is compiled against.
    *
    * @return a mask of all required `instruction_set` values
@@ -45,6 +47,8 @@ public:
   virtual uint32_t required_instruction_sets() const { return _required_instruction_sets; };
 
   /**
+   * @private For internal implementation use
+   *
    * Run a full document parse (ensure_capacity, stage1 and stage2).
    *
    * Overridden by each implementation.
@@ -57,6 +61,8 @@ public:
   WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept = 0;
 
   /**
+   * @private For internal implementation use
+   *
    * Run a full document parse (ensure_capacity, stage1 and stage2).
    *
    * Overridden by each implementation.
@@ -70,6 +76,8 @@ public:
   WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
 
   /**
+   * @private For internal implementation use
+   *
    * Stage 1 of the document parser.
    *
    * Overridden by each implementation.
@@ -83,6 +91,8 @@ public:
   WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept = 0;
 
   /**
+   * @private For internal implementation use
+   *
    * Stage 2 of the document parser.
    *
    * Overridden by each implementation.
@@ -95,6 +105,8 @@ public:
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept = 0;
 
   /**
+   * @private For internal implementation use
+   *
    * Stage 2 of the document parser for parser::parse_many.
    *
    * Overridden by each implementation.
@@ -108,9 +120,10 @@ public:
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept = 0;
 
 protected:
+  /** @private Construct an implementation with the given name and description. For subclasses. */
   really_inline implementation(
-    const std::string &name,
-    const std::string &description,
+    std::string_view name,
+    std::string_view description,
     uint32_t required_instruction_sets
   ) :
     _name(name),
@@ -192,8 +205,8 @@ public:
  */
 class detect_best_supported_implementation_on_first_use final : public implementation {
 public:
-  const std::string& name() const noexcept final { return set_best()->name(); }
-  const std::string& description() const noexcept final { return set_best()->description(); }
+  const std::string &name() const noexcept final { return set_best()->name(); }
+  const std::string &description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
   WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
     return set_best()->parse(buf, len, parser);

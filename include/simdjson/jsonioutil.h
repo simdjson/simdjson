@@ -15,6 +15,7 @@ namespace simdjson {
 
 #if SIMDJSON_EXCEPTIONS
 
+[[deprecated("Use padded_string::load() instead")]]
 inline padded_string get_corpus(const char *path) {
   return padded_string::load(path);
 }

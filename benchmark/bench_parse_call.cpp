@@ -9,10 +9,10 @@ const padded_string EMPTY_ARRAY("[]", 2);
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void json_parse(State& state) {
-  dom::parser parser;
-  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
+  ParsedJson pj;
+  if (!pj.allocate_capacity(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
-    auto error = simdjson::json_parse(EMPTY_ARRAY, parser);
+    auto error = json_parse(EMPTY_ARRAY, pj);
     if (error) { return; }
   }
 }
@@ -20,7 +20,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(json_parse);
 static void parser_parse_error_code(State& state) {
   dom::parser parser;
-  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
+  if (parser.allocate(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     auto [doc, error] = parser.parse(EMPTY_ARRAY);
     if (error) { return; }
@@ -29,7 +29,7 @@ static void parser_parse_error_code(State& state) {
 BENCHMARK(parser_parse_error_code);
 static void parser_parse_exception(State& state) {
   dom::parser parser;
-  if (parser.set_capacity(EMPTY_ARRAY.length())) { return; }
+  if (parser.allocate(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
     try {
       UNUSED dom::element doc = parser.parse(EMPTY_ARRAY);

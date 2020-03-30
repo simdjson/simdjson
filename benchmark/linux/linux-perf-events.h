@@ -56,25 +56,29 @@ public:
     temp_result_vec.resize(num_events * 2 + 1);
   }
 
-  ~LinuxEvents() { close(fd); }
+  ~LinuxEvents() { if (fd != -1) { close(fd); } }
 
   inline void start() {
-    if (ioctl(fd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) == -1) {
-      report_error("ioctl(PERF_EVENT_IOC_RESET)");
-    }
+    if (fd != -1) {
+      if (ioctl(fd, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP) == -1) {
+        report_error("ioctl(PERF_EVENT_IOC_RESET)");
+      }
 
-    if (ioctl(fd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) == -1) {
-      report_error("ioctl(PERF_EVENT_IOC_ENABLE)");
+      if (ioctl(fd, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP) == -1) {
+        report_error("ioctl(PERF_EVENT_IOC_ENABLE)");
+      }
     }
   }
 
   inline void end(std::vector<unsigned long long> &results) {
-    if (ioctl(fd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP) == -1) {
-      report_error("ioctl(PERF_EVENT_IOC_DISABLE)");
-    }
+    if (fd != -1) {
+      if (ioctl(fd, PERF_EVENT_IOC_DISABLE, PERF_IOC_FLAG_GROUP) == -1) {
+        report_error("ioctl(PERF_EVENT_IOC_DISABLE)");
+      }
 
-    if (read(fd, temp_result_vec.data(), temp_result_vec.size() * 8) == -1) {
-      report_error("read");
+      if (read(fd, temp_result_vec.data(), temp_result_vec.size() * 8) == -1) {
+        report_error("read");
+      }
     }
     // our actual results are in slots 1,3,5, ... of this structure
     // we really should be checking our ids obtained earlier to be safe

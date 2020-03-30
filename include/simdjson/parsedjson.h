@@ -8,9 +8,9 @@
 namespace simdjson {
 
 /**
- * @deprecated Use `document::parser` instead.
+ * @deprecated Use `dom::parser` instead.
  */
-using ParsedJson = dom::parser;
+using ParsedJson [[deprecated("Use dom::parser instead")]] = dom::parser;
 
 } // namespace simdjson
 #endif

@@ -77,7 +77,7 @@ without bound:
 
   ```c++
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
-  simdjson::error_code allocate_error = parser.set_capacity(1024*1024); // This allocates enough capacity to handle documents <= 1MB
+  simdjson::error_code allocate_error = parser.allocate(1024*1024); // This allocates enough capacity to handle documents <= 1MB
   if (allocate_error) { cerr << allocate_error << endl; exit(1); }
 
   for (web_request request : listen()) {
