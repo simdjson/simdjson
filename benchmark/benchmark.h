@@ -130,12 +130,16 @@ double diff(timespec start, timespec end) {
     if (verbose)                                                               \
       printf(" %7.3f %s per input byte (best) ", cycle_per_op, unitname);      \
     if (verbose)                                                               \
-      printf(" %7.3f %s per input byte (avg) ", avg_cycle_per_op, unitname);   \
+      printf(" %7.3f %s (avg) ", avg_cycle_per_op, unitname);                  \
     if (verbose)                                                               \
-      printf(" %7.3f GB/s (error margin: %.3f GB/s)", max_gb_per_s,            \
+      printf(" %7.3f GB/s (error margin: %5.3f GB/s)", max_gb_per_s,            \
              -avg_gb_per_s + max_gb_per_s);                                    \
+    if (verbose)                                                               \
+      printf(" %13.0f documents/s (best)", 1.0/min_sumclockdiff);             \
+    if (verbose)                                                               \
+      printf(" %13.0f documents/s (avg)", 1.0/(sumclockdiff/repeat));         \
     if (!verbose)                                                              \
-      printf(" %20.3f %20.3f %20.3f %20.3f ", cycle_per_op,                    \
+      printf(" %20.3f %20.3f %20.3f %20.3f", cycle_per_op,                     \
              avg_cycle_per_op - cycle_per_op, max_gb_per_s,                    \
              -avg_gb_per_s + max_gb_per_s);                                    \
     printf("\n");                                                              \

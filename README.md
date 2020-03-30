@@ -74,7 +74,8 @@ Performance results
 
 The simdjson library uses three-quarters less instructions than state-of-the-art parser RapidJSON and
 fifty percent less than sajson. To our knowledge, simdjson is the first fully-validating JSON parser
-to run at gigabytes per second on commodity processors.
+to run at gigabytes per second on commodity processors. It can parse millions of JSON documents
+per second on a single core.
 
 The following figure represents parsing speed in GB/s for parsing various files
 on an Intel Skylake processor (3.4 GHz) using the GNU GCC 9 compiler (with the -O3 flag).

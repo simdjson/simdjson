@@ -65,7 +65,7 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
-size_t sum_line_lengths(char * data, size_t length) {
+never_inline size_t sum_line_lengths(char * data, size_t length) {
   std::stringstream is;
   is.rdbuf()->pubsetbuf(data, length);
   std::string line;
@@ -124,19 +124,25 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
 #ifndef ALLPARSER
   if (!just_data)
 #endif
+  {
+    memcpy(buffer, p.data(), p.size());
     BEST_TIME("RapidJSON  ",
               d.Parse<kParseValidateEncodingFlag>((const char *)buffer)
                   .HasParseError(),
-              false, memcpy(buffer, p.data(), p.size()), repeat, volume,
+              false, , repeat, volume,
               !just_data);
+  }
 #ifndef ALLPARSER
   if (!just_data)
 #endif
+  {
+    memcpy(buffer, p.data(), p.size());
     BEST_TIME("RapidJSON (accurate number parsing)  ",
               d.Parse<kParseValidateEncodingFlag|kParseFullPrecisionFlag>((const char *)buffer)
                   .HasParseError(),
-              false, memcpy(buffer, p.data(), p.size()), repeat, volume,
+              false, , repeat, volume,
               !just_data);
+  }
   BEST_TIME("RapidJSON (insitu)",
             d.ParseInsitu<kParseValidateEncodingFlag>(buffer).HasParseError(),
             false,
@@ -167,10 +173,10 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
           .is_valid(),
       true, memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
 
-
+  memcpy(buffer, p.data(), p.size());
   size_t expected = json::parse(p.data(), p.data() + p.size()).size();
   BEST_TIME("nlohmann-json", json::parse(buffer, buffer + p.size()).size(),
-            expected, memcpy(buffer, p.data(), p.size()), repeat, volume,
+            expected, , repeat, volume,
             !just_data);
 
 #ifdef ALLPARSER
