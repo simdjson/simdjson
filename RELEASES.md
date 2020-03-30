@@ -3,7 +3,7 @@
 ## Highlights
 
 - **Multi-Document Parsing:** read a bundle of JSON documents (ndjson) 2-4x faster than doing it
-  individually. [API docs](https://github.com/simdjson/simdjson/blob/master/doc/basics.md#newline-delimited-json-ndjson-and-json-lines) / [Design Details](https://github.com/simdjson/simdjson/blob/master/doc/JsonStream.md#motivations)
+  individually. [API docs](https://github.com/simdjson/simdjson/blob/master/doc/basics.md#newline-delimited-json-ndjson-and-json-lines) / [Design Details](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md)
 - **Simplified API:** The API has been completely revamped for ease of use, from the DOM API to
   error handling and error chaining! [Docs](https://github.com/simdjson/simdjson/blob/master/doc/basics.md#the-basics-loading-and-parsing-json-documents)
 - **Exact Float Parsing:** simdjson now parses floats flawlessly *without* any performance loss,
