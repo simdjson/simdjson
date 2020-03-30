@@ -314,7 +314,7 @@ really_inline parser::parser(size_t max_capacity, size_t max_depth) noexcept
   : _max_capacity{max_capacity}, _max_depth{max_depth}, loaded_bytes(nullptr, &aligned_free_char) {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
-inline std::string parser::get_error_message() const noexcept { return error_message(int(error)); }
+inline std::string parser::get_error_message() const noexcept { return error_message(error); }
 inline bool parser::print_json(std::ostream &os) const noexcept {
   if (!valid) { return false; }
   os << doc.root();

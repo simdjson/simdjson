@@ -7,33 +7,33 @@ namespace simdjson {
 
 // Because of template weirdness, the actual class definition is inline in the document class
 
-WARN_UNUSED bool ParsedJson::Iterator::is_ok() const {
+WARN_UNUSED bool dom::parser::Iterator::is_ok() const {
   return location < tape_length;
 }
 
 // useful for debugging purposes
-size_t ParsedJson::Iterator::get_tape_location() const {
+size_t dom::parser::Iterator::get_tape_location() const {
   return location;
 }
 
 // useful for debugging purposes
-size_t ParsedJson::Iterator::get_tape_length() const {
+size_t dom::parser::Iterator::get_tape_length() const {
   return tape_length;
 }
 
 // returns the current depth (start at 1 with 0 reserved for the fictitious root
 // node)
-size_t ParsedJson::Iterator::get_depth() const {
+size_t dom::parser::Iterator::get_depth() const {
   return depth;
 }
 
 // A scope is a series of nodes at the same depth, typically it is either an
 // object ({) or an array ([). The root node has type 'r'.
-uint8_t ParsedJson::Iterator::get_scope_type() const {
+uint8_t dom::parser::Iterator::get_scope_type() const {
   return depth_index[depth].scope_type;
 }
 
-bool ParsedJson::Iterator::move_forward() {
+bool dom::parser::Iterator::move_forward() {
   if (location + 1 >= tape_length) {
     return false; // we are at the end!
   }
@@ -58,14 +58,14 @@ bool ParsedJson::Iterator::move_forward() {
   return true;
 }
 
-void ParsedJson::Iterator::move_to_value() {
+void dom::parser::Iterator::move_to_value() {
   // assume that we are on a key, so move by 1.
   location += 1;
   current_val = doc.tape[location];
   current_type = (current_val >> 56);
 }
 
-bool ParsedJson::Iterator::move_to_key(const char *key) {
+bool dom::parser::Iterator::move_to_key(const char *key) {
     if (down()) {
       do {
         const bool right_key = (strcmp(get_string(), key) == 0);
@@ -79,7 +79,7 @@ bool ParsedJson::Iterator::move_to_key(const char *key) {
     return false;
 }
 
-bool ParsedJson::Iterator::move_to_key_insensitive(
+bool dom::parser::Iterator::move_to_key_insensitive(
     const char *key) {
     if (down()) {
       do {
@@ -94,7 +94,7 @@ bool ParsedJson::Iterator::move_to_key_insensitive(
     return false;
 }
 
-bool ParsedJson::Iterator::move_to_key(const char *key,
+bool dom::parser::Iterator::move_to_key(const char *key,
                                                        uint32_t length) {
   if (down()) {
     do {
@@ -110,7 +110,7 @@ bool ParsedJson::Iterator::move_to_key(const char *key,
   return false;
 }
 
-bool ParsedJson::Iterator::move_to_index(uint32_t index) {
+bool dom::parser::Iterator::move_to_index(uint32_t index) {
   if (down()) {
     uint32_t i = 0;
     for (; i < index; i++) {
@@ -126,7 +126,7 @@ bool ParsedJson::Iterator::move_to_index(uint32_t index) {
   return false;
 }
 
-bool ParsedJson::Iterator::prev() {
+bool dom::parser::Iterator::prev() {
   size_t target_location = location;
   to_start_scope();
   size_t npos = location;
@@ -150,7 +150,7 @@ bool ParsedJson::Iterator::prev() {
   return true;
 }
 
-bool ParsedJson::Iterator::up() {
+bool dom::parser::Iterator::up() {
   if (depth == 1) {
     return false; // don't allow moving back to root
   }
@@ -163,7 +163,7 @@ bool ParsedJson::Iterator::up() {
   return true;
 }
 
-bool ParsedJson::Iterator::down() {
+bool dom::parser::Iterator::down() {
   if (location + 1 >= tape_length) {
     return false;
   }
@@ -184,13 +184,13 @@ bool ParsedJson::Iterator::down() {
   return false;
 }
 
-void ParsedJson::Iterator::to_start_scope() {
+void dom::parser::Iterator::to_start_scope() {
   location = depth_index[depth].start_of_scope;
   current_val = doc.tape[location];
   current_type = (current_val >> 56);
 }
 
-bool ParsedJson::Iterator::next() {
+bool dom::parser::Iterator::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
@@ -209,7 +209,7 @@ bool ParsedJson::Iterator::next() {
   return true;
 }
 
-ParsedJson::Iterator::Iterator(const ParsedJson &pj) noexcept(false)
+dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
     : doc(pj.doc), depth(0), location(0), tape_length(0) {
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
@@ -236,8 +236,8 @@ ParsedJson::Iterator::Iterator(const ParsedJson &pj) noexcept(false)
   }
 }
 
-ParsedJson::Iterator::Iterator(
-    const ParsedJson::Iterator &o) noexcept
+dom::parser::Iterator::Iterator(
+    const dom::parser::Iterator &o) noexcept
     : doc(o.doc), max_depth(o.depth), depth(o.depth), location(o.location),
       tape_length(o.tape_length), current_type(o.current_type),
       current_val(o.current_val) {
@@ -245,11 +245,11 @@ ParsedJson::Iterator::Iterator(
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
 
-ParsedJson::Iterator::~Iterator() noexcept {
+dom::parser::Iterator::~Iterator() noexcept {
   if (depth_index) { delete[] depth_index; }
 }
 
-bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
+bool dom::parser::Iterator::print(std::ostream &os, bool escape_strings) const {
   if (!is_ok()) {
     return false;
   }
@@ -295,7 +295,7 @@ bool ParsedJson::Iterator::print(std::ostream &os, bool escape_strings) const {
   return true;
 }
 
-bool ParsedJson::Iterator::move_to(const char *pointer,
+bool dom::parser::Iterator::move_to(const char *pointer,
                                                    uint32_t length) {
   char *new_pointer = nullptr;
   if (pointer[0] == '#') {
@@ -354,7 +354,7 @@ bool ParsedJson::Iterator::move_to(const char *pointer,
   return found;
 }
 
-bool ParsedJson::Iterator::relative_move_to(const char *pointer,
+bool dom::parser::Iterator::relative_move_to(const char *pointer,
                                                             uint32_t length) {
   if (length == 0) {
     // returns the whole document

@@ -903,13 +903,13 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return true if successful, false if allocation failed.
    */
+  [[deprecated("Use set_capacity() instead.")]]
   WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
-  // type aliases for backcompat
   /** @private Use the new DOM API instead */
   class Iterator;
   /** @private Use simdjson_error instead */
-  using InvalidJSON = simdjson_error;
+  using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
   /** @private Next location to write to in the tape */
   uint32_t current_loc{0};

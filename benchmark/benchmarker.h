@@ -294,7 +294,7 @@ struct benchmarker {
     // Allocate dom::parser
     collector.start();
     dom::parser parser;
-    bool alloc_ok = parser.allocate_capacity(json.size());
+    error_code alloc_error = parser.set_capacity(json.size());
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
     // Run it once to get hot buffers
@@ -305,8 +305,8 @@ struct benchmarker {
       }
     }
 
-    if (!alloc_ok) {
-      exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result.");
+    if (alloc_error) {
+      exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result: " + error_message(alloc_error));
     }
     verbose() << "[verbose] allocated memory for parsed JSON " << endl;
 
