@@ -105,7 +105,13 @@ echo always > /sys/kernel/mm/transparent_hugepage/enabled
 In general, when running benchmarks over large files, we recommend that you report performance
 numbers with and without huge pages if possible. Furthermore, you should amortize the parsing (e.g.,
 by parsing several large files) to distinguish the time spent parsing from the time spent allocating
-memory.
+memory. If you are using the `parse` benchmarking tool provided with the simdjson library, you can
+use the `-H` flag to omit the memory allocation cost from the benchmark results.
+
+```
+./parse largefile # includes memory allocation cost
+./parse -H largefile # without memory allocation
+```
 
 Computed GOTOs
 --------------
