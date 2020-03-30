@@ -350,7 +350,7 @@ public:
   std::unique_ptr<uint8_t[]> string_buf;
 
 private:
-  inline error_code set_capacity(size_t len) noexcept;
+  inline error_code allocate(size_t len) noexcept;
   template<typename T>
   friend class simdjson::minify;
   friend class parser;
@@ -609,13 +609,10 @@ public:
   * @param max_capacity The maximum document length the parser can automatically handle. The parser
   *    will allocate more capacity on an as needed basis (when it sees documents too big to handle)
   *    up to this amount. The parser still starts with zero capacity no matter what this number is:
-  *    to allocate an initial capacity, call set_capacity() after constructing the parser. Defaults
-  *    to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
-  * @param max_depth The maximum depth--number of nested objects and arrays--this parser can handle.
-  *    This will not be allocated until parse() is called for the first time. Defaults to
-  *    DEFAULT_MAX_DEPTH.
+  *    to allocate an initial capacity, call allocate() after constructing the parser.
+  *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
   */
-  really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
 
   /**
    * Take another parser's buffers and state.
@@ -836,6 +833,30 @@ public:
   really_inline simdjson_result<element> parse_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /**
+   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
+   * and `max_depth` depth.
+   *
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @return The error, if there is one.
+   */
+  WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+
+  /**
+   * @private deprecated because it returns bool instead of error_code, which is our standard for
+   * failures. Use allocate() instead.
+   *
+   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
+   * and `max_depth` depth.
+   *
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
+   * @return true if successful, false if allocation failed.
+   */
+  [[deprecated("Use allocate() instead.")]]
+  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+
+  /**
    * The largest document this parser can support without reallocating.
    *
    * @return Current capacity, in bytes.
@@ -859,17 +880,6 @@ public:
   really_inline size_t max_depth() const noexcept;
 
   /**
-   * Set capacity. This is the largest document this parser can support without reallocating.
-   *
-   * This will allocate or deallocate as necessary.
-   *
-   * @param capacity The new capacity, in bytes.
-   *
-   * @return MEMALLOC if unsuccessful, SUCCESS otherwise.
-   */
-  WARN_UNUSED inline error_code set_capacity(size_t capacity) noexcept;
-
-  /**
    * Set max_capacity. This is the largest document this parser can automatically support.
    *
    * The parser may reallocate internal buffers as needed up to this amount.
@@ -879,32 +889,6 @@ public:
    * @param max_capacity The new maximum capacity, in bytes.
    */
   really_inline void set_max_capacity(size_t max_capacity) noexcept;
-
-  /**
-   * Set the maximum level of nested object and arrays supported by this parser.
-   *
-   * This will allocate or deallocate as necessary.
-   *
-   * @param max_depth The new maximum depth, in bytes.
-   *
-   * @return MEMALLOC if unsuccessful, SUCCESS otherwise.
-   */
-  WARN_UNUSED inline error_code set_max_depth(size_t max_depth) noexcept;
-
-  /**
-   * @private @deprecated Use set_capacity() instead.
-   *
-   * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
-   * and `max_depth` depth.
-   *
-   * Equivalent to calling set_capacity() and set_max_depth().
-   *
-   * @param capacity The new capacity.
-   * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
-   * @return true if successful, false if allocation failed.
-   */
-  [[deprecated("Use set_capacity() instead.")]]
-  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   /** @private Use the new DOM API instead */
   class Iterator;
@@ -988,13 +972,6 @@ public:
 
 private:
   /**
-   * The maximum document length this parser supports.
-   *
-   * Buffers are large enough to handle any document up to this length.
-   */
-  size_t _capacity{0};
-
-  /**
    * The maximum document length this parser will automatically support.
    *
    * The parser will not be automatically allocated above this amount.
@@ -1002,11 +979,18 @@ private:
   size_t _max_capacity;
 
   /**
+   * The maximum document length this parser supports.
+   *
+   * Buffers are large enough to handle any document up to this length.
+   */
+  size_t _capacity{0};
+
+  /**
    * The maximum depth (number of nested objects and arrays) supported by this parser.
    *
    * Defaults to DEFAULT_MAX_DEPTH.
    */
-  size_t _max_depth;
+  size_t _max_depth{0};
 
   /**
    * The loaded buffer (reused each time load() is called)
