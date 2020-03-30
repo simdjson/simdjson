@@ -108,9 +108,10 @@ public:
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept = 0;
 
 protected:
+  /** Construct an implementation with the given name and description. For subclasses. */
   really_inline implementation(
-    const std::string &name,
-    const std::string &description,
+    std::string_view name,
+    std::string_view description,
     uint32_t required_instruction_sets
   ) :
     _name(name),
@@ -192,8 +193,8 @@ public:
  */
 class detect_best_supported_implementation_on_first_use final : public implementation {
 public:
-  const std::string& name() const noexcept final { return set_best()->name(); }
-  const std::string& description() const noexcept final { return set_best()->description(); }
+  const std::string &name() const noexcept final { return set_best()->name(); }
+  const std::string &description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
   WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
     return set_best()->parse(buf, len, parser);
