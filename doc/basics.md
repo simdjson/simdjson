@@ -211,7 +211,11 @@ program from continuing if there was an error.
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays or objects, we even support direct file concatenation without whitespace. The concatenated file has no size restrictions (including larger than 4GB), though each individual document must be less than 4GB.
+The simdjson library also support multithreaded JSON streaming through a large file containing many
+smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org)
+format. If your JSON documents all contain arrays or objects, we even support direct file
+concatenation without whitespace. The concatenated file has no size restrictions (including larger
+than 4GB), though each individual document must be less than 4GB.
 
 Here is a simple example:
 
@@ -229,6 +233,8 @@ for (dom::element doc : parser.load_many(filename)) {
 ```
 
 In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`.
+
+See [parse_many.md](parse_many.md) for detailed information and design.
 
 Thread Safety
 -------------
