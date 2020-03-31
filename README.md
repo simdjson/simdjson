@@ -112,7 +112,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 | JSON for Modern C++ (nlohmann/json)   | 0.11 |
 
 
-The simdjson library offer high speed whether it processes tiny files (e.g., 300 bytes)
+The simdjson library offers high speed whether it processes tiny files (e.g., 300 bytes)
 or larger files (e.g., 3MB). The following plot presents parsing
 speed for [synthetic files over various sizes generated with a script](https://github.com/simdjson/simdjson_experiments_vldb2019/blob/master/experiments/growing/gen.py) on a 3.4 GHz Skylake processor (GNU GCC 9, -O3).
 <img src="doc/growing.png" width="90%">
