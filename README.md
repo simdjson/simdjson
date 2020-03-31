@@ -68,6 +68,7 @@ Usage documentation is available:
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
+* [API](https://simdjson.org/api/0.3.0/annotated.html) contains the automatically generated API documentation.
 
 Performance results
 -------------------
@@ -136,7 +137,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 
 - [ZippyJSON](https://github.com/michaeleisel/zippyjson): Swift bindings for the simdjson project.
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
-- [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port.
+- [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
