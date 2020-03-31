@@ -12,7 +12,8 @@ enum {
    * The major version (MAJOR.minor.revision) of simdjson being used.
    */
   SIMDJSON_VERSION_MAJOR = 0,
-  /**   * The minor version (major.MINOR.revision) of simdjson being used.
+  /**
+   * The minor version (major.MINOR.revision) of simdjson being used.
    */
   SIMDJSON_VERSION_MINOR = 3,
   /**

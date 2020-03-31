@@ -1,4 +1,4 @@
-/* auto-generated on Tue 31 Mar 2020 16:58:16 EDT. Do not edit! */
+/* auto-generated on Tue 31 Mar 2020 17:00:28 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -48,7 +48,8 @@ enum {
    * The major version (MAJOR.minor.revision) of simdjson being used.
    */
   SIMDJSON_VERSION_MAJOR = 0,
-  /**   * The minor version (major.MINOR.revision) of simdjson being used.
+  /**
+   * The minor version (major.MINOR.revision) of simdjson being used.
    */
   SIMDJSON_VERSION_MINOR = 3,
   /**

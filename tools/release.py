@@ -96,7 +96,7 @@ with open(versionfile, 'w') as file:
     file.write("   * The major version (MAJOR.minor.revision) of simdjson being used.\n")
     file.write("   */\n")
     file.write("  SIMDJSON_VERSION_MAJOR = "+str(newversion[0])+",\n")
-    file.write("  /**")
+    file.write("  /**\n")
     file.write("   * The minor version (major.MINOR.revision) of simdjson being used.\n")
     file.write("   */\n")
     file.write("  SIMDJSON_VERSION_MINOR = "+str(newversion[1])+",\n")
