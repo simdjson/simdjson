@@ -36,9 +36,10 @@ Table of Contents
 Quick Start
 -----------
 
+          
 The simdjson library is easily consumable with a single .h and .cpp file.
 
-0. Prerequisites: `g++` or `clang++`.
+0. Prerequisites: `g++` (version 7 or better) or `clang++` (version 6 or better), and a 64-bit system.
 1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
    ```
    wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
