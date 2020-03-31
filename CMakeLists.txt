@@ -5,8 +5,8 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-project(simdjson 
-  DESCRIPTION "Parsing gigabytes of JSON per second" 
+project(simdjson
+  DESCRIPTION "Parsing gigabytes of JSON per second"
   LANGUAGES CXX
 )
 
@@ -26,9 +26,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 2)
-set(PROJECT_VERSION_PATCH 1)
-set(SIMDJSON_LIB_VERSION "0.2.1" CACHE STRING "simdjson library version")
+set(PROJECT_VERSION_MINOR 3)
+set(PROJECT_VERSION_PATCH 0)
+set(SIMDJSON_LIB_VERSION "0.3.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
