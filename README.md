@@ -153,8 +153,8 @@ instructions, reducing branch misprediction, and reducing data dependency to tak
 CPU's multiple execution cores.
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318): A description of the design
-and implementation of simdjson is in our research article in VLDB journal: Geoff Langdale, Daniel
-Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
+and implementation of simdjson is in our research article: Geoff Langdale, Daniel
+Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 
