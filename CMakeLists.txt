@@ -29,7 +29,7 @@ set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 3)
 set(PROJECT_VERSION_PATCH 0)
 set(SIMDJSON_LIB_VERSION "0.3.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "0" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
 option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
