@@ -16,7 +16,7 @@ An overview of what you need to know to use simdjson, with examples.
 Including simdjson
 ------------------
 
-To include simdjson, copy [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp)
+To include simdjson, copy [simdjson.h](/singleheader/simdjson.h) and [simdjson.cpp](/singleheader/simdjson.cpp)
 into your project. Then include it in your project with:
 
 ```c++
