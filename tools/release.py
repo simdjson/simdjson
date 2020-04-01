@@ -76,7 +76,10 @@ elif (newversion[1] !=  currentv[1]):
 else :
     assert newversion[2] ==  currentv[2] + 1
 
+atleastminor= (currentv[0] != newversion[0]) or (currentv[1] != newversion[1])
 
+if(atleastminor):
+    print("This is more than a revision.")
 
 versionfilerel = os.sep + "include" + os.sep + "simdjson" + os.sep + "simdjson_version.h"
 versionfile = maindir + versionfilerel
@@ -114,17 +117,35 @@ print(versionfile + " modified")
 import fileinput
 import re
 
+
 newmajorversionstring = str(newversion[0])
 mewminorversionstring = str(newversion[1])
 newrevversionstring = str(newversion[2])
 newversionstring = str(newversion[0]) + "." + str(newversion[1]) + "." + str(newversion[2])
 cmakefile = maindir + os.sep + "CMakeLists.txt"
+
+sonumber = None
+pattern = re.compile("set\(SIMDJSON_LIB_SOVERSION \"(\d+)\" CACHE STRING \"simdjson library soversion\"\)")
+with open (cmakefile, 'rt') as myfile:
+    for line in myfile:
+        m = pattern.search(line)
+        if m != None:
+            sonumber = int(m.group(1))
+            break
+print("so library number "+str(sonumber))
+
+if(atleastminor):
+    print("Given that we have a minor revision, it seems necessary to bump the so library number")
+    print("See https://github.com/simdjson/simdjson/issues/661")
+    sonumber += 1
+
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
     line = re.sub('SIMDJSON_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
     line = re.sub('SIMDJSON_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
+    line = re.sub('set\(SIMDJSON_LIB_SOVERSION \"\d+\"','set(SIMDJSON_LIB_SOVERSION \"'+str(sonumber)+'\"', line)
     print(line)
 
 
