@@ -258,6 +258,8 @@ struct benchmarker {
   event_aggregate stage2;
   // Speed and event summary for allocation
   event_aggregate allocate_stage;
+  // Speed and event summary for the repeatly-parsing mode
+  event_aggregate loop;
 
   benchmarker(const char *_filename, event_collector& _collector)
     : filename(_filename), collector(_collector), stats(NULL) {
@@ -294,7 +296,10 @@ struct benchmarker {
     // Allocate dom::parser
     collector.start();
     dom::parser parser;
-    bool alloc_ok = parser.allocate_capacity(json.size());
+    error_code error = parser.allocate(json.size());
+    if (error) {
+      exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result: " + error_message(error));
+    }
     event_count allocate_count = collector.end();
     allocate_stage << allocate_count;
     // Run it once to get hot buffers
@@ -305,14 +310,11 @@ struct benchmarker {
       }
     }
 
-    if (!alloc_ok) {
-      exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result.");
-    }
     verbose() << "[verbose] allocated memory for parsed JSON " << endl;
 
     // Stage 1 (find structurals)
     collector.start();
-    error_code error = active_implementation->stage1((const uint8_t *)json.data(), json.size(), parser, false);
+    error = active_implementation->stage1((const uint8_t *)json.data(), json.size(), parser, false);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {
@@ -346,10 +348,30 @@ struct benchmarker {
     }
   }
 
+  void run_loop(size_t iterations) {
+    dom::parser parser;
+    auto firstresult = parser.parse((const uint8_t *)json.data(), json.size());
+    if (firstresult.error()) {
+      exit_error(string("Failed to parse ") + filename + string(":") + error_message(firstresult.error()));
+    }
+
+    collector.start();
+    // some users want something closer to "number of documents per second"
+    for(size_t i = 0; i < iterations; i++) {
+      auto result = parser.parse((const uint8_t *)json.data(), json.size());
+      if (result.error()) {
+        exit_error(string("Failed to parse ") + filename + string(":") + error_message(result.error()));
+      }
+    }
+    event_count all_loop_count = collector.end();
+    loop << all_loop_count;
+  }
+
   really_inline void run_iterations(size_t iterations, bool stage1_only, bool hotbuffers=false) {
     for (size_t i = 0; i<iterations; i++) {
       run_iteration(stage1_only, hotbuffers);
     }
+    run_loop(iterations);
   }
 
   template<typename T>
@@ -397,7 +419,7 @@ struct benchmarker {
     }
   }
 
-  void print(bool tabbed_output) const {
+  void print(bool tabbed_output, size_t iterations) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);
@@ -458,9 +480,9 @@ struct benchmarker {
         printf("|- Allocation\n");
         print_aggregate("|    ", allocate_stage.best);
       }
-              printf("|- Stage 1\n");
+      printf("|- Stage 1\n");
       print_aggregate("|    ", stage1.best);
-              printf("|- Stage 2\n");
+      printf("|- Stage 2\n");
       print_aggregate("|    ", stage2.best);
       if (collector.has_events()) {
         double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
@@ -475,6 +497,7 @@ struct benchmarker {
           freqmin, freqmax, freqall);
         }
       }
+      printf("\n%.1f documents parsed per second\n", iterations/loop.best.elapsed_sec());
     }
   }
 };

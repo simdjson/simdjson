@@ -16,7 +16,7 @@ An overview of what you need to know to use simdjson, with examples.
 Including simdjson
 ------------------
 
-To include simdjson, copy [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp)
+To include simdjson, copy [simdjson.h](/singleheader/simdjson.h) and [simdjson.cpp](/singleheader/simdjson.cpp)
 into your project. Then include it in your project with:
 
 ```c++
@@ -102,8 +102,6 @@ for (dom::object car : cars) {
 }
 ```
 
-
-
 JSON Pointer
 ------------
 
@@ -144,7 +142,7 @@ behavior.
 > 
 > ```c++
 > dom::element doc;
-> error_code error;
+> simdjson::error_code error;
 > parser.parse(json).tie(doc, error); // <-- Assigns to doc and error just like "auto [doc, error]"
 > ```
 
@@ -154,48 +152,50 @@ This is how the example in "Using the Parsed JSON" could be written using only e
 
 ```c++
 auto cars_json = R"( [
-  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+{ "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+{ "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+{ "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
-auto [doc, error] = parser.parse(cars_json);
+auto [cars, error] = parser.parse(cars_json).get<dom::array>();
 if (error) { cerr << error << endl; exit(1); }
 
 // Iterating through an array of objects
 for (dom::element car_element : cars) {
-  dom::object car;
-  car_element.get<dom::object>().tie(car, error);
-  if (error) { cerr << error << endl; exit(1); }
+dom::object car;
+car_element.get<dom::object>().tie(car, error);
+if (error) { cerr << error << endl; exit(1); }
 
-  // Accessing a field by name
-  dom::element make, model;
-  car["make"].tie(make, error);
-  if (error) { cerr << error << endl; exit(1); }
-  car["model"].tie(model, error);
-  if (error) { cerr << error << endl; exit(1); }
-  cout << "Make/Model: " << make << "/" << model << endl;
+// Accessing a field by name
+dom::element make, model;
+car["make"].tie(make, error);
+if (error) { cerr << error << endl; exit(1); }
+car["model"].tie(model, error);
+if (error) { cerr << error << endl; exit(1); }
+cout << "Make/Model: " << make << "/" << model << endl;
 
-  // Casting a JSON element to an integer
-  uint64_t year;
-  car["year"].get<uint64_t>().tie(year, error);
-  if (error) { cerr << error << endl; exit(1); }
-  cout << "- This car is " << 2020 - year << "years old." << endl;
+// Casting a JSON element to an integer
+uint64_t year;
+car["year"].get<uint64_t>().tie(year, error);
+if (error) { cerr << error << endl; exit(1); }
+cout << "- This car is " << 2020 - year << "years old." << endl;
 
-  // Iterating through an array of floats
-  double total_tire_pressure = 0;
-  for (dom::element tire_pressure_element : car["tire_pressure"]) {
+// Iterating through an array of floats
+double total_tire_pressure = 0;
+dom::array tire_pressure_array;
+car["tire_pressure"].get<dom::array>().tie(tire_pressure_array, error);
+if (error) { cerr << error << endl; exit(1); }
+for (dom::element tire_pressure_element : tire_pressure_array) {
     double tire_pressure;
-    tire_pressure_element.get<uint64_t>().tie(tire_pressure, error);
+    tire_pressure_element.get<double>().tie(tire_pressure, error);
     if (error) { cerr << error << endl; exit(1); }
     total_tire_pressure += tire_pressure;
-  }
-  cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
+}
+cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
 
-  // Writing out all the information about the car
-  for (auto [key, value] : car) {
+// Writing out all the information about the car
+for (auto [key, value] : car) {
     cout << "- " << key << ": " << value << endl;
-  }
 }
 ```
 
@@ -213,16 +213,21 @@ program from continuing if there was an error.
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
-The simdjson library also support multithreaded JSON streaming through a large file containing many smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays or objects, we even support direct file concatenation without whitespace. The concatenated file has no size restrictions (including larger than 4GB), though each individual document must be less than 4GB.
+The simdjson library also support multithreaded JSON streaming through a large file containing many
+smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org)
+format. If your JSON documents all contain arrays or objects, we even support direct file
+concatenation without whitespace. The concatenated file has no size restrictions (including larger
+than 4GB), though each individual document must be less than 4GB.
 
-Here is a simple example:
+Here is a simple example, given "x.json" with this content:
 
-```cpp
-auto ndjson = R"(
+```json
 { "foo": 1 }
 { "foo": 2 }
 { "foo": 3 }
-)"_padded;
+```
+
+```c++
 dom::parser parser;
 for (dom::element doc : parser.load_many(filename)) {
   cout << doc["foo"] << endl;
@@ -231,6 +236,8 @@ for (dom::element doc : parser.load_many(filename)) {
 ```
 
 In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`.
+
+See [parse_many.md](parse_many.md) for detailed information and design.
 
 Thread Safety
 -------------

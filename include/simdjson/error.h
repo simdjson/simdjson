@@ -12,7 +12,7 @@ namespace simdjson {
  */
 enum error_code {
   SUCCESS = 0,              ///< No error
-  SUCCESS_AND_HAS_MORE,     ///< No error and buffer still has more data
+  SUCCESS_AND_HAS_MORE,     ///< @private No error and buffer still has more data
   CAPACITY,                 ///< This parser can't support a document that big
   MEMALLOC,                 ///< Error allocating memory, most likely out of memory
   TAPE_ERROR,               ///< Something went wrong while writing to the tape (stage 2), this is a generic error
@@ -165,19 +165,19 @@ struct simdjson_result_base : public std::pair<T, error_code> {
 template<typename T>
 struct simdjson_result : public internal::simdjson_result_base<T> {
   /**
-   * Create a new empty result with error = UNINITIALIZED.
+   * @private Create a new empty result with error = UNINITIALIZED.
    */
   really_inline simdjson_result() noexcept;
   /**
-   * Create a new error result.
+   * @private Create a new error result.
    */
   really_inline simdjson_result(T &&value) noexcept;
   /**
-   * Create a new successful result.
+   * @private Create a new successful result.
    */
   really_inline simdjson_result(error_code error_code) noexcept;
   /**
-   * Create a new result with both things (use if you don't want to branch when creating the result).
+   * @private Create a new result with both things (use if you don't want to branch when creating the result).
    */
   really_inline simdjson_result(T &&value, error_code error) noexcept;
 
@@ -220,11 +220,12 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 /**
  * @deprecated This is an alias and will be removed, use error_code instead
  */
-using ErrorValues = error_code;
+using ErrorValues [[deprecated("This is an alias and will be removed, use error_code instead")]] = error_code;
 
 /**
  * @deprecated Error codes should be stored and returned as `error_code`, use `error_message()` instead.
  */
+[[deprecated("Error codes should be stored and returned as `error_code`, use `error_message()` instead.")]]
 inline const std::string &error_message(int error) noexcept;
 
 } // namespace simdjson

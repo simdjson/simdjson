@@ -90,6 +90,15 @@ inline simdjson_result<dom::element>::operator dom::object() const noexcept(fals
   return get<dom::object>();
 }
 
+inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.begin();
+}
+inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.end();
+}
+
 #endif
 
 //
@@ -184,7 +193,7 @@ inline element document::root() const noexcept {
 #define RETURN_ERROR(CODE, MESSAGE) return REPORT_ERROR((CODE), (MESSAGE));
 
 WARN_UNUSED
-inline error_code document::set_capacity(size_t capacity) noexcept {
+inline error_code document::allocate(size_t capacity) noexcept {
   if (capacity == 0) {
     string_buf.reset();
     tape.reset();
@@ -301,11 +310,11 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 //
 // parser inline implementation
 //
-really_inline parser::parser(size_t max_capacity, size_t max_depth) noexcept
-  : _max_capacity{max_capacity}, _max_depth{max_depth}, loaded_bytes(nullptr, &aligned_free_char) {}
+really_inline parser::parser(size_t max_capacity) noexcept
+  : _max_capacity{max_capacity}, loaded_bytes(nullptr, &aligned_free_char) {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
-inline std::string parser::get_error_message() const noexcept { return error_message(int(error)); }
+inline std::string parser::get_error_message() const noexcept { return error_message(error); }
 inline bool parser::print_json(std::ostream &os) const noexcept {
   if (!valid) { return false; }
   os << doc.root();
@@ -422,98 +431,97 @@ really_inline size_t parser::max_depth() const noexcept {
 }
 
 WARN_UNUSED
-inline error_code parser::set_capacity(size_t capacity) noexcept {
-  if (_capacity == capacity) {
-    return SUCCESS;
+inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
+  //
+  // If capacity has changed, reallocate capacity-based buffers
+  //
+  if (_capacity != capacity) {
+    // Set capacity to 0 until we finish, in case there's an error
+    _capacity = 0;
+
+    //
+    // Reallocate the document
+    //
+    error_code err = doc.allocate(capacity);
+    if (err) { return err; }
+
+    //
+    // Don't allocate 0 bytes, just return.
+    //
+    if (capacity == 0) {
+      structural_indexes.reset();
+      return SUCCESS;
+    }
+
+    //
+    // Initialize stage 1 output
+    //
+    uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+    structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
+    if (!structural_indexes) {
+      return MEMALLOC;
+    }
+
+    _capacity = capacity;
+
+  //
+  // If capacity hasn't changed, but the document was taken, allocate a new document.
+  //
+  } else if (!doc.tape) {
+    error_code err = doc.allocate(capacity);
+    if (err) { return err; }
   }
 
-  // Set capacity to 0 until we finish, in case there's an error
-  _capacity = 0;
+  //
+  // If max_depth has changed, reallocate those buffers
+  //
+  if (max_depth != _max_depth) {
+    _max_depth = 0;
 
-  //
-  // Reallocate the document
-  //
-  error_code err = doc.set_capacity(capacity);
-  if (err) { return err; }
+    if (max_depth == 0) {
+      ret_address.reset();
+      containing_scope_offset.reset();
+      return SUCCESS;
+    }
 
-  //
-  // Don't allocate 0 bytes, just return.
-  //
-  if (capacity == 0) {
-    structural_indexes.reset();
-    return SUCCESS;
+    //
+    // Initialize stage 2 state
+    //
+    containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+  #ifdef SIMDJSON_USE_COMPUTED_GOTO
+    ret_address.reset(new (std::nothrow) void *[max_depth]);
+  #else
+    ret_address.reset(new (std::nothrow) char[max_depth]);
+  #endif
+
+    if (!ret_address || !containing_scope_offset) {
+      // Could not allocate memory
+      return MEMALLOC;
+    }
+
+    _max_depth = max_depth;
   }
-
-  //
-  // Initialize stage 1 output
-  //
-  uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-  if (!structural_indexes) {
-    return MEMALLOC;
-  }
-
-  _capacity = capacity;
   return SUCCESS;
+}
+
+WARN_UNUSED
+inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
+  return !allocate(capacity, max_depth);
 }
 
 really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   _max_capacity = max_capacity;
 }
 
-WARN_UNUSED inline error_code parser::set_max_depth(size_t max_depth) noexcept {
-  if (max_depth == _max_depth && ret_address) { return SUCCESS; }
-
-  _max_depth = 0;
-
-  if (max_depth == 0) {
-    ret_address.reset();
-    containing_scope_offset.reset();
-    return SUCCESS;
-  }
-
-  //
-  // Initialize stage 2 state
-  //
-  containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  ret_address.reset(new (std::nothrow) void *[max_depth]);
-#else
-  ret_address.reset(new (std::nothrow) char[max_depth]);
-#endif
-
-  if (!ret_address || !containing_scope_offset) {
-    // Could not allocate memory
-    return MEMALLOC;
-  }
-
-  _max_depth = max_depth;
-  return SUCCESS;
-}
-
-WARN_UNUSED inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
-  return !set_capacity(capacity) && !set_max_depth(max_depth);
-}
-
 inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   // If we don't have enough capacity, (try to) automatically bump it.
-  if (unlikely(desired_capacity > capacity())) {
+  // If the document was taken, reallocate that too.
+  // Both in one if statement to minimize unlikely branching.
+  if (unlikely(desired_capacity > capacity() || !doc.tape)) {
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
-
-    error = set_capacity(desired_capacity);
-    if (error) { return error; }
-  }
-
-  // Allocate depth-based buffers if they aren't already.
-  error = set_max_depth(max_depth());
-  if (error) { return error; }
-
-  // If the last doc was taken, we need to allocate a new one
-  if (!doc.tape) {
-    error = doc.set_capacity(desired_capacity);
-    if (error) { return error; }
+    return allocate(desired_capacity, _max_depth > 0 ? _max_depth : DEFAULT_MAX_DEPTH);
   }
 
   return SUCCESS;
@@ -829,6 +837,13 @@ inline element::operator int64_t() const noexcept(false) { return get<int64_t>()
 inline element::operator double() const noexcept(false) { return get<double>(); }
 inline element::operator array() const noexcept(false) { return get<array>(); }
 inline element::operator object() const noexcept(false) { return get<object>(); }
+
+inline dom::array::iterator dom::element::begin() const noexcept(false) {
+  return get<array>().begin();
+}
+inline dom::array::iterator dom::element::end() const noexcept(false) {
+  return get<array>().end();
+}
 
 #endif
 

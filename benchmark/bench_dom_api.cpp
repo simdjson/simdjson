@@ -256,7 +256,6 @@ static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
   padded_string json = get_corpus(JSON_TEST_PATH);
   dom::parser parser;
-  if (!parser.allocate_capacity(json.length())) { cerr << "allocation failed" << endl; return; }
   if (int error = json_parse(json, parser); error != SUCCESS) { cerr << error_message(error) << endl; return; }
   for (auto _ : state) {
     std::stringstream s;

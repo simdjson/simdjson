@@ -107,8 +107,9 @@ WARN_UNUSED inline dom::parser build_parsed_json(const padded_string &s) noexcep
   return parser;
 }
 
-// We do not want to allow implicit conversion from C string to std::string.
+/** @private We do not want to allow implicit conversion from C string to std::string. */
 int json_parse(const char *buf, dom::parser &parser) noexcept = delete;
+/** @private We do not want to allow implicit conversion from C string to std::string. */
 dom::parser build_parsed_json(const char *buf) noexcept = delete;
 
 } // namespace simdjson

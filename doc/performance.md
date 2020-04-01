@@ -77,7 +77,9 @@ without bound:
 
   ```c++
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
-  parser.set_capacity(1024*1024); // This allocates enough capacity to handle documents <= 1MB
+  simdjson::error_code allocate_error = parser.allocate(1024*1024); // This allocates enough capacity to handle documents <= 1MB
+  if (allocate_error) { cerr << allocate_error << endl; exit(1); }
+
   for (web_request request : listen()) {
     auto [doc, error] = parser.parse(request.body);
     // If the document was above our limit, emit 413 = payload too large
@@ -105,7 +107,13 @@ echo always > /sys/kernel/mm/transparent_hugepage/enabled
 In general, when running benchmarks over large files, we recommend that you report performance
 numbers with and without huge pages if possible. Furthermore, you should amortize the parsing (e.g.,
 by parsing several large files) to distinguish the time spent parsing from the time spent allocating
-memory.
+memory. If you are using the `parse` benchmarking tool provided with the simdjson library, you can
+use the `-H` flag to omit the memory allocation cost from the benchmark results.
+
+```
+./parse largefile # includes memory allocation cost
+./parse -H largefile # without memory allocation
+```
 
 Computed GOTOs
 --------------

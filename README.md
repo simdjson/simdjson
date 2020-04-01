@@ -36,14 +36,15 @@ Table of Contents
 Quick Start
 -----------
 
+          
 The simdjson library is easily consumable with a single .h and .cpp file.
 
-0. Prerequisites: `g++` or `clang++`.
+0. Prerequisites: `g++` (version 7 or better) or `clang++` (version 6 or better), and a 64-bit system.
 1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
    ```
    wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
    ```
-2. Create `parser.cpp`:
+2. Create `quickstart.cpp`:
 
    ```c++
    #include "simdjson.h"
@@ -53,8 +54,8 @@ The simdjson library is easily consumable with a single .h and .cpp file.
      std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
    }
    ```
-3. `c++ -o parser parser.cpp simdjson.cpp -std=c++17`
-4. `./parser`
+3. `c++ -o quickstart quickstart.cpp simdjson.cpp -std=c++17`
+4. `./quickstart`
    ```
    100 results.
    ```
@@ -68,13 +69,15 @@ Usage documentation is available:
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
+* [API](https://simdjson.org/api/0.3.0/annotated.html) contains the automatically generated API documentation.
 
 Performance results
 -------------------
 
 The simdjson library uses three-quarters less instructions than state-of-the-art parser RapidJSON and
 fifty percent less than sajson. To our knowledge, simdjson is the first fully-validating JSON parser
-to run at gigabytes per second on commodity processors.
+to run at gigabytes per second on commodity processors. It can parse millions of JSON documents
+per second on a single core.
 
 The following figure represents parsing speed in GB/s for parsing various files
 on an Intel Skylake processor (3.4 GHz) using the GNU GCC 9 compiler (with the -O3 flag).
@@ -111,7 +114,7 @@ On a Skylake processor, the parsing speeds (in GB/s) of various processors on th
 | JSON for Modern C++ (nlohmann/json)   | 0.11 |
 
 
-The simdjson library offer high speed whether it processes tiny files (e.g., 300 bytes)
+The simdjson library offers high speed whether it processes tiny files (e.g., 300 bytes)
 or larger files (e.g., 3MB). The following plot presents parsing
 speed for [synthetic files over various sizes generated with a script](https://github.com/simdjson/simdjson_experiments_vldb2019/blob/master/experiments/growing/gen.py) on a 3.4 GHz Skylake processor (GNU GCC 9, -O3).
 <img src="doc/growing.png" width="90%">
@@ -135,7 +138,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 
 - [ZippyJSON](https://github.com/michaeleisel/zippyjson): Swift bindings for the simdjson project.
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
-- [simdjson-rs](https://github.com/Licenser/simdjson-rs): Rust port.
+- [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
@@ -152,8 +155,8 @@ instructions, reducing branch misprediction, and reducing data dependency to tak
 CPU's multiple execution cores.
 
 Some people [enjoy reading our paper](https://arxiv.org/abs/1902.08318): A description of the design
-and implementation of simdjson is in our research article in VLDB journal: Geoff Langdale, Daniel
-Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019appear)
+and implementation of simdjson is in our research article: Geoff Langdale, Daniel
+Lemire, [Parsing Gigabytes of JSON per Second](https://arxiv.org/abs/1902.08318), VLDB Journal 28 (6), 2019.
 
 We also have an informal [blog post providing some background and context](https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/).
 

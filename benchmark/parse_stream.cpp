@@ -36,7 +36,7 @@ int main (int argc, char *argv[]){
         for (auto i = 0; i < 3; i++) {
             //Actual test
             simdjson::dom::parser parser;
-            simdjson::error_code alloc_error = parser.set_capacity(p.size());
+            simdjson::error_code alloc_error = parser.allocate(p.size());
             if (alloc_error) {
                 std::cerr << alloc_error << std::endl;
                 return EXIT_FAILURE;
