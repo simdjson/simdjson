@@ -58,7 +58,7 @@ commands:
       - run: cmake $CMAKE_TEST_FLAGS  -DCMAKE_INSTALL_PREFIX:PATH=destination
       - run: make all install
       - run: make test
-      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json # we not only want cmake to build and run tests, but we want also a succesful installation from which we can build, link and run programs
+      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json # we not only want cmake to build and run tests, but we want also a succesful installation from which we can build, link and run programs
 
 jobs:
 
