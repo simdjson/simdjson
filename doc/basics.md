@@ -8,8 +8,9 @@ An overview of what you need to know to use simdjson, with examples.
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [JSON Pointer](#json-pointer)
 * [Error Handling](#error-handling)
-    * [Error Handling Example](#error-handling-example)
-    * [Exceptions](#exceptions)
+  * [Error Handling Example](#error-handling-example)
+  * [Exceptions](#exceptions)
+* [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
 
@@ -67,6 +68,8 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   first element.
   > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
   > O(1) operation, which it is not presently in simdjson.
+* **Checking an Element Type:** You can check an element's type with `element.type()`. It
+  returns an `element_type`.
 
 Here are some examples of all of the above:
 
@@ -152,9 +155,9 @@ This is how the example in "Using the Parsed JSON" could be written using only e
 
 ```c++
 auto cars_json = R"( [
-{ "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-{ "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-{ "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
 auto [cars, error] = parser.parse(cars_json).get<dom::array>();
@@ -209,6 +212,60 @@ dom::element doc = parser.parse(json); // Throws an exception if there was an er
 
 When used this way, a `simdjson_error` exception will be thrown if an error occurs, preventing the
 program from continuing if there was an error.
+
+Tree Walking and JSON Element Types
+-----------------------------------
+
+Sometimes you don't necessarily have a document with a known type, and are trying to generically
+inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For
+example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON
+(* ignoring nuances like trailing commas and escaping strings, for brevity's sake):
+
+```c++
+void print_json(dom::element element) {
+  switch (element.type()) {
+    case dom::element_type::ARRAY:
+      cout << "[";
+      for (dom::element child : dom::array(element)) {
+        print_json(child);
+        cout << ",";
+      }
+      cout << "]";
+      break;
+    case dom::element_type::OBJECT:
+      cout << "{";
+      for (dom::key_value_pair field : dom::object(element)) {
+        cout << "\"" << field.key << "\": ";
+        print_json(field.value);
+      }
+      cout << "}";
+      break;
+    case dom::element_type::INT64:
+      cout << int64_t(element) << endl;
+      break;
+    case dom::element_type::UINT64:
+      cout << uint64_t(element) << endl;
+      break;
+    case dom::element_type::DOUBLE:
+      cout << double(element) << endl;
+      break;
+    case dom::element_type::STRING:
+      cout << std::string_view(element) << endl;
+      break;
+    case dom::element_type::BOOL:
+      cout << bool(element) << endl;
+      break;
+    case dom::element_type::NULL_VALUE:
+      cout << "null" << endl;
+      break;
+  }
+}
+
+void basics_treewalk_1() {
+  dom::parser parser;
+  print_json(parser.load("twitter.json"));
+}
+```
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------

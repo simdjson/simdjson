@@ -23,6 +23,11 @@
 #define NDJSON_TEST_PATH "jsonexamples/amazon_cellphones.ndjson"
 #endif
 
+#define ASSERT_EQUAL(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
+#define ASSERT_TRUE(ACTUAL) ASSERT_EQUAL(ACTUAL, true)
+#define ASSERT_FALSE(ACTUAL) ASSERT_EQUAL(ACTUAL, false)
+#define ASSERT_SUCCESS(ERROR) if (ERROR) { std::cerr << (ERROR) << std::endl; return false; }
+
 namespace number_tests {
 
   // ulp distance
@@ -1104,6 +1109,488 @@ namespace dom_api_tests {
   }
 }
 
+namespace type_tests {
+  using namespace simdjson;
+  using namespace std;
+
+  const padded_string ALL_TYPES_JSON = R"(
+    {
+      "array": [],
+
+      "object": {},
+
+      "string": "foo",
+
+      "0": 0,
+      "1": 1,
+      "-1": -1,
+      "9223372036854775807": 9223372036854775807,
+      "-9223372036854775808": -9223372036854775808,
+
+      "9223372036854775808": 9223372036854775808,
+      "18446744073709551615": 18446744073709551615,
+
+      "0.0": 0.0,
+      "0.1": 0.1,
+      "1e0": 1e0,
+      "1e100": 1e100,
+
+      "true": true,
+      "false": false,
+
+      "null": null
+    }
+  )"_padded;
+
+  bool test_array() {
+    std::cout << "Running " << __func__ << std::endl;
+
+    const auto key = "array";
+    const auto expected_type = dom::element_type::ARRAY;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_TRUE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_FALSE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_TRUE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_FALSE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    dom::array value;
+    result.get<dom::array>().tie(value, error);
+    ASSERT_SUCCESS(error);
+
+    return true;
+  }
+
+  bool test_object() {
+    std::cout << "Running " << __func__ << std::endl;
+
+    const auto key = "object";
+    const auto expected_type = dom::element_type::OBJECT;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_TRUE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_FALSE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_TRUE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_FALSE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    dom::object value;
+    result.get<dom::object>().tie(value, error);
+    ASSERT_SUCCESS(error);
+
+    return true;
+  }
+
+  bool test_string() {
+    std::cout << "Running " << __func__ << std::endl;
+
+    const auto key = "string";
+    const auto expected_type = dom::element_type::STRING;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_TRUE(result.is<std::string_view>());
+    ASSERT_TRUE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_FALSE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_TRUE(element.is<std::string_view>());
+    ASSERT_TRUE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_FALSE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    std::string_view value;
+    result.get<std::string_view>().tie(value, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(value, string_view("foo"));
+
+    const char *value2;
+    result.get<const char *>().tie(value2, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(string_view(value2), string_view("foo"));
+
+    return true;
+  }
+
+  bool test_int64(const char *key, int64_t expected_value) {
+    std::cout << "Running " << __func__ << "(" << key << ")" << std::endl;
+
+    const auto expected_type = dom::element_type::INT64;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_TRUE(result.is<int64_t>());
+    if (expected_value < 0) {
+      ASSERT_FALSE(result.is<uint64_t>());
+    } else {
+      ASSERT_TRUE(result.is<uint64_t>());
+    }
+    ASSERT_TRUE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_TRUE(element.is<int64_t>());
+    if (expected_value < 0) {
+      ASSERT_FALSE(element.is<uint64_t>());
+    } else {
+      ASSERT_TRUE(element.is<uint64_t>());
+    }
+    ASSERT_TRUE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    int64_t value;
+    result.get<int64_t>().tie(value, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(value, expected_value);
+
+    return true;
+  }
+
+  bool test_uint64(const char *key, uint64_t expected_value) {
+    std::cout << "Running " << __func__ << "(" << key << ")" << std::endl;
+
+    const auto expected_type = dom::element_type::UINT64;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_TRUE(result.is<uint64_t>());
+    ASSERT_TRUE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_TRUE(element.is<uint64_t>());
+    ASSERT_TRUE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    uint64_t value;
+    result.get<uint64_t>().tie(value, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(value, expected_value);
+
+    return true;
+  }
+
+  bool test_double(const char *key, double expected_value) {
+    std::cout << "Running " << __func__ << "(" << key << ")" << std::endl;
+
+    const auto expected_type = dom::element_type::DOUBLE;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_TRUE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_TRUE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    double value;
+    result.get<double>().tie(value, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(value, expected_value);
+
+    return true;
+  }
+
+  bool test_bool(const char *key, bool expected_value) {
+    std::cout << "Running " << __func__ << "(" << key << ")" << std::endl;
+
+    const auto expected_type = dom::element_type::BOOL;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_FALSE(result.is<double>());
+    ASSERT_TRUE(result.is<bool>());
+    ASSERT_FALSE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_FALSE(element.is<double>());
+    ASSERT_TRUE(element.is<bool>());
+    ASSERT_FALSE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+    bool value;
+    result.get<bool>().tie(value, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(value, expected_value);
+
+    return true;
+  }
+
+  bool test_null() {
+    std::cout << "Running " << __func__ << std::endl;
+
+    const auto expected_type = dom::element_type::NULL_VALUE;
+
+    dom::parser parser;
+    simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)["null"];
+    ASSERT_SUCCESS(result.error());
+
+    // Test simdjson_result<element>.is<T>() (error chain)
+    ASSERT_FALSE(result.is<dom::array>());
+    ASSERT_FALSE(result.is<dom::object>());
+    ASSERT_FALSE(result.is<std::string_view>());
+    ASSERT_FALSE(result.is<const char *>());
+    ASSERT_FALSE(result.is<int64_t>());
+    ASSERT_FALSE(result.is<uint64_t>());
+    ASSERT_FALSE(result.is<double>());
+    ASSERT_FALSE(result.is<bool>());
+    ASSERT_TRUE(result.is_null());
+
+    // Test simdjson_result<element>.type() (error chain)
+    simdjson::error_code error;
+    dom::element_type type;
+    result.type().tie(type, error);
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(type, expected_type);
+
+    // Test element.is<T>()
+    dom::element element = result.first;
+    ASSERT_FALSE(element.is<dom::array>());
+    ASSERT_FALSE(element.is<dom::object>());
+    ASSERT_FALSE(element.is<std::string_view>());
+    ASSERT_FALSE(element.is<const char *>());
+    ASSERT_FALSE(element.is<int64_t>());
+    ASSERT_FALSE(element.is<uint64_t>());
+    ASSERT_FALSE(element.is<double>());
+    ASSERT_FALSE(element.is<bool>());
+    ASSERT_TRUE(element.is_null());
+
+    // Test element.type()
+    ASSERT_EQUAL(element.type(), expected_type);
+
+    // Test element.get<T>()
+
+    return true;
+  }
+
+  bool run() {
+    return test_array() &&
+
+           test_object() &&
+
+           test_string() &&
+
+           test_int64("0", 0) &&
+           test_int64("1", 1) &&
+           test_int64("-1", -1) &&
+           test_int64("9223372036854775807", 9223372036854775807LL) &&
+           test_int64("-9223372036854775808", -1 - 9223372036854775807LL) &&
+
+           test_uint64("9223372036854775808", 9223372036854775808ULL) &&
+           test_uint64("18446744073709551615", 18446744073709551615ULL) &&
+
+           test_double("0.0", 0.0) &&
+           test_double("0.1", 0.1) &&
+           test_double("1e0", 1e0) &&
+           test_double("1e100", 1e100) &&
+
+           test_bool("true", true) &&
+           test_bool("false", false) &&
+
+           test_null() &&
+
+           true;
+  }
+
+}
+
 namespace format_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
@@ -1378,6 +1865,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Running basic tests." << std::endl;
   if (parse_api_tests::run() &&
       dom_api_tests::run() &&
+      type_tests::run() &&
       format_tests::run() &&
       document_tests::run() &&
       number_tests::run() &&

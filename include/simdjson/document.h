@@ -41,49 +41,64 @@ namespace simdjson::internal {
 using namespace simdjson::dom;
 
 constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
-enum class tape_type;
-class tape_ref;
-  /**
-    * The possible types in the tape. Internal only.
-    */
-  enum class tape_type {
-    ROOT = 'r',
-    START_ARRAY = '[',
-    START_OBJECT = '{',
-    END_ARRAY = ']',
-    END_OBJECT = '}',
-    STRING = '"',
-    INT64 = 'l',
-    UINT64 = 'u',
-    DOUBLE = 'd',
-    TRUE_VALUE = 't',
-    FALSE_VALUE = 'f',
-    NULL_VALUE = 'n'
-  };
 
-  /**
-  * A reference to an element on the tape. Internal only.
-  */
-  class tape_ref {
-  public:
-    really_inline tape_ref() noexcept;
-    really_inline tape_ref(const document *doc, size_t json_index) noexcept;
-    inline size_t after_element() const noexcept;
-    really_inline tape_type type() const noexcept;
-    really_inline uint64_t tape_value() const noexcept;
-    template<typename T>
-    really_inline T next_tape_value() const noexcept;
-    inline std::string_view get_string_view() const noexcept;
+/**
+ * The possible types in the tape. Internal only.
+ */
+enum class tape_type {
+  ROOT = 'r',
+  START_ARRAY = '[',
+  START_OBJECT = '{',
+  END_ARRAY = ']',
+  END_OBJECT = '}',
+  STRING = '"',
+  INT64 = 'l',
+  UINT64 = 'u',
+  DOUBLE = 'd',
+  TRUE_VALUE = 't',
+  FALSE_VALUE = 'f',
+  NULL_VALUE = 'n'
+};
 
-    /** The document this element references. */
-    const document *doc;
+/**
+ * A reference to an element on the tape. Internal only.
+ */
+class tape_ref {
+public:
+  really_inline tape_ref() noexcept;
+  really_inline tape_ref(const document *doc, size_t json_index) noexcept;
+  inline size_t after_element() const noexcept;
+  really_inline tape_type tape_ref_type() const noexcept;
+  really_inline uint64_t tape_value() const noexcept;
+  template<typename T>
+  really_inline T next_tape_value() const noexcept;
+  inline std::string_view get_string_view() const noexcept;
 
-    /** The index of this element on `doc.tape[]` */
-    size_t json_index;
-  };
+  /** The document this element references. */
+  const document *doc;
+
+  /** The index of this element on `doc.tape[]` */
+  size_t json_index;
+};
+
 } // namespace simdjson::internal
 
 namespace simdjson::dom {
+
+/**
+ * The actual concrete type of a JSON element
+ * This is the type it is most easily cast to with get<>.
+ */
+enum class element_type {
+  ARRAY,     ///< dom::array
+  OBJECT,    ///< dom::object
+  INT64,     ///< int64_t
+  UINT64,    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
+  DOUBLE,    ///< double: Any number with a "." or "e" that fits in double.
+  STRING,    ///< std::string_view
+  BOOL,      ///< bool
+  NULL_VALUE ///< null
+};
 
 /**
  * JSON array.
@@ -366,6 +381,9 @@ class element : protected internal::tape_ref {
 public:
   /** Create a new, invalid element. */
   really_inline element() noexcept;
+
+  /** The type of this element. */
+  really_inline element_type type() const noexcept;
 
   /** Whether this element is a json `null`. */
   really_inline bool is_null() const noexcept;
@@ -1121,6 +1139,36 @@ inline std::ostream& operator<<(std::ostream& out, const object &value) { return
  */
 inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify(value); }
 
+/**
+ * Print element type to an output stream.
+ *
+ * @param out The output stream.
+ * @param value The value to print.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, element_type type) {
+  switch (type) {
+    case element_type::ARRAY:
+      return out << "array";
+    case element_type::OBJECT:
+      return out << "object";
+    case element_type::INT64:
+      return out << "int64_t";
+    case element_type::UINT64:
+      return out << "uint64_t";
+    case element_type::DOUBLE:
+      return out << "double";
+    case element_type::STRING:
+      return out << "string";
+    case element_type::BOOL:
+      return out << "bool";
+    case element_type::NULL_VALUE:
+      return out << "null";
+    default:
+      abort();
+  }
+}
+
 } // namespace dom
 
 #if SIMDJSON_EXCEPTIONS
@@ -1172,6 +1220,7 @@ public:
   really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
+  inline simdjson_result<dom::element_type> type() const noexcept;
   inline simdjson_result<bool> is_null() const noexcept;
   template<typename T>
   inline simdjson_result<bool> is() const noexcept;

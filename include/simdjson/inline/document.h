@@ -23,6 +23,10 @@ really_inline simdjson_result<dom::element>::simdjson_result(dom::element &&valu
     : internal::simdjson_result_base<dom::element>(std::forward<dom::element>(value)) {}
 really_inline simdjson_result<dom::element>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::element>(error) {}
+inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() const noexcept {
+  if (error()) { return error(); }
+  return first.type();
+}
 inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
   if (error()) { return error(); }
   return first.is_null();
@@ -715,13 +719,39 @@ inline key_value_pair::key_value_pair(const std::string_view &_key, element _val
 really_inline element::element() noexcept : internal::tape_ref() {}
 really_inline element::element(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 
+inline element_type element::type() const noexcept {
+  switch (tape_ref_type()) {
+    case internal::tape_type::START_ARRAY:
+      return element_type::ARRAY;
+    case internal::tape_type::START_OBJECT:
+      return element_type::OBJECT;
+    case internal::tape_type::INT64:
+      return element_type::INT64;
+    case internal::tape_type::UINT64:
+      return element_type::UINT64;
+    case internal::tape_type::DOUBLE:
+      return element_type::DOUBLE;
+    case internal::tape_type::STRING:
+      return element_type::STRING;
+    case internal::tape_type::TRUE_VALUE:
+    case internal::tape_type::FALSE_VALUE:
+      return element_type::BOOL;
+    case internal::tape_type::NULL_VALUE:
+      return element_type::NULL_VALUE;
+    case internal::tape_type::ROOT:
+    case internal::tape_type::END_ARRAY:
+    case internal::tape_type::END_OBJECT:
+    default:
+      abort();
+  }
+}
 really_inline bool element::is_null() const noexcept {
-  return type() == internal::tape_type::NULL_VALUE;
+  return tape_ref_type() == internal::tape_type::NULL_VALUE;
 }
 
 template<>
 inline simdjson_result<bool> element::get<bool>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::TRUE_VALUE:
       return true;
     case internal::tape_type::FALSE_VALUE:
@@ -732,7 +762,7 @@ inline simdjson_result<bool> element::get<bool>() const noexcept {
 }
 template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::STRING: {
       size_t string_buf_index = tape_value();
       return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
@@ -743,7 +773,7 @@ inline simdjson_result<const char *> element::get<const char *>() const noexcept
 }
 template<>
 inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::STRING:
       return get_string_view();
     default:
@@ -752,7 +782,7 @@ inline simdjson_result<std::string_view> element::get<std::string_view>() const 
 }
 template<>
 inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::UINT64:
       return next_tape_value<uint64_t>();
     case internal::tape_type::INT64: {
@@ -768,11 +798,11 @@ inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
 }
 template<>
 inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::UINT64: {
       uint64_t result = next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
-      if (result > (std::numeric_limits<uint64_t>::max)()) {
+      if (result > (std::numeric_limits<int64_t>::max)()) {
         return NUMBER_OUT_OF_RANGE;
       }
       return static_cast<int64_t>(result);
@@ -785,7 +815,7 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
 }
 template<>
 inline simdjson_result<double> element::get<double>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::UINT64:
       return next_tape_value<uint64_t>();
     case internal::tape_type::INT64: {
@@ -804,7 +834,7 @@ inline simdjson_result<double> element::get<double>() const noexcept {
 }
 template<>
 inline simdjson_result<array> element::get<array>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::START_ARRAY:
       return array(doc, json_index);
     default:
@@ -813,7 +843,7 @@ inline simdjson_result<array> element::get<array>() const noexcept {
 }
 template<>
 inline simdjson_result<object> element::get<object>() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(doc, json_index);
     default:
@@ -838,10 +868,10 @@ inline element::operator double() const noexcept(false) { return get<double>(); 
 inline element::operator array() const noexcept(false) { return get<array>(); }
 inline element::operator object() const noexcept(false) { return get<object>(); }
 
-inline dom::array::iterator dom::element::begin() const noexcept(false) {
+inline array::iterator element::begin() const noexcept(false) {
   return get<array>().begin();
 }
-inline dom::array::iterator dom::element::end() const noexcept(false) {
+inline array::iterator element::end() const noexcept(false) {
   return get<array>().end();
 }
 
@@ -854,7 +884,7 @@ inline simdjson_result<element> element::operator[](const char *key) const noexc
   return at_key(key);
 }
 inline simdjson_result<element> element::at(const std::string_view &json_pointer) const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(doc, json_index).at(json_pointer);
     case internal::tape_type::START_ARRAY:
@@ -905,7 +935,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       out << '"' << internal::escape_json_string(iter.get_string_view()) << "\":";
       iter.json_index++;
     }
-    switch (iter.type()) {
+    switch (iter.tape_ref_type()) {
 
     // Arrays
     case tape_type::START_ARRAY: {
@@ -923,7 +953,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       iter.json_index++;
 
       // Handle empty [] (we don't want to come back around and print commas)
-      if (iter.type() == tape_type::END_ARRAY) {
+      if (iter.tape_ref_type() == tape_type::END_ARRAY) {
         out << ']';
         depth--;
         break;
@@ -950,7 +980,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       iter.json_index++;
 
       // Handle empty {} (we don't want to come back around and print commas)
-      if (iter.type() == tape_type::END_OBJECT) {
+      if (iter.tape_ref_type() == tape_type::END_OBJECT) {
         out << '}';
         depth--;
         break;
@@ -997,8 +1027,8 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
     after_value = true;
 
     // Handle multiple ends in a row
-    while (depth != 0 && (iter.type() == tape_type::END_ARRAY || iter.type() == tape_type::END_OBJECT)) {
-      out << char(iter.type());
+    while (depth != 0 && (iter.tape_ref_type() == tape_type::END_ARRAY || iter.tape_ref_type() == tape_type::END_OBJECT)) {
+      out << char(iter.tape_ref_type());
       depth--;
       iter.json_index++;
     }
@@ -1070,7 +1100,7 @@ really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
 really_inline tape_ref::tape_ref(const document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
 inline size_t tape_ref::after_element() const noexcept {
-  switch (type()) {
+  switch (tape_ref_type()) {
     case tape_type::START_ARRAY:
     case tape_type::START_OBJECT:
       return tape_value();
@@ -1082,7 +1112,7 @@ inline size_t tape_ref::after_element() const noexcept {
       return json_index + 1;
   }
 }
-really_inline tape_type tape_ref::type() const noexcept {
+really_inline tape_type tape_ref::tape_ref_type() const noexcept {
   return static_cast<tape_type>(doc->tape[json_index] >> 56);
 }
 really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
