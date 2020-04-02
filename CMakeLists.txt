@@ -50,7 +50,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 find_package(CTargets)
 find_package(Options)
 
+# We used to have install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
+# alone.
+# However, this fails because we also need the root level simdjson.h file.
 install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
+install(FILES include/${SIMDJSON_LIB_NAME}.h DESTINATION include)
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
 add_definitions(-DSIMDJSON_TEST_DATA_DIR="${TEST_DATA_DIR}")

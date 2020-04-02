@@ -41,7 +41,7 @@ commands:
       - run: ARCHFLAGS=-march=haswell make test # this breaks runtime dispatch, but see https://github.com/lemire/simdjson/issues/444... this is a code robustness test
       - run: make clean
       - run: EXTRAFLAGS=-DSIMDJSON_NO_COMPUTED_GOTO=true make test # this should run tests with computed gotos disabled
-  make_test_strict:
+  make_test_strict: # this version fails when a warning is detected.
     steps:
       - checkout
       - run: EXTRAFLAGS=-Werror make
@@ -50,14 +50,24 @@ commands:
       - run: EXTRAFLAGS=-Werror make quicktests
       - run: make clean
   
-  cmake_test:
+  cmake_simple_test: # this version just builds and test
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake
       - checkout
       - run: cmake $CMAKE_TEST_FLAGS
-      - run: make
+      - run: make all
       - run: make test
+
+  cmake_test: # this version builds, install, test and then verifyi from the installation
+    steps:
+      - run: apt-get update -qq
+      - run: apt-get install -y cmake
+      - checkout
+      - run: cmake $CMAKE_TEST_FLAGS  -DCMAKE_INSTALL_PREFIX:PATH=destination
+      - run: make all install
+      - run: make test
+      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json # we not only want cmake to build and run tests, but we want also a succesful installation from which we can build, link and run programs
 
 jobs:
 
@@ -114,7 +124,7 @@ jobs:
     description: Build, run tests and check performance on GCC 7 and AVX 2 with a cmake sanitize build
     executor: gcc7
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_test ]
+    steps: [ cmake_simple_test ]
 
   gcc-sse:
     description: Build, run tests and check performance on GCC 7 and SSE 4.2
@@ -135,7 +145,7 @@ jobs:
     description: Build, run tests and check performance on GCC 7 and SSE 4.2 with a cmake sanitize build
     executor: gcc7
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_test ]
+    steps: [ cmake_simple_test ]
 
   clang-avx:
     description: Build, run tests and check performance on clang 6 and AVX 2
@@ -160,7 +170,7 @@ jobs:
     description: Build, run tests and check performance on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_test ]
+    steps: [ init_clang6, cmake_simple_test ]
 
   clang-sse:
     description: Build, run tests and check performance on Clang 6 and SSE 4.2
@@ -181,7 +191,7 @@ jobs:
     description: Build, run tests and check performance on Clang 6 and SSE 4.2 with a cmake sanitize build
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_test ]
+    steps: [ init_clang6, cmake_simple_test ]
 
 workflows:
   version: 2.1
