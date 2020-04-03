@@ -599,7 +599,7 @@ inline void array::iterator::operator++() noexcept {
 // object inline implementation
 //
 really_inline object::object() noexcept : internal::tape_ref() {}
-really_inline object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { };
+really_inline object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 inline object::iterator object::begin() const noexcept {
   return iterator(doc, json_index + 1);
 }
