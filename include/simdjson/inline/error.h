@@ -84,13 +84,13 @@ template<typename T>
 really_inline T& simdjson_result_base<T>::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return this->first;
-};
+}
 
 template<typename T>
 really_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<T>(this->first);
-};
+}
 
 template<typename T>
 really_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {

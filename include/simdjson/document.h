@@ -1107,7 +1107,7 @@ namespace dom {
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify(value); };
+inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify(value); }
 /**
  * Print JSON to an output stream.
  *
