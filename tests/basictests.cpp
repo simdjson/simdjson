@@ -10,6 +10,7 @@
 #include <string_view>
 #include <sstream>
 #include <utility>
+#include <ciso646> 
 #ifndef _MSC_VER
 #include <unistd.h>
 #endif
@@ -817,6 +818,12 @@ namespace dom_api_tests {
     if (doc["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
 
     UNUSED element val;
+#ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
+    std::tie(val,error) = doc["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    std::tie(std::ignore,error) = doc["d"];
+    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+#endif
     // tie(val, error) = doc["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
     doc["d"].tie(val, error);
     if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
