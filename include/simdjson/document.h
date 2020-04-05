@@ -1107,7 +1107,7 @@ namespace dom {
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify<element>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1117,7 +1117,7 @@ inline std::ostream& operator<<(std::ostream& out, const element &value) { retur
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const array &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const array &value) { return out << minify<array>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1127,7 +1127,7 @@ inline std::ostream& operator<<(std::ostream& out, const array &value) { return 
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const object &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const object &value) { return out << minify<object>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1137,7 +1137,7 @@ inline std::ostream& operator<<(std::ostream& out, const object &value) { return
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify<key_value_pair>(value); }
 
 /**
  * Print element type to an output stream.
@@ -1184,7 +1184,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) { return out << minify<simdjson_result<dom::element>>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1196,7 +1196,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::el
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) { return out << minify<simdjson_result<dom::array>>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1208,7 +1208,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify<simdjson_result<dom::object>>(value); }
 
 #endif
 

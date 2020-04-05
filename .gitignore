@@ -71,6 +71,9 @@ objs
 /distinctuseridcompetition
 /errortests
 /examples/quickstart/quickstart
+/examples/quickstart/quickstart11
+/examples/quickstart/quickstart14
+/examples/quickstart/quickstart17
 /examples/quickstart/simdjson.cpp
 /examples/quickstart/simdjson.h
 /examples/quickstart/twitter.json
@@ -104,6 +107,7 @@ objs
 /pointercheck
 /readme_examples
 /readme_examples_noexceptions
+/staticchecks
 /statisticalmodel
 /stringparsingcheck
 /submodules
@@ -121,6 +125,7 @@ objs
 /tests/parse_many_test
 /tests/readme_examples
 /tests/readme_examples_noexceptions
+/tests/staticchecks
 /tools/json2json
 /tools/jsonstats
 /tools/minify

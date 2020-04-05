@@ -15,6 +15,7 @@ set(SIMDJSON_INCLUDE
     ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h
+    ${SIMDJSON_INCLUDE_DIR}/simdjson/nonstd/string_view.hpp
     ${SIMDJSON_INCLUDE_DIR}/simdjson/padded_string.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson.h
     ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson_iterator.h
