@@ -1,5 +1,5 @@
 if(MSVC)
-  target_include_directories(${SIMDJSON_LIB_NAME}
+  target_include_directories(simdjson
     INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/windows>
   )
 endif()
@@ -24,7 +24,7 @@ target_compile_definitions(errortests PRIVATE JSON_TEST_PATH="${PROJECT_SOURCE_D
 
 ## This causes problems
 # add_executable(singleheader ./singleheadertest.cpp ${PROJECT_SOURCE_DIR}/singleheader/simdjson.cpp)
-# target_link_libraries(singleheader ${SIMDJSON_LIB_NAME})
+# target_link_libraries(singleheader simdjson)
 # add_test(singleheader singleheader)
 
 if(MSVC)

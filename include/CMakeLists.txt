@@ -1,25 +1,2 @@
-set(SIMDJSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
-set(SIMDJSON_INCLUDE
-    ${SIMDJSON_INCLUDE_DIR}/simdjson.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/common_defs.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/compiler_check.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/document_stream.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/document.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/error.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/implementation.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document_stream.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/document.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/error.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/padded_string.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/inline/parsedjson_iterator.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/internal/jsonformatutils.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonioutil.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/jsonparser.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/nonstd/string_view.hpp
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/padded_string.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/parsedjson_iterator.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/portability.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson_version.h
-    ${SIMDJSON_INCLUDE_DIR}/simdjson/simdjson.h
-)
+install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.h)
+install(FILES simdjson.h DESTINATION include)

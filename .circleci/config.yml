@@ -59,7 +59,7 @@ commands:
       - run: make all
       - run: make test
 
-  cmake_test: # this version builds, install, test and then verifyi from the installation
+  cmake_test: # this version builds, install, test and then verify from the installation
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake

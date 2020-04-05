@@ -24,7 +24,6 @@ set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 3)
 set(PROJECT_VERSION_PATCH 1)
@@ -50,21 +49,26 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 find_package(CTargets)
 find_package(Options)
 
-# We used to have install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
-# alone.
-# However, this fails because we also need the root level simdjson.h file.
-install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
-install(FILES include/${SIMDJSON_LIB_NAME}.h DESTINATION include)
+#
+# Create the top level simdjson library (must be done at this level to use both src/ and include/
+# directories)
+#
+add_subdirectory(include)
+add_subdirectory(src)
+
+#
+# Compile tools / tests / benchmarks
+#
 set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
 add_definitions(-DSIMDJSON_TEST_DATA_DIR="${TEST_DATA_DIR}")
 add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${TEST_DATA_DIR}")
 enable_testing()
-include(include/CMakeLists.txt)
-add_subdirectory(src)
+
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
+
 
 if (SIMDJSON_GOOGLE_BENCHMARKS)
   if(NOT EXISTS dependencies/benchmark/CMakeLists.txt)

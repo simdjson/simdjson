@@ -1,9 +1,4 @@
-target_include_directories(${SIMDJSON_LIB_NAME}
-  INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/benchmark>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/benchmark/linux>
-)
-
+include_directories( . linux )
 add_cpp_benchmark(parse)
 add_cpp_benchmark(statisticalmodel)
 add_cpp_benchmark(parse_stream)
