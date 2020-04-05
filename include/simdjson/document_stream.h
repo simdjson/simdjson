@@ -14,6 +14,8 @@ namespace simdjson::dom {
  */
 class document_stream {
 public:
+  /** Move one document_stream to another. */
+  really_inline document_stream(document_stream && other) noexcept = default;
   really_inline ~document_stream() noexcept;
 
   /**
