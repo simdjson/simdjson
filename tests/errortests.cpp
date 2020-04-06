@@ -14,8 +14,8 @@
 using namespace simdjson;
 using namespace std;
 
-#ifndef JSON_TEST_PATH
-#define JSON_TEST_PATH "jsonexamples/twitter.json"
+#ifndef SIMDJSON_TWITTER_JSON_PATH
+#define SIMDJSON_TWITTER_JSON_PATH "jsonexamples/twitter.json"
 #endif
 
 #define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
@@ -27,14 +27,14 @@ namespace parser_load {
   bool parser_load_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
-    auto [doc, error] = parser.load(JSON_TEST_PATH);
+    auto [doc, error] = parser.load(SIMDJSON_TWITTER_JSON_PATH);
     ASSERT_ERROR(error, CAPACITY);
     TEST_SUCCEED();
   }
   bool parser_load_many_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
-    for (auto [doc, error] : parser.load_many(JSON_TEST_PATH)) {
+    for (auto [doc, error] : parser.load_many(SIMDJSON_TWITTER_JSON_PATH)) {
       ASSERT_ERROR(error, CAPACITY);
       TEST_SUCCEED();
     }

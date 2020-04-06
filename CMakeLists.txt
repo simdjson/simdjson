@@ -46,7 +46,6 @@ option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
-find_package(CTargets)
 find_package(Options)
 
 #
@@ -63,12 +62,14 @@ set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
 add_definitions(-DSIMDJSON_TEST_DATA_DIR="${TEST_DATA_DIR}")
 add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${TEST_DATA_DIR}")
+add_definitions(-DJSON_TEST_PATH="${BENCHMARK_DATA_DIR}/twitter.json")
+add_definitions(-DSIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/amazon_cellphones.ndjson")
+
 enable_testing()
 
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
-
 
 if (SIMDJSON_GOOGLE_BENCHMARKS)
   if(NOT EXISTS dependencies/benchmark/CMakeLists.txt)

@@ -1,3 +1,4 @@
-add_cpp_tool(json2json)
-add_cpp_tool(jsonstats)
-add_cpp_tool(minify)
+link_libraries(simdjson)
+add_executable(json2json json2json.cpp)
+add_executable(jsonstats jsonstats.cpp)
+add_executable(minify minify.cpp)

@@ -5,7 +5,7 @@
 using namespace simdjson;
 
 int main() {
-  const char *filename = JSON_TEST_PATH;
+  const char *filename = SIMDJSON_TWITTER_JSON_PATH;
   padded_string p = get_corpus(filename);
   dom::parser parser;
   auto [doc, error] = parser.parse(p);
