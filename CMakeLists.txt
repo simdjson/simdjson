@@ -65,22 +65,10 @@ add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsone
 
 enable_testing()
 
+add_subdirectory(dependencies)
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)
-
-if (SIMDJSON_GOOGLE_BENCHMARKS)
-  if(NOT EXISTS dependencies/benchmark/CMakeLists.txt)
-    # message(STATUS "Unable to find dependencies/benchmark/CMakeLists.txt")
-    execute_process(COMMAND git submodule update --init -- dependencies/benchmark
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-  endif()
-  option(BENCHMARK_ENABLE_TESTING OFF)
-  set(BENCHMARK_ENABLE_TESTING OFF)
-  option(BENCHMARK_ENABLE_INSTALL OFF)
-  set(BENCHMARK_ENABLE_INSTALL OFF)
-  add_subdirectory(dependencies/benchmark)
-endif()
 
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
 option(ENABLE_FUZZING "enable building the fuzzers" ON)
