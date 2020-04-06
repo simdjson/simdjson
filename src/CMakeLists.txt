@@ -27,6 +27,11 @@ if(SIMDJSON_ENABLE_THREADS)
   target_link_libraries(simdjson PRIVATE Threads::Threads)
 endif()
 
+# For targets that want to include the source directly
+add_library(simdjson-source INTERFACE)
+target_include_directories(simdjson-source INTERFACE .)
+target_include_directories(simdjson-source INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+
 # Installation
 
 install(TARGETS simdjson

@@ -15,6 +15,17 @@ function(add_compile_fail_test TEST_NAME)
   set_tests_properties(${TEST_NAME} PROPERTIES WILL_FAIL TRUE)
 endfunction(add_compile_fail_test)
 
+#
+# These test explicitly do #include "simdjson.cpp"
+#
+add_cpp_test(numberparsingcheck numberparsingcheck.cpp)
+target_link_libraries(numberparsingcheck simdjson-source)
+add_cpp_test(stringparsingcheck stringparsingcheck.cpp)
+target_link_libraries(stringparsingcheck simdjson-source)
+
+#
+# All remaining tests link with simdjson proper
+#
 link_libraries(simdjson)
 
 # add_executable(allparserscheckfile allparserscheckfile.cpp)
@@ -22,10 +33,8 @@ add_cpp_test(basictests basictests.cpp)
 add_cpp_test(errortests errortests.cpp)
 add_cpp_test(integer_tests integer_tests.cpp)
 add_cpp_test(jsoncheck jsoncheck.cpp)
-# add_executable(numberparsingcheck numberparsingcheck.cpp)
 add_cpp_test(parse_many_test parse_many_test.cpp)
 add_cpp_test(pointercheck pointercheck.cpp)
-# add_cpp_test(stringparsingcheck stringparsingcheck.cpp)
 
 # Compile-only tests
 add_executable(readme_examples readme_examples.cpp)
