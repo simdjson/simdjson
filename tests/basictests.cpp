@@ -17,12 +17,11 @@
 
 #include "simdjson.h"
 
-#ifndef SIMDJSON_TWITTER_JSON_PATH
-#define SIMDJSON_TWITTER_JSON_PATH "jsonexamples/twitter.json"
+#ifndef SIMDJSON_BENCHMARK_DATA_DIR
+#define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
 #endif
-#ifndef SIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH
-#define SIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH "jsonexamples/amazon_cellphones.ndjson"
-#endif
+const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+const char *AMAZON_CELLPHONES_NDJSON = SIMDJSON_BENCHMARK_DATA_DIR "amazon_cellphones.ndjson";
 
 #define ASSERT_EQUAL(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
 #define ASSERT_TRUE(ACTUAL) ASSERT_EQUAL(ACTUAL, true)
@@ -493,18 +492,18 @@ namespace parse_api_tests {
   // }
 
   bool parser_load() {
-    std::cout << "Running " << __func__ << std::endl;
+    std::cout << "Running " << __func__ << " on " << TWITTER_JSON << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.load(SIMDJSON_TWITTER_JSON_PATH);
+    auto [doc, error] = parser.load(TWITTER_JSON);
     if (error) { cerr << error << endl; return false; }
     if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
     return true;
   }
   bool parser_load_many() {
-    std::cout << "Running " << __func__ << std::endl;
+    std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto [doc, error] : parser.load_many(SIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH)) {
+    for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       if (error) { cerr << error << endl; return false; }
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
       count++;
@@ -537,7 +536,7 @@ namespace parse_api_tests {
   bool parser_load_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    const element doc = parser.load(SIMDJSON_TWITTER_JSON_PATH);
+    const element doc = parser.load(TWITTER_JSON);
     if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
     return true;
   }
@@ -545,7 +544,7 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (const element doc : parser.load_many(SIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH)) {
+    for (const element doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
       count++;
     }
@@ -869,7 +868,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     dom::parser parser;
-    auto [result_count, error] = parser.load(SIMDJSON_TWITTER_JSON_PATH)["search_metadata"]["count"].get<uint64_t>();
+    auto [result_count, error] = parser.load(TWITTER_JSON)["search_metadata"]["count"].get<uint64_t>();
     if (error) { cerr << "Error: " << error << endl; return false; }
     if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
     return true;
@@ -880,7 +879,7 @@ namespace dom_api_tests {
     // Print users with a default profile.
     set<string_view> default_users;
     dom::parser parser;
-    auto [tweets, error] = parser.load(SIMDJSON_TWITTER_JSON_PATH)["statuses"].get<dom::array>();
+    auto [tweets, error] = parser.load(TWITTER_JSON)["statuses"].get<dom::array>();
     if (error) { cerr << "Error: " << error << endl; return false; }
     for (auto tweet : tweets) {
       object user;
@@ -905,7 +904,7 @@ namespace dom_api_tests {
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
     dom::parser parser;
-    auto [tweets, error] = parser.load(SIMDJSON_TWITTER_JSON_PATH)["statuses"].get<dom::array>();
+    auto [tweets, error] = parser.load(TWITTER_JSON)["statuses"].get<dom::array>();
     if (error) { cerr << "Error: " << error << endl; return false; }
     for (auto tweet : tweets) {
       auto [media, not_found] = tweet["entities"]["media"].get<dom::array>();
@@ -1043,7 +1042,7 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     dom::parser parser;
-    element doc = parser.load(SIMDJSON_TWITTER_JSON_PATH);
+    element doc = parser.load(TWITTER_JSON);
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
     return true;
@@ -1054,7 +1053,7 @@ namespace dom_api_tests {
     // Print users with a default profile.
     set<string_view> default_users;
     dom::parser parser;
-    element doc = parser.load(SIMDJSON_TWITTER_JSON_PATH);
+    element doc = parser.load(TWITTER_JSON);
     for (object tweet : doc["statuses"].get<dom::array>()) {
       object user = tweet["user"];
       if (user["default_profile"]) {
@@ -1070,7 +1069,7 @@ namespace dom_api_tests {
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
     dom::parser parser;
-    element doc = parser.load(SIMDJSON_TWITTER_JSON_PATH);
+    element doc = parser.load(TWITTER_JSON);
     for (object tweet : doc["statuses"].get<dom::array>()) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {

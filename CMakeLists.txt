@@ -42,7 +42,7 @@ endif()
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
-option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
+option(SIMDJSON_NO_EXCEPTIONS "Disable simdjson's exception-throwing interface" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
@@ -58,12 +58,8 @@ add_subdirectory(src)
 #
 # Compile tools / tests / benchmarks
 #
-set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
-set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
-add_definitions(-DSIMDJSON_TEST_DATA_DIR="${TEST_DATA_DIR}")
-add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${TEST_DATA_DIR}")
-add_definitions(-DJSON_TEST_PATH="${BENCHMARK_DATA_DIR}/twitter.json")
-add_definitions(-DSIMDJSON_AMAZON_CELLPHONES_NDJSON_PATH="${PROJECT_SOURCE_DIR}/jsonexamples/amazon_cellphones.ndjson")
+add_definitions(-DSIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
+add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
 
 enable_testing()
 

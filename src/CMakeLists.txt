@@ -9,8 +9,13 @@ else()
 endif()
 
 target_sources(simdjson PRIVATE simdjson.cpp)
-target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 target_include_directories(simdjson PRIVATE .)
+target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+
+if(SIMDJSON_NO_EXCEPTIONS)
+  message(STATUS "simdjson exception interface turned off. Code that does not check error codes will not compile.")
+  target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=0)
+endif()
 
 if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   # prevent shared libraries from depending on Intel provided libraries

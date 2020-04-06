@@ -1,18 +1,42 @@
 # Helper so we don't have to repeat ourselves so much
-function(add_cpp_test TEST_NAME)
-  add_executable(${TEST_NAME} ${TEST_NAME}.cpp)
+function(add_cpp_test TEST_NAME TEST_FILE)
+  add_executable(${TEST_NAME} ${TEST_FILE})
   add_test(${TEST_NAME} ${TEST_NAME})
 endfunction(add_cpp_test)
 
+# Sets a target to only build when you run the test, and expect failure
+function(add_compile_fail_test TEST_NAME)
+  set_target_properties(${TEST_NAME} PROPERTIES
+                        EXCLUDE_FROM_ALL TRUE
+                        EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+  add_test(NAME ${TEST_NAME}
+          COMMAND ${CMAKE_COMMAND} --build . --target ${TEST_NAME} --config $<CONFIGURATION>
+          WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+  set_tests_properties(${TEST_NAME} PROPERTIES WILL_FAIL TRUE)
+endfunction(add_compile_fail_test)
 
 link_libraries(simdjson)
 
-add_cpp_test(basictests)
-add_cpp_test(errortests)
-add_cpp_test(jsoncheck)
-add_cpp_test(parse_many_test)
-add_cpp_test(pointercheck)
-add_cpp_test(integer_tests)
+# add_executable(allparserscheckfile allparserscheckfile.cpp)
+add_cpp_test(basictests basictests.cpp)
+add_cpp_test(errortests errortests.cpp)
+add_cpp_test(integer_tests integer_tests.cpp)
+add_cpp_test(jsoncheck jsoncheck.cpp)
+# add_executable(numberparsingcheck numberparsingcheck.cpp)
+add_cpp_test(parse_many_test parse_many_test.cpp)
+add_cpp_test(pointercheck pointercheck.cpp)
+# add_cpp_test(stringparsingcheck stringparsingcheck.cpp)
+
+# Compile-only tests
+add_executable(readme_examples readme_examples.cpp)
+add_executable(readme_examples_noexceptions readme_examples_noexceptions.cpp)
+target_compile_options(readme_examples_noexceptions PRIVATE -fno-exceptions)
+
+# Test that readme_examples does NOT compile when SIMDJSON_EXCEPTIONS=0 (i.e. test that the define
+# works even if exceptions are on)
+add_executable(readme_examples_will_fail_with_exceptions_off readme_examples.cpp)
+target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
+add_compile_fail_test(readme_examples_will_fail_with_exceptions_off)
 
 if(MSVC)
   include_directories($<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/windows>)
