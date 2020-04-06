@@ -2,28 +2,41 @@ version: '{build}'
 branches:
   only:
   - master
-image:
-    - Visual Studio 2017
 clone_folder: c:\projects\simdjson
-
-platform:
-- x64
-
+platform: x64
+image:
+  - Visual Studio 2019
+  - Visual Studio 2017
+configuration: Release
 environment:
   matrix:
-    - SIMDJSON_BUILD_STATIC: "OFF"
-      THREADS: "ON"
-    - SIMDJSON_BUILD_STATIC: "OFF"
-      THREADS: "OFF"
-    - SIMDJSON_BUILD_STATIC: "ON"
-      THREADS: "ON"
-#    - SIMDJSON_BUILD_STATIC: "ON"
-#      THREADS: "OFF"
-      
+    - SIMDJSON_BUILD_STATIC: ON
+      SIMDJSON_ENABLE_THREADS: OFF
+    - SIMDJSON_BUILD_STATIC: OFF
+      SIMDJSON_ENABLE_THREADS: ON
+
 build_script:
+  - set
   - mkdir build
   - cd build
-  - ps: cmake -DSIMDJSON_BUILD_STATIC="$env:SIMDJSON_BUILD_STATIC" -DSIMDJSON_ENABLE_THREADS="$env:THREADS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_GOOGLE_BENCHMARKS=OFF ..
-  - cmake --build .
-  - ctest --verbose --output-on-failure
+  - cmake -DSIMDJSON_BUILD_STATIC=%SIMDJSON_BUILD_STATIC% -DSIMDJSON_ENABLE_THREADS=%SIMDJSON_ENABLE_THREADS% -DCMAKE_BUILD_TYPE=%Configuration% -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_GOOGLE_BENCHMARKS=OFF ..
+  - cmake --build . --config %Configuration%
 
+test_script:
+  - ctest --verbose --output-on-failure -C %Configuration%
+  
+# VS 2017 only: readme examples don't presently succeed, exclude
+for:
+- matrix:
+    only:
+      - image: Visual Studio 2017
+  test_script:
+    - ctest --verbose --output-on-failure -C %Configuration% -E readme
+  
+matrix:
+  fast_finish: true
+  exclude:
+    # Don't build all variants on 2019, just running it to make sure readme_tests succeed
+    - image: Visual Studio 2019
+      SIMDJSON_BUILD_STATIC: ON
+      SIMDJSON_ENABLE_THREADS: OFF

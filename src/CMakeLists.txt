@@ -55,16 +55,16 @@ set_target_properties(simdjson PROPERTIES
 MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${CMAKE_BINARY_DIR})
 endif()
 
-if((SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
-  target_compile_definitions(${SIMDJSON_LIB_NAME} INTERFACE SIMDJSON_USING_LIBRARY=1)
+if(NOT SIMDJSON_BUILD_STATIC)
+  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
 endif()
 
-if(MSVC AND (SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
+if(MSVC AND (NOT SIMDJSON_BUILD_STATIC))
   if (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
+    MESSAGE( STATUS "To build a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
   endif()
   MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
- set_target_properties(simdjson
+  set_target_properties(simdjson
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
 endif()
 

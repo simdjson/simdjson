@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
 
+message(STATUS "cmake version ${CMAKE_VERSION}")
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to Release")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -52,6 +53,7 @@ find_package(Options)
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
 # directories)
 #
+add_subdirectory(windows)
 add_subdirectory(include)
 add_subdirectory(src)
 
