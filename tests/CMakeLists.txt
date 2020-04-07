@@ -32,8 +32,10 @@ add_cpp_test(pointercheck pointercheck.cpp)
 #
 # Competition parse test
 #
-add_executable(allparserscheckfile allparserscheckfile.cpp)
-target_link_libraries(allparserscheckfile competition-all)
+if (SIMDJSON_COMPETITION)
+  add_executable(allparserscheckfile allparserscheckfile.cpp)
+  target_link_libraries(allparserscheckfile competition-all)
+endif()
 
 #
 # Compile-only tests

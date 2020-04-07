@@ -226,35 +226,36 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
     - make -j
     - ctest --output-on-failure
 ---
-  kind: pipeline
-  name: amd64_clang_cmake_no_exceptions
-  
-  platform:
-    os: linux
-    arch: amd64
-  
-  steps:
-  - name: Build and Test
-    image: ubuntu:18.04
-    environment:
-      CC: clang
-      CXX: clang++
-      CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-    commands:
-      - apt-get update -qq
-      - apt-get install -y clang make cmake
-      - $CC --version
-      - mkdir build && cd build
-      - cmake $CMAKE_FLAGS ..
-      - make -j
-      - ctest --output-on-failure
+kind: pipeline
+name: amd64_clang_cmake_no_exceptions
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang
+    CXX: clang++
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang make cmake git
+    - $CC --version
+    - mkdir build && cd build
+    - cmake $CMAKE_FLAGS ..
+    - make -j
+    - ctest --output-on-failure
+---
 kind: pipeline
 name: amd64_clang_cmake_static
 
@@ -271,7 +272,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
@@ -340,7 +341,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
@@ -386,7 +387,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
@@ -433,7 +434,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
@@ -480,7 +481,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
   commands:
     - apt-get update -y
-    - apt-get install -y make $CC g++ cmake 
+    - apt-get install -y make $CC g++ cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..
@@ -527,7 +528,7 @@ steps:
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF
   commands:
     - apt-get update -qq
-    - apt-get install -y clang make cmake
+    - apt-get install -y clang make cmake git
     - $CC --version
     - mkdir build && cd build
     - cmake $CMAKE_FLAGS ..

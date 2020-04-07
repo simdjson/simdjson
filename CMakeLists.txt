@@ -31,6 +31,7 @@ set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.3.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 
+option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
 option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
 option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
