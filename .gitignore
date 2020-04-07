@@ -119,6 +119,7 @@ objs
 /simdjson.h
 /singleheader/amalgamation_demo
 /singleheader/demo
+/tests/allparserscheckfile
 /tests/basictests
 /tests/errortests
 /tests/integer_tests

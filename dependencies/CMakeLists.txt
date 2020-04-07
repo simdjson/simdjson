@@ -20,3 +20,39 @@ if (SIMDJSON_GOOGLE_BENCHMARKS)
   set(BENCHMARK_ENABLE_INSTALL OFF)
   add_subdirectory(benchmark)
 endif()
+
+add_library(competition-cJSON INTERFACE)
+target_include_directories(competition-cJSON INTERFACE cJSON)
+
+add_library(competition-fastjson INTERFACE)
+target_include_directories(competition-fastjson INTERFACE fastjson/src fastjson/include)
+
+add_library(competition-gason INTERFACE)
+target_include_directories(competition-gason INTERFACE gason/src)
+
+add_library(competition-jsmn INTERFACE)
+target_include_directories(competition-jsmn INTERFACE jsmn)
+
+add_library(competition-json INTERFACE)
+target_include_directories(competition-json INTERFACE json/single_include)
+
+add_library(competition-json11 INTERFACE)
+target_include_directories(competition-json11 INTERFACE json11)
+
+add_library(competition-jsoncppdist INTERFACE)
+target_include_directories(competition-jsoncppdist INTERFACE jsoncppdist)
+
+add_library(competition-rapidjson INTERFACE)
+target_include_directories(competition-rapidjson INTERFACE rapidjson/include)
+
+add_library(competition-sajson INTERFACE)
+target_include_directories(competition-sajson INTERFACE sajson/include)
+
+add_library(competition-ujson4c ujson4c/src/ujdecode.c)
+target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
+
+add_library(competition-core INTERFACE)
+target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn)
+
+add_library(competition-all INTERFACE)
+target_link_libraries(competition-all INTERFACE competition-core competition-jsoncppdist competition-json11 competition-fastjson competition-gason competition-ujson4c)

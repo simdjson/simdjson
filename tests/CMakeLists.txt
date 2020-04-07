@@ -2,9 +2,42 @@
 function(add_cpp_test TEST_NAME TEST_FILE)
   add_executable(${TEST_NAME} ${TEST_FILE})
   add_test(${TEST_NAME} ${TEST_NAME})
+  target_link_libraries(${TEST_NAME} test-data)
 endfunction(add_cpp_test)
 
-# Sets a target to only build when you run the test, and expect failure
+#
+# These test explicitly do #include "simdjson.cpp"
+#
+if (NOT MSVC) # Can't get simdjson-source to compile on Windows for some reason.
+  add_cpp_test(numberparsingcheck numberparsingcheck.cpp)
+  target_link_libraries(numberparsingcheck simdjson-source test-data simdjson-windows-headers)
+  add_cpp_test(stringparsingcheck stringparsingcheck.cpp)
+  target_link_libraries(stringparsingcheck simdjson-source test-data simdjson-windows-headers)
+endif()
+
+#
+# All remaining tests link with simdjson proper
+#
+link_libraries(simdjson)
+
+add_cpp_test(basictests basictests.cpp)
+add_cpp_test(errortests errortests.cpp)
+add_cpp_test(integer_tests integer_tests.cpp)
+add_cpp_test(jsoncheck jsoncheck.cpp)
+target_link_libraries(jsoncheck simdjson-windows-headers)
+add_cpp_test(parse_many_test parse_many_test.cpp)
+target_link_libraries(parse_many_test simdjson-windows-headers)
+add_cpp_test(pointercheck pointercheck.cpp)
+
+#
+# Competition parse test
+#
+add_executable(allparserscheckfile allparserscheckfile.cpp)
+target_link_libraries(allparserscheckfile competition-all)
+
+#
+# Compile-only tests
+#
 function(add_compile_test TEST_NAME TEST_FILE EXPECT_SUCCESS)
   add_executable(${TEST_NAME} ${TEST_FILE})
   set_target_properties(${TEST_NAME} PROPERTIES
@@ -18,32 +51,6 @@ function(add_compile_test TEST_NAME TEST_FILE EXPECT_SUCCESS)
   endif()
 endfunction(add_compile_test)
 
-#
-# These test explicitly do #include "simdjson.cpp"
-#
-if (NOT MSVC) # Can't get simdjson-source to compile on Windows for some reason.
-  add_cpp_test(numberparsingcheck numberparsingcheck.cpp)
-  target_link_libraries(numberparsingcheck simdjson-source simdjson-windows-headers)
-  add_cpp_test(stringparsingcheck stringparsingcheck.cpp)
-  target_link_libraries(stringparsingcheck simdjson-source simdjson-windows-headers)
-endif()
-
-#
-# All remaining tests link with simdjson proper
-#
-link_libraries(simdjson)
-
-# add_executable(allparserscheckfile allparserscheckfile.cpp)
-add_cpp_test(basictests basictests.cpp)
-add_cpp_test(errortests errortests.cpp)
-add_cpp_test(integer_tests integer_tests.cpp)
-add_cpp_test(jsoncheck jsoncheck.cpp)
-target_link_libraries(jsoncheck simdjson-windows-headers)
-add_cpp_test(parse_many_test parse_many_test.cpp)
-target_link_libraries(parse_many_test simdjson-windows-headers)
-add_cpp_test(pointercheck pointercheck.cpp)
-
-# Compile-only tests
 # Don't add the tests if we're on VS2017 or older; they don't succeed.
 if(NOT (MSVC AND MSVC_VERSION LESS 1920))
   add_compile_test(readme_examples readme_examples.cpp TRUE)

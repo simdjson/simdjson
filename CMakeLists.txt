@@ -8,7 +8,7 @@ endif()
 
 project(simdjson
   DESCRIPTION "Parsing gigabytes of JSON per second"
-  LANGUAGES CXX
+  LANGUAGES CXX C
 )
 
 # LTO seems to create all sorts of fun problems. Let us
@@ -60,8 +60,9 @@ add_subdirectory(src)
 #
 # Compile tools / tests / benchmarks
 #
-add_definitions(-DSIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
-add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
+add_library(test-data INTERFACE)
+target_compile_definitions(test-data INTERFACE SIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
+target_compile_definitions(test-data INTERFACE SIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
 
 enable_testing()
 
