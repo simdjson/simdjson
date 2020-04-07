@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
+include(GNUInstallDirs)
 
 message(STATUS "cmake version ${CMAKE_VERSION}")
 if (NOT CMAKE_BUILD_TYPE)
@@ -32,23 +33,14 @@ set(SIMDJSON_LIB_VERSION "0.3.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
-option(SIMDJSON_IMPLEMENTATION_WESTMERE "Include the westmere implementation" ON)
-option(SIMDJSON_IMPLEMENTATION_ARM64 "Include the arm64 implementation" ON)
-option(SIMDJSON_IMPLEMENTATION_FALLBACK "Include the fallback implementation" ON)
 if(NOT MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
 else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
 endif()
-option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
-option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
-option(SIMDJSON_NO_EXCEPTIONS "Disable simdjson's exception-throwing interface" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
-
-find_package(Options)
 
 #
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
@@ -61,11 +53,11 @@ add_subdirectory(src)
 #
 # Compile tools / tests / benchmarks
 #
+enable_testing()
+
 add_library(test-data INTERFACE)
 target_compile_definitions(test-data INTERFACE SIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
 target_compile_definitions(test-data INTERFACE SIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
-
-enable_testing()
 
 add_subdirectory(dependencies)
 add_subdirectory(tools)
@@ -77,6 +69,11 @@ add_subdirectory(benchmark)
 option(ENABLE_FUZZING "enable building the fuzzers" ON)
 if(ENABLE_FUZZING)
   add_subdirectory(fuzz)
+endif()
+
+if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
+  # prevent shared libraries from depending on Intel provided libraries
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
 set(CPACK_PACKAGE_VENDOR "Daniel Lemire")
