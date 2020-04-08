@@ -80,10 +80,9 @@ auto cars_json = R"( [
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
-dom::array cars = parser.parse(cars_json).get<dom::array>();
 
 // Iterating through an array of objects
-for (dom::object car : cars) {
+for (dom::object car : parser.parse(cars_json)) {
   // Accessing a field by name
   cout << "Make/Model: " << car["make"] << "/" << car["model"] << endl;
 
