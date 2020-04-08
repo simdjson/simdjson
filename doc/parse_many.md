@@ -12,8 +12,6 @@ Contents
 - [How it works](#how-it-works)
 - [Support](#support)
 - [API](#api)
-- [Concurrency mode](#concurrency-mode)
-- [Example](#example)
 - [Use cases](#use-cases)
 
 Motivations
@@ -88,13 +86,16 @@ sweet spot for now.
 
 ### Threads
 
-But how can we make use of threads?  We found a pretty cool algorithm that allows us to quickly
+But how can we make use of threads if they are available?  We found a pretty cool algorithm that allows us to quickly
 identify the  position of the last JSON document in a given batch. Knowing exactly where the end of
 the batch is, we no longer need for stage 2 to finish in order to load a new batch. We already know
 where to start the next batch. Therefore, we can run stage 1 on the next batch concurrently while
-the main thread is going through stage 2. Now, running stage 1 in a different thread can, in best
-cases, remove almost entirely it's cost and replaces it by the overhead of a thread, which is orders
+the main thread is going through stage 2. Running stage 1 in a different thread can, in best
+cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders
 of magnitude cheaper. Ain't that awesome!
+
+Thread support is only active if thread supported is detected in which case the macro
+SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in  single-thread mode.
 
 Support
 -------
