@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
 
+message(STATUS "cmake version ${CMAKE_VERSION}")
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to Release")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -24,7 +25,6 @@ set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(SIMDJSON_LIB_NAME simdjson)
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 3)
 set(PROJECT_VERSION_PATCH 1)
@@ -43,25 +43,28 @@ endif()
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 option(SIMDJSON_ENABLE_THREADS "enable threaded operation" ON)
-option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
+option(SIMDJSON_NO_EXCEPTIONS "Disable simdjson's exception-throwing interface" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
-find_package(CTargets)
 find_package(Options)
 
-# We used to have install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
-# alone.
-# However, this fails because we also need the root level simdjson.h file.
-install(DIRECTORY include/${SIMDJSON_LIB_NAME} DESTINATION include)
-install(FILES include/${SIMDJSON_LIB_NAME}.h DESTINATION include)
-set (TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
-set (BENCHMARK_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
-add_definitions(-DSIMDJSON_TEST_DATA_DIR="${TEST_DATA_DIR}")
-add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${TEST_DATA_DIR}")
-enable_testing()
-include(include/CMakeLists.txt)
+#
+# Create the top level simdjson library (must be done at this level to use both src/ and include/
+# directories)
+#
+add_subdirectory(windows)
+add_subdirectory(include)
 add_subdirectory(src)
+
+#
+# Compile tools / tests / benchmarks
+#
+add_definitions(-DSIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
+add_definitions(-DSIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
+
+enable_testing()
+
 add_subdirectory(tools)
 add_subdirectory(tests)
 add_subdirectory(benchmark)

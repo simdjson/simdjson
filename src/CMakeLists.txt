@@ -1,132 +1,70 @@
-if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
-  # prevent shared libraries from depending on Intel provided libraries
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
-endif()
-
 include(GNUInstallDirs)
 
-# we default on a shared library.
 if(SIMDJSON_BUILD_STATIC)
-  set(SIMDJSON_LIB_TYPE STATIC)
   MESSAGE( STATUS "Building a static library." )
+  add_library(simdjson STATIC "")
 else()
-  MESSAGE( STATUS "Building a dynamic library (default)." )
-  set(SIMDJSON_LIB_TYPE SHARED)
+  MESSAGE( STATUS "Building a dynamic library." )
+  add_library(simdjson SHARED "")
 endif()
 
-MESSAGE( STATUS "SIMDJSON_LIB_TYPE: " ${SIMDJSON_LIB_TYPE})
+target_sources(simdjson PRIVATE simdjson.cpp)
+target_include_directories(simdjson PRIVATE .)
+target_include_directories(simdjson PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
-# Bring in include files
-include(../include/CMakeLists.txt)
+if(SIMDJSON_NO_EXCEPTIONS)
+  message(STATUS "simdjson exception interface turned off. Code that does not check error codes will not compile.")
+  target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=0)
+endif()
 
-set(SIMDJSON_SRC_DIR $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
+  # prevent shared libraries from depending on Intel provided libraries
+  target_link_options(simdjson PUBLIC "-static-intel")
+endif()
 
-set(SIMDJSON_SRC
-  simdjson.cpp
-)
+if(SIMDJSON_ENABLE_THREADS)
+  find_package(Threads REQUIRED)
+  target_link_libraries(simdjson PRIVATE Threads::Threads)
+endif()
 
-# Load headers and sources
-set(SIMDJSON_SRC_HEADERS
-  error.cpp
-  implementation.cpp
-  isadetection.h
-  simdprune_tables.h
-  stage1_find_marks.cpp
-  stage2_build_tape.cpp
-  arm64/bitmanipulation.h
-  arm64/bitmask.h
-  arm64/implementation.h
-  arm64/intrinsics.h
-  arm64/numberparsing.h
-  arm64/simd.h
-  arm64/stage1_find_marks.h
-  arm64/stage2_build_tape.h
-  arm64/stringparsing.h
-  fallback/implementation.h
-  fallback/stage1_find_marks.h
-  fallback/stage2_build_tape.h
-  generic/atomparsing.h
-  generic/json_scanner.h
-  generic/json_string_scanner.h
-  generic/json_structural_indexer.h
-  generic/numberparsing.h
-  generic/stage2_build_tape.h
-  generic/stage2_streaming_build_tape.h
-  generic/stringparsing.h
-  generic/utf8_fastvalidate_algorithm.h
-  generic/utf8_lookup_algorithm.h
-  generic/utf8_lookup2_algorithm.h
-  generic/utf8_range_algorithm.h
-  generic/utf8_zwegner_algorithm.h
-  haswell/bitmanipulation.h
-  haswell/bitmask.h
-  haswell/implementation.h
-  haswell/intrinsics.h
-  haswell/numberparsing.h
-  haswell/simd.h
-  haswell/stage1_find_marks.h
-  haswell/stage2_build_tape.h
-  haswell/stringparsing.h
-  document_parser_callbacks.h
-  westmere/bitmanipulation.h
-  westmere/bitmask.h
-  westmere/implementation.h
-  westmere/intrinsics.h
-  westmere/numberparsing.h
-  westmere/simd.h
-  westmere/stage1_find_marks.h
-  westmere/stage2_build_tape.h
-  westmere/stringparsing.h
-)
-set_source_files_properties(${SIMDJSON_SRC_HEADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
+# For targets that want to include the source directly
+add_library(simdjson-source INTERFACE)
+target_include_directories(simdjson-source INTERFACE .)
+target_include_directories(simdjson-source INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
-add_library(${SIMDJSON_LIB_NAME} ${SIMDJSON_LIB_TYPE} ${SIMDJSON_SRC} ${SIMDJSON_INCLUDE} ${SIMDJSON_SRC_HEADERS})
+# Installation
 
-target_include_directories(${SIMDJSON_LIB_NAME}
-  PUBLIC
-  $<BUILD_INTERFACE:${SIMDJSON_SRC_DIR}>
-  $<BUILD_INTERFACE:${SIMDJSON_INCLUDE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-
-install(TARGETS ${SIMDJSON_LIB_NAME}
-  EXPORT ${SIMDJSON_LIB_NAME}-config
+install(TARGETS simdjson
+  EXPORT simdjson-config
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(EXPORT ${SIMDJSON_LIB_NAME}-config
-  FILE ${SIMDJSON_LIB_NAME}-config.cmake
-  NAMESPACE ${SIMDJSON_LIB_NAME}::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${SIMDJSON_LIB_NAME}
+install(EXPORT simdjson-config
+  FILE simdjson-config.cmake
+  NAMESPACE simdjson::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson
 )
 
 if(NOT MSVC)
 ## We output the library at the root of the current directory where cmake is invoked
 ## This is handy but Visual Studio will happily ignore us
-set_target_properties(${SIMDJSON_LIB_NAME} PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-  VERSION ${SIMDJSON_LIB_VERSION}
-  SOVERSION ${SIMDJSON_LIB_SOVERSION})
+set_target_properties(simdjson PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${CMAKE_BINARY_DIR})
 endif()
 
-if((SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
-  target_compile_definitions(${SIMDJSON_LIB_NAME} INTERFACE SIMDJSON_USING_LIBRARY=1)
+if(NOT SIMDJSON_BUILD_STATIC)
+  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
 endif()
 
-if(MSVC AND (SIMDJSON_LIB_TYPE STREQUAL "SHARED"))
+if(MSVC AND (NOT SIMDJSON_BUILD_STATIC))
   if (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE( STATUS "To build  a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
+    MESSAGE( STATUS "To build a Windows DLL using Visual Studio, you may need cmake 3.4 or better." )
   endif()
   MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
- set_target_properties(${SIMDJSON_LIB_NAME}
+  set_target_properties(simdjson
     PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
-endif()
-
-if(SIMDJSON_ENABLE_THREADS)
-  find_package(Threads REQUIRED)
-  target_link_libraries( ${SIMDJSON_LIB_NAME} Threads::Threads)
 endif()
 

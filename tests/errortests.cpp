@@ -14,9 +14,10 @@
 using namespace simdjson;
 using namespace std;
 
-#ifndef JSON_TEST_PATH
-#define JSON_TEST_PATH "jsonexamples/twitter.json"
+#ifndef SIMDJSON_BENCHMARK_DATA_DIR
+#define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
 #endif
+const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 
 #define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
 #define ASSERT_ERROR(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { cerr << "FAIL: Unexpected error \"" << (ACTUAL) << "\" (expected \"" << (EXPECTED) << "\")" << endl; return false; }
@@ -27,14 +28,14 @@ namespace parser_load {
   bool parser_load_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
-    auto [doc, error] = parser.load(JSON_TEST_PATH);
+    auto [doc, error] = parser.load(TWITTER_JSON);
     ASSERT_ERROR(error, CAPACITY);
     TEST_SUCCEED();
   }
   bool parser_load_many_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
-    for (auto [doc, error] : parser.load_many(JSON_TEST_PATH)) {
+    for (auto [doc, error] : parser.load_many(TWITTER_JSON)) {
       ASSERT_ERROR(error, CAPACITY);
       TEST_SUCCEED();
     }
