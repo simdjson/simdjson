@@ -156,8 +156,6 @@ for line in fileinput.input(doxyfile, inplace=1, backup='.bak'):
     print(line)
 print("modified "+doxyfile+", a backup was made")
 
-PROJECT_NUMBER         = "0.3.1"
-
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 
