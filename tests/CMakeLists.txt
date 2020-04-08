@@ -44,11 +44,14 @@ target_link_libraries(parse_many_test simdjson-windows-headers)
 add_cpp_test(pointercheck pointercheck.cpp)
 
 # Compile-only tests
-add_compile_test(readme_examples readme_examples.cpp TRUE)
-# Test that readme_examples does NOT compile when SIMDJSON_EXCEPTIONS=0 (i.e. test that the define
-# works even if exceptions are on)
-add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp FALSE)
-target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
+# Don't add the tests if we're on VS2017 or older; they don't succeed.
+if(NOT (MSVC AND MSVC_VERSION LESS 1920))
+  add_compile_test(readme_examples readme_examples.cpp TRUE)
+  # Test that readme_examples does NOT compile when SIMDJSON_EXCEPTIONS=0 (i.e. test that the define
+  # works even if exceptions are on)
+  add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp FALSE)
+  target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
+endif()
 
 if(MSVC)
   add_custom_command(TARGET basictests POST_BUILD        # Adds a post-build event

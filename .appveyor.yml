@@ -25,14 +25,6 @@ build_script:
 test_script:
   - ctest --verbose --output-on-failure -C %Configuration%
   
-# VS 2017 only: readme examples don't presently succeed, exclude
-for:
-- matrix:
-    only:
-      - image: Visual Studio 2017
-  test_script:
-    - ctest --verbose --output-on-failure -C %Configuration% -E readme
-  
 matrix:
   fast_finish: true
   exclude:
