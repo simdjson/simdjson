@@ -223,14 +223,14 @@ private:
 /**
  * The list of available implementations compiled into simdjson.
  */
-extern const internal::available_implementation_list available_implementations;
+extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations;
 
 /**
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
   */
-extern internal::atomic_ptr<const implementation> active_implementation;
+extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation;
 
 } // namespace simdjson
 

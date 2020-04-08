@@ -11,7 +11,7 @@ namespace simdjson::internal {
     std::string message;
   };
   // These MUST match the codes in error_code. We check this constraint in basictests.
-  extern const error_code_info error_codes[];
+  extern SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[];
 } // namespace simdjson::internal
 
 namespace simdjson {

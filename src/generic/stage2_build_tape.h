@@ -350,14 +350,14 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](auto copy, auto idx) {
+      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );

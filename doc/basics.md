@@ -28,7 +28,7 @@ using namespace simdjson; // optional
 You can compile with:
 
 ```
-c++ myproject.cpp simdjson.cpp --std=c++17
+c++ myproject.cpp simdjson.cpp
 ```
 
 The Basics: Loading and Parsing JSON Documents
@@ -98,9 +98,39 @@ for (dom::object car : parser.parse(cars_json)) {
   cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
 
   // Writing out all the information about the car
-  for (auto [key, value] : car) {
-    cout << "- " << key << ": " << value << endl;
+  for (auto field : car) {
+    cout << "- " << field.key << ": " << field.value << endl;
   }
+}
+```
+
+C++17 Support
+-------------
+
+While the simdjson library can be used in any project using C++ 11 and above, it has special support
+for C++ 17. The APIs for field iteration and error handling in particular are designed to work
+nicely with C++17's destructuring syntax. For example:
+
+```c++
+dom::parser parser;
+padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+auto [object, error] = parser.parse(json).get<dom::object>();
+for (auto [key, value] : object) {
+  cout << key << " = " << value << endl;
+}
+```
+
+For comparison, here is the C++ 11 version of the same code:
+
+```c++
+// C++ 11 version for comparison
+dom::parser parser;
+padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+dom::object object;
+simdjson::error_code error;
+parser.parse(json).get<dom::object>().tie(object, error);
+for (dom::key_value_pair field : object) {
+  cout << field.key << " = " << field.value << endl;
 }
 ```
 
@@ -159,7 +189,9 @@ auto cars_json = R"( [
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
 dom::parser parser;
-auto [cars, error] = parser.parse(cars_json).get<dom::array>();
+dom::array cars;
+simdjson::error_code error;
+parser.parse(cars_json).get<dom::array>().tie(cars, error);
 if (error) { cerr << error << endl; exit(1); }
 
 // Iterating through an array of objects
@@ -196,8 +228,8 @@ for (dom::element tire_pressure_element : tire_pressure_array) {
 cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
 
 // Writing out all the information about the car
-for (auto [key, value] : car) {
-    cout << "- " << key << ": " << value << endl;
+for (auto field : car) {
+    cout << "- " << field.key << ": " << field.value << endl;
 }
 ```
 

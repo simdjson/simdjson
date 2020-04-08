@@ -25,7 +25,9 @@ else()
   set(OPT_FLAGS "${OPT_FLAGS} -DSIMDJSON_EXCEPTIONS=0")
 endif()
 
-if(NOT MSVC)
+if(MSVC)
+set(CXXSTD_FLAGS "/std:c++17")
+else()
 set(CXXSTD_FLAGS "-std=c++17 -fPIC")
 endif()
 
