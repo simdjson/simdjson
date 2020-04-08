@@ -54,7 +54,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
      std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
    }
    ```
-3. `c++ -o quickstart quickstart.cpp simdjson.cpp -std=c++17`
+3. `c++ -o quickstart quickstart.cpp simdjson.cpp`
 4. `./quickstart`
    ```
    100 results.
@@ -184,3 +184,5 @@ License
 This code is made available under the Apache License 2.0.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
+
+For compilers that do not support C++17, we bundle the string-view library which is published under the Boost license (http://www.boost.org/LICENSE_1_0.txt). Like the Apache license, the Boost license is a permissive license allowing commercial redistribution.

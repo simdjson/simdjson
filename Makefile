@@ -91,7 +91,7 @@ JSON_INCLUDE:=dependencies/json/single_include/nlohmann/json.hpp
 EXTRAOBJECTS=ujdecode.o
 
 MAINEXECUTABLES=parse minify json2json jsonstats statisticalmodel jsonpointer get_corpus_benchmark
-TESTEXECUTABLES=jsoncheck jsoncheck_westmere jsoncheck_fallback integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests errortests readme_examples readme_examples_noexceptions
+TESTEXECUTABLES=jsoncheck jsoncheck_westmere jsoncheck_fallback integer_tests numberparsingcheck stringparsingcheck pointercheck parse_many_test basictests errortests readme_examples readme_examples11 readme_examples_noexceptions readme_examples_noexceptions11
 COMPARISONEXECUTABLES=minifiercompetition parsingcompetition parseandstatcompetition distinctuseridcompetition allparserscheckfile allparsingcompetition
 SUPPLEMENTARYEXECUTABLES=parse_noutf8validation parse_nonumberparsing parse_nostringparsing
 
@@ -141,22 +141,22 @@ run_pointercheck: pointercheck
 run_issue150_sh: allparserscheckfile
 	./scripts/issue150.sh
 
-quickstart: singleheader/simdjson.h singleheader/simdjson.cpp
+quickstart: amalgamate
 	cd examples/quickstart && make quickstart
 
-run_quickstart:
+run_quickstart: amalgamate
 	cd examples/quickstart && make test
 
-quickstart11:
+quickstart11: amalgamate
 	cd examples/quickstart && make quickstart11
 
-run_quickstart11:
+run_quickstart11: amalgamate
 	cd examples/quickstart && make test11
 
-quickstart14:
+quickstart14: amalgamate
 	cd examples/quickstart && make quickstart14
 
-run_quickstart14:
+run_quickstart14: amalgamate
 	cd examples/quickstart && make test14
 
 run_testjson2json_sh: minify json2json
@@ -173,7 +173,7 @@ test: quicktests slowtests
 
 quiettest: quicktests slowtests
 
-quicktests: run_basictests run_quickstart readme_examples readme_examples_noexceptions run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback run_quickstart14
+quicktests: run_basictests run_quickstart readme_examples readme_examples_noexceptions run_jsoncheck run_numberparsingcheck run_integer_tests run_stringparsingcheck run_jsoncheck run_parse_many_test run_pointercheck run_jsoncheck_westmere run_jsoncheck_fallback run_quickstart14 run_quickstart11
 
 slowtests: run_testjson2json_sh run_issue150_sh
 
@@ -246,8 +246,14 @@ errortests: tests/errortests.cpp $(HEADERS) $(LIBFILES)
 readme_examples: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o readme_examples tests/readme_examples.cpp -I. $(LIBFILES) $(LIBFLAGS)
 
+readme_examples11: tests/readme_examples.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o readme_examples11 tests/readme_examples.cpp -I. $(LIBFILES) $(LIBFLAGS) -std=c++11
+
 readme_examples_noexceptions: tests/readme_examples_noexceptions.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o readme_examples_noexceptions tests/readme_examples_noexceptions.cpp -I. $(LIBFILES) $(LIBFLAGS) -fno-exceptions
+
+readme_examples_noexceptions11: tests/readme_examples_noexceptions.cpp $(HEADERS) $(LIBFILES)
+	$(CXX) $(CXXFLAGS) -o readme_examples_noexceptions11 tests/readme_examples_noexceptions.cpp -I. $(LIBFILES) $(LIBFLAGS) -fno-exceptions -std=c++11
 
 staticchecks: tests/staticchecks.cpp $(HEADERS) src/simdjson.cpp
 	$(CXX) $(CXXFLAGS) -o staticchecks tests/staticchecks.cpp -I. $(LIBFLAGS)
@@ -257,8 +263,6 @@ numberparsingcheck: tests/numberparsingcheck.cpp $(HEADERS) src/simdjson.cpp
 
 integer_tests:tests/integer_tests.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o integer_tests tests/integer_tests.cpp -I. $(LIBFILES) $(LIBFLAGS)
-
-
 
 stringparsingcheck: tests/stringparsingcheck.cpp $(HEADERS) src/simdjson.cpp
 	$(CXX) $(CXXFLAGS) -o stringparsingcheck tests/stringparsingcheck.cpp -I. $(LIBFLAGS) -DJSON_TEST_STRINGS

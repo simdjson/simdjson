@@ -106,7 +106,9 @@ objs
 /perfdiff
 /pointercheck
 /readme_examples
+/readme_examples11
 /readme_examples_noexceptions
+/readme_examples_noexceptions11
 /staticchecks
 /statisticalmodel
 /stringparsingcheck
@@ -124,7 +126,9 @@ objs
 /tests/integer_tests
 /tests/parse_many_test
 /tests/readme_examples
+/tests/readme_examples11
 /tests/readme_examples_noexceptions
+/tests/readme_examples_noexceptions11
 /tests/staticchecks
 /tools/json2json
 /tools/jsonstats

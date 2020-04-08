@@ -127,6 +127,6 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
 } // namespace simdjson::internal
 
 namespace simdjson {
- const internal::available_implementation_list available_implementations{};
- internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
+  SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations{};
+  SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 }

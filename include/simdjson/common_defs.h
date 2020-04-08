@@ -37,20 +37,20 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 } // namespace simdjson
 
 #if defined(__GNUC__)
-// Marks a block with a name so that MCA analysis can see it.
-#define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
-#define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
-#define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
+  // Marks a block with a name so that MCA analysis can see it.
+  #define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
+  #define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
+  #define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
 #else
-#define BEGIN_DEBUG_BLOCK(name)
-#define END_DEBUG_BLOCK(name)
-#define DEBUG_BLOCK(name, block)
+  #define BEGIN_DEBUG_BLOCK(name)
+  #define END_DEBUG_BLOCK(name)
+  #define DEBUG_BLOCK(name, block)
 #endif
 
 #if !defined(_MSC_VER) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
-// Implemented using Labels as Values which works in GCC and CLANG (and maybe
-// also in Intel's compiler), but won't work in MSVC.
-#define SIMDJSON_USE_COMPUTED_GOTO
+  // Implemented using Labels as Values which works in GCC and CLANG (and maybe
+  // also in Intel's compiler), but won't work in MSVC.
+  #define SIMDJSON_USE_COMPUTED_GOTO
 #endif
 
 // Align to N-byte boundary
@@ -60,54 +60,76 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #ifdef _MSC_VER
-#define really_inline __forceinline
-#define never_inline __declspec(noinline)
 
-#define UNUSED
-#define WARN_UNUSED
+  #define really_inline __forceinline
+  #define never_inline __declspec(noinline)
 
-#ifndef likely
-#define likely(x) x
-#endif
-#ifndef unlikely
-#define unlikely(x) x
-#endif
+  #define UNUSED
+  #define WARN_UNUSED
 
-#define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
-#define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
-#define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
-#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
-#define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
+  #ifndef likely
+  #define likely(x) x
+  #endif
+  #ifndef unlikely
+  #define unlikely(x) x
+  #endif
+
+  #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
+  #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
+  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
+  #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
+
+  #if SIMDJSON_USING_LIBRARY
+  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
+  #else
+  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+  #endif
 
 #else // MSC_VER
 
+  #define really_inline inline __attribute__((always_inline, unused))
+  #define never_inline inline __attribute__((noinline, unused))
 
-#define really_inline inline __attribute__((always_inline, unused))
-#define never_inline inline __attribute__((noinline, unused))
+  #define UNUSED __attribute__((unused))
+  #define WARN_UNUSED __attribute__((warn_unused_result))
 
-#define UNUSED __attribute__((unused))
-#define WARN_UNUSED __attribute__((warn_unused_result))
+  #ifndef likely
+  #define likely(x) __builtin_expect(!!(x), 1)
+  #endif
+  #ifndef unlikely
+  #define unlikely(x) __builtin_expect(!!(x), 0)
+  #endif
 
-#ifndef likely
-#define likely(x) __builtin_expect(!!(x), 1)
-#endif
-#ifndef unlikely
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#endif
+  #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
+  // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough)
+  #define SIMDJSON_PRAGMA(P) _Pragma(#P)
+  #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
+  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
+  #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 
-#define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
-// gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
-#define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough)
-#define SIMDJSON_PRAGMA(P) _Pragma(#P)
-#define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
-#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
-#define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
+  #define SIMDJSON_DLLIMPORTEXPORT
 
 #endif // MSC_VER
+
+//
+// Backfill std::string_view using nonstd::string_view on C++11
+//
+#if (!SIMDJSON_CPLUSPLUS17)
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+#include "simdjson/nonstd/string_view.hpp"
+SIMDJSON_POP_DISABLE_WARNINGS
+
+namespace std {
+  using string_view = nonstd::string_view;
+}
+#endif // if (SIMDJSON_CPLUSPLUS < 201703L)
 
 #endif // SIMDJSON_COMMON_DEFS_H

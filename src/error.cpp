@@ -1,7 +1,7 @@
 #include "simdjson/error.h"
 
 namespace simdjson::internal {
-  const error_code_info error_codes[] {
+  SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[] {
     { SUCCESS, "No error" },
     { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
     { CAPACITY, "This parser can't support a document that big" },
