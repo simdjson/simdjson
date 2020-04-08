@@ -304,8 +304,9 @@ We built simdjson with thread safety in mind.
 The simdjson library is single-threaded except for  [`parse_many`](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md) which may use secondary threads under its control when the library is compiled with thread support.
 
 
-We recommend using one dom::parser object per thread in which case the library is thread-safe.
-It is unsafe to reuse a dom::parser object between different threads.
+We recommend using one `dom::parser` object per thread in which case the library is thread-safe.
+It is unsafe to reuse a `dom::parser` object between different threads.
+The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend on the `dom::parser`, etc. therefore it is also potentially unsafe to use the result of the parsing between different threads.
 
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
