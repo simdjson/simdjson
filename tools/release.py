@@ -150,6 +150,13 @@ for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
 
 
 print("modified "+cmakefile+", a backup was made")
+doxyfile = maindir + os.sep + "Doxyfile"
+for line in fileinput.input(doxyfile, inplace=1, backup='.bak'):
+    line = re.sub('PROJECT_NUMBER         = "\d+\.\d+\.\d+','PROJECT_NUMBER         = "'+newversionstring, line.rstrip())
+    print(line)
+print("modified "+doxyfile+", a backup was made")
+
+PROJECT_NUMBER         = "0.3.1"
 
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
