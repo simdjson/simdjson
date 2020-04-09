@@ -32,11 +32,12 @@ set(PROJECT_VERSION_PATCH 1)
 set(SIMDJSON_LIB_VERSION "0.3.1" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 
-option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
-if(NOT MSVC)
-  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
-else()
+if(MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
+  option(SIMDJSON_COMPETITION "Compile competitive benchmarks" OFF)
+  else()
+  option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
+  option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 endif()
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 
