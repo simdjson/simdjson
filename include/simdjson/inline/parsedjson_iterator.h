@@ -139,7 +139,7 @@ bool dom::parser::Iterator::prev() {
     oldnpos = npos;
     if ((current_type == '[') || (current_type == '{')) {
       // we need to jump
-      npos = (current_val & internal::JSON_VALUE_MASK);
+      npos = static_cast<uint32_t>(current_val);
     } else {
       npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
@@ -168,7 +168,7 @@ bool dom::parser::Iterator::down() {
     return false;
   }
   if ((current_type == '[') || (current_type == '{')) {
-    size_t npos = (current_val & internal::JSON_VALUE_MASK);
+    size_t npos = static_cast<uint32_t>(current_val);
     if (npos == location + 2) {
       return false; // we have an empty scope
     }
@@ -194,7 +194,7 @@ bool dom::parser::Iterator::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
-    npos = (current_val & internal::JSON_VALUE_MASK);
+    npos = static_cast<uint32_t>(current_val);
   } else {
     npos = location + (is_number() ? 2 : 1);
   }
@@ -439,7 +439,7 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
         size_t npos;
         if ((current_type == '[') || (current_type == '{')) {
           // we need to jump
-          npos = (current_val & internal::JSON_VALUE_MASK);
+          npos = static_cast<uint32_t>(current_val);
         } else {
           npos =
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);

@@ -70,6 +70,8 @@ public:
   inline size_t after_element() const noexcept;
   really_inline tape_type tape_ref_type() const noexcept;
   really_inline uint64_t tape_value() const noexcept;
+  really_inline uint32_t first_tape_value() const noexcept;
+  really_inline uint32_t second_tape_value() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
   inline std::string_view get_string_view() const noexcept;
@@ -143,7 +145,11 @@ public:
    * Part of the std::iterable interface.
    */
   inline iterator end() const noexcept;
-
+  /**
+  * Get the size of the array (number of immediate children).
+  * It is a satured value with a maximum of 0xFFFFFF.
+  */
+  inline uint32_t size() const noexcept;
   /**
    * Get the value associated with the given JSON pointer.
    *
@@ -206,6 +212,7 @@ public:
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
+
     /**
      * Get the key of this key/value pair.
      */
@@ -231,7 +238,11 @@ public:
    * Part of the std::iterable interface.
    */
   inline iterator end() const noexcept;
-
+  /**
+  * Get the size of the object (number of keys).
+  * It is a satured value with a maximum of 0xFFFFFF.
+  */
+  inline uint32_t size() const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -923,6 +934,9 @@ public:
 
   /** @private Tape location of each open { or [ */
   std::unique_ptr<uint32_t[]> containing_scope_offset;
+
+  /** @private Number of elements in current scope */
+  std::unique_ptr<uint32_t[]> containing_scope_count;
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
   std::unique_ptr<void*[]> ret_address;
@@ -1033,7 +1047,7 @@ private:
   //
 
   inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
-  inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
+  inline void annotate_previous_loc(uint32_t saved_loc, uint32_t val, uint32_t cnt) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,

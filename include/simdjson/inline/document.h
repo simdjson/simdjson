@@ -489,6 +489,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     if (max_depth == 0) {
       ret_address.reset();
       containing_scope_offset.reset();
+      containing_scope_count.reset();
       return SUCCESS;
     }
 
@@ -496,13 +497,14 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     // Initialize stage 2 state
     //
     containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+    containing_scope_count.reset(new (std::nothrow) uint32_t[max_depth]);
   #ifdef SIMDJSON_USE_COMPUTED_GOTO
     ret_address.reset(new (std::nothrow) void *[max_depth]);
   #else
     ret_address.reset(new (std::nothrow) char[max_depth]);
   #endif
 
-    if (!ret_address || !containing_scope_offset) {
+    if (!ret_address || !containing_scope_offset || !containing_scope_count ) {
       // Could not allocate memory
       return MEMALLOC;
     }
@@ -546,7 +548,9 @@ inline array::iterator array::begin() const noexcept {
 inline array::iterator array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-
+inline uint32_t array::size() const noexcept {
+  return second_tape_value();
+}
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -609,6 +613,9 @@ inline object::iterator object::begin() const noexcept {
 }
 inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
+}
+inline uint32_t object::size() const noexcept {
+  return second_tape_value();
 }
 
 inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
@@ -947,7 +954,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::array>(dom::array(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the ]
+        iter.json_index = iter.first_tape_value() - 1; // Jump to the ]
         depth--;
         break;
       }
@@ -974,7 +981,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::object>(dom::object(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the }
+        iter.json_index = iter.first_tape_value() - 1; // Jump to the }
         depth--;
         break;
       }
@@ -1107,7 +1114,7 @@ inline size_t tape_ref::after_element() const noexcept {
   switch (tape_ref_type()) {
     case tape_type::START_ARRAY:
     case tape_type::START_OBJECT:
-      return tape_value();
+      return first_tape_value();
     case tape_type::UINT64:
     case tape_type::INT64:
     case tape_type::DOUBLE:
@@ -1122,6 +1129,13 @@ really_inline tape_type tape_ref::tape_ref_type() const noexcept {
 really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
+really_inline uint32_t internal::tape_ref::first_tape_value() const noexcept {
+  return static_cast<uint32_t>(doc->tape[json_index]);
+}
+really_inline uint32_t internal::tape_ref::second_tape_value() const noexcept {
+  return static_cast<uint32_t>((doc->tape[json_index]>> 32) & 0xFFFFFF);
+}
+
 template<typename T>
 really_inline T tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t));

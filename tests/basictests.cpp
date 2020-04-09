@@ -201,6 +201,36 @@ namespace document_tests {
     }
     return true;
   }
+  bool count_array_example() {
+    std::cout << __func__ << std::endl;
+    simdjson::padded_string smalljson = "[1,2,3]"_padded;
+    simdjson::dom::parser parser;
+    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::array>();
+    if (error) {
+      printf("This json should  be valid %s.\n", smalljson.data());
+      return false;
+    }
+    if(doc.size() != 3) {
+      printf("This json should  have size three but found %u : %s.\n", doc.size(), smalljson.data());
+      return false;
+    }
+    return true;
+  }
+  bool count_object_example() {
+    std::cout << __func__ << std::endl;
+    simdjson::padded_string smalljson = "{\"1\":1,\"2\":1,\"3\":1}"_padded;
+    simdjson::dom::parser parser;
+    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::object>();
+    if (error) {
+      printf("This json should  be valid %s.\n", smalljson.data());
+      return false;
+    }
+    if(doc.size() != 3) {
+      printf("This json should  have size three but found %u : %s.\n", doc.size(), smalljson.data());
+      return false;
+    }
+    return true;
+  }
   // returns true if successful
   bool stable_test() {
     std::cout << __func__ << std::endl;
@@ -299,6 +329,8 @@ namespace document_tests {
   }
   bool run() {
     return bad_example() &&
+           count_array_example() &&
+           count_object_example() &&
            stable_test() &&
            skyprophet_test() &&
            lots_of_brackets();

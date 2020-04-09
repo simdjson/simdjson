@@ -384,6 +384,7 @@ object_begin:
 
 object_key_state:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.containing_scope_count[parser.depth - 1] ++; // we have a key value pair
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -413,6 +414,7 @@ array_begin:
   }
 
 main_array_switch:
+  doc_parser.containing_scope_count[parser.depth-1] ++; // we have a new value
   /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
   GOTO( parser.parse_value(addresses, addresses.array_continue) );

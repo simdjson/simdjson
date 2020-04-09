@@ -27,16 +27,19 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
 }
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
   containing_scope_offset[depth] = current_loc;
+  containing_scope_count[depth] = 0;
   write_tape(0, internal::tape_type::ROOT);
   return true;
 }
 really_inline bool parser::on_start_object(uint32_t depth) noexcept {
   containing_scope_offset[depth] = current_loc;
+  containing_scope_count[depth] = 0;
   write_tape(0, internal::tape_type::START_OBJECT);
   return true;
 }
 really_inline bool parser::on_start_array(uint32_t depth) noexcept {
   containing_scope_offset[depth] = current_loc;
+  containing_scope_count[depth] = 0;
   write_tape(0, internal::tape_type::START_ARRAY);
   return true;
 }
@@ -44,20 +47,20 @@ really_inline bool parser::on_start_array(uint32_t depth) noexcept {
 really_inline bool parser::on_end_document(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  annotate_previous_loc(containing_scope_offset[depth], current_loc, 0);
   write_tape(containing_scope_offset[depth], internal::tape_type::ROOT);
   return true;
 }
 really_inline bool parser::on_end_object(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   write_tape(containing_scope_offset[depth], internal::tape_type::END_OBJECT);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  annotate_previous_loc(containing_scope_offset[depth], current_loc, containing_scope_count[depth]);
   return true;
 }
 really_inline bool parser::on_end_array(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   write_tape(containing_scope_offset[depth], internal::tape_type::END_ARRAY);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc);
+  annotate_previous_loc(containing_scope_offset[depth], current_loc, containing_scope_count[depth]);
   return true;
 }
 
@@ -117,8 +120,11 @@ really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexc
   doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
 }
 
-really_inline void parser::annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept {
-  doc.tape[saved_loc] |= val;
+really_inline void parser::annotate_previous_loc(uint32_t saved_loc, uint32_t val, uint32_t cnt) noexcept {
+  // count can overflow if it exceeds 24 bits... so we saturate
+  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+  uint32_t cntsat = cnt > 0xFFFFFF ? 0xFFFFFF : cnt & 0xFFFFFF; // this could be optimized?
+  doc.tape[saved_loc] |= val | (static_cast<uint64_t>(cntsat)<< 32);
 }
 
 } // namespace simdjson::dom
