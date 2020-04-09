@@ -139,7 +139,7 @@ run_pointercheck: pointercheck
 	./pointercheck
 
 run_issue150_sh: allparserscheckfile
-	./scripts/issue150.sh
+	./tests/issue150.sh
 
 quickstart: amalgamate
 	cd examples/quickstart && make quickstart
@@ -160,7 +160,7 @@ run_quickstart14: amalgamate
 	cd examples/quickstart && make test14
 
 run_testjson2json_sh: minify json2json
-	./scripts/testjson2json.sh
+	./tests/testjson2json.sh
 
 $(FEATURE_JSON_FILES): benchmark/genfeaturejson.rb
 	ruby ./benchmark/genfeaturejson.rb

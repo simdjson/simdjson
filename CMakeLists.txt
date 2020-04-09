@@ -63,7 +63,7 @@ target_compile_definitions(test-data INTERFACE SIMDJSON_BENCHMARK_DATA_DIR="${CM
 add_subdirectory(dependencies)
 add_subdirectory(tools)
 add_subdirectory(tests)
-add_subdirectory(scripts)
+add_subdirectory(examples)
 add_subdirectory(benchmark)
 
 # for fuzzing, read the comments in the fuzz/CMakeLists.txt file
