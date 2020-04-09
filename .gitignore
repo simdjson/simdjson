@@ -57,11 +57,19 @@ objs
 /allparsingcompetition
 /basictests
 /benchfeatures
+/benchmark/allparsingcompetition
 /benchmark/bench_dom_api
 /benchmark/bench_parse_call
+/benchmark/distinctuseridcompetition
 /benchmark/get_corpus_benchmark
+/benchmark/minifiercompetition
 /benchmark/parse
+/benchmark/parseandstatcompetition
+/benchmark/parse_nonumberparsing
+/benchmark/parse_nostringparsing
+/benchmark/parse_noutf8validation
 /benchmark/parse_stream
+/benchmark/parsingcompetition
 /benchmark/perfdiff
 /benchmark/statisticalmodel
 /build/
@@ -119,6 +127,7 @@ objs
 /simdjson.h
 /singleheader/amalgamation_demo
 /singleheader/demo
+/tests/allparserscheckfile
 /tests/basictests
 /tests/errortests
 /tests/integer_tests

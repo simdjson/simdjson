@@ -1,7 +1,6 @@
 #!/bin/bash
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-cd $SCRIPTPATH/..
-for i in jsonchecker/adversarial/issue150/*.json ; do
+for i in $SCRIPTPATH/../jsonchecker/adversarial/issue150/*.json ; do
   echo $i;
   ./allparserscheckfile -m $i;
   if [ $? -ne 0 ];
