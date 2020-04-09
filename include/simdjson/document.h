@@ -147,7 +147,8 @@ public:
   inline iterator end() const noexcept;
   /**
   * Get the size of the array (number of immediate children).
-  * It is a satured value with a maximum of 0xFFFFFF.
+  * It is a saturated value with a maximum of 0xFFFFFF: if the value
+  * is 0xFFFFFF then the size is 0xFFFFFF or greater.
   */
   inline uint32_t size() const noexcept;
   /**
@@ -240,7 +241,8 @@ public:
   inline iterator end() const noexcept;
   /**
   * Get the size of the object (number of keys).
-  * It is a satured value with a maximum of 0xFFFFFF.
+  * It is a saturated value with a maximum of 0xFFFFFF: if the value
+  * is 0xFFFFFF then the size is 0xFFFFFF or greater.
   */
   inline uint32_t size() const noexcept;
   /**
