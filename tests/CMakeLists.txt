@@ -35,13 +35,15 @@ set_property(
 #
 # json2json test
 #
-add_test(
-  NAME testjson2json
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
-  WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
-)
-set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
-set_property(TEST testjson2json APPEND PROPERTY LABELS slowtests)
+if (NOT MSVC) # Can't run .sh on windows
+  add_test(
+    NAME testjson2json
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
+  )
+  set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
+  set_property(TEST testjson2json APPEND PROPERTY LABELS slowtests)
+endif()
 
 #
 # Competition parse test
@@ -50,7 +52,7 @@ if (SIMDJSON_COMPETITION)
   add_executable(allparserscheckfile allparserscheckfile.cpp)
   target_link_libraries(allparserscheckfile competition-all)
 
-  add_test(issue150 issue150.sh)
+  add_test(issue150 ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
   set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
   set_property(TEST issue150 APPEND PROPERTY LABELS slowtests)
 endif()
