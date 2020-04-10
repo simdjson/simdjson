@@ -10,7 +10,8 @@
 #include "simdjson/simdjson.h"
 #include "simdjson/padded_string.h"
 
-namespace simdjson::dom {
+namespace simdjson {
+namespace dom {
 
 class parser;
 class element;
@@ -23,9 +24,7 @@ class document_stream;
 /** The default batch size for parser.parse_many() and parser.load_many() */
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
 
-} // namespace simdjson::dom
-
-namespace simdjson {
+} // namespace dom
 
 template<> struct simdjson_result<dom::element>;
 template<> struct simdjson_result<dom::array>;
@@ -34,9 +33,7 @@ template<> struct simdjson_result<dom::object>;
 template<typename T>
 class minify;
 
-} // namespace simdjson
-
-namespace simdjson::internal {
+namespace internal {
 
 using namespace simdjson::dom;
 
@@ -90,9 +87,9 @@ public:
   size_t json_index;
 };
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson::dom {
+namespace dom {
 
 /**
  * The actual concrete type of a JSON element
@@ -1087,7 +1084,8 @@ private:
   friend class document_stream;
 }; // class parser
 
-} // namespace simdjson::dom
+} // namespace dom
+} // namespace simdjson
 
 namespace simdjson {
 

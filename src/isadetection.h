@@ -148,6 +148,6 @@ static inline uint32_t detect_supported_architectures() {
 
 #endif // end SIMD extension detection code
 
-} // namespace simdjson::internal
+} // namespace simdjson
 
 #endif // SIMDJSON_ISADETECTION_H

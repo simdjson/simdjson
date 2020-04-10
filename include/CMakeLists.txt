@@ -6,10 +6,7 @@
 #
 add_library(simdjson-headers INTERFACE)
 target_compile_features(simdjson-headers INTERFACE cxx_std_11) # headers require at least C++11
-target_include_directories(simdjson-headers INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+target_include_directories(simdjson-headers INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 install(TARGETS simdjson-headers
         EXPORT simdjson-headers-config

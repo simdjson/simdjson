@@ -127,7 +127,8 @@ inline simdjson::padded_string operator "" _padded(const char *str, size_t len) 
   return simdjson::padded_string(str, len);
 }
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -135,6 +136,7 @@ namespace simdjson::internal {
 // responsible to free the memory (free(...))
 inline char *allocate_padded_buffer(size_t length) noexcept;
 
-} // namespace simdjson::internal;
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_H

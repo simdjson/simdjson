@@ -3,7 +3,8 @@
 
 #include "simdjson.h"
 
-namespace simdjson::dom {
+namespace simdjson {
+namespace dom {
 
 //
 // Parser callbacks
@@ -138,6 +139,7 @@ really_inline void parser::end_scope(uint32_t depth) noexcept {
   doc.tape[d.tape_index] |= current_loc | (static_cast<uint64_t>(cntsat) << 32);
 }
 
-} // namespace simdjson::dom
+} // namespace simdjson
+} // namespace dom
 
 #endif // SIMDJSON_DOCUMENT_PARSER_CALLBACKS_H

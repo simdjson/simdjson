@@ -4,7 +4,8 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simdjson::dom;
 
@@ -18,6 +19,7 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_IMPLEMENTATION_H

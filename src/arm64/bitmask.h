@@ -5,7 +5,8 @@
 
 #include "arm64/intrinsics.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
@@ -35,7 +36,8 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
   return bitmask;
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif

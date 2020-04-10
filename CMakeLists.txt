@@ -20,8 +20,8 @@ set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 
 if(MSVC)
   option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
-  set(SIMDJSON_COMPETITION CACHE STRING "Compile competitive benchmarks" OFF)
-  else()
+  option(SIMDJSON_COMPETITION "Compile competitive benchmarks" OFF)
+else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
   option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 endif()
@@ -103,6 +103,22 @@ endif()
 if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
+
+# Workaround for https://gitlab.kitware.com/cmake/cmake/issues/15415#note_633938:
+function(export_private_library NAME)
+  install(TARGETS ${NAME}
+    EXPORT ${NAME}-config
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+  install(EXPORT ${NAME}-config
+    FILE ${NAME}-config.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson-private
+  )
+endfunction()
+
+export_private_library(simdjson-flags)
 
 #
 # Create the top level simdjson library (must be done at this level to use both src/ and include/

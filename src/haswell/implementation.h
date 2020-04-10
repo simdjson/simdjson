@@ -4,7 +4,8 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simdjson::dom;
 
@@ -22,6 +23,7 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::haswell
+} // namespace haswell
+} // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_IMPLEMENTATION_H

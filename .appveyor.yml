@@ -20,10 +20,11 @@ build_script:
   - mkdir build
   - cd build
   - cmake -DSIMDJSON_BUILD_STATIC=%SIMDJSON_BUILD_STATIC% -DSIMDJSON_ENABLE_THREADS=%SIMDJSON_ENABLE_THREADS% -DCMAKE_BUILD_TYPE=%Configuration% -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_GOOGLE_BENCHMARKS=OFF ..
-  - cmake --verbose --build . --config %Configuration%
+  - cmake -LH ..
+  - cmake --build . --config %Configuration% --verbose
 
 test_script:
-  - ctest --verbose --output-on-failure -C %Configuration%
+  - ctest --output-on-failure -C %Configuration% --verbose
   
 matrix:
   fast_finish: true

@@ -242,7 +242,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(7 <= SIMDJSON_PADDING);
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)

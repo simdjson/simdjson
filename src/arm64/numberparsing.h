@@ -16,7 +16,8 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
@@ -32,6 +33,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #include "generic/numberparsing.h"
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H

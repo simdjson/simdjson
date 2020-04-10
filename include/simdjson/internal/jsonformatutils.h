@@ -5,7 +5,8 @@
 #include <iostream>
 #include <sstream>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 class escape_json_string;
 
@@ -58,6 +59,7 @@ inline std::ostream& operator<<(std::ostream& out, const escape_json_string &une
   return out;
 }
 
-} // namespace simdjson::internal
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_INTERNAL_JSONFORMATUTILS_H

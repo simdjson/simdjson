@@ -8,7 +8,8 @@
 #include "westmere/implementation.h"
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simd;
 
@@ -73,7 +74,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_STAGE1_FIND_MARKS_H

@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include <thread>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 /**
  * This algorithm is used to quickly identify the buffer position of
@@ -93,9 +94,12 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
   return len;
 }
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson::dom {
+} // namespace simdjson
+
+namespace simdjson {
+namespace dom {
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
@@ -272,5 +276,6 @@ inline error_code document_stream::json_parse() noexcept {
 }
 #endif // SIMDJSON_THREADS_ENABLED
 
-} // namespace simdjson::dom
+} // namespace dom
+} // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H

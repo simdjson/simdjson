@@ -9,7 +9,8 @@
 #include <memory>
 #include <string>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -30,9 +31,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   return padded_buffer;
 } // allocate_padded_buffer()
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson {
 
 inline padded_string::padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
 inline padded_string::padded_string(size_t length) noexcept

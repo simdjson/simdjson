@@ -1,6 +1,8 @@
 #include "simdjson/error.h"
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
+
   SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[] {
     { SUCCESS, "No error" },
     { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
@@ -28,4 +30,6 @@ namespace simdjson::internal {
     { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
     { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" }
   }; // error_messages[]
-}
+
+} // namespace internal
+} // namespace simdjson

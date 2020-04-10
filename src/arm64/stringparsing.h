@@ -7,7 +7,8 @@
 #include "arm64/intrinsics.h"
 #include "arm64/bitmanipulation.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simd;
 
@@ -29,7 +30,7 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + sizeof(v0));
   v0.store(dst);
@@ -46,7 +47,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 #include "generic/stringparsing.h"
 
-}
-// namespace simdjson::amd64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_H

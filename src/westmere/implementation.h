@@ -5,7 +5,8 @@
 #include "simdjson/implementation.h"
 #include "isadetection.h"
 
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simdjson::dom;
 
@@ -19,6 +20,7 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::westmere
+} // namespace westmere
+} // namespace simdjson
 
 #endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H

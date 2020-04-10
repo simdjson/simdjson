@@ -6,12 +6,14 @@
 #include "arm64/stringparsing.h"
 #include "arm64/numberparsing.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 #include "generic/atomparsing.h"
 #include "generic/stage2_build_tape.h"
 #include "generic/stage2_streaming_build_tape.h"
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STAGE2_BUILD_TAPE_H
