@@ -16,6 +16,7 @@ inline void parser::init_stage2() noexcept {
   error = UNINITIALIZED;
 }
 
+
 really_inline error_code parser::on_error(error_code new_error_code) noexcept {
   error = new_error_code;
   return new_error_code;
@@ -25,21 +26,29 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
   valid = true;
   return success_code;
 }
+// increment_count increments the count of keys in an object or values in an array.
+// Note that if you are at the level of the values or elements, the count
+// must be increment in the preceding depth (depth-1) where the array or
+// the object resides.
+really_inline void parser::increment_count(uint32_t depth) noexcept {
+  containing_scope[depth].count++;
+}
+
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  containing_scope_count[depth] = 0;
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
   write_tape(0, internal::tape_type::ROOT);
   return true;
 }
 really_inline bool parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  containing_scope_count[depth] = 0;
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
   write_tape(0, internal::tape_type::START_OBJECT);
   return true;
 }
 really_inline bool parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope_offset[depth] = current_loc;
-  containing_scope_count[depth] = 0;
+  containing_scope[depth].tape_index = current_loc;
+  containing_scope[depth].count = 0;
   write_tape(0, internal::tape_type::START_ARRAY);
   return true;
 }
@@ -47,20 +56,20 @@ really_inline bool parser::on_start_array(uint32_t depth) noexcept {
 really_inline bool parser::on_end_document(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
-  annotate_previous_loc(containing_scope_offset[depth], current_loc, 0);
-  write_tape(containing_scope_offset[depth], internal::tape_type::ROOT);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::ROOT);
+  end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_object(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], internal::tape_type::END_OBJECT);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc, containing_scope_count[depth]);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
+  end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_array(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope_offset[depth], internal::tape_type::END_ARRAY);
-  annotate_previous_loc(containing_scope_offset[depth], current_loc, containing_scope_count[depth]);
+  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
+  end_scope(depth);
   return true;
 }
 
@@ -120,11 +129,13 @@ really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexc
   doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
 }
 
-really_inline void parser::annotate_previous_loc(uint32_t saved_loc, uint32_t val, uint32_t cnt) noexcept {
+// this function is responsible for annotating the start of the scope
+really_inline void parser::end_scope(uint32_t depth) noexcept {
+  scope_descriptor d = containing_scope[depth];
   // count can overflow if it exceeds 24 bits... so we saturate
   // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-  uint32_t cntsat = cnt > 0xFFFFFF ? 0xFFFFFF : cnt & 0xFFFFFF; // this could be optimized?
-  doc.tape[saved_loc] |= val | (static_cast<uint64_t>(cntsat)<< 32);
+  const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
+  doc.tape[d.tape_index] |= current_loc | (static_cast<uint64_t>(cntsat) << 32);
 }
 
 } // namespace simdjson::dom

@@ -25,7 +25,7 @@ struct streaming_structural_parser: structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope_offset[depth] != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
@@ -97,6 +97,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
+  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -126,6 +127,7 @@ array_begin:
   }
 
 main_array_switch:
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
   /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
   GOTO( parser.parse_value(addresses, addresses.array_continue) );

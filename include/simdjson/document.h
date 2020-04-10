@@ -621,6 +621,13 @@ private:
   friend class object;
 };
 
+
+// expectation: sizeof(scope_descriptor) = 64/8.
+struct scope_descriptor {
+  uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
+  uint32_t count; // how many elements in the scope
+};
+
 /**
   * A persistent document parser.
   *
@@ -936,10 +943,8 @@ public:
   std::unique_ptr<uint32_t[]> structural_indexes;
 
   /** @private Tape location of each open { or [ */
-  std::unique_ptr<uint32_t[]> containing_scope_offset;
+  std::unique_ptr<scope_descriptor[]> containing_scope;
 
-  /** @private Number of elements in current scope */
-  std::unique_ptr<uint32_t[]> containing_scope_count;
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
   std::unique_ptr<void*[]> ret_address;
@@ -1005,6 +1010,8 @@ public:
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private
 
+  really_inline void increment_count(uint32_t depth) noexcept; ///< @private
+  really_inline void end_scope(uint32_t depth) noexcept; ///< @private
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -1050,7 +1057,6 @@ private:
   //
 
   inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
-  inline void annotate_previous_loc(uint32_t saved_loc, uint32_t val, uint32_t cnt) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
