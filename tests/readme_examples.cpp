@@ -109,7 +109,7 @@ namespace treewalk_1 {
   }
 }
 
-#if (SIMDJSON_CPLUSPLUS >= 201703L)
+#ifdef SIMDJSON_CPLUSPLUS17
 void basics_cpp17_1() {
   dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
@@ -179,7 +179,7 @@ void performance_1() {
   cout << doc2 << endl;
 }
 
-#if (SIMDJSON_CPLUSPLUS >= 201703L)
+#ifdef SIMDJSON_CPLUSPLUS17
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_2() {
   dom::parser parser(1024*1024); // Never grow past documents > 1MB

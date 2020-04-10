@@ -1,6 +1,6 @@
 include_directories( . linux )
-link_libraries(simdjson)
-# add_executable(benchfeatures benchfeatures.cpp)
+link_libraries(simdjson simdjson-flags)
+# add_executable(benchfeatures benchfeatures.cpp) # doesn't presently compile at all
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
 add_executable(perfdiff perfdiff.cpp)
 add_executable(parse parse.cpp)

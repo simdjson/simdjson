@@ -1,5 +1,29 @@
 #
-# simdjson as a library
+# For callers who intend to #include simdjson.cpp.
+#
+# target_link_libraries(my-program simdjson-include-source) gives you the header and source
+# directories. It does not specify any compiler flags.
+#
+add_library(simdjson-include-source INTERFACE)
+target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
+target_include_directories(simdjson-include-source INTERFACE .)
+
+#
+# For callers who intend to compile simdjson.cpp themselves.
+#
+# target_link_libraries(my-object simdjson-source) gives you the header and source directories, plus
+# the .cpp sources. It does not specify any compiler flags.
+#
+add_library(simdjson-source INTERFACE)
+target_sources(simdjson-source INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp)
+target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
+
+#
+# simdjson is the distributed library compiled with flags.
+#
+# target_link_libraries(my-object simdjson) gives you the .so or .a to link against, plus the header
+# directory. It does not specify any compiler flags, even though simdjson.so/a was compiled with
+# target_link_libraries(simdjson PRIVATE simdjson-flags).
 #
 
 if(SIMDJSON_BUILD_STATIC)
@@ -15,9 +39,8 @@ else()
   endif()
 endif()
 
-target_sources(simdjson PRIVATE simdjson.cpp)
-target_link_libraries(simdjson PUBLIC simdjson-headers)
-target_include_directories(simdjson PRIVATE .)
+target_link_libraries(simdjson PRIVATE simdjson-source simdjson-flags)
+target_link_libraries(simdjson INTERFACE simdjson-headers) # Only expose the headers, not sources
 
 if(NOT MSVC)
   ## We output the library at the root of the current directory where cmake is invoked
@@ -25,13 +48,6 @@ if(NOT MSVC)
   set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
   MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${CMAKE_BINARY_DIR})
 endif()
-
-#
-# simdjson to be compiled into your exe as source (you must #include simdjson.cpp)
-#
-add_library(simdjson-source INTERFACE)
-target_link_libraries(simdjson-source INTERFACE simdjson-headers)
-target_include_directories(simdjson-source INTERFACE .)
 
 #
 # Installation

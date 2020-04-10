@@ -1,5 +1,4 @@
-link_libraries(simdjson)
-link_libraries(simdjson-windows-headers)
+link_libraries(simdjson simdjson-flags simdjson-windows-headers)
 
 add_executable(json2json json2json.cpp)
 add_executable(jsonstats jsonstats.cpp)

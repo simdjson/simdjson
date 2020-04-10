@@ -4,7 +4,7 @@
 using namespace std;
 using namespace simdjson;
 
-#if (SIMDJSON_CPLUSPLUS >= 201703L)
+#ifdef SIMDJSON_CPLUSPLUS17
 void basics_error_1() {
   dom::parser parser;
   auto json = "1"_padded;
@@ -76,7 +76,7 @@ void basics_error_3() {
   }
 }
 
-#if (SIMDJSON_CPLUSPLUS >= 201703L)
+#ifdef SIMDJSON_CPLUSPLUS17
 void basics_error_3_cpp17() {
   auto cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
