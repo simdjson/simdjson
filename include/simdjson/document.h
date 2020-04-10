@@ -41,6 +41,7 @@ namespace simdjson::internal {
 using namespace simdjson::dom;
 
 constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
+constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
 
 /**
  * The possible types in the tape. Internal only.
@@ -70,8 +71,8 @@ public:
   inline size_t after_element() const noexcept;
   really_inline tape_type tape_ref_type() const noexcept;
   really_inline uint64_t tape_value() const noexcept;
-  really_inline uint32_t first_tape_value() const noexcept;
-  really_inline uint32_t second_tape_value() const noexcept;
+  really_inline uint32_t matching_brace_index() const noexcept;
+  really_inline uint32_t scope_count() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
   inline std::string_view get_string_view() const noexcept;
