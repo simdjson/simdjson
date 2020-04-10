@@ -80,6 +80,10 @@
 #if defined(BOOST_HAS_THREADS) || defined(_REENTRANT) || defined(_MT)
 #define SIMDJSON_THREADS_ENABLED
 #endif
+#ifdef __APPLE__
+// https://github.com/simdjson/simdjson/issues/691
+#undef SIMDJSON_THREADS_ENABLED
+#endif
 
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
