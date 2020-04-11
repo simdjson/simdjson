@@ -477,7 +477,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return document_stream_test() &&
+    return json_issue467() &&
+           document_stream_test() &&
            document_stream_utf8_test();
   }
 }
@@ -538,6 +539,11 @@ namespace parse_api_tests {
     for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       if (error) { cerr << error << endl; return false; }
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+      auto arr = doc.get<dom::array>().value(); // let us get the array
+      if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
+      size_t c = 0;
+      for(auto v : arr) { c++; (void)v; }
+      if(c != 9) { cerr << "mismatched array size"<< endl; return false; }
       count++;
     }
     if (count != 793) { cerr << "Expected 793 documents, but load_many loaded " << count << " documents." << endl; return false; }
@@ -570,6 +576,13 @@ namespace parse_api_tests {
     dom::parser parser;
     const element doc = parser.load(TWITTER_JSON);
     if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
+    size_t c = 0;
+    dom::object obj = doc.get<dom::object>().value(); // let us get the object
+    for (auto x : obj) {
+      c++;
+      (void) x;
+    }
+    if(c != obj.size()) { cerr << "Mismatched size" << endl; return false; }
     return true;
   }
   bool parser_load_many_exception() {
