@@ -16,7 +16,6 @@ inline void parser::init_stage2() noexcept {
   error = UNINITIALIZED;
 }
 
-
 really_inline error_code parser::on_error(error_code new_error_code) noexcept {
   error = new_error_code;
   return new_error_code;
