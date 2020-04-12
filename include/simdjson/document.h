@@ -143,6 +143,10 @@ public:
    * Part of the std::iterable interface.
    */
   inline iterator end() const noexcept;
+  /**
+  * Get the size of the array (number of immediate children).
+  */
+  inline uint32_t size() noexcept;
 
   /**
    * Get the value associated with the given JSON pointer.
@@ -215,6 +219,7 @@ public:
      */
     inline element value() const noexcept;
   private:
+    size_t lazy_size{SIZE_MAX};
     really_inline iterator(const document *doc, size_t json_index) noexcept;
     friend class object;
   };
@@ -232,6 +237,10 @@ public:
    */
   inline iterator end() const noexcept;
 
+  /**
+  * Get the size of the array (number of immediate children).
+  */
+  inline uint32_t size() noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -303,6 +312,7 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 private:
+  size_t lazy_size{SIZE_MAX};
   really_inline object(const document *doc, size_t json_index) noexcept;
   friend class element;
   friend struct simdjson_result<element>;

@@ -547,6 +547,16 @@ inline array::iterator array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
 
+inline uint32_t array::size() noexcept {
+  if( lazy_size != SIZE_MAX ) {
+    return lazy_size;
+  }
+  lazy_size = 0;
+  for(auto i = begin(); i != end(); ++i) {
+    lazy_size++;
+  }
+  return lazy_size;
+}
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -609,6 +619,16 @@ inline object::iterator object::begin() const noexcept {
 }
 inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
+}
+inline uint32_t object::size() noexcept {
+  if( lazy_size != SIZE_MAX ) {
+    return lazy_size;
+  }
+  lazy_size = 0;
+  for(auto i = begin(); i != end(); ++i) {
+    lazy_size++;
+  }
+  return lazy_size;
 }
 
 inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
