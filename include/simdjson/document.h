@@ -145,6 +145,11 @@ public:
   inline iterator end() const noexcept;
   /**
   * Get the size of the array (number of immediate children).
+  * 
+  * The size is evaluated lazily: the first time the function
+  * is called, it is computed (in linear time) and following
+  * calls to the same function on the same instance just
+  * return the precomputed value.
   */
   inline uint32_t size() noexcept;
 
@@ -173,6 +178,7 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
 private:
+  size_t lazy_size{SIZE_MAX}; // convention: SIZE_MAX means "unevaluated"
   really_inline array(const document *doc, size_t json_index) noexcept;
   friend class element;
   friend struct simdjson_result<element>;
@@ -219,7 +225,6 @@ public:
      */
     inline element value() const noexcept;
   private:
-    size_t lazy_size{SIZE_MAX};
     really_inline iterator(const document *doc, size_t json_index) noexcept;
     friend class object;
   };
@@ -239,6 +244,11 @@ public:
 
   /**
   * Get the size of the array (number of immediate children).
+  * 
+  * The size is evaluated lazily: the first time the function
+  * is called, it is computed (in linear time) and following
+  * calls to the same function on the same instance just
+  * return the precomputed value.
   */
   inline uint32_t size() noexcept;
   /**
@@ -312,7 +322,7 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 private:
-  size_t lazy_size{SIZE_MAX};
+  size_t lazy_size{SIZE_MAX}; // convention: SIZE_MAX means "unevaluated"
   really_inline object(const document *doc, size_t json_index) noexcept;
   friend class element;
   friend struct simdjson_result<element>;

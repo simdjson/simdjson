@@ -548,7 +548,7 @@ inline array::iterator array::end() const noexcept {
 }
 
 inline uint32_t array::size() noexcept {
-  if( lazy_size != SIZE_MAX ) {
+  if(lazy_size != SIZE_MAX) {
     return lazy_size;
   }
   lazy_size = 0;
@@ -621,7 +621,7 @@ inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
 inline uint32_t object::size() noexcept {
-  if( lazy_size != SIZE_MAX ) {
+  if(lazy_size != SIZE_MAX) {
     return lazy_size;
   }
   lazy_size = 0;
