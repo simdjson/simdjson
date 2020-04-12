@@ -366,7 +366,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
   return bytes_read;
 }
 
-inline simdjson_result<element> parser::load(const std::string &path) noexcept {
+inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
   size_t len;
   error_code code;
   read_file(path).tie(len, code);

@@ -674,8 +674,8 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline simdjson_result<element> load(const std::string &path) noexcept; 
-
+  inline simdjson_result<element> load(const std::string &path) & noexcept;
+  inline simdjson_result<element> load(const std::string &path) &&  = delete ;
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
