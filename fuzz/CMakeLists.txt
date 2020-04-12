@@ -27,7 +27,7 @@ set(SIMDJSON_FUZZ_LDFLAGS "" CACHE STRING "LDFLAGS for the fuzz targets")
 
 set(SOURCES
   fuzz_parser.cpp
-#  fuzz_minify.cpp   # <--- does not pass the build check test on oss-fuzz, says "partially instrumented". help needed!
+  fuzz_minify.cpp
   fuzz_dump.cpp
   fuzz_print_json.cpp
   fuzz_dump_raw_tape.cpp

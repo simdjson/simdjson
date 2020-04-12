@@ -23,7 +23,7 @@ jobs:
         sudo apt-get install --quiet ninja-build valgrind zip unzip
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 8
+        sudo ./llvm.sh 9
 
     - uses: actions/checkout@v1
     - name: Create and prepare the initial seed corpus
@@ -55,7 +55,7 @@ jobs:
       run: |
         for fuzzer in $allfuzzers; do
           mkdir -p out/$fuzzer # in case this is a new fuzzer, or corpus.tar is broken
-          build-ossfuzz-fast8/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=30 $artifactsprefix || touch failed
+          build-ossfuzz-fast9/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=30 $artifactsprefix || touch failed
           # make sure the failing output is visible in the log
           if [ -e failed ] ; then
             ls fuzzfailure/* |xargs -n1 base64
@@ -68,22 +68,22 @@ jobs:
         for fuzzer in $allfuzzers; do
           build-ossfuzz-withavx/fuzz/fuzz_$fuzzer       out/$fuzzer -max_total_time=20 $artifactsprefix || touch failed
           build-ossfuzz-noavx/fuzz/fuzz_$fuzzer         out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
-          build-ossfuzz-noavx8/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
+          build-ossfuzz-noavx9/fuzz/fuzz_$fuzzer        out/$fuzzer -max_total_time=10 $artifactsprefix || touch failed
           if [ -e failed ] ; then
             # make sure the failing output is visible in the log
             ls fuzzfailure/* |xargs -n1 base64
             exit 1
           fi
           echo disable msan runs, it fails inside the fuzzing engine and not the fuzzed code!
-          echo build-ossfuzz-msan-noavx8/fuzz/fuzz_$fuzzer   out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
-          echo build-ossfuzz-msan-withavx8/fuzz/fuzz_$fuzzer out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
+          echo build-ossfuzz-msan-noavx9/fuzz/fuzz_$fuzzer   out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
+          echo build-ossfuzz-msan-withavx9/fuzz/fuzz_$fuzzer out/$fuzzer -max_total_time=10 -reload=0 $artifactsprefix
           echo now have $(ls out/$fuzzer |wc -l) files in corpus        
         done
     - name: Minimize the corpus with the fast fuzzer
       run: |
         for fuzzer in $allfuzzers; do      
           mkdir -p out/cmin/$fuzzer
-          build-ossfuzz-fast8/fuzz/fuzz_$fuzzer -merge=1  out/cmin/$fuzzer out/$fuzzer
+          build-ossfuzz-fast9/fuzz/fuzz_$fuzzer -merge=1  out/cmin/$fuzzer out/$fuzzer
           rm -rf out/$fuzzer
           mv out/cmin/$fuzzer out/$fuzzer
         done
