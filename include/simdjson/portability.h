@@ -81,6 +81,18 @@
 #define SIMDJSON_THREADS_ENABLED
 #endif
 
+
+// workaround for large stack sizes under -O0.
+// https://github.com/simdjson/simdjson/issues/691
+#ifdef __APPLE__
+#ifndef __OPTIMIZE__
+// Apple systems have small stack sizes in secondary threads.
+// Lack of compiler optimization may generate high stack usage.
+// So we are disabling multithreaded support for safety.
+#undef SIMDJSON_THREADS_ENABLED
+#endif
+#endif
+
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
