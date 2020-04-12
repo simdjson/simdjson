@@ -389,25 +389,29 @@ public:
   really_inline bool is_null() const noexcept;
 
   /**
-   * Tell whether the value can be cast to the given primitive type.
+   * Tell whether the value can be cast to provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::array
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
   really_inline bool is() const noexcept;
 
   /**
-   * Get the value as the given primitive type.
+   * Get the value as the provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::array
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @returns The value cast to the given type, or:
    *          INCORRECT_TYPE if the value cannot be cast to the given type.
