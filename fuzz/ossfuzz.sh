@@ -39,6 +39,6 @@ cmake --build .
 cp fuzz/fuzz_* $OUT
 
 # all corpora are equal, they all take json as input
-for f in $OUT/fuzz* ; do
+for f in $(ls $OUT/fuzz* |grep -v '.zip$') ; do
    cp ../corpus.zip $OUT/$(basename $f).zip
 done
