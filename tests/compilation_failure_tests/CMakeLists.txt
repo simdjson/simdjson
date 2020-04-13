@@ -30,5 +30,5 @@ endfunction(add_compile_test)
 
 
 add_dual_compile_test(example_compiletest example_compiletest.cpp)
-add_dual_compile_test(dangling_parser     dangling_parser.cpp)
+add_dual_compile_test(dangling_parser_load     dangling_parser_load.cpp)
 
