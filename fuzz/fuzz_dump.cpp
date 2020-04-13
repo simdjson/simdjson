@@ -6,55 +6,57 @@
 
 #include "NullBuffer.h"
 
-// from the README on the front page
-void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
-  NulOStream os;
-
-  if (pjh.is_object()) {
-    os << "{";
-    if (pjh.down()) {
-      pjh.print(os); // must be a string
-      os << ":";
-      pjh.next();
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        os << ",";
-        pjh.print(os);
-        os << ":";
-        pjh.next();
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
+// example from doc/basics.md#tree-walking-and-json-element-types
+void print_json(std::ostream& os, simdjson::dom::element element) {
+    const char endl='\n';
+    switch (element.type()) {
+    case simdjson::dom::element_type::ARRAY:
+        os << "[";
+        for (simdjson::dom::element child : simdjson::dom::array(element)) {
+            print_json(os, child);
+            os << ",";
+        }
+        os << "]";
+        break;
+    case simdjson::dom::element_type::OBJECT:
+        os << "{";
+        for (simdjson::dom::key_value_pair field : simdjson::dom::object(element)) {
+            os << "\"" << field.key << "\": ";
+            print_json(os, field.value);
+        }
+        os << "}";
+        break;
+    case simdjson::dom::element_type::INT64:
+        os << int64_t(element) << endl;
+        break;
+    case simdjson::dom::element_type::UINT64:
+        os << uint64_t(element) << endl;
+        break;
+    case simdjson::dom::element_type::DOUBLE:
+        os << double(element) << endl;
+        break;
+    case simdjson::dom::element_type::STRING:
+        os << std::string_view(element) << endl;
+        break;
+    case simdjson::dom::element_type::BOOL:
+        os << bool(element) << endl;
+        break;
+    case simdjson::dom::element_type::NULL_VALUE:
+        os << "null" << endl;
+        break;
     }
-    os << "}";
-  } else if (pjh.is_array()) {
-    os << "[";
-    if (pjh.down()) {
-      compute_dump(pjh); // let us recurse
-      while (pjh.next()) {
-        os << ",";
-        compute_dump(pjh); // let us recurse
-      }
-      pjh.up();
-    }
-    os << "]";
-  } else {
-    pjh.print(os); // just print the lone value
-  }
 }
-
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
-  try {
-    auto pj = simdjson::build_parsed_json(Data, Size);
-    if (!pj.is_valid()) {
-      throw 1;
+    try {
+        simdjson::dom::parser pj;
+        auto elem=pj.parse(Data, Size);
+        auto v=elem.value();
+        NulOStream os;
+        //std::ostream& os(std::cout);
+        print_json(os,v);
+    } catch (...) {
     }
-    simdjson::ParsedJson::Iterator pjh(pj);
-    if (pjh.is_ok()) {
-      compute_dump(pjh);
-    }
-  } catch (...) {
-  }
-  return 0;
+    return 0;
+
 }
