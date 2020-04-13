@@ -29,6 +29,7 @@ function(add_dual_compile_test TEST_NAME TEST_FILE)
 endfunction(add_compile_test)
 
 
-add_dual_compile_test(example_compiletest example_compiletest.cpp)
-add_dual_compile_test(dangling_parser_load     dangling_parser_load.cpp)
+add_dual_compile_test(example_compiletest     example_compiletest.cpp)
+add_dual_compile_test(dangling_parser_load    dangling_parser_load.cpp)
+add_dual_compile_test(dangling_parser_parse1  dangling_parser_parse1.cpp)
 
