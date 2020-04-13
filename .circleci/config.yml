@@ -92,7 +92,16 @@ jobs:
     executor: clang6
     environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_ENABLE_THREADS=ON }
     steps: [ init_clang6, cmake_test ]
-
+  gcc-avx-noexcept:
+    description: Build, run tests and check performance on GCC 7 and AVX 2 *without* threads
+    executor: gcc7
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_DISABLE_EXCEPTIONS=ON }
+    steps: [ cmake_test ]
+  clang-avx-noexcept:
+    description: Build, run tests and check performance on Clang 6 and AVX 2 with threads
+    executor: clang6
+    environment: { CMAKE_TEST_FLAGS: -DSIMDJSON_DISABLE_EXCEPTIONS=ON }
+    steps: [ init_clang6, cmake_test ]
   gcc9-avx:
     description: Build, run tests and check performance on GCC 9 and AVX 2
     executor: gcc9
@@ -197,6 +206,8 @@ workflows:
   version: 2.1
   build_and_test:
     jobs:
+      - gcc-avx-noexcept
+      - clang-avx-noexcept
       - gcc9-avx
       - gcc8-avx
       - gcc-avx

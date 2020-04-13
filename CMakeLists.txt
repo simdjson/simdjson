@@ -20,6 +20,14 @@ project(simdjson
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
+### If we are going to pretend to support a mode without exceptions, we should check:
+option(SIMDJSON_DISABLE_EXCEPTIONS "Disables exceptions in builds" OFF)
+if(SIMDJSON_DISABLE_EXCEPTIONS)
+	  if(UNIX)
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+	  endif(UNIX)
+endif(SIMDJSON_DISABLE_EXCEPTIONS)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MACOSX_RPATH OFF)
