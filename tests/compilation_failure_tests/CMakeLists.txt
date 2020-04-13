@@ -29,8 +29,10 @@ function(add_dual_compile_test TEST_NAME TEST_FILE)
 endfunction(add_compile_test)
 
 
-add_dual_compile_test(example_compiletest     example_compiletest.cpp)
-add_dual_compile_test(dangling_parser_load    dangling_parser_load.cpp)
-add_dual_compile_test(dangling_parser_parse1  dangling_parser_parse1.cpp)
-add_dual_compile_test(dangling_parser_parse2  dangling_parser_parse2.cpp)
+add_dual_compile_test(example_compiletest               example_compiletest.cpp)
+add_dual_compile_test(dangling_parser_load              dangling_parser_load.cpp)
+add_dual_compile_test(dangling_parser_parse_uint8       dangling_parser_parse_uint8.cpp)
+add_dual_compile_test(dangling_parser_parse_uchar       dangling_parser_parse_uchar.cpp)
+add_dual_compile_test(dangling_parser_parse_stdstring   dangling_parser_parse_stdstring.cpp)
+add_dual_compile_test(dangling_parser_parse_padstring   dangling_parser_parse_padstring.cpp)
 
