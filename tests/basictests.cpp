@@ -220,7 +220,12 @@ namespace document_tests {
         "}"_padded;
     simdjson::dom::parser parser;
     std::ostringstream myStream;
+#if SIMDJSON_EXCEPTIONS
     myStream << parser.parse(json);
+#else
+    auto [d,e] = parser.parse(json);
+    myStream << d;
+#endif
     std::string newjson = myStream.str();
     if(static_cast<std::string>(json) != newjson) {
       std::cout << "serialized json differs!" << std::endl;
@@ -697,6 +702,65 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool large_int() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string s= R"({"t":9223372036854775808})";
+    simdjson::dom::parser parser;
+    auto doc = parser.parse(s);
+    auto obj = doc.get<dom::object>();
+
+#if SIMDJSON_EXCEPTIONS
+    if(obj["t"].is<int64_t>()) {
+      cerr << "unexpected int64_t" << endl;
+      return false;
+    }
+    if(!obj["t"].is<uint64_t>()) {
+      cerr << "expected uint64_t" << endl;
+      return false;
+    }
+    try {
+      if(obj["t"].get<int64_t>() != std::numeric_limits<int64_t>::min()) {
+        cerr << "bad int64_t value" << endl;
+        return false;
+      }
+      return false; // we should end up here because an exception was not thrown!!!
+    } catch(...) {
+      // we should end up here!
+    }
+    try {
+      if(static_cast<int64_t>(obj["t"]) != std::numeric_limits<int64_t>::min()) {
+        cerr << "bad int64_t value" << endl;
+        return false;
+      }
+      return false; // we should end up here because an exception was not thrown!!!
+    } catch(...) {
+      // we should end up here!
+    }
+    if(obj["t"].get<uint64_t>() != UINT64_C(9223372036854775808)) {
+      cerr << "bad uint64_t value" << endl;
+      return false;
+    }
+#else // if exceptions are disabled
+    auto [v,err] = obj["t"].get<int64_t>();
+    if(err == SUCCESS) {
+      cerr << "get<int64_t>() should fail" << endl;
+      return false;
+    }
+    auto [v2,er2] = obj["t"].get<uint64_t>();
+    if(er2 != SUCCESS) {
+      cerr << "get<uint64_t>() should work" << endl;
+      return false;
+    }
+    if(v2 != UINT64_C(9223372036854775808)) {
+      cerr << "bad uint64_t value" << endl;
+      return false;
+    }
+
+#endif
+
+    return true;
+  }
+
   bool array_iterator() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 1, 10, 100 ])");
@@ -1087,7 +1151,8 @@ namespace dom_api_tests {
 #endif
 
   bool run() {
-    return ParsedJson_Iterator_test() &&
+    return large_int() &&
+           ParsedJson_Iterator_test() &&
            object_iterator() &&
            array_iterator() &&
            object_iterator_empty() &&
