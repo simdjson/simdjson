@@ -7,7 +7,7 @@
 #include "NullBuffer.h"
 
 // example from doc/basics.md#tree-walking-and-json-element-types
-void print_json(std::ostream& os, simdjson::dom::element element) {
+static void print_json(std::ostream& os, simdjson::dom::element element) {
     const char endl='\n';
     switch (element.type()) {
     case simdjson::dom::element_type::ARRAY:
