@@ -77,12 +77,12 @@ fi
 
 
 # a fuzzer with sanitizers, built with avx disabled.
-variant=ossfuzz-noavx8
-if which clang++-8 >/dev/null 2>&1 ; then
+variant=ossfuzz-noavx9
+if which clang++-9 >/dev/null 2>&1 ; then
     if [ ! -d build-$variant ] ; then
 	
-	export CC=clang-8
-	export CXX="clang++-8"
+	export CC=clang-9
+	export CXX="clang++-9"
 	export CFLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -mno-avx2 -mno-avx "
 	export CXXFLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=undefined -mno-avx2 -mno-avx"
 	export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
@@ -103,7 +103,7 @@ if which clang++-8 >/dev/null 2>&1 ; then
 	cd ..
     fi
 else
-    echo "$me: WARNING clang++-8 not found, please install it to build $variant"
+    echo "$me: WARNING clang++-9 not found, please install it to build $variant"
 fi
 
 # a fuzzer with sanitizers, default built
@@ -132,11 +132,11 @@ if [ ! -d build-$variant ] ; then
 fi
 
 # a fast fuzzer, for fast exploration
-variant=ossfuzz-fast8
-if which clang++-8 >/dev/null 2>&1 ; then
+variant=ossfuzz-fast9
+if which clang++-9 >/dev/null 2>&1 ; then
     if [ ! -d build-$variant ] ; then
-	export CC=clang-8
-	export CXX="clang++-8"
+	export CC=clang-9
+	export CXX="clang++-9"
 	export CFLAGS="-fsanitize=fuzzer-no-link -O3 -g"
 	export CXXFLAGS="-fsanitize=fuzzer-no-link -O3 -g"
 	export LIB_FUZZING_ENGINE="-fsanitize=fuzzer"
@@ -157,6 +157,6 @@ if which clang++-8 >/dev/null 2>&1 ; then
 	cd ..
     fi
 else
-    echo "$me: WARNING clang++-8 not found, please install it to build $variant"
+    echo "$me: WARNING clang++-9 not found, please install it to build $variant"
 fi
 
