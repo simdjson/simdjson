@@ -58,7 +58,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Extracting Values:** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
   dom::object and dom::array. You can also use is<*typename*>()` to test if it is a
-  given type, and get<*typename*>() to get the value (an exception is still thrown if the cast is not possible): casts and get<*typename*>() can be used interchangeably. Note that if you are compiling simdjson without support for exceptions, casts are disabled, and get<*typename*>() returns a pair (result,error code).
+  given type, and get<*typename*>() to get the value (an exception is still thrown if the cast is not possible): casts and get<*typename*>() can be used interchangeably. You can use the variant of get<*typename*>() which returns a pair to avoid exceptions: e.g.,  `auto [value,error] = get<double>()`.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
