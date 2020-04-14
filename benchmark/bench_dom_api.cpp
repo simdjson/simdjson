@@ -8,7 +8,116 @@ using namespace std;
 
 const padded_string EMPTY_ARRAY("[]", 2);
 
-const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "";
+const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+const char *NUMBERS_JSON = SIMDJSON_BENCHMARK_DATA_DIR "numbers.json";
+
+
+
+static void numbers_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+  if(error) {
+    cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+    return;
+  }
+  for (auto _ : state) {
+    std::vector<double> container;
+    for (auto e : arr) {
+      double x;
+      e.get<double>().tie(x,error);
+      if(error) { cerr << "found a node that is not an number?" << endl; break;}
+      container.push_back(x);
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_scan);
+
+static void numbers_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+  if(error) {
+    cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+    return;
+  }
+  for (auto _ : state) {
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (auto e : arr) {
+      double x;
+      e.get<double>().tie(x,error);
+      if(error) { cerr << "found a node that is not an number?" << endl; break;}
+      container[pos++] = x;
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_size_scan);
+
+
+static void numbers_load_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  for (auto _ : state) {
+    // this may hit the disk, but probably just once
+    parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+    if(error) {
+      cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+      break;
+    }
+    std::vector<double> container;
+    for (auto e : arr) {
+      double x;
+      e.get<double>().tie(x,error);
+      if(error) { cerr << "found a node that is not an number?" << endl; break;}
+      container.push_back(x);
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_load_scan);
+
+static void numbers_load_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  for (auto _ : state) {
+    // this may hit the disk, but probably just once
+    parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+    if(error) {
+      cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+      break;
+    }
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (auto e : arr) {
+      double x;
+      e.get<double>().tie(x,error);
+      if(error) { cerr << "found a node that is not an number?" << endl; break;}
+      container[pos++] = x;
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_load_size_scan);
+
 
 #if SIMDJSON_EXCEPTIONS
 
