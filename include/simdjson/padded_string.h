@@ -118,7 +118,7 @@ private:
  * @param s The padded_string instance.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { out << s.data(); return out; }
+inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { return out << s.data(); }
 
 } // namespace simdjson
 
