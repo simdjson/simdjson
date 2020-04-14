@@ -396,7 +396,8 @@ public:
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
    * - Array: dom::array
-   * - Object: dom::array
+   * - Object: dom::object
+   *
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
@@ -410,7 +411,8 @@ public:
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
    * - Array: dom::array
-   * - Object: dom::array
+   * - Object: dom::object
+   *
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @returns The value cast to the given type, or:
