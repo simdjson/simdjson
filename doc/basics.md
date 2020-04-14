@@ -50,6 +50,8 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
+Note: The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. Calling `parse` or `load` a second time invalidates the previous parsed document. If you need access simultaneously to several parsed documents, you need to have several `parser` instances.
+
 Using the Parsed JSON
 ---------------------
 
