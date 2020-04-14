@@ -211,7 +211,7 @@ namespace document_tests {
       return false;
     }
     if(doc.size() != 3) {
-      printf("This json should  have size three but found %u : %s.\n", doc.size(), smalljson.data());
+      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
       return false;
     }
     return true;
@@ -226,7 +226,7 @@ namespace document_tests {
       return false;
     }
     if(doc.size() != 3) {
-      printf("This json should  have size three but found %u : %s.\n", doc.size(), smalljson.data());
+      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
       return false;
     }
     return true;
@@ -539,7 +539,7 @@ namespace parse_api_tests {
     for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       if (error) { cerr << error << endl; return false; }
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
-      auto arr = doc.get<dom::array>().value(); // let us get the array
+      auto arr = doc.get<dom::array>(); // let us get the array
       if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
       size_t c = 0;
       for(auto v : arr) { c++; (void)v; }

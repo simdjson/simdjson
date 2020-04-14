@@ -125,6 +125,10 @@ inline dom::array::iterator simdjson_result<dom::array>::end() const noexcept(fa
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
+inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -177,6 +181,10 @@ inline dom::object::iterator simdjson_result<dom::object>::begin() const noexcep
 inline dom::object::iterator simdjson_result<dom::object>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
+}
+inline size_t simdjson_result<dom::object>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -546,7 +554,7 @@ inline array::iterator array::begin() const noexcept {
 inline array::iterator array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-inline uint32_t array::size() const noexcept {
+inline size_t array::size() const noexcept {
   return scope_count();
 }
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
@@ -612,7 +620,7 @@ inline object::iterator object::begin() const noexcept {
 inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-inline uint32_t object::size() const noexcept {
+inline size_t object::size() const noexcept {
   return scope_count();
 }
 
