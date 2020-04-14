@@ -33,7 +33,7 @@ static void numbers_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }
+  }  
 }
 BENCHMARK(numbers_scan);
 
@@ -60,7 +60,7 @@ static void numbers_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }
+  }  
 }
 BENCHMARK(numbers_size_scan);
 
@@ -86,7 +86,7 @@ static void numbers_load_scan(State& state) {
     }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }
+  }  
 }
 BENCHMARK(numbers_load_scan);
 
@@ -114,12 +114,83 @@ static void numbers_load_size_scan(State& state) {
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
     benchmark::ClobberMemory();
-  }
+  }  
 }
 BENCHMARK(numbers_load_size_scan);
 
 
 #if SIMDJSON_EXCEPTIONS
+
+
+static void numbers_exceptions_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr = parser.load(NUMBERS_JSON);
+  for (auto _ : state) {
+    std::vector<double> container;
+    for (double x : arr) {
+      container.push_back(x);
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_exceptions_scan);
+
+static void numbers_exceptions_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr = parser.load(NUMBERS_JSON);
+  for (auto _ : state) {
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (double x : arr) {
+      container[pos++] = x;
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_exceptions_size_scan);
+
+
+static void numbers_exceptions_load_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  for (auto _ : state) {
+    // this may hit the disk, but probably just once
+    dom::array arr = parser.load(NUMBERS_JSON);
+    std::vector<double> container;
+    for (double x : arr) {
+      container.push_back(x);
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_exceptions_load_scan);
+
+static void numbers_exceptions_load_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  for (auto _ : state) {
+    // this may hit the disk, but probably just once
+    dom::array arr = parser.load(NUMBERS_JSON);
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (double x : arr) {
+      container[pos++] = x;
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }  
+}
+BENCHMARK(numbers_exceptions_load_size_scan);
+
 
 static void twitter_count(State& state) {
   // Prints the number of results in twitter.json
