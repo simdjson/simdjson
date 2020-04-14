@@ -70,7 +70,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
     if(error) {
       // error case
     }
-    ```
+  ```
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
