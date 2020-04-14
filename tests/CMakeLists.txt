@@ -72,7 +72,7 @@ endfunction(add_compile_test)
 
 # Don't add the tests if we're on VS2017 or older; they don't succeed.
 if(NOT (MSVC AND MSVC_VERSION LESS 1920))
-if(NOT SIMDJSON_DISABLE_EXCEPTIONS)
+if(SIMDJSON_EXCEPTIONS)
   add_compile_test(readme_examples readme_examples.cpp quicktests)
   set_property(
     TEST readme_examples
