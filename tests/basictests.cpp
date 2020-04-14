@@ -1607,7 +1607,7 @@ namespace format_tests {
   const string MINIFIED(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
   bool assert_minified(ostringstream &actual, const std::string &expected=MINIFIED) {
     if (actual.str() != expected) {
-      cerr << "Failed to correctly minify " << DOCUMENT.data() << endl;
+      cerr << "Failed to correctly minify " << DOCUMENT << endl;
       cerr << "Expected: " << expected << endl;
       cerr << "Actual:   " << actual.str() << endl;
       return false;
