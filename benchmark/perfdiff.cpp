@@ -29,7 +29,8 @@ std::string exec(const char* cmd) {
     std::string result;
     std::unique_ptr<FILE, decltype(&closepipe)> pipe(popen(cmd, "r"), closepipe);
     if (!pipe) {
-        throw std::runtime_error("popen() failed!");
+        std::cerr << "popen() failed!" << std::endl;
+        abort();
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();

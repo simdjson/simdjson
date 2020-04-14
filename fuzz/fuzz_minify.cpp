@@ -8,7 +8,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     auto end = begin + Size;
 
     std::string str(begin, end);
-
+#if SIMDJSON_EXCEPTIONS
     try {
         simdjson::dom::parser parser;
         simdjson::dom::element doc = parser.parse(str);
@@ -17,5 +17,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     } catch (...) {
 
     }
+#endif
     return 0;
 }

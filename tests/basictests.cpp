@@ -22,8 +22,12 @@
 #endif
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const char *AMAZON_CELLPHONES_NDJSON = SIMDJSON_BENCHMARK_DATA_DIR "amazon_cellphones.ndjson";
-
+#if SIMDJSON_EXCEPTIONS
 #define ASSERT_EQUAL(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
+#else
+#define ASSERT_EQUAL(ACTUAL, EXPECTED) 
+#endif
+
 #define ASSERT_TRUE(ACTUAL) ASSERT_EQUAL(ACTUAL, true)
 #define ASSERT_FALSE(ACTUAL) ASSERT_EQUAL(ACTUAL, false)
 #define ASSERT_SUCCESS(ERROR) if (ERROR) { std::cerr << (ERROR) << std::endl; return false; }
@@ -220,7 +224,14 @@ namespace document_tests {
         "}"_padded;
     simdjson::dom::parser parser;
     std::ostringstream myStream;
+#if SIMDJSON_EXCEPTIONS
     myStream << parser.parse(json);
+#else
+    simdjson::dom::element doc;
+    simdjson::error_code error;
+    parser.parse(json).tie(doc, error);
+    myStream << doc;
+#endif
     std::string newjson = myStream.str();
     if(static_cast<std::string>(json) != newjson) {
       std::cout << "serialized json differs!" << std::endl;

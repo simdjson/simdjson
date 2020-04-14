@@ -96,12 +96,15 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       }
     }
   } else {
+    simdjson::error_code error;
     if (element.is<double>()) {
       s.float_count++;
     } else if (element.is<int64_t>()) {
       s.integer_count++;
     } else if (element.is<bool>()) {
-      if (element.get<bool>()) {
+      bool v;
+      element.get<bool>().tie(v,error);
+      if (v) {
         s.true_count++;
       } else {
         s.false_count++;
@@ -110,15 +113,19 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       s.null_count++;
     } else if (element.is<std::string_view>()) {
       s.string_count++;
-      if (is_ascii(element.get<std::string_view>())) {
+      std::string_view v;
+      element.get<std::string_view>().tie(v,error);
+      if (is_ascii(v)) {
         s.ascii_string_count++;
       }
-      const std::string_view strval = element.get<std::string_view>();
+      std::string_view strval;
+      element.get<std::string_view>().tie(strval, error);
       if (strval.size() > s.string_maximum_length) {
         s.string_maximum_length = strval.size();
       }
     } else {
-      throw std::runtime_error("unrecognized node.");
+      std::cerr << "unrecognized node." << std::endl;
+      abort();
     }
   }
 }

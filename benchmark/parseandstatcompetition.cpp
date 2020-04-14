@@ -54,7 +54,10 @@ really_inline void simdjson_process_atom(stat_t &s,
   if (element.is<double>()) {
     s.number_count++;
   } else if (element.is<bool>()) {
-    if (element.get<bool>()) {
+    simdjson::error_code err;
+    bool v;
+    element.get<bool>().tie(v,err);
+    if (v) {
       s.true_count++;
     } else {
       s.false_count++;

@@ -44,7 +44,7 @@ void compute_dump(simdjson::ParsedJson::Iterator &pjh) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-
+#if SIMDJSON_EXCEPTIONS
   try {
     auto pj = simdjson::build_parsed_json(Data, Size);
     if (!pj.is_valid()) {
@@ -56,5 +56,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     }
   } catch (...) {
   }
+#endif
   return 0;
 }
