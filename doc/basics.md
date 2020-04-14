@@ -70,6 +70,8 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   > O(1) operation, which it is not presently in simdjson.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
   returns an `element_type`.
+* **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
+  with the `size()` method.
 
 Here are some examples of all of the above:
 
