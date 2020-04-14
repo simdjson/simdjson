@@ -8,12 +8,14 @@
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 #if SIMDJSON_EXCEPTIONS
-  try {
-    auto pj = simdjson::build_parsed_json(Data, Size);
-    NulOStream os;
-    UNUSED bool ignored=pj.dump_raw_tape(os);
-  } catch (...) {
-  }
+    try {
+        simdjson::dom::parser pj;
+        auto elem=pj.parse(Data, Size);
+        auto v=elem.value();
+        NulOStream os;
+        UNUSED auto dumpstatus=v.dump_raw_tape(os);
+    } catch (...) {
+    }
 #endif
-  return 0;
+    return 0;
 }
