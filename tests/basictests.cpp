@@ -740,7 +740,7 @@ namespace dom_api_tests {
       cerr << "bad uint64_t value" << endl;
       return false;
     }
-#else // if exceptions are disabled
+#endif
     auto [v,err] = obj["t"].get<int64_t>();
     if(err == SUCCESS) {
       cerr << "get<int64_t>() should fail" << endl;
@@ -755,9 +755,6 @@ namespace dom_api_tests {
       cerr << "bad uint64_t value" << endl;
       return false;
     }
-
-#endif
-
     return true;
   }
 
