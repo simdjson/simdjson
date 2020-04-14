@@ -109,11 +109,11 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
   }
 
   if (!just_data) {
-    auto inner=[](auto& str){
+    auto parse_dynamic=[](auto& str){
         simdjson::dom::parser parser;
         return parser.parse(str).error();
     };
-    BEST_TIME("simdjson (dynamic mem) ", inner(p), simdjson::SUCCESS,
+    BEST_TIME("simdjson (dynamic mem) ", parse_dynamic(p), simdjson::SUCCESS,
               , repeat, volume, !just_data);
   }
   // (static alloc)
