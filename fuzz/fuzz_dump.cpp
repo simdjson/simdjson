@@ -9,6 +9,7 @@
 
 // example from doc/basics.md#tree-walking-and-json-element-types
 static void print_json(std::ostream& os, simdjson::dom::element element) {
+#if SIMDJSON_EXCEPTIONS
     const char endl='\n';
     switch (element.type()) {
     case simdjson::dom::element_type::ARRAY:
@@ -46,6 +47,7 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
         os << "null" << endl;
         break;
     }
+#endif
 }
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 #if SIMDJSON_EXCEPTIONS

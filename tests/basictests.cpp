@@ -22,12 +22,8 @@
 #endif
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const char *AMAZON_CELLPHONES_NDJSON = SIMDJSON_BENCHMARK_DATA_DIR "amazon_cellphones.ndjson";
-#if SIMDJSON_EXCEPTIONS
-#define ASSERT_EQUAL(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
-#else
-#define ASSERT_EQUAL(ACTUAL, EXPECTED) 
-#endif
 
+#define ASSERT_EQUAL(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
 #define ASSERT_TRUE(ACTUAL) ASSERT_EQUAL(ACTUAL, true)
 #define ASSERT_FALSE(ACTUAL) ASSERT_EQUAL(ACTUAL, false)
 #define ASSERT_SUCCESS(ERROR) if (ERROR) { std::cerr << (ERROR) << std::endl; return false; }
@@ -1170,7 +1166,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_TRUE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1181,9 +1177,29 @@ namespace type_tests {
     ASSERT_FALSE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
-    // Test simdjson_result<element>.type() (error chain)
+#endif
     simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
+    // Test simdjson_result<element>.type() (error chain)
+
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1221,7 +1237,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_TRUE(result.is<dom::object>());
@@ -1232,9 +1248,28 @@ namespace type_tests {
     ASSERT_FALSE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
-    // Test simdjson_result<element>.type() (error chain)
+#endif
+    bool v;
     simdjson::error_code error;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
+    // Test simdjson_result<element>.type() (error chain)
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1272,7 +1307,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1283,9 +1318,29 @@ namespace type_tests {
     ASSERT_FALSE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
+#endif
 
-    // Test simdjson_result<element>.type() (error chain)
     simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
+    // Test simdjson_result<element>.type() (error chain)
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1328,7 +1383,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1343,9 +1398,32 @@ namespace type_tests {
     ASSERT_TRUE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
-    // Test simdjson_result<element>.type() (error chain)
+#endif
     simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<uint64_t>().tie(v,error);
+    if (expected_value < 0) {
+      ASSERT_FALSE(v);
+    } else {
+      ASSERT_TRUE(v);
+    }
+    result.is<double>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
+    // Test simdjson_result<element>.type() (error chain)
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1387,7 +1465,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1398,9 +1476,28 @@ namespace type_tests {
     ASSERT_TRUE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
+#endif
+   simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
     // Test simdjson_result<element>.type() (error chain)
-    simdjson::error_code error;
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1438,7 +1535,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1449,9 +1546,28 @@ namespace type_tests {
     ASSERT_TRUE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
+#endif
+   simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
     // Test simdjson_result<element>.type() (error chain)
-    simdjson::error_code error;
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1489,7 +1605,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1500,9 +1616,28 @@ namespace type_tests {
     ASSERT_FALSE(result.is<double>());
     ASSERT_TRUE(result.is<bool>());
     ASSERT_FALSE(result.is_null());
-
+#endif
+   simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_TRUE(v);
+    result.is_null().tie(v,error);
+    ASSERT_FALSE(v);
     // Test simdjson_result<element>.type() (error chain)
-    simdjson::error_code error;
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
@@ -1540,7 +1675,7 @@ namespace type_tests {
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)["null"];
     ASSERT_SUCCESS(result.error());
-
+#if SIMDJSON_EXCEPTIONS
     // Test simdjson_result<element>.is<T>() (error chain)
     ASSERT_FALSE(result.is<dom::array>());
     ASSERT_FALSE(result.is<dom::object>());
@@ -1551,9 +1686,28 @@ namespace type_tests {
     ASSERT_FALSE(result.is<double>());
     ASSERT_FALSE(result.is<bool>());
     ASSERT_TRUE(result.is_null());
-
+#endif
+   simdjson::error_code error;
+    bool v;
+    result.is<dom::array>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<dom::object>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<std::string_view>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<const char *>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<int64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<uint64_t>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<double>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is<bool>().tie(v,error);
+    ASSERT_FALSE(v);
+    result.is_null().tie(v,error);
+    ASSERT_TRUE(v);
     // Test simdjson_result<element>.type() (error chain)
-    simdjson::error_code error;
     dom::element_type type;
     result.type().tie(type, error);
     ASSERT_SUCCESS(error);
