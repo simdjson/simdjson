@@ -76,7 +76,7 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
   add_compile_test(readme_examples_noexceptions readme_examples_noexceptions.cpp quicktests)
 
   # Compile tests that *should fail*
-  add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp FALSE quicktests) # <--- those two arguments at the end, are leftovers, right?
+  add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp)
   target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
   set_tests_properties(readme_examples_will_fail_with_exceptions_off PROPERTIES WILL_FAIL TRUE)
 
