@@ -60,16 +60,26 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   dom::object and dom::array. An exception is thrown if the cast is not possible. You can also use is<*typename*>() to test if it is a
   given type, or use the `type()` method: e.g., `element.type() == dom::element_type::DOUBLE`. Instead of casting, you can use get<*typename*>() to get the value: casts and get<*typename*>() can be used interchangeably. You can use a variant usage of get<*typename*>() with error codes to avoid exceptions: e.g.,  
   ```c++
-    simdjson::error_code error;
-    double value;
-    result.get<double>().tie(value, error); // no exception, ever
-    /**
-     * If you do not have to support libc++, you can use the simpler syntax:
-     * auto [value, error] = result.get<double>();
-     */
-    if(error) {
-      // error case
-    }
+#include <iostream>
+#include "simdjson.h"
+
+int main() {
+  auto numberstring = "1.2"_padded;
+  simdjson::dom::parser parser;
+  simdjson::error_code error;
+  double value;
+  parser.parse(numberstring).get<double>().tie(value,error);
+  if(error) {
+    std::cerr << "error parsing JSON" << std::endl;
+    return EXIT_FAILURE;
+  }
+  if(value != 1.2) {
+    std::cerr << "bad value" << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
+  return EXIT_SUCCESS;
+}
   ```
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
