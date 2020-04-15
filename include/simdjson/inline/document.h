@@ -736,6 +736,7 @@ inline key_value_pair::key_value_pair(const std::string_view &_key, element _val
 really_inline element::element() noexcept : internal::tape_ref() {}
 really_inline element::element(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 
+
 inline element_type element::type() const noexcept {
   switch (tape_ref_type()) {
     case internal::tape_type::START_ARRAY:
@@ -763,19 +764,17 @@ inline element_type element::type() const noexcept {
   }
 }
 really_inline bool element::is_null() const noexcept {
-  return tape_ref_type() == internal::tape_type::NULL_VALUE;
+  return is_null();
 }
 
 template<>
 inline simdjson_result<bool> element::get<bool>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::TRUE_VALUE:
-      return true;
-    case internal::tape_type::FALSE_VALUE:
-      return false;
-    default:
-      return INCORRECT_TYPE;
+  if(is_true()) {
+    return true;
+  } else if(is_false()) {
+    return false;
   }
+  return INCORRECT_TYPE;
 }
 template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
@@ -799,24 +798,22 @@ inline simdjson_result<std::string_view> element::get<std::string_view>() const 
 }
 template<>
 inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64:
-      return next_tape_value<uint64_t>();
-    case internal::tape_type::INT64: {
+  if(unlikely(!is_uint64())) { // branch rarely taken
+    if(is_int64()) {
       int64_t result = next_tape_value<int64_t>();
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
       return static_cast<uint64_t>(result);
     }
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  return next_tape_value<int64_t>();
 }
 template<>
 inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64: {
+  if(unlikely(!is_int64())) { // branch rarely taken
+    if(is_uint64()) {
       uint64_t result = next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
       if (result > (std::numeric_limits<int64_t>::max)()) {
@@ -824,11 +821,9 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
       }
       return static_cast<int64_t>(result);
     }
-    case internal::tape_type::INT64:
-      return next_tape_value<int64_t>();
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  return next_tape_value<int64_t>();
 }
 template<>
 inline simdjson_result<double> element::get<double>() const noexcept {
@@ -838,22 +833,13 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // 2. Using a switch-case relies on the compiler guessing what kind of code generation
   //    we want... But the compiler cannot know that we expect the type to be "double"
   //    most of the time.
-  // TODO: 1. We probably want to similarly optimize other get functions.
-  //       2. These optimizations can probably be made more elegant (more encapsulation).
-  //
-  // Note regarding the following constants, there is no runtime shifting or computation
-  // at all: the compiler will figure out the value.
-  constexpr uint64_t tape_double = static_cast<uint64_t>(internal::tape_type::DOUBLE)<<56;
-  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(internal::tape_type::UINT64)<<56;
-  constexpr uint64_t tape_int64 = static_cast<uint64_t>(internal::tape_type::INT64)<<56;
-  const uint64_t tv = doc->tape[json_index];
   // We can expect get<double> to refer to a double type almost all the time.
   // It is important to craft the code accordingly so that the compiler can use this
   // information. (This could also be solved with profile-guided optimization.)
-  if(unlikely(tv != tape_double)) { // branch rarely taken
-    if(tv == tape_uint64) {
+  if(unlikely(!is_double())) { // branch rarely taken
+    if(is_uint64()) {
       return next_tape_value<uint64_t>();
-    } else if(tv == tape_int64) {
+    } else if(is_uint64()) {
       return next_tape_value<int64_t>();
     }
     return INCORRECT_TYPE;
@@ -1128,6 +1114,37 @@ namespace simdjson::internal {
 really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
 really_inline tape_ref::tape_ref(const document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
+
+
+// Some value types have a specific on-tape word value. It can be faster
+// to check the type by doing a word-to-word comparison instead of extracting the
+// most significant 8 bits.
+
+really_inline bool tape_ref::is_double() const noexcept {
+  constexpr uint64_t tape_double = static_cast<uint64_t>(tape_type::DOUBLE)<<56;
+  return doc->tape[json_index] == tape_double;
+}
+really_inline bool tape_ref::is_int64() const noexcept {
+  constexpr uint64_t tape_int64 = static_cast<uint64_t>(tape_type::INT64)<<56;
+  return doc->tape[json_index] == tape_int64;
+}
+really_inline bool tape_ref::is_uint64() const noexcept {
+  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(tape_type::UINT64)<<56;
+  return doc->tape[json_index] == tape_uint64;
+}
+really_inline bool tape_ref::is_false() const noexcept {
+  constexpr uint64_t tape_false = static_cast<uint64_t>(tape_type::FALSE_VALUE)<<56;
+  return doc->tape[json_index] == tape_false;
+}
+really_inline bool tape_ref::is_true() const noexcept {
+  constexpr uint64_t tape_true = static_cast<uint64_t>(tape_type::TRUE_VALUE)<<56;
+  return doc->tape[json_index] == tape_true;
+}
+really_inline bool tape_ref::is_null() const noexcept {
+  constexpr uint64_t tape_null = static_cast<uint64_t>(tape_type::NULL_VALUE)<<56;
+  return doc->tape[json_index] == tape_null;
+}
+
 inline size_t tape_ref::after_element() const noexcept {
   switch (tape_ref_type()) {
     case tape_type::START_ARRAY:
@@ -1157,7 +1174,13 @@ really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
 template<typename T>
 really_inline T tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t));
-  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
+  // Though the following is tempting...
+  //  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
+  // It is not generally safe. It is safer, and often faster to rely
+  // on memcpy. Yes, it is uglier, but it is also encapsulated.
+  T x;
+  memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
+  return x;
 }
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   size_t string_buf_index = tape_value();
