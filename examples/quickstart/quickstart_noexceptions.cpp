@@ -5,10 +5,7 @@ int main(void) {
   simdjson::dom::element tweets;
   simdjson::error_code error;
   parser.load("twitter.json").tie(tweets,error);
-  if(error) {
-    std::cerr << "could not load document" << std::endl;
-    return EXIT_FAILURE;
-  }
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   simdjson::dom::element res;
 
   tweets["search_metadata"]["count"].tie(res,error);
