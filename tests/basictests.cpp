@@ -1270,12 +1270,17 @@ namespace type_tests {
     return true;
   }
 
+
   template<typename T>
   bool test_cast(simdjson_result<dom::element> result) {
     std::cout << "  test_cast<" << typeid(T).name() << "> expecting success" << std::endl;
     // Grab the element out and check success
     dom::element element = result.first;
 
+    // get<T>() == expected
+    T actual;
+    simdjson::error_code error;
+    result.get<T>().tie(actual, error);
     ASSERT_SUCCESS(error);
 
     element.get<T>().tie(actual, error);
