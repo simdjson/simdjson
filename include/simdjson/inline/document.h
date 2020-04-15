@@ -764,7 +764,7 @@ inline element_type element::type() const noexcept {
   }
 }
 really_inline bool element::is_null() const noexcept {
-  return is_null();
+  return is_null_on_tape();
 }
 
 template<>
@@ -839,7 +839,7 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   if(unlikely(!is_double())) { // branch rarely taken
     if(is_uint64()) {
       return next_tape_value<uint64_t>();
-    } else if(is_uint64()) {
+    } else if(is_int64()) {
       return next_tape_value<int64_t>();
     }
     return INCORRECT_TYPE;
@@ -1140,7 +1140,7 @@ really_inline bool tape_ref::is_true() const noexcept {
   constexpr uint64_t tape_true = static_cast<uint64_t>(tape_type::TRUE_VALUE)<<56;
   return doc->tape[json_index] == tape_true;
 }
-really_inline bool tape_ref::is_null() const noexcept {
+really_inline bool tape_ref::is_null_on_tape() const noexcept {
   constexpr uint64_t tape_null = static_cast<uint64_t>(tape_type::NULL_VALUE)<<56;
   return doc->tape[json_index] == tape_null;
 }

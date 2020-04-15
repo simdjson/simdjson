@@ -76,7 +76,7 @@ public:
   really_inline bool is_uint64() const noexcept;
   really_inline bool is_false() const noexcept;
   really_inline bool is_true() const noexcept;
-  really_inline bool is_null() const noexcept;
+  really_inline bool is_null_on_tape() const noexcept;// different name to avoid clash with is_null.
   really_inline uint32_t matching_brace_index() const noexcept;
   really_inline uint32_t scope_count() const noexcept;
   template<typename T>
