@@ -125,6 +125,10 @@ inline dom::array::iterator simdjson_result<dom::array>::end() const noexcept(fa
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
+inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -177,6 +181,10 @@ inline dom::object::iterator simdjson_result<dom::object>::begin() const noexcep
 inline dom::object::iterator simdjson_result<dom::object>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
+}
+inline size_t simdjson_result<dom::object>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -488,21 +496,21 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
 
     if (max_depth == 0) {
       ret_address.reset();
-      containing_scope_offset.reset();
+      containing_scope.reset();
       return SUCCESS;
     }
 
     //
     // Initialize stage 2 state
     //
-    containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+    containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
   #ifdef SIMDJSON_USE_COMPUTED_GOTO
     ret_address.reset(new (std::nothrow) void *[max_depth]);
   #else
     ret_address.reset(new (std::nothrow) char[max_depth]);
   #endif
 
-    if (!ret_address || !containing_scope_offset) {
+    if (!ret_address || !containing_scope) {
       // Could not allocate memory
       return MEMALLOC;
     }
@@ -546,7 +554,9 @@ inline array::iterator array::begin() const noexcept {
 inline array::iterator array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-
+inline size_t array::size() const noexcept {
+  return scope_count();
+}
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -609,6 +619,9 @@ inline object::iterator object::begin() const noexcept {
 }
 inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
+}
+inline size_t object::size() const noexcept {
+  return scope_count();
 }
 
 inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
@@ -947,7 +960,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::array>(dom::array(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the ]
+        iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
       }
@@ -974,7 +987,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::object>(dom::object(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the }
+        iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;
       }
@@ -1107,7 +1120,7 @@ inline size_t tape_ref::after_element() const noexcept {
   switch (tape_ref_type()) {
     case tape_type::START_ARRAY:
     case tape_type::START_OBJECT:
-      return tape_value();
+      return matching_brace_index();
     case tape_type::UINT64:
     case tape_type::INT64:
     case tape_type::DOUBLE:
@@ -1122,6 +1135,13 @@ really_inline tape_type tape_ref::tape_ref_type() const noexcept {
 really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
+really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
+  return static_cast<uint32_t>(doc->tape[json_index]);
+}
+really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
+  return static_cast<uint32_t>((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
+}
+
 template<typename T>
 really_inline T tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t));

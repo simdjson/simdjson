@@ -209,6 +209,36 @@ namespace document_tests {
     }
     return true;
   }
+  bool count_array_example() {
+    std::cout << __func__ << std::endl;
+    simdjson::padded_string smalljson = "[1,2,3]"_padded;
+    simdjson::dom::parser parser;
+    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::array>();
+    if (error) {
+      printf("This json should  be valid %s.\n", smalljson.data());
+      return false;
+    }
+    if(doc.size() != 3) {
+      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
+      return false;
+    }
+    return true;
+  }
+  bool count_object_example() {
+    std::cout << __func__ << std::endl;
+    simdjson::padded_string smalljson = "{\"1\":1,\"2\":1,\"3\":1}"_padded;
+    simdjson::dom::parser parser;
+    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::object>();
+    if (error) {
+      printf("This json should  be valid %s.\n", smalljson.data());
+      return false;
+    }
+    if(doc.size() != 3) {
+      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
+      return false;
+    }
+    return true;
+  }
   // returns true if successful
   bool stable_test() {
     std::cout << __func__ << std::endl;
@@ -307,6 +337,8 @@ namespace document_tests {
   }
   bool run() {
     return bad_example() &&
+           count_array_example() &&
+           count_object_example() &&
            stable_test() &&
            skyprophet_test() &&
            lots_of_brackets();
@@ -453,7 +485,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return document_stream_test() &&
+    return json_issue467() &&
+           document_stream_test() &&
            document_stream_utf8_test();
   }
 }
@@ -514,6 +547,11 @@ namespace parse_api_tests {
     for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       if (error) { cerr << error << endl; return false; }
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+      auto arr = doc.get<dom::array>(); // let us get the array
+      if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
+      size_t c = 0;
+      for(auto v : arr) { c++; (void)v; }
+      if(c != 9) { cerr << "mismatched array size"<< endl; return false; }
       count++;
     }
     if (count != 793) { cerr << "Expected 793 documents, but load_many loaded " << count << " documents." << endl; return false; }
@@ -546,6 +584,13 @@ namespace parse_api_tests {
     dom::parser parser;
     const element doc = parser.load(TWITTER_JSON);
     if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
+    size_t c = 0;
+    dom::object obj = doc.get<dom::object>().value(); // let us get the object
+    for (auto x : obj) {
+      c++;
+      (void) x;
+    }
+    if(c != obj.size()) { cerr << "Mismatched size" << endl; return false; }
     return true;
   }
   bool parser_load_many_exception() {
