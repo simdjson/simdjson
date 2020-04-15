@@ -125,9 +125,9 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
+  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
 
 main_array_switch:
-  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
   /* we call update char on all paths in, so we can peek at parser.c on the
    * on paths that can accept a close square brace (post-, and at start) */
   GOTO( parser.parse_value(addresses, addresses.array_continue) );
@@ -135,6 +135,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
     parser.advance_char();
     goto main_array_switch;
   case ']':

@@ -36,19 +36,19 @@ really_inline void parser::increment_count(uint32_t depth) noexcept {
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
   containing_scope[depth].tape_index = current_loc;
   containing_scope[depth].count = 0;
-  write_tape(0, internal::tape_type::ROOT);
+  write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_object(uint32_t depth) noexcept {
   containing_scope[depth].tape_index = current_loc;
   containing_scope[depth].count = 0;
-  write_tape(0, internal::tape_type::START_OBJECT);
+  write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_array(uint32_t depth) noexcept {
   containing_scope[depth].tape_index = current_loc;
   containing_scope[depth].count = 0;
-  write_tape(0, internal::tape_type::START_ARRAY);
+  write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
   return true;
 }
 // TODO we're not checking this bool
@@ -134,6 +134,7 @@ really_inline void parser::end_scope(uint32_t depth) noexcept {
   // count can overflow if it exceeds 24 bits... so we saturate
   // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
   const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
+  // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
   doc.tape[d.tape_index] |= current_loc | (static_cast<uint64_t>(cntsat) << 32);
 }
 

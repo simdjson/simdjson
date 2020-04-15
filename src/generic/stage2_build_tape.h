@@ -372,6 +372,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -383,7 +384,6 @@ object_begin:
   }
 
 object_key_state:
-  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
   FAIL_IF( parser.advance_char() != ':' );
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
@@ -391,6 +391,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
+    doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
