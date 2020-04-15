@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 
@@ -109,6 +110,15 @@ private:
   char *data_ptr{nullptr};
 
 }; // padded_string
+
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { return out << s.data(); }
 
 } // namespace simdjson
 
