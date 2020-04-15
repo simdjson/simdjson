@@ -26,6 +26,7 @@ add_cpp_test(integer_tests integer_tests.cpp)
 add_cpp_test(jsoncheck jsoncheck.cpp)
 add_cpp_test(parse_many_test parse_many_test.cpp)
 add_cpp_test(pointercheck pointercheck.cpp quicktests)
+add_cpp_test(extracting_values_example extracting_values_example.cpp quicktests)
 
 set_property(
   TEST basictests errortests integer_tests jsoncheck parse_many_test pointercheck

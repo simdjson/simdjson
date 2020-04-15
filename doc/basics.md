@@ -59,9 +59,17 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 
 * **Extracting Values:** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  dom::object and dom::array. You can also use is_*typename*()` to test if it is a
-  given type, and as_*typename*() to do the cast and return an error code on failure instead of an
-  exception.
+  dom::object and dom::array. An exception is thrown if the cast is not possible. You can also use is<*typename*>() to test if it is a
+  given type, or use the `type()` method: e.g., `element.type() == dom::element_type::DOUBLE`. Instead of casting, you can use get<*typename*>() to get the value: casts and get<*typename*>() can be used interchangeably. You can use a variant usage of get<*typename*>() with error codes to avoid exceptions: e.g.,  
+  ```c++
+  simdjson::error_code error;
+  double value; // variable where we store the value to be parsed
+  simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
+  simdjson::dom::parser parser;
+  parser.parse(numberstring).get<double>().tie(value,error);
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
+  ```
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
@@ -173,7 +181,7 @@ behavior.
 > use it. If your project treats aliased, this means you can't use the same names in `auto [x, error]`
 > without triggering warnings or error (and particularly can't use the word "error" every time). To
 > circumvent this, you can use this instead:
-> 
+>
 > ```c++
 > dom::element doc;
 > simdjson::error_code error;
@@ -343,4 +351,3 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
-
