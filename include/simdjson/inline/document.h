@@ -832,22 +832,34 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
 }
 template<>
 inline simdjson_result<double> element::get<double>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64:
+  // Performance considerations:
+  // 1. Querying tape_ref_type() implies doing a shift, it is fast to just do a straight
+  //   comparison.
+  // 2. Using a switch-case relies on the compiler guessing what kind of code generation
+  //    we want... But the compiler cannot know that we expect the type to be "double"
+  //    most of the time.
+  // TODO: 1. We probably want to similarly optimize other get functions.
+  //       2. These optimizations can probably be made more elegant (more encapsulation).
+  //
+  // Note regarding the following constants, there is no runtime shifting or computation
+  // at all: the compiler will figure out the value.
+  constexpr uint64_t tape_double = static_cast<uint64_t>(internal::tape_type::DOUBLE)<<56;
+  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(internal::tape_type::UINT64)<<56;
+  constexpr uint64_t tape_int64 = static_cast<uint64_t>(internal::tape_type::INT64)<<56;
+  const uint64_t tv = doc->tape[json_index];
+  // We can expect get<double> to refer to a double type almost all the time.
+  // It is important to craft the code accordingly so that the compiler can use this
+  // information. (This could also be solved with profile-guided optimization.)
+  if(unlikely(tv != tape_double)) { // branch rarely taken
+    if(tv == tape_uint64) {
       return next_tape_value<uint64_t>();
-    case internal::tape_type::INT64: {
+    } else if(tv == tape_int64) {
       return next_tape_value<int64_t>();
-      int64_t result = tape_value();
-      if (result < 0) {
-        return NUMBER_OUT_OF_RANGE;
-      }
-      return double(result);
     }
-    case internal::tape_type::DOUBLE:
-      return next_tape_value<double>();
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  // this is common:
+  return next_tape_value<double>();
 }
 template<>
 inline simdjson_result<array> element::get<array>() const noexcept {
