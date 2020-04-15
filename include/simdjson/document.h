@@ -680,8 +680,8 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline simdjson_result<element> load(const std::string &path) noexcept; 
-
+  inline simdjson_result<element> load(const std::string &path) & noexcept;
+  inline simdjson_result<element> load(const std::string &path) &&  = delete ;
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
@@ -717,13 +717,17 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const std::string &s) noexcept;
+  really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  really_inline simdjson_result<element> parse(const std::string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const padded_string &s) noexcept;
+  really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;

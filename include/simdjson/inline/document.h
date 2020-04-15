@@ -366,7 +366,7 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
   return bytes_read;
 }
 
-inline simdjson_result<element> parser::load(const std::string &path) noexcept {
+inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
   size_t len;
   error_code code;
   read_file(path).tie(len, code);
@@ -382,7 +382,7 @@ inline document_stream parser::load_many(const std::string &path, size_t batch_s
   return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
 }
 
-inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
+inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
   error_code code = ensure_capacity(len);
   if (code) { return code; }
 
@@ -405,13 +405,13 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
   error = UNINITIALIZED;
   return doc.root();
 }
-really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
+really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
-really_inline simdjson_result<element> parser::parse(const std::string &s) noexcept {
+really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-really_inline simdjson_result<element> parser::parse(const padded_string &s) noexcept {
+really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
 
