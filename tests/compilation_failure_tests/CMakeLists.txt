@@ -15,7 +15,7 @@ function(detail_add_dual_compile_test TEST_NAME TEST_FILE)
   add_test(NAME ${TEST_NAME}
            COMMAND ${CMAKE_COMMAND} --build . --target ${TEST_NAME} --config $<CONFIGURATION>
            WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endfunction(add_compile_test)
+endfunction(detail_add_dual_compile_test)
 
 # adds a compilation test. two targets are created, one expected to
 # succeed compilation and one that is expected to fail.
@@ -26,7 +26,7 @@ function(add_dual_compile_test TEST_NAME TEST_FILE)
     target_compile_definitions(${TEST_NAME}_should_not_compile PRIVATE COMPILATION_TEST_USE_FAILING_CODE=1)
     set_tests_properties(${TEST_NAME}_should_compile           PROPERTIES WILL_FAIL FALSE)
     set_tests_properties(${TEST_NAME}_should_not_compile       PROPERTIES WILL_FAIL TRUE)
-endfunction(add_compile_test)
+endfunction(add_dual_compile_test)
 
 
 add_dual_compile_test(example_compiletest               example_compiletest.cpp)
