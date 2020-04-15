@@ -73,18 +73,24 @@ endfunction(add_compile_test)
 
 # Don't add the tests if we're on VS2017 or older; they don't succeed.
 if(NOT (MSVC AND MSVC_VERSION LESS 1920))
+if(SIMDJSON_EXCEPTIONS)
   add_compile_test(readme_examples readme_examples.cpp quicktests)
+  set_property(
+    TEST readme_examples
+    APPEND PROPERTY LABELS quicktests
+  )
+endif()
   add_compile_test(readme_examples_noexceptions readme_examples_noexceptions.cpp quicktests)
 
   # Compile tests that *should fail*
   add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp)
   target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
   set_tests_properties(readme_examples_will_fail_with_exceptions_off PROPERTIES WILL_FAIL TRUE)
-
   set_property(
-    TEST readme_examples readme_examples_noexceptions readme_examples_will_fail_with_exceptions_off
+    TEST readme_examples_noexceptions readme_examples_will_fail_with_exceptions_off
     APPEND PROPERTY LABELS quicktests
   )
+
 endif()
 
 

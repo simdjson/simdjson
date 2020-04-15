@@ -1,4 +1,5 @@
 #include "simdjson.h"
+
 int main(void) {
   simdjson::dom::parser parser;
   simdjson::dom::element tweets = parser.load("twitter.json");

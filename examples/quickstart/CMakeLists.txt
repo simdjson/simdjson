@@ -1,2 +1,6 @@
-add_executable(quickstart quickstart.cpp)
-target_link_libraries(quickstart PRIVATE simdjson)
+if(SIMDJSON_EXCEPTIONS)
+  add_executable(quickstart quickstart.cpp)
+  target_link_libraries(quickstart PRIVATE simdjson)
+endif()
+add_executable(quickstart_noexceptions quickstart_noexceptions.cpp)
+target_link_libraries(quickstart_noexceptions PRIVATE simdjson)

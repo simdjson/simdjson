@@ -258,7 +258,14 @@ namespace document_tests {
         "}"_padded;
     simdjson::dom::parser parser;
     std::ostringstream myStream;
+#if SIMDJSON_EXCEPTIONS
     myStream << parser.parse(json);
+#else
+    simdjson::dom::element doc;
+    simdjson::error_code error;
+    parser.parse(json).tie(doc, error);
+    myStream << doc;
+#endif
     std::string newjson = myStream.str();
     if(static_cast<std::string>(json) != newjson) {
       std::cout << "serialized json differs!" << std::endl;
@@ -1280,7 +1287,6 @@ namespace type_tests {
       // T() == expected
       actual = T(result);
       ASSERT_EQUAL(actual, expected);
-
       actual = T(element);
       ASSERT_EQUAL(actual, expected);
 
@@ -1308,6 +1314,7 @@ namespace type_tests {
 
     return true;
   }
+
 
   template<typename T>
   bool test_cast(simdjson_result<dom::element> result) {
@@ -1369,7 +1376,6 @@ namespace type_tests {
   bool test_cast(simdjson_result<dom::element> result, simdjson::error_code expected_error) {
     std::cout << "  test_cast<" << typeid(T).name() << "> expecting error '" << expected_error << "'" << std::endl;
     dom::element element = result.first;
-
     // get<T>() == expected
     T actual;
     simdjson::error_code error;
@@ -1428,7 +1434,6 @@ namespace type_tests {
   bool test_type(simdjson_result<dom::element> result, dom::element_type expected_type) {
     std::cout << "  test_type() expecting " << expected_type << std::endl;
     dom::element element = result.first;
-
     dom::element_type actual_type;
     simdjson::error_code error;
     result.type().tie(actual_type, error);
@@ -1460,7 +1465,6 @@ namespace type_tests {
     std::cout << "  test_is_null() expecting " << expected_is_null << std::endl;
     // Grab the element out and check success
     dom::element element = result.first;
-
     bool actual_is_null;
     simdjson::error_code error;
     result.is_null().tie(actual_is_null, error);
@@ -1549,7 +1553,6 @@ namespace type_tests {
 
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
-
     return true
       && test_type(result, dom::element_type::INT64)
       && test_cast<dom::array>(result, INCORRECT_TYPE)
@@ -1589,7 +1592,6 @@ namespace type_tests {
 
     dom::parser parser;
     simdjson_result<dom::element> result = parser.parse(ALL_TYPES_JSON)[key];
-
     return true
       && test_type(result, dom::element_type::DOUBLE)
       && test_cast<dom::array>(result, INCORRECT_TYPE)

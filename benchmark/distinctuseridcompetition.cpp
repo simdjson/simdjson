@@ -65,23 +65,30 @@ void print_vec(const std::vector<int64_t> &v) {
 
 void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
   if (element.is<simdjson::dom::array>()) {
-    auto array = element.get<simdjson::dom::array>();
+    simdjson::dom::array array;
+    simdjson::error_code error;
+    element.get<simdjson::dom::array>().tie(array, error);
     for (auto child : array) {
       if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
         simdjson_recurse(v, child);
       }
     }
   } else if (element.is<simdjson::dom::object>()) {
-    auto object = element.get<simdjson::dom::object>();
+    simdjson::dom::object object;
+    simdjson::error_code error;
+    element.get<simdjson::dom::object>().tie(object, error);
     for (auto [key, value] : object) {
       if((key.size() == 4) && (memcmp(key.data(), "user", 4) == 0)) {
         // we are in an object under the key "user"
         if(value.is<simdjson::dom::object>()) {
-          auto child_object = value.get<simdjson::dom::object>();
+          simdjson::dom::object child_object;
+          value.get<simdjson::dom::object>().tie(child_object, error);
           for (auto [child_key, child_value] : child_object) {
             if((child_key.size() == 2) && (memcmp(child_key.data(), "id", 2) == 0)) {
               if(child_value.is<int64_t>()) {
-                v.push_back(child_value.get<int64_t>());
+                int64_t x;
+                child_value.get<int64_t>().tie(x, error);
+                v.push_back(x);
               }
             }
             if (child_value.is<simdjson::dom::array>() || child_value.is<simdjson::dom::object>()) {
@@ -111,9 +118,13 @@ __attribute__((noinline)) std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   simdjson::dom::parser parser;
-  simdjson::dom::element doc = parser.parse(p);
-  simdjson_recurse(answer, doc);
-  remove_duplicates(answer);
+  simdjson::dom::element doc;
+  simdjson::error_code error;
+  parser.parse(p).tie(doc, error);
+  if(!error) {
+    simdjson_recurse(answer, doc);
+    remove_duplicates(answer);
+  }
   return answer;
 }
 
@@ -373,7 +384,8 @@ int main(int argc, char *argv[]) {
   BEST_TIME("sasjon (just parse) ", sasjon_just_parse(p), false, , repeat,
             volume, !just_data);
   simdjson::dom::parser parser;
-  simdjson::dom::element doc = parser.parse(p);
+  simdjson::dom::element doc;
+  parser.parse(p).tie(doc, error);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size() + 1);
