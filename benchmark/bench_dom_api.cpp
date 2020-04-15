@@ -349,8 +349,8 @@ static void twitter_image_sizes(State& state) {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
         for (dom::object image : media.get<dom::array>()) {
-          for (auto [key, size] : image["sizes"].get<dom::object>()) {
-            image_sizes.insert({ size["w"], size["h"] });
+          for (auto size : image["sizes"].get<dom::object>()) {
+            image_sizes.insert({ size.value["w"], size.value["h"] });
           }
         }
       }
@@ -455,9 +455,9 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
         for (dom::element image : images) {
           auto [sizes, error2] = image["sizes"].get<dom::object>();
           if (error2) { return; }
-          for (auto [key, size] : sizes) {
-            auto [width, error3] = size["w"].get<uint64_t>();
-            auto [height, error4] = size["h"].get<uint64_t>();
+          for (auto size : sizes) {
+            auto [width, error3] = size.value["w"].get<uint64_t>();
+            auto [height, error4] = size.value["h"].get<uint64_t>();
             if (error3 || error4) { return; }
             image_sizes.insert({ width, height });
           }

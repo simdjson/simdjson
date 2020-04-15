@@ -135,8 +135,6 @@ int main (int argc, char *argv[]){
 
         }
 
-        std::min(res.begin(), res.end());
-
         double min_result = *min_element(res.begin(), res.end());
         double speedinGBs = (p.size()) / (min_result * 1000000000.0);
 

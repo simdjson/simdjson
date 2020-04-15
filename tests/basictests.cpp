@@ -54,18 +54,14 @@ namespace number_tests {
 
   bool small_integers() {
     std::cout << __func__ << std::endl;
-    char buf[1024];
     simdjson::dom::parser parser;
     for (int m = 10; m < 20; m++) {
       for (int i = -1024; i < 1024; i++) {
-        auto n = sprintf(buf, "%*d", m, i);
-        buf[n] = '\0';
-        fflush(NULL);
-
-        auto [actual, error] = parser.parse(buf, n).get<int64_t>();
+        auto str = std::to_string(i);
+        auto [actual, error] = parser.parse(str).get<int64_t>();
         if (error) { std::cerr << error << std::endl; return false; }
         if (actual != i) {
-          std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << i << std::endl;
+          std::cerr << "JSON '" << str << "' parsed to " << actual << " instead of " << i << std::endl;
           return false;
         }
       } 
@@ -202,7 +198,7 @@ namespace document_tests {
     std::cout << __func__ << std::endl;
     simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
     simdjson::dom::parser parser;
-    auto [doc, error] = parser.parse(badjson);
+    auto error = parser.parse(badjson).error();
     if (!error) {
       printf("This json should not be valid %s.\n", badjson.data());
       return false;
@@ -313,16 +309,16 @@ namespace document_tests {
         fflush(NULL);
       }
       counter++;
-      auto [doc1, res1] = parser.parse(rec.c_str(), rec.length());
-      if (res1 != simdjson::error_code::SUCCESS) {
+      auto error = parser.parse(rec.c_str(), rec.length()).error();
+      if (error != simdjson::error_code::SUCCESS) {
         printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
-        printf("Parsing failed. Error is %s\n", simdjson::error_message(res1));
+        printf("Parsing failed. Error is %s\n", simdjson::error_message(error));
         return false;
       }
-      auto [doc2, res2] = parser.parse(rec.c_str(), rec.length());
-      if (res2 != simdjson::error_code::SUCCESS) {
+      error = parser.parse(rec.c_str(), rec.length()).error();
+      if (error != simdjson::error_code::SUCCESS) {
         printf("Something is wrong in skyprophet_test: %s.\n", rec.c_str());
-        printf("Parsing failed. Error is %s\n", simdjson::error_message(res2));
+        printf("Parsing failed. Error is %s\n", simdjson::error_message(error));
         return false;
       }
     }
@@ -338,7 +334,7 @@ namespace document_tests {
       input += "]";
     }
     simdjson::dom::parser parser;
-    auto [doc, error] = parser.parse(input);
+    auto error = parser.parse(input).error();
     if (error) { std::cerr << "Error: " << simdjson::error_message(error) << std::endl; return false; }
     return true;
   }
@@ -353,7 +349,6 @@ namespace document_tests {
 }
 
 namespace document_stream_tests {
-
   static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
     return parser.parse_many(str);
   }
@@ -367,9 +362,9 @@ namespace document_stream_tests {
   static bool parse_json_message_issue467(simdjson::padded_string &json, size_t expectedcount) {
     simdjson::dom::parser parser;
     size_t count = 0;
-    for (auto [doc, error] : parser.parse_many(json)) {
-      if (error) {
-          std::cerr << "Failed with simdjson error= " << error << std::endl;
+    for (auto doc : parser.parse_many(json)) {
+      if (doc.error()) {
+          std::cerr << "Failed with simdjson error= " << doc.error() << std::endl;
           return false;
       }
       count++;
@@ -973,11 +968,11 @@ namespace dom_api_tests {
           object sizes;
           image["sizes"].get<dom::object>().tie(sizes, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
           if (error) { cerr << "Error: " << error << endl; return false; }
-          for (auto [key, size] : sizes) {
+          for (auto size : sizes) {
             uint64_t width, height;
-            size["w"].get<uint64_t>().tie(width, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            size.value["w"].get<uint64_t>().tie(width, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
-            size["h"].get<uint64_t>().tie(height, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            size.value["h"].get<uint64_t>().tie(height, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
             image_sizes.insert(make_pair(width, height));
           }
@@ -1134,8 +1129,8 @@ namespace dom_api_tests {
       auto [media, not_found] = tweet["entities"]["media"];
       if (!not_found) {
         for (object image : media.get<dom::array>()) {
-          for (auto [key, size] : image["sizes"].get<dom::object>()) {
-            image_sizes.insert(make_pair(size["w"], size["h"]));
+          for (auto size : image["sizes"].get<dom::object>()) {
+            image_sizes.insert(make_pair(size.value["w"], size.value["h"]));
           }
         }
       }
@@ -1712,6 +1707,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["foo"];
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << value;
     return assert_minified(s, "1");
@@ -1720,6 +1716,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["foo"];
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "1");
@@ -1729,6 +1726,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["bar"].get<dom::array>();
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << value;
     return assert_minified(s, "[1,2,3]");
@@ -1737,6 +1735,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["bar"].get<dom::array>();
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "[1,2,3]");
@@ -1746,6 +1745,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["baz"].get<dom::object>();
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << value;
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
@@ -1754,6 +1754,7 @@ namespace format_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     auto [value, error] = parser.parse(DOCUMENT)["baz"].get<dom::object>();
+    if (error) { cerr << error << endl; return false; }
     ostringstream s;
     s << minify(value);
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");

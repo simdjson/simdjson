@@ -5,6 +5,7 @@ using namespace std;
 using namespace simdjson;
 
 #ifdef SIMDJSON_CPLUSPLUS17
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 void basics_error_1() {
   dom::parser parser;
   auto json = "1"_padded;
@@ -13,6 +14,7 @@ void basics_error_1() {
   if (error) { cerr << error << endl; exit(1); }
   // Use document here now that we've checked for the error
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
 void basics_error_2() {

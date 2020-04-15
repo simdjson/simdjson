@@ -51,10 +51,10 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_library(simdjson-flags INTERFACE)
 if(MSVC)
   target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
-  target_compile_options(simdjson-flags INTERFACE /W3 /wd4005 /wd4996 /wd4267 /wd4244 /wd4113)
+  target_compile_options(simdjson-flags INTERFACE /WX /W3 /wd4005 /wd4996 /wd4267 /wd4244 /wd4113)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
-  target_compile_options(simdjson-flags INTERFACE -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self)
+  target_compile_options(simdjson-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self)
 endif()
 
 # Optional flags

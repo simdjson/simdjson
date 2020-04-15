@@ -10,7 +10,7 @@ namespace westmere {
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
+// Sadly, sanitizers are not smart enough to figure it out.
 NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef _MSC_VER

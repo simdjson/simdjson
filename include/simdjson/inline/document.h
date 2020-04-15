@@ -793,7 +793,7 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
     if(is_uint64()) {
       uint64_t result = next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
-      if (result > (std::numeric_limits<int64_t>::max)()) {
+      if (result > uint64_t((std::numeric_limits<int64_t>::max)())) {
         return NUMBER_OUT_OF_RANGE;
       }
       return static_cast<int64_t>(result);

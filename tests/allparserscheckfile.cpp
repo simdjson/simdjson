@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
   }
   simdjson::dom::parser parser;
-  auto [doc, err] = parser.parse(p);
+  auto err = parser.parse(p).error();
 
   rapidjson::Document d;
 

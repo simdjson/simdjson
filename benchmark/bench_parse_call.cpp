@@ -22,7 +22,7 @@ static void parser_parse_error_code(State& state) {
   dom::parser parser;
   if (parser.allocate(EMPTY_ARRAY.length())) { return; }
   for (auto _ : state) {
-    auto [doc, error] = parser.parse(EMPTY_ARRAY);
+    auto error = parser.parse(EMPTY_ARRAY).error();
     if (error) { return; }
   }
 }
@@ -53,7 +53,7 @@ BENCHMARK(build_parsed_json);
 static void document_parse_error_code(State& state) {
   for (auto _ : state) {
     dom::parser parser;
-    auto [doc, error] = parser.parse(EMPTY_ARRAY);
+    auto error = parser.parse(EMPTY_ARRAY).error();
     if (error) { return; }
   }
 }

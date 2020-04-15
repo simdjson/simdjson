@@ -69,6 +69,7 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   if (element.is<simdjson::dom::array>()) {
     s.array_count++;
     auto [array, array_error] = element.get<simdjson::dom::array>();
+    if (array_error) { std::cerr << array_error << std::endl; abort(); }
     for (auto child : array) {
       if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
         simdjson_recurse(s, child);
@@ -79,12 +80,13 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
     auto [object, object_error] = element.get<simdjson::dom::object>();
-    for (auto [key, value] : object) {
+    if (object_error) { std::cerr << object_error << std::endl; abort(); }
+    for (auto field : object) {
       s.string_count++; // for key
-      if (value.is<simdjson::dom::array>() || value.is<simdjson::dom::object>()) {
-        simdjson_recurse(s, value);
+      if (field.value.is<simdjson::dom::array>() || field.value.is<simdjson::dom::object>()) {
+        simdjson_recurse(s, field.value);
       } else {
-        simdjson_process_atom(s, value);
+        simdjson_process_atom(s, field.value);
       }
     }
   } else {

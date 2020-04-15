@@ -127,6 +127,7 @@ nicely with C++17's destructuring syntax. For example:
 dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 auto [object, error] = parser.parse(json).get<dom::object>();
+if (error) { cerr << error << endl; return; }
 for (auto [key, value] : object) {
   cout << key << " = " << value << endl;
 }

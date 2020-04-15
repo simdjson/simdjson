@@ -348,7 +348,7 @@ bool validate(const char *dirname) {
       total_string_length = 0;
       empty_string = 0;
       simdjson::dom::parser parser;
-      auto [doc, err] = parser.parse(p);
+      auto err = parser.parse(p).error();
       bool isok = (err == simdjson::error_code::SUCCESS);
       free(big_buffer);
       if (good_string > 0) {

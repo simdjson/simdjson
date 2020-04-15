@@ -255,7 +255,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
     for (int i = 0; i < repeat; i++) {
       unified.start();
-      auto [doc, parse_error] = parser.parse(p);
+      auto parse_error = parser.parse(p).error();
       if (parse_error)
         printf("bug\n");
       unified.end(results);
