@@ -389,25 +389,31 @@ public:
   really_inline bool is_null() const noexcept;
 
   /**
-   * Tell whether the value can be cast to the given primitive type.
+   * Tell whether the value can be cast to provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
   really_inline bool is() const noexcept;
 
   /**
-   * Get the value as the given primitive type.
+   * Get the value as the provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @returns The value cast to the given type, or:
    *          INCORRECT_TYPE if the value cannot be cast to the given type.
@@ -1209,7 +1215,16 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
  *        thrown).
  */
 inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify<simdjson_result<dom::object>>(value); }
-
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+  * @throw simdjson_error if the result being printed has an error. If there is an error with the
+ *        underlying output stream, that error will be propagated (simdjson_error will not be
+ *        thrown).
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
 #endif
 
 /** The result of a JSON navigation that may fail. */
