@@ -736,47 +736,9 @@ inline key_value_pair::key_value_pair(const std::string_view &_key, element _val
 really_inline element::element() noexcept : internal::tape_ref() {}
 really_inline element::element(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 
-namespace {
-// fastmod computes (a % 14) quickly
-// uses algorithm from https://arxiv.org/abs/1902.01961
-//  Faster Remainder by Direct Computation
-// 	Software: Practice and Experience 49 (6), 2019
-really_inline uint64_t fastmod14(unsigned int a) {
-  constexpr uint64_t M = 0xFFFFFFFF / 14 + 1;
-  uint64_t lowbits = (M  * a) & 0xFFFFFFFF;
-  return (lowbits * 14) >> 32;
-}
-}
-
 inline element_type element::type() const noexcept {
-  /* The element_type values are chosen so that x -> x % 14 does the correct mapping. We assume
-  that the types are correct, but this is no worse than before where an abort would follow. */
-  return static_cast<element_type>(fastmod14(static_cast<unsigned int>(tape_ref_type())));
-  // this is likely a hot function, so we don't want a switch case?
-  /*switch (tape_ref_type()) {
-    case internal::tape_type::START_ARRAY:
-      return element_type::ARRAY;
-    case internal::tape_type::START_OBJECT:
-      return element_type::OBJECT;
-    case internal::tape_type::INT64:
-      return element_type::INT64;
-    case internal::tape_type::UINT64:
-      return element_type::UINT64;
-    case internal::tape_type::DOUBLE:
-      return element_type::DOUBLE;
-    case internal::tape_type::STRING:
-      return element_type::STRING;
-    case internal::tape_type::TRUE_VALUE:
-    case internal::tape_type::FALSE_VALUE:
-      return element_type::BOOL;
-    case internal::tape_type::NULL_VALUE:
-      return element_type::NULL_VALUE;
-    case internal::tape_type::ROOT:
-    case internal::tape_type::END_ARRAY:
-    case internal::tape_type::END_OBJECT:
-    default:
-      abort();
-  }*/
+  auto tape_type = tape_ref_type();
+  return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
 really_inline bool element::is_null() const noexcept {
   return tape_ref_type() == internal::tape_type::NULL_VALUE;

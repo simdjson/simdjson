@@ -93,17 +93,15 @@ namespace simdjson::dom {
  * This is the type it is most easily cast to with get<>.
  */
 enum class element_type {
-  ARRAY = 7,     ///< dom::array
-  OBJECT = 11,    ///< dom::object
-  INT64 = 10,     ///< int64_t
-  UINT64 = 5,    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
-  DOUBLE = 2,    ///< double: Any number with a "." or "e" that fits in double.
-  STRING = 6,    ///< std::string_view
-  BOOL = 4,      ///< bool
-  NULL_VALUE = 12 ///< null
+  ARRAY = '[',     ///< dom::array
+  OBJECT = '{',    ///< dom::object
+  INT64 = 'l',     ///< int64_t
+  UINT64 = 'u',    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
+  DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
+  STRING = '"',    ///< std::string_view
+  BOOL = 't',      ///< bool
+  NULL_VALUE = 'n' ///< null
 };
-
-/* We choose the integers 7, 11, and so forth in element_type so that the matching tape values (", {,..,) are mapped to them using the x -> x % 14 function. */
 
 /**
  * JSON array.
