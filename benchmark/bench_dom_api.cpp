@@ -202,8 +202,8 @@ static void numbers_exceptions_size_scan(State& state) {
     std::vector<double> container;
     container.resize(arr.size());
     size_t pos = 0;
-    for (double x : arr) {
-      container[pos++] = x;
+    for (auto e : arr) {
+      container[pos++] = double(e);
     }
     if(pos != container.size()) { cerr << "bad count" << endl; }
     benchmark::DoNotOptimize(container.data());
@@ -212,6 +212,48 @@ static void numbers_exceptions_size_scan(State& state) {
 }
 BENCHMARK(numbers_exceptions_size_scan);
 
+
+
+static void numbers_type_exceptions_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr = parser.load(NUMBERS_JSON);
+  for (auto _ : state) {
+    std::vector<double> container;
+    for (auto e : arr) {
+      dom::element_type actual_type = e.type();
+      if(actual_type != dom::element_type::DOUBLE) {
+        cerr << "found a node that is not an number?" << endl; break;
+      }
+      container.push_back(double(e));
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(numbers_type_exceptions_scan);
+
+static void numbers_type_exceptions_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr = parser.load(NUMBERS_JSON);
+  for (auto _ : state) {
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (auto e : arr) {
+      dom::element_type actual_type = e.type();
+      if(actual_type != dom::element_type::DOUBLE) {
+        cerr << "found a node that is not an number?" << endl; break;
+      }
+      container[pos++] = double(e);
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(numbers_type_exceptions_size_scan);
 
 static void numbers_exceptions_load_scan(State& state) {
   // Prints the number of results in twitter.json

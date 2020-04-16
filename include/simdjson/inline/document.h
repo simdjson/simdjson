@@ -738,30 +738,8 @@ really_inline element::element(const document *_doc, size_t _json_index) noexcep
 
 
 inline element_type element::type() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::START_ARRAY:
-      return element_type::ARRAY;
-    case internal::tape_type::START_OBJECT:
-      return element_type::OBJECT;
-    case internal::tape_type::INT64:
-      return element_type::INT64;
-    case internal::tape_type::UINT64:
-      return element_type::UINT64;
-    case internal::tape_type::DOUBLE:
-      return element_type::DOUBLE;
-    case internal::tape_type::STRING:
-      return element_type::STRING;
-    case internal::tape_type::TRUE_VALUE:
-    case internal::tape_type::FALSE_VALUE:
-      return element_type::BOOL;
-    case internal::tape_type::NULL_VALUE:
-      return element_type::NULL_VALUE;
-    case internal::tape_type::ROOT:
-    case internal::tape_type::END_ARRAY:
-    case internal::tape_type::END_OBJECT:
-    default:
-      abort();
-  }
+  auto tape_type = tape_ref_type();
+  return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
 really_inline bool element::is_null() const noexcept {
   return is_null_on_tape();

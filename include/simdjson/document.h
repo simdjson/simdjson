@@ -44,7 +44,7 @@ constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
 constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
 
 /**
- * The possible types in the tape. Internal only.
+ * The possible types in the tape.
  */
 enum class tape_type {
   ROOT = 'r',
@@ -99,14 +99,14 @@ namespace simdjson::dom {
  * This is the type it is most easily cast to with get<>.
  */
 enum class element_type {
-  ARRAY,     ///< dom::array
-  OBJECT,    ///< dom::object
-  INT64,     ///< int64_t
-  UINT64,    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
-  DOUBLE,    ///< double: Any number with a "." or "e" that fits in double.
-  STRING,    ///< std::string_view
-  BOOL,      ///< bool
-  NULL_VALUE ///< null
+  ARRAY = '[',     ///< dom::array
+  OBJECT = '{',    ///< dom::object
+  INT64 = 'l',     ///< int64_t
+  UINT64 = 'u',    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
+  DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
+  STRING = '"',    ///< std::string_view
+  BOOL = 't',      ///< bool
+  NULL_VALUE = 'n' ///< null
 };
 
 /**
