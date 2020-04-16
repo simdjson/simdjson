@@ -65,6 +65,63 @@ static void numbers_size_scan(State& state) {
 BENCHMARK(numbers_size_scan);
 
 
+static void numbers_type_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+  if(error) {
+    cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+    return;
+  }
+  for (auto _ : state) {
+    std::vector<double> container;
+    for (auto e : arr) {
+      dom::element_type actual_type = e.type();
+      if(actual_type != dom::element_type::DOUBLE) {
+        cerr << "found a node that is not an number?" << endl; break;
+      }
+      double x;
+      e.get<double>().tie(x,error);
+      container.push_back(x);
+    }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(numbers_type_scan);
+
+static void numbers_type_size_scan(State& state) {
+  // Prints the number of results in twitter.json
+  dom::parser parser;
+  dom::array arr;
+  simdjson::error_code error;
+  parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
+  if(error) {
+    cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
+    return;
+  }
+  for (auto _ : state) {
+    std::vector<double> container;
+    container.resize(arr.size());
+    size_t pos = 0;
+    for (auto e : arr) {
+      dom::element_type actual_type = e.type();
+      if(actual_type != dom::element_type::DOUBLE) {
+        cerr << "found a node that is not an number?" << endl; break;
+      }
+      double x;
+      e.get<double>().tie(x,error);
+      container[pos++] = x;
+    }
+    if(pos != container.size()) { cerr << "bad count" << endl; }
+    benchmark::DoNotOptimize(container.data());
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(numbers_type_size_scan);
+
 static void numbers_load_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
