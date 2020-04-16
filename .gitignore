@@ -71,6 +71,7 @@ objs
 /benchmark/parse_stream
 /benchmark/parsingcompetition
 /benchmark/perfdiff
+/benchmark/simdjson-master
 /benchmark/statisticalmodel
 /build/
 /build-ossfuzz-*/
@@ -131,6 +132,7 @@ objs
 /tests/allparserscheckfile
 /tests/basictests
 /tests/checkimplementation
+/tests/compilation_failure_tests/example_compiletest_should_compile
 /tests/errortests
 /tests/extracting_values_example
 /tests/integer_tests
