@@ -189,9 +189,8 @@ inline size_t simdjson_result<dom::object>::size() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-} // namespace simdjson
 
-namespace simdjson::dom {
+namespace dom {
 
 //
 // document inline implementation
@@ -900,9 +899,8 @@ inline bool element::dump_raw_tape(std::ostream &out) const noexcept {
   return doc->dump_raw_tape(out);
 }
 
-} // namespace simdjson::dom
+} // namespace dom
 
-namespace simdjson {
 
 //
 // minify inline implementation
@@ -1082,9 +1080,8 @@ inline std::ostream& minify<simdjson_result<dom::object>>::print(std::ostream& o
 
 #endif
 
-} // namespace simdjson
 
-namespace simdjson::internal {
+namespace internal {
 
 //
 // tape_ref inline implementation
@@ -1151,7 +1148,7 @@ really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
 
 template<typename T>
 really_inline T tape_ref::next_tape_value() const noexcept {
-  static_assert(sizeof(T) == sizeof(uint64_t));
+  static_assert(sizeof(T) == sizeof(uint64_t), "next_tape_value() template parameter must be 64-bit");
   // Though the following is tempting...
   //  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
   // It is not generally safe. It is safer, and often faster to rely
@@ -1170,7 +1167,7 @@ inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   );
 }
 
-
-} // namespace simdjson::internal
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_INLINE_DOCUMENT_H

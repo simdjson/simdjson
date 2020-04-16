@@ -4,7 +4,9 @@
 #include "simdjson.h"
 #include "fallback/implementation.h"
 
-namespace simdjson::fallback::stage1 {
+namespace simdjson {
+namespace fallback {
+namespace stage1 {
 
 class structural_scanner {
 public:
@@ -139,9 +141,8 @@ private:
   bool streaming;
 }; // structural_scanner
 
-} // simdjson::fallback::stage1
+} // namespace stage1
 
-namespace simdjson::fallback {
 
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   if (unlikely(len > parser.capacity())) {
@@ -207,6 +208,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
   return SUCCESS;
 }
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STAGE1_FIND_MARKS_H

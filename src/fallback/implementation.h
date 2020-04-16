@@ -4,7 +4,8 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
 using namespace simdjson::dom;
 
@@ -22,6 +23,8 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
 };
 
-} // namespace simdjson::fallback
+} // namespace fallback
+
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H

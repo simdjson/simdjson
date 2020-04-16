@@ -6,7 +6,9 @@
 #include "arm64/bitmanipulation.h"
 #include "arm64/intrinsics.h"
 
-namespace simdjson::arm64::simd {
+namespace simdjson {
+namespace arm64 {
+namespace simd {
 
   template<typename T>
   struct simd8;
@@ -387,6 +389,8 @@ namespace simdjson::arm64::simd {
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::arm64::simd
+} // namespace simd
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_SIMD_H

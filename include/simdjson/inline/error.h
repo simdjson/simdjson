@@ -4,7 +4,8 @@
 #include "simdjson/error.h"
 #include <string>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
   // We store the error code so we can validate the error message is associated with the right code
   struct error_code_info {
     error_code code;
@@ -12,9 +13,8 @@ namespace simdjson::internal {
   };
   // These MUST match the codes in error_code. We check this constraint in basictests.
   extern SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[];
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson {
 
 inline const char *error_message(error_code error) noexcept {
   // If you're using error_code, we're trusting you got it from the enum.

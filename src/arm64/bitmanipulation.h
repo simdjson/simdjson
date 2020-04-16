@@ -4,28 +4,24 @@
 #include "simdjson.h"
 #include "arm64/intrinsics.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
-#ifndef _MSC_VER
+NO_SANITIZE_UNDEFINED
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
-__attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif // _MSC_VER
-/* result might be undefined when input_num is zero */
+// Sadly, sanitizers are not smart enough to figure it out.
 really_inline int trailing_zeroes(uint64_t input_num) {
-
 #ifdef _MSC_VER
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // _MSC_VER
   return __builtin_ctzll(input_num);
 #endif // _MSC_VER
-
-} // namespace simdjson::arm64
+}
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -78,6 +74,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 #endif
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

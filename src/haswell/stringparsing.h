@@ -8,7 +8,8 @@
 #include "haswell/bitmanipulation.h"
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simd;
 
@@ -30,7 +31,7 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v(src);
   // store to dest unconditionally - we can overwrite the bits we don't like later
   v.store(dst);
@@ -42,7 +43,8 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 #include "generic/stringparsing.h"
 
-} // namespace simdjson::haswell
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_STRINGPARSING_H

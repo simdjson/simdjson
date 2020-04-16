@@ -8,7 +8,8 @@
 #include "westmere/bitmanipulation.h"
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 
 using namespace simd;
 
@@ -30,7 +31,7 @@ public:
 really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1));
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v0(src);
   simd8<uint8_t> v1(src + 16);
   v0.store(dst);
@@ -44,7 +45,8 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 #include "generic/stringparsing.h"
 
-} // namespace simdjson::westmere
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H

@@ -17,7 +17,8 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -40,7 +41,9 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #include "generic/numberparsing.h"
 
-} // namespace simdjson::haswell
+} // namespace haswell
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H

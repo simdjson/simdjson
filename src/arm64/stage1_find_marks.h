@@ -7,7 +7,8 @@
 #include "arm64/bitmanipulation.h"
 #include "arm64/implementation.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
 using namespace simd;
 
@@ -85,6 +86,7 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_STAGE1_FIND_MARKS_H

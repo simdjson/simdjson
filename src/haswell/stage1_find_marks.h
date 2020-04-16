@@ -9,7 +9,8 @@
 #include "haswell/implementation.h"
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
 using namespace simd;
 
@@ -74,7 +75,9 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   return haswell::stage1::json_structural_indexer::index<128>(buf, len, parser, streaming);
 }
 
-} // namespace simdjson::haswell
+} // namespace haswell
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H

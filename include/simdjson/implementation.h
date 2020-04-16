@@ -218,7 +218,7 @@ private:
   std::atomic<T*> ptr;
 };
 
-} // namespace [simdjson::]internal
+} // namespace internal
 
 /**
  * The list of available implementations compiled into simdjson.

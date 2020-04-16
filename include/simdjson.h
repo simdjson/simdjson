@@ -17,12 +17,12 @@
 #include "simdjson/document.h"
 #include "simdjson/document_stream.h"
 
-// Deprecated API
+// // Deprecated API
 #include "simdjson/jsonparser.h"
 #include "simdjson/parsedjson.h"
 #include "simdjson/parsedjson_iterator.h"
 
-// Inline functions
+// // Inline functions
 #include "simdjson/inline/document.h"
 #include "simdjson/inline/document_stream.h"
 #include "simdjson/inline/error.h"

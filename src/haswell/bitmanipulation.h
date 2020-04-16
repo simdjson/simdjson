@@ -6,25 +6,24 @@
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
-namespace simdjson::haswell {
+namespace simdjson {
+namespace haswell {
 
-#ifndef _MSC_VER
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
-__attribute__((no_sanitize("undefined")))  // this is deliberate
-#endif
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef _MSC_VER
   return (int)_tzcnt_u64(input_num);
-#else
+#else // _MSC_VER
   ////////
   // You might expect the next line to be equivalent to 
   // return (int)_tzcnt_u64(input_num);
   // but the generated code differs and might be less efficient?
   ////////
   return __builtin_ctzll(input_num);
-#endif// _MSC_VER
+#endif // _MSC_VER
 }
 
 /* result might be undefined when input_num is zero */
@@ -71,7 +70,9 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                    (unsigned long long *)result);
 #endif
 }
-}// namespace simdjson::haswell
+
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H

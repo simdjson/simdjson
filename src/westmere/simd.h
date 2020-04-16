@@ -9,7 +9,9 @@
 
 
 TARGET_WESTMERE
-namespace simdjson::westmere::simd {
+namespace simdjson {
+namespace westmere {
+namespace simd {
 
   template<typename Child>
   struct base {
@@ -351,7 +353,10 @@ namespace simdjson::westmere::simd {
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::westmere::simd
+} // namespace simd
+
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

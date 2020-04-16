@@ -87,6 +87,7 @@ objs
 /examples/quickstart/twitter.json
 /fuzz/fuzz_dump
 /fuzz/fuzz_dump_raw_tape
+/fuzz/fuzz_minify
 /fuzz/fuzz_parser
 /fuzz/fuzz_print_json
 /get_corpus_benchmark

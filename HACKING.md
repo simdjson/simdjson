@@ -26,8 +26,10 @@ simdjson's source structure, from the top level, looks like this:
     compiled multiple times, from whichever architectures use them. They assume they are already
     enclosed in a namespace, e.g.:
     ```c++
-    namespace simdjson::haswell {
-      #include "generic/stage1_find_marks.h"
+    namespace simdjson {
+      namespace haswell {
+        #include "generic/stage1_find_marks.h"
+      }
     }
     ```
 
