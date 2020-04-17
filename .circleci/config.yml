@@ -102,7 +102,7 @@ jobs:
   sanitize-gcc9:
     description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
     executor: gcc9
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ cmake_test_all ]
   sanitize-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build

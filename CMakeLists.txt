@@ -161,12 +161,7 @@ add_subdirectory(dependencies)
 add_subdirectory(tests)
 add_subdirectory(examples)
 add_subdirectory(benchmark)
-
-# for fuzzing, read the comments in the fuzz/CMakeLists.txt file
-option(ENABLE_FUZZING "enable building the fuzzers" ON)
-if(ENABLE_FUZZING AND SIMDJSON_EXCEPTIONS)
-  add_subdirectory(fuzz)
-endif()
+add_subdirectory(fuzz)
 
 #
 # CPack
