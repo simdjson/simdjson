@@ -131,6 +131,7 @@ objs
 /tests/allparserscheckfile
 /tests/basictests
 /tests/errortests
+/tests/extracting_values_example
 /tests/integer_tests
 /tests/jsoncheck
 /tests/numberparsingcheck
