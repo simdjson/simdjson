@@ -4,6 +4,7 @@
 # target_link_libraries(my-program simdjson-include-source) gives you the header and source
 # directories. It does not specify any compiler flags.
 #
+
 add_library(simdjson-include-source INTERFACE)
 target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)

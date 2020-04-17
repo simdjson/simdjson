@@ -37,7 +37,7 @@ Other important files and directories:
 * **.drone.yml:** Definitions for Drone CI.
 * **.appveyor.yml:** Definitions for Appveyor CI (Windows).
 * **.circleci:** Definitions for Circle CI.
-* **amalgamation.sh:** Generates singleheader/simdjson.h and singleheader/simdjson.cpp for release.
+* **amalgamate.sh:** Generates singleheader/simdjson.h and singleheader/simdjson.cpp for release.
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. If you're not sure what else to do to check your performance, this is always a good start:
@@ -73,7 +73,7 @@ you can regenerate them by running this at the top level:
 make amalgamate
 ```
 
-The amalgamator is at `amalgamation.sh` at the top level. It generates singleheader/simdjson.h by
+The amalgamator is at `amalgamate.sh` at the top level. It generates singleheader/simdjson.h by
 reading through include/simdjson.h, copy/pasting each header file into the amalgamated file at the
 point it gets included (but only once per header). singleheader/simdjson.cpp is generated from
 src/simdjson.cpp the same way, except files under generic/ may be included and copy/pasted multiple
