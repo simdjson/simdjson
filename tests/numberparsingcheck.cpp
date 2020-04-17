@@ -179,7 +179,7 @@ bool validate(const char *dirname) {
       invalid_count = 0;
       total_count += float_count + int_count + invalid_count;
       simdjson::dom::parser parser;
-      auto [doc, err] = parser.parse(p);
+      auto err = parser.parse(p).error();
       bool isok = (err == simdjson::error_code::SUCCESS);
       if (int_count + float_count + invalid_count > 0) {
         printf("File %40s %s --- integers: %10zu floats: %10zu invalid: %10zu "

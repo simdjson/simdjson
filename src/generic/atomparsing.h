@@ -3,7 +3,7 @@ namespace atomparsing {
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
 
 WARN_UNUSED
-really_inline bool str4ncmp(const uint8_t *src, const char* atom) {
+really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
   static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));

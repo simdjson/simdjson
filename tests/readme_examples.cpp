@@ -114,6 +114,7 @@ void basics_cpp17_1() {
   dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
   auto [object, error] = parser.parse(json).get<dom::object>();
+  if (error) { cerr << error << endl; return; }
   for (auto [key, value] : object) {
     cout << key << " = " << value << endl;
   }
@@ -180,6 +181,7 @@ void performance_1() {
 }
 
 #ifdef SIMDJSON_CPLUSPLUS17
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_2() {
   dom::parser parser(1024*1024); // Never grow past documents > 1MB
@@ -204,6 +206,7 @@ void performance_3() {
     // ...
   // }
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
 int main() {

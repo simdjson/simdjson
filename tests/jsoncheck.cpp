@@ -70,7 +70,7 @@ bool validate(const char *dirname) {
         return EXIT_FAILURE;
       }
       simdjson::dom::parser parser;
-      auto [doc, errorcode] = parser.parse(p);
+      auto errorcode = parser.parse(p).error();
       ++how_many;
       printf("%s\n", errorcode == simdjson::error_code::SUCCESS ? "ok" : "invalid");
       if (contains("EXCLUDE", name)) {
