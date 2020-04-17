@@ -30,7 +30,6 @@ if (NOT MSVC)
       endif()
     endif()
 
-    message(STATUS ${TEST_NAME})
     add_test(
       NAME ${TEST_NAME}
       COMMAND ${CMAKE_CXX_COMPILER} ${QUICKSTART_FLAGS} -I${PROJECT_SOURCE_DIR}/include -I${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/simdjson.cpp ${SOURCE_FILE}

@@ -88,19 +88,20 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
       TEST readme_examples
       APPEND PROPERTY LABELS quicktests
     )
-  endif()
-  add_compile_test(readme_examples_noexceptions readme_examples_noexceptions.cpp quicktests)
 
-  add_compile_test(readme_examples11 readme_examples.cpp quicktests)
-  set_target_properties(readme_examples11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-  if (!MSVC)
-    target_compile_options(readme_examples11 PRIVATE -Werror)
+    add_compile_test(readme_examples11 readme_examples.cpp quicktests)
+    set_target_properties(readme_examples11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    if (!MSVC)
+      target_compile_options(readme_examples11 PRIVATE -Werror)
+    endif()
   endif()
+
+  add_compile_test(readme_examples_noexceptions readme_examples_noexceptions.cpp quicktests)
 
   add_compile_test(readme_examples_noexceptions11 readme_examples_noexceptions.cpp quicktests)
   set_target_properties(readme_examples_noexceptions11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
   if (!MSVC)
-    target_compile_options(readme_examples11 PRIVATE -Werror)
+    target_compile_options(readme_examples_noexceptions11 PRIVATE -Werror)
   endif()
 
   # Compile tests that *should fail*
