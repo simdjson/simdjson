@@ -168,7 +168,7 @@ jobs:
     steps: [ init_clang6, cmake_test ]
   haswell-clang6-libcpp:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
-    executor: haswell-clang6-libcpp
+    executor: haswell-clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_USE_LIBCPP=ON}
     steps: [ init_clang6, cmake_test ]
   haswell-gcc8:
