@@ -51,7 +51,7 @@ executors:
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
   clang8:
     docker:
-      - image: ubuntu:19.04
+      - image: ubuntu:20.04
         environment:
           CXX: clang++
   clang6:
