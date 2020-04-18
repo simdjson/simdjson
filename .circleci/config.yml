@@ -85,6 +85,7 @@ commands:
     steps:
       - checkout
       - run: make
+      - run: ./json2json -h # Print out the implementation we're using on this hardware
       - run: make amalgamate
       - run: make test
       - run: make checkperf
@@ -96,6 +97,7 @@ commands:
       - checkout
       - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS
       - run: make all
+      - run: tools/json2json -h # Print out the implementation we're using on this hardware
       - run: ctest --output-on-failure
 
   cmake_test: # this version builds, install, test and then verify from the installation
@@ -105,6 +107,7 @@ commands:
       - checkout
       - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination
       - run: make all install
+      - run: tools/json2json -h # Print out the implementation we're using on this hardware
       - run: ctest --output-on-failure
       - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json # we not only want cmake to build and run tests, but we want also a succesful installation from which we can build, link and run programs
 

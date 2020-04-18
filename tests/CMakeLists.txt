@@ -43,6 +43,7 @@ endif()
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
 add_cpp_test(basictests basictests.cpp quicktests)
+add_cpp_test(checkimplementation checkimplementation.cpp quicktests)
 add_cpp_test(errortests errortests.cpp quicktests)
 add_cpp_test(integer_tests integer_tests.cpp quicktests)
 add_cpp_test(jsoncheck jsoncheck.cpp quicktests)
@@ -74,6 +75,35 @@ if (NOT MSVC) # Can't run .sh on windows
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
     set_property(TEST issue150 APPEND PROPERTY LABELS slowtests)
   endif()
+endif()
+
+if (NOT MSVC)
+  #
+  # json2json tool tests
+  #
+
+  add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
+
+  #
+  # SIMDJSON_FORCE_IMPLEMENTATION tests
+  #
+  if (SIMDJSON_IMPLEMENTATION_FALLBACK)
+    add_test(
+      NAME simdjson_force_implementation_fallback
+      COMMAND
+        ${CMAKE_COMMAND} -E env
+        SIMDJSON_FORCE_IMPLEMENTATION=fallback
+        $<TARGET_FILE:json2json> ${EXAMPLE_JSON}
+    )
+  endif()
+  add_test(
+    NAME simdjson_force_implementation_error
+    COMMAND
+      ${CMAKE_COMMAND} -E env
+      SIMDJSON_FORCE_IMPLEMENTATION=doesnotexist
+      $<TARGET_FILE:json2json> ${EXAMPLE_JSON}
+  )
+  set_tests_properties(simdjson_force_implementation_error PROPERTIES WILL_FAIL TRUE)
 endif()
 
 #
