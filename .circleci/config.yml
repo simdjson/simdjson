@@ -49,7 +49,11 @@ executors:
         environment:
           CXX: g++
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
-
+  clang8:
+    docker:
+      - image: ubuntu:19.04
+        environment:
+          CXX: clang++
   clang6:
     docker:
       - image: ubuntu:18.04
@@ -60,6 +64,12 @@ executors:
       - image: ubuntu:18.04
         environment:
           CXX: clang++-6.0
+          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
+  haswell-clang8:
+    docker:
+      - image: ubuntu:19.04
+        environment:
+          CXX: clang++
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
   westmere-clang6:
     docker:
@@ -166,9 +176,9 @@ jobs:
     executor: haswell-clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ init_clang6, cmake_test ]
-  haswell-clang6-libcpp:
+  haswell-clang8-libcpp:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
-    executor: haswell-clang6
+    executor: haswell-clang8
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_USE_LIBCPP=ON}
     steps: [ init_clang6, cmake_test ]
   haswell-gcc8:
@@ -217,9 +227,9 @@ jobs:
     executor: haswell-clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ init_clang6, cmake_test ]
-  haswell-unthreaded-clang6-libcpp:
+  haswell-unthreaded-clang8-libcpp:
     description: Build and run tests on Clang 6 and AVX 2 *without* threads
-    executor: haswell-clang6
+    executor: haswell-clang8
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF -DSIMDJSON_USE_LIBCPP=ON}
     steps: [ init_clang6, cmake_test ]
   #
@@ -296,7 +306,7 @@ workflows:
       - haswell-dynamic-clang6
       - haswell-unthreaded-gcc7
       - haswell-unthreaded-clang6
-      - haswell-unthreaded-clang6-libcpp
+      - haswell-unthreaded-clang8-libcpp
 
       - haswell-sanitize-gcc7
       - haswell-sanitize-clang6
