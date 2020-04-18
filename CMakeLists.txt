@@ -24,10 +24,15 @@ if(MSVC)
 else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
   option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
+  option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
+
+if(SIMDJSON_USE_LIBCPP)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+endif(SIMDJSON_USE_LIBCPP)
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
 set(CMAKE_CXX_STANDARD 17)
