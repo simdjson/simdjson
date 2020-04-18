@@ -217,7 +217,11 @@ jobs:
     executor: haswell-clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ init_clang6, cmake_test ]
-
+  haswell-unthreaded-clang6-libcpp:
+    description: Build and run tests on Clang 6 and AVX 2 *without* threads
+    executor: haswell-clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF -DSIMDJSON_USE_LIBCPP=ON}
+    steps: [ init_clang6, cmake_test ]
   #
   # Westmere
   #
@@ -292,6 +296,7 @@ workflows:
       - haswell-dynamic-clang6
       - haswell-unthreaded-gcc7
       - haswell-unthreaded-clang6
+      - haswell-unthreaded-clang6-libcpp
 
       - haswell-sanitize-gcc7
       - haswell-sanitize-clang6
