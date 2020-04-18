@@ -60,6 +60,8 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    100 results.
    ```
 
+On systems where the C++ defaults to old C++ standards, you may need to specify the C++ standard: e.g.,  replace `c++ -o quickstart quickstart.cpp simdjson.cpp` with `c++ -std=c++17 -o quickstart quickstart.cpp simdjson.cpp`. On macOS we require support for the C++17 standard and the `-std=c++17` flag.
+
 Documentation
 -------------
 

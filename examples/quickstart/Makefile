@@ -5,7 +5,7 @@ JSONEXAMPLES=$(ROOT)/jsonexamples
 test: quickstart twitter.json
 	./quickstart
 quickstart: quickstart.cpp simdjson.cpp simdjson.h
-	c++ -o ./quickstart quickstart.cpp simdjson.cpp
+	c++ -std=c++17 -o ./quickstart quickstart.cpp simdjson.cpp
 clean:
 	rm -f simdjson.cpp simdjson.h twitter.json quickstart quickstart11 quickstart14
 simdjson.cpp: $(SINGLEHEADER)/simdjson.cpp
@@ -15,6 +15,9 @@ simdjson.h: $(SINGLEHEADER)/simdjson.h
 twitter.json: $(JSONEXAMPLES)/twitter.json
 	cp $(JSONEXAMPLES)/twitter.json .
 
+UNAME_S := $(shell uname -s)
+ifneq ($(UNAME_S),Darwin)
+# Will not work on macOS.
 quickstart11: $(ROOT)/src/**.h $(ROOT)/src/**.cpp $(ROOT)/include/**.h $(ROOT)/src/**.cpp
 	rm -f simdjson.h simdjson.cpp
 	c++ -o ./quickstart11 quickstart.cpp $(ROOT)/src/simdjson.cpp -I$(ROOT)/src -I$(ROOT)/include -std=c++11
@@ -25,6 +28,8 @@ quickstart14: $(ROOT)/src/**.h $(ROOT)/src/**.cpp $(ROOT)/include/**.h $(ROOT)/s
 	c++ -o ./quickstart14 quickstart.cpp $(ROOT)/src/simdjson.cpp -I$(ROOT)/src -I$(ROOT)/include -std=c++14
 test14: quickstart14 twitter.json
 	./quickstart14
+endif
+
 quickstart17: $(ROOT)/src/**.h $(ROOT)/src/**.cpp $(ROOT)/include/**.h $(ROOT)/src/**.cpp
 	rm -f simdjson.h simdjson.cpp
 	c++ -o ./quickstart17 quickstart.cpp $(ROOT)/src/simdjson.cpp -I$(ROOT)/src -I$(ROOT)/include -std=c++17

@@ -88,21 +88,23 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
       TEST readme_examples
       APPEND PROPERTY LABELS quicktests
     )
-
+if(NOT APPLE) # we require C++17 on Apple
     add_compile_test(readme_examples11 readme_examples.cpp quicktests)
     set_target_properties(readme_examples11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
     if (!MSVC)
       target_compile_options(readme_examples11 PRIVATE -Werror)
     endif()
+endif(NOT APPLE)
   endif()
 
   add_compile_test(readme_examples_noexceptions readme_examples_noexceptions.cpp quicktests)
-
+if(NOT APPLE) # we require C++17 on Apple
   add_compile_test(readme_examples_noexceptions11 readme_examples_noexceptions.cpp quicktests)
   set_target_properties(readme_examples_noexceptions11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
   if (!MSVC)
     target_compile_options(readme_examples_noexceptions11 PRIVATE -Werror)
   endif()
+endif(NOT APPLE)
 
   # Compile tests that *should fail*
   add_compile_test(readme_examples_will_fail_with_exceptions_off readme_examples.cpp quicktests)
