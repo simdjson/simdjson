@@ -53,6 +53,7 @@ libs
 objs
 
 # Build outputs (TODO build to a subdir so we can exclude that instead)
+/.simdjson-user-CMakeCache.txt
 /allparserscheckfile
 /allparsingcompetition
 /basictests
@@ -124,10 +125,10 @@ objs
 /stringparsingcheck
 /submodules
 /ujdecode.o
-/amalgamation_demo.cpp
+/amalgamate_demo.cpp
 /simdjson.cpp
 /simdjson.h
-/singleheader/amalgamation_demo
+/singleheader/amalgamate_demo
 /singleheader/demo
 /tests/allparserscheckfile
 /tests/basictests

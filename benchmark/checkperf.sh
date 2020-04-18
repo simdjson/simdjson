@@ -2,6 +2,8 @@
 
 set -ex
 
+set | grep CHECKPERF
+
 if [ -z "$CHECKPERF_REPOSITORY" ]; then CHECKPERF_REPOSITORY=.; fi
 
 # Arguments: perfdiff.sh <branch> <test json files>
@@ -29,10 +31,18 @@ else
 fi
 
 echo "Building $CHECKPERF_DIR/parse ..."
-make parse
+if [ -n "$CHECKPERF_CMAKECACHE" ]; then
+  cp $CHECKPERF_CMAKECACHE $CHECKPERF_DIR/CMakeCache.txt
+  cmake -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF .
+  make parse
+  REFERENCE_PARSE=$CHECKPERF_DIR/benchmark/parse
+else
+  make parse
+  REFERENCE_PARSE=$CHECKPERF_DIR/parse
+fi
 popd
 
 # Run them and diff performance
 echo "Running perfdiff:"
-echo ./perfdiff \"./parse -t $CHECKPERF_ARGS\" \"$CHECKPERF_DIR/parse -t $CHECKPERF_ARGS\"
-./perfdiff "./parse -t $CHECKPERF_ARGS" "$CHECKPERF_DIR/parse -t $CHECKPERF_ARGS"
+echo ./perfdiff \"./parse -t $CHECKPERF_ARGS\" \"$REFERENCE_PARSE -t $CHECKPERF_ARGS\"
+./perfdiff "./parse -t $CHECKPERF_ARGS" "$REFERENCE_PARSE -t $CHECKPERF_ARGS"
