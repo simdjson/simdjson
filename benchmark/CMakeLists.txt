@@ -43,5 +43,7 @@ if (NOT MSVC)
       CHECKPERF_DIR=${CMAKE_CURRENT_BINARY_DIR}/simdjson-master
       CHECKPERF_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}
       bash ${CMAKE_CURRENT_SOURCE_DIR}/checkperf.sh ${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json)
+  set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
+  set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
 endif()
