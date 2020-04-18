@@ -31,7 +31,7 @@ option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
 if(SIMDJSON_USE_LIBCPP)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
 endif(SIMDJSON_USE_LIBCPP)
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
@@ -41,6 +41,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 
 # LTO seems to create all sorts of fun problems. Let us
 # disable temporarily.
