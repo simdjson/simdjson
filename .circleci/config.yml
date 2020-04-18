@@ -298,7 +298,7 @@ workflows:
 
       - clang6
       - haswell-clang6
-      - haswell-clang6-libcpp
+      - haswell-clang8-libcpp
       - westmere-clang6
       - fallback-clang6
 
