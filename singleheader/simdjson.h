@@ -1,4 +1,4 @@
-/* auto-generated on Thu  2 Apr 2020 18:58:25 EDT. Do not edit! */
+/* auto-generated on Sun Apr 19 11:36:20 PDT 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -25,8 +25,23 @@
 #endif
 #endif
 
-#if (SIMDJSON_CPLUSPLUS < 201703L)
-#error simdjson requires a compiler compliant with the C++17 standard
+// C++ 17
+#if !defined(SIMDJSON_CPLUSPLUS17) && (SIMDJSON_CPLUSPLUS >= 201703L)
+#define SIMDJSON_CPLUSPLUS17 1
+#endif
+
+// C++ 14
+#if !defined(SIMDJSON_CPLUSPLUS14) && (SIMDJSON_CPLUSPLUS >= 201402L)
+#define SIMDJSON_CPLUSPLUS14 1
+#endif
+
+// C++ 11
+#if !defined(SIMDJSON_CPLUSPLUS11) && (SIMDJSON_CPLUSPLUS >= 201103L)
+#define SIMDJSON_CPLUSPLUS11 1
+#endif
+
+#ifndef SIMDJSON_CPLUSPLUS11
+#error simdjson requires a compiler compliant with the C++11 standard
 #endif
 
 #endif // SIMDJSON_COMPILER_CHECK_H
@@ -154,6 +169,18 @@ enum {
 #define SIMDJSON_THREADS_ENABLED
 #endif
 
+
+// workaround for large stack sizes under -O0.
+// https://github.com/simdjson/simdjson/issues/691
+#ifdef __APPLE__
+#ifndef __OPTIMIZE__
+// Apple systems have small stack sizes in secondary threads.
+// Lack of compiler optimization may generate high stack usage.
+// So we are disabling multithreaded support for safety.
+#undef SIMDJSON_THREADS_ENABLED
+#endif
+#endif
+
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
@@ -250,20 +277,20 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 } // namespace simdjson
 
 #if defined(__GNUC__)
-// Marks a block with a name so that MCA analysis can see it.
-#define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
-#define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
-#define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
+  // Marks a block with a name so that MCA analysis can see it.
+  #define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
+  #define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
+  #define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
 #else
-#define BEGIN_DEBUG_BLOCK(name)
-#define END_DEBUG_BLOCK(name)
-#define DEBUG_BLOCK(name, block)
+  #define BEGIN_DEBUG_BLOCK(name)
+  #define END_DEBUG_BLOCK(name)
+  #define DEBUG_BLOCK(name, block)
 #endif
 
 #if !defined(_MSC_VER) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
-// Implemented using Labels as Values which works in GCC and CLANG (and maybe
-// also in Intel's compiler), but won't work in MSVC.
-#define SIMDJSON_USE_COMPUTED_GOTO
+  // Implemented using Labels as Values which works in GCC and CLANG (and maybe
+  // also in Intel's compiler), but won't work in MSVC.
+  #define SIMDJSON_USE_COMPUTED_GOTO
 #endif
 
 // Align to N-byte boundary
@@ -273,58 +300,1613 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #ifdef _MSC_VER
-#define really_inline __forceinline
-#define never_inline __declspec(noinline)
 
-#define UNUSED
-#define WARN_UNUSED
+  #define really_inline __forceinline
+  #define never_inline __declspec(noinline)
 
-#ifndef likely
-#define likely(x) x
-#endif
-#ifndef unlikely
-#define unlikely(x) x
-#endif
+  #define UNUSED
+  #define WARN_UNUSED
 
-#define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
-#define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
-#define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
-#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
-#define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
+  #ifndef likely
+  #define likely(x) x
+  #endif
+  #ifndef unlikely
+  #define unlikely(x) x
+  #endif
+
+  #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
+  #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
+  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
+  #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
+
+  #if SIMDJSON_USING_LIBRARY
+  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
+  #else
+  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+  #endif
 
 #else // MSC_VER
 
+  #define really_inline inline __attribute__((always_inline, unused))
+  #define never_inline inline __attribute__((noinline, unused))
 
-#define really_inline inline __attribute__((always_inline, unused))
-#define never_inline inline __attribute__((noinline, unused))
+  #define UNUSED __attribute__((unused))
+  #define WARN_UNUSED __attribute__((warn_unused_result))
 
-#define UNUSED __attribute__((unused))
-#define WARN_UNUSED __attribute__((warn_unused_result))
+  #ifndef likely
+  #define likely(x) __builtin_expect(!!(x), 1)
+  #endif
+  #ifndef unlikely
+  #define unlikely(x) __builtin_expect(!!(x), 0)
+  #endif
 
-#ifndef likely
-#define likely(x) __builtin_expect(!!(x), 1)
-#endif
-#ifndef unlikely
-#define unlikely(x) __builtin_expect(!!(x), 0)
-#endif
+  #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
+  // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wreturn-type) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable)
+  #define SIMDJSON_PRAGMA(P) _Pragma(#P)
+  #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
+  #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
+  #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 
-#define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
-// gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
-#define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
-  SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough)
-#define SIMDJSON_PRAGMA(P) _Pragma(#P)
-#define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
-#define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
-#define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
+  #define SIMDJSON_DLLIMPORTEXPORT
 
 #endif // MSC_VER
 
+//
+// Backfill std::string_view using nonstd::string_view on C++11
+//
+#if (!SIMDJSON_CPLUSPLUS17)
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
+/* begin file include/simdjson/nonstd/string_view.hpp */
+// Copyright 2017-2019 by Martin Moene
+//
+// string-view lite, a C++17-like string_view for C++98 and later.
+// For more information see https://github.com/martinmoene/string-view-lite
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+#pragma once
+
+#ifndef NONSTD_SV_LITE_H_INCLUDED
+#define NONSTD_SV_LITE_H_INCLUDED
+
+#define string_view_lite_MAJOR  1
+#define string_view_lite_MINOR  4
+#define string_view_lite_PATCH  0
+
+#define string_view_lite_VERSION  nssv_STRINGIFY(string_view_lite_MAJOR) "." nssv_STRINGIFY(string_view_lite_MINOR) "." nssv_STRINGIFY(string_view_lite_PATCH)
+
+#define nssv_STRINGIFY(  x )  nssv_STRINGIFY_( x )
+#define nssv_STRINGIFY_( x )  #x
+
+// string-view lite configuration:
+
+#define nssv_STRING_VIEW_DEFAULT  0
+#define nssv_STRING_VIEW_NONSTD   1
+#define nssv_STRING_VIEW_STD      2
+
+#if !defined( nssv_CONFIG_SELECT_STRING_VIEW )
+# define nssv_CONFIG_SELECT_STRING_VIEW  ( nssv_HAVE_STD_STRING_VIEW ? nssv_STRING_VIEW_STD : nssv_STRING_VIEW_NONSTD )
+#endif
+
+#if defined( nssv_CONFIG_SELECT_STD_STRING_VIEW ) || defined( nssv_CONFIG_SELECT_NONSTD_STRING_VIEW )
+# error nssv_CONFIG_SELECT_STD_STRING_VIEW and nssv_CONFIG_SELECT_NONSTD_STRING_VIEW are deprecated and removed, please use nssv_CONFIG_SELECT_STRING_VIEW=nssv_STRING_VIEW_...
+#endif
+
+#ifndef  nssv_CONFIG_STD_SV_OPERATOR
+# define nssv_CONFIG_STD_SV_OPERATOR  0
+#endif
+
+#ifndef  nssv_CONFIG_USR_SV_OPERATOR
+# define nssv_CONFIG_USR_SV_OPERATOR  1
+#endif
+
+#ifdef   nssv_CONFIG_CONVERSION_STD_STRING
+# define nssv_CONFIG_CONVERSION_STD_STRING_CLASS_METHODS   nssv_CONFIG_CONVERSION_STD_STRING
+# define nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS  nssv_CONFIG_CONVERSION_STD_STRING
+#endif
+
+#ifndef  nssv_CONFIG_CONVERSION_STD_STRING_CLASS_METHODS
+# define nssv_CONFIG_CONVERSION_STD_STRING_CLASS_METHODS  1
+#endif
+
+#ifndef  nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+# define nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS  1
+#endif
+
+// Control presence of exception handling (try and auto discover):
+
+#ifndef nssv_CONFIG_NO_EXCEPTIONS
+# if defined(__cpp_exceptions) || defined(__EXCEPTIONS) || defined(_CPPUNWIND)
+#  define nssv_CONFIG_NO_EXCEPTIONS  0
+# else
+#  define nssv_CONFIG_NO_EXCEPTIONS  1
+# endif
+#endif
+
+// C++ language version detection (C++20 is speculative):
+// Note: VC14.0/1900 (VS2015) lacks too much from C++14.
+
+#ifndef   nssv_CPLUSPLUS
+# if defined(_MSVC_LANG ) && !defined(__clang__)
+#  define nssv_CPLUSPLUS  (_MSC_VER == 1900 ? 201103L : _MSVC_LANG )
+# else
+#  define nssv_CPLUSPLUS  __cplusplus
+# endif
+#endif
+
+#define nssv_CPP98_OR_GREATER  ( nssv_CPLUSPLUS >= 199711L )
+#define nssv_CPP11_OR_GREATER  ( nssv_CPLUSPLUS >= 201103L )
+#define nssv_CPP11_OR_GREATER_ ( nssv_CPLUSPLUS >= 201103L )
+#define nssv_CPP14_OR_GREATER  ( nssv_CPLUSPLUS >= 201402L )
+#define nssv_CPP17_OR_GREATER  ( nssv_CPLUSPLUS >= 201703L )
+#define nssv_CPP20_OR_GREATER  ( nssv_CPLUSPLUS >= 202000L )
+
+// use C++17 std::string_view if available and requested:
+
+#if nssv_CPP17_OR_GREATER && defined(__has_include )
+# if __has_include( <string_view> )
+#  define nssv_HAVE_STD_STRING_VIEW  1
+# else
+#  define nssv_HAVE_STD_STRING_VIEW  0
+# endif
+#else
+# define  nssv_HAVE_STD_STRING_VIEW  0
+#endif
+
+#define  nssv_USES_STD_STRING_VIEW  ( (nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_STD) || ((nssv_CONFIG_SELECT_STRING_VIEW == nssv_STRING_VIEW_DEFAULT) && nssv_HAVE_STD_STRING_VIEW) )
+
+#define nssv_HAVE_STARTS_WITH ( nssv_CPP20_OR_GREATER || !nssv_USES_STD_STRING_VIEW )
+#define nssv_HAVE_ENDS_WITH     nssv_HAVE_STARTS_WITH
+
+//
+// Use C++17 std::string_view:
+//
+
+#if nssv_USES_STD_STRING_VIEW
+
+#include <string_view>
+
+// Extensions for std::string:
+
+#if nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+
+namespace nonstd {
+
+template< class CharT, class Traits, class Allocator = std::allocator<CharT> >
+std::basic_string<CharT, Traits, Allocator>
+to_string( std::basic_string_view<CharT, Traits> v, Allocator const & a = Allocator() )
+{
+    return std::basic_string<CharT,Traits, Allocator>( v.begin(), v.end(), a );
+}
+
+template< class CharT, class Traits, class Allocator >
+std::basic_string_view<CharT, Traits>
+to_string_view( std::basic_string<CharT, Traits, Allocator> const & s )
+{
+    return std::basic_string_view<CharT, Traits>( s.data(), s.size() );
+}
+
+// Literal operators sv and _sv:
+
+#if nssv_CONFIG_STD_SV_OPERATOR
+
+using namespace std::literals::string_view_literals;
+
+#endif
+
+#if nssv_CONFIG_USR_SV_OPERATOR
+
+inline namespace literals {
+inline namespace string_view_literals {
+
+
+constexpr std::string_view operator "" _sv( const char* str, size_t len ) noexcept  // (1)
+{
+    return std::string_view{ str, len };
+}
+
+constexpr std::u16string_view operator "" _sv( const char16_t* str, size_t len ) noexcept  // (2)
+{
+    return std::u16string_view{ str, len };
+}
+
+constexpr std::u32string_view operator "" _sv( const char32_t* str, size_t len ) noexcept  // (3)
+{
+    return std::u32string_view{ str, len };
+}
+
+constexpr std::wstring_view operator "" _sv( const wchar_t* str, size_t len ) noexcept  // (4)
+{
+    return std::wstring_view{ str, len };
+}
+
+}} // namespace literals::string_view_literals
+
+#endif // nssv_CONFIG_USR_SV_OPERATOR
+
+} // namespace nonstd
+
+#endif // nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+
+namespace nonstd {
+
+using std::string_view;
+using std::wstring_view;
+using std::u16string_view;
+using std::u32string_view;
+using std::basic_string_view;
+
+// literal "sv" and "_sv", see above
+
+using std::operator==;
+using std::operator!=;
+using std::operator<;
+using std::operator<=;
+using std::operator>;
+using std::operator>=;
+
+using std::operator<<;
+
+} // namespace nonstd
+
+#else // nssv_HAVE_STD_STRING_VIEW
+
+//
+// Before C++17: use string_view lite:
+//
+
+// Compiler versions:
+//
+// MSVC++  6.0  _MSC_VER == 1200  nssv_COMPILER_MSVC_VERSION ==  60  (Visual Studio 6.0)
+// MSVC++  7.0  _MSC_VER == 1300  nssv_COMPILER_MSVC_VERSION ==  70  (Visual Studio .NET 2002)
+// MSVC++  7.1  _MSC_VER == 1310  nssv_COMPILER_MSVC_VERSION ==  71  (Visual Studio .NET 2003)
+// MSVC++  8.0  _MSC_VER == 1400  nssv_COMPILER_MSVC_VERSION ==  80  (Visual Studio 2005)
+// MSVC++  9.0  _MSC_VER == 1500  nssv_COMPILER_MSVC_VERSION ==  90  (Visual Studio 2008)
+// MSVC++ 10.0  _MSC_VER == 1600  nssv_COMPILER_MSVC_VERSION == 100  (Visual Studio 2010)
+// MSVC++ 11.0  _MSC_VER == 1700  nssv_COMPILER_MSVC_VERSION == 110  (Visual Studio 2012)
+// MSVC++ 12.0  _MSC_VER == 1800  nssv_COMPILER_MSVC_VERSION == 120  (Visual Studio 2013)
+// MSVC++ 14.0  _MSC_VER == 1900  nssv_COMPILER_MSVC_VERSION == 140  (Visual Studio 2015)
+// MSVC++ 14.1  _MSC_VER >= 1910  nssv_COMPILER_MSVC_VERSION == 141  (Visual Studio 2017)
+// MSVC++ 14.2  _MSC_VER >= 1920  nssv_COMPILER_MSVC_VERSION == 142  (Visual Studio 2019)
+
+#if defined(_MSC_VER ) && !defined(__clang__)
+# define nssv_COMPILER_MSVC_VER      (_MSC_VER )
+# define nssv_COMPILER_MSVC_VERSION  (_MSC_VER / 10 - 10 * ( 5 + (_MSC_VER < 1900 ) ) )
+#else
+# define nssv_COMPILER_MSVC_VER      0
+# define nssv_COMPILER_MSVC_VERSION  0
+#endif
+
+#define nssv_COMPILER_VERSION( major, minor, patch )  ( 10 * ( 10 * (major) + (minor) ) + (patch) )
+
+#if defined(__clang__)
+# define nssv_COMPILER_CLANG_VERSION  nssv_COMPILER_VERSION(__clang_major__, __clang_minor__, __clang_patchlevel__)
+#else
+# define nssv_COMPILER_CLANG_VERSION    0
+#endif
+
+#if defined(__GNUC__) && !defined(__clang__)
+# define nssv_COMPILER_GNUC_VERSION  nssv_COMPILER_VERSION(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#else
+# define nssv_COMPILER_GNUC_VERSION    0
+#endif
+
+// half-open range [lo..hi):
+#define nssv_BETWEEN( v, lo, hi ) ( (lo) <= (v) && (v) < (hi) )
+
+// Presence of language and library features:
+
+#ifdef _HAS_CPP0X
+# define nssv_HAS_CPP0X  _HAS_CPP0X
+#else
+# define nssv_HAS_CPP0X  0
+#endif
+
+// Unless defined otherwise below, consider VC14 as C++11 for variant-lite:
+
+#if nssv_COMPILER_MSVC_VER >= 1900
+# undef  nssv_CPP11_OR_GREATER
+# define nssv_CPP11_OR_GREATER  1
+#endif
+
+#define nssv_CPP11_90   (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1500)
+#define nssv_CPP11_100  (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1600)
+#define nssv_CPP11_110  (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1700)
+#define nssv_CPP11_120  (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1800)
+#define nssv_CPP11_140  (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1900)
+#define nssv_CPP11_141  (nssv_CPP11_OR_GREATER_ || nssv_COMPILER_MSVC_VER >= 1910)
+
+#define nssv_CPP14_000  (nssv_CPP14_OR_GREATER)
+#define nssv_CPP17_000  (nssv_CPP17_OR_GREATER)
+
+// Presence of C++11 language features:
+
+#define nssv_HAVE_CONSTEXPR_11          nssv_CPP11_140
+#define nssv_HAVE_EXPLICIT_CONVERSION   nssv_CPP11_140
+#define nssv_HAVE_INLINE_NAMESPACE      nssv_CPP11_140
+#define nssv_HAVE_NOEXCEPT              nssv_CPP11_140
+#define nssv_HAVE_NULLPTR               nssv_CPP11_100
+#define nssv_HAVE_REF_QUALIFIER         nssv_CPP11_140
+#define nssv_HAVE_UNICODE_LITERALS      nssv_CPP11_140
+#define nssv_HAVE_USER_DEFINED_LITERALS nssv_CPP11_140
+#define nssv_HAVE_WCHAR16_T             nssv_CPP11_100
+#define nssv_HAVE_WCHAR32_T             nssv_CPP11_100
+
+#if ! ( ( nssv_CPP11_OR_GREATER && nssv_COMPILER_CLANG_VERSION ) || nssv_BETWEEN( nssv_COMPILER_CLANG_VERSION, 300, 400 ) )
+# define nssv_HAVE_STD_DEFINED_LITERALS  nssv_CPP11_140
+#else
+# define nssv_HAVE_STD_DEFINED_LITERALS  0
+#endif
+
+// Presence of C++14 language features:
+
+#define nssv_HAVE_CONSTEXPR_14          nssv_CPP14_000
+
+// Presence of C++17 language features:
+
+#define nssv_HAVE_NODISCARD             nssv_CPP17_000
+
+// Presence of C++ library features:
+
+#define nssv_HAVE_STD_HASH              nssv_CPP11_120
+
+// C++ feature usage:
+
+#if nssv_HAVE_CONSTEXPR_11
+# define nssv_constexpr  constexpr
+#else
+# define nssv_constexpr  /*constexpr*/
+#endif
+
+#if  nssv_HAVE_CONSTEXPR_14
+# define nssv_constexpr14  constexpr
+#else
+# define nssv_constexpr14  /*constexpr*/
+#endif
+
+#if nssv_HAVE_EXPLICIT_CONVERSION
+# define nssv_explicit  explicit
+#else
+# define nssv_explicit  /*explicit*/
+#endif
+
+#if nssv_HAVE_INLINE_NAMESPACE
+# define nssv_inline_ns  inline
+#else
+# define nssv_inline_ns  /*inline*/
+#endif
+
+#if nssv_HAVE_NOEXCEPT
+# define nssv_noexcept  noexcept
+#else
+# define nssv_noexcept  /*noexcept*/
+#endif
+
+//#if nssv_HAVE_REF_QUALIFIER
+//# define nssv_ref_qual  &
+//# define nssv_refref_qual  &&
+//#else
+//# define nssv_ref_qual  /*&*/
+//# define nssv_refref_qual  /*&&*/
+//#endif
+
+#if nssv_HAVE_NULLPTR
+# define nssv_nullptr  nullptr
+#else
+# define nssv_nullptr  NULL
+#endif
+
+#if nssv_HAVE_NODISCARD
+# define nssv_nodiscard  [[nodiscard]]
+#else
+# define nssv_nodiscard  /*[[nodiscard]]*/
+#endif
+
+// Additional includes:
+
+#include <algorithm>
+#include <cassert>
+#include <iterator>
+#include <limits>
+#include <ostream>
+#include <string>   // std::char_traits<>
+
+#if ! nssv_CONFIG_NO_EXCEPTIONS
+# include <stdexcept>
+#endif
+
+#if nssv_CPP11_OR_GREATER
+# include <type_traits>
+#endif
+
+// Clang, GNUC, MSVC warning suppression macros:
+
+#if defined(__clang__)
+# pragma clang diagnostic ignored "-Wreserved-user-defined-literal"
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wuser-defined-literals"
+#elif defined(__GNUC__)
+# pragma  GCC  diagnostic push
+# pragma  GCC  diagnostic ignored "-Wliteral-suffix"
+#endif // __clang__
+
+#if nssv_COMPILER_MSVC_VERSION >= 140
+# define nssv_SUPPRESS_MSGSL_WARNING(expr)        [[gsl::suppress(expr)]]
+# define nssv_SUPPRESS_MSVC_WARNING(code, descr)  __pragma(warning(suppress: code) )
+# define nssv_DISABLE_MSVC_WARNINGS(codes)        __pragma(warning(push))  __pragma(warning(disable: codes))
+#else
+# define nssv_SUPPRESS_MSGSL_WARNING(expr)
+# define nssv_SUPPRESS_MSVC_WARNING(code, descr)
+# define nssv_DISABLE_MSVC_WARNINGS(codes)
+#endif
+
+#if defined(__clang__)
+# define nssv_RESTORE_WARNINGS()  _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__)
+# define nssv_RESTORE_WARNINGS()  _Pragma("GCC diagnostic pop")
+#elif nssv_COMPILER_MSVC_VERSION >= 140
+# define nssv_RESTORE_WARNINGS()  __pragma(warning(pop ))
+#else
+# define nssv_RESTORE_WARNINGS()
+#endif
+
+// Suppress the following MSVC (GSL) warnings:
+// - C4455, non-gsl   : 'operator ""sv': literal suffix identifiers that do not
+//                      start with an underscore are reserved
+// - C26472, gsl::t.1 : don't use a static_cast for arithmetic conversions;
+//                      use brace initialization, gsl::narrow_cast or gsl::narow
+// - C26481: gsl::b.1 : don't use pointer arithmetic. Use span instead
+
+nssv_DISABLE_MSVC_WARNINGS( 4455 26481 26472 )
+//nssv_DISABLE_CLANG_WARNINGS( "-Wuser-defined-literals" )
+//nssv_DISABLE_GNUC_WARNINGS( -Wliteral-suffix )
+
+namespace nonstd { namespace sv_lite {
+
+#if nssv_CPP11_OR_GREATER
+
+namespace detail {
+
+#if nssv_CPP14_OR_GREATER
+
+template< typename CharT >
+inline constexpr std::size_t length( CharT * s, std::size_t result = 0 )
+{
+    CharT * v = s;
+    std::size_t r = result;
+    while ( *v != '\0' ) {
+       ++v;
+       ++r;
+    }
+    return r;
+}
+
+#else // nssv_CPP14_OR_GREATER
+
+// Expect tail call optimization to make length() non-recursive:
+
+template< typename CharT >
+inline constexpr std::size_t length( CharT * s, std::size_t result = 0 )
+{
+    return *s == '\0' ? result : length( s + 1, result + 1 );
+}
+
+#endif // nssv_CPP14_OR_GREATER
+
+} // namespace detail
+
+#endif // nssv_CPP11_OR_GREATER
+
+template
+<
+    class CharT,
+    class Traits = std::char_traits<CharT>
+>
+class basic_string_view;
+
+//
+// basic_string_view:
+//
+
+template
+<
+    class CharT,
+    class Traits /* = std::char_traits<CharT> */
+>
+class basic_string_view
+{
+public:
+    // Member types:
+
+    typedef Traits traits_type;
+    typedef CharT  value_type;
+
+    typedef CharT       * pointer;
+    typedef CharT const * const_pointer;
+    typedef CharT       & reference;
+    typedef CharT const & const_reference;
+
+    typedef const_pointer iterator;
+    typedef const_pointer const_iterator;
+    typedef std::reverse_iterator< const_iterator > reverse_iterator;
+    typedef	std::reverse_iterator< const_iterator > const_reverse_iterator;
+
+    typedef std::size_t     size_type;
+    typedef std::ptrdiff_t  difference_type;
+
+    // 24.4.2.1 Construction and assignment:
+
+    nssv_constexpr basic_string_view() nssv_noexcept
+        : data_( nssv_nullptr )
+        , size_( 0 )
+    {}
+
+#if nssv_CPP11_OR_GREATER
+    nssv_constexpr basic_string_view( basic_string_view const & other ) nssv_noexcept = default;
+#else
+    nssv_constexpr basic_string_view( basic_string_view const & other ) nssv_noexcept
+        : data_( other.data_)
+        , size_( other.size_)
+    {}
+#endif
+
+    nssv_constexpr basic_string_view( CharT const * s, size_type count ) nssv_noexcept // non-standard noexcept
+        : data_( s )
+        , size_( count )
+    {}
+
+    nssv_constexpr basic_string_view( CharT const * s) nssv_noexcept // non-standard noexcept
+        : data_( s )
+#if nssv_CPP17_OR_GREATER
+        , size_( Traits::length(s) )
+#elif nssv_CPP11_OR_GREATER
+        , size_( detail::length(s) )
+#else
+        , size_( Traits::length(s) )
+#endif
+    {}
+
+    // Assignment:
+
+#if nssv_CPP11_OR_GREATER
+    nssv_constexpr14 basic_string_view & operator=( basic_string_view const & other ) nssv_noexcept = default;
+#else
+    nssv_constexpr14 basic_string_view & operator=( basic_string_view const & other ) nssv_noexcept
+    {
+        data_ = other.data_;
+        size_ = other.size_;
+        return *this;
+    }
+#endif
+
+    // 24.4.2.2 Iterator support:
+
+    nssv_constexpr const_iterator begin()  const nssv_noexcept { return data_;         }
+    nssv_constexpr const_iterator end()    const nssv_noexcept { return data_ + size_; }
+
+    nssv_constexpr const_iterator cbegin() const nssv_noexcept { return begin(); }
+    nssv_constexpr const_iterator cend()   const nssv_noexcept { return end();   }
+
+    nssv_constexpr const_reverse_iterator rbegin()  const nssv_noexcept { return const_reverse_iterator( end() );   }
+    nssv_constexpr const_reverse_iterator rend()    const nssv_noexcept { return const_reverse_iterator( begin() ); }
+
+    nssv_constexpr const_reverse_iterator crbegin() const nssv_noexcept { return rbegin(); }
+    nssv_constexpr const_reverse_iterator crend()   const nssv_noexcept { return rend();   }
+
+    // 24.4.2.3 Capacity:
+
+    nssv_constexpr size_type size()     const nssv_noexcept { return size_; }
+    nssv_constexpr size_type length()   const nssv_noexcept { return size_; }
+    nssv_constexpr size_type max_size() const nssv_noexcept { return (std::numeric_limits< size_type >::max)(); }
+
+    // since C++20
+    nssv_nodiscard nssv_constexpr bool empty() const nssv_noexcept
+    {
+        return 0 == size_;
+    }
+
+    // 24.4.2.4 Element access:
+
+    nssv_constexpr const_reference operator[]( size_type pos ) const
+    {
+        return data_at( pos );
+    }
+
+    nssv_constexpr14 const_reference at( size_type pos ) const
+    {
+#if nssv_CONFIG_NO_EXCEPTIONS
+        assert( pos < size() );
+#else
+        if ( pos >= size() )
+        {
+            throw std::out_of_range("nonstd::string_view::at()");
+        }
+#endif
+        return data_at( pos );
+    }
+
+    nssv_constexpr const_reference front() const { return data_at( 0 );          }
+    nssv_constexpr const_reference back()  const { return data_at( size() - 1 ); }
+
+    nssv_constexpr const_pointer   data()  const nssv_noexcept { return data_; }
+
+    // 24.4.2.5 Modifiers:
+
+    nssv_constexpr14 void remove_prefix( size_type n )
+    {
+        assert( n <= size() );
+        data_ += n;
+        size_ -= n;
+    }
+
+    nssv_constexpr14 void remove_suffix( size_type n )
+    {
+        assert( n <= size() );
+        size_ -= n;
+    }
+
+    nssv_constexpr14 void swap( basic_string_view & other ) nssv_noexcept
+    {
+        using std::swap;
+        swap( data_, other.data_ );
+        swap( size_, other.size_ );
+    }
+
+    // 24.4.2.6 String operations:
+
+    size_type copy( CharT * dest, size_type n, size_type pos = 0 ) const
+    {
+#if nssv_CONFIG_NO_EXCEPTIONS
+        assert( pos <= size() );
+#else
+        if ( pos > size() )
+        {
+            throw std::out_of_range("nonstd::string_view::copy()");
+        }
+#endif
+        const size_type rlen = (std::min)( n, size() - pos );
+
+        (void) Traits::copy( dest, data() + pos, rlen );
+
+        return rlen;
+    }
+
+    nssv_constexpr14 basic_string_view substr( size_type pos = 0, size_type n = npos ) const
+    {
+#if nssv_CONFIG_NO_EXCEPTIONS
+        assert( pos <= size() );
+#else
+        if ( pos > size() )
+        {
+            throw std::out_of_range("nonstd::string_view::substr()");
+        }
+#endif
+        return basic_string_view( data() + pos, (std::min)( n, size() - pos ) );
+    }
+
+    // compare(), 6x:
+
+    nssv_constexpr14 int compare( basic_string_view other ) const nssv_noexcept // (1)
+    {
+        if ( const int result = Traits::compare( data(), other.data(), (std::min)( size(), other.size() ) ) )
+        {
+            return result;
+        }
+
+        return size() == other.size() ? 0 : size() < other.size() ? -1 : 1;
+    }
+
+    nssv_constexpr int compare( size_type pos1, size_type n1, basic_string_view other ) const // (2)
+    {
+        return substr( pos1, n1 ).compare( other );
+    }
+
+    nssv_constexpr int compare( size_type pos1, size_type n1, basic_string_view other, size_type pos2, size_type n2 ) const // (3)
+    {
+        return substr( pos1, n1 ).compare( other.substr( pos2, n2 ) );
+    }
+
+    nssv_constexpr int compare( CharT const * s ) const // (4)
+    {
+        return compare( basic_string_view( s ) );
+    }
+
+    nssv_constexpr int compare( size_type pos1, size_type n1, CharT const * s ) const // (5)
+    {
+        return substr( pos1, n1 ).compare( basic_string_view( s ) );
+    }
+
+    nssv_constexpr int compare( size_type pos1, size_type n1, CharT const * s, size_type n2 ) const // (6)
+    {
+        return substr( pos1, n1 ).compare( basic_string_view( s, n2 ) );
+    }
+
+    // 24.4.2.7 Searching:
+
+    // starts_with(), 3x, since C++20:
+
+    nssv_constexpr bool starts_with( basic_string_view v ) const nssv_noexcept  // (1)
+    {
+        return size() >= v.size() && compare( 0, v.size(), v ) == 0;
+    }
+
+    nssv_constexpr bool starts_with( CharT c ) const nssv_noexcept  // (2)
+    {
+        return starts_with( basic_string_view( &c, 1 ) );
+    }
+
+    nssv_constexpr bool starts_with( CharT const * s ) const  // (3)
+    {
+        return starts_with( basic_string_view( s ) );
+    }
+
+    // ends_with(), 3x, since C++20:
+
+    nssv_constexpr bool ends_with( basic_string_view v ) const nssv_noexcept  // (1)
+    {
+        return size() >= v.size() && compare( size() - v.size(), npos, v ) == 0;
+    }
+
+    nssv_constexpr bool ends_with( CharT c ) const nssv_noexcept  // (2)
+    {
+        return ends_with( basic_string_view( &c, 1 ) );
+    }
+
+    nssv_constexpr bool ends_with( CharT const * s ) const  // (3)
+    {
+        return ends_with( basic_string_view( s ) );
+    }
+
+    // find(), 4x:
+
+    nssv_constexpr14 size_type find( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
+    {
+        return assert( v.size() == 0 || v.data() != nssv_nullptr )
+            , pos >= size()
+            ? npos
+            : to_pos( std::search( cbegin() + pos, cend(), v.cbegin(), v.cend(), Traits::eq ) );
+    }
+
+    nssv_constexpr14 size_type find( CharT c, size_type pos = 0 ) const nssv_noexcept  // (2)
+    {
+        return find( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr14 size_type find( CharT const * s, size_type pos, size_type n ) const  // (3)
+    {
+        return find( basic_string_view( s, n ), pos );
+    }
+
+    nssv_constexpr14 size_type find( CharT const * s, size_type pos = 0 ) const  // (4)
+    {
+        return find( basic_string_view( s ), pos );
+    }
+
+    // rfind(), 4x:
+
+    nssv_constexpr14 size_type rfind( basic_string_view v, size_type pos = npos ) const nssv_noexcept  // (1)
+    {
+        if ( size() < v.size() )
+        {
+            return npos;
+        }
+
+        if ( v.empty() )
+        {
+            return (std::min)( size(), pos );
+        }
+
+        const_iterator last   = cbegin() + (std::min)( size() - v.size(), pos ) + v.size();
+        const_iterator result = std::find_end( cbegin(), last, v.cbegin(), v.cend(), Traits::eq );
+
+        return result != last ? size_type( result - cbegin() ) : npos;
+    }
+
+    nssv_constexpr14 size_type rfind( CharT c, size_type pos = npos ) const nssv_noexcept  // (2)
+    {
+        return rfind( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr14 size_type rfind( CharT const * s, size_type pos, size_type n ) const  // (3)
+    {
+        return rfind( basic_string_view( s, n ), pos );
+    }
+
+    nssv_constexpr14 size_type rfind( CharT const * s, size_type pos = npos ) const  // (4)
+    {
+        return rfind( basic_string_view( s ), pos );
+    }
+
+    // find_first_of(), 4x:
+
+    nssv_constexpr size_type find_first_of( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
+    {
+        return pos >= size()
+            ? npos
+            : to_pos( std::find_first_of( cbegin() + pos, cend(), v.cbegin(), v.cend(), Traits::eq ) );
+    }
+
+    nssv_constexpr size_type find_first_of( CharT c, size_type pos = 0 ) const nssv_noexcept  // (2)
+    {
+        return find_first_of( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr size_type find_first_of( CharT const * s, size_type pos, size_type n ) const  // (3)
+    {
+        return find_first_of( basic_string_view( s, n ), pos );
+    }
+
+    nssv_constexpr size_type find_first_of(  CharT const * s, size_type pos = 0 ) const  // (4)
+    {
+        return find_first_of( basic_string_view( s ), pos );
+    }
+
+    // find_last_of(), 4x:
+
+    nssv_constexpr size_type find_last_of( basic_string_view v, size_type pos = npos ) const nssv_noexcept  // (1)
+    {
+        return empty()
+            ? npos
+            : pos >= size()
+            ? find_last_of( v, size() - 1 )
+            : to_pos( std::find_first_of( const_reverse_iterator( cbegin() + pos + 1 ), crend(), v.cbegin(), v.cend(), Traits::eq ) );
+    }
+
+    nssv_constexpr size_type find_last_of( CharT c, size_type pos = npos ) const nssv_noexcept  // (2)
+    {
+        return find_last_of( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr size_type find_last_of( CharT const * s, size_type pos, size_type count ) const  // (3)
+    {
+        return find_last_of( basic_string_view( s, count ), pos );
+    }
+
+    nssv_constexpr size_type find_last_of( CharT const * s, size_type pos = npos ) const  // (4)
+    {
+        return find_last_of( basic_string_view( s ), pos );
+    }
+
+    // find_first_not_of(), 4x:
+
+    nssv_constexpr size_type find_first_not_of( basic_string_view v, size_type pos = 0 ) const nssv_noexcept  // (1)
+    {
+        return pos >= size()
+            ? npos
+            : to_pos( std::find_if( cbegin() + pos, cend(), not_in_view( v ) ) );
+    }
+
+    nssv_constexpr size_type find_first_not_of( CharT c, size_type pos = 0 ) const nssv_noexcept  // (2)
+    {
+        return find_first_not_of( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr size_type find_first_not_of( CharT const * s, size_type pos, size_type count ) const  // (3)
+    {
+        return find_first_not_of( basic_string_view( s, count ), pos );
+    }
+
+    nssv_constexpr size_type find_first_not_of( CharT const * s, size_type pos = 0 ) const  // (4)
+    {
+        return find_first_not_of( basic_string_view( s ), pos );
+    }
+
+    // find_last_not_of(), 4x:
+
+    nssv_constexpr size_type find_last_not_of( basic_string_view v, size_type pos = npos ) const nssv_noexcept  // (1)
+    {
+        return empty()
+            ? npos
+            : pos >= size()
+            ? find_last_not_of( v, size() - 1 )
+            : to_pos( std::find_if( const_reverse_iterator( cbegin() + pos + 1 ), crend(), not_in_view( v ) ) );
+    }
+
+    nssv_constexpr size_type find_last_not_of( CharT c, size_type pos = npos ) const nssv_noexcept  // (2)
+    {
+        return find_last_not_of( basic_string_view( &c, 1 ), pos );
+    }
+
+    nssv_constexpr size_type find_last_not_of( CharT const * s, size_type pos, size_type count ) const  // (3)
+    {
+        return find_last_not_of( basic_string_view( s, count ), pos );
+    }
+
+    nssv_constexpr size_type find_last_not_of( CharT const * s, size_type pos = npos ) const  // (4)
+    {
+        return find_last_not_of( basic_string_view( s ), pos );
+    }
+
+    // Constants:
+
+#if nssv_CPP17_OR_GREATER
+    static nssv_constexpr size_type npos = size_type(-1);
+#elif nssv_CPP11_OR_GREATER
+    enum : size_type { npos = size_type(-1) };
+#else
+    enum { npos = size_type(-1) };
+#endif
+
+private:
+    struct not_in_view
+    {
+        const basic_string_view v;
+
+        nssv_constexpr explicit not_in_view( basic_string_view v ) : v( v ) {}
+
+        nssv_constexpr bool operator()( CharT c ) const
+        {
+            return npos == v.find_first_of( c );
+        }
+    };
+
+    nssv_constexpr size_type to_pos( const_iterator it ) const
+    {
+        return it == cend() ? npos : size_type( it - cbegin() );
+    }
+
+    nssv_constexpr size_type to_pos( const_reverse_iterator it ) const
+    {
+        return it == crend() ? npos : size_type( crend() - it - 1 );
+    }
+
+    nssv_constexpr const_reference data_at( size_type pos ) const
+    {
+#if nssv_BETWEEN( nssv_COMPILER_GNUC_VERSION, 1, 500 )
+        return data_[pos];
+#else
+        return assert( pos < size() ), data_[pos];
+#endif
+    }
+
+private:
+    const_pointer data_;
+    size_type     size_;
+
+public:
+#if nssv_CONFIG_CONVERSION_STD_STRING_CLASS_METHODS
+
+    template< class Allocator >
+    basic_string_view( std::basic_string<CharT, Traits, Allocator> const & s ) nssv_noexcept
+        : data_( s.data() )
+        , size_( s.size() )
+    {}
+
+#if nssv_HAVE_EXPLICIT_CONVERSION
+
+    template< class Allocator >
+    explicit operator std::basic_string<CharT, Traits, Allocator>() const
+    {
+        return to_string( Allocator() );
+    }
+
+#endif // nssv_HAVE_EXPLICIT_CONVERSION
+
+#if nssv_CPP11_OR_GREATER
+
+    template< class Allocator = std::allocator<CharT> >
+    std::basic_string<CharT, Traits, Allocator>
+    to_string( Allocator const & a = Allocator() ) const
+    {
+        return std::basic_string<CharT, Traits, Allocator>( begin(), end(), a );
+    }
+
+#else
+
+    std::basic_string<CharT, Traits>
+    to_string() const
+    {
+        return std::basic_string<CharT, Traits>( begin(), end() );
+    }
+
+    template< class Allocator >
+    std::basic_string<CharT, Traits, Allocator>
+    to_string( Allocator const & a ) const
+    {
+        return std::basic_string<CharT, Traits, Allocator>( begin(), end(), a );
+    }
+
+#endif // nssv_CPP11_OR_GREATER
+
+#endif // nssv_CONFIG_CONVERSION_STD_STRING_CLASS_METHODS
+};
+
+//
+// Non-member functions:
+//
+
+// 24.4.3 Non-member comparison functions:
+// lexicographically compare two string views (function template):
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator== (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) == 0 ; }
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator!= (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) != 0 ; }
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator< (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) < 0 ; }
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator<= (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) <= 0 ; }
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator> (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) > 0 ; }
+
+template< class CharT, class Traits >
+nssv_constexpr bool operator>= (
+    basic_string_view <CharT, Traits> lhs,
+    basic_string_view <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) >= 0 ; }
+
+// Let S be basic_string_view<CharT, Traits>, and sv be an instance of S.
+// Implementations shall provide sufficient additional overloads marked
+// constexpr and noexcept so that an object t with an implicit conversion
+// to S can be compared according to Table 67.
+
+#if ! nssv_CPP11_OR_GREATER || nssv_BETWEEN( nssv_COMPILER_MSVC_VERSION, 100, 141 )
+
+// accomodate for older compilers:
+
+// ==
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator==(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) == 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator==(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) == 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator==(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.size() == rhs.size() && lhs.compare( rhs ) == 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator==(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return lhs.size() == rhs.size() && lhs.compare( rhs ) == 0; }
+
+// !=
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator!=(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) != 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator!=(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) != 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator!=(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.size() != rhs.size() && lhs.compare( rhs ) != 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator!=(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return lhs.size() != rhs.size() || rhs.compare( lhs ) != 0; }
+
+// <
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) < 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) > 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) < 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return rhs.compare( lhs ) > 0; }
+
+// <=
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<=(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) <= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<=(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) >= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<=(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) <= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator<=(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return rhs.compare( lhs ) >= 0; }
+
+// >
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) > 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) < 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) > 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return rhs.compare( lhs ) < 0; }
+
+// >=
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>=(
+    basic_string_view<CharT, Traits> lhs,
+    char const * rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) >= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>=(
+    char const * lhs,
+    basic_string_view<CharT, Traits> rhs ) nssv_noexcept
+{ return rhs.compare( lhs ) <= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>=(
+    basic_string_view<CharT, Traits> lhs,
+    std::basic_string<CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) >= 0; }
+
+template< class CharT, class Traits>
+nssv_constexpr bool operator>=(
+    std::basic_string<CharT, Traits> rhs,
+    basic_string_view<CharT, Traits> lhs ) nssv_noexcept
+{ return rhs.compare( lhs ) <= 0; }
+
+#else // newer compilers:
+
+#define nssv_BASIC_STRING_VIEW_I(T,U)  typename std::decay< basic_string_view<T,U> >::type
+
+#if nssv_BETWEEN( nssv_COMPILER_MSVC_VERSION, 140, 150 )
+# define nssv_MSVC_ORDER(x)  , int=x
+#else
+# define nssv_MSVC_ORDER(x)  /*, int=x*/
+#endif
+
+// ==
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator==(
+         basic_string_view  <CharT, Traits> lhs,
+    nssv_BASIC_STRING_VIEW_I(CharT, Traits) rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) == 0; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator==(
+    nssv_BASIC_STRING_VIEW_I(CharT, Traits) lhs,
+         basic_string_view  <CharT, Traits> rhs ) nssv_noexcept
+{ return lhs.size() == rhs.size() && lhs.compare( rhs ) == 0; }
+
+// !=
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator!= (
+         basic_string_view  < CharT, Traits > lhs,
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) rhs ) nssv_noexcept
+{ return lhs.size() != rhs.size() || lhs.compare( rhs ) != 0 ; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator!= (
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) lhs,
+         basic_string_view  < CharT, Traits > rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) != 0 ; }
+
+// <
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator< (
+         basic_string_view  < CharT, Traits > lhs,
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) < 0 ; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator< (
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) lhs,
+         basic_string_view  < CharT, Traits > rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) < 0 ; }
+
+// <=
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator<= (
+         basic_string_view  < CharT, Traits > lhs,
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) <= 0 ; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator<= (
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) lhs,
+         basic_string_view  < CharT, Traits > rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) <= 0 ; }
+
+// >
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator> (
+         basic_string_view  < CharT, Traits > lhs,
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) > 0 ; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator> (
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) lhs,
+         basic_string_view  < CharT, Traits > rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) > 0 ; }
+
+// >=
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(1) >
+nssv_constexpr bool operator>= (
+         basic_string_view  < CharT, Traits > lhs,
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) >= 0 ; }
+
+template< class CharT, class Traits  nssv_MSVC_ORDER(2) >
+nssv_constexpr bool operator>= (
+    nssv_BASIC_STRING_VIEW_I( CharT, Traits ) lhs,
+         basic_string_view  < CharT, Traits > rhs ) nssv_noexcept
+{ return lhs.compare( rhs ) >= 0 ; }
+
+#undef nssv_MSVC_ORDER
+#undef nssv_BASIC_STRING_VIEW_I
+
+#endif // compiler-dependent approach to comparisons
+
+// 24.4.4 Inserters and extractors:
+
+namespace detail {
+
+template< class Stream >
+void write_padding( Stream & os, std::streamsize n )
+{
+    for ( std::streamsize i = 0; i < n; ++i )
+        os.rdbuf()->sputc( os.fill() );
+}
+
+template< class Stream, class View >
+Stream & write_to_stream( Stream & os, View const & sv )
+{
+    typename Stream::sentry sentry( os );
+
+    if ( !os )
+        return os;
+
+    const std::streamsize length = static_cast<std::streamsize>( sv.length() );
+
+    // Whether, and how, to pad:
+    const bool      pad = ( length < os.width() );
+    const bool left_pad = pad && ( os.flags() & std::ios_base::adjustfield ) == std::ios_base::right;
+
+    if ( left_pad )
+        write_padding( os, os.width() - length );
+
+    // Write span characters:
+    os.rdbuf()->sputn( sv.begin(), length );
+
+    if ( pad && !left_pad )
+        write_padding( os, os.width() - length );
+
+    // Reset output stream width:
+    os.width( 0 );
+
+    return os;
+}
+
+} // namespace detail
+
+template< class CharT, class Traits >
+std::basic_ostream<CharT, Traits> &
+operator<<(
+    std::basic_ostream<CharT, Traits>& os,
+    basic_string_view <CharT, Traits> sv )
+{
+    return detail::write_to_stream( os, sv );
+}
+
+// Several typedefs for common character types are provided:
+
+typedef basic_string_view<char>      string_view;
+typedef basic_string_view<wchar_t>   wstring_view;
+#if nssv_HAVE_WCHAR16_T
+typedef basic_string_view<char16_t>  u16string_view;
+typedef basic_string_view<char32_t>  u32string_view;
+#endif
+
+}} // namespace nonstd::sv_lite
+
+//
+// 24.4.6 Suffix for basic_string_view literals:
+//
+
+#if nssv_HAVE_USER_DEFINED_LITERALS
+
+namespace nonstd {
+nssv_inline_ns namespace literals {
+nssv_inline_ns namespace string_view_literals {
+
+#if nssv_CONFIG_STD_SV_OPERATOR && nssv_HAVE_STD_DEFINED_LITERALS
+
+nssv_constexpr nonstd::sv_lite::string_view operator "" sv( const char* str, size_t len ) nssv_noexcept  // (1)
+{
+    return nonstd::sv_lite::string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::u16string_view operator "" sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
+{
+    return nonstd::sv_lite::u16string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::u32string_view operator "" sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
+{
+    return nonstd::sv_lite::u32string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::wstring_view operator "" sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
+{
+    return nonstd::sv_lite::wstring_view{ str, len };
+}
+
+#endif // nssv_CONFIG_STD_SV_OPERATOR && nssv_HAVE_STD_DEFINED_LITERALS
+
+#if nssv_CONFIG_USR_SV_OPERATOR
+
+nssv_constexpr nonstd::sv_lite::string_view operator "" _sv( const char* str, size_t len ) nssv_noexcept  // (1)
+{
+    return nonstd::sv_lite::string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::u16string_view operator "" _sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
+{
+    return nonstd::sv_lite::u16string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::u32string_view operator "" _sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
+{
+    return nonstd::sv_lite::u32string_view{ str, len };
+}
+
+nssv_constexpr nonstd::sv_lite::wstring_view operator "" _sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
+{
+    return nonstd::sv_lite::wstring_view{ str, len };
+}
+
+#endif // nssv_CONFIG_USR_SV_OPERATOR
+
+}}} // namespace nonstd::literals::string_view_literals
+
+#endif
+
+//
+// Extensions for std::string:
+//
+
+#if nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+
+namespace nonstd {
+namespace sv_lite {
+
+// Exclude MSVC 14 (19.00): it yields ambiguous to_string():
+
+#if nssv_CPP11_OR_GREATER && nssv_COMPILER_MSVC_VERSION != 140
+
+template< class CharT, class Traits, class Allocator = std::allocator<CharT> >
+std::basic_string<CharT, Traits, Allocator>
+to_string( basic_string_view<CharT, Traits> v, Allocator const & a = Allocator() )
+{
+    return std::basic_string<CharT,Traits, Allocator>( v.begin(), v.end(), a );
+}
+
+#else
+
+template< class CharT, class Traits >
+std::basic_string<CharT, Traits>
+to_string( basic_string_view<CharT, Traits> v )
+{
+    return std::basic_string<CharT, Traits>( v.begin(), v.end() );
+}
+
+template< class CharT, class Traits, class Allocator >
+std::basic_string<CharT, Traits, Allocator>
+to_string( basic_string_view<CharT, Traits> v, Allocator const & a )
+{
+    return std::basic_string<CharT, Traits, Allocator>( v.begin(), v.end(), a );
+}
+
+#endif // nssv_CPP11_OR_GREATER
+
+template< class CharT, class Traits, class Allocator >
+basic_string_view<CharT, Traits>
+to_string_view( std::basic_string<CharT, Traits, Allocator> const & s )
+{
+    return basic_string_view<CharT, Traits>( s.data(), s.size() );
+}
+
+}} // namespace nonstd::sv_lite
+
+#endif // nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+
+//
+// make types and algorithms available in namespace nonstd:
+//
+
+namespace nonstd {
+
+using sv_lite::basic_string_view;
+using sv_lite::string_view;
+using sv_lite::wstring_view;
+
+#if nssv_HAVE_WCHAR16_T
+using sv_lite::u16string_view;
+#endif
+#if nssv_HAVE_WCHAR32_T
+using sv_lite::u32string_view;
+#endif
+
+// literal "sv"
+
+using sv_lite::operator==;
+using sv_lite::operator!=;
+using sv_lite::operator<;
+using sv_lite::operator<=;
+using sv_lite::operator>;
+using sv_lite::operator>=;
+
+using sv_lite::operator<<;
+
+#if nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
+using sv_lite::to_string;
+using sv_lite::to_string_view;
+#endif
+
+} // namespace nonstd
+
+// 24.4.5 Hash support (C++11):
+
+// Note: The hash value of a string view object is equal to the hash value of
+// the corresponding string object.
+
+#if nssv_HAVE_STD_HASH
+
+#include <functional>
+
+namespace std {
+
+template<>
+struct hash< nonstd::string_view >
+{
+public:
+    std::size_t operator()( nonstd::string_view v ) const nssv_noexcept
+    {
+        return std::hash<std::string>()( std::string( v.data(), v.size() ) );
+    }
+};
+
+template<>
+struct hash< nonstd::wstring_view >
+{
+public:
+    std::size_t operator()( nonstd::wstring_view v ) const nssv_noexcept
+    {
+        return std::hash<std::wstring>()( std::wstring( v.data(), v.size() ) );
+    }
+};
+
+template<>
+struct hash< nonstd::u16string_view >
+{
+public:
+    std::size_t operator()( nonstd::u16string_view v ) const nssv_noexcept
+    {
+        return std::hash<std::u16string>()( std::u16string( v.data(), v.size() ) );
+    }
+};
+
+template<>
+struct hash< nonstd::u32string_view >
+{
+public:
+    std::size_t operator()( nonstd::u32string_view v ) const nssv_noexcept
+    {
+        return std::hash<std::u32string>()( std::u32string( v.data(), v.size() ) );
+    }
+};
+
+} // namespace std
+
+#endif // nssv_HAVE_STD_HASH
+
+nssv_RESTORE_WARNINGS()
+
+#endif // nssv_HAVE_STD_STRING_VIEW
+#endif // NONSTD_SV_LITE_H_INCLUDED
+/* end file include/simdjson/nonstd/string_view.hpp */
+SIMDJSON_POP_DISABLE_WARNINGS
+
+namespace std {
+  using string_view = nonstd::string_view;
+}
+#endif // if (SIMDJSON_CPLUSPLUS < 201703L)
+
 #endif // SIMDJSON_COMMON_DEFS_H
-/* end file include/simdjson/portability.h */
+/* end file include/simdjson/nonstd/string_view.hpp */
 #include <string>
 #include <utility>
 
@@ -554,7 +2136,7 @@ inline const std::string &error_message(int error) noexcept;
 } // namespace simdjson
 
 #endif // SIMDJSON_ERROR_H
-/* end file include/simdjson/portability.h */
+/* end file include/simdjson/nonstd/string_view.hpp */
 /* begin file include/simdjson/padded_string.h */
 #ifndef SIMDJSON_PADDED_STRING_H
 #define SIMDJSON_PADDED_STRING_H
@@ -562,6 +2144,7 @@ inline const std::string &error_message(int error) noexcept;
 #include <cstring>
 #include <memory>
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 
@@ -665,6 +2248,15 @@ private:
 
 }; // padded_string
 
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { return out << s.data(); }
+
 } // namespace simdjson
 
 // This is deliberately outside of simdjson so that people get it without having to use the namespace
@@ -672,7 +2264,8 @@ inline simdjson::padded_string operator "" _padded(const char *str, size_t len) 
   return simdjson::padded_string(str, len);
 }
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -680,7 +2273,8 @@ namespace simdjson::internal {
 // responsible to free the memory (free(...))
 inline char *allocate_padded_buffer(size_t length) noexcept;
 
-} // namespace simdjson::internal;
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_H
 /* end file include/simdjson/padded_string.h */
@@ -713,7 +2307,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept;
 #endif // SIMDJSON_H
 /* end file include/simdjson/simdjson.h */
 
-namespace simdjson::dom {
+namespace simdjson {
+namespace dom {
 
 class parser;
 class element;
@@ -726,9 +2321,7 @@ class document_stream;
 /** The default batch size for parser.parse_many() and parser.load_many() */
 static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
 
-} // namespace simdjson::dom
-
-namespace simdjson {
+} // namespace dom
 
 template<> struct simdjson_result<dom::element>;
 template<> struct simdjson_result<dom::array>;
@@ -737,16 +2330,15 @@ template<> struct simdjson_result<dom::object>;
 template<typename T>
 class minify;
 
-} // namespace simdjson
-
-namespace simdjson::internal {
+namespace internal {
 
 using namespace simdjson::dom;
 
 constexpr const uint64_t JSON_VALUE_MASK = 0x00FFFFFFFFFFFFFF;
+constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
 
 /**
- * The possible types in the tape. Internal only.
+ * The possible types in the tape.
  */
 enum class tape_type {
   ROOT = 'r',
@@ -773,6 +2365,14 @@ public:
   inline size_t after_element() const noexcept;
   really_inline tape_type tape_ref_type() const noexcept;
   really_inline uint64_t tape_value() const noexcept;
+  really_inline bool is_double() const noexcept;
+  really_inline bool is_int64() const noexcept;
+  really_inline bool is_uint64() const noexcept;
+  really_inline bool is_false() const noexcept;
+  really_inline bool is_true() const noexcept;
+  really_inline bool is_null_on_tape() const noexcept;// different name to avoid clash with is_null.
+  really_inline uint32_t matching_brace_index() const noexcept;
+  really_inline uint32_t scope_count() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
   inline std::string_view get_string_view() const noexcept;
@@ -784,23 +2384,23 @@ public:
   size_t json_index;
 };
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson::dom {
+namespace dom {
 
 /**
  * The actual concrete type of a JSON element
  * This is the type it is most easily cast to with get<>.
  */
 enum class element_type {
-  ARRAY,     ///< dom::array
-  OBJECT,    ///< dom::object
-  INT64,     ///< int64_t
-  UINT64,    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
-  DOUBLE,    ///< double: Any number with a "." or "e" that fits in double.
-  STRING,    ///< std::string_view
-  BOOL,      ///< bool
-  NULL_VALUE ///< null
+  ARRAY = '[',     ///< dom::array
+  OBJECT = '{',    ///< dom::object
+  INT64 = 'l',     ///< int64_t
+  UINT64 = 'u',    ///< uint64_t: any integer that fits in uint64_t but *not* int64_t
+  DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
+  STRING = '"',    ///< std::string_view
+  BOOL = 't',      ///< bool
+  NULL_VALUE = 'n' ///< null
 };
 
 /**
@@ -846,7 +2446,12 @@ public:
    * Part of the std::iterable interface.
    */
   inline iterator end() const noexcept;
-
+  /**
+   * Get the size of the array (number of immediate children).
+   * It is a saturated value with a maximum of 0xFFFFFF: if the value
+   * is 0xFFFFFF then the size is 0xFFFFFF or greater.
+   */
+  inline size_t size() const noexcept;
   /**
    * Get the value associated with the given JSON pointer.
    *
@@ -909,6 +2514,7 @@ public:
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
+
     /**
      * Get the key of this key/value pair.
      */
@@ -934,7 +2540,12 @@ public:
    * Part of the std::iterable interface.
    */
   inline iterator end() const noexcept;
-
+  /**
+   * Get the size of the object (number of keys).
+   * It is a saturated value with a maximum of 0xFFFFFF: if the value
+   * is 0xFFFFFF then the size is 0xFFFFFF or greater.
+   */
+  inline size_t size() const noexcept;
   /**
    * Get the value associated with the given key.
    *
@@ -1092,25 +2703,31 @@ public:
   really_inline bool is_null() const noexcept;
 
   /**
-   * Tell whether the value can be cast to the given primitive type.
+   * Tell whether the value can be cast to provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
   really_inline bool is() const noexcept;
 
   /**
-   * Get the value as the given primitive type.
+   * Get the value as the provided type (T).
    *
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
    * - String: std::string_view, const char *
-   * - Array: array
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @returns The value cast to the given type, or:
    *          INCORRECT_TYPE if the value cannot be cast to the given type.
@@ -1310,6 +2927,13 @@ private:
   friend class object;
 };
 
+
+// expectation: sizeof(scope_descriptor) = 64/8.
+struct scope_descriptor {
+  uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
+  uint32_t count; // how many elements in the scope
+};
+
 /**
   * A persistent document parser.
   *
@@ -1377,8 +3001,8 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline simdjson_result<element> load(const std::string &path) noexcept; 
-
+  inline simdjson_result<element> load(const std::string &path) & noexcept;
+  inline simdjson_result<element> load(const std::string &path) &&  = delete ;
   /**
    * Parse a JSON document and return a temporary reference to it.
    *
@@ -1414,13 +3038,17 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) noexcept;
+  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const std::string &s) noexcept;
+  really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  really_inline simdjson_result<element> parse(const std::string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const padded_string &s) noexcept;
+  really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
@@ -1625,7 +3253,8 @@ public:
   std::unique_ptr<uint32_t[]> structural_indexes;
 
   /** @private Tape location of each open { or [ */
-  std::unique_ptr<uint32_t[]> containing_scope_offset;
+  std::unique_ptr<scope_descriptor[]> containing_scope;
+
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
   std::unique_ptr<void*[]> ret_address;
@@ -1691,6 +3320,8 @@ public:
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private
 
+  really_inline void increment_count(uint32_t depth) noexcept; ///< @private
+  really_inline void end_scope(uint32_t depth) noexcept; ///< @private
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -1736,7 +3367,6 @@ private:
   //
 
   inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
-  inline void annotate_previous_loc(uint32_t saved_loc, uint64_t val) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
@@ -1751,7 +3381,8 @@ private:
   friend class document_stream;
 }; // class parser
 
-} // namespace simdjson::dom
+} // namespace dom
+} // namespace simdjson
 
 namespace simdjson {
 
@@ -1810,7 +3441,7 @@ namespace dom {
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify(value); };
+inline std::ostream& operator<<(std::ostream& out, const element &value) { return out << minify<element>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1820,7 +3451,7 @@ inline std::ostream& operator<<(std::ostream& out, const element &value) { retur
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const array &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const array &value) { return out << minify<array>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1830,7 +3461,7 @@ inline std::ostream& operator<<(std::ostream& out, const array &value) { return 
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const object &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const object &value) { return out << minify<object>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1840,7 +3471,7 @@ inline std::ostream& operator<<(std::ostream& out, const object &value) { return
  * @param value The value to print.
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value) { return out << minify<key_value_pair>(value); }
 
 /**
  * Print element type to an output stream.
@@ -1887,7 +3518,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) { return out << minify<simdjson_result<dom::element>>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1899,7 +3530,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::el
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) { return out << minify(value); }
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::array> &value) noexcept(false) { return out << minify<simdjson_result<dom::array>>(value); }
 /**
  * Print JSON to an output stream.
  *
@@ -1911,8 +3542,17 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify(value); }
-
+inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::object> &value) noexcept(false) { return out << minify<simdjson_result<dom::object>>(value); }
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+  * @throw simdjson_error if the result being printed has an error. If there is an error with the
+ *        underlying output stream, that error will be propagated (simdjson_error will not be
+ *        thrown).
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
 #endif
 
 /** The result of a JSON navigation that may fail. */
@@ -1966,6 +3606,7 @@ public:
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);
   inline dom::array::iterator end() const noexcept(false);
+  inline size_t size() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
@@ -1986,6 +3627,7 @@ public:
 #if SIMDJSON_EXCEPTIONS
   inline dom::object::iterator begin() const noexcept(false);
   inline dom::object::iterator end() const noexcept(false);
+  inline size_t size() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
@@ -2187,37 +3829,6 @@ public:
   const implementation *detect_best_supported() const noexcept;
 };
 
-/**
- * @private Detects best supported implementation on first use, and sets it
- */
-class detect_best_supported_implementation_on_first_use final : public implementation {
-public:
-  const std::string &name() const noexcept final { return set_best()->name(); }
-  const std::string &description() const noexcept final { return set_best()->description(); }
-  uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
-  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
-    return set_best()->parse(buf, len, parser);
-  }
-  WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
-    return set_best()->minify(buf, len, dst, dst_len);
-  }
-  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept final {
-    return set_best()->stage1(buf, len, parser, streaming);
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
-    return set_best()->stage2(buf, len, parser);
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept final {
-    return set_best()->stage2(buf, len, parser, next_json);
-  }
-
-  really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
-private:
-  const implementation *set_best() const noexcept;
-};
-
-inline const detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
-
 template<typename T>
 class atomic_ptr {
 public:
@@ -2236,21 +3847,19 @@ private:
   std::atomic<T*> ptr;
 };
 
-} // namespace [simdjson::]internal
+} // namespace internal
 
 /**
  * The list of available implementations compiled into simdjson.
  */
-inline const internal::available_implementation_list available_implementations;
+extern SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations;
 
 /**
   * The active implementation.
   *
   * Automatically initialized on first use to the most advanced implementation supported by this hardware.
-  *
-  * @hideinitializer
   */
-inline internal::atomic_ptr<const implementation> active_implementation = &internal::detect_best_supported_implementation_on_first_use_singleton;
+extern SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation;
 
 } // namespace simdjson
 
@@ -2262,7 +3871,8 @@ inline internal::atomic_ptr<const implementation> active_implementation = &inter
 
 #include <thread>
 
-namespace simdjson::dom {
+namespace simdjson {
+namespace dom {
 
 /**
  * A forward-only stream of documents.
@@ -2272,6 +3882,8 @@ namespace simdjson::dom {
  */
 class document_stream {
 public:
+  /** Move one document_stream to another. */
+  really_inline document_stream(document_stream && other) noexcept = default;
   really_inline ~document_stream() noexcept;
 
   /**
@@ -2396,12 +4008,13 @@ private:
   friend class dom::parser;
 }; // class document_stream
 
-} // end of namespace simdjson::dom
+} // namespace dom
+} // namespace simdjson
 
 #endif // SIMDJSON_DOCUMENT_STREAM_H
 /* end file include/simdjson/document_stream.h */
 
-// Deprecated API
+// // Deprecated API
 /* begin file include/simdjson/jsonparser.h */
 // TODO Remove this -- deprecated API and files
 
@@ -2583,7 +4196,8 @@ dom::parser build_parsed_json(const char *buf) noexcept = delete;
 #include <iostream>
 #include <sstream>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 class escape_json_string;
 
@@ -2636,7 +4250,8 @@ inline std::ostream& operator<<(std::ostream& out, const escape_json_string &une
   return out;
 }
 
-} // namespace simdjson::internal
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_INTERNAL_JSONFORMATUTILS_H
 /* end file include/simdjson/internal/jsonformatutils.h */
@@ -2894,7 +4509,7 @@ public:
 #endif
 /* end file include/simdjson/internal/jsonformatutils.h */
 
-// Inline functions
+// // Inline functions
 /* begin file include/simdjson/inline/document.h */
 #ifndef SIMDJSON_INLINE_DOCUMENT_H
 #define SIMDJSON_INLINE_DOCUMENT_H
@@ -3018,6 +4633,10 @@ inline dom::array::iterator simdjson_result<dom::array>::end() const noexcept(fa
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
+inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -3071,12 +4690,15 @@ inline dom::object::iterator simdjson_result<dom::object>::end() const noexcept(
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
+inline size_t simdjson_result<dom::object>::size() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.size();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
-} // namespace simdjson
 
-namespace simdjson::dom {
+namespace dom {
 
 //
 // document inline implementation
@@ -3259,19 +4881,23 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
   return bytes_read;
 }
 
-inline simdjson_result<element> parser::load(const std::string &path) noexcept {
-  auto [len, code] = read_file(path);
+inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
+  size_t len;
+  error_code code;
+  read_file(path).tie(len, code);
   if (code) { return code; }
 
   return parse(loaded_bytes.get(), len, false);
 }
 
 inline document_stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
-  auto [len, code] = read_file(path);
+  size_t len;
+  error_code code;
+  read_file(path).tie(len, code);
   return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
 }
 
-inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) noexcept {
+inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
   error_code code = ensure_capacity(len);
   if (code) { return code; }
 
@@ -3294,13 +4920,13 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
   error = UNINITIALIZED;
   return doc.root();
 }
-really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) noexcept {
+really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
-really_inline simdjson_result<element> parser::parse(const std::string &s) noexcept {
+really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-really_inline simdjson_result<element> parser::parse(const padded_string &s) noexcept {
+really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
 
@@ -3377,21 +5003,21 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
 
     if (max_depth == 0) {
       ret_address.reset();
-      containing_scope_offset.reset();
+      containing_scope.reset();
       return SUCCESS;
     }
 
     //
     // Initialize stage 2 state
     //
-    containing_scope_offset.reset(new (std::nothrow) uint32_t[max_depth]); // TODO realloc
+    containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
   #ifdef SIMDJSON_USE_COMPUTED_GOTO
     ret_address.reset(new (std::nothrow) void *[max_depth]);
   #else
     ret_address.reset(new (std::nothrow) char[max_depth]);
   #endif
 
-    if (!ret_address || !containing_scope_offset) {
+    if (!ret_address || !containing_scope) {
       // Could not allocate memory
       return MEMALLOC;
     }
@@ -3435,7 +5061,9 @@ inline array::iterator array::begin() const noexcept {
 inline array::iterator array::end() const noexcept {
   return iterator(doc, after_element() - 1);
 }
-
+inline size_t array::size() const noexcept {
+  return scope_count();
+}
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -3492,12 +5120,15 @@ inline void array::iterator::operator++() noexcept {
 // object inline implementation
 //
 really_inline object::object() noexcept : internal::tape_ref() {}
-really_inline object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { };
+really_inline object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 inline object::iterator object::begin() const noexcept {
   return iterator(doc, json_index + 1);
 }
 inline object::iterator object::end() const noexcept {
   return iterator(doc, after_element() - 1);
+}
+inline size_t object::size() const noexcept {
+  return scope_count();
 }
 
 inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
@@ -3612,46 +5243,23 @@ inline key_value_pair::key_value_pair(const std::string_view &_key, element _val
 really_inline element::element() noexcept : internal::tape_ref() {}
 really_inline element::element(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
 
+
 inline element_type element::type() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::START_ARRAY:
-      return element_type::ARRAY;
-    case internal::tape_type::START_OBJECT:
-      return element_type::OBJECT;
-    case internal::tape_type::INT64:
-      return element_type::INT64;
-    case internal::tape_type::UINT64:
-      return element_type::UINT64;
-    case internal::tape_type::DOUBLE:
-      return element_type::DOUBLE;
-    case internal::tape_type::STRING:
-      return element_type::STRING;
-    case internal::tape_type::TRUE_VALUE:
-    case internal::tape_type::FALSE_VALUE:
-      return element_type::BOOL;
-    case internal::tape_type::NULL_VALUE:
-      return element_type::NULL_VALUE;
-    case internal::tape_type::ROOT:
-    case internal::tape_type::END_ARRAY:
-    case internal::tape_type::END_OBJECT:
-    default:
-      abort();
-  }
+  auto tape_type = tape_ref_type();
+  return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
 really_inline bool element::is_null() const noexcept {
-  return tape_ref_type() == internal::tape_type::NULL_VALUE;
+  return is_null_on_tape();
 }
 
 template<>
 inline simdjson_result<bool> element::get<bool>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::TRUE_VALUE:
-      return true;
-    case internal::tape_type::FALSE_VALUE:
-      return false;
-    default:
-      return INCORRECT_TYPE;
+  if(is_true()) {
+    return true;
+  } else if(is_false()) {
+    return false;
   }
+  return INCORRECT_TYPE;
 }
 template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
@@ -3675,55 +5283,54 @@ inline simdjson_result<std::string_view> element::get<std::string_view>() const 
 }
 template<>
 inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64:
-      return next_tape_value<uint64_t>();
-    case internal::tape_type::INT64: {
+  if(unlikely(!is_uint64())) { // branch rarely taken
+    if(is_int64()) {
       int64_t result = next_tape_value<int64_t>();
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
       return static_cast<uint64_t>(result);
     }
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  return next_tape_value<int64_t>();
 }
 template<>
 inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64: {
+  if(unlikely(!is_int64())) { // branch rarely taken
+    if(is_uint64()) {
       uint64_t result = next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
-      if (result > (std::numeric_limits<int64_t>::max)()) {
+      if (result > uint64_t((std::numeric_limits<int64_t>::max)())) {
         return NUMBER_OUT_OF_RANGE;
       }
       return static_cast<int64_t>(result);
     }
-    case internal::tape_type::INT64:
-      return next_tape_value<int64_t>();
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  return next_tape_value<int64_t>();
 }
 template<>
 inline simdjson_result<double> element::get<double>() const noexcept {
-  switch (tape_ref_type()) {
-    case internal::tape_type::UINT64:
+  // Performance considerations:
+  // 1. Querying tape_ref_type() implies doing a shift, it is fast to just do a straight
+  //   comparison.
+  // 2. Using a switch-case relies on the compiler guessing what kind of code generation
+  //    we want... But the compiler cannot know that we expect the type to be "double"
+  //    most of the time.
+  // We can expect get<double> to refer to a double type almost all the time.
+  // It is important to craft the code accordingly so that the compiler can use this
+  // information. (This could also be solved with profile-guided optimization.)
+  if(unlikely(!is_double())) { // branch rarely taken
+    if(is_uint64()) {
       return next_tape_value<uint64_t>();
-    case internal::tape_type::INT64: {
+    } else if(is_int64()) {
       return next_tape_value<int64_t>();
-      int64_t result = tape_value();
-      if (result < 0) {
-        return NUMBER_OUT_OF_RANGE;
-      }
-      return double(result);
     }
-    case internal::tape_type::DOUBLE:
-      return next_tape_value<double>();
-    default:
-      return INCORRECT_TYPE;
+    return INCORRECT_TYPE;
   }
+  // this is common:
+  return next_tape_value<double>();
 }
 template<>
 inline simdjson_result<array> element::get<array>() const noexcept {
@@ -3800,9 +5407,8 @@ inline bool element::dump_raw_tape(std::ostream &out) const noexcept {
   return doc->dump_raw_tape(out);
 }
 
-} // namespace simdjson::dom
+} // namespace dom
 
-namespace simdjson {
 
 //
 // minify inline implementation
@@ -3836,7 +5442,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::array>(dom::array(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the ]
+        iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
       }
@@ -3863,7 +5469,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::object>(dom::object(iter.doc, iter.json_index));
-        iter.json_index = iter.tape_value() - 1; // Jump to the }
+        iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;
       }
@@ -3982,9 +5588,8 @@ inline std::ostream& minify<simdjson_result<dom::object>>::print(std::ostream& o
 
 #endif
 
-} // namespace simdjson
 
-namespace simdjson::internal {
+namespace internal {
 
 //
 // tape_ref inline implementation
@@ -3992,11 +5597,42 @@ namespace simdjson::internal {
 really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
 really_inline tape_ref::tape_ref(const document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
+
+
+// Some value types have a specific on-tape word value. It can be faster
+// to check the type by doing a word-to-word comparison instead of extracting the
+// most significant 8 bits.
+
+really_inline bool tape_ref::is_double() const noexcept {
+  constexpr uint64_t tape_double = static_cast<uint64_t>(tape_type::DOUBLE)<<56;
+  return doc->tape[json_index] == tape_double;
+}
+really_inline bool tape_ref::is_int64() const noexcept {
+  constexpr uint64_t tape_int64 = static_cast<uint64_t>(tape_type::INT64)<<56;
+  return doc->tape[json_index] == tape_int64;
+}
+really_inline bool tape_ref::is_uint64() const noexcept {
+  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(tape_type::UINT64)<<56;
+  return doc->tape[json_index] == tape_uint64;
+}
+really_inline bool tape_ref::is_false() const noexcept {
+  constexpr uint64_t tape_false = static_cast<uint64_t>(tape_type::FALSE_VALUE)<<56;
+  return doc->tape[json_index] == tape_false;
+}
+really_inline bool tape_ref::is_true() const noexcept {
+  constexpr uint64_t tape_true = static_cast<uint64_t>(tape_type::TRUE_VALUE)<<56;
+  return doc->tape[json_index] == tape_true;
+}
+really_inline bool tape_ref::is_null_on_tape() const noexcept {
+  constexpr uint64_t tape_null = static_cast<uint64_t>(tape_type::NULL_VALUE)<<56;
+  return doc->tape[json_index] == tape_null;
+}
+
 inline size_t tape_ref::after_element() const noexcept {
   switch (tape_ref_type()) {
     case tape_type::START_ARRAY:
     case tape_type::START_OBJECT:
-      return tape_value();
+      return matching_brace_index();
     case tape_type::UINT64:
     case tape_type::INT64:
     case tape_type::DOUBLE:
@@ -4011,10 +5647,23 @@ really_inline tape_type tape_ref::tape_ref_type() const noexcept {
 really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
+really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
+  return static_cast<uint32_t>(doc->tape[json_index]);
+}
+really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
+  return static_cast<uint32_t>((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
+}
+
 template<typename T>
 really_inline T tape_ref::next_tape_value() const noexcept {
-  static_assert(sizeof(T) == sizeof(uint64_t));
-  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
+  static_assert(sizeof(T) == sizeof(uint64_t), "next_tape_value() template parameter must be 64-bit");
+  // Though the following is tempting...
+  //  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
+  // It is not generally safe. It is safer, and often faster to rely
+  // on memcpy. Yes, it is uglier, but it is also encapsulated.
+  T x;
+  memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
+  return x;
 }
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   size_t string_buf_index = tape_value();
@@ -4026,8 +5675,8 @@ inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   );
 }
 
-
-} // namespace simdjson::internal
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_INLINE_DOCUMENT_H
 /* end file include/simdjson/inline/document.h */
@@ -4040,7 +5689,8 @@ inline std::string_view internal::tape_ref::get_string_view() const noexcept {
 #include <stdexcept>
 #include <thread>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 /**
  * This algorithm is used to quickly identify the buffer position of
@@ -4126,9 +5776,12 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
   return len;
 }
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson::dom {
+} // namespace simdjson
+
+namespace simdjson {
+namespace dom {
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
@@ -4305,7 +5958,8 @@ inline error_code document_stream::json_parse() noexcept {
 }
 #endif // SIMDJSON_THREADS_ENABLED
 
-} // namespace simdjson::dom
+} // namespace dom
+} // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
 /* end file include/simdjson/inline/document_stream.h */
 /* begin file include/simdjson/inline/error.h */
@@ -4314,43 +5968,17 @@ inline error_code document_stream::json_parse() noexcept {
 
 #include <string>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
   // We store the error code so we can validate the error message is associated with the right code
   struct error_code_info {
     error_code code;
     std::string message;
   };
   // These MUST match the codes in error_code. We check this constraint in basictests.
-  inline const error_code_info error_codes[] {
-    { SUCCESS, "No error" },
-    { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
-    { CAPACITY, "This parser can't support a document that big" },
-    { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
-    { TAPE_ERROR, "Something went wrong while writing to the tape" },
-    { DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)" },
-    { STRING_ERROR, "Problem while parsing a string" },
-    { T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'" },
-    { F_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'f'" },
-    { N_ATOM_ERROR, "Problem while parsing an atom starting with the letter 'n'" },
-    { NUMBER_ERROR, "Problem while parsing a number" },
-    { UTF8_ERROR, "The input is not valid UTF-8" },
-    { UNINITIALIZED, "Uninitialized" },
-    { EMPTY, "Empty: no JSON found" },
-    { UNESCAPED_CHARS, "Within strings, some characters must be escaped, we found unescaped characters" },
-    { UNCLOSED_STRING, "A string is opened, but never closed." },
-    { UNSUPPORTED_ARCHITECTURE, "simdjson does not have an implementation supported by this CPU architecture (perhaps it's a non-SIMD CPU?)." },
-    { INCORRECT_TYPE, "The JSON element does not have the requested type." },
-    { NUMBER_OUT_OF_RANGE, "The JSON number is too large or too small to fit within the requested type." },
-    { INDEX_OUT_OF_BOUNDS, "Attempted to access an element of a JSON array that is beyond its length." },
-    { NO_SUCH_FIELD, "The JSON field referenced does not exist in this object." },
-    { IO_ERROR, "Error reading the file." },
-    { INVALID_JSON_POINTER, "Invalid JSON pointer syntax." },
-    { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
-    { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" }
-  }; // error_messages[]
-} // namespace simdjson::internal
+  extern SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[];
+} // namespace internal
 
-namespace simdjson {
 
 inline const char *error_message(error_code error) noexcept {
   // If you're using error_code, we're trusting you got it from the enum.
@@ -4394,13 +6022,13 @@ template<typename T>
 really_inline T& simdjson_result_base<T>::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return this->first;
-};
+}
 
 template<typename T>
 really_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<T>(this->first);
-};
+}
 
 template<typename T>
 really_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
@@ -4484,7 +6112,8 @@ really_inline simdjson_result<T>::simdjson_result() noexcept
 #include <memory>
 #include <string>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -4505,9 +6134,8 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   return padded_buffer;
 } // allocate_padded_buffer()
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson {
 
 inline padded_string::padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
 inline padded_string::padded_string(size_t length) noexcept
@@ -4756,7 +6384,7 @@ bool dom::parser::Iterator::prev() {
     oldnpos = npos;
     if ((current_type == '[') || (current_type == '{')) {
       // we need to jump
-      npos = (current_val & internal::JSON_VALUE_MASK);
+      npos = static_cast<uint32_t>(current_val);
     } else {
       npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
@@ -4785,7 +6413,7 @@ bool dom::parser::Iterator::down() {
     return false;
   }
   if ((current_type == '[') || (current_type == '{')) {
-    size_t npos = (current_val & internal::JSON_VALUE_MASK);
+    size_t npos = static_cast<uint32_t>(current_val);
     if (npos == location + 2) {
       return false; // we have an empty scope
     }
@@ -4811,7 +6439,7 @@ bool dom::parser::Iterator::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
-    npos = (current_val & internal::JSON_VALUE_MASK);
+    npos = static_cast<uint32_t>(current_val);
   } else {
     npos = location + (is_number() ? 2 : 1);
   }
@@ -5056,7 +6684,7 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
         size_t npos;
         if ((current_type == '[') || (current_type == '{')) {
           // we need to jump
-          npos = (current_val & internal::JSON_VALUE_MASK);
+          npos = static_cast<uint32_t>(current_val);
         } else {
           npos =
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
