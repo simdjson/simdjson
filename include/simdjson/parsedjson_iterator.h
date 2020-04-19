@@ -16,7 +16,11 @@
 
 namespace simdjson {
 
+#ifndef _MSC_VER // Workaround for VS2019 compiler bug that triggers deprecated error even if deprecated class is unused
 class [[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]] dom::parser::Iterator {
+#else
+class dom::parser::Iterator {
+#endif
 public:
   inline Iterator(const dom::parser &parser) noexcept(false);
   inline Iterator(const Iterator &o) noexcept;
