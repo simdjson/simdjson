@@ -1078,7 +1078,7 @@ private:
   inline error_code ensure_capacity(size_t desired_capacity) noexcept;
 
   /** Read the file into loaded_bytes */
-  inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
+  simdjson_result<size_t> read_file(const std::string &path) noexcept;
 
   friend class parser::Iterator;
   friend class document_stream;

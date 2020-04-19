@@ -1,5 +1,6 @@
 #include "simdjson.h"
 #include "error.cpp"
 #include "implementation.cpp"
+#include "simdjson_impl.cpp"
 #include "stage1_find_marks.cpp"
 #include "stage2_build_tape.cpp"

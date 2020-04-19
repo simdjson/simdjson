@@ -100,7 +100,7 @@ struct padded_string final {
    *
    * @param path the path to the file.
    **/
-  inline static simdjson_result<padded_string> load(const std::string &path) noexcept;
+  static simdjson_result<padded_string> load(const std::string &path) noexcept;
 
 private:
   padded_string &operator=(const padded_string &o) = delete;

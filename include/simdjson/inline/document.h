@@ -335,44 +335,6 @@ inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
   return valid ? doc.dump_raw_tape(os) : false;
 }
 
-inline simdjson_result<size_t> parser::read_file(const std::string &path) noexcept {
-  // Open the file
-  std::FILE *fp = std::fopen(path.c_str(), "rb");
-  if (fp == nullptr) {
-    return IO_ERROR;
-  }
-
-  // Get the file size
-  if(std::fseek(fp, 0, SEEK_END) < 0) {
-    std::fclose(fp);
-    return IO_ERROR;
-  }
-  long len = std::ftell(fp);
-  if((len < 0) || (len == LONG_MAX)) {
-    std::fclose(fp);
-    return IO_ERROR;
-  }
-
-  // Make sure we have enough capacity to load the file
-  if (_loaded_bytes_capacity < size_t(len)) {
-    loaded_bytes.reset( internal::allocate_padded_buffer(len) );
-    if (!loaded_bytes) {
-      std::fclose(fp);
-      return MEMALLOC;
-    }
-    _loaded_bytes_capacity = len;
-  }
-
-  // Read the string
-  std::rewind(fp);
-  size_t bytes_read = std::fread(loaded_bytes.get(), 1, len, fp);
-  if (std::fclose(fp) != 0 || bytes_read != size_t(len)) {
-    return IO_ERROR;
-  }
-
-  return bytes_read;
-}
-
 inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
   size_t len;
   error_code code;
