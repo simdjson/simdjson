@@ -7,72 +7,24 @@ executors:
       - image: gcc:7
         environment:
           CXX: g++
-  haswell-gcc7:
-    docker:
-      - image: gcc:7
-        environment:
-          CXX: g++
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
-  westmere-gcc7:
-    docker:
-      - image: gcc:7
-        environment:
-          CXX: g++
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF -DSIMDJSON_IMPLEMENTATION_WESTMERE=ON  -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
-  fallback-gcc7:
-    docker:
-      - image: gcc:7
-        environment:
-          CXX: g++
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=ON  -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
 
   gcc8:
     docker:
       - image: gcc:8
         environment:
           CXX: g++
-  haswell-gcc8:
-    docker:
-      - image: gcc:8
-        environment:
-          CXX: g++
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
 
   gcc9:
     docker:
       - image: gcc:9
         environment:
           CXX: g++
-  haswell-gcc9:
-    docker:
-      - image: gcc:9
-        environment:
-          CXX: g++
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
 
   clang6:
     docker:
       - image: ubuntu:18.04
         environment:
           CXX: clang++-6.0
-  haswell-clang6:
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: clang++-6.0
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
-  westmere-clang6:
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: clang++-6.0
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF -DSIMDJSON_IMPLEMENTATION_WESTMERE=ON  -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
-  fallback-clang6:
-    docker:
-      - image: ubuntu:18.04
-        environment:
-          CXX: clang++-6.0
-          CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=ON  -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
                 
 # Reusable test commands (and initializer for clang 6)
 commands:
@@ -89,45 +41,113 @@ commands:
       - run: make amalgamate
       - run: make test
       - run: make checkperf
-  
-  cmake_simple_test: # this version just builds and test
+
+  cmake_prep:
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake
       - checkout
-      - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS
+
+  cmake_build:
+    steps:
+      - cmake_prep
+      - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
       - run: make all
       - run: tools/json2json -h # Print out the implementation we're using on this hardware
-      - run: ctest --output-on-failure
 
-  cmake_test: # this version builds, install, test and then verify from the installation
+  cmake_test:
     steps:
-      - run: apt-get update -qq
-      - run: apt-get install -y cmake
-      - checkout
-      - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination
-      - run: make all install
-      - run: tools/json2json -h # Print out the implementation we're using on this hardware
-      - run: ctest --output-on-failure
-      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json # we not only want cmake to build and run tests, but we want also a succesful installation from which we can build, link and run programs
+      - cmake_build
+      - run: ctest --output-on-failure -L acceptance
+      - run: ctest --output-on-failure -LE acceptance
+
+  cmake_test_all:
+    steps:
+      - cmake_build
+      - run: ctest --output-on-failure -L acceptance -LE per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest --output-on-failure -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest --output-on-failure -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest --output-on-failure -L per_implementation
+      - run: ctest --output-on-failure -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+
+  # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
+  cmake_install_test: # this version builds, install, test and then verify from the installation
+    steps:
+      - run: make install
+      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
 
 jobs:
 
+  # static
+  gcc7:
+    description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
+    executor: gcc7
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ cmake_test_all, cmake_install_test ]
+  clang6:
+    description: Build and run tests on clang 6 and AVX 2 with a cmake static build
+    executor: clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ init_clang6, cmake_test_all, cmake_install_test ]
+  
+  # sanitize
+  sanitize-gcc7:
+    description: Build and run tests on GCC 7 and AVX 2 with a cmake sanitize build
+    executor: gcc7
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test_all ]
+  sanitize-clang6:
+    description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
+    executor: clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ init_clang6, cmake_test_all ]
+  
+  # dynamic
+  dynamic-gcc7:
+    description: Build and run tests on GCC 7 and AVX 2 with a cmake dynamic build
+    executor: gcc7
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ cmake_test, cmake_install_test ]
+  dynamic-clang6:
+    description: Build and run tests on clang 6 and AVX 2 with a cmake dynamic build
+    executor: clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
+    steps: [ init_clang6, cmake_test, cmake_install_test ]
+  
+  # unthreaded
+  unthreaded-gcc7:
+    description: Build and run tests on GCC 7 and AVX 2 *without* threads
+    executor: gcc7
+    environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ cmake_test, cmake_install_test ]
+  unthreaded-clang6:
+    description: Build and run tests on Clang 6 and AVX 2 *without* threads
+    executor: clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
+    steps: [ init_clang6, cmake_test, cmake_install_test ]
+
+  # noexcept
+  noexcept-gcc7:
+    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
+    executor: gcc7
+    environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
+    steps: [ cmake_test, cmake_install_test ]
+  noexcept-clang6:
+    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
+    executor: clang6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
+    steps: [ init_clang6, cmake_test, cmake_install_test ]
+
   #
-  # Generic
+  # Misc.
   #
 
   # make (test and checkperf)
   gcc9:
-    description: Build, run tests and check performance on GCC 7
+    description: Build, run tests and check performance on GCC 9
     executor: gcc9
     environment: { EXTRAFLAGS: -Werror }
     steps: [ make_test ]
-  clang6:
-    description: Build, run tests and check performance on clang 6 and AVX 2
-    executor: clang6
-    environment: { EXTRAFLAGS: -Werror }
-    steps: [ init_clang6, make_test ]
   arch-haswell-gcc7:
     description: Build, run tests and check performance on GCC 7 with -march=haswell
     executor: gcc7
@@ -143,167 +163,28 @@ jobs:
     executor: gcc7
     environment: { EXTRAFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
     steps: [ make_test ]
-  noexcept-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ cmake_test ]
-  noexcept-clang6:
-    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ init_clang6, cmake_test ]
-    
-  #
-  # Haswell
-  #
-
-  # static
-  haswell-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
-    executor: haswell-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test ]
-  haswell-clang6:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake static build
-    executor: haswell-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ init_clang6, cmake_test ]
-  haswell-gcc8:
-    description: Build and run tests on GCC 8 and AVX 2
-    executor: haswell-gcc8
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test ]
-  haswell-gcc9:
-    description: Build and run tests on GCC 9 and AVX 2
-    executor: haswell-gcc9
-    environment: { EXTRAFLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test ]
-  
-  # sanitize
-  haswell-sanitize-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake sanitize build
-    executor: haswell-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_simple_test ]
-  haswell-sanitize-clang6:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
-    executor: haswell-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_simple_test ]
-  
-  # dynamic
-  haswell-dynamic-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake dynamic build
-    executor: haswell-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ cmake_test ]
-  haswell-dynamic-clang6:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake dynamic build
-    executor: haswell-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ init_clang6, cmake_test ]
-  
-  # unthreaded
-  haswell-unthreaded-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 *without* threads
-    executor: haswell-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ cmake_test ]
-  haswell-unthreaded-clang6:
-    description: Build and run tests on Clang 6 and AVX 2 *without* threads
-    executor: haswell-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ init_clang6, cmake_test ]
-
-  #
-  # Westmere
-  #
-
-  # static
-  westmere-gcc7:
-    description: Build and run tests on GCC 7 and SSE 4.2 with a cmake static build
-    executor: westmere-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test ]
-  westmere-clang6:
-    description: Build and run tests on Clang 6 and SSE 4.2 with a cmake static build
-    executor: westmere-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ init_clang6, cmake_test ]
-
-  # sanitize
-  westmere-sanitize-gcc7:
-    description: Build and run tests on GCC 7 and SSE 4.2 with a cmake sanitize build
-    executor: westmere-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_simple_test ]
-  westmere-sanitize-clang6:
-    description: Build and run tests on Clang 6 and SSE 4.2 with a cmake sanitize build
-    executor: westmere-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_simple_test ]
-      
-  #
-  # Fallback
-  #
-
-  # static
-  fallback-gcc7:
-    description: Build and run tests on GCC 7 and fallback implementation with a cmake static build
-    executor: fallback-gcc7
-    steps: [ cmake_test ]
-  fallback-clang6:
-    description: Build and run tests on Clang 6 and fallback implementation with a cmake static build
-    executor: fallback-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ init_clang6, cmake_test ]
-
-  # sanitize
-  fallback-sanitize-gcc7:
-    description: Build and run tests on GCC 7 and fallback implementation with a cmake sanitize build
-    executor: fallback-gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ cmake_simple_test ]
-  fallback-sanitize-clang6:
-    description: Build and run tests on Clang 6 and fallback implementation with a cmake sanitize build
-    executor: fallback-clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
-    steps: [ init_clang6, cmake_simple_test ]
 
 workflows:
   version: 2.1
   build_and_test:
     jobs:
-      - gcc9
-      - haswell-gcc7
-      - westmere-gcc7
-      - fallback-gcc7
-
+      # full multi-implementation tests
+      - gcc7
       - clang6
-      - haswell-clang6
-      - westmere-clang6
-      - fallback-clang6
 
-      - haswell-dynamic-gcc7
-      - haswell-dynamic-clang6
-      - haswell-unthreaded-gcc7
-      - haswell-unthreaded-clang6
+      # full single-implementation tests
+      - sanitize-gcc7
+      - sanitize-clang6
+      - dynamic-gcc7
+      - dynamic-clang6
+      - unthreaded-gcc7
+      - unthreaded-clang6
 
-      - haswell-sanitize-gcc7
-      - haswell-sanitize-clang6
-      - westmere-sanitize-gcc7
-      - westmere-sanitize-clang6
-      - fallback-sanitize-gcc7
-      - fallback-sanitize-clang6
-
-      - noexcept-gcc7
-      - noexcept-clang6
-      - haswell-gcc8
-      - haswell-gcc9
+      # quicker make single-implementation tests
+      - gcc9
       - arch-haswell-gcc7
       - arch-nehalem-gcc7
       - no-computed-goto-gcc7
-
+    
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
