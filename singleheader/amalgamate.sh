@@ -46,7 +46,7 @@ function doinclude()
         if [[ ! " ${found_includes[@]} " =~ " ${file} " ]]; then
             found_includes+=("$file")
             dofile $AMALGAMATE_INCLUDE_PATH $file
-        fi;
+        fi
     elif [ -f $AMALGAMATE_SOURCE_PATH/$file ]; then
         # generic includes are included multiple times
         if [[ "${file}" == *'generic/'*'.h' ]]; then
@@ -73,10 +73,15 @@ function dofile()
     do
         if [[ "${line}" == '#include "'*'"'* ]]; then
             file=$(echo $line| cut -d'"' -f 2)
+            # include all from simdjson.cpp except simdjson.h
+            if [ "${file}" == "simdjson.h" ] && [ "${2}" == "simdjson.cpp" ]; then
+                echo "$line"
+                continue
+            fi
 
             if [[ "${file}" == '../'* ]]; then
                 file=$(echo $file| cut -d'/' -f 2-)
-            fi;
+            fi
 
             # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
             doinclude $file $line
@@ -108,15 +113,6 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_H}
 echo "Creating ${AMAL_C}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
 {
-    echo "#include \"simdjson.h\""
-
-    echo ""
-    echo "/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */"
-    echo "#ifdef DMALLOC"
-    echo "#include \"dmalloc.h\""
-    echo "#endif"
-    echo ""
-
     for file in ${ALLCFILES}; do
         dofile $AMALGAMATE_SOURCE_PATH $file
     done
