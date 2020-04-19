@@ -9,22 +9,22 @@
 
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 #include "haswell/implementation.h"
-namespace simdjson { namespace internal { const haswell::implementation haswell_singleton{}; } }
+namespace simdjson { namespace internal { static const haswell::implementation haswell_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 #include "westmere/implementation.h"
-namespace simdjson { namespace internal { const westmere::implementation westmere_singleton{}; } }
+namespace simdjson { namespace internal { static const westmere::implementation westmere_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include "arm64/implementation.h"
-namespace simdjson { namespace internal { const arm64::implementation arm64_singleton{}; } }
+namespace simdjson { namespace internal { static const arm64::implementation arm64_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_ARM64
 
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 #include "fallback/implementation.h"
-namespace simdjson { namespace internal { const fallback::implementation fallback_singleton{}; } }
+namespace simdjson { namespace internal { static const fallback::implementation fallback_singleton{}; } }
 #endif // SIMDJSON_IMPLEMENTATION_FALLBACK
 
 namespace simdjson {
@@ -63,7 +63,7 @@ const detect_best_supported_implementation_on_first_use detect_best_supported_im
 
 internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-const std::initializer_list<const implementation *> available_implementation_pointers {
+static const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
   &haswell_singleton,
 #endif
@@ -100,7 +100,7 @@ public:
   unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
 };
 
-const unsupported_implementation unsupported_singleton{};
+static const unsupported_implementation unsupported_singleton{};
 
 size_t available_implementation_list::size() const noexcept {
   return internal::available_implementation_pointers.size();
