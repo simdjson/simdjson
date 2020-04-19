@@ -7,24 +7,32 @@ executors:
       - image: gcc:7
         environment:
           CXX: g++
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j --output-on-failure
 
   gcc8:
     docker:
       - image: gcc:8
         environment:
           CXX: g++
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j --output-on-failure
 
   gcc9:
     docker:
       - image: gcc:9
         environment:
           CXX: g++
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j --output-on-failure
 
   clang6:
     docker:
       - image: ubuntu:18.04
         environment:
           CXX: clang++-6.0
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j --output-on-failure
                 
 # Reusable test commands (and initializer for clang 6)
 commands:
@@ -36,7 +44,7 @@ commands:
   make_test:
     steps:
       - checkout
-      - run: make
+      - run: make $BUILD_FLAGS
       - run: ./json2json -h # Print out the implementation we're using on this hardware
       - run: make amalgamate
       - run: make test
@@ -51,24 +59,24 @@ commands:
   cmake_build:
     steps:
       - cmake_prep
-      - run: cmake $CMAKE_FLAGS $CMAKE_IMPLEMENTATION_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
-      - run: make all
+      - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
+      - run: make $BUILD_FLAGS all
       - run: tools/json2json -h # Print out the implementation we're using on this hardware
 
   cmake_test:
     steps:
       - cmake_build
-      - run: ctest --output-on-failure -L acceptance
-      - run: ctest --output-on-failure -LE acceptance
+      - run: ctest $CTEST_FLAGS -L acceptance
+      - run: ctest $CTEST_FLAGS -LE acceptance
 
   cmake_test_all:
     steps:
       - cmake_build
-      - run: ctest --output-on-failure -L acceptance -LE per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest --output-on-failure -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest --output-on-failure -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest --output-on-failure -L per_implementation
-      - run: ctest --output-on-failure -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+      - run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+      - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
@@ -94,7 +102,7 @@ jobs:
   sanitize-gcc7:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake sanitize build
     executor: gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "" } # gcc sanitize seems to have bugs with -j :(
     steps: [ cmake_test_all ]
   sanitize-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
