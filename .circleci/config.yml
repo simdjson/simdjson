@@ -104,6 +104,11 @@ jobs:
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "" } # gcc sanitize seems to have bugs with -j :(
     steps: [ cmake_test_all ]
+  sanitize-gcc9:
+    description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
+    executor: gcc9
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    steps: [ cmake_test_all ]
   sanitize-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang6
@@ -151,11 +156,6 @@ jobs:
   #
 
   # make (test and checkperf)
-  gcc9:
-    description: Build, run tests and check performance on GCC 9
-    executor: gcc9
-    environment: { EXTRAFLAGS: -Werror }
-    steps: [ make_test ]
   arch-haswell-gcc7:
     description: Build, run tests and check performance on GCC 7 with -march=haswell
     executor: gcc7
@@ -182,6 +182,7 @@ workflows:
 
       # full single-implementation tests
       - sanitize-gcc7
+      - sanitize-gcc9
       - sanitize-clang6
       - dynamic-gcc7
       - dynamic-clang6
@@ -189,7 +190,6 @@ workflows:
       - unthreaded-clang6
 
       # quicker make single-implementation tests
-      - gcc9
       - arch-haswell-gcc7
       - arch-nehalem-gcc7
       - no-computed-goto-gcc7
