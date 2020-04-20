@@ -21,7 +21,7 @@ namespace simdjson {
 
 class [[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]] dom::parser::Iterator {
 public:
-  inline Iterator(const dom::parser &parser) noexcept(false) 
+  inline Iterator(const dom::parser &pj) noexcept(false) 
     : doc(pj.doc), depth(0), location(0), tape_length(0) {
 #if SIMDJSON_EXCEPTIONS
     if (!pj.valid) { throw simdjson_error(pj.error); }
