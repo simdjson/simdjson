@@ -127,7 +127,8 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
-  doc_parser.n_structural_indexes = next_structural_index - doc_parser.structural_indexes.get();
+  // the cast is entirely unnecessary but Visual Studio wants an explicit cast
+  doc_parser.n_structural_indexes = static_cast<decltype(doc_parser.n_structural_indexes)>(next_structural_index - doc_parser.structural_indexes.get());
   return error;
 }
 

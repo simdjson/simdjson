@@ -815,9 +815,9 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // information. (This could also be solved with profile-guided optimization.)
   if(unlikely(!is_double())) { // branch rarely taken
     if(is_uint64()) {
-      return next_tape_value<uint64_t>();
+      return static_cast<double>(next_tape_value<uint64_t>());
     } else if(is_int64()) {
-      return next_tape_value<int64_t>();
+      return static_cast<double>(next_tape_value<int64_t>());
     }
     return INCORRECT_TYPE;
   }
