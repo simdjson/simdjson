@@ -95,7 +95,7 @@ if (NOT MSVC)
   add_cpp_test(checkimplementation LABELS per_implementation)
 
   add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
-  set_property(TEST issue150 APPEND PROPERTY LABELS acceptance per_implementation)
+  set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)
 
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
