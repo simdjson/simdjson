@@ -3,6 +3,7 @@ The Basics
 
 An overview of what you need to know to use simdjson, with examples.
 
+* [Requirements](#requirements)
 * [Including simdjson](#including-simdjson)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
@@ -13,6 +14,13 @@ An overview of what you need to know to use simdjson, with examples.
 * [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
 * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 * [Thread Safety](#thread-safety)
+
+
+Requirements
+------------------
+
+- A recent compiler (LLVM clang6 or better, GNU GCC 7 or better, Visual Studio 2017 or better). We require C++11 support as a minimum.
+- A 64-bit system (ARM or x64 Intel/AMD). Under Visual Studio, you must compile for 64-bit (e.g., x64) targets.
 
 Including simdjson
 ------------------
@@ -50,7 +58,7 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
-Note: The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. Calling `parse` or `load` a second time invalidates the previous parsed document. If you need access simultaneously to several parsed documents, you need to have several `parser` instances.
+The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. Calling `parse` or `load` a second time invalidates the previous parsed document. If you need access simultaneously to several parsed documents, you need to have several `parser` instances. For best performance, a `parser` instance should be reused.
 
 Using the Parsed JSON
 ---------------------
