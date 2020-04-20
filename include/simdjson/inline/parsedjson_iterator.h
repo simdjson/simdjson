@@ -5,6 +5,10 @@
 
 namespace simdjson {
 
+// VS2017 reports deprecated warnings when you define a deprecated class's methods.
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
+
 // Because of template weirdness, the actual class definition is inline in the document class
 
 WARN_UNUSED bool dom::parser::Iterator::is_ok() const {
@@ -468,6 +472,8 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 
   return found;
 }
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 } // namespace simdjson
 
