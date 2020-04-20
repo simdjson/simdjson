@@ -209,49 +209,6 @@ bool dom::parser::Iterator::next() {
   return true;
 }
 
-[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
-dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
-    : doc(pj.doc), depth(0), location(0), tape_length(0) {
-#if SIMDJSON_EXCEPTIONS
-  if (!pj.valid) { throw simdjson_error(pj.error); }
-#else
-  if (!pj.valid) { abort(); }
-#endif
-
-  max_depth = pj.max_depth();
-  depth_index = new scopeindex_t[max_depth + 1];
-  depth_index[0].start_of_scope = location;
-  current_val = doc.tape[location++];
-  current_type = (current_val >> 56);
-  depth_index[0].scope_type = current_type;
-  tape_length = current_val & internal::JSON_VALUE_MASK;
-  if (location < tape_length) {
-    // If we make it here, then depth_capacity must >=2, but the compiler
-    // may not know this.
-    current_val = doc.tape[location];
-    current_type = (current_val >> 56);
-    depth++;
-    assert(depth < max_depth);
-    depth_index[depth].start_of_scope = location;
-    depth_index[depth].scope_type = current_type;
-  }
-}
-
-[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
-dom::parser::Iterator::Iterator(
-    const dom::parser::Iterator &o) noexcept
-    : doc(o.doc), max_depth(o.depth), depth(o.depth), location(o.location),
-      tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val) {
-  depth_index = new scopeindex_t[max_depth+1];
-  memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
-}
-
-[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
-dom::parser::Iterator::~Iterator() noexcept {
-  if (depth_index) { delete[] depth_index; }
-}
-
 bool dom::parser::Iterator::print(std::ostream &os, bool escape_strings) const {
   if (!is_ok()) {
     return false;
