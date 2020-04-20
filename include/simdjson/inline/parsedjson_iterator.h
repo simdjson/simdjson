@@ -209,6 +209,7 @@ bool dom::parser::Iterator::next() {
   return true;
 }
 
+[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
 dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
     : doc(pj.doc), depth(0), location(0), tape_length(0) {
 #if SIMDJSON_EXCEPTIONS
@@ -236,6 +237,7 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
   }
 }
 
+[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
 dom::parser::Iterator::Iterator(
     const dom::parser::Iterator &o) noexcept
     : doc(o.doc), max_depth(o.depth), depth(o.depth), location(o.location),
@@ -245,6 +247,7 @@ dom::parser::Iterator::Iterator(
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
 
+[[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]]
 dom::parser::Iterator::~Iterator() noexcept {
   if (depth_index) { delete[] depth_index; }
 }
