@@ -324,10 +324,26 @@ struct value128 {
   uint64_t high;
 };
 
+#if defined(_MSC_VER) && !defined(_M_X64) // _umul128 for x86, arm, arm64
+#if defined(_M_ARM)
+static inline uint64_t __emulu(uint32_t x, uint32_t y) {
+  return x * (uint64_t)y;
+}
+#endif
+static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+  uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
+  uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
+  uint64_t adbc = ad + __emulu((uint32_t)ab, (uint32_t)(cd >> 32));
+  uint64_t adbc_carry = !!(adbc < ad);
+  uint64_t lo = bd + (adbc << 32);
+  *hi = __emulu((uint32_t)(ab >> 32), (uint32_t)(cd >> 32)) + (adbc >> 32) + (adbc_carry << 32) + !!(lo < bd);
+  return lo;
+}
+#endif
+
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
 #ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
   answer.low = _umul128(value1, value2, &answer.high);
 #else
   __uint128_t r = ((__uint128_t)value1) * value2;
