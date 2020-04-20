@@ -94,7 +94,7 @@ really_inline uint8_t *parser::on_start_string() noexcept {
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
+  uint32_t str_length = static_cast<uint32_t>(dst - (current_string_buf_loc + sizeof(uint32_t)));
   // TODO check for overflow in case someone has a crazy string (>=4GB?)
   // But only add the overflow check when the document itself exceeds 4GB
   // Currently unneeded because we refuse to parse docs larger or equal to 4GB.

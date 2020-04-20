@@ -127,7 +127,7 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
-  doc_parser.n_structural_indexes = next_structural_index - doc_parser.structural_indexes.get();
+  doc_parser.n_structural_indexes = static_cast<uint32_t>(next_structural_index - doc_parser.structural_indexes.get());
   return error;
 }
 
@@ -148,7 +148,7 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }
-  stage1::structural_scanner scanner(buf, len, parser, streaming);
+  stage1::structural_scanner scanner(buf, static_cast<uint32_t>(len), parser, streaming);
   return scanner.scan();
 }
 

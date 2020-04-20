@@ -55,7 +55,7 @@ really_inline void json_minifier::step<64>(const uint8_t *block_buf, buf_block_r
 
 template<size_t STEP_SIZE>
 error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept {
-  buf_block_reader<STEP_SIZE> reader(buf, len);
+  buf_block_reader<STEP_SIZE> reader(buf, static_cast<uint32_t>(len));
   json_minifier minifier(dst);
   while (reader.has_full_block()) {
     minifier.step<STEP_SIZE>(reader.full_block(), reader);

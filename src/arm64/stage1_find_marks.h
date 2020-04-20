@@ -83,7 +83,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 #include "generic/utf8_lookup2_algorithm.h"
 #include "generic/json_structural_indexer.h"
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
-  return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
+  return arm64::stage1::json_structural_indexer::index<64>(buf, static_cast<uint32_t>(len), parser, streaming);
 }
 
 } // namespace arm64

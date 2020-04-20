@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
-include(GNUInstallDirs)
 
 message(STATUS "cmake version ${CMAKE_VERSION}")
 if (NOT CMAKE_BUILD_TYPE)
@@ -11,6 +10,8 @@ project(simdjson
   DESCRIPTION "Parsing gigabytes of JSON per second"
   LANGUAGES CXX C
 )
+
+include(GNUInstallDirs)
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 3)
@@ -52,7 +53,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_library(simdjson-flags INTERFACE)
 if(MSVC)
   target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
-  target_compile_options(simdjson-flags INTERFACE /WX /W3 /wd4005 /wd4996 /wd4267 /wd4244 /wd4113)
+  target_compile_options(simdjson-flags INTERFACE /WX /W3 /wd4005 /wd4996 /wd4113)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
   target_compile_options(simdjson-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self)

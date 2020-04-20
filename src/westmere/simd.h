@@ -278,10 +278,10 @@ namespace simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      this->chunks[0].compress(static_cast<uint16_t>(mask), output);
+      this->chunks[1].compress(static_cast<uint16_t>(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(static_cast<uint16_t>(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(static_cast<uint16_t>(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>

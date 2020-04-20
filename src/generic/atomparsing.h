@@ -16,7 +16,7 @@ really_inline bool is_valid_true_atom(const uint8_t *src) {
 }
 
 WARN_UNUSED
-really_inline bool is_valid_true_atom(const uint8_t *src, size_t len) {
+really_inline bool is_valid_true_atom(const uint8_t *src, uint32_t len) {
   if (len > 4) { return is_valid_true_atom(src); }
   else if (len == 4) { return !str4ncmp(src, "true"); }
   else { return false; }
@@ -28,7 +28,7 @@ really_inline bool is_valid_false_atom(const uint8_t *src) {
 }
 
 WARN_UNUSED
-really_inline bool is_valid_false_atom(const uint8_t *src, size_t len) {
+really_inline bool is_valid_false_atom(const uint8_t *src, uint32_t len) {
   if (len > 5) { return is_valid_false_atom(src); }
   else if (len == 5) { return !str4ncmp(src+1, "alse"); }
   else { return false; }
@@ -40,7 +40,7 @@ really_inline bool is_valid_null_atom(const uint8_t *src) {
 }
 
 WARN_UNUSED
-really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
+really_inline bool is_valid_null_atom(const uint8_t *src, uint32_t len) {
   if (len > 4) { return is_valid_null_atom(src); }
   else if (len == 4) { return !str4ncmp(src, "null"); }
   else { return false; }

@@ -427,7 +427,7 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 
   bool found = false;
   if (is_object()) {
-    if (move_to_key(key_or_index.c_str(), key_or_index.length())) {
+    if (move_to_key(key_or_index.c_str(), static_cast<uint32_t>(key_or_index.length()))) {
       found = relative_move_to(pointer + offset, length - offset);
     }
   } else if (is_array()) {

@@ -1,10 +1,10 @@
 namespace stage2 {
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(const uint8_t *_buf, size_t _len, parser &_doc_parser, size_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
+  really_inline streaming_structural_parser(const uint8_t *_buf, uint32_t _len, parser &_doc_parser, uint32_t _i) : structural_parser(_buf, _len, _doc_parser, _i) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
+  WARN_UNUSED really_inline error_code start(UNUSED uint32_t len, ret_address finish_parser) {
     doc_parser.init_stage2(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
@@ -41,8 +41,8 @@ struct streaming_structural_parser: structural_parser {
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(buf, len, doc_parser, next_json);
-  error_code result = parser.start(len, addresses.finish);
+  stage2::streaming_structural_parser parser(buf, static_cast<uint32_t>(len), doc_parser, static_cast<uint32_t>(next_json));
+  error_code result = parser.start(static_cast<uint32_t>(len), addresses.finish);
   if (result) { return result; }
   //
   // Read first value
