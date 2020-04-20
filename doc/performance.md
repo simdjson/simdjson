@@ -35,7 +35,7 @@ cout << doc << endl;
 cout << doc2 << endl;
 ```
 
-It's not just internal buffers though. The simdjson library reuses the document itself. dom::element, dom::object and dom::array are *references* to the internal document.
+It's not just internal buffers though. The simdjson library reuses the document itself. The dom::element, dom::object and dom::array instances are *references* to the internal document.
 You are only *borrowing* the document from simdjson, which purposely reuses and overwrites it each
 time you call parse. This prevent wasteful and unnecessary memory allocation in 99% of cases where
 JSON is just read, used, and converted to native values or thrown away.
