@@ -312,7 +312,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
 // The following code is used in number parsing. It is not
 // properly "char utils" stuff, but we move it here so that
 // it does not get copied multiple times in the binaries (once
-// per instructin set).
+// per instruction set).
 ///
 
 
