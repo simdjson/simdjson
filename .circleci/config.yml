@@ -8,7 +8,7 @@ executors:
         environment:
           CXX: g++
           BUILD_FLAGS: -j
-          CTEST_FLAGS: -j --output-on-failure
+          CTEST_FLAGS: -j4 --output-on-failure
 
   gcc8:
     docker:
@@ -16,7 +16,7 @@ executors:
         environment:
           CXX: g++
           BUILD_FLAGS: -j
-          CTEST_FLAGS: -j --output-on-failure
+          CTEST_FLAGS: -j4 --output-on-failure
 
   gcc9:
     docker:
@@ -24,21 +24,22 @@ executors:
         environment:
           CXX: g++
           BUILD_FLAGS: -j
-          CTEST_FLAGS: -j --output-on-failure
+          CTEST_FLAGS: -j4 --output-on-failure
   clang9:
     docker:
       - image: conanio/clang9
         environment:
           CXX: clang++-9
           BUILD_FLAGS: -j
-          CTEST_FLAGS: -j --output-on-failure
-  clang6:
+          CTEST_FLAGS: -j4 --output-on-failure
+
+clang6:
     docker:
       - image: ubuntu:18.04
         environment:
           CXX: clang++-6.0
           BUILD_FLAGS: -j
-          CTEST_FLAGS: -j --output-on-failure
+          CTEST_FLAGS: -j4 --output-on-failure
                 
 # Reusable test commands (and initializer for clang 6)
 commands:
@@ -73,7 +74,7 @@ commands:
     steps:
       - cmake_build
       - run: ctest $CTEST_FLAGS -L acceptance
-      - run: ctest $CTEST_FLAGS -LE acceptance
+      - run: ctest $CTEST_FLAGS -LE acceptance -E checkperf
 
   cmake_test_all:
     steps:
@@ -125,20 +126,15 @@ jobs:
     environment: { CMAKE_FLAGS:  -DSIMDJSON_USE_LIBCPP=ON}
     steps: [cmake_test_all_noprep ]
   # sanitize
-  sanitize-gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake sanitize build
-    executor: gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "" } # gcc sanitize seems to have bugs with -j :(
-    steps: [ cmake_test_all ]
   sanitize-gcc9:
     description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
     executor: gcc9
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ cmake_test_all ]
   sanitize-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ init_clang6, cmake_test_all ]
   
   # dynamic
@@ -210,7 +206,6 @@ workflows:
       - libcpp-clang9
       
       # full single-implementation tests
-      - sanitize-gcc7
       - sanitize-gcc9
       - sanitize-clang6
       - dynamic-gcc7

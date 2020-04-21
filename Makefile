@@ -1,4 +1,4 @@
-REFERENCE_VERSION = master
+CHECKPERF_BRANCH = master
 
 .SUFFIXES:
 #
@@ -207,8 +207,8 @@ benchfeatures: benchmark/benchfeatures.cpp benchmark/event_counter.h benchmark/b
 perfdiff: benchmark/perfdiff.cpp
 	$(CXX) $(CXXFLAGS) -o perfdiff benchmark/perfdiff.cpp $(LIBFILES) $(LIBFLAGS)
 
-checkperf:
-	bash ./scripts/checkperf.sh $(REFERENCE_VERSION)
+checkperf: parse perfdiff
+	CHECKPERF_BRANCH=$(CHECKPERF_BRANCH) bash ./benchmark/checkperf.sh jsonexamples/twitter.json
 
 statisticalmodel: benchmark/statisticalmodel.cpp $(HEADERS) $(LIBFILES)
 	$(CXX) $(CXXFLAGS) -o statisticalmodel benchmark/statisticalmodel.cpp $(LIBFILES) $(LIBFLAGS)

@@ -34,3 +34,16 @@ if (SIMDJSON_COMPETITION)
   target_link_libraries(allparsingcompetition competition-all)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
 endif()
+
+if (NOT MSVC)
+  add_test(NAME checkperf
+    COMMAND ${CMAKE_COMMAND} -E env
+      CHECKPERF_REPOSITORY=https://github.com/simdjson/simdjson
+      CHECKPERF_BRANCH=master
+      CHECKPERF_DIR=${CMAKE_CURRENT_BINARY_DIR}/simdjson-master
+      CHECKPERF_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}
+      bash ${CMAKE_CURRENT_SOURCE_DIR}/checkperf.sh ${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json)
+  set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
+  set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
+  set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
+endif()
