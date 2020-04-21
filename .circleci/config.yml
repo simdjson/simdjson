@@ -123,7 +123,7 @@ jobs:
   libcpp-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
     executor: clang9
-    environment: { CMAKE_FLAGS:  -DSIMDJSON_USE_LIBCPP=ON}
+    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON }
     steps: [cmake_test_all_noprep ]
   # sanitize
   sanitize-gcc9:
