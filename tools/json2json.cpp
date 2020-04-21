@@ -4,17 +4,27 @@
 #endif
 #include "simdjson.h"
 
+void usage(const char *exe) {
+  std::cerr << exe << " v" << STRINGIFY(SIMDJSON_VERSION) << " (" << simdjson::active_implementation->name() << ")" << std::endl;
+  std::cerr << std::endl;
+  std::cerr << "Reads json in, out the result of the parsing. " << std::endl;
+  std::cerr << "Usage: " << exe << " <jsonfile>" << std::endl;
+  std::cerr << "The -d flag dumps the raw content of the tape." << std::endl;
+}
 int main(int argc, char *argv[]) {
   bool rawdump = false;
 
 #ifndef _MSC_VER
   int c;
 
-  while ((c = getopt(argc, argv, "d")) != -1) {
+  while ((c = getopt(argc, argv, "dh")) != -1) {
     switch (c) {
     case 'd':
       rawdump = true;
       break;
+    case 'h':
+      usage(argv[0]);
+      return EXIT_SUCCESS;
     default:
       abort();
     }
@@ -23,11 +33,8 @@ int main(int argc, char *argv[]) {
   int optind = 1;
 #endif
   if (optind >= argc) {
-    std::cerr << "Reads json in, out the result of the parsing. " << std::endl;
-    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
-    std::cerr << "The -d flag dumps the raw content of the tape." << std::endl;
-
-    exit(1);
+    usage(argv[0]);
+    return EXIT_FAILURE;
   }
   const char *filename = argv[optind];
   if (optind + 1 < argc) {
