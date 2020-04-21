@@ -51,7 +51,7 @@ executors:
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
   clang8:
     docker:
-      - image: ubuntu:20.04
+      - image: conanio/clang8
         environment:
           CXX: clang++
   clang6:
@@ -67,7 +67,7 @@ executors:
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
   haswell-clang8:
     docker:
-      - image: ubuntu:19.04
+      - image: conanio/clang8
         environment:
           CXX: clang++
           CMAKE_IMPLEMENTATION_FLAGS: -DSIMDJSON_IMPLEMENTATION_HASWELL=ON  -DSIMDJSON_IMPLEMENTATION_WESTMERE=OFF -DSIMDJSON_IMPLEMENTATION_FALLBACK=OFF -DSIMDJSON_IMPLEMENTATION_ARM64=OFF
@@ -177,10 +177,10 @@ jobs:
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ init_clang6, cmake_test ]
   haswell-clang8-libcpp:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake static build
+    description: Build and run tests on clang 8 and AVX 2 with a cmake static build, using libc++
     executor: haswell-clang8
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_USE_LIBCPP=ON}
-    steps: [ init_clang6, cmake_test ]
+    steps: [ cmake_test ]
   haswell-gcc8:
     description: Build and run tests on GCC 8 and AVX 2
     executor: haswell-gcc8
@@ -228,10 +228,10 @@ jobs:
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ init_clang6, cmake_test ]
   haswell-unthreaded-clang8-libcpp:
-    description: Build and run tests on Clang 6 and AVX 2 *without* threads
+    description: Build and run tests on Clang 8 and AVX 2 *without* threads with libc++
     executor: haswell-clang8
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF -DSIMDJSON_USE_LIBCPP=ON}
-    steps: [ init_clang6, cmake_test ]
+    steps: [ cmake_test ]
   #
   # Westmere
   #
