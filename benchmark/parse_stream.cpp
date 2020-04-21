@@ -56,7 +56,7 @@ int main (int argc, char *argv[]){
             auto end = std::chrono::steady_clock::now();
 
             std::chrono::duration<double> secs = end - start;
-            double speedinGBs = (p.size()) / (secs.count() * 1000000000.0);
+            double speedinGBs = static_cast<double>(p.size()) / (static_cast<double>(secs.count()) * 1000000000.0);
             std::cout << speedinGBs << "\t\t\t\t" << count << std::endl;
 
             if (parse_res != simdjson::SUCCESS) {
@@ -88,7 +88,7 @@ int main (int argc, char *argv[]){
                 auto end = std::chrono::steady_clock::now();
 
                 std::chrono::duration<double> secs = end - start;
-                double speedinGBs = (p.size()) / (secs.count() * 1000000000.0);
+                double speedinGBs = static_cast<double>(p.size()) / (static_cast<double>(secs.count()) * 1000000000.0);
                 if (speedinGBs > batch_size_res.at(i))
                     batch_size_res[i] = speedinGBs;
 
@@ -136,7 +136,7 @@ int main (int argc, char *argv[]){
         }
 
         double min_result = *min_element(res.begin(), res.end());
-        double speedinGBs = (p.size()) / (min_result * 1000000000.0);
+        double speedinGBs = static_cast<double>(p.size()) / (min_result * 1000000000.0);
 
 
         std::cout << "Min:  " << min_result << " bytes read: " << p.size()

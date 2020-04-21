@@ -16,7 +16,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = i;
+    double d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -122,7 +122,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   ///////
   uint64_t upperbit = upper >> 63;
   uint64_t mantissa = upper >> (upperbit + 9);
-  lz += 1 ^ upperbit;
+  lz += int(1 ^ upperbit);
 
   // Here we have mantissa < (1<<54).
 
@@ -276,13 +276,13 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     ++p;
     i = 0;
   } else {
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
         found_invalid_number(src);
@@ -404,13 +404,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
     // the is_made_of_eight_digits_fast routine is unlikely to help here because
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       // a multiplication by 10 is cheaper than an arbitrary integer
       // multiplication
       i = 10 * i + digit; // might overflow, we will handle the overflow later
@@ -428,7 +428,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     const char *const first_after_period = p;
     if (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                           // cheaper than arbitrary mult.
@@ -448,7 +448,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = *p - '0';
+      unsigned char digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
@@ -456,7 +456,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     exponent = first_after_period - p;
   }
   int digit_count =
-      p - start_digits - 1; // used later to guard against overflows
+      int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -474,16 +474,16 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return false;
     }
-    unsigned char digit = *p - '0';
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
     if (is_integer(*p)) {
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -495,7 +495,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
         return false;
       }
-      digit = *p - '0';
+      digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
     }
@@ -513,7 +513,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         start++;
       }
       // we over-decrement by one when there is a '.'
-      digit_count -= (start - start_digits);
+      digit_count -= int(start - start_digits);
       if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!

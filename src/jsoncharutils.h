@@ -280,27 +280,27 @@ static inline bool is_utf8_continuing(char c) {
 //
 inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
-    c[0] = cp;
+    c[0] = uint8_t(cp);
     return 1; // ascii
   }
   if (cp <= 0x7FF) {
-    c[0] = (cp >> 6) + 192;
-    c[1] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 6) + 192);
+    c[1] = uint8_t((cp & 63) + 128);
     return 2; // universal plane
     //  Surrogates are treated elsewhere...
     //} //else if (0xd800 <= cp && cp <= 0xdfff) {
     //  return 0; // surrogates // could put assert here
   } else if (cp <= 0xFFFF) {
-    c[0] = (cp >> 12) + 224;
-    c[1] = ((cp >> 6) & 63) + 128;
-    c[2] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 12) + 224);
+    c[1] = uint8_t(((cp >> 6) & 63) + 128);
+    c[2] = uint8_t((cp & 63) + 128);
     return 3;
   } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this
                                // is not needed
-    c[0] = (cp >> 18) + 240;
-    c[1] = ((cp >> 12) & 63) + 128;
-    c[2] = ((cp >> 6) & 63) + 128;
-    c[3] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 18) + 240);
+    c[1] = uint8_t(((cp >> 12) & 63) + 128);
+    c[2] = uint8_t(((cp >> 6) & 63) + 128);
+    c[3] = uint8_t((cp & 63) + 128);
     return 4;
   }
   // will return 0 when the code point was too large.
@@ -347,8 +347,8 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   answer.low = _umul128(value1, value2, &answer.high);
 #else
   __uint128_t r = ((__uint128_t)value1) * value2;
-  answer.low = r;
-  answer.high = r >> 64;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
 #endif
   return answer;
 }

@@ -77,14 +77,14 @@ never_inline size_t sum_line_lengths(char * data, size_t length) {
 }
 
 
-bool bench(const char *filename, bool verbose, bool just_data, int repeat_multiplier) {
+bool bench(const char *filename, bool verbose, bool just_data, double repeat_multiplier) {
   auto [p, err] = simdjson::padded_string::load(filename);
   if (err) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return false;
   }
 
-  int repeat = (50000000 * repeat_multiplier) / p.size();
+  int repeat = static_cast<int>((50000000 * repeat_multiplier) / static_cast<double>(p.size()));
   if (repeat < 10) { repeat = 10; }
 
   if (verbose) {
@@ -97,7 +97,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
       std::cout << p.size() << " B";
     std::cout << ": will run " << repeat << " iterations." << std::endl;
   }
-  int volume = p.size();
+  size_t volume = p.size();
   if (just_data) {
     printf("%-42s %20s %20s %20s %20s \n", "name", "cycles_per_byte",
            "cycles_per_byte_err", "gb_per_s", "gb_per_s_err");
@@ -214,7 +214,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     buffer[p.size()] = '\0';
     BEST_TIME(
         "jsmn           ",
-        (jsmn_parse(&jparser, buffer, p.size(), tokens.get(), p.size()) > 0),
+        (jsmn_parse(&jparser, buffer, p.size(), tokens.get(), static_cast<unsigned int>(p.size())) > 0),
         true, jsmn_init(&jparser), repeat, volume, !just_data);
   }
   memcpy(buffer, p.data(), p.size());
@@ -253,7 +253,7 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     results.resize(evts.size());
     stats.resize(evts.size());
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
-    for (int i = 0; i < repeat; i++) {
+    for (decltype(repeat) i = 0; i < repeat; i++) {
       unified.start();
       auto parse_error = parser.parse(p).error();
       if (parse_error)
@@ -265,13 +265,13 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     printf("simdjson : cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
-           stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat,
-           stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,
-           stats[4] * 1.0 / repeat, volume * repeat * 1.0 / stats[2],
-           stats[1] * 1.0 / stats[0], stats[1] * 1.0 / (volume * repeat));
+           static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
+           static_cast<double>(stats[2]) / static_cast<double>(repeat), static_cast<double>(stats[3]) / static_cast<double>(repeat),
+           static_cast<double>(stats[4]) / static_cast<double>(repeat), static_cast<double>(volume) * static_cast<double>(repeat) / static_cast<double>(stats[2]),
+           static_cast<double>(stats[1]) / static_cast<double>(stats[0]), static_cast<double>(stats[1]) / (static_cast<double>(volume) * static_cast<double>(repeat)));
 
     std::fill(stats.begin(), stats.end(), 0);
-    for (int i = 0; i < repeat; i++) {
+    for (decltype(repeat) i = 0; i < repeat; i++) {
       memcpy(buffer, p.data(), p.size());
       buffer[p.size()] = '\0';
       unified.start();
@@ -285,13 +285,13 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     printf("RapidJSON: cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
-           stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat,
-           stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,
-           stats[4] * 1.0 / repeat, volume * repeat * 1.0 / stats[2],
-           stats[1] * 1.0 / stats[0], stats[1] * 1.0 / (volume * repeat));
+           static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
+           static_cast<double>(stats[2]) / static_cast<double>(repeat), static_cast<double>(stats[3]) / static_cast<double>(repeat),
+           static_cast<double>(stats[4]) / static_cast<double>(repeat), static_cast<double>(volume) * static_cast<double>(repeat) / static_cast<double>(stats[2]),
+           static_cast<double>(stats[1]) / static_cast<double>(stats[0]), static_cast<double>(stats[1]) / (static_cast<double>(volume) * static_cast<double>(repeat)));
 
     std::fill(stats.begin(), stats.end(), 0); // unnecessary
-    for (int i = 0; i < repeat; i++) {
+    for (decltype(repeat) i = 0; i < repeat; i++) {
       memcpy(buffer, p.data(), p.size());
       unified.start();
       if (sajson::parse(sajson::bounded_allocation(ast_buffer, ast_buffer_size),
@@ -305,10 +305,10 @@ bool bench(const char *filename, bool verbose, bool just_data, int repeat_multip
     printf("sajson   : cycles %10.0f instructions %10.0f branchmisses %10.0f "
            "cacheref %10.0f cachemisses %10.0f  bytespercachemiss %10.0f "
            "inspercycle %10.1f insperbyte %10.1f\n",
-           stats[0] * 1.0 / repeat, stats[1] * 1.0 / repeat,
-           stats[2] * 1.0 / repeat, stats[3] * 1.0 / repeat,
-           stats[4] * 1.0 / repeat, volume * repeat * 1.0 / stats[2],
-           stats[1] * 1.0 / stats[0], stats[1] * 1.0 / (volume * repeat));
+           static_cast<double>(stats[0]) / static_cast<double>(repeat), static_cast<double>(stats[1]) / static_cast<double>(repeat),
+           static_cast<double>(stats[2]) / static_cast<double>(repeat), static_cast<double>(stats[3]) / static_cast<double>(repeat),
+           static_cast<double>(stats[4]) / static_cast<double>(repeat), static_cast<double>(volume) * static_cast<double>(repeat) / static_cast<double>(stats[2]),
+           static_cast<double>(stats[1]) / static_cast<double>(stats[0]), static_cast<double>(stats[1]) / (static_cast<double>(volume) * static_cast<double>(repeat)));
 
   }
 #endif //  __linux__

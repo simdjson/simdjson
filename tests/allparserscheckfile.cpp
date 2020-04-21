@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     jsmn_init(&jsmnparser);
     memcpy(buffer, p.data(), p.size());
     buffer[p.size()] = '\0';
-    int r = jsmn_parse(&jsmnparser, buffer, p.size(), tokens.get(), p.size());
+    int r = jsmn_parse(&jsmnparser, buffer, p.size(), tokens.get(), static_cast<unsigned int>(p.size()));
     tokens = nullptr;
     jsmn_correct = (r > 0);
   }

@@ -18,7 +18,7 @@ template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
   int fd;
   bool working;
   perf_event_attr attribs;
-  int num_events;
+  size_t num_events;
   std::vector<uint64_t> temp_result_vec;
   std::vector<uint64_t> ids;
 
@@ -43,7 +43,7 @@ public:
     uint32_t i = 0;
     for (auto config : config_vec) {
       attribs.config = config;
-      fd = syscall(__NR_perf_event_open, &attribs, pid, cpu, group, flags);
+      fd = static_cast<int>(syscall(__NR_perf_event_open, &attribs, pid, cpu, group, flags));
       if (fd == -1) {
         report_error("perf_event_open");
       }

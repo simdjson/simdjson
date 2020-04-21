@@ -94,7 +94,7 @@ really_inline uint8_t *parser::on_start_string() noexcept {
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = dst - (current_string_buf_loc + sizeof(uint32_t));
+  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
   // TODO check for overflow in case someone has a crazy string (>=4GB?)
   // But only add the overflow check when the document itself exceeds 4GB
   // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
@@ -126,7 +126,7 @@ really_inline bool parser::on_number_double(double value) noexcept {
 }
 
 really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexcept {
-  doc.tape[current_loc++] = val | ((static_cast<uint64_t>(static_cast<char>(t))) << 56);
+  doc.tape[current_loc++] = val | ((uint64_t(char(t))) << 56);
 }
 
 // this function is responsible for annotating the start of the scope
@@ -136,7 +136,7 @@ really_inline void parser::end_scope(uint32_t depth) noexcept {
   // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
   const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
   // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-  doc.tape[d.tape_index] |= current_loc | (static_cast<uint64_t>(cntsat) << 32);
+  doc.tape[d.tape_index] |= current_loc | (uint64_t(cntsat) << 32);
 }
 
 } // namespace simdjson
