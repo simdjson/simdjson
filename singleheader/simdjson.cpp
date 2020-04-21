@@ -502,7 +502,7 @@ const detect_best_supported_implementation_on_first_use detect_best_supported_im
 
 internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers {
+static const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
   &haswell_singleton,
 #endif
@@ -561,6 +561,15 @@ const implementation *available_implementation_list::detect_best_supported() con
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  char *force_implementation_name = getenv("SIMDJSON_FORCE_IMPLEMENTATION");
+  if (force_implementation_name) {
+    auto force_implementation = available_implementations[force_implementation_name];
+    if (!force_implementation) {
+      fprintf(stderr, "SIMDJSON_FORCE_IMPLEMENTATION environment variable set to '%s', which is not a supported implementation name!\n", force_implementation_name);
+      abort();
+    }
+    return active_implementation = force_implementation;
+  }
   return active_implementation = available_implementations.detect_best_supported();
 }
 
@@ -5759,7 +5768,7 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
 // The following code is used in number parsing. It is not
 // properly "char utils" stuff, but we move it here so that
 // it does not get copied multiple times in the binaries (once
-// per instructin set).
+// per instruction set).
 ///
 
 
