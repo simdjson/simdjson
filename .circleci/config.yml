@@ -58,6 +58,7 @@ commands:
       - run: make checkperf
 
   install_cmake:
+    steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake
 
