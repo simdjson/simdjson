@@ -59,16 +59,10 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 #endif
 }
 
-#ifdef _MSC_VER
-#pragma intrinsic(_umul128) // todo: this might fail under visual studio for ARM
-#endif
-
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 #ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  uint64_t high;
-  *result = _umul128(value1, value2, &high);
-  return high;
+  *result = value1 * value2;
+  return !!__umulh(value1, value2);
 #else
   return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 #endif
