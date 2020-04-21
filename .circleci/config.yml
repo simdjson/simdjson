@@ -89,15 +89,15 @@ commands:
     steps:
       - checkout
       - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
-      - run: make $BUILD_FLAGS all
-      - run: tools/json2json -h # Print out the implementation we're using on this hardware
-      - run: ctest $CTEST_FLAGS -L acceptance
-      - run: ctest $CTEST_FLAGS -LE acceptance
-      - run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-      - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+      - run: make $BUILD_FLAGS all VERBOSE=1
+      #- run: tools/json2json -h # Print out the implementation we're using on this hardware
+      #- run: ctest $CTEST_FLAGS -L acceptance
+      #- run: ctest $CTEST_FLAGS -LE acceptance
+      #- run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+      #- run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+      #- run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+      #- run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+      #- run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
@@ -203,25 +203,25 @@ workflows:
   build_and_test:
     jobs:
       # full multi-implementation tests
-      - gcc7
-      - clang6
+      #- gcc7
+      #- clang6
       
       # libc++
       - libcpp-clang9
       
       # full single-implementation tests
-      - sanitize-gcc7
-      - sanitize-gcc9
-      - sanitize-clang6
-      - dynamic-gcc7
-      - dynamic-clang6
-      - unthreaded-gcc7
-      - unthreaded-clang6
+      #- sanitize-gcc7
+      #- sanitize-gcc9
+      #- sanitize-clang6
+      #- dynamic-gcc7
+      #- dynamic-clang6
+      #- unthreaded-gcc7
+      #- unthreaded-clang6
 
       # quicker make single-implementation tests
-      - arch-haswell-gcc7
-      - arch-nehalem-gcc7
-      - no-computed-goto-gcc7
+      #- arch-haswell-gcc7
+      #- arch-nehalem-gcc7
+      #- no-computed-goto-gcc7
     
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
