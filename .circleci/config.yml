@@ -84,6 +84,21 @@ commands:
       - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
       - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
+
+  cmake_test_all_noprep:
+    steps:
+      - checkout
+      - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
+      - run: make $BUILD_FLAGS all
+      - run: tools/json2json -h # Print out the implementation we're using on this hardware
+      - run: ctest $CTEST_FLAGS -L acceptance
+      - run: ctest $CTEST_FLAGS -LE acceptance
+      - run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+      - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
     steps:
@@ -108,7 +123,7 @@ jobs:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
     executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_USE_LIBCPP=ON}
-    steps: [cmake_test_all, cmake_install_test ]
+    steps: [cmake_test_all_noprep ]
   # sanitize
   sanitize-gcc7:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake sanitize build
