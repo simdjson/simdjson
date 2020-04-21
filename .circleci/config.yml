@@ -33,7 +33,7 @@ executors:
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
-clang6:
+  clang6:
     docker:
       - image: ubuntu:18.04
         environment:
