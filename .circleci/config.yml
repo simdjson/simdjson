@@ -90,14 +90,14 @@ commands:
       - checkout
       - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
       - run: make $BUILD_FLAGS all VERBOSE=1
-      #- run: tools/json2json -h # Print out the implementation we're using on this hardware
-      #- run: ctest $CTEST_FLAGS -L acceptance
-      #- run: ctest $CTEST_FLAGS -LE acceptance
-      #- run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
-      #- run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
-      #- run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
-      #- run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-      #- run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+      - run: tools/json2json -h # Print out the implementation we're using on this hardware
+      - run: ctest $CTEST_FLAGS -L acceptance
+      - run: ctest $CTEST_FLAGS -LE acceptance
+      - run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+      - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
