@@ -121,10 +121,20 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #endif // MSC_VER
 
+
+// some systems have string_view even if SIMDJSON_CPLUSPLUS17 is false,
+// let us try to detect them:
+#if defined __has_include
+// do not combine the next #if with the previous one (unsafe)
+#  if __has_include (<string_view>)
+#define SIMDJSON_HAS_STRING_VIEW
+#  endif
+#endif
+
 //
 // Backfill std::string_view using nonstd::string_view on C++11
 //
-#if (!SIMDJSON_CPLUSPLUS17)
+#if (!SIMDJSON_CPLUSPLUS17) && !defined(SIMDJSON_HAS_STRING_VIEW)
 
 SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include "simdjson/nonstd/string_view.hpp"
