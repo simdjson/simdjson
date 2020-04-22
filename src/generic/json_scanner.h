@@ -46,8 +46,13 @@ private:
  * strings. When we're done, json_block will fuse the two together by masking out tokens that are
  * part of a string.
  */
+/// Os3
 class json_scanner {
 public:
+  json_scanner()
+  : prev_scalar()
+  , string_scanner()
+  {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -74,7 +79,7 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 //
 // Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
+// For example, this checks for empty curly braces, e.g.
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //

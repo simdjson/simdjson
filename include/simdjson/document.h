@@ -124,8 +124,12 @@ public:
      * Get the next value.
      *
      * Part of the std::iterator interface.
+     *
+     * https://en.cppreference.com/w/cpp/language/operator_incdec
+     * T T::operator++(int);
      */
-    inline void operator++() noexcept;
+    ///Os3 3
+    inline iterator& operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
      *
@@ -205,8 +209,10 @@ public:
      * Get the next key/value pair.
      *
      * Part of the std::iterator interface.
+     *
+     * Os3 2
      */
-    inline void operator++() noexcept;
+    inline iterator& operator++() noexcept;
     /**
      * Check if these key value pairs come from the same place in the JSON.
      *
@@ -339,7 +345,8 @@ public:
    *
    * The parser will allocate capacity as needed.
    */
-  document() noexcept = default;
+  ///Os3 2
+  document() noexcept :string_buf(), tape() {};
   ~document() noexcept = default;
 
   /**
@@ -811,7 +818,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.

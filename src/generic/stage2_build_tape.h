@@ -50,7 +50,13 @@ struct unified_machine_addresses {
 class structural_iterator {
 public:
   really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf}, len{_len}, structural_indexes{_structural_indexes}, next_structural{next_structural_index} {}
+    : buf{_buf}
+    , len{_len}
+    , structural_indexes{_structural_indexes}
+    , next_structural{next_structural_index}
+    , idx{}
+    , c{}
+    {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;

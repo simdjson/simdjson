@@ -22,6 +22,9 @@ public:
   inline Iterator(const Iterator &o) noexcept;
   inline ~Iterator() noexcept;
 
+  ///Os3 4
+  inline Iterator& operator=(const Iterator&) = default;
+
   inline bool is_ok() const;
 
   // useful for debugging purposes

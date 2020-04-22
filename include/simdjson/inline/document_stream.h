@@ -85,7 +85,7 @@ static inline bool is_ascii(char c) {
   return ((unsigned char)c) <= 127;
 }
 
-// if the string ends with  UTF-8 values, backtrack 
+// if the string ends with  UTF-8 values, backtrack
 // up to the first ASCII character. May return 0.
 static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
   while ((len > 0) and (not is_ascii(c[len - 1]))) {
@@ -100,14 +100,34 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson {
 namespace dom {
-
+///Os3
 really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *buf,
   size_t len,
   size_t batch_size,
   error_code _error
-) noexcept : parser{_parser}, _buf{buf}, _len{len}, _batch_size(batch_size), error{_error} {
+) noexcept
+  : parser{_parser}
+  , _buf{buf}
+  , _len{len}
+  , _batch_size(batch_size)
+  , buf_start(0)
+  , next_json(0)
+  , load_next_batch(true)
+  , current_buffer_loc(0)
+#ifdef SIMDJSON_THREADS_ENABLED
+  , last_json_buffer_loc()
+#endif
+  , n_parsed_docs()
+  , n_bytes_parsed()
+  , error(_error)
+#ifdef SIMDJSON_THREADS_ENABLED
+  , stage1_is_ok_thread(SUCCESS)
+  , stage_1_thread()
+  , parser_thread()
+#endif
+{
   if (!error) { error = json_parse(); }
 }
 

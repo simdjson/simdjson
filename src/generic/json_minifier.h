@@ -3,6 +3,8 @@
 // We assume the file in which it is included already includes
 // "simdjson/stage1_find_marks.h" (this simplifies amalgation)
 
+/// Os3 don't know why is this code segment included in simdjson.ccp
+/// three times
 namespace stage1 {
 
 class json_minifier {
@@ -11,7 +13,11 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
+  ///Os3
+  really_inline json_minifier(uint8_t *_dst)
+  : scanner()
+  , dst{_dst}
+  {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
