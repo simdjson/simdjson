@@ -139,7 +139,6 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
   # Compile tests that *should fail*
   add_cpp_test(readme_examples_will_fail_with_exceptions_off WILL_FAIL COMPILE_ONLY LABELS acceptance SOURCES readme_examples.cpp)
   target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
-
 endif()
 
 

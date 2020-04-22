@@ -133,6 +133,11 @@ objs
 /tests/allparserscheckfile
 /tests/basictests
 /tests/checkimplementation
+/tests/compilation_failure_tests/dangling_parser_load_should_compile
+/tests/compilation_failure_tests/dangling_parser_parse_padstring_should_compile
+/tests/compilation_failure_tests/dangling_parser_parse_stdstring_should_compile
+/tests/compilation_failure_tests/dangling_parser_parse_uchar_should_compile
+/tests/compilation_failure_tests/dangling_parser_parse_uint8_should_compile
 /tests/compilation_failure_tests/example_compiletest_should_compile
 /tests/errortests
 /tests/extracting_values_example
