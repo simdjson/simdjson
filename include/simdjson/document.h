@@ -958,21 +958,21 @@ public:
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes{};
 
   /** @private Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope;
+  std::unique_ptr<scope_descriptor[]> containing_scope{};
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address;
+  std::unique_ptr<void*[]> ret_address{};
 #else
   /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address;
+  std::unique_ptr<char[]> ret_address{};
 #endif
 
   /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc;
+  uint8_t *current_string_buf_loc{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -980,7 +980,7 @@ public:
   error_code error{UNINITIALIZED};
 
   /** @private Use `parser.parse(...).value()` instead */
-  document doc;
+  document doc{};
 
   /** @private returns true if the document parsed was valid */
   [[deprecated("Use the result of parser.parse() instead")]]

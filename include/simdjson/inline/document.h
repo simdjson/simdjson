@@ -322,21 +322,8 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // parser inline implementation
 //
 really_inline parser::parser(size_t max_capacity) noexcept
-  :
-    current_loc{0},
-    n_structural_indexes{0},
-    structural_indexes(),
-    containing_scope(),
-    ret_address(),
-    current_string_buf_loc(),
-    valid(false),
-    error{UNINITIALIZED},
-    doc(),
-    _max_capacity{max_capacity},
-    _capacity{0},
-    _max_depth{0},
-    loaded_bytes(nullptr, &aligned_free_char),
-    _loaded_bytes_capacity{0}
+  : _max_capacity{max_capacity},
+    loaded_bytes(nullptr, &aligned_free_char)
     {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
