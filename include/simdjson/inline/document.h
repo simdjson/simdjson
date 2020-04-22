@@ -323,13 +323,22 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 //
 // Os3 2
 really_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity},
+  :
+    current_loc{0},
+    n_structural_indexes{0},
+    structural_indexes(),
     containing_scope(),
-    current_string_buf_loc(),
-    doc(),
-    loaded_bytes(nullptr, &aligned_free_char),
     ret_address(),
-    structural_indexes() {}
+    current_string_buf_loc(),
+    valid(false),
+    error{UNINITIALIZED},
+    doc(),
+    _max_capacity{max_capacity},
+    _capacity{0},
+    _max_depth{0},
+    loaded_bytes(nullptr, &aligned_free_char),
+    _loaded_bytes_capacity{0}
+    {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
