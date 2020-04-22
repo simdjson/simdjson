@@ -67,7 +67,7 @@ private:
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
-  json_scanner scanner;
+  json_scanner scanner{};
   utf8_checker checker{};
   bit_indexer indexer;
   uint64_t prev_structurals = 0;

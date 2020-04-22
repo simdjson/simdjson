@@ -55,7 +55,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner = {};
 };
 
 
