@@ -668,18 +668,6 @@ public:
   *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
   */
   really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
-//   : current_loc{}
-//   , n_structural_indexes{}
-//   , structural_indexes{}
-//   , containing_scope{}
-// //  , ret_address{std::nullptr_t}
-//   , _max_capacity{max_capacity}
-//   , _capacity{0}
-//   , _max_depth{0}
-//   , loaded_bytes{}
-// //  , _loaded_bytes_capacity{std::nullptr_t}
-//  {}
-
   /**
    * Take another parser's buffers and state.
    *

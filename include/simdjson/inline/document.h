@@ -321,7 +321,6 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 //
 // parser inline implementation
 //
-// Os3 2
 really_inline parser::parser(size_t max_capacity) noexcept
   :
     current_loc{0},
