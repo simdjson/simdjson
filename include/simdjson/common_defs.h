@@ -122,8 +122,25 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #endif // MSC_VER
 
 
-// some systems have string_view even if SIMDJSON_CPLUSPLUS17 is 0,
-// let us try to detect them:
+
+// C++17 requires string_view.
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_HAS_STRING_VIEW
+#endif
+
+// This macro (__cpp_lib_string_view) has to be defined
+// for C++17 and better, but if it is otherwise defined,
+// we are going to assume that string_view is available
+// even if we do not have C++17 support.
+#ifdef __cpp_lib_string_view
+#define SIMDJSON_HAS_STRING_VIEW
+#endif
+
+// Some systems have string_view even if we do not have C++17 support,
+// and even if __cpp_lib_string_view is undefined, it is the case
+// with Apple clang version 11.
+// We must handle it. *This is important.*
+#ifndef SIMDJSON_HAS_STRING_VIEW
 #if defined __has_include
 // do not combine the next #if with the previous one (unsafe)
 #if __has_include (<string_view>)
@@ -134,17 +151,19 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 // included string_view.
 // This means that we have string_view *even though* we may not have C++17.
 #define SIMDJSON_HAS_STRING_VIEW
-#endif// _LIBCPP_STRING_VIEW
-#endif// __has_include (<string_view>)
-#endif//defined __has_include
+#endif // _LIBCPP_STRING_VIEW
+#endif // __has_include (<string_view>)
+#endif // defined __has_include
+#endif // def SIMDJSON_HAS_STRING_VIEW
+// end of complicated but important routine to try to detect string_view.
 
 //
 // Backfill std::string_view using nonstd::string_view on systems where
-// we expect that string_view is missing (either pre-C++17 or where we could
-// not otherwise find the string_view header)
+// we expect that string_view is missing. Important: if we get this wrong,
+// we will end up with two string_view definitions and potential trouble.
+// That is why we work so hard above to avoid it.
 //
-#if (!SIMDJSON_CPLUSPLUS17) && !defined(SIMDJSON_HAS_STRING_VIEW)
-
+#ifndef SIMDJSON_HAS_STRING_VIEW
 SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include "simdjson/nonstd/string_view.hpp"
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -152,6 +171,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 namespace std {
   using string_view = nonstd::string_view;
 }
-#endif // if (SIMDJSON_CPLUSPLUS < 201703L)
+#endif // SIMDJSON_HAS_STRING_VIEW
+#undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
 
 #endif // SIMDJSON_COMMON_DEFS_H
