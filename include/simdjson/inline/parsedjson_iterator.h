@@ -208,7 +208,6 @@ bool dom::parser::Iterator::next() {
   current_type = next_type;
   return true;
 }
-/// Os3 2
 dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
     : doc(pj.doc),
      max_depth(),
@@ -243,7 +242,6 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
     depth_index[depth].scope_type = current_type;
   }
 }
-///Os3
 dom::parser::Iterator::Iterator(
     const dom::parser::Iterator &o) noexcept
     : doc(o.doc),

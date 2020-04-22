@@ -125,10 +125,7 @@ public:
      *
      * Part of the std::iterator interface.
      *
-     * https://en.cppreference.com/w/cpp/language/operator_incdec
-     * T T::operator++(int);
      */
-    ///Os3 3
     inline iterator& operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
@@ -210,7 +207,6 @@ public:
      *
      * Part of the std::iterator interface.
      *
-     * Os3 2
      */
     inline iterator& operator++() noexcept;
     /**

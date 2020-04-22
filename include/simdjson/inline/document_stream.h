@@ -100,7 +100,6 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson {
 namespace dom {
-///Os3
 really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *buf,

@@ -46,7 +46,6 @@ private:
  * strings. When we're done, json_block will fuse the two together by masking out tokens that are
  * part of a string.
  */
-/// Os3
 class json_scanner {
 public:
   json_scanner()

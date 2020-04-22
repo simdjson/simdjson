@@ -606,7 +606,6 @@ inline element array::iterator::operator*() const noexcept {
 inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-/// Os3 3
 inline array::iterator& array::iterator::operator++() noexcept {
   json_index = after_element();
   return *this;
@@ -707,7 +706,6 @@ inline const key_value_pair object::iterator::operator*() const noexcept {
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-///Os3 3
 inline object::iterator& object::iterator::operator++() noexcept {
   json_index++;
   json_index = after_element();
