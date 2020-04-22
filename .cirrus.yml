@@ -18,6 +18,7 @@ task:
     - cmake ..
     - ls /tmp/cirrus-ci-build/
     - ls /tmp/cirrus-ci-build/build/singleheader
+    - /tmp/cirrus-ci-build/build/singleheader/amalgamate.sh
     - make VERBOSE=1
   test_script:
     - ctest  --extra-verbose
