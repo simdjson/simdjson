@@ -51,7 +51,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #
 add_library(simdjson-flags INTERFACE)
 if(MSVC)
-  target_compile_options(simdjson-flags INTERFACE /nologo)
+  target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
   target_compile_options(simdjson-flags INTERFACE /WX /W3 /wd4267 /wd4244)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
