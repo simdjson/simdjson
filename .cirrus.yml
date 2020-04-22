@@ -1,0 +1,20 @@
+task:
+  timeout_in: 120m
+  freebsd_instance:
+    matrix:
+      - image_family: freebsd-13-0-snap
+      - image_family: freebsd-12-1
+      - image_family: freebsd-11-3-snap
+  env:
+    ASSUME_ALWAYS_YES: YES
+  setup_script:
+    - pkg update -f
+    - pkg install bash
+    - tools/bsd-setup.sh --install-optional
+  build_script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
+  test_script:
+    - ctest
