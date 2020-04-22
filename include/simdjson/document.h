@@ -345,8 +345,7 @@ public:
    *
    * The parser will allocate capacity as needed.
    */
-  ///Os3 2
-  document() noexcept :tape(), string_buf() {};
+  document() noexcept = default;
   ~document() noexcept = default;
 
   /**
@@ -380,13 +379,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint64_t[]> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf;
+  std::unique_ptr<uint8_t[]> string_buf{};
 
 private:
   inline error_code allocate(size_t len) noexcept;
