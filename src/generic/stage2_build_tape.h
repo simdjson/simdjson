@@ -105,8 +105,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {
