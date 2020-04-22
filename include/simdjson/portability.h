@@ -7,6 +7,12 @@
 #ifdef _MSC_VER
 #include <iso646.h>
 #endif
+#include <stdio.h>
+#include <string.h>
+#include <cerrno>
+#include <utility>
+#include <limits>
+#include <stdarg.h>
 
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define IS_X86_64 1
@@ -112,6 +118,7 @@
 #endif
 
 namespace simdjson {
+
 /** @private portable version of  posix_memalign */
 static inline void *aligned_malloc(size_t alignment, size_t size) {
   void *p;
@@ -146,11 +153,113 @@ static inline void aligned_free(void *mem_block) {
 #else
   free(mem_block);
 #endif
+
 }
 
 /** @private */
 static inline void aligned_free_char(char *mem_block) {
   aligned_free((void *)mem_block);
 }
+
+//
+// Compatibility functions for Microsoft's *_s functions, so we pass the _CRT_SECURE_WARNING check.
+// These are generally not defined on other platforms.
+//
+
+namespace internal {
+
+#ifdef _MSC_VER
+
+/** @private */
+static inline errno_t fopen_s(FILE **f, const char *name, const char *mode) {
+  return ::fopen_s(f, name, mode);
+}
+/** @private */
+static inline errno_t strcpy_s(char *dest, rsize_t destsz, const char *src) {
+  return ::strcpy_s(dest, destsz, src);
+}
+/** @private */
+static inline errno_t getenv_s(size_t *len, char *value, rsize_t valuesz, const char *name) {
+  return ::getenv_s(len, value, valuesz, name);
+}
+/** @private */
+static inline int sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  int result = vsprintf_s(buffer, sizeOfBuffer, format, args);
+  va_end(args);
+  return result;
+}
+
+#else // _MSC_VER
+
+typedef size_t rsize_t;
+typedef int errno_t;
+
+/** @private */
+static inline errno_t fopen_s(FILE **f, const char *name, const char *mode) {
+  errno_t ret = 0;
+  assert(f);
+  *f = fopen(name, mode);
+  if (!*f)
+      ret = errno;
+  return ret;
+}
+
+/** @private */
+static inline errno_t strcpy_s(char *dest, rsize_t destsz, const char *src) {
+  strncpy(dest, src, destsz);
+  if (dest[destsz-1] != '\0') {
+    return ERANGE;
+  }
+  return 0;
+}
+
+/** @private */
+static inline errno_t getenv_s(size_t *len, char *value, rsize_t valuesz, const char *name) {
+  if (valuesz == 0) {
+    return EINVAL;
+  }
+
+  char *getenv_value = getenv(name);
+  if (getenv_value) {
+    errno_t error = strcpy_s(value, valuesz, getenv_value);
+    if (error) {
+      return error;
+    }
+    if (len) {
+      *len = strlen(getenv_value);
+    }
+  } else {
+    memset(value, 0, valuesz);
+    if (len) {
+      *len = 0;
+    }
+  }
+
+  return 0;
+}
+
+/** @private */
+static inline int sprintf_s(char *buffer, size_t sizeOfBuffer, const char *format, ...) {
+  if (sizeOfBuffer > std::numeric_limits<int>::max()) {
+    errno = EINVAL;
+    return -1;
+  }
+  va_list args;
+  va_start(args, format);
+  int result = vsnprintf(buffer, sizeOfBuffer, format, args);
+  va_end(args);
+  if (result >= int(sizeOfBuffer)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return result;
+}
+
+#endif // _MSC_VER
+
+}
+
 } // namespace simdjson
 #endif // SIMDJSON_PORTABILITY_H

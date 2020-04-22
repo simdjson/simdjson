@@ -76,7 +76,7 @@ namespace number_tests {
     int maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
-      auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       buf[n] = '\0';
       fflush(NULL);
       auto [actual, error] = parser.parse(buf, n).get<double>();
@@ -169,7 +169,7 @@ namespace number_tests {
     char buf[1024];
     simdjson::dom::parser parser;
     for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
-      auto n = sprintf(buf,"1e%d", i);
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf), "1e%d", i);
       buf[n] = '\0';
       fflush(NULL);
 
@@ -277,19 +277,19 @@ namespace document_tests {
     std::vector<std::string> data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
                       i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"counter\": %f, \"array\": [%s]}", i * 3.1416,
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf), "{\"counter\": %f, \"array\": [%s]}", i * 3.1416,
                       (i % 2) ? "true" : "false");
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"number\": %e}", i * 10000.31321321);
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf), "{\"number\": %e}", i * 10000.31321321);
       data.emplace_back(std::string(buf, n));
     }
     data.emplace_back(std::string("true"));
@@ -398,7 +398,7 @@ namespace document_stream_tests {
     std::string data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
                       i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
@@ -446,7 +446,7 @@ namespace document_stream_tests {
     std::string data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      auto n = simdjson::internal::sprintf_s(buf, sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"été\": {\"id\": %zu, \"name\": \"éventail%zu\"}}",
                       i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);

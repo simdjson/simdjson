@@ -56,13 +56,14 @@ bool validate(const char *dirname) {
       printf("validating: file %s ", name);
       fflush(nullptr);
       size_t filelen = strlen(name);
-      char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
-      strcpy(fullpath, dirname);
+      size_t fullpathlen = dirlen + filelen + 1 + 1;
+      char *fullpath = static_cast<char *>(malloc(fullpathlen));
+      simdjson::internal::strcpy_s(fullpath, fullpathlen, dirname);
       if (needsep) {
         fullpath[dirlen] = '/';
-        strcpy(fullpath + dirlen + 1, name);
+        simdjson::internal::strcpy_s(fullpath + dirlen + 1, fullpathlen - dirlen - 1, name);
       } else {
-        strcpy(fullpath + dirlen, name);
+        simdjson::internal::strcpy_s(fullpath + dirlen, fullpathlen - dirlen, name);
       }
       auto [p, error] = simdjson::padded_string::load(fullpath);
       if (error) {

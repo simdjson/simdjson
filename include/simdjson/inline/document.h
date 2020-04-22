@@ -11,6 +11,7 @@
 #include <iostream>
 #include <climits>
 #include <cctype>
+#include <stdio.h>
 
 namespace simdjson {
 
@@ -337,8 +338,8 @@ inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
 
 inline simdjson_result<size_t> parser::read_file(const std::string &path) noexcept {
   // Open the file
-  std::FILE *fp = std::fopen(path.c_str(), "rb");
-  if (fp == nullptr) {
+  std::FILE *fp;
+  if (internal::fopen_s(&fp, path.c_str(), "rb")) {
     return IO_ERROR;
   }
 

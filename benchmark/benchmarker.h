@@ -422,7 +422,7 @@ struct benchmarker {
   void print(bool tabbed_output, size_t iterations) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
-      strcpy(filename_copy, filename);
+      simdjson::internal::strcpy_s(filename_copy, strlen(filename)+1, filename);
       #if defined(__linux__)
       char* base = ::basename(filename_copy);
       #else

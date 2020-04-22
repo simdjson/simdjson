@@ -3,6 +3,8 @@
 #include "simdprune_tables.h"
 
 #include <initializer_list>
+#include <stdio.h>
+#include <string.h>
 
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
@@ -122,8 +124,17 @@ const implementation *available_implementation_list::detect_best_supported() con
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
-  char *force_implementation_name = getenv("SIMDJSON_FORCE_IMPLEMENTATION");
-  if (force_implementation_name) {
+
+  char force_implementation_name[128];
+  // Fill with zeroes to ensure it's null-terminated
+  memset(force_implementation_name, 0, sizeof(force_implementation_name));
+  auto error = internal::getenv_s(nullptr, force_implementation_name, sizeof(force_implementation_name)-1, "SIMDJSON_FORCE_IMPLEMENTATION");
+  if (error) {
+    fprintf(stderr, "Could not get SIMDJSON_FORCE_IMPLEMENTATION environment variable: errno %d!\n", error);
+    abort();
+  }
+  // If SIMDJSON_FORCE_IMPLEMENTATION is non-empty, forcibly select it!
+  if (force_implementation_name[0] != '\0') {
     auto force_implementation = available_implementations[force_implementation_name];
     if (!force_implementation) {
       fprintf(stderr, "SIMDJSON_FORCE_IMPLEMENTATION environment variable set to '%s', which is not a supported implementation name!\n", force_implementation_name);
