@@ -23,7 +23,7 @@ public:
   inline ~Iterator() noexcept;
 
   ///Os3 4
-  inline Iterator& operator=(const Iterator&) = default;
+  inline Iterator& operator=(const Iterator&) = delete;
 
   inline bool is_ok() const;
 
