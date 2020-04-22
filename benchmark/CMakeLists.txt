@@ -35,7 +35,7 @@ if (SIMDJSON_COMPETITION)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
 endif()
 
-if (NOT MSVC)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_test(NAME checkperf
     COMMAND ${CMAKE_COMMAND} -E env
       CHECKPERF_REPOSITORY=https://github.com/simdjson/simdjson
@@ -46,4 +46,4 @@ if (NOT MSVC)
   set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
-endif()
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
