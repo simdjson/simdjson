@@ -3,7 +3,13 @@
 #
 
 # TODO haven't quite decided the right way to run quickstart on Windows. Needs README update.
-if (NOT MSVC)
+#
+# Note: on macOS and other platforms, the 'command' described below may not work even if the cmake builds.
+# For example, it may be necessary to specify the sysroot, which CMake does, but the 'command' does not
+# handle such niceties. On a case-by-case basis it is fixable but it requires work that CMake knows how
+# to do but that is not trivial.
+#
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # TODO run amalgamate first!
   function(add_quickstart_test TEST_NAME SOURCE_FILE)
     # Second argument is C++ standard name

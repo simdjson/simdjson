@@ -122,17 +122,26 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 #endif // MSC_VER
 
 
-// some systems have string_view even if SIMDJSON_CPLUSPLUS17 is false,
+// some systems have string_view even if SIMDJSON_CPLUSPLUS17 is 0,
 // let us try to detect them:
 #if defined __has_include
 // do not combine the next #if with the previous one (unsafe)
-#  if __has_include (<string_view>)
+#if __has_include (<string_view>)
+// now it is safe to trigger the include
+#include <string_view> // though the file is there, it does not follow that we got the implementation
+#if defined(_LIBCPP_STRING_VIEW)
+// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceeded C++17,
+// included string_view.
+// This means that we have string_view *even though* we may not have C++17.
 #define SIMDJSON_HAS_STRING_VIEW
-#  endif
-#endif
+#endif// _LIBCPP_STRING_VIEW
+#endif// __has_include (<string_view>)
+#endif//defined __has_include
 
 //
-// Backfill std::string_view using nonstd::string_view on C++11
+// Backfill std::string_view using nonstd::string_view on systems where
+// we expect that string_view is missing (either pre-C++17 or where we could
+// not otherwise find the string_view header)
 //
 #if (!SIMDJSON_CPLUSPLUS17) && !defined(SIMDJSON_HAS_STRING_VIEW)
 
