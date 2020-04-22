@@ -22,11 +22,10 @@ public:
     // it helps tremendously.
     if (bits == 0)
         return;
-    auto cnt = count_ones(bits);
+    int cnt = static_cast<int>(count_ones(bits));
 
     // Do the first 8 all together
-    decltype(cnt) i;
-    for (i=0; i<8; i++) {
+    for (int i=0; i<8; i++) {
       this->tail[i] = idx + trailing_zeroes(bits);
       bits = clear_lowest_bit(bits);
     }
@@ -34,7 +33,7 @@ public:
     // Do the next 8 all together (we hope in most cases it won't happen at all
     // and the branch is easily predicted).
     if (unlikely(cnt > 8)) {
-      for (i=8; i<16; i++) {
+      for (int i=8; i<16; i++) {
         this->tail[i] = idx + trailing_zeroes(bits);
         bits = clear_lowest_bit(bits);
       }
@@ -43,7 +42,7 @@ public:
       // branch mispredictions here. 16+ structurals per block means either punctuation ({} [] , :)
       // or the start of a value ("abc" true 123) every four characters.
       if (unlikely(cnt > 16)) {
-        i = 16;
+        int i = 16;
         do {
           this->tail[i] = idx + trailing_zeroes(bits);
           bits = clear_lowest_bit(bits);
