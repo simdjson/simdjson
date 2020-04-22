@@ -209,14 +209,7 @@ bool dom::parser::Iterator::next() {
   return true;
 }
 dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
-    : doc(pj.doc),
-     max_depth(),
-     depth(0),
-     location(0),
-     tape_length(0),
-     current_type(),
-     current_val(),
-     depth_index()
+    : doc(pj.doc)
 {
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }

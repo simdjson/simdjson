@@ -53,9 +53,7 @@ public:
     : buf{_buf},
      len{_len},
      structural_indexes{_structural_indexes},
-     next_structural{next_structural_index},
-     idx{},
-     c{}
+     next_structural{next_structural_index}
     {}
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
@@ -111,8 +109,8 @@ public:
   const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
-  size_t idx; // location of the structural character in the input (buf)
-  uint8_t c;  // used to track the (structural) character we are looking at
+  size_t idx{}; // location of the structural character in the input (buf)
+  uint8_t c{};  // used to track the (structural) character we are looking at
 };
 
 struct structural_parser {

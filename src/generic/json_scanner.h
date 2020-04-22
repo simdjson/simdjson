@@ -48,10 +48,7 @@ private:
  */
 class json_scanner {
 public:
-  json_scanner()
-  : prev_scalar()
-  , string_scanner()
-  {}
+  json_scanner() {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -59,7 +56,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner{};
 };
 
 

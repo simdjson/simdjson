@@ -111,21 +111,7 @@ really_inline document_stream::document_stream(
    _buf{buf},
    _len{len},
    _batch_size(batch_size),
-   buf_start(0),
-   next_json(0),
-   load_next_batch(true),
-   current_buffer_loc(0),
-#ifdef SIMDJSON_THREADS_ENABLED
-   last_json_buffer_loc(),
-#endif
-   n_parsed_docs(),
-   n_bytes_parsed(),
-   error(_error),
-#ifdef SIMDJSON_THREADS_ENABLED
-   stage1_is_ok_thread(SUCCESS),
-   stage_1_thread(),
-   parser_thread()
-#endif
+   error(_error)
 {
   if (!error) { error = json_parse(); }
 }

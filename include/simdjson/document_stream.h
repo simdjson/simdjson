@@ -135,8 +135,8 @@ private:
   error_code error{SUCCESS_AND_HAS_MORE};
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
-  std::thread stage_1_thread;
-  dom::parser parser_thread;
+  std::thread stage_1_thread{};
+  dom::parser parser_thread{};
 #endif
   friend class dom::parser;
 }; // class document_stream
