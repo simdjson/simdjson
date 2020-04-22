@@ -10,7 +10,7 @@ task:
   setup_script:
     - pkg update -f
     - pkg install bash
-    - pkg_add -r cmake
+    - pkg install cmake
   build_script:
     - mkdir build
     - cd build
