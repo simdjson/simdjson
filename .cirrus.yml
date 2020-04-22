@@ -10,7 +10,7 @@ task:
   setup_script:
     - pkg update -f
     - pkg install bash
-    - tools/bsd-setup.sh --install-optional
+    - pkg_add -r cmake
   build_script:
     - mkdir build
     - cd build
