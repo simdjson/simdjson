@@ -15,6 +15,6 @@ task:
     - mkdir build
     - cd build
     - cmake ..
-    - make
+    - make VERBOSE=1
   test_script:
-    - ctest
+    - ctest  --extra-verbose
