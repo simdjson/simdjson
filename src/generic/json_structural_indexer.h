@@ -62,11 +62,11 @@ public:
 
 private:
   really_inline json_structural_indexer(uint32_t *structural_indexes)
-  : scanner()
-  , checker{}
-  , indexer{structural_indexes}
-  , prev_structurals{0}
-  , unescaped_chars_error{0}
+  : scanner(),
+  checker{},
+  indexer{structural_indexes},
+  prev_structurals{0},
+  unescaped_chars_error{0}
   {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;

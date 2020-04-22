@@ -132,7 +132,6 @@ protected:
     _required_instruction_sets(required_instruction_sets)
   {
   }
-  ///Os3 1
   virtual ~implementation()=default;
 
 private:
