@@ -108,14 +108,14 @@ really_inline document_stream::document_stream(
   size_t batch_size,
   error_code _error
 ) noexcept
-  : parser{_parser}
+  : parser{_parser},
    _buf{buf},
    _len{len},
    _batch_size(batch_size),
    buf_start(0),
    next_json(0),
    load_next_batch(true),
-   current_buffer_loc(0)
+   current_buffer_loc(0),
 #ifdef SIMDJSON_THREADS_ENABLED
    last_json_buffer_loc(),
 #endif
