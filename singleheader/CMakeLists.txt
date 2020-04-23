@@ -24,3 +24,13 @@ if (NOT MSVC)
   target_link_libraries(amalgamate_demo simdjson-include-source)
   add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 endif()
+
+
+#
+# We also want to be able to build amalgamate_demo.cpp from the single header
+# files alone.
+#
+set(SINGLEHEADER_FILE simdjson.h )
+add_library(singleheaderlib simdjson.cpp ${SINGLEHEADER_FILE})
+add_executable(amalgamate_demo_from_repo amalgamate_demo.cpp ${SINGLEHEADER_FILE})
+add_dependencies(amalgamate_demo_from_repo singleheaderlib)
