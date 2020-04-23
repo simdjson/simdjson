@@ -17,4 +17,5 @@ task:
     - cmake ..
     - make VERBOSE=1
   test_script:
+    - cd build
     - ctest  --extra-verbose

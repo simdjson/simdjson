@@ -1,7 +1,13 @@
 #
 # Amalgamation
 #
+# We should check whether bash is available here and avoid failures on systems where
+# bash is unavailable.
 if (NOT MSVC)
+  ##
+  # Important! The script amalgamate.sh is not generally executable. It
+  # assumes that bash is at /bin/bash which may not be true.
+  ###
   set(SINGLEHEADER_FILES simdjson.h simdjson.cpp amalgamate_demo.cpp README.md)
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
@@ -14,10 +20,6 @@ if (NOT MSVC)
   )
 
   add_custom_target(amalgamate DEPENDS ${SINGLEHEADER_FILES})
-
-  # Under FreeBSD, it appears that CMake does not copy amalgamate.sh, so let us be 
-  # explicit.
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
   add_executable(amalgamate_demo amalgamate_demo.cpp)
   target_link_libraries(amalgamate_demo simdjson-include-source)
   add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
