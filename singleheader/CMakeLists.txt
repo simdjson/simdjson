@@ -9,7 +9,7 @@ if (NOT MSVC)
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      bash ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
     DEPENDS amalgamate.sh simdjson-source 
   )
 
