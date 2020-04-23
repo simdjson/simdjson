@@ -15,7 +15,7 @@ task:
     - mkdir build
     - cd build
     - cmake ..
-    - make VERBOSE=1
+    - make -j
   test_script:
     - cd build
-    - ctest  --extra-verbose
+    - ctest  -j4 --output-on-failure -E checkperf
