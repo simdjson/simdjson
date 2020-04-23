@@ -124,8 +124,9 @@ public:
      * Get the next value.
      *
      * Part of the std::iterator interface.
+     *
      */
-    inline void operator++() noexcept;
+    inline iterator& operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
      *
@@ -205,8 +206,9 @@ public:
      * Get the next key/value pair.
      *
      * Part of the std::iterator interface.
+     *
      */
-    inline void operator++() noexcept;
+    inline iterator& operator++() noexcept;
     /**
      * Check if these key value pairs come from the same place in the JSON.
      *
@@ -373,13 +375,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint64_t[]> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf;
+  std::unique_ptr<uint8_t[]> string_buf{};
 
 private:
   inline error_code allocate(size_t len) noexcept;
@@ -660,8 +662,7 @@ public:
   *    to allocate an initial capacity, call allocate() after constructing the parser.
   *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
   */
-  really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
-
+  really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.
    *
@@ -811,7 +812,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -953,21 +954,21 @@ public:
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes{};
 
   /** @private Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope;
+  std::unique_ptr<scope_descriptor[]> containing_scope{};
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address;
+  std::unique_ptr<void*[]> ret_address{};
 #else
   /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address;
+  std::unique_ptr<char[]> ret_address{};
 #endif
 
   /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc;
+  uint8_t *current_string_buf_loc{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -975,7 +976,7 @@ public:
   error_code error{UNINITIALIZED};
 
   /** @private Use `parser.parse(...).value()` instead */
-  document doc;
+  document doc{};
 
   /** @private returns true if the document parsed was valid */
   [[deprecated("Use the result of parser.parse() instead")]]

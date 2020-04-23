@@ -213,7 +213,7 @@ inline error_code document::allocate(size_t capacity) noexcept {
 
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
-  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where len + 1 tape elements are
   // generated, see issue https://github.com/lemire/simdjson/issues/345
   size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
@@ -322,7 +322,9 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // parser inline implementation
 //
 really_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity}, loaded_bytes(nullptr, &aligned_free_char) {}
+  : _max_capacity{max_capacity},
+    loaded_bytes(nullptr, &aligned_free_char)
+    {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
@@ -604,8 +606,9 @@ inline element array::iterator::operator*() const noexcept {
 inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-inline void array::iterator::operator++() noexcept {
+inline array::iterator& array::iterator::operator++() noexcept {
   json_index = after_element();
+  return *this;
 }
 
 //
@@ -703,9 +706,10 @@ inline const key_value_pair object::iterator::operator*() const noexcept {
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-inline void object::iterator::operator++() noexcept {
+inline object::iterator& object::iterator::operator++() noexcept {
   json_index++;
   json_index = after_element();
+  return *this;
 }
 inline std::string_view object::iterator::key() const noexcept {
   size_t string_buf_index = size_t(tape_value());

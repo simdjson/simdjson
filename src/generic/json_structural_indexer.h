@@ -61,13 +61,14 @@ public:
   static error_code index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept;
 
 private:
-  really_inline json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+  really_inline json_structural_indexer(uint32_t *structural_indexes)
+  : indexer{structural_indexes} {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
   really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
 
-  json_scanner scanner;
+  json_scanner scanner{};
   utf8_checker checker{};
   bit_indexer indexer;
   uint64_t prev_structurals = 0;
@@ -145,7 +146,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
 //    they can make a lot of progress before they need that information.
 // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
-// 
+//
 // The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.

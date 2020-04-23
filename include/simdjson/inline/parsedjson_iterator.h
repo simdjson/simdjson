@@ -212,9 +212,9 @@ bool dom::parser::Iterator::next() {
   current_type = next_type;
   return true;
 }
-
 dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
-    : doc(pj.doc), depth(0), location(0), tape_length(0) {
+    : doc(pj.doc)
+{
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
 #else
@@ -239,12 +239,17 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
     depth_index[depth].scope_type = current_type;
   }
 }
-
 dom::parser::Iterator::Iterator(
     const dom::parser::Iterator &o) noexcept
-    : doc(o.doc), max_depth(o.depth), depth(o.depth), location(o.location),
-      tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val) {
+    : doc(o.doc),
+    max_depth(o.depth),
+    depth(o.depth),
+    location(o.location),
+    tape_length(o.tape_length),
+    current_type(o.current_type),
+    current_val(o.current_val),
+    depth_index()
+{
   depth_index = new scopeindex_t[max_depth+1];
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }

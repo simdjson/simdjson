@@ -48,6 +48,7 @@ private:
  */
 class json_scanner {
 public:
+  json_scanner() {}
   really_inline json_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
 
@@ -55,7 +56,7 @@ private:
   // Whether the last character of the previous iteration is part of a scalar token
   // (anything except whitespace or an operator).
   uint64_t prev_scalar = 0ULL;
-  json_string_scanner string_scanner;
+  json_string_scanner string_scanner{};
 };
 
 
@@ -74,7 +75,7 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 
 //
 // Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g. 
+// For example, this checks for empty curly braces, e.g.
 //
 //     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
 //

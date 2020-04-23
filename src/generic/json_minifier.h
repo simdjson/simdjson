@@ -11,12 +11,14 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst) : dst{_dst} {}
+  really_inline json_minifier(uint8_t *_dst)
+  : dst{_dst}
+  {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
-  json_scanner scanner;
+  json_scanner scanner{};
   uint8_t *dst;
 };
 
