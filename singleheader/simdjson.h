@@ -1,4 +1,4 @@
-/* auto-generated on Thu Apr 23 09:19:14 PDT 2020. Do not edit! */
+/* auto-generated on Thu Apr 23 15:36:58 PDT 2020. Do not edit! */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -102,6 +102,20 @@ enum {
 #if defined(__aarch64__) || defined(_M_ARM64)
 #define IS_ARM64 1
 #endif
+
+#if (!defined(IS_X86_64)) && (!defined(IS_ARM64))
+#if _MSC_VER
+#pragma message("The simdjson library is designed\
+ for 64-bit processors and it seems that you are not\
+compiling for a known 64-bit platform. All fast kernels\
+will be disabled and performance may be poor. Please\
+use a 64-bt target such as x64 or 64-bit ARM.")
+#else
+#error "The simdjson library is designed\
+ for 64-bit processors. It seems that you are not\
+compiling for a known 64-bit platform."
+#endif
+#endif // (!defined(IS_X86_64)) && (!defined(IS_ARM64))
 
 // this is almost standard?
 #undef STRINGIFY_IMPLEMENTATION_
@@ -344,6 +358,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
   // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
+    SIMDJSON_DISABLE_GCC_WARNING(-Weffc++) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wconversion) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
