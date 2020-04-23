@@ -178,13 +178,16 @@ quicktests: run_basictests run_quickstart readme_examples readme_examples_noexce
 slowtests: run_testjson2json_sh run_issue150_sh
 
 amalgamate:
-	./amalgamation.sh
+	singleheader/amalgamate.sh
 
-singleheader/simdjson.h singleheader/simdjson.cpp singleheader/amalgamation_demo.cpp: amalgamation.sh src/simdjson.cpp $(SRCHEADERS) $(INCLUDEHEADERS)
-	./amalgamation.sh
+singleheader/simdjson.h singleheader/simdjson.cpp singleheader/amalgamate_demo.cpp: singleheader/amalgamate.sh src/simdjson.cpp $(SRCHEADERS) $(INCLUDEHEADERS)
+	singleheader/amalgamate.sh
 
-singleheader/demo: singleheader/simdjson.h singleheader/simdjson.cpp singleheader/amalgamation_demo.cpp
-	$(CXX) $(CXXFLAGS) -o singleheader/demo singleheader/amalgamation_demo.cpp -Isingleheader
+singleheader/demo: singleheader/simdjson.h singleheader/simdjson.cpp singleheader/amalgamate_demo.cpp
+	$(CXX) $(CXXFLAGS) -o singleheader/demo singleheader/amalgamate_demo.cpp -Isingleheader
+
+amalgamate_test: singleheader/demo jsonexamples/twitter.json jsonexamples/amazon_cellphones.ndjson
+	singleheader/demo jsonexamples/twitter.json jsonexamples/amazon_cellphones.ndjson
 
 submodules:
 	-git submodule update --init --recursive

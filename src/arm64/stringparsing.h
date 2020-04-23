@@ -40,8 +40,8 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   // smash them together into a 64-byte mask and get the bitmask from there.
   uint64_t bs_and_quote = simd8x64<bool>(v0 == '\\', v1 == '\\', v0 == '"', v1 == '"').to_bitmask();
   return {
-    static_cast<uint32_t>(bs_and_quote),      // bs_bits
-    static_cast<uint32_t>(bs_and_quote >> 32) // quote_bits
+    uint32_t(bs_and_quote),      // bs_bits
+    uint32_t(bs_and_quote >> 32) // quote_bits
   };
 }
 

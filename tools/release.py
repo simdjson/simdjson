@@ -159,5 +159,5 @@ print("modified "+doxyfile+", a backup was made")
 scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 
-print("Please run the tests before issuing a release, do make test && make amalgamate \n")
+print("Please run the tests before issuing a release, do make test && make amalgamate_test \n")
 print("to issue release, enter \n git commit -a && git push  &&  git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\" &&  git push --tags \n")

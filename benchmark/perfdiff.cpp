@@ -32,7 +32,7 @@ std::string exec(const char* cmd) {
         std::cerr << "popen() failed!" << std::endl;
         abort();
     }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    while (fgets(buffer.data(), int(buffer.size()), pipe.get()) != nullptr) {
         result += buffer.data();
     }
     return result;
@@ -44,10 +44,10 @@ double readThroughput(std::string parseOutput) {
     double result = 0;
     int numResults = 0;
     while (std::getline(output, line)) {
-        int pos = 0;
+        std::string::size_type pos = 0;
         for (int i=0; i<5; i++) {
             pos = line.find('\t', pos);
-            if (pos < 0) {
+            if (pos == std::string::npos) {
                 std::cerr << "Command printed out a line with less than 5 fields in it:\n" << line << std::endl;
             }
             pos++;

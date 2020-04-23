@@ -1,7 +1,7 @@
 *
 !.git
 !Makefile
-!amalgamation.sh
+!amalgamate.sh
 !benchmark
 !dependencies
 !include

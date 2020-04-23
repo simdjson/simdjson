@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   buffer[p.size()] = '\0';
 
   int repeat = 50;
-  int volume = p.size();
+  size_t volume = p.size();
   if (just_data) {
     printf(
         "name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
   printf("minisize = %zu, original size = %zu  (minified down to %.2f percent "
          "of original) \n",
-         outlength, p.size(), outlength * 100.0 / p.size());
+         outlength, p.size(), static_cast<double>(outlength) * 100.0 / static_cast<double>(p.size()));
 
   /***
    * Is it worth it to minify before parsing?

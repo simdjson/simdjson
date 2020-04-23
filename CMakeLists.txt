@@ -25,10 +25,12 @@ if(MSVC)
 else()
   option(SIMDJSON_BUILD_STATIC "Build a static library" OFF) # turning it on disables the production of a dynamic library
   option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
+  option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
+
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
 set(CMAKE_CXX_STANDARD 17)
@@ -37,6 +39,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 
 # LTO seems to create all sorts of fun problems. Let us
 # disable temporarily.
@@ -51,12 +54,23 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #
 add_library(simdjson-flags INTERFACE)
 if(MSVC)
-  target_compile_options(simdjson-flags INTERFACE /nologo)
-  target_compile_options(simdjson-flags INTERFACE /WX /W3 /wd4996 /wd4267 /wd4244)
+  target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
+  target_compile_options(simdjson-flags INTERFACE /WX /W3)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
-  target_compile_options(simdjson-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self)
+  target_compile_options(simdjson-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif()
+
+
+if(SIMDJSON_USE_LIBCPP)
+  target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
+  # instead of the above line, we could have used
+  # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++  -lc++abi")
+  # The next line is needed empirically.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  # we update CMAKE_SHARED_LINKER_FLAGS, this gets updated later as well
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lc++abi")
+endif(SIMDJSON_USE_LIBCPP)
 
 # Optional flags
 option(SIMDJSON_IMPLEMENTATION_HASWELL "Include the haswell implementation" ON)
@@ -139,6 +153,15 @@ if (NOT MSVC)
 endif()
 
 #
+# Set up test data
+#
+enable_testing()
+add_subdirectory(jsonchecker)
+add_subdirectory(jsonexamples)
+add_library(test-data INTERFACE)
+target_link_libraries(test-data INTERFACE jsonchecker-data jsonexamples-data)
+
+#
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
 # directories) and tools
 #
@@ -146,16 +169,11 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
 add_subdirectory(tools)
+add_subdirectory(singleheader)
 
 #
 # Compile tools / tests / benchmarks
 #
-enable_testing()
-
-add_library(test-data INTERFACE)
-target_compile_definitions(test-data INTERFACE SIMDJSON_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonchecker/")
-target_compile_definitions(test-data INTERFACE SIMDJSON_BENCHMARK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/")
-set(EXAMPLE_JSON ${CMAKE_CURRENT_SOURCE_DIR}/jsonexamples/twitter.json)
 
 add_subdirectory(dependencies)
 add_subdirectory(tests)

@@ -379,31 +379,31 @@ struct benchmarker {
     printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
       prefix,
       "Speed",
-      stage.elapsed_ns() / stats->blocks, // per block
-      100.0 * stage.elapsed_sec() / all_stages.elapsed_sec(), // %
-      stage.elapsed_ns() / stats->bytes, // per byte
-      stage.elapsed_ns() / stats->structurals, // per structural
-      (json.size() / 1000000000.0) / stage.elapsed_sec() // GB/s
+      stage.elapsed_ns() / static_cast<double>(stats->blocks), // per block
+      percent(stage.elapsed_sec(), all_stages.elapsed_sec()), // %
+      stage.elapsed_ns() / static_cast<double>(stats->bytes), // per byte
+      stage.elapsed_ns() / static_cast<double>(stats->structurals), // per structural
+      (static_cast<double>(json.size()) / 1000000000.0) / stage.elapsed_sec() // GB/s
     );
 
     if (collector.has_events()) {
       printf("%s%-13s: %8.4f per block    (%6.2f%%) - %8.4f per byte    - %8.4f per structural    - %8.3f GHz est. frequency\n",
         prefix,
         "Cycles",
-        stage.cycles() / stats->blocks,
-        100.0 * stage.cycles() / all_stages.cycles(),
-        stage.cycles() / stats->bytes,
-        stage.cycles() / stats->structurals,
+        stage.cycles() / static_cast<double>(stats->blocks),
+        percent(stage.cycles(), all_stages.cycles()),
+        stage.cycles() / static_cast<double>(stats->bytes),
+        stage.cycles() / static_cast<double>(stats->structurals),
         (stage.cycles() / stage.elapsed_sec()) / 1000000000.0
       );
       printf("%s%-13s: %8.4f per block    (%6.2f%%) - %8.4f per byte    - %8.4f per structural    - %8.3f per cycle\n",
         prefix,
         "Instructions",
-        stage.instructions() / stats->blocks,
-        100.0 * stage.instructions() / all_stages.instructions(),
-        stage.instructions() / stats->bytes,
-        stage.instructions() / stats->structurals,
-        stage.instructions() / stage.cycles()
+        stage.instructions() / static_cast<double>(stats->blocks),
+        percent(stage.instructions(), all_stages.instructions()),
+        stage.instructions() / static_cast<double>(stats->bytes),
+        stage.instructions() / static_cast<double>(stats->structurals),
+        stage.instructions() / static_cast<double>(stage.cycles())
       );
 
       // NOTE: removed cycles/miss because it is a somewhat misleading stat
@@ -411,12 +411,19 @@ struct benchmarker {
         prefix,
         "Misses",
         stage.branch_misses(),
-        100.0 * stage.branch_misses() / all_stages.branch_misses(),
+        percent(stage.branch_misses(), all_stages.branch_misses()),
         stage.cache_misses(),
-        100.0 * stage.cache_misses() / all_stages.cache_misses(),
+        percent(stage.cache_misses(), all_stages.cache_misses()),
         stage.cache_references()
       );
     }
+  }
+
+  static double percent(size_t a, size_t b) {
+    return 100.0 * static_cast<double>(a) / static_cast<double>(b);
+  }
+  static double percent(double a, double b) {
+    return 100.0 * a / b;
   }
 
   void print(bool tabbed_output, size_t iterations) const {
@@ -432,14 +439,14 @@ struct benchmarker {
         base[strlen(base)-5] = '\0';
       }
 
-      double gb = json.size() / 1000000000.0;
+      double gb = static_cast<double>(json.size()) / 1000000000.0;
       if (collector.has_events()) {
         printf("\"%s\"\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",
                 base,
-                allocate_stage.best.cycles() / json.size(),
-                stage1.best.cycles() / json.size(),
-                stage2.best.cycles() / json.size(),
-                all_stages.best.cycles() / json.size(),
+                allocate_stage.best.cycles() / static_cast<double>(json.size()),
+                stage1.best.cycles() / static_cast<double>(json.size()),
+                stage2.best.cycles() / static_cast<double>(json.size()),
+                all_stages.best.cycles() / static_cast<double>(json.size()),
                 gb / all_stages.best.elapsed_sec(),
                 gb / stage1.best.elapsed_sec(),
                 gb / stage2.best.elapsed_sec());
@@ -455,22 +462,22 @@ struct benchmarker {
       printf("\n");
       printf("%s\n", filename);
       printf("%s\n", string(strlen(filename), '=').c_str());
-      printf("%9zu blocks - %10zu bytes - %5zu structurals (%5.1f %%)\n", stats->bytes / BYTES_PER_BLOCK, stats->bytes, stats->structurals, 100.0 * stats->structurals / stats->bytes);
+      printf("%9zu blocks - %10zu bytes - %5zu structurals (%5.1f %%)\n", stats->bytes / BYTES_PER_BLOCK, stats->bytes, stats->structurals, percent(stats->structurals, stats->bytes));
       if (stats) {
         printf("special blocks with: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
-          stats->blocks_with_utf8, 100.0 * stats->blocks_with_utf8 / stats->blocks,
-          stats->blocks_with_escapes, 100.0 * stats->blocks_with_escapes / stats->blocks,
-          stats->blocks_with_0_structurals, 100.0 * stats->blocks_with_0_structurals / stats->blocks,
-          stats->blocks_with_1_structural, 100.0 * stats->blocks_with_1_structural / stats->blocks,
-          stats->blocks_with_8_structurals, 100.0 * stats->blocks_with_8_structurals / stats->blocks,
-          stats->blocks_with_16_structurals, 100.0 * stats->blocks_with_16_structurals / stats->blocks);
+          stats->blocks_with_utf8, percent(stats->blocks_with_utf8, stats->blocks),
+          stats->blocks_with_escapes, percent(stats->blocks_with_escapes, stats->blocks),
+          stats->blocks_with_0_structurals, percent(stats->blocks_with_0_structurals, stats->blocks),
+          stats->blocks_with_1_structural, percent(stats->blocks_with_1_structural, stats->blocks),
+          stats->blocks_with_8_structurals, percent(stats->blocks_with_8_structurals, stats->blocks),
+          stats->blocks_with_16_structurals, percent(stats->blocks_with_16_structurals, stats->blocks));
         printf("special block flips: utf8 %9zu (%5.1f %%) - escape %9zu (%5.1f %%) - 0 structurals %9zu (%5.1f %%) - 1+ structurals %9zu (%5.1f %%) - 8+ structurals %9zu (%5.1f %%) - 16+ structurals %9zu (%5.1f %%)\n",
-          stats->blocks_with_utf8_flipped, 100.0 * stats->blocks_with_utf8_flipped / stats->blocks,
-          stats->blocks_with_escapes_flipped, 100.0 * stats->blocks_with_escapes_flipped / stats->blocks,
-          stats->blocks_with_0_structurals_flipped, 100.0 * stats->blocks_with_0_structurals_flipped / stats->blocks,
-          stats->blocks_with_1_structural_flipped, 100.0 * stats->blocks_with_1_structural_flipped / stats->blocks,
-          stats->blocks_with_8_structurals_flipped, 100.0 * stats->blocks_with_8_structurals_flipped / stats->blocks,
-          stats->blocks_with_16_structurals_flipped, 100.0 * stats->blocks_with_16_structurals_flipped / stats->blocks);
+          stats->blocks_with_utf8_flipped, percent(stats->blocks_with_utf8_flipped, stats->blocks),
+          stats->blocks_with_escapes_flipped, percent(stats->blocks_with_escapes_flipped, stats->blocks),
+          stats->blocks_with_0_structurals_flipped, percent(stats->blocks_with_0_structurals_flipped, stats->blocks),
+          stats->blocks_with_1_structural_flipped, percent(stats->blocks_with_1_structural_flipped, stats->blocks),
+          stats->blocks_with_8_structurals_flipped, percent(stats->blocks_with_8_structurals_flipped, stats->blocks),
+          stats->blocks_with_16_structurals_flipped, percent(stats->blocks_with_16_structurals_flipped, stats->blocks));
       }
       printf("\n");
       printf("All Stages\n");
@@ -497,7 +504,7 @@ struct benchmarker {
           freqmin, freqmax, freqall);
         }
       }
-      printf("\n%.1f documents parsed per second\n", iterations/loop.best.elapsed_sec());
+      printf("\n%.1f documents parsed per second\n", static_cast<double>(iterations)/static_cast<double>(loop.best.elapsed_sec()));
     }
   }
 };

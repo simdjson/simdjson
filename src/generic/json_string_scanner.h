@@ -107,7 +107,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
   const uint64_t in_string = prefix_xor(quote) ^ prev_in_string;
   // right shift of a signed value expected to be well-defined and standard
   // compliant as of C++20, John Regher from Utah U. says this is fine code
-  prev_in_string = static_cast<uint64_t>(static_cast<int64_t>(in_string) >> 63);
+  prev_in_string = uint64_t(static_cast<int64_t>(in_string) >> 63);
   // Use ^ to turn the beginning quote off, and the end quote on.
   return {
     backslash,

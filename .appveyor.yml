@@ -34,7 +34,7 @@ test_script:
 matrix:
   fast_finish: true
   exclude:
-    # Don't build all variants on 2019, just running it to make sure readme_tests succeed
-    - image: Visual Studio 2019
+    # Don't build all variants on 2017, just running it to make sure readme_tests succeed
+    - image: Visual Studio 2017
       SIMDJSON_BUILD_STATIC: ON
       SIMDJSON_ENABLE_THREADS: OFF

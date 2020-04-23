@@ -189,7 +189,7 @@ public:
   // is referenced is undefined, and evaluation fails". Here we just return
   // the first corresponding value.
   inline bool move_to(const std::string &pointer) {
-      return move_to(pointer.c_str(), pointer.length());
+      return move_to(pointer.c_str(), uint32_t(pointer.length()));
   }
 
   private:

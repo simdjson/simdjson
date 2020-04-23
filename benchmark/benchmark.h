@@ -60,7 +60,7 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
   do {                                                                         \
     uint64_t cycles_start, cycles_final, cycles_diff;                          \
     uint64_t min_diff = UINT64_MAX;                                            \
-    for (int i = 0; i < repeat; i++) {                                         \
+    for (decltype(repeat) i = 0; i < repeat; i++) {                                         \
       __asm volatile("" ::: /* pretend to clobber */ "memory");                \
       RDTSC_START(cycles_start);                                               \
       test;                                                                    \
@@ -73,7 +73,7 @@ uint64_t global_rdtsc_overhead = (uint64_t)UINT64_MAX;
   } while (0)
 
 double diff(timespec start, timespec end) {
-  return ((end.tv_nsec + 1000000000 * end.tv_sec) -
+  return static_cast<double>((end.tv_nsec + 1000000000 * end.tv_sec) -
           (start.tv_nsec + 1000000000 * start.tv_sec)) /
          1000000000.0;
 }
@@ -100,7 +100,7 @@ double diff(timespec start, timespec end) {
     uint64_t sum_diff = 0;                                                     \
     double sumclockdiff = 0;                                                   \
     struct timespec time1, time2;                                              \
-    for (int i = 0; i < repeat; i++) {                                         \
+    for (decltype(repeat) i = 0; i < repeat; i++) {                                         \
       pre;                                                                     \
       __asm volatile("" ::: /* pretend to clobber */ "memory");                \
       clock_gettime(CLOCK_REALTIME, &time1);                                   \
@@ -121,12 +121,12 @@ double diff(timespec start, timespec end) {
       sum_diff += cycles_diff;                                                 \
     }                                                                          \
     uint64_t S = size;                                                         \
-    float cycle_per_op = (min_diff) / (double)S;                               \
-    float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
+    double cycle_per_op = static_cast<double>(min_diff) / static_cast<double>(S);                               \
+    double avg_cycle_per_op = static_cast<double>(sum_diff) / (static_cast<double>(S) * static_cast<double>(repeat));                \
     double avg_gb_per_s =                                                      \
-        ((double)S * repeat) / ((sumclockdiff)*1000.0 * 1000.0 * 1000.0);      \
+        (static_cast<double>(S) * static_cast<double>(repeat)) / ((sumclockdiff)*1000.0 * 1000.0 * 1000.0);      \
     double max_gb_per_s =                                                      \
-        ((double)S) / ((min_sumclockdiff)*1000.0 * 1000.0 * 1000.0);           \
+        static_cast<double>(S) / (min_sumclockdiff * 1000.0 * 1000.0 * 1000.0);           \
     if (verbose)                                                               \
       printf(" %7.3f %s per input byte (best) ", cycle_per_op, unitname);      \
     if (verbose)                                                               \
@@ -137,7 +137,7 @@ double diff(timespec start, timespec end) {
     if (verbose)                                                               \
       printf(" %13.0f documents/s (best)", 1.0/min_sumclockdiff);             \
     if (verbose)                                                               \
-      printf(" %13.0f documents/s (avg)", 1.0/(sumclockdiff/repeat));         \
+      printf(" %13.0f documents/s (avg)", 1.0/(sumclockdiff/static_cast<double>(repeat)));         \
     if (!verbose)                                                              \
       printf(" %20.3f %20.3f %20.3f %20.3f", cycle_per_op,                     \
              avg_cycle_per_op - cycle_per_op, max_gb_per_s,                    \
@@ -170,8 +170,8 @@ double diff(timespec start, timespec end) {
       sum_diff += cycles_diff;                                                 \
     }                                                                          \
     uint64_t S = size;                                                         \
-    float cycle_per_op = (min_diff) / (double)S;                               \
-    float avg_cycle_per_op = (sum_diff) / ((double)S * repeat);                \
+    double cycle_per_op = static_cast<double>(min_diff) / static_cast<double>(S);                               \
+    double avg_cycle_per_op = static_cast<double>(sum_diff) / (static_cast<double>(S) * static_cast<double>(repeat));                \
     if (verbose)                                                               \
       printf(" %.3f %s per input byte (best) ", cycle_per_op, unitname);       \
     if (verbose)                                                               \

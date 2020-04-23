@@ -73,7 +73,7 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
     simdjson::dom::parser parser;
-    int maxulp = 0;
+    uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
       auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
@@ -81,7 +81,7 @@ namespace number_tests {
       fflush(NULL);
       auto [actual, error] = parser.parse(buf, n).get<double>();
       if (error) { std::cerr << error << std::endl; return false; }
-      int ulp = f64_ulp_dist(actual,expected);  
+      uint64_t ulp = f64_ulp_dist(actual,expected);  
       if(ulp > maxulp) maxulp = ulp;
       if(ulp > 0) {
         std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
@@ -284,12 +284,12 @@ namespace document_tests {
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"counter\": %f, \"array\": [%s]}", i * 3.1416,
+      auto n = sprintf(buf, "{\"counter\": %f, \"array\": [%s]}", static_cast<double>(i) * 3.1416,
                       (i % 2) ? "true" : "false");
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"number\": %e}", i * 10000.31321321);
+      auto n = sprintf(buf, "{\"number\": %e}", static_cast<double>(i) * 10000.31321321);
       data.emplace_back(std::string(buf, n));
     }
     data.emplace_back(std::string("true"));
@@ -1563,7 +1563,7 @@ namespace type_tests {
       && (expected_value >= 0 ?
           test_cast<uint64_t>(result, expected_value) :
           test_cast<uint64_t>(result, NUMBER_OUT_OF_RANGE))
-      && test_cast<double>(result, expected_value)
+      && test_cast<double>(result, static_cast<double>(expected_value))
       && test_cast<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);
   }
@@ -1582,7 +1582,7 @@ namespace type_tests {
       && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, NUMBER_OUT_OF_RANGE)
       && test_cast<uint64_t>(result, expected_value)
-      && test_cast<double>(result, expected_value)
+      && test_cast<double>(result, static_cast<double>(expected_value))
       && test_cast<bool>(result, INCORRECT_TYPE)
       && test_is_null(result, false);
   }
