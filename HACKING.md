@@ -20,7 +20,7 @@ simdjson's source structure, from the top level, looks like this:
   implementations).
   * simdjson.cpp: A "master source" that includes all implementation files from src/. This is
     equivalent to the distributed simdjson.cpp.
-  * arm64/|fallback/|haswell/|westmere/: Architecture-specific implementations. All functions are 
+  * arm64/|fallback/|haswell/|westmere/: Architecture-specific implementations. All functions are
     Each architecture defines its own namespace, e.g. simdjson::haswell.
   * generic/: Generic implementations of the simdjson parser. These files may be included and
     compiled multiple times, from whichever architectures use them. They assume they are already
@@ -56,7 +56,7 @@ Other important files and directories:
 * **tools:** Source for executables that can be distributed with simdjson
 
 > **Don't modify the files in singleheader/ directly; these are automatically generated.**
-> 
+>
 > While we distribute those files on release, we *maintain* the files under include/ and src/.
 
 While simdjson distributes just two files from the singleheader/ directory, we *maintain* the code in
@@ -157,6 +157,19 @@ make
 make test
 ```
 
+linux way:
+
+```
+mkdir build                                                    # if necessary
+cd build
+cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CC_COMPILER=gcc      # or
+cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CC_COMPILER=clang
+make -j
+```
+
+
+
+
 ### Usage (CMake on 64-bit Windows using Visual Studio)
 
 We assume you have a common 64-bit Windows PC with at least Visual Studio 2017 and an x64 processor with AVX2 support (2013 Intel Haswell or later) or SSE 4.2 + CLMUL (2010 Westmere or later).
@@ -189,7 +202,7 @@ On Windows (64-bit):
 will build and install `simdjson` as a shared library.
 
 ```
-.\vcpkg.exe install simdjson:x64-windows-static  
+.\vcpkg.exe install simdjson:x64-windows-static
 ```
 
 will build and install `simdjson` as a static library.
