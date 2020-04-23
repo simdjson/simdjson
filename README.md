@@ -40,7 +40,7 @@ Quick Start
           
 The simdjson library is easily consumable with a single .h and .cpp file.
 
-0. Prerequisites: `g++` (version 7 or better) or `clang++` (version 6 or better), and a 64-bit system.
+0. Prerequisites: `g++` (version 7 or better) or `clang++` (version 6 or better), and a 64-bit system with a command-line shell (e.g., Linux, macOS, freeBSD). We also support programming environnements like Visual Studio and Xcode, but different steps are needed.
 1. Pull [simdjson.h](singleheader/simdjson.h) and [simdjson.cpp](singleheader/simdjson.cpp) into a directory, along with the sample file [twitter.json](jsonexamples/twitter.json).
    ```
    wget https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.h https://raw.githubusercontent.com/simdjson/simdjson/master/singleheader/simdjson.cpp https://raw.githubusercontent.com/simdjson/simdjson/master/jsonexamples/twitter.json
@@ -188,3 +188,7 @@ This code is made available under the Apache License 2.0.
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
 For compilers that do not support C++17, we bundle the string-view library which is published under the Boost license (http://www.boost.org/LICENSE_1_0.txt). Like the Apache license, the Boost license is a permissive license allowing commercial redistribution.
+<<<<<<< HEAD
+=======
+
+>>>>>>> 832bbe734dfc9719d9428ad38368602169594788
