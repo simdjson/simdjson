@@ -15,12 +15,12 @@
 #include <vector>
 
 template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
-  int fd;
-  bool working;
-  perf_event_attr attribs;
-  size_t num_events;
-  std::vector<uint64_t> temp_result_vec;
-  std::vector<uint64_t> ids;
+  int fd{};
+  bool working{};
+  perf_event_attr attribs{};
+  size_t num_events{};
+  std::vector<uint64_t> temp_result_vec{};
+  std::vector<uint64_t> ids{};
 
 public:
   explicit LinuxEvents(std::vector<int> config_vec) : fd(0), working(true) {

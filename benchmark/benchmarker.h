@@ -241,25 +241,25 @@ const char* benchmark_stage_name(BenchmarkStage stage) {
 
 struct benchmarker {
   // JSON text from loading the file. Owns the memory.
-  padded_string json;
+  padded_string json{};
   // JSON filename
-  const char *filename;
+  const char *filename{};
   // Event collector that can be turned on to measure cycles, missed branches, etc.
   event_collector& collector;
 
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
-  json_stats* stats;
+  json_stats* stats{};
   // Speed and event summary for full parse (not including allocation)
-  event_aggregate all_stages;
+  event_aggregate all_stages{};
   // Speed and event summary for stage 1
-  event_aggregate stage1;
+  event_aggregate stage1{};
   // Speed and event summary for stage 2
-  event_aggregate stage2;
+  event_aggregate stage2{};
   // Speed and event summary for allocation
-  event_aggregate allocate_stage;
+  event_aggregate allocate_stage{};
   // Speed and event summary for the repeatly-parsing mode
-  event_aggregate loop;
+  event_aggregate loop{};
 
   benchmarker(const char *_filename, event_collector& _collector)
     : filename(_filename), collector(_collector), stats(NULL) {
@@ -277,6 +277,9 @@ struct benchmarker {
       delete stats;
     }
   }
+
+  benchmarker(const benchmarker&) = delete;
+  benchmarker& operator=(const benchmarker&) = delete;
 
   const event_aggregate& operator[](BenchmarkStage stage) const {
     switch (stage) {

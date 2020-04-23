@@ -214,7 +214,7 @@ public:
   operator T*() { return ptr.load(); }
   T& operator*() { return *ptr; }
   T* operator->() { return ptr.load(); }
-  T* operator=(T *_ptr) { return ptr = _ptr; }
+  atomic_ptr& operator=(T *_ptr) { ptr = _ptr; return *this; }
 
 private:
   std::atomic<T*> ptr;
