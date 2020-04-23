@@ -162,8 +162,8 @@ linux way:
 ```
 mkdir build                                                    # if necessary
 cd build
-cmake .. -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CC_COMPILER=gcc      # or
-cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CC_COMPILER=clang
+cmake .. -DCMAKE_CXX_COMPILER=g++       # or
+cmake .. -DCMAKE_CXX_COMPILER=clang++ 
 make -j
 ```
 
