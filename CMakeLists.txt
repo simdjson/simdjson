@@ -58,6 +58,9 @@ if(MSVC)
   target_compile_options(simdjson-flags INTERFACE /WX /W3)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
+  if(NOT SIMDJSON_GOOGLE_BENCHMARKS) # Google Benchmark can't be compiled without warnings with -Weffc++
+    target_compile_options(simdjson-flags INTERFACE -Weffc++)
+  endif()
   target_compile_options(simdjson-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif()
 
