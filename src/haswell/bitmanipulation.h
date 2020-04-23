@@ -33,17 +33,19 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-  return static_cast<int>(_lzcnt_u64(input_num));
+  return int(_lzcnt_u64(input_num));
 }
 
-really_inline int count_ones(uint64_t input_num) {
 #ifdef _MSC_VER
+really_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
-#else
-  return _popcnt64(input_num);
-#endif
 }
+#else
+really_inline long long int count_ones(uint64_t input_num) {
+  return _popcnt64(input_num);
+}
+#endif
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {

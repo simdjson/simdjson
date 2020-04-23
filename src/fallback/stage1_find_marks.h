@@ -127,7 +127,7 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
-  doc_parser.n_structural_indexes = next_structural_index - doc_parser.structural_indexes.get();
+  doc_parser.n_structural_indexes = uint32_t(next_structural_index - doc_parser.structural_indexes.get());
   return error;
 }
 
@@ -148,7 +148,7 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }
-  stage1::structural_scanner scanner(buf, len, parser, streaming);
+  stage1::structural_scanner scanner(buf, uint32_t(len), parser, streaming);
   return scanner.scan();
 }
 
@@ -201,7 +201,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
     pos += meta[2] | quote;
 
     i += 1;
-    nonescape = (~nonescape) | (meta[1]);
+    nonescape = uint8_t(~nonescape) | (meta[1]);
   }
   dst_len = pos; // we intentionally do not work with a reference
   // for fear of aliasing

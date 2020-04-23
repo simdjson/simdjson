@@ -47,7 +47,7 @@ platform:
 steps:
 - name: build
   image: gcc:8
-  commands: [ make, make amalgamate ]
+  commands: [ make, make amalgamate_test ]
 ---
 kind: pipeline
 name: x64-slowtests
@@ -87,7 +87,7 @@ steps:
   image: gcc:8
   environment:
     EXTRA_FLAGS: -fno-exceptions
-  commands: [ make, make amalgamate ]
+  commands: [ make, make amalgamate_test ]
 ---
 kind: pipeline
 name: x64-noexceptions-slowtests
@@ -139,7 +139,7 @@ platform:
 steps:
 - name: build
   image: gcc:8
-  commands: [ make, make amalgamate ]
+  commands: [ make, make amalgamate_test ]
 ---
 kind: pipeline
 name: arm64-slowtests

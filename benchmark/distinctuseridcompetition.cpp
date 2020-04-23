@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
   size_t size = s1.size();
 
   int repeat = 500;
-  int volume = p.size();
+  size_t volume = p.size();
   if (just_data) {
     printf(
         "name cycles_per_byte cycles_per_byte_err  gb_per_s gb_per_s_err \n");

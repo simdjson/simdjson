@@ -1,0 +1,21 @@
+task:
+  timeout_in: 120m
+  freebsd_instance:
+    matrix:
+      - image_family: freebsd-13-0-snap
+
+  env:
+    ASSUME_ALWAYS_YES: YES
+  setup_script:
+    - pkg update -f
+    - pkg install bash
+    - pkg install cmake
+    - pkg install git
+  build_script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make -j2
+  test_script:
+    - cd build
+    - ctest  -j2 --output-on-failure -E checkperf

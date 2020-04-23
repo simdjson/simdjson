@@ -280,27 +280,27 @@ static inline bool is_utf8_continuing(char c) {
 //
 inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
-    c[0] = cp;
+    c[0] = uint8_t(cp);
     return 1; // ascii
   }
   if (cp <= 0x7FF) {
-    c[0] = (cp >> 6) + 192;
-    c[1] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 6) + 192);
+    c[1] = uint8_t((cp & 63) + 128);
     return 2; // universal plane
     //  Surrogates are treated elsewhere...
     //} //else if (0xd800 <= cp && cp <= 0xdfff) {
     //  return 0; // surrogates // could put assert here
   } else if (cp <= 0xFFFF) {
-    c[0] = (cp >> 12) + 224;
-    c[1] = ((cp >> 6) & 63) + 128;
-    c[2] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 12) + 224);
+    c[1] = uint8_t(((cp >> 6) & 63) + 128);
+    c[2] = uint8_t((cp & 63) + 128);
     return 3;
   } else if (cp <= 0x10FFFF) { // if you know you have a valid code point, this
                                // is not needed
-    c[0] = (cp >> 18) + 240;
-    c[1] = ((cp >> 12) & 63) + 128;
-    c[2] = ((cp >> 6) & 63) + 128;
-    c[3] = (cp & 63) + 128;
+    c[0] = uint8_t((cp >> 18) + 240);
+    c[1] = uint8_t(((cp >> 12) & 63) + 128);
+    c[2] = uint8_t(((cp >> 6) & 63) + 128);
+    c[3] = uint8_t((cp & 63) + 128);
     return 4;
   }
   // will return 0 when the code point was too large.
@@ -324,15 +324,31 @@ struct value128 {
   uint64_t high;
 };
 
+#if defined(_MSC_VER) && !defined(_M_X64) // _umul128 for x86, arm, arm64
+#if defined(_M_ARM)
+static inline uint64_t __emulu(uint32_t x, uint32_t y) {
+  return x * (uint64_t)y;
+}
+#endif
+static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+  uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
+  uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
+  uint64_t adbc = ad + __emulu((uint32_t)ab, (uint32_t)(cd >> 32));
+  uint64_t adbc_carry = !!(adbc < ad);
+  uint64_t lo = bd + (adbc << 32);
+  *hi = __emulu((uint32_t)(ab >> 32), (uint32_t)(cd >> 32)) + (adbc >> 32) + (adbc_carry << 32) + !!(lo < bd);
+  return lo;
+}
+#endif
+
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
 #ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
   answer.low = _umul128(value1, value2, &answer.high);
 #else
   __uint128_t r = ((__uint128_t)value1) * value2;
-  answer.low = r;
-  answer.high = r >> 64;
+  answer.low = uint64_t(r);
+  answer.high = uint64_t(r >> 64);
 #endif
   return answer;
 }

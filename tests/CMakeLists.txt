@@ -66,7 +66,7 @@ if (NOT MSVC) # Can't run .sh on windows
   #
   add_test(
     NAME testjson2json
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
     WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
   )
   set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
@@ -79,12 +79,13 @@ if (NOT MSVC) # Can't run .sh on windows
     add_executable(allparserscheckfile allparserscheckfile.cpp)
     target_link_libraries(allparserscheckfile competition-all)
 
-    add_test(issue150 ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
+    add_test(issue150 bash ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation)
   endif()
 endif()
 
+# This should really test whether bash is available.
 if (NOT MSVC)
   #
   # json2json tool test: check that json2json can parse twitter.json
@@ -139,7 +140,6 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
   # Compile tests that *should fail*
   add_cpp_test(readme_examples_will_fail_with_exceptions_off WILL_FAIL COMPILE_ONLY LABELS acceptance SOURCES readme_examples.cpp)
   target_compile_definitions(readme_examples_will_fail_with_exceptions_off PRIVATE SIMDJSON_EXCEPTIONS=0)
-
 endif()
 
 

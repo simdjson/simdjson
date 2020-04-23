@@ -17,6 +17,7 @@ namespace simdjson {
  */
 class implementation {
 public:
+
   /**
    * The name of this implementation.
    *
@@ -131,6 +132,7 @@ protected:
     _required_instruction_sets(required_instruction_sets)
   {
   }
+  virtual ~implementation()=default;
 
 private:
   /**

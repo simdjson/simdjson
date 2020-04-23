@@ -33,7 +33,7 @@ namespace internal {
  * complete
  * document, therefore the last json buffer location is the end of the batch
  * */
-inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
+inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
   // this function can be generally useful
   if (parser.n_structural_indexes == 0)
     return 0;
@@ -85,7 +85,7 @@ static inline bool is_ascii(char c) {
   return ((unsigned char)c) <= 127;
 }
 
-// if the string ends with  UTF-8 values, backtrack 
+// if the string ends with  UTF-8 values, backtrack
 // up to the first ASCII character. May return 0.
 static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
   while ((len > 0) and (not is_ascii(c[len - 1]))) {
@@ -100,14 +100,19 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson {
 namespace dom {
-
 really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *buf,
   size_t len,
   size_t batch_size,
   error_code _error
-) noexcept : parser{_parser}, _buf{buf}, _len{len}, _batch_size(batch_size), error{_error} {
+) noexcept
+  : parser{_parser},
+   _buf{buf},
+   _len{len},
+   _batch_size(batch_size),
+   error(_error)
+{
   if (!error) { error = json_parse(); }
 }
 
@@ -172,7 +177,7 @@ inline error_code document_stream::json_parse() noexcept {
       if (stage1_is_ok != simdjson::SUCCESS) {
         return stage1_is_ok;
       }
-      size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+      uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
       if (last_index == 0) {
         if (parser.n_structural_indexes == 0) {
           return simdjson::EMPTY;
@@ -249,7 +254,7 @@ inline error_code document_stream::json_parse() noexcept {
     if (stage1_is_ok != simdjson::SUCCESS) {
       return stage1_is_ok;
     }
-    size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+    uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
         return EMPTY;

@@ -25,6 +25,13 @@ executors:
           CXX: g++
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
+  clang9:
+    docker:
+      - image: conanio/clang9
+        environment:
+          CXX: clang++-9
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
 
   clang6:
     docker:
@@ -50,10 +57,13 @@ commands:
       - run: make test
       - run: make checkperf
 
-  cmake_prep:
+  install_cmake:
     steps:
       - run: apt-get update -qq
       - run: apt-get install -y cmake
+
+  cmake_prep:
+    steps:
       - checkout
 
   cmake_build:
@@ -78,6 +88,7 @@ commands:
       - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
       - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
+
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
     steps:
@@ -91,60 +102,65 @@ jobs:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test_all, cmake_install_test ]
+    steps: [ install_cmake, cmake_test_all, cmake_install_test ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ init_clang6, cmake_test_all, cmake_install_test ]
-  
+    steps: [ init_clang6, install_cmake, cmake_test_all, cmake_install_test ]
+  # libcpp
+  libcpp-clang9:
+    description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
+    executor: clang9
+    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON }
+    steps: [ cmake_test_all, cmake_install_test ]
   # sanitize
   sanitize-gcc9:
     description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
     executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ cmake_test_all ]
+    steps: [ install_cmake, cmake_test_all ]
   sanitize-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ init_clang6, cmake_test_all ]
+    steps: [ init_clang6, install_cmake, cmake_test_all ]
   
   # dynamic
   dynamic-gcc7:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake dynamic build
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ cmake_test, cmake_install_test ]
+    steps: [ install_cmake, cmake_test, cmake_install_test ]
   dynamic-clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake dynamic build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ init_clang6, cmake_test, cmake_install_test ]
+    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
   
   # unthreaded
   unthreaded-gcc7:
     description: Build and run tests on GCC 7 and AVX 2 *without* threads
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ cmake_test, cmake_install_test ]
+    steps: [ install_cmake, cmake_test, cmake_install_test ]
   unthreaded-clang6:
     description: Build and run tests on Clang 6 and AVX 2 *without* threads
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ init_clang6, cmake_test, cmake_install_test ]
+    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
 
   # noexcept
   noexcept-gcc7:
     description: Build and run tests on GCC 7 and AVX 2 with exceptions off
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ cmake_test, cmake_install_test ]
+    steps: [ install_cmake, cmake_test, cmake_install_test ]
   noexcept-clang6:
     description: Build and run tests on GCC 7 and AVX 2 with exceptions off
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ init_clang6, cmake_test, cmake_install_test ]
+    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
 
   #
   # Misc.
@@ -174,7 +190,10 @@ workflows:
       # full multi-implementation tests
       - gcc7
       - clang6
-
+      
+      # libc++
+      - libcpp-clang9
+      
       # full single-implementation tests
       - sanitize-gcc9
       - sanitize-clang6

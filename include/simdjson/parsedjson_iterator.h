@@ -22,6 +22,8 @@ public:
   inline Iterator(const Iterator &o) noexcept;
   inline ~Iterator() noexcept;
 
+  inline Iterator& operator=(const Iterator&) = delete;
+
   inline bool is_ok() const;
 
   // useful for debugging purposes
@@ -187,7 +189,7 @@ public:
   // is referenced is undefined, and evaluation fails". Here we just return
   // the first corresponding value.
   inline bool move_to(const std::string &pointer) {
-      return move_to(pointer.c_str(), pointer.length());
+      return move_to(pointer.c_str(), uint32_t(pointer.length()));
   }
 
   private:
@@ -253,13 +255,13 @@ public:
 
   private:
   const document &doc;
-  size_t max_depth;
-  size_t depth;
-  size_t location; // our current location on a tape
-  size_t tape_length;
-  uint8_t current_type;
-  uint64_t current_val;
-  scopeindex_t *depth_index;
+  size_t max_depth{};
+  size_t depth{};
+  size_t location{}; // our current location on a tape
+  size_t tape_length{};
+  uint8_t current_type{};
+  uint64_t current_val{};
+  scopeindex_t *depth_index{};
 };
 
 } // namespace simdjson
