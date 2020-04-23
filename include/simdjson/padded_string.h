@@ -106,7 +106,7 @@ private:
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
-  size_t viable_size;
+  size_t viable_size{0};
   char *data_ptr{nullptr};
 
 }; // padded_string
