@@ -188,7 +188,3 @@ This code is made available under the Apache License 2.0.
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
 For compilers that do not support C++17, we bundle the string-view library which is published under the Boost license (http://www.boost.org/LICENSE_1_0.txt). Like the Apache license, the Boost license is a permissive license allowing commercial redistribution.
-<<<<<<< HEAD
-=======
-
->>>>>>> 832bbe734dfc9719d9428ad38368602169594788

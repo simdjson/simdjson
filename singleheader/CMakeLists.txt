@@ -24,3 +24,18 @@ if (NOT MSVC)
   target_link_libraries(amalgamate_demo simdjson-include-source)
   add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 endif()
+
+
+#
+# We also want to be able to build amalgamate_demo.cpp from the single header
+# files alone.
+#
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.h COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.cpp COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/amalgamate_demo.cpp COPYONLY)
+set(SINGLEHEADER_FILE ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.h )
+add_library(singleheaderlib ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.cpp ${SINGLEHEADER_FILE})
+add_executable(amalgamate_demo_from_repo ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/amalgamate_demo.cpp ${SINGLEHEADER_FILE})
+add_dependencies(amalgamate_demo_from_repo singleheaderlib)
+add_test(amalgamate_demo_from_repo amalgamate_demo_from_repo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+

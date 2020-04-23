@@ -1,4 +1,4 @@
-/* auto-generated on Mon Apr 20 11:05:12 PDT 2020. Do not edit! */
+/* auto-generated on Thu Apr 23 09:19:14 PDT 2020. Do not edit! */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -345,6 +345,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
     SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wconversion) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \
@@ -361,11 +362,49 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #endif // MSC_VER
 
-//
-// Backfill std::string_view using nonstd::string_view on C++11
-//
-#if (!SIMDJSON_CPLUSPLUS17)
 
+
+// C++17 requires string_view.
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_HAS_STRING_VIEW
+#endif
+
+// This macro (__cpp_lib_string_view) has to be defined
+// for C++17 and better, but if it is otherwise defined,
+// we are going to assume that string_view is available
+// even if we do not have C++17 support.
+#ifdef __cpp_lib_string_view
+#define SIMDJSON_HAS_STRING_VIEW
+#endif
+
+// Some systems have string_view even if we do not have C++17 support,
+// and even if __cpp_lib_string_view is undefined, it is the case
+// with Apple clang version 11.
+// We must handle it. *This is important.*
+#ifndef SIMDJSON_HAS_STRING_VIEW
+#if defined __has_include
+// do not combine the next #if with the previous one (unsafe)
+#if __has_include (<string_view>)
+// now it is safe to trigger the include
+#include <string_view> // though the file is there, it does not follow that we got the implementation
+#if defined(_LIBCPP_STRING_VIEW)
+// Ah! So we under libc++ which under its Library Fundamentals Technical Specification, which preceeded C++17,
+// included string_view.
+// This means that we have string_view *even though* we may not have C++17.
+#define SIMDJSON_HAS_STRING_VIEW
+#endif // _LIBCPP_STRING_VIEW
+#endif // __has_include (<string_view>)
+#endif // defined __has_include
+#endif // def SIMDJSON_HAS_STRING_VIEW
+// end of complicated but important routine to try to detect string_view.
+
+//
+// Backfill std::string_view using nonstd::string_view on systems where
+// we expect that string_view is missing. Important: if we get this wrong,
+// we will end up with two string_view definitions and potential trouble.
+// That is why we work so hard above to avoid it.
+//
+#ifndef SIMDJSON_HAS_STRING_VIEW
 SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 /* begin file simdjson/nonstd/string_view.hpp */
 // Copyright 2017-2019 by Martin Moene
@@ -1903,7 +1942,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 namespace std {
   using string_view = nonstd::string_view;
 }
-#endif // if (SIMDJSON_CPLUSPLUS < 201703L)
+#endif // SIMDJSON_HAS_STRING_VIEW
+#undef SIMDJSON_HAS_STRING_VIEW // We are not going to need this macro anymore.
 
 #endif // SIMDJSON_COMMON_DEFS_H
 /* end file  */
@@ -2421,8 +2461,9 @@ public:
      * Get the next value.
      *
      * Part of the std::iterator interface.
+     *
      */
-    inline void operator++() noexcept;
+    inline iterator& operator++() noexcept;
     /**
      * Check if these values come from the same place in the JSON.
      *
@@ -2502,8 +2543,9 @@ public:
      * Get the next key/value pair.
      *
      * Part of the std::iterator interface.
+     *
      */
-    inline void operator++() noexcept;
+    inline iterator& operator++() noexcept;
     /**
      * Check if these key value pairs come from the same place in the JSON.
      *
@@ -2670,13 +2712,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape;
+  std::unique_ptr<uint64_t[]> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf;
+  std::unique_ptr<uint8_t[]> string_buf{};
 
 private:
   inline error_code allocate(size_t len) noexcept;
@@ -2957,8 +2999,7 @@ public:
   *    to allocate an initial capacity, call allocate() after constructing the parser.
   *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
   */
-  really_inline parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
-
+  really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.
    *
@@ -3108,7 +3149,7 @@ public:
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
    *         - other json errors if parsing fails.
    */
-  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept; 
+  inline document_stream load_many(const std::string &path, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -3250,21 +3291,21 @@ public:
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes;
+  std::unique_ptr<uint32_t[]> structural_indexes{};
 
   /** @private Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope;
+  std::unique_ptr<scope_descriptor[]> containing_scope{};
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address;
+  std::unique_ptr<void*[]> ret_address{};
 #else
   /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address;
+  std::unique_ptr<char[]> ret_address{};
 #endif
 
   /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc;
+  uint8_t *current_string_buf_loc{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -3272,7 +3313,7 @@ public:
   error_code error{UNINITIALIZED};
 
   /** @private Use `parser.parse(...).value()` instead */
-  document doc;
+  document doc{};
 
   /** @private returns true if the document parsed was valid */
   [[deprecated("Use the result of parser.parse() instead")]]
@@ -3646,6 +3687,7 @@ namespace simdjson {
  */
 class implementation {
 public:
+
   /**
    * The name of this implementation.
    *
@@ -3760,6 +3802,7 @@ protected:
     _required_instruction_sets(required_instruction_sets)
   {
   }
+  virtual ~implementation()=default;
 
 private:
   /**
@@ -3841,7 +3884,7 @@ public:
   operator T*() { return ptr.load(); }
   T& operator*() { return *ptr; }
   T* operator->() { return ptr.load(); }
-  T* operator=(T *_ptr) { return ptr = _ptr; }
+  atomic_ptr& operator=(T *_ptr) { ptr = _ptr; return *this; }
 
 private:
   std::atomic<T*> ptr;
@@ -4002,8 +4045,8 @@ private:
   error_code error{SUCCESS_AND_HAS_MORE};
 #ifdef SIMDJSON_THREADS_ENABLED
   error_code stage1_is_ok_thread{SUCCESS};
-  std::thread stage_1_thread;
-  dom::parser parser_thread;
+  std::thread stage_1_thread{};
+  dom::parser parser_thread{};
 #endif
   friend class dom::parser;
 }; // class document_stream
@@ -4240,7 +4283,7 @@ inline std::ostream& operator<<(std::ostream& out, const escape_json_string &une
       if ((unsigned char)unescaped.str[i] <= 0x1F) {
         // TODO can this be done once at the beginning, or will it mess up << char?
         std::ios::fmtflags f(out.flags());
-        out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(unescaped.str[i]);
+        out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << int(unescaped.str[i]);
         out.flags(f);
       } else {
         out << unescaped.str[i];
@@ -4263,6 +4306,8 @@ public:
   inline Iterator(const dom::parser &parser) noexcept(false);
   inline Iterator(const Iterator &o) noexcept;
   inline ~Iterator() noexcept;
+
+  inline Iterator& operator=(const Iterator&) = delete;
 
   inline bool is_ok() const;
 
@@ -4429,7 +4474,7 @@ public:
   // is referenced is undefined, and evaluation fails". Here we just return
   // the first corresponding value.
   inline bool move_to(const std::string &pointer) {
-      return move_to(pointer.c_str(), pointer.length());
+      return move_to(pointer.c_str(), uint32_t(pointer.length()));
   }
 
   private:
@@ -4495,13 +4540,13 @@ public:
 
   private:
   const document &doc;
-  size_t max_depth;
-  size_t depth;
-  size_t location; // our current location on a tape
-  size_t tape_length;
-  uint8_t current_type;
-  uint64_t current_val;
-  scopeindex_t *depth_index;
+  size_t max_depth{};
+  size_t depth{};
+  size_t location{}; // our current location on a tape
+  size_t tape_length{};
+  uint8_t current_type{};
+  uint64_t current_val{};
+  scopeindex_t *depth_index{};
 };
 
 } // namespace simdjson
@@ -4721,7 +4766,7 @@ inline error_code document::allocate(size_t capacity) noexcept {
 
   // a pathological input like "[[[[..." would generate len tape elements, so
   // need a capacity of at least len + 1, but it is also possible to do
-  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6" 
+  // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where len + 1 tape elements are
   // generated, see issue https://github.com/lemire/simdjson/issues/345
   size_t tape_capacity = ROUNDUP_N(capacity + 2, 64);
@@ -4737,12 +4782,12 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
+  uint8_t type = uint8_t(tape_val >> 56);
   os << tape_idx << " : " << type;
   tape_idx++;
   size_t how_many = 0;
   if (type == 'r') {
-    how_many = tape_val & internal::JSON_VALUE_MASK;
+    how_many = size_t(tape_val & internal::JSON_VALUE_MASK);
   } else {
     // Error: no starting root node?
     return false;
@@ -4753,7 +4798,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     os << tape_idx << " : ";
     tape_val = tape[tape_idx];
     payload = tape_val & internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
+    type = uint8_t(tape_val >> 56);
     switch (type) {
     case '"': // we have a string
       os << "string \"";
@@ -4820,7 +4865,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   }
   tape_val = tape[tape_idx];
   payload = tape_val & internal::JSON_VALUE_MASK;
-  type = (tape_val >> 56);
+  type = uint8_t(tape_val >> 56);
   os << tape_idx << " : " << type << "\t// pointing to " << payload
      << " (start root)\n";
   return true;
@@ -4830,7 +4875,9 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // parser inline implementation
 //
 really_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity}, loaded_bytes(nullptr, &aligned_free_char) {}
+  : _max_capacity{max_capacity},
+    loaded_bytes(nullptr, &aligned_free_char)
+    {}
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
@@ -4979,7 +5026,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     //
     // Initialize stage 1 output
     //
-    uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
     structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
     if (!structural_indexes) {
       return MEMALLOC;
@@ -5073,7 +5120,7 @@ inline simdjson_result<element> array::at(const std::string_view &json_pointer) 
   size_t array_index = 0;
   size_t i;
   for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
-    uint8_t digit = uint8_t(json_pointer[i]) - '0';
+    uint8_t digit = uint8_t(json_pointer[i] - '0');
     // Check for non-digit in array index. If it's there, we're trying to get a field in an object
     if (digit > 9) { return INCORRECT_TYPE; }
     array_index = array_index*10 + digit;
@@ -5112,8 +5159,9 @@ inline element array::iterator::operator*() const noexcept {
 inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-inline void array::iterator::operator++() noexcept {
+inline array::iterator& array::iterator::operator++() noexcept {
   json_index = after_element();
+  return *this;
 }
 
 //
@@ -5211,12 +5259,13 @@ inline const key_value_pair object::iterator::operator*() const noexcept {
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
   return json_index != other.json_index;
 }
-inline void object::iterator::operator++() noexcept {
+inline object::iterator& object::iterator::operator++() noexcept {
   json_index++;
   json_index = after_element();
+  return *this;
 }
 inline std::string_view object::iterator::key() const noexcept {
-  size_t string_buf_index = tape_value();
+  size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return std::string_view(
@@ -5225,7 +5274,7 @@ inline std::string_view object::iterator::key() const noexcept {
   );
 }
 inline const char* object::iterator::key_c_str() const noexcept {
-  return reinterpret_cast<const char *>(&doc->string_buf[tape_value() + sizeof(uint32_t)]);
+  return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
 }
 inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
@@ -5265,7 +5314,7 @@ template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
   switch (tape_ref_type()) {
     case internal::tape_type::STRING: {
-      size_t string_buf_index = tape_value();
+      size_t string_buf_index = size_t(tape_value());
       return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
     }
     default:
@@ -5289,7 +5338,7 @@ inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
-      return static_cast<uint64_t>(result);
+      return uint64_t(result);
     }
     return INCORRECT_TYPE;
   }
@@ -5323,9 +5372,9 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // information. (This could also be solved with profile-guided optimization.)
   if(unlikely(!is_double())) { // branch rarely taken
     if(is_uint64()) {
-      return next_tape_value<uint64_t>();
+      return double(next_tape_value<uint64_t>());
     } else if(is_int64()) {
-      return next_tape_value<int64_t>();
+      return double(next_tape_value<int64_t>());
     }
     return INCORRECT_TYPE;
   }
@@ -5604,27 +5653,27 @@ really_inline tape_ref::tape_ref(const document *_doc, size_t _json_index) noexc
 // most significant 8 bits.
 
 really_inline bool tape_ref::is_double() const noexcept {
-  constexpr uint64_t tape_double = static_cast<uint64_t>(tape_type::DOUBLE)<<56;
+  constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE)<<56;
   return doc->tape[json_index] == tape_double;
 }
 really_inline bool tape_ref::is_int64() const noexcept {
-  constexpr uint64_t tape_int64 = static_cast<uint64_t>(tape_type::INT64)<<56;
+  constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64)<<56;
   return doc->tape[json_index] == tape_int64;
 }
 really_inline bool tape_ref::is_uint64() const noexcept {
-  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(tape_type::UINT64)<<56;
+  constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
   return doc->tape[json_index] == tape_uint64;
 }
 really_inline bool tape_ref::is_false() const noexcept {
-  constexpr uint64_t tape_false = static_cast<uint64_t>(tape_type::FALSE_VALUE)<<56;
+  constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
   return doc->tape[json_index] == tape_false;
 }
 really_inline bool tape_ref::is_true() const noexcept {
-  constexpr uint64_t tape_true = static_cast<uint64_t>(tape_type::TRUE_VALUE)<<56;
+  constexpr uint64_t tape_true = uint64_t(tape_type::TRUE_VALUE)<<56;
   return doc->tape[json_index] == tape_true;
 }
 really_inline bool tape_ref::is_null_on_tape() const noexcept {
-  constexpr uint64_t tape_null = static_cast<uint64_t>(tape_type::NULL_VALUE)<<56;
+  constexpr uint64_t tape_null = uint64_t(tape_type::NULL_VALUE)<<56;
   return doc->tape[json_index] == tape_null;
 }
 
@@ -5648,10 +5697,10 @@ really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
 really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
-  return static_cast<uint32_t>(doc->tape[json_index]);
+  return uint32_t(doc->tape[json_index]);
 }
 really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
-  return static_cast<uint32_t>((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
+  return uint32_t((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
 }
 
 template<typename T>
@@ -5666,7 +5715,7 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {
-  size_t string_buf_index = tape_value();
+  size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return std::string_view(
@@ -5715,7 +5764,7 @@ namespace internal {
  * complete
  * document, therefore the last json buffer location is the end of the batch
  * */
-inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
+inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
   // this function can be generally useful
   if (parser.n_structural_indexes == 0)
     return 0;
@@ -5767,7 +5816,7 @@ static inline bool is_ascii(char c) {
   return ((unsigned char)c) <= 127;
 }
 
-// if the string ends with  UTF-8 values, backtrack 
+// if the string ends with  UTF-8 values, backtrack
 // up to the first ASCII character. May return 0.
 static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
   while ((len > 0) and (not is_ascii(c[len - 1]))) {
@@ -5782,14 +5831,19 @@ static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
 
 namespace simdjson {
 namespace dom {
-
 really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *buf,
   size_t len,
   size_t batch_size,
   error_code _error
-) noexcept : parser{_parser}, _buf{buf}, _len{len}, _batch_size(batch_size), error{_error} {
+) noexcept
+  : parser{_parser},
+   _buf{buf},
+   _len{len},
+   _batch_size(batch_size),
+   error(_error)
+{
   if (!error) { error = json_parse(); }
 }
 
@@ -5854,7 +5908,7 @@ inline error_code document_stream::json_parse() noexcept {
       if (stage1_is_ok != simdjson::SUCCESS) {
         return stage1_is_ok;
       }
-      size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+      uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
       if (last_index == 0) {
         if (parser.n_structural_indexes == 0) {
           return simdjson::EMPTY;
@@ -5931,7 +5985,7 @@ inline error_code document_stream::json_parse() noexcept {
     if (stage1_is_ok != simdjson::SUCCESS) {
       return stage1_is_ok;
     }
-    size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+    uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
         return EMPTY;
@@ -6250,6 +6304,10 @@ inline simdjson_result<padded_string> padded_string::load(const std::string &fil
 
 namespace simdjson {
 
+// VS2017 reports deprecated warnings when you define a deprecated class's methods.
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
+
 // Because of template weirdness, the actual class definition is inline in the document class
 
 WARN_UNUSED bool dom::parser::Iterator::is_ok() const {
@@ -6299,7 +6357,7 @@ bool dom::parser::Iterator::move_forward() {
 
   location += 1;
   current_val = doc.tape[location];
-  current_type = (current_val >> 56);
+  current_type = uint8_t(current_val >> 56);
   return true;
 }
 
@@ -6307,7 +6365,7 @@ void dom::parser::Iterator::move_to_value() {
   // assume that we are on a key, so move by 1.
   location += 1;
   current_val = doc.tape[location];
-  current_type = (current_val >> 56);
+  current_type = uint8_t(current_val >> 56);
 }
 
 bool dom::parser::Iterator::move_to_key(const char *key) {
@@ -6384,14 +6442,14 @@ bool dom::parser::Iterator::prev() {
     oldnpos = npos;
     if ((current_type == '[') || (current_type == '{')) {
       // we need to jump
-      npos = static_cast<uint32_t>(current_val);
+      npos = uint32_t(current_val);
     } else {
       npos = npos + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
     }
   } while (npos < target_location);
   location = oldnpos;
   current_val = doc.tape[location];
-  current_type = current_val >> 56;
+  current_type = uint8_t(current_val >> 56);
   return true;
 }
 
@@ -6404,7 +6462,7 @@ bool dom::parser::Iterator::up() {
   depth--;
   location -= 1;
   current_val = doc.tape[location];
-  current_type = (current_val >> 56);
+  current_type = uint8_t(current_val >> 56);
   return true;
 }
 
@@ -6413,7 +6471,7 @@ bool dom::parser::Iterator::down() {
     return false;
   }
   if ((current_type == '[') || (current_type == '{')) {
-    size_t npos = static_cast<uint32_t>(current_val);
+    size_t npos = uint32_t(current_val);
     if (npos == location + 2) {
       return false; // we have an empty scope
     }
@@ -6423,7 +6481,7 @@ bool dom::parser::Iterator::down() {
     depth_index[depth].start_of_scope = location;
     depth_index[depth].scope_type = current_type;
     current_val = doc.tape[location];
-    current_type = (current_val >> 56);
+    current_type = uint8_t(current_val >> 56);
     return true;
   }
   return false;
@@ -6432,19 +6490,19 @@ bool dom::parser::Iterator::down() {
 void dom::parser::Iterator::to_start_scope() {
   location = depth_index[depth].start_of_scope;
   current_val = doc.tape[location];
-  current_type = (current_val >> 56);
+  current_type = uint8_t(current_val >> 56);
 }
 
 bool dom::parser::Iterator::next() {
   size_t npos;
   if ((current_type == '[') || (current_type == '{')) {
     // we need to jump
-    npos = static_cast<uint32_t>(current_val);
+    npos = uint32_t(current_val);
   } else {
     npos = location + (is_number() ? 2 : 1);
   }
   uint64_t next_val = doc.tape[npos];
-  uint8_t next_type = (next_val >> 56);
+  uint8_t next_type = uint8_t(next_val >> 56);
   if ((next_type == ']') || (next_type == '}')) {
     return false; // we reached the end of the scope
   }
@@ -6453,9 +6511,9 @@ bool dom::parser::Iterator::next() {
   current_type = next_type;
   return true;
 }
-
 dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
-    : doc(pj.doc), depth(0), location(0), tape_length(0) {
+    : doc(pj.doc)
+{
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
 #else
@@ -6466,26 +6524,31 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
   depth_index = new scopeindex_t[max_depth + 1];
   depth_index[0].start_of_scope = location;
   current_val = doc.tape[location++];
-  current_type = (current_val >> 56);
+  current_type = uint8_t(current_val >> 56);
   depth_index[0].scope_type = current_type;
-  tape_length = current_val & internal::JSON_VALUE_MASK;
+  tape_length = size_t(current_val & internal::JSON_VALUE_MASK);
   if (location < tape_length) {
     // If we make it here, then depth_capacity must >=2, but the compiler
     // may not know this.
     current_val = doc.tape[location];
-    current_type = (current_val >> 56);
+    current_type = uint8_t(current_val >> 56);
     depth++;
     assert(depth < max_depth);
     depth_index[depth].start_of_scope = location;
     depth_index[depth].scope_type = current_type;
   }
 }
-
 dom::parser::Iterator::Iterator(
     const dom::parser::Iterator &o) noexcept
-    : doc(o.doc), max_depth(o.depth), depth(o.depth), location(o.location),
-      tape_length(o.tape_length), current_type(o.current_type),
-      current_val(o.current_val) {
+    : doc(o.doc),
+    max_depth(o.depth),
+    depth(o.depth),
+    location(o.location),
+    tape_length(o.tape_length),
+    current_type(o.current_type),
+    current_val(o.current_val),
+    depth_index()
+{
   depth_index = new scopeindex_t[max_depth+1];
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
 }
@@ -6532,7 +6595,7 @@ bool dom::parser::Iterator::print(std::ostream &os, bool escape_strings) const {
   case '}': // we end an object
   case '[': // we start an array
   case ']': // we end an array
-    os << static_cast<char>(current_type);
+    os << char(current_type);
     break;
   default:
     return false;
@@ -6559,7 +6622,7 @@ bool dom::parser::Iterator::move_to(const char *pointer,
             new_pointer[new_length] = '\\';
             new_length++;
           }
-          new_pointer[new_length] = fragment;
+          new_pointer[new_length] = char(fragment);
           i += 3;
 #if __cpp_exceptions
         } catch (std::invalid_argument &) {
@@ -6672,7 +6735,7 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 
   bool found = false;
   if (is_object()) {
-    if (move_to_key(key_or_index.c_str(), key_or_index.length())) {
+    if (move_to_key(key_or_index.c_str(), uint32_t(key_or_index.length()))) {
       found = relative_move_to(pointer + offset, length - offset);
     }
   } else if (is_array()) {
@@ -6684,14 +6747,14 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
         size_t npos;
         if ((current_type == '[') || (current_type == '{')) {
           // we need to jump
-          npos = static_cast<uint32_t>(current_val);
+          npos = uint32_t(current_val);
         } else {
           npos =
               location + ((current_type == 'd' || current_type == 'l') ? 2 : 1);
         }
         location = npos;
         current_val = doc.tape[npos];
-        current_type = (current_val >> 56);
+        current_type = uint8_t(current_val >> 56);
         return true; // how could it fail ?
       }
     } else { // regular numeric index
@@ -6713,6 +6776,8 @@ bool dom::parser::Iterator::relative_move_to(const char *pointer,
 
   return found;
 }
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 } // namespace simdjson
 
