@@ -12,13 +12,9 @@ task:
     - pkg install cmake
     - pkg install git
   build_script:
-    - ls /tmp/cirrus-ci-build/
     - mkdir build
     - cd build
     - cmake ..
-    - ls /tmp/cirrus-ci-build/
-    - ls /tmp/cirrus-ci-build/build/singleheader
-    - bash /tmp/cirrus-ci-build/build/singleheader/amalgamate.sh
     - make VERBOSE=1
   test_script:
     - ctest  --extra-verbose
