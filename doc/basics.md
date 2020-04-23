@@ -124,6 +124,27 @@ for (dom::object car : parser.parse(cars_json)) {
 }
 ```
 
+Here is a different example illustrating the same ideas:
+
+```C++
+auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+dom::parser parser;
+
+// Parse and iterate through an array of objects
+for (dom::object obj : parser.parse(abstract_json)) {
+    for(const auto& key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj = key_value.value;
+      cout << "a: " << double(innerobj["a"]) << ", ";
+      cout << "b: " << double(innerobj["b"]) << ", ";
+      cout << "c: " << int64_t(innerobj["c"]) << endl;
+    }
+}
+```
+
 C++17 Support
 -------------
 
@@ -275,6 +296,49 @@ cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
 for (auto field : car) {
     cout << "- " << field.key << ": " << field.value << endl;
 }
+```
+
+Here is another example:
+
+```C++
+auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+dom::parser parser;
+dom::array rootarray;
+simdjson::error_code error;
+parser.parse(abstract_json).get<dom::array>().tie(rootarray, error);
+if (error) { cerr << error << endl; exit(1); }
+// Iterate through an array of objects
+for (dom::element elem : rootarray) {
+    dom::object obj;
+    elem.get<dom::object>().tie(obj, error);
+    if (error) { cerr << error << endl; exit(1); }
+    for(auto & key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj;
+      key_value.value.get<dom::object>().tie(innerobj, error);
+      if (error) { cerr << error << endl; exit(1); }
+
+      double va;
+      innerobj["a"].get<double>().tie(va, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "a: " << va << ", ";
+
+      double vb;
+      innerobj["b"].get<double>().tie(vb, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "b: " << vb << ", ";
+
+      int64_t vc;
+      innerobj["c"].get<int64_t>().tie(vc, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "c: " << vc << endl;
+
+    }
+}
+
 ```
 
 ### Exceptions
