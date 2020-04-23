@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.9) # CMP0069 NEW
-include(GNUInstallDirs)
 
 message(STATUS "cmake version ${CMAKE_VERSION}")
 if (NOT CMAKE_BUILD_TYPE)
@@ -40,6 +39,7 @@ set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+include(GNUInstallDirs)
 
 # LTO seems to create all sorts of fun problems. Let us
 # disable temporarily.
@@ -55,7 +55,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 add_library(simdjson-flags INTERFACE)
 if(MSVC)
   target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
-  target_compile_options(simdjson-flags INTERFACE /WX /W3)
+  target_compile_options(simdjson-flags INTERFACE /WX /W3 /sdl)
 else()
   target_compile_options(simdjson-flags INTERFACE -fPIC)
   if(NOT SIMDJSON_GOOGLE_BENCHMARKS) # Google Benchmark can't be compiled without warnings with -Weffc++
