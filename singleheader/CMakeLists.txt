@@ -3,12 +3,28 @@
 #
 # We should check whether bash is available here and avoid failures on systems where
 # bash is unavailable.
-if (NOT MSVC)
+set(SINGLEHEADER_FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h
+  ${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/README.md
+)
+set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
+
+if (MSVC)
+  # MSVC doesn't have bash, so we use existing amalgamated files instead of generating them ...
+  add_custom_command(
+    OUTPUT ${SINGLEHEADER_FILES}
+    COMMAND ${CMAKE_COMMAND} -E copy
+      simdjson.cpp simdjson.h amalgamate_demo.cpp README.md
+      ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS simdjson.cpp simdjson.h amalgamate_demo.cpp README.md
+  )
+else()
   ##
   # Important! The script amalgamate.sh is not generally executable. It
   # assumes that bash is at /bin/bash which may not be true.
   ###
-  set(SINGLEHEADER_FILES simdjson.h simdjson.cpp amalgamate_demo.cpp README.md)
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
@@ -16,26 +32,29 @@ if (NOT MSVC)
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
       bash ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
-    DEPENDS amalgamate.sh simdjson-source 
+    DEPENDS amalgamate.sh simdjson-source
   )
-
-  add_custom_target(amalgamate DEPENDS ${SINGLEHEADER_FILES})
-  add_executable(amalgamate_demo amalgamate_demo.cpp)
-  target_link_libraries(amalgamate_demo simdjson-include-source)
-  add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 endif()
 
+add_custom_target(amalgamate DEPENDS ${SIINGLEHEADER_FILES})
 
 #
-# We also want to be able to build amalgamate_demo.cpp from the single header
-# files alone.
+# Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
 #
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.h COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.cpp COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/amalgamate_demo.cpp COPYONLY)
-set(SINGLEHEADER_FILE ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.h )
-add_library(singleheaderlib ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/simdjson.cpp ${SINGLEHEADER_FILE})
-add_executable(amalgamate_demo_from_repo ${CMAKE_CURRENT_BINARY_DIR}/single_header_from_repo/amalgamate_demo.cpp ${SINGLEHEADER_FILE})
-add_dependencies(amalgamate_demo_from_repo singleheaderlib)
-add_test(amalgamate_demo_from_repo amalgamate_demo_from_repo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+add_library(simdjson-singleheader-include-source INTERFACE)
+target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
+#
+# Include this to get "simdjson.cpp" included in your project as one of the sources.
+#
+add_library(simdjson-singleheader-source INTERFACE)
+target_sources(simdjson-singleheader-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
+target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singleheader-include-source)
+add_dependencies(simdjson-singleheader-source amalgamate)
+
+#
+# Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
+#
+add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
+target_link_libraries(amalgamate_demo simdjson-singleheader-include-source)
+add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
