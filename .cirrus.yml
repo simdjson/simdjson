@@ -12,12 +12,10 @@ task:
     - pkg install cmake
     - pkg install git
   build_script:
-    - ls /tmp/cirrus-ci-build/
     - mkdir build
     - cd build
     - cmake ..
-    - ls /tmp/cirrus-ci-build/
-    - ls /tmp/cirrus-ci-build/build/singleheader
-    - make VERBOSE=1
+    - make -j2
   test_script:
-    - ctest  --extra-verbose
+    - cd build
+    - ctest  -j2 --output-on-failure -E checkperf
