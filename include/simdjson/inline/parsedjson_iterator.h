@@ -247,8 +247,7 @@ dom::parser::Iterator::Iterator(
     location(o.location),
     tape_length(o.tape_length),
     current_type(o.current_type),
-    current_val(o.current_val),
-    depth_index()
+    current_val(o.current_val)
 {
   depth_index = new scopeindex_t[max_depth+1];
   memcpy(depth_index, o.depth_index, (depth + 1) * sizeof(depth_index[0]));
