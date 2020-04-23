@@ -15,8 +15,8 @@
 #include <vector>
 
 template <int TYPE = PERF_TYPE_HARDWARE> class LinuxEvents {
-  int fd{};
-  bool working{};
+  int fd;
+  bool working;
   perf_event_attr attribs{};
   size_t num_events{};
   std::vector<uint64_t> temp_result_vec{};

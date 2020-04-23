@@ -243,13 +243,13 @@ struct benchmarker {
   // JSON text from loading the file. Owns the memory.
   padded_string json{};
   // JSON filename
-  const char *filename{};
+  const char *filename;
   // Event collector that can be turned on to measure cycles, missed branches, etc.
   event_collector& collector;
 
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
-  json_stats* stats{};
+  json_stats* stats;
   // Speed and event summary for full parse (not including allocation)
   event_aggregate all_stages{};
   // Speed and event summary for stage 1
