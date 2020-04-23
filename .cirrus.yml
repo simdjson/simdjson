@@ -3,18 +3,19 @@ task:
   freebsd_instance:
     matrix:
       - image_family: freebsd-13-0-snap
-      - image_family: freebsd-12-1
-      - image_family: freebsd-11-3-snap
+
   env:
     ASSUME_ALWAYS_YES: YES
   setup_script:
     - pkg update -f
     - pkg install bash
     - pkg install cmake
+    - pkg install git
   build_script:
     - mkdir build
     - cd build
     - cmake ..
-    - make
+    - make -j2
   test_script:
-    - ctest
+    - cd build
+    - ctest  -j2 --output-on-failure -E checkperf
