@@ -33,7 +33,7 @@ namespace internal {
  * complete
  * document, therefore the last json buffer location is the end of the batch
  * */
-inline size_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
+inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const dom::parser &parser) {
   // this function can be generally useful
   if (parser.n_structural_indexes == 0)
     return 0;
@@ -172,7 +172,7 @@ inline error_code document_stream::json_parse() noexcept {
       if (stage1_is_ok != simdjson::SUCCESS) {
         return stage1_is_ok;
       }
-      size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+      uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
       if (last_index == 0) {
         if (parser.n_structural_indexes == 0) {
           return simdjson::EMPTY;
@@ -249,7 +249,7 @@ inline error_code document_stream::json_parse() noexcept {
     if (stage1_is_ok != simdjson::SUCCESS) {
       return stage1_is_ok;
     }
-    size_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
+    uint32_t last_index = internal::find_last_json_buf_idx(buf(), _batch_size, parser);
     if (last_index == 0) {
       if (parser.n_structural_indexes == 0) {
         return EMPTY;

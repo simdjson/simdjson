@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
       std::cerr << "failure?" << std::endl;
     }
   }
-  printf("%f %f %f %f ", cy1 * 1.0 / iterations, cl1 * 1.0 / iterations,
-         cy2 * 1.0 / iterations, cl2 * 1.0 / iterations);
+  printf("%f %f %f %f ", static_cast<double>(cy1) / static_cast<double>(iterations), static_cast<double>(cl1) / static_cast<double>(iterations),
+         static_cast<double>(cy2) / static_cast<double>(iterations), static_cast<double>(cl2) / static_cast<double>(iterations));
 #endif // __linux__
   printf("\n");
   return EXIT_SUCCESS;

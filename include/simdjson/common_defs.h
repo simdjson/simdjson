@@ -105,6 +105,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   // gcc doesn't seem to disable all warnings with all and extra, add warnings here as necessary
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS \
     SIMDJSON_DISABLE_GCC_WARNING(-Wall) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wconversion) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \

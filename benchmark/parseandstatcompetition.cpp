@@ -336,7 +336,7 @@ int main(int argc, char *argv[]) {
   assert(stat_equal(s1, s2));
   assert(stat_equal(s1, s3));
   int repeat = 50;
-  int volume = p.size();
+  size_t volume = p.size();
   if (just_data) {
     printf("name cycles_per_byte cycles_per_byte_err gb_per_s gb_per_s_err \n");
   }

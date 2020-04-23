@@ -229,12 +229,12 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
-  uint8_t type = (tape_val >> 56);
+  uint8_t type = uint8_t(tape_val >> 56);
   os << tape_idx << " : " << type;
   tape_idx++;
   size_t how_many = 0;
   if (type == 'r') {
-    how_many = tape_val & internal::JSON_VALUE_MASK;
+    how_many = size_t(tape_val & internal::JSON_VALUE_MASK);
   } else {
     // Error: no starting root node?
     return false;
@@ -245,7 +245,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     os << tape_idx << " : ";
     tape_val = tape[tape_idx];
     payload = tape_val & internal::JSON_VALUE_MASK;
-    type = (tape_val >> 56);
+    type = uint8_t(tape_val >> 56);
     switch (type) {
     case '"': // we have a string
       os << "string \"";
@@ -312,7 +312,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
   }
   tape_val = tape[tape_idx];
   payload = tape_val & internal::JSON_VALUE_MASK;
-  type = (tape_val >> 56);
+  type = uint8_t(tape_val >> 56);
   os << tape_idx << " : " << type << "\t// pointing to " << payload
      << " (start root)\n";
   return true;
@@ -471,7 +471,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     //
     // Initialize stage 1 output
     //
-    uint32_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
     structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
     if (!structural_indexes) {
       return MEMALLOC;
@@ -565,7 +565,7 @@ inline simdjson_result<element> array::at(const std::string_view &json_pointer) 
   size_t array_index = 0;
   size_t i;
   for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
-    uint8_t digit = uint8_t(json_pointer[i]) - '0';
+    uint8_t digit = uint8_t(json_pointer[i] - '0');
     // Check for non-digit in array index. If it's there, we're trying to get a field in an object
     if (digit > 9) { return INCORRECT_TYPE; }
     array_index = array_index*10 + digit;
@@ -708,7 +708,7 @@ inline void object::iterator::operator++() noexcept {
   json_index = after_element();
 }
 inline std::string_view object::iterator::key() const noexcept {
-  size_t string_buf_index = tape_value();
+  size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return std::string_view(
@@ -717,7 +717,7 @@ inline std::string_view object::iterator::key() const noexcept {
   );
 }
 inline const char* object::iterator::key_c_str() const noexcept {
-  return reinterpret_cast<const char *>(&doc->string_buf[tape_value() + sizeof(uint32_t)]);
+  return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
 }
 inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
@@ -757,7 +757,7 @@ template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
   switch (tape_ref_type()) {
     case internal::tape_type::STRING: {
-      size_t string_buf_index = tape_value();
+      size_t string_buf_index = size_t(tape_value());
       return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
     }
     default:
@@ -781,7 +781,7 @@ inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
-      return static_cast<uint64_t>(result);
+      return uint64_t(result);
     }
     return INCORRECT_TYPE;
   }
@@ -815,9 +815,9 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // information. (This could also be solved with profile-guided optimization.)
   if(unlikely(!is_double())) { // branch rarely taken
     if(is_uint64()) {
-      return next_tape_value<uint64_t>();
+      return double(next_tape_value<uint64_t>());
     } else if(is_int64()) {
-      return next_tape_value<int64_t>();
+      return double(next_tape_value<int64_t>());
     }
     return INCORRECT_TYPE;
   }
@@ -1096,27 +1096,27 @@ really_inline tape_ref::tape_ref(const document *_doc, size_t _json_index) noexc
 // most significant 8 bits.
 
 really_inline bool tape_ref::is_double() const noexcept {
-  constexpr uint64_t tape_double = static_cast<uint64_t>(tape_type::DOUBLE)<<56;
+  constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE)<<56;
   return doc->tape[json_index] == tape_double;
 }
 really_inline bool tape_ref::is_int64() const noexcept {
-  constexpr uint64_t tape_int64 = static_cast<uint64_t>(tape_type::INT64)<<56;
+  constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64)<<56;
   return doc->tape[json_index] == tape_int64;
 }
 really_inline bool tape_ref::is_uint64() const noexcept {
-  constexpr uint64_t tape_uint64 = static_cast<uint64_t>(tape_type::UINT64)<<56;
+  constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
   return doc->tape[json_index] == tape_uint64;
 }
 really_inline bool tape_ref::is_false() const noexcept {
-  constexpr uint64_t tape_false = static_cast<uint64_t>(tape_type::FALSE_VALUE)<<56;
+  constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
   return doc->tape[json_index] == tape_false;
 }
 really_inline bool tape_ref::is_true() const noexcept {
-  constexpr uint64_t tape_true = static_cast<uint64_t>(tape_type::TRUE_VALUE)<<56;
+  constexpr uint64_t tape_true = uint64_t(tape_type::TRUE_VALUE)<<56;
   return doc->tape[json_index] == tape_true;
 }
 really_inline bool tape_ref::is_null_on_tape() const noexcept {
-  constexpr uint64_t tape_null = static_cast<uint64_t>(tape_type::NULL_VALUE)<<56;
+  constexpr uint64_t tape_null = uint64_t(tape_type::NULL_VALUE)<<56;
   return doc->tape[json_index] == tape_null;
 }
 
@@ -1140,10 +1140,10 @@ really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
 really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
-  return static_cast<uint32_t>(doc->tape[json_index]);
+  return uint32_t(doc->tape[json_index]);
 }
 really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
-  return static_cast<uint32_t>((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
+  return uint32_t((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
 }
 
 template<typename T>
@@ -1158,7 +1158,7 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {
-  size_t string_buf_index = tape_value();
+  size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return std::string_view(
