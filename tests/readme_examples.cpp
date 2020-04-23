@@ -52,6 +52,8 @@ void basics_dom_1() {
   }
 }
 
+
+
 void basics_dom_2() {
   auto cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
@@ -62,6 +64,27 @@ void basics_dom_2() {
   dom::element cars = parser.parse(cars_json);
   cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
 }
+
+void basics_dom_3() {
+  auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+  dom::parser parser;
+
+  // Parse and iterate through an array of objects
+  for (dom::object obj : parser.parse(abstract_json)) {
+    for(const auto& key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj = key_value.value;
+      cout << "a: " << double(innerobj["a"]) << ", ";
+      cout << "b: " << double(innerobj["b"]) << ", ";
+      cout << "c: " << int64_t(innerobj["c"]) << endl;
+    }
+  }
+}
+
+
 
 namespace treewalk_1 {
   void print_json(dom::element element) {
@@ -210,5 +233,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
 int main() {
+  basics_dom_1();
+  basics_dom_2();
+  basics_dom_3();
   return 0;
 }
