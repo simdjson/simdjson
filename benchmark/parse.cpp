@@ -78,7 +78,7 @@ void exit_usage(string message) {
 }
 
 struct option_struct {
-  vector<char*> files;
+  vector<char*> files{};
   bool stage1_only = false;
 
   int32_t iterations = 200;

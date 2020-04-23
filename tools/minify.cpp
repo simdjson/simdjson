@@ -32,7 +32,7 @@ void exit_usage(std::string message) {
 
 
 struct option_struct {
-  char* filename;
+  char* filename{};
  
   option_struct(int argc, char **argv) {
     #ifndef _MSC_VER

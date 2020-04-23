@@ -84,9 +84,9 @@ struct event_count {
 
 struct event_aggregate {
   int iterations = 0;
-  event_count total;
-  event_count best;
-  event_count worst;
+  event_count total{};
+  event_count best{};
+  event_count worst{};
 
   event_aggregate() {}
 
@@ -111,8 +111,8 @@ struct event_aggregate {
 };
 
 struct event_collector {
-  event_count count;
-  time_point<steady_clock> start_clock;
+  event_count count{};
+  time_point<steady_clock> start_clock{};
 
 #if defined(__linux__)
   LinuxEvents<PERF_TYPE_HARDWARE> linux_events;
