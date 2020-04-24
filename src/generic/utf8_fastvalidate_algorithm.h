@@ -62,9 +62,9 @@ struct utf8_checker {
     this->has_error |= simd8<uint8_t>(
       (carries > initial_lengths) == (initial_lengths > simd8<int8_t>::zero()));
   }
-
+  
   really_inline void check_carried_continuations() {
-    constexpr int8_t last_1[32] = {
+    static constexpr int8_t last_1[32] = {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,

@@ -85,14 +85,14 @@ struct utf8_checker {
   // lets us use one constant table instead of 3, possibly saving registers on systems with fewer
   // registers.
   //
-  constexpr uint8_t LEAD_4      = 0x01; // [1111]____ 10______ 10______ 10______ (0_|11)__
-  constexpr uint8_t LEAD_3      = 0x02; // [1110]____ 10______ 10______ (0|11)__
-  constexpr uint8_t LEAD_2      = 0x04; // [110_]____ 10______ (0|11)__
-  constexpr uint8_t LEAD_1      = 0x08; // [0___]____ (0|11)__
-  constexpr uint8_t LEAD_2_PLUS = 0x10; // [11__]____ ...
-  constexpr uint8_t LEAD_1100   = 0x20; // [1100]____ ...
-  constexpr uint8_t LEAD_1110   = 0x40; // [1110]____ ...
-  constexpr uint8_t LEAD_1111   = 0x80; // [1111]____ ...
+  static constexpr uint8_t LEAD_4      = 0x01; // [1111]____ 10______ 10______ 10______ (0_|11)__
+  static constexpr uint8_t LEAD_3      = 0x02; // [1110]____ 10______ 10______ (0|11)__
+  static constexpr uint8_t LEAD_2      = 0x04; // [110_]____ 10______ (0|11)__
+  static constexpr uint8_t LEAD_1      = 0x08; // [0___]____ (0|11)__
+  static constexpr uint8_t LEAD_2_PLUS = 0x10; // [11__]____ ...
+  static constexpr uint8_t LEAD_1100   = 0x20; // [1100]____ ...
+  static constexpr uint8_t LEAD_1110   = 0x40; // [1110]____ ...
+  static constexpr uint8_t LEAD_1111   = 0x80; // [1111]____ ...
 
   // Prepare fast_path_error in case the next block is ASCII
   really_inline void set_fast_path_error() {
@@ -108,7 +108,7 @@ struct utf8_checker {
     // this->prev_incomplete = lead_flags & incomplete;
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
-    constexpr uint8_t last_len[32] = {
+    static constexpr uint8_t last_len[32] = {
       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -147,13 +147,13 @@ struct utf8_checker {
     // match different patterns. This is why there are 2 LEAD_4 and 2 LEAD_3s in lead_flags, among
     // other things.
     //
-    constexpr int TOO_SHORT_2 = LEAD_2_PLUS; // 11______ (0___|11__)____
-    constexpr int TOO_LONG_1  = LEAD_1;      // 0_______ 10______
-    constexpr int OVERLONG_2  = LEAD_1100;   // 1100000_ ________ (technically we match 10______ but we could match ________, they both yield errors either way)
-    constexpr int OVERLONG_3  = LEAD_3;      // 11100000 100_____ ________
-    constexpr int OVERLONG_4  = LEAD_4;      // 11110000 1000____ ________ ________
-    constexpr int TOO_LARGE   = LEAD_1111;   // 11110100 (1001|101_)____
-    constexpr int SURROGATE   = LEAD_1110;   // 11101101 [101_]____
+    static constexpr int TOO_SHORT_2 = LEAD_2_PLUS; // 11______ (0___|11__)____
+    static constexpr int TOO_LONG_1  = LEAD_1;      // 0_______ 10______
+    static constexpr int OVERLONG_2  = LEAD_1100;   // 1100000_ ________ (technically we match 10______ but we could match ________, they both yield errors either way)
+    static constexpr int OVERLONG_3  = LEAD_3;      // 11100000 100_____ ________
+    static constexpr int OVERLONG_4  = LEAD_4;      // 11110000 1000____ ________ ________
+    static constexpr int TOO_LARGE   = LEAD_1111;   // 11110100 (1001|101_)____
+    static constexpr int SURROGATE   = LEAD_1110;   // 11101101 [101_]____
 
     // Total: 4 instructions, 2 constants
     // - 2 table lookups (shuffles)

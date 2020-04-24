@@ -330,7 +330,7 @@ struct structural_parser {
  * for documentation.
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
-  constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
+  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
