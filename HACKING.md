@@ -4,6 +4,8 @@ Hacking simdjson
 Here is wisdom about how to build, test and run simdjson from within the repository. *Users* of
 simdjson should use the released simdjson.h and simdjson.cpp files.
 
+If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md) guide.
+
 Directory Structure and Source
 ------------------------------
 
@@ -81,23 +83,28 @@ point it gets included (but only once per header). singleheader/simdjson.cpp is 
 src/simdjson.cpp the same way, except files under generic/ may be included and copy/pasted multiple
 times.
 
-### Usage (CMake on 64-bit platforms like Linux or macOS)
+### Usage (CMake on 64-bit platforms like Linux, freeBSD or macOS)
 
-Requirements: We require a recent version of cmake. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type
+Requirements: In addition to git, we require a recent version of CMake as well as bash.
 
+1. On macOS, the easiest way to install cmake might be to use [brew](https://brew.sh) and then type
 ```
 brew install cmake
 ```
-
-There is an [equivalent brew on Linux which works the same way as well](https://linuxbrew.sh).
-
-You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. For example, you can install a recent compiler with brew:
-
+2. Under Linux, you might be able to install CMake as follows:
 ```
-brew install gcc@8
+apt-get update -qq
+apt-get install -y cmake
+```
+3. On freeBSD, you might be able to install bash and CMake as follows:
+```
+pkg update -f
+pkg install bash
+pkg install cmake
 ```
 
-Optional: You need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as `export CC=gcc-7` and `export CXX=g++-7`.
+You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. 
+
 
 Building: While in the project repository, do the following:
 
@@ -121,7 +128,7 @@ cmake --build .
 ctest
 ```
 
-In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old. You may proceed as follows:
+In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old.  You need to tell cmake which compiler you wish to use by setting the CC and CXX variables. Under bash, you can do so with commands such as `export CC=gcc-7` and `export CXX=g++-7`. You can also do it as part of the `cmake` command: `cmake .. -DCMAKE_CXX_COMPILER=g++`.  You may proceed as follows:
 
 ```
 brew install gcc@8
@@ -133,16 +140,9 @@ cmake --build .
 ctest
 ```
 
-linux way:
+If your compiler does not default on C++11 support or better you may get failing tests. If so, you may be able to exclude the failing  tests by replacing `ctest` with `ctest  -E "^quickstart$"`.
 
-```
-mkdir build                                                    # if necessary
-cd build
-cmake .. -DCMAKE_CXX_COMPILER=g++       # or
-cmake .. -DCMAKE_CXX_COMPILER=clang++ 
-cmake --build .
-```
-
+Note that the name of directory (`build`) is arbitrary, you can name it as you want (e.g., `buildgcc`) and you can have as many different such directories as you would like (one per configuration).
 
 
 
