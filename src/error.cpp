@@ -8,7 +8,7 @@ namespace internal {
     { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
     { CAPACITY, "This parser can't support a document that big" },
     { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
-    { TAPE_ERROR, "Something went wrong while writing to the tape" },
+    { TAPE_ERROR, "The JSON document has an improper structure: missing or superfluous commas, braces, missing keys, etc." },
     { DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)" },
     { STRING_ERROR, "Problem while parsing a string" },
     { T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'" },
