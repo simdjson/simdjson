@@ -77,6 +77,8 @@ void basics_error_3() {
     }
   }
 }
+
+
 void basics_error_4() {
   auto abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
@@ -115,6 +117,17 @@ void basics_error_4() {
 
     }
   }
+}
+
+void basics_error_5() {
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v;
+  simdjson::error_code error;
+  parser.parse(abstract_json)["str"]["123"]["abc"].get<double>().tie(v, error);
+  if (error) { cerr << error << endl; exit(1); }
+  cout << "number: " << v << endl;
 }
 
 
@@ -174,5 +187,6 @@ int main() {
   basics_error_2();
   basics_error_3();
   basics_error_4();
+  basics_error_5();
   return 0;
 }

@@ -84,6 +84,13 @@ void basics_dom_3() {
   }
 }
 
+void basics_dom_4() {
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  cout << "number: " << v << endl;
+}
 
 
 namespace treewalk_1 {
@@ -236,5 +243,6 @@ int main() {
   basics_dom_1();
   basics_dom_2();
   basics_dom_3();
+  basics_dom_4();
   return 0;
 }
