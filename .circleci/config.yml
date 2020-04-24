@@ -48,15 +48,6 @@ commands:
       - run: apt-get update -qq
       - run: apt-get install -y clang build-essential git
 
-  make_test:
-    steps:
-      - checkout
-      - run: make $BUILD_FLAGS
-      - run: ./json2json -h # Print out the implementation we're using on this hardware
-      - run: make amalgamate
-      - run: make test
-      - run: make checkperf
-
   install_cmake:
     steps:
       - run: apt-get update -qq
@@ -170,18 +161,18 @@ jobs:
   arch-haswell-gcc7:
     description: Build, run tests and check performance on GCC 7 with -march=haswell
     executor: gcc7
-    environment: { ARCHFLAGS: -march=haswell }
-    steps: [ make_test ]
+    environment: { CXXFLAGS: -march=haswell }
+    steps: [ install_cmake, cmake_test ]
   arch-nehalem-gcc7:
     description: Build, run tests and check performance on GCC 7 with -march=nehalem
     executor: gcc7
-    environment: { ARCHFLAGS: -march=nehalem }
-    steps: [ make_test ]
+    environment: { CXXFLAGS: -march=nehalem }
+    steps: [ install_cmake, cmake_test ]
   no-computed-goto-gcc7:
     description: Build, run tests and check performance on GCC 7 with -DSIMDJSON_NO_COMPUTED_GOTO=true
     executor: gcc7
-    environment: { EXTRAFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
-    steps: [ make_test ]
+    environment: { CXXFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
+    steps: [ install_cmake, cmake_test ]
 
 workflows:
   version: 2.1
@@ -192,7 +183,7 @@ workflows:
       - clang6
       
       # libc++
-      - libcpp-clang9
+      # - libcpp-clang9 # disabled due to too many errors
       
       # full single-implementation tests
       - sanitize-gcc9

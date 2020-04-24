@@ -1,4 +1,4 @@
-/* auto-generated on Thu Apr 23 09:19:14 PDT 2020. Do not edit! */
+/* auto-generated on Thu Apr 23 15:36:58 PDT 2020. Do not edit! */
 #include "simdjson.h"
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
@@ -502,7 +502,7 @@ const detect_best_supported_implementation_on_first_use detect_best_supported_im
 
 internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers {
+const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
   &haswell_singleton,
 #endif

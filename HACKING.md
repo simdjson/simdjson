@@ -9,8 +9,7 @@ Directory Structure and Source
 
 simdjson's source structure, from the top level, looks like this:
 
-* **Makefile:** The main Makefile for Linux. This is not the same as CMakeLists.txt.
-* **CMakeLists.txt:** A Makefile generator for non-default cases and options.
+* **CMakeLists.txt:** The main build system.
 * **include:** User-facing declarations and inline definitions (most user-facing functions are inlined).
   * simdjson.h: A "master include" that includes files from include/simdjson/. This is equivalent to
     the distributed simdjson.h.
@@ -70,7 +69,10 @@ simdjson.h and simdjson.cpp are not always up to date in master. To ensure you h
 you can regenerate them by running this at the top level:
 
 ```bash
-make amalgamate
+mkdir build
+cd build
+cmake ..
+cmake --build . --target amalgamate
 ```
 
 The amalgamator is at `amalgamate.sh` at the top level. It generates singleheader/simdjson.h by
@@ -78,32 +80,6 @@ reading through include/simdjson.h, copy/pasting each header file into the amalg
 point it gets included (but only once per header). singleheader/simdjson.cpp is generated from
 src/simdjson.cpp the same way, except files under generic/ may be included and copy/pasted multiple
 times.
-
-### Usage (old-school Makefile on platforms like Linux or macOS)
-
-Requirements: recent clang or gcc, and make. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. A 64-bit system like Linux or macOS is expected.
-
-To test:
-
-```
-make
-make test
-```
-
-To run benchmarks:
-
-```
-make parse
-./parse jsonexamples/twitter.json
-```
-
-Under Linux, the `parse` command gives a detailed analysis of the performance counters.
-
-To run comparative benchmarks (with other parsers):
-
-```
-make benchmark
-```
 
 ### Usage (CMake on 64-bit platforms like Linux or macOS)
 
@@ -129,8 +105,8 @@ Building: While in the project repository, do the following:
 mkdir build
 cd build
 cmake ..
-make
-make test
+cmake --build .
+ctest
 ```
 
 CMake will build a library. By default, it builds a shared library (e.g., libsimdjson.so on Linux).
@@ -141,8 +117,8 @@ You can build a static library:
 mkdir buildstatic
 cd buildstatic
 cmake -DSIMDJSON_BUILD_STATIC=ON ..
-make
-make test
+cmake --build .
+ctest
 ```
 
 In some cases, you may want to specify your compiler, especially if the default compiler on your system is too old. You may proceed as follows:
@@ -153,8 +129,8 @@ mkdir build
 cd build
 export CXX=g++-8 CC=gcc-8
 cmake ..
-make
-make test
+cmake --build .
+ctest
 ```
 
 linux way:
@@ -164,7 +140,7 @@ mkdir build                                                    # if necessary
 cd build
 cmake .. -DCMAKE_CXX_COMPILER=g++       # or
 cmake .. -DCMAKE_CXX_COMPILER=clang++ 
-make -j
+cmake --build .
 ```
 
 

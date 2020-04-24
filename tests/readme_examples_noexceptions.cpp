@@ -78,6 +78,59 @@ void basics_error_3() {
   }
 }
 
+
+void basics_error_4() {
+  auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+  dom::parser parser;
+  dom::array rootarray;
+  simdjson::error_code error;
+  parser.parse(abstract_json).get<dom::array>().tie(rootarray, error);
+  if (error) { cerr << error << endl; exit(1); }
+  // Iterate through an array of objects
+  for (dom::element elem : rootarray) {
+    dom::object obj;
+    elem.get<dom::object>().tie(obj, error);
+    if (error) { cerr << error << endl; exit(1); }
+    for(auto & key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj;
+      key_value.value.get<dom::object>().tie(innerobj, error);
+      if (error) { cerr << error << endl; exit(1); }
+
+      double va;
+      innerobj["a"].get<double>().tie(va, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "a: " << va << ", ";
+
+      double vb;
+      innerobj["b"].get<double>().tie(vb, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "b: " << vb << ", ";
+
+      int64_t vc;
+      innerobj["c"].get<int64_t>().tie(vc, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "c: " << vc << endl;
+
+    }
+  }
+}
+
+void basics_error_5() {
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v;
+  simdjson::error_code error;
+  parser.parse(abstract_json)["str"]["123"]["abc"].get<double>().tie(v, error);
+  if (error) { cerr << error << endl; exit(1); }
+  cout << "number: " << v << endl;
+}
+
+
 #ifdef SIMDJSON_CPLUSPLUS17
 void basics_error_3_cpp17() {
   auto cars_json = R"( [
@@ -131,5 +184,9 @@ void basics_error_3_cpp17() {
 #endif
 
 int main() {
+  basics_error_2();
+  basics_error_3();
+  basics_error_4();
+  basics_error_5();
   return 0;
 }

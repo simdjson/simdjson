@@ -58,7 +58,12 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
-The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. Calling `parse` or `load` a second time invalidates the previous parsed document. If you need access simultaneously to several parsed documents, you need to have several `parser` instances. For best performance, a `parser` instance should be reused.
+The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. 
+
+During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance. 
+
+For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](https://github.com/simdjson/simdjson/blob/master/doc/performance.md).
+
 
 Using the Parsed JSON
 ---------------------
@@ -85,11 +90,13 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
   first element.
   > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
-  > O(1) operation, which it is not presently in simdjson.
-* **Checking an Element Type:** You can check an element's type with `element.type()`. It
-  returns an `element_type`.
+  > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements 
+  > using a for-loop, as in our examples. 
 * **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
   with the `size()` method.
+* **Checking an Element Type:** You can check an element's type with `element.type()`. It
+  returns an `element_type`.
+
 
 Here are some examples of all of the above:
 
@@ -123,6 +130,39 @@ for (dom::object car : parser.parse(cars_json)) {
   }
 }
 ```
+
+Here is a different example illustrating the same ideas:
+
+```C++
+auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+dom::parser parser;
+
+// Parse and iterate through an array of objects
+for (dom::object obj : parser.parse(abstract_json)) {
+    for(const auto& key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj = key_value.value;
+      cout << "a: " << double(innerobj["a"]) << ", ";
+      cout << "b: " << double(innerobj["b"]) << ", ";
+      cout << "c: " << int64_t(innerobj["c"]) << endl;
+    }
+}
+```
+
+And another one:
+
+
+```C++
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  cout << "number: " << v << endl;
+```
+
 
 C++17 Support
 -------------
@@ -276,6 +316,64 @@ for (auto field : car) {
     cout << "- " << field.key << ": " << field.value << endl;
 }
 ```
+
+Here is another example:
+
+```C++
+auto abstract_json = R"( [
+    {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
+    {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
+  ] )"_padded;
+dom::parser parser;
+dom::array rootarray;
+simdjson::error_code error;
+parser.parse(abstract_json).get<dom::array>().tie(rootarray, error);
+if (error) { cerr << error << endl; exit(1); }
+// Iterate through an array of objects
+for (dom::element elem : rootarray) {
+    dom::object obj;
+    elem.get<dom::object>().tie(obj, error);
+    if (error) { cerr << error << endl; exit(1); }
+    for(auto & key_value : obj) {
+      cout << "key: " << key_value.key << " : ";
+      dom::object innerobj;
+      key_value.value.get<dom::object>().tie(innerobj, error);
+      if (error) { cerr << error << endl; exit(1); }
+
+      double va;
+      innerobj["a"].get<double>().tie(va, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "a: " << va << ", ";
+
+      double vb;
+      innerobj["b"].get<double>().tie(vb, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "b: " << vb << ", ";
+
+      int64_t vc;
+      innerobj["c"].get<int64_t>().tie(vc, error);
+      if (error) { cerr << error << endl; exit(1); }
+      cout << "c: " << vc << endl;
+
+    }
+}
+
+```
+
+And another one:
+
+```C++
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v;
+  simdjson::error_code error;
+  parser.parse(abstract_json)["str"]["123"]["abc"].get<double>().tie(v, error);
+  if (error) { cerr << error << endl; exit(1); }
+  cout << "number: " << v << endl;
+```
+
+Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
 
 ### Exceptions
 
