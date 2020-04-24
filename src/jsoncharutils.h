@@ -254,6 +254,7 @@ namespace {
 //
 // see
 // https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
+namespace {
 really_inline constexpr uint32_t hex_to_u32_nocheck(
     const uint8_t *src) { 
   uint32_t v1 = digit_to_val32[630 + src[0]];
@@ -262,16 +263,18 @@ really_inline constexpr uint32_t hex_to_u32_nocheck(
   uint32_t v4 = digit_to_val32[0 + src[3]];
   return v1 | v2 | v3 | v4;
 }
+}
 
 // returns true if the provided byte value is a 
 // "continuing" UTF-8 value, that is, if it starts with
 // 0b10...
+namespace {
 really_inline constexpr bool is_utf8_continuing(char c) {
   // in 2 complement's notation, values start at 0b10000 (-128)... and
   // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
   return ((signed char)c) <= -65;
 }
-
+}
 
 
 // given a code point cp, writes to c
@@ -363,10 +366,11 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 
 // Precomputed powers of ten from 10^0 to 10^22. These
 // can be represented exactly using the double type.
+namespace {
 constexpr double power_of_ten[] = {
     1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
     1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
-
+}
 // the mantissas of powers of ten from -308 to 308, extended out to sixty four
 // bits
 // This struct will likely get padded to 16 bytes.
@@ -381,6 +385,7 @@ typedef struct {
 // 10^FASTFLOAT_LARGEST_POWER (inclusively). The mantissa is truncated, and
 // never rounded up.
 // Uses about 10KB.
+namespace {
 constexpr  components power_of_ten_components[] = {
     {0xa5ced43b7e3e9188L, 7},    {0xcf42894a5dce35eaL, 10},
     {0x818995ce7aa0e1b2L, 14},   {0xa1ebfb4219491a1fL, 17},
@@ -699,9 +704,11 @@ constexpr  components power_of_ten_components[] = {
     {0xbaa718e68396cffdL, 2093}, {0xe950df20247c83fdL, 2096},
     {0x91d28b7416cdd27eL, 2100}, {0xb6472e511c81471dL, 2103},
     {0xe3d8f9e563a198e5L, 2106}, {0x8e679c2f5e44ff8fL, 2110}};
+}
 
 // A complement from power_of_ten_components
 // complete to a 128-bit mantissa.
+namespace {
 constexpr uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
                                  0x52064cac828675b9,
                                  0x7343efebd1940993,
@@ -1336,6 +1343,7 @@ constexpr uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
                                  0xe0133fe4adf8e952,
                                  0x58180fddd97723a6,
                                  0x570f09eaa7ea7648};
+}
 
 
 } // namespace simdjson
