@@ -4,6 +4,23 @@
 #include "simdjson.h"
 
 namespace simdjson {
+
+/**
+ *  The following would be a performacne antipattern:
+ *  constexpr int f(int x) {
+ *     constexpr int z[] = {321,321,321,32,2,3,132,3,321,321,321,32,2,3,132,3};
+ *     return z[x];
+ *  }
+ * It seems that many compilers will construct the array when the function is
+ * is called instead of laying out the array in binary form.
+ *
+ * So we "hide" the arrays in an anonymous namespace instead.
+ */
+
+
+
+
+
 // structural chars here are
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c (and NULL)
 // we are also interested in the four whitespace characters
