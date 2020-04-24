@@ -15,4 +15,5 @@ install(EXPORT simdjson-headers-config
         FILE simdjson-headers-config.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson)
 install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.h)
+install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.hpp)
 install(FILES simdjson.h DESTINATION include)
