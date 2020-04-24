@@ -145,6 +145,18 @@ for (dom::object obj : parser.parse(abstract_json)) {
 }
 ```
 
+And another one:
+
+
+```C++
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  cout << "number: " << v << endl;
+```
+
+
 C++17 Support
 -------------
 
@@ -340,6 +352,21 @@ for (dom::element elem : rootarray) {
 }
 
 ```
+
+And another one:
+
+```C++
+  auto abstract_json = R"(
+    {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
+  dom::parser parser;
+  double v;
+  simdjson::error_code error;
+  parser.parse(abstract_json)["str"]["123"]["abc"].get<double>().tie(v, error);
+  if (error) { cerr << error << endl; exit(1); }
+  cout << "number: " << v << endl;
+```
+
+Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
 
 ### Exceptions
 
