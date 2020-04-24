@@ -32,7 +32,7 @@ We discourage the following types of contributions:
 
 In short, most code changes should either bring new features or better performance. We want to avoid unmotivated code changes.
 
-Guidelines
+General Guidelines
 ----------
 
 Contributors are encouraged to :
@@ -42,6 +42,20 @@ Contributors are encouraged to :
 - Modify as few lines of code as possible when working on an issue. The more lines you modify, the harder it is for your fellow human beings to understand what is going on.
 - Tools may report "problems" with the code, but we never delegate programming to tools: if there is a problem with the code, we need to understand it. Thus we will not "fix" code merely to please a static analyzer if we do not understand.
 - Provide tests for any new feature. We will not merge a new feature without tests.
+
+
+Pull Requests
+--------------
+
+Pull requests are always invited. However, we ask that you follow these guidelines:
+
+- Users should provide a rationale for their changes. Does it improve performance? Does it add a feature? Does it improve maintainability? Does fix a bug? This must be explicitly stated as part of the pull request. Do not propose changes based on taste or intuition. We do not delegate programming to tools: that some tool suggested a code change is not reason enough to change the code.
+   1. When your code improves performance, please document the gains with a benchmark using hard numbers.
+   2. If your code fixes a bug, please be either fix a failing test, or propose a new test.
+   3. Other types of changes must be clearly motivated. We openly discourage changes with no identifiable benefits.
+- Changes should be focused and minimal. You should change as few lines of code as possible. Please do not reformat or touch files needlessly.
+- New features must be accompanied of new tests, in general.
+- Your code should pass our continuous-integration tests. It is your responsability to ensure that your proposal pass the tests. We do not merge pull requests that would break our build.
 
 Code of Conduct
 ---------------

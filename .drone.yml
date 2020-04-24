@@ -1,207 +1,321 @@
 kind: pipeline
-name: x64-quicktests-libc
-
-platform:
-  os: linux
-  arch: amd64
-
+name: gcc8
+platform: { os: linux, arch: amd64 }
 steps:
-- name: quicktests
+- name: Build and Test
+  image: gcc:8
+  environment:
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+    - ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: clang6
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+    - ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: dynamic-gcc8
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: gcc:8
+  environment:
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
+name: dynamic-clang6
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
+name: sanitize-gcc8
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: gcc:8
+  environment:
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=haswell ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=westmere ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: sanitize-clang6
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=haswell ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=westmere ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: arm64-gcc8
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: gcc:8
+  environment:
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=arm64 ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
+    - ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: arm64-clang6
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
+name: arm64-dynamic-gcc8
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: gcc:8
+  environment:
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
+name: arm64-dynamic-clang6
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
+name: arm64-sanitize-gcc8
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: gcc:8
+  environment:
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CC: gcc
+    CXX: g++
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=arm64 ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: arm64-sanitize-clang6
+platform: { os: linux, arch: arm64 }
+steps:
+- name: Build and Test
+  image: ubuntu:18.04
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang cmake git
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L acceptance -LE per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=arm64 ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - SIMDJSON_FORCE_IMPLEMENTATION=fallback ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -L per_implementation
+    - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+---
+kind: pipeline
+name: libcpp-clang8
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
   image: conanio/clang8
   user: root
-  commands: [ EXTRAFLAGS=-stdlib=libc++ make quicktests ]
+  environment:
+    CC: clang-8
+    CXX: clang++-8
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+    CXXFLAGS: -stdlib=libc++
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
 ---
 kind: pipeline
-name: x64-quicktests
-
-platform:
-  os: linux
-  arch: amd64
-
+name: noexceptions-gcc8
+platform: { os: linux, arch: amd64 }
 steps:
-- name: quicktests
-  image: gcc:8
-  commands: [ make quicktests ]
----
-kind: pipeline
-name: x64-checkperf
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: checkperf
+- name: Build and Test
   image: gcc:8
   environment:
-    CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands: [ sed '/^$/Q' /proc/cpuinfo, make checkperf ]
----
-kind: pipeline
-name: x64-build
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: build
-  image: gcc:8
-  commands: [ make, make amalgamate_test ]
----
-kind: pipeline
-name: x64-slowtests
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: slowtests
-  image: gcc:8
-  commands: [ make slowtests ]
----
-kind: pipeline
-name: x64-noexceptions-quicktests
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: quicktests
-  image: gcc:8
-  environment:
-    EXTRA_FLAGS: -fno-exceptions
-  commands: [ make quicktests ]
----
-kind: pipeline
-name: x64-noexceptions-build
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: build
-  image: gcc:8
-  environment:
-    EXTRA_FLAGS: -fno-exceptions
-  commands: [ make, make amalgamate_test ]
----
-kind: pipeline
-name: x64-noexceptions-slowtests
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: slowtests
-  image: gcc:8
-  environment:
-    EXTRA_FLAGS: -fno-exceptions
-  commands: [ make slowtests ]
----
-kind: pipeline
-name: arm64-quicktests
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: quicktests
-  image: gcc:8
-  commands: [ make quicktests ]
----
-kind: pipeline
-name: arm64-checkperf
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: checkperf
-  image: gcc:8
-  environment:
-    CHECKPERF_REPOSITORY: https://github.com/lemire/simdjson
-  commands: [ cat /proc/cpuinfo, make checkperf ]
----
-kind: pipeline
-name: arm64-build
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: build
-  image: gcc:8
-  commands: [ make, make amalgamate_test ]
----
-kind: pipeline
-name: arm64-slowtests
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: slowtests
-  image: gcc:8
-  commands: [ make slowtests ]
----
-kind: pipeline
-name: x64-amalgamated-build
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: build
-  image: gcc:8
-  environment:
-    SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make amalgamate, make ]
----
-kind: pipeline
-name: x64-amalgamated-quicktests
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: quicktests
-  image: gcc:8
-  environment:
-    SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make amalgamate, make quicktests ]
----
-kind: pipeline
-name: x64-amalgamated-slowtests
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: slowtests
-  image: gcc:8
-  environment:
-    SIMDJSON_TEST_AMALGAMATED_HEADERS: 1
-  commands: [ make amalgamate, make slowtests ]
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake 
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
 ---
 kind: pipeline
 name: stylecheck
-
-platform:
-  os: linux
-  arch: amd64
-
+platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
   image: ubuntu:18.04
@@ -209,351 +323,3 @@ steps:
     - apt-get update -y
     - apt-get install -y python clang-format
     - ./style/run-clang-format.py -r include/ benchmark/ src/ tests/
----
-kind: pipeline
-name: amd64_clang_cmake_dynamic
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_clang_cmake_no_exceptions
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_clang_cmake_static
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_gcc_cmake_static
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake 
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_gcc_cmake_dynamic
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: arm64_clang_cmake_dynamic
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: arm64_gcc_cmake_dynamic
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: arm64_clang_cmake_static
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: arm64_gcc_cmake_static
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ctest -j4 --output-on-failure -E checkperf
-
----
-kind: pipeline
-name: arm64_clang_cmake_sanitize
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: arm64_gcc_cmake_sanitize
-
-platform:
-  os: linux
-  arch: arm64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf
-
----
-kind: pipeline
-name: amd64_clang_cmake_sanitize
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
-  commands:
-    - apt-get update -y
-    - apt-get install -y make $CC g++ cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_gcc_cmake_sanitize
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf
-
----
-kind: pipeline
-name: amd64_clang_cmake_sanitize_noavx
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: ubuntu:18.04
-  environment:
-    CC: clang
-    CXX: clang++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y clang make cmake git
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf
----
-kind: pipeline
-name: amd64_gcc_cmake_sanitize_noavx
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: Build and Test
-  image: gcc:8
-  environment:
-    CC: gcc
-    CXX: g++
-    CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON -DSIMDJSON_IMPLEMENTATION_HASWELL=OFF
-  commands:
-    - apt-get update -qq
-    - apt-get install -y cmake
-    - $CC --version
-    - mkdir build && cd build
-    - cmake $CMAKE_FLAGS ..
-    - make -j
-    - ASAN_OPTIONS="detect_leaks=0" ctest -j4 --output-on-failure -E checkperf

@@ -3,7 +3,7 @@
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&q=proj%3Asimdjson&can=2)
 [![Build status](https://ci.appveyor.com/api/projects/status/ae77wp5v3lebmu6n/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/simdjson-jmmti/branch/master)
 [![CirrusCI](https://api.cirrus-ci.com/github/simdjson/simdjson.svg)](https://cirrus-ci.com/github/simdjson/simdjson)
-[![][license img]][license]
+[![][license img]][license]  [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](https://simdjson.org/api/0.3.1/index.html)
 
 simdjson : Parsing gigabytes of JSON per second
 ===============================================
@@ -70,7 +70,7 @@ Usage documentation is available:
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
-* [API](https://simdjson.org/api/0.3.0/annotated.html) contains the automatically generated API documentation.
+* [API](https://simdjson.org/api/0.3.1/annotated.html) contains the automatically generated API documentation.
 
 Performance results
 -------------------
