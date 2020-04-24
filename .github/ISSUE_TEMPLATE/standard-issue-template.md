@@ -24,3 +24,8 @@ Is your issue:
 3. A feature request? Please provide a clear rationale for the feature. Be advised that simdjson is a community-based project: you should consider providing help.
 
 4. A documentation issue? Can you suggest an improvement?
+
+
+If you plan to contribute to simdjson, please read our 
+* CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
+* HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md

@@ -14,8 +14,6 @@ Before submitting an issue, please ensure that you have read the documentation:
 * Contributing: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md
 
 
-**Indicate whether you are willing or able to provide a bug fix as a pull request**
-
 **Describe the bug**
 A clear and concise description of what the bug is.
 
@@ -26,3 +24,10 @@ Steps to reproduce the behaviour: provide a code sample if possible.
  - OS: [e.g. Ubuntu 16.04.6 LTS]
  - Compiler [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
  - Version [e.g. 22]
+
+
+**Indicate whether you are willing or able to provide a bug fix as a pull request**
+
+If you plan to contribute to simdjson, please read our 
+* CONTRIBUTING guide: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md and our
+* HACKING guide: https://github.com/simdjson/simdjson/blob/master/HACKING.md
