@@ -1,3 +1,9 @@
+set(CMAKE_CXX_CLANG_TIDY
+  clang-tidy;
+  -header-filter=.*;
+  -checks=-*,performance-*,bugprone-*,portability-*,-portability-simd-intrinsics,misc-*,-misc-non-private-member-variables-in-classes;
+  -warnings-as-errors=*;
+)
 #
 # For callers who intend to #include simdjson.cpp.
 #

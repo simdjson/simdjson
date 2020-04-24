@@ -65,13 +65,13 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 #include "generic/json_scanner.h"
 
 #include "generic/json_minifier.h"
-WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+inline WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
 }
 
 #include "generic/utf8_lookup2_algorithm.h"
 #include "generic/json_structural_indexer.h"
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
+inline WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   return haswell::stage1::json_structural_indexer::index<128>(buf, len, parser, streaming);
 }
 

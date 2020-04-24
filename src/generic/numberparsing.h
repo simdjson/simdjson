@@ -341,7 +341,7 @@ never_inline bool parse_large_integer(const uint8_t *const src,
   return is_structural_or_whitespace(*p);
 }
 
-bool slow_float_parsing(UNUSED const char * src, parser &parser) {
+inline bool slow_float_parsing(UNUSED const char * src, parser &parser) {
   double d;
   if (parse_float_strtod(src, &d)) {
     parser.on_number_double(d);

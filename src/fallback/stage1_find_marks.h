@@ -144,7 +144,7 @@ private:
 } // namespace stage1
 
 
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
+inline WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }
@@ -187,7 +187,7 @@ static uint8_t jump_table[256 * 3] = {
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
 };
 
-WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+inline WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   size_t i = 0, pos = 0;
   uint8_t quote = 0;
   uint8_t nonescape = 1;
