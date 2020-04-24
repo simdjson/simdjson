@@ -366,6 +366,7 @@ And another one:
   cout << "number: " << v << endl;
 ```
 
+Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
 
 ### Exceptions
 
