@@ -13,7 +13,7 @@ namespace simdjson {
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
+really_inline constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
   // these are the chars that can follow a true/false/null or number atom
   // and nothing else
   constexpr uint32_t structural_or_whitespace_or_null_negated[256] = {
@@ -39,7 +39,7 @@ constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
+really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
   constexpr uint32_t structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -61,7 +61,7 @@ constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
 
 
 
-constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
+really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
   constexpr uint32_t structural_or_whitespace_or_null[256] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
@@ -79,7 +79,7 @@ constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
 
 
 
-constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
+really_inline constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
   constexpr uint32_t structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
@@ -102,7 +102,7 @@ constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
 //
 // see
 // https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
-constexpr uint32_t hex_to_u32_nocheck(
+really_inline constexpr uint32_t hex_to_u32_nocheck(
     const uint8_t *src) { 
   constexpr uint32_t digit_to_val32[886] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -263,7 +263,7 @@ constexpr uint32_t hex_to_u32_nocheck(
 // returns true if the provided byte value is a 
 // "continuing" UTF-8 value, that is, if it starts with
 // 0b10...
-constexpr bool is_utf8_continuing(char c) {
+really_inline constexpr bool is_utf8_continuing(char c) {
   // in 2 complement's notation, values start at 0b10000 (-128)... and
   // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
   return ((signed char)c) <= -65;

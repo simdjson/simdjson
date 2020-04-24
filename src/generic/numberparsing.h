@@ -209,13 +209,13 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   return true;
 }
 
-constexpr bool is_integer(char c) {
+really_inline constexpr bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
 
 
-constexpr bool
+really_inline constexpr bool
 is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   // We need to check that the character following a zero is valid. This is
   // probably frequent and it is harder than it looks. We are building all of this
