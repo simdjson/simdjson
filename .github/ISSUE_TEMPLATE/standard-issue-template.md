@@ -9,12 +9,11 @@ assignees: ''
 
 Before submitting an issue, please ensure that you have read the documentation:
 
-* [Basics](doc/basics.md) is an overview of how to use simdjson and its APIs.
-* [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
-* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and how you can work with it.
-* [Contributing](https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md)
+* Basics is an overview of how to use simdjson and its APIs: https://github.com/simdjson/simdjson/blob/master/doc/basics.md
+* Performance shows some more advanced scenarios and how to tune for them: https://github.com/simdjson/simdjson/blob/master/doc/performance.md
+* Contributing: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md
 
-Keep in mind that we do not make changes to simdjson without clearly identifiable benefits, which typically means either performance improvements, bug fixes or new features. Avoid bike-shedding: we all have opinions about how to write code, but we want to focus on what makes simdjson objectively better.
+We do not make changes to simdjson without clearly identifiable benefits, which typically means either performance improvements, bug fixes or new features. Avoid bike-shedding: we all have opinions about how to write code, but we want to focus on what makes simdjson objectively better.
 
 Is your issue:
 
