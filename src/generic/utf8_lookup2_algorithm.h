@@ -81,17 +81,17 @@ namespace utf8_validation {
     // These are the errors we're going to match for bytes 1-2, by looking at the first three
     // nibbles of the character: <high bits of byte 1>> & <low bits of byte 1> & <high bits of byte 2>
     //
-    static const int OVERLONG_2  = 0x01; // 1100000_ 10______ (technically we match 10______ but we could match ________, they both yield errors either way)
-    static const int OVERLONG_3  = 0x02; // 11100000 100_____ ________
-    static const int OVERLONG_4  = 0x04; // 11110000 1000____ ________ ________
-    static const int SURROGATE   = 0x08; // 11101101 [101_]____
-    static const int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
-    static const int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
+    constexpr int OVERLONG_2  = 0x01; // 1100000_ 10______ (technically we match 10______ but we could match ________, they both yield errors either way)
+    constexpr int OVERLONG_3  = 0x02; // 11100000 100_____ ________
+    constexpr int OVERLONG_4  = 0x04; // 11110000 1000____ ________ ________
+    constexpr int SURROGATE   = 0x08; // 11101101 [101_]____
+    constexpr int TOO_LARGE   = 0x10; // 11110100 (1001|101_)____
+    constexpr int TOO_LARGE_2 = 0x20; // 1111(1___|011_|0101) 10______
 
     // After processing the rest of byte 1 (the low bits), we're still not done--we have to check
     // byte 2 to be sure which things are errors and which aren't.
     // Since high_bits is byte 5, byte 2 is high_bits.prev<3>
-    static const int CARRY = OVERLONG_2 | TOO_LARGE_2;
+    constexpr int CARRY = OVERLONG_2 | TOO_LARGE_2;
     const simd8<uint8_t> byte_2_high = input.shr<4>().lookup_16<uint8_t>(
         // ASCII: ________ [0___]____
         CARRY, CARRY, CARRY, CARRY,
@@ -364,7 +364,7 @@ namespace utf8_validation {
   really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
-    static const uint8_t max_array[32] = {
+    constexpr uint8_t max_array[32] = {
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255,
       255, 255, 255, 255, 255, 255, 255, 255,

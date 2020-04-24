@@ -196,12 +196,12 @@ struct utf8_checker {
   //
   // These constants define the set of error flags in check_special_cases().
   //
-  static const uint8_t OVERLONG_2  = 0x01; // 1100000_         ________         Could have been encoded in 1 byte
-  static const uint8_t OVERLONG_3  = 0x02; // 11100000         100_____         Could have been encoded in 2 bytes
-  static const uint8_t SURROGATE   = 0x04; // 11101010         101_____         Surrogate pairs
-  static const uint8_t TOO_LARGE   = 0x08; // 11110100         (1001|101_)____ > U+10FFFF
-  static const uint8_t TOO_LARGE_2 = 0x10; // 1111(0101..1111) ________       > U+10FFFF
-  static const uint8_t OVERLONG_4  = 0x20; // 11110000         1000____         Could have been encoded in 3 bytes
+  constexpr uint8_t OVERLONG_2  = 0x01; // 1100000_         ________         Could have been encoded in 1 byte
+  constexpr uint8_t OVERLONG_3  = 0x02; // 11100000         100_____         Could have been encoded in 2 bytes
+  constexpr uint8_t SURROGATE   = 0x04; // 11101010         101_____         Surrogate pairs
+  constexpr uint8_t TOO_LARGE   = 0x08; // 11110100         (1001|101_)____ > U+10FFFF
+  constexpr uint8_t TOO_LARGE_2 = 0x10; // 1111(0101..1111) ________       > U+10FFFF
+  constexpr uint8_t OVERLONG_4  = 0x20; // 11110000         1000____         Could have been encoded in 3 bytes
 
   //
   // Check for special-case errors with table lookups on the first 3 nibbles (first 2 bytes).

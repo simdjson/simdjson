@@ -64,7 +64,7 @@ struct utf8_checker {
   }
 
   really_inline void check_carried_continuations() {
-    static const int8_t last_1[32] = {
+    constexpr int8_t last_1[32] = {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,

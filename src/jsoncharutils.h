@@ -9,9 +9,14 @@ namespace simdjson {
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 
-// these are the chars that can follow a true/false/null or number atom
-// and nothing else
-const uint32_t structural_or_whitespace_or_null_negated[256] = {
+
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
+  // these are the chars that can follow a true/false/null or number atom
+  // and nothing else
+  constexpr uint32_t structural_or_whitespace_or_null_negated[256] = {
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -27,14 +32,15 @@ const uint32_t structural_or_whitespace_or_null_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
   return structural_or_whitespace_or_null_negated[c];
 }
 
-const uint32_t structural_or_whitespace_negated[256] = {
+
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
+  constexpr uint32_t structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -50,14 +56,13 @@ const uint32_t structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
 }
 
-const uint32_t structural_or_whitespace_or_null[256] = {
+
+
+constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
+  constexpr uint32_t structural_or_whitespace_or_null[256] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -69,12 +74,13 @@ const uint32_t structural_or_whitespace_or_null[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-really_inline uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
   return structural_or_whitespace_or_null[c];
 }
 
-const uint32_t structural_or_whitespace[256] = {
+
+
+constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
+  constexpr uint32_t structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -86,12 +92,19 @@ const uint32_t structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
-const uint32_t digit_to_val32[886] = {
+
+// returns a value with the high 16 bits set if not valid
+// otherwise returns the conversion of the 4 hex digits at src into the bottom
+// 16 bits of the 32-bit return register
+//
+// see
+// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
+constexpr uint32_t hex_to_u32_nocheck(
+    const uint8_t *src) { 
+  constexpr uint32_t digit_to_val32[886] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -240,14 +253,6 @@ const uint32_t digit_to_val32[886] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-// returns a value with the high 16 bits set if not valid
-// otherwise returns the conversion of the 4 hex digits at src into the bottom
-// 16 bits of the 32-bit return register
-//
-// see
-// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
-static inline uint32_t hex_to_u32_nocheck(
-    const uint8_t *src) { // strictly speaking, static inline is a C-ism
   uint32_t v1 = digit_to_val32[630 + src[0]];
   uint32_t v2 = digit_to_val32[420 + src[1]];
   uint32_t v3 = digit_to_val32[210 + src[2]];
@@ -258,7 +263,7 @@ static inline uint32_t hex_to_u32_nocheck(
 // returns true if the provided byte value is a 
 // "continuing" UTF-8 value, that is, if it starts with
 // 0b10...
-static inline bool is_utf8_continuing(char c) {
+constexpr bool is_utf8_continuing(char c) {
   // in 2 complement's notation, values start at 0b10000 (-128)... and
   // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
   return ((signed char)c) <= -65;
@@ -355,7 +360,7 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 
 // Precomputed powers of ten from 10^0 to 10^22. These
 // can be represented exactly using the double type.
-static const double power_of_ten[] = {
+constexpr double power_of_ten[] = {
     1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
     1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
 
@@ -373,7 +378,7 @@ typedef struct {
 // 10^FASTFLOAT_LARGEST_POWER (inclusively). The mantissa is truncated, and
 // never rounded up.
 // Uses about 10KB.
-static const components power_of_ten_components[] = {
+constexpr  components power_of_ten_components[] = {
     {0xa5ced43b7e3e9188L, 7},    {0xcf42894a5dce35eaL, 10},
     {0x818995ce7aa0e1b2L, 14},   {0xa1ebfb4219491a1fL, 17},
     {0xca66fa129f9b60a6L, 20},   {0xfd00b897478238d0L, 23},
@@ -694,7 +699,7 @@ static const components power_of_ten_components[] = {
 
 // A complement from power_of_ten_components
 // complete to a 128-bit mantissa.
-const uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
+constexpr uint64_t mantissa_128[] = {0x419ea3bd35385e2d,
                                  0x52064cac828675b9,
                                  0x7343efebd1940993,
                                  0x1014ebe6c5f90bf8,

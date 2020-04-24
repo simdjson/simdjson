@@ -29,7 +29,7 @@ struct utf8_checker {
   processed_utf_bytes previous;
 
   really_inline void check_carried_continuations() {
-    static const int8_t last_len[32] = {
+    constexpr int8_t last_len[32] = {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
