@@ -62,6 +62,7 @@ really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
 }
 
+namespace {
   constexpr uint32_t structural_or_whitespace_or_null[256] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
@@ -74,10 +75,13 @@ really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+}
 
 really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
   return structural_or_whitespace_or_null[c];
 }
+
+namespace {
   constexpr uint32_t structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
@@ -90,7 +94,7 @@ really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
+}
 
 really_inline constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
