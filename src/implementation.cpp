@@ -63,7 +63,7 @@ const detect_best_supported_implementation_on_first_use detect_best_supported_im
 
 internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-constexpr const std::initializer_list<const implementation *> available_implementation_pointers {
+const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
   &haswell_singleton,
 #endif
