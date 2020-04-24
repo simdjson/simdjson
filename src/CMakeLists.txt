@@ -42,7 +42,7 @@ else()
   endif()
 endif()
 
-target_link_libraries(simdjson INTERFACE simdjson-headers) # Only expose the headers, not sources
+target_link_libraries(simdjson PUBLIC simdjson-headers) # Only expose the headers, not sources
 
 target_link_libraries(simdjson PRIVATE simdjson-source simdjson-flags)
 
@@ -57,7 +57,7 @@ endif()
 #
 # Installation
 #
-install(TARGETS simdjson
+install(TARGETS simdjson simdjson-headers
   EXPORT simdjson-config
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
