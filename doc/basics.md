@@ -58,7 +58,12 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string
 ```
 
-The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. Calling `parse` or `load` a second time invalidates the previous parsed document. If you need access simultaneously to several parsed documents, you need to have several `parser` instances. For best performance, a `parser` instance should be reused.
+The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance. 
+
+During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance. 
+
+For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](https://github.com/simdjson/simdjson/blob/master/doc/performance.md).
+
 
 Using the Parsed JSON
 ---------------------
@@ -85,11 +90,13 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
   first element.
   > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
-  > O(1) operation, which it is not presently in simdjson.
-* **Checking an Element Type:** You can check an element's type with `element.type()`. It
-  returns an `element_type`.
+  > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements 
+  > using a for-loop, as in our examples. 
 * **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
   with the `size()` method.
+* **Checking an Element Type:** You can check an element's type with `element.type()`. It
+  returns an `element_type`.
+
 
 Here are some examples of all of the above:
 
