@@ -9,14 +9,9 @@ namespace simdjson {
 // we are also interested in the four whitespace characters
 // space 0x20, linefeed 0x0a, horizontal tab 0x09 and carriage return 0x0d
 
-
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
-really_inline constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
-  // these are the chars that can follow a true/false/null or number atom
-  // and nothing else
-  constexpr uint32_t structural_or_whitespace_or_null_negated[256] = {
+// these are the chars that can follow a true/false/null or number atom
+// and nothing else
+constexpr uint32_t structural_or_whitespace_or_null_negated[256] = {
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -32,15 +27,16 @@ really_inline constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-  return structural_or_whitespace_or_null_negated[c];
-}
-
 
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
-  constexpr uint32_t structural_or_whitespace_negated[256] = {
+really_inline constexpr uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
+  return structural_or_whitespace_or_null_negated[c];
+}
+
+
+constexpr uint32_t structural_or_whitespace_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1,
@@ -56,13 +52,15 @@ really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+// return non-zero if not a structural or whitespace char
+// zero otherwise
+really_inline constexpr uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
 }
 
 
-
-really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
-  constexpr uint32_t structural_or_whitespace_or_null[256] = {
+constexpr uint32_t structural_or_whitespace_or_null[256] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -74,13 +72,13 @@ really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+really_inline constexpr uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
   return structural_or_whitespace_or_null[c];
 }
 
 
-
-really_inline constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
-  constexpr uint32_t structural_or_whitespace[256] = {
+constexpr uint32_t structural_or_whitespace[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -92,19 +90,12 @@ really_inline constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+really_inline constexpr uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
-
-// returns a value with the high 16 bits set if not valid
-// otherwise returns the conversion of the 4 hex digits at src into the bottom
-// 16 bits of the 32-bit return register
-//
-// see
-// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
-really_inline constexpr uint32_t hex_to_u32_nocheck(
-    const uint8_t *src) { 
-  constexpr uint32_t digit_to_val32[886] = {
+constexpr uint32_t digit_to_val32[886] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -253,6 +244,15 @@ really_inline constexpr uint32_t hex_to_u32_nocheck(
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+
+// returns a value with the high 16 bits set if not valid
+// otherwise returns the conversion of the 4 hex digits at src into the bottom
+// 16 bits of the 32-bit return register
+//
+// see
+// https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
+really_inline constexpr uint32_t hex_to_u32_nocheck(
+    const uint8_t *src) { 
   uint32_t v1 = digit_to_val32[630 + src[0]];
   uint32_t v2 = digit_to_val32[420 + src[1]];
   uint32_t v3 = digit_to_val32[210 + src[2]];
