@@ -276,7 +276,7 @@ namespace {
 // see
 // https://lemire.me/blog/2019/04/17/parsing-short-hexadecimal-strings-efficiently/
 namespace {
-really_inline constexpr uint32_t hex_to_u32_nocheck(
+really_inline uint32_t hex_to_u32_nocheck(
     const uint8_t *src) { 
   uint32_t v1 = digit_to_val32[630 + src[0]];
   uint32_t v2 = digit_to_val32[420 + src[1]];
