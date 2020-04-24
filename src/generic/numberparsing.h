@@ -213,11 +213,8 @@ really_inline constexpr bool is_integer(char c) {
   return (c >= '0' && c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
-
-// We need to check that the character following a zero is valid. This is
-// probably frequent and it is harder than it looks. We are building all of this
-// just to differentiate between 0x1 (invalid), 0,1 (valid) 0e1 (valid)...
-constexpr bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
+namespace {
+  constexpr bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
@@ -229,7 +226,11 @@ constexpr bool structural_or_whitespace_or_exponent_or_decimal_negated[256] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+}
 
+// We need to check that the character following a zero is valid. This is
+// probably frequent and it is harder than it looks. We are building all of this
+// just to differentiate between 0x1 (invalid), 0,1 (valid) 0e1 (valid)...
 really_inline constexpr bool
 is_not_structural_or_whitespace_or_exponent_or_decimal(unsigned char c) {
   return structural_or_whitespace_or_exponent_or_decimal_negated[c];

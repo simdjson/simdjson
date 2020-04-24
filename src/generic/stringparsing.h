@@ -9,6 +9,7 @@ namespace stringparsing {
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
 // u not handled in this table as it's complex
+namespace {
 constexpr uint8_t escape_map[256] = {
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
@@ -30,7 +31,7 @@ constexpr uint8_t escape_map[256] = {
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
     0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
 };
-
+}
 // handle a unicode codepoint
 // write appropriate values into dest
 // src will advance 6 bytes or 12 bytes

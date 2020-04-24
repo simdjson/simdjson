@@ -29,12 +29,11 @@ struct utf8_checker {
   processed_utf_bytes previous;
 
   really_inline void check_carried_continuations() {
-    constexpr int8_t last_len[32] = {
+    static constexpr int8_t last_len[32] = { // The "static" is important for performance.
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
-      9, 9, 9, 9, 9, 2, 1, 0
-    };
+      9, 9, 9, 9, 9, 2, 1, 0};
     this->has_error |= simd8<int8_t>(this->previous.first_len) > simd8<int8_t>(last_len + 32 - sizeof(simd8<int8_t>));
   }
 
