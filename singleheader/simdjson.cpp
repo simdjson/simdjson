@@ -1,12 +1,14 @@
-/* auto-generated on Thu Apr 23 15:36:58 PDT 2020. Do not edit! */
+/* auto-generated on Sun, Apr 26, 2020 23:12:52. Do not edit! */
+/* begin file simdjson.cpp */
 #include "simdjson.h"
+
+SIMDJSON_DISABLE_DEPRECATED_WARNING
 
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
 
-/* begin file simdjson.cpp */
 /* begin file error.cpp */
 
 namespace simdjson {
@@ -17,7 +19,7 @@ namespace internal {
     { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
     { CAPACITY, "This parser can't support a document that big" },
     { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
-    { TAPE_ERROR, "Something went wrong while writing to the tape" },
+    { TAPE_ERROR, "The JSON document has an improper structure: missing or superfluous commas, braces, missing keys, etc." },
     { DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)" },
     { STRING_ERROR, "Problem while parsing a string" },
     { T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'" },

@@ -1,5 +1,7 @@
 #include "simdjson.h"
 
+SIMDJSON_DISABLE_DEPRECATED_WARNING
+
 /* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
 #ifdef DMALLOC
 #include "dmalloc.h"
