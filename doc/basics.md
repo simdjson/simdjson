@@ -20,7 +20,7 @@ Requirements
 ------------------
 
 - A recent compiler (LLVM clang6 or better, GNU GCC 7 or better, Visual Studio 2017 or better). We require C++11 support as a minimum.
-- A 64-bit system (ARM or x64 Intel/AMD). We run tests on macOS, freeBSD, Linux and Windows. We recommend that Visual Studio users  target a 64-bit build (x64).
+- A 64-bit system (ARM or x64 Intel/AMD). We run tests on macOS, freeBSD, Linux and Windows. We recommend that Visual Studio users  target a 64-bit build (x64) instead of a 32-bit build (x86).
 
 
 Including simdjson
