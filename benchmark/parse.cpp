@@ -4,8 +4,8 @@
 #include <cctype>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 
 #include <cstdio>
@@ -89,58 +89,54 @@ struct option_struct {
   bool hotbuffers = false;
 
   option_struct(int argc, char **argv) {
-    #ifndef _MSC_VER
-      int c;
+    int c;
 
-      while ((c = getopt(argc, argv, "vtn:i:a:s:H")) != -1) {
-        switch (c) {
-        case 'n':
-          iterations = atoi(optarg);
-          break;
-        case 'i':
-          iteration_step = atoi(optarg);
-          break;
-        case 't':
-          tabbed_output = true;
-          break;
-        case 'v':
-          verbose = true;
-          break;
-        case 'a': {
-          const implementation *impl = simdjson::available_implementations[optarg];
-          if (!impl) {
-            std::string exit_message = string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
-            for (auto imple : simdjson::available_implementations) {
-              exit_message += imple->name();
-              exit_message += " ";
-            }
-            exit_usage(exit_message);
+    while ((c = getopt(argc, argv, "vtn:i:a:s:H")) != -1) {
+      switch (c) {
+      case 'n':
+        iterations = atoi(optarg);
+        break;
+      case 'i':
+        iteration_step = atoi(optarg);
+        break;
+      case 't':
+        tabbed_output = true;
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      case 'a': {
+        const implementation *impl = simdjson::available_implementations[optarg];
+        if (!impl) {
+          std::string exit_message = string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
+          for (auto imple : simdjson::available_implementations) {
+            exit_message += imple->name();
+            exit_message += " ";
           }
-          simdjson::active_implementation = impl;
-          break;
+          exit_usage(exit_message);
         }
-        case 'H':
-          hotbuffers = true;
-          break;
-        case 's':
-          if (!strcmp(optarg, "stage1")) {
-            stage1_only = true;
-          } else if (!strcmp(optarg, "all")) {
-            stage1_only = false;
-          } else {
-            exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
-          }
-          break;
-        default:
-          // reaching here means an argument was given to getopt() which did not have a case label
-          exit_usage("Unexpected argument - missing case for option "+
-                     std::string(1,static_cast<char>(c))+
-                     " (programming error)");
-        }
+        simdjson::active_implementation = impl;
+        break;
       }
-    #else
-      int optind = 1;
-    #endif
+      case 'H':
+        hotbuffers = true;
+        break;
+      case 's':
+        if (!strcmp(optarg, "stage1")) {
+          stage1_only = true;
+        } else if (!strcmp(optarg, "all")) {
+          stage1_only = false;
+        } else {
+          exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
+        }
+        break;
+      default:
+        // reaching here means an argument was given to getopt() which did not have a case label
+        exit_usage("Unexpected argument - missing case for option "+
+                    std::string(1,static_cast<char>(c))+
+                    " (programming error)");
+      }
+    }
 
     // All remaining arguments are considered to be files
     for (int i=optind; i<argc; i++) {
@@ -154,12 +150,6 @@ struct option_struct {
     if (files.size() == 1) {
       iteration_step = iterations;
     }
-
-    #if !defined(__linux__)
-      if (tabbed_output) {
-        exit_error("tabbed_output (-t) flag only works under linux.\n");
-      }
-    #endif
   }
 };
 

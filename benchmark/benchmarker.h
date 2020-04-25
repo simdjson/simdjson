@@ -7,8 +7,8 @@
 #include <cctype>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 
 #include <cstdio>
@@ -45,6 +45,8 @@ using std::vector;
 using std::ostream;
 using std::ofstream;
 using std::exception;
+using std::min;
+using std::max;
 
 // Initialize "verbose" to go nowhere. We'll read options in main() and set to cout if verbose is true.
 std::ofstream dev_null;
@@ -498,8 +500,8 @@ struct benchmarker {
         double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
         double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
         double freqall = (all_stages.best.cycles() / all_stages.best.elapsed_sec()) / 1000000000.0;
-        double freqmin = std::min(freq1, freq2);
-        double freqmax = std::max(freq1, freq2);
+        double freqmin = min(freq1, freq2);
+        double freqmax = max(freq1, freq2);
         if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
           printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
           "Expect the overall speed not to match stage 1 and stage 2 speeds.\n"
