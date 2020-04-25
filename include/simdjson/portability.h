@@ -15,6 +15,43 @@
 #define IS_ARM64 1
 #endif
 
+#if defined(__clang__) && defined(_MSC_VER) && defined( IS_X86_64)
+// clang under Visual Studio needs help
+#define __AVX2__ 1
+#define __AVX__ 1
+#define __SSE3__ 1
+#define __SSE4_1__ 1
+#define __SSE4_2__ 1
+#define __SSE_MATH__ 1
+#define __SSE__ 1
+#define __SSSE3__ 1
+#define __PCLMUL__ 1
+#define __BMI2__ 1
+#define __BMI__ 1
+#define __LZCNT__ 1
+// clang under Windows has _stricmp (like visual studio) but not strcasecmp (as clang normally has)
+#ifndef strcasecmp
+#define strcasecmp _stricmp
+#endif
+// clang under windows has _aligned_malloc but not posix_memalign as clang normally does
+static inline int posix_memalign(void **p, size_t alignment, size_t size) {
+#ifdef _MSC_VER
+    *p = _aligned_malloc(size, alignment);
+    return *p == nullptr;
+#elif defined(__MINGW32__) || defined(__MINGW64__)
+    // we may, later, need this for mingw
+    *p = __mingw_aligned_malloc(size, alignment);
+    return *p == nullptr;
+#else
+    return posix_memalign(p, alignment, size);
+#endif
+}
+#undef _MSC_VER // for everything else, we don't want to be considered as windows
+// TODO: undefining _MSC_VER is wrong. We should go through and have a SIMDJSON_VISUAL_STUDIO
+// macro or something instead of blindly relying on _MSC_VER to determine whether we are under
+// visual studio
+#endif
+
 #if (!defined(IS_X86_64)) && (!defined(IS_ARM64))
 #if _MSC_VER
 #pragma message("The simdjson library is designed\
