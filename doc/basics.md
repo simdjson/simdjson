@@ -22,6 +22,7 @@ Requirements
 - A recent compiler (LLVM clang6 or better, GNU GCC 7 or better, Visual Studio 2017 or better). We require C++11 support as a minimum.
 - A 64-bit system (ARM or x64 Intel/AMD). We run tests on macOS, freeBSD, Linux and Windows. We recommend that Visual Studio users  target a 64-bit build (x64).
 
+
 Including simdjson
 ------------------
 
@@ -38,6 +39,11 @@ You can compile with:
 ```
 c++ myproject.cpp simdjson.cpp
 ```
+
+Note: 
+- Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ myproject.cpp simdjson.cpp`).
+- Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`. 
+
 
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
