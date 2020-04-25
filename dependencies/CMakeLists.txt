@@ -1,17 +1,34 @@
 # Initializes a git submodule if it hasn't been initialized before
 # Does NOT attempt to update or otherwise modify git submodules that are already initialized.
-function(initialize_submodule DIRECTORY)
-  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git)
+function(initialize_submodule dir)
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/.git)
     find_package(Git QUIET REQUIRED)
-    message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git does not exist. Initializing ${DIRECTORY} submodule ...")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init ${DIRECTORY}
+    message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git does not exist. Initializing ${dir} submodule ...")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init ${dir}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     RESULT_VARIABLE GIT_EXIT_CODE)
     if(NOT GIT_EXIT_CODE EQUAL "0")
-      message(FATAL_ERROR "${GIT_EXECUTABLE} submodule update --init dependencies/${DIRECTORY} failed with exit code ${GIT_EXIT_CODE}, please checkout submodules")
+      message(FATAL_ERROR "${GIT_EXECUTABLE} submodule update --init dependencies/${dir} failed with exit code ${GIT_EXIT_CODE}, please checkout submodules")
     endif()
   endif()
 endfunction(initialize_submodule)
+
+function(git_submodule_target dir)
+  find_package(Git QUIET REQUIRED)
+  # This conditionally creates the git repository
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/.git
+    COMMAND ${GIT_EXECUTABLE} ${SIMDJSON_GIT_ARGS} submodule update --init --depth 1 ${dir}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+  add_custom_target(${dir}-submodule DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/.git)
+endfunction(git_submodule_target)
+
+function(add_competition_submodule_library dir)
+  git_submodule_target(${dir})
+  add_library(competition-${dir} ${ARGN})
+  add_dependencies(competition-${dir} ${dir}-submodule)
+endfunction(add_competition_submodule_library)
 
 if (SIMDJSON_GOOGLE_BENCHMARKS)
   option(BENCHMARK_ENABLE_TESTING OFF)
@@ -23,43 +40,35 @@ if (SIMDJSON_GOOGLE_BENCHMARKS)
 endif()
 
 if (SIMDJSON_COMPETITION)
-  initialize_submodule(cJSON)
-  add_library(competition-cJSON INTERFACE)
+  add_competition_submodule_library(cJSON INTERFACE)
   target_include_directories(competition-cJSON INTERFACE cJSON)
 
-  initialize_submodule(fastjson)
-  add_library(competition-fastjson INTERFACE)
+  add_competition_submodule_library(fastjson INTERFACE)
   target_include_directories(competition-fastjson INTERFACE fastjson/src fastjson/include)
 
-  initialize_submodule(gason)
-  add_library(competition-gason INTERFACE)
+  add_competition_submodule_library(gason INTERFACE)
   target_include_directories(competition-gason INTERFACE gason/src)
 
-  initialize_submodule(jsmn)
-  add_library(competition-jsmn INTERFACE)
+  add_competition_submodule_library(jsmn INTERFACE)
   target_include_directories(competition-jsmn INTERFACE jsmn)
 
-  initialize_submodule(json)
-  add_library(competition-json INTERFACE)
+  add_competition_submodule_library(json INTERFACE)
   target_include_directories(competition-json INTERFACE json/single_include)
 
-  initialize_submodule(json11)
-  add_library(competition-json11 INTERFACE)
+  add_competition_submodule_library(json11 INTERFACE)
   target_include_directories(competition-json11 INTERFACE json11)
 
   add_library(competition-jsoncppdist INTERFACE)
   target_include_directories(competition-jsoncppdist INTERFACE jsoncppdist)
 
-  initialize_submodule(rapidjson)
-  add_library(competition-rapidjson INTERFACE)
+  add_competition_submodule_library(rapidjson INTERFACE)
   target_include_directories(competition-rapidjson INTERFACE rapidjson/include)
 
-  initialize_submodule(sajson)
-  add_library(competition-sajson INTERFACE)
+  add_competition_submodule_library(sajson INTERFACE)
   target_include_directories(competition-sajson INTERFACE sajson/include)
 
-  initialize_submodule(ujson4c)
-  add_library(competition-ujson4c ujson4c/src/ujdecode.c)
+  initialize_submodule(ujson4c) # ujdecode.c must exist at compile time to create the library in cmake
+  add_competition_submodule_library(ujson4c ujson4c/src/ujdecode.c)
   target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
 
   add_library(competition-core INTERFACE)

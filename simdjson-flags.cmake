@@ -23,6 +23,8 @@ set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+set(SIMDJSON_GIT_ARGS -c core.filesRefLockTimeout=4000 CACHE STRING "Arguments to pass when doing git operations")
+
 # LTO seems to create all sorts of fun problems. Let us
 # disable temporarily.
 #include(CheckIPOSupported)

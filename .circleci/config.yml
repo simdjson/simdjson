@@ -56,6 +56,9 @@ commands:
   cmake_prep:
     steps:
       - checkout
+      - run: cmake --version
+      - run: $CXX --version
+      - run: git --version
 
   cmake_build:
     steps:
