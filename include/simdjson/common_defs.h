@@ -59,7 +59,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 
   #define really_inline __forceinline
   #define never_inline __declspec(noinline)
@@ -119,7 +119,15 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
   #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 
-  #define SIMDJSON_DLLIMPORTEXPORT
+  #if defined(_MSC_VER) && defined(__clang__)
+    #if SIMDJSON_USING_LIBRARY
+    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
+    #else
+    #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
+    #endif
+  #else
+    #define SIMDJSON_DLLIMPORTEXPORT
+  #endif
 
 #endif // MSC_VER
 

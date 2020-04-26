@@ -8,6 +8,12 @@
  */
 
 #include "simdjson/compiler_check.h"
+#include "simdjson/common_defs.h"
+
+SIMDJSON_PUSH_DISABLE_WARNINGS
+#if defined(_MSC_VER) && defined(__clang__)
+SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
+#endif
 
 // Public API
 #include "simdjson/simdjson_version.h"
@@ -28,5 +34,7 @@
 #include "simdjson/inline/error.h"
 #include "simdjson/inline/padded_string.h"
 #include "simdjson/inline/parsedjson_iterator.h"
+
+SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H
