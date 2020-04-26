@@ -155,6 +155,7 @@ objs
 /tools/json2json
 /tools/jsonstats
 /tools/minify
+/build*/
 
 # Don't check in generated API docs
 /doc/api
