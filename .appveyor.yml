@@ -24,12 +24,13 @@ build_script:
   - set
   - mkdir build
   - cd build
+  - cmake --version
   - cmake -DSIMDJSON_BUILD_STATIC=%SIMDJSON_BUILD_STATIC% -DSIMDJSON_ENABLE_THREADS=%SIMDJSON_ENABLE_THREADS% -DCMAKE_BUILD_TYPE=%Configuration% -DCMAKE_GENERATOR_PLATFORM=%SIMDJSON_PLATFORM% ..
   - cmake -LH ..
-  - cmake --build . --config %Configuration% --verbose
+  - cmake --build . --config %Configuration% --verbose --parallel
 
 test_script:
-  - ctest --output-on-failure -C %Configuration% --verbose
+  - ctest --output-on-failure -C %Configuration% --verbose --parallel
   
 matrix:
   fast_finish: true
