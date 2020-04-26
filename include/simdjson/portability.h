@@ -18,13 +18,13 @@
 #if (!defined(IS_X86_64)) && (!defined(IS_ARM64))
 #if _MSC_VER
 #pragma message("The simdjson library is designed\
- for 64-bit processors and it seems that you are not\
-compiling for a known 64-bit platform. All fast kernels\
-will be disabled and performance may be poor. Please\
+ for 64-bit processors and it seems that you are not \
+compiling for a known 64-bit platform. All fast kernels \
+will be disabled and performance may be poor. Please \
 use a 64-bit target such as x64 or 64-bit ARM.")
 #else
 #error "The simdjson library is designed\
- for 64-bit processors. It seems that you are not\
+ for 64-bit processors. It seems that you are not \
 compiling for a known 64-bit platform."
 #endif
 #endif // (!defined(IS_X86_64)) && (!defined(IS_ARM64))
