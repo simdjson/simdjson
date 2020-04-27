@@ -64,23 +64,33 @@ double readThroughput(std::string parseOutput) {
 
 const double INTERLEAVED_ATTEMPTS = 7;
 
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <new parse cmd> <reference parse cmd>" << std::endl;
+int main(int argc, const char *argv[]) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <old parse exe> <new parse exe> [<parse arguments>]" << std::endl;
         return 1;
     }
+
+    std::string newCommand = argv[1];
+    std::string refCommand = argv[2];
+    for (int i=3; i<argc; i++) {
+        newCommand += " ";
+        newCommand += argv[i];
+        refCommand += " ";
+        refCommand += argv[i];
+    }
+
     std::vector<double> ref;
     std::vector<double> newcode;
     for (int attempt=0; attempt < INTERLEAVED_ATTEMPTS; attempt++) {
         std::cout << "Attempt #" << (attempt+1) << " of " << INTERLEAVED_ATTEMPTS << std::endl;
 
         // Read new throughput
-        double newThroughput = readThroughput(exec(argv[1]));
+        double newThroughput = readThroughput(exec(newCommand.c_str()));
         std::cout << "New throughput: " << newThroughput << std::endl;
         newcode.push_back(newThroughput);
 
         // Read reference throughput
-        double referenceThroughput = readThroughput(exec(argv[2]));
+        double referenceThroughput = readThroughput(exec(refCommand.c_str()));
         std::cout << "Ref throughput: " << referenceThroughput << std::endl;
         ref.push_back(referenceThroughput);
     }

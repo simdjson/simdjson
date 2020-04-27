@@ -4,8 +4,8 @@
 #include <cctype>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 #include <initializer_list>
 
@@ -84,42 +84,38 @@ struct option_struct {
   bool verbose = false;
 
   option_struct(int argc, char **argv) {
-    #ifndef _MSC_VER
-      int c;
+    int c;
 
-      while ((c = getopt(argc, argv, "vtn:i:a:s:")) != -1) {
-        switch (c) {
-        case 'n':
-          iterations = atoi(optarg);
-          break;
-        case 'i':
-          iteration_step = atoi(optarg);
-          break;
-        case 'v':
-          verbose = true;
-          break;
-        case 'a':
-          arch = parse_architecture(optarg);
-          if (arch == architecture::UNSUPPORTED) {
-            exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a HASWELL, WESTMERE or ARM64");
-          }
-          break;
-        case 's':
-          if (!strcmp(optarg, "stage1")) {
-            stage1_only = true;
-          } else if (!strcmp(optarg, "all")) {
-            stage1_only = false;
-          } else {
-            exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
-          }
-          break;
-        default:
-          exit_error("Unexpected argument " + c);
+    while ((c = getopt(argc, argv, "vtn:i:a:s:")) != -1) {
+      switch (c) {
+      case 'n':
+        iterations = atoi(optarg);
+        break;
+      case 'i':
+        iteration_step = atoi(optarg);
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      case 'a':
+        arch = parse_architecture(optarg);
+        if (arch == architecture::UNSUPPORTED) {
+          exit_usage(string("Unsupported option value -a ") + optarg + ": expected -a HASWELL, WESTMERE or ARM64");
         }
+        break;
+      case 's':
+        if (!strcmp(optarg, "stage1")) {
+          stage1_only = true;
+        } else if (!strcmp(optarg, "all")) {
+          stage1_only = false;
+        } else {
+          exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
+        }
+        break;
+      default:
+        exit_error("Unexpected argument " + c);
       }
-    #else
-      int optind = 1;
-    #endif
+    }
 
     // If architecture is not specified, pick the best supported architecture by default
     if (arch == architecture::UNSUPPORTED) {

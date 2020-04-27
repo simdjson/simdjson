@@ -1,50 +1,37 @@
 version: '{build}'
-branches:
-  only:
-  - master
-clone_folder: c:\projects\simdjson
-platform: x64
-image:
-  - Visual Studio 2019
-  - Visual Studio 2017
+branches: { only: [ master ] }
 configuration: Release
+image: Visual Studio 2019
+platform: x64
+
 environment:
   matrix:
-    - SIMDJSON_BUILD_STATIC: ON
-      SIMDJSON_ENABLE_THREADS: OFF
-      SIMDJSON_PLATFORM: x64
-      CMAKE_EXTRA_ARGS:
-    - SIMDJSON_BUILD_STATIC: ON
-      SIMDJSON_ENABLE_THREADS: OFF
-      SIMDJSON_PLATFORM: Win32
-      CMAKE_EXTRA_ARGS:
-    - SIMDJSON_BUILD_STATIC: OFF
-      SIMDJSON_ENABLE_THREADS: ON
-      SIMDJSON_PLATFORM: x64
-      CMAKE_EXTRA_ARGS:
-    - SIMDJSON_BUILD_STATIC: OFF
-      SIMDJSON_ENABLE_THREADS: ON
-      SIMDJSON_PLATFORM: x64
-      CMAKE_EXTRA_ARGS: -T ClangCL
+    - job_name: VS2019
+      CMAKE_ARGS: -DSIMDJSON_CHECKPERF_BRANCH=jkeiser/parse-t
+    - job_name: VS2019CLANG
+      CMAKE_ARGS: -T ClangCL
+    - job_name: VS2017 (Static, No Threads)
+      image: Visual Studio 2017
+      CMAKE_ARGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_ENABLE_THREADS=OFF
+      CTEST_ARGS: -E checkperf
+    - job_name: VS2019 (Win32)
+      platform: Win32
+      CMAKE_ARGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_ENABLE_THREADS=ON # This should be the default. Testing anyway.
+      CTEST_ARGS: -E checkperf
 
-# Under visual studio 2019, LLVM clang comes preinstalled according
-# to this grid: https://www.appveyor.com/docs/windows-images-software/#llvm
 build_script:
   - set
   - mkdir build
   - cd build
   - cmake --version
-  - cmake %CMAKE_EXTRA_ARGS% -DSIMDJSON_BUILD_STATIC=%SIMDJSON_BUILD_STATIC% -DSIMDJSON_ENABLE_THREADS=%SIMDJSON_ENABLE_THREADS% -DCMAKE_BUILD_TYPE=%Configuration% -DCMAKE_GENERATOR_PLATFORM=%SIMDJSON_PLATFORM% ..
+  - cmake -A %Platform% %CMAKE_ARGS% --parallel ..
   - cmake -LH ..
   - cmake --build . --config %Configuration% --verbose --parallel
 
 test_script:
-  - ctest --output-on-failure -C %Configuration% --verbose --parallel
+  - ctest --output-on-failure -C %Configuration% --verbose %CTEST_ARGS% --parallel
+    
+clone_folder: c:\projects\simdjson
 
 matrix:
   fast_finish: true
-  exclude:
-    # Don't build all variants on 2017, just running it to make sure readme_tests succeed
-    - image: Visual Studio 2017
-      SIMDJSON_BUILD_STATIC: ON
-      SIMDJSON_ENABLE_THREADS: OFF

@@ -1,8 +1,8 @@
 #include "simdjson.h"
 
+#include <unistd.h>
 #ifndef _MSC_VER
 #include "linux-perf-events.h"
-#include <unistd.h>
 #ifdef __linux__
 #include <libgen.h>
 #endif //__linux__

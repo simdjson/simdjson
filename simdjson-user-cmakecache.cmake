@@ -5,12 +5,20 @@
 # Not supported on Windows at present, because the only thing that uses it is checkperf, which we
 # don't run on Windows.
 #
-if (NOT MSVC)
-  set(SIMDJSON_USER_CMAKECACHE ${CMAKE_CURRENT_BINARY_DIR}/.simdjson-user-CMakeCache.txt)
+set(SIMDJSON_USER_CMAKECACHE ${CMAKE_CURRENT_BINARY_DIR}/.simdjson-user-CMakeCache.txt)
+if (MSVC)
   add_custom_command(
     OUTPUT ${SIMDJSON_USER_CMAKECACHE}
-    COMMAND bash -c "grep SIMDJSON_ ${PROJECT_BINARY_DIR}/CMakeCache.txt | grep -v SIMDJSON_LIB_ > ${SIMDJSON_USER_CMAKECACHE}"
+    COMMAND findstr SIMDJSON_ ${PROJECT_BINARY_DIR}/CMakeCache.txt > ${SIMDJSON_USER_CMAKECACHE}.tmp
+    COMMAND findstr /v SIMDJSON_LIB_ ${SIMDJSON_USER_CMAKECACHE}.tmp > ${SIMDJSON_USER_CMAKECACHE}
     VERBATIM # Makes it not do weird escaping with the command
   )
-  add_custom_target(simdjson-user-cmakecache ALL DEPENDS ${SIMDJSON_USER_CMAKECACHE})
+else()
+  add_custom_command(
+    OUTPUT ${SIMDJSON_USER_CMAKECACHE}
+    COMMAND grep SIMDJSON_ ${PROJECT_BINARY_DIR}/CMakeCache.txt > ${SIMDJSON_USER_CMAKECACHE}.tmp
+    COMMAND grep -v SIMDJSON_LIB_ ${SIMDJSON_USER_CMAKECACHE}.tmp > ${SIMDJSON_USER_CMAKECACHE}
+    VERBATIM # Makes it not do weird escaping with the command
+  )
 endif()
+add_custom_target(simdjson-user-cmakecache DEPENDS ${SIMDJSON_USER_CMAKECACHE})
