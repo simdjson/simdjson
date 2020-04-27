@@ -1,8 +1,8 @@
 #include <iostream>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 
 #include "simdjson.h"
 
@@ -35,34 +35,30 @@ struct option_struct {
   char* filename{};
  
   option_struct(int argc, char **argv) {
-    #ifndef _MSC_VER
-      int c;
+    int c;
 
-      while ((c = getopt(argc, argv, "a:")) != -1) {
-        switch (c) {
-        case 'a': {
-          const simdjson::implementation *impl = simdjson::available_implementations[optarg];
-          if (!impl) {
-            std::string exit_message = std::string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
-            for (auto imple : simdjson::available_implementations) {
-              exit_message += imple->name();
-              exit_message += " ";
-            }
-            exit_usage(exit_message);
+    while ((c = getopt(argc, argv, "a:")) != -1) {
+      switch (c) {
+      case 'a': {
+        const simdjson::implementation *impl = simdjson::available_implementations[optarg];
+        if (!impl) {
+          std::string exit_message = std::string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
+          for (auto imple : simdjson::available_implementations) {
+            exit_message += imple->name();
+            exit_message += " ";
           }
-          simdjson::active_implementation = impl;
-          break;
+          exit_usage(exit_message);
         }
-        default:
-          // reaching here means an argument was given to getopt() which did not have a case label
-          exit_usage("Unexpected argument - missing case for option "+
-                     std::string(1,static_cast<char>(c))+
-                     " (programming error)");
-        }
+        simdjson::active_implementation = impl;
+        break;
       }
-    #else
-      int optind = 1;
-    #endif
+      default:
+        // reaching here means an argument was given to getopt() which did not have a case label
+        exit_usage("Unexpected argument - missing case for option "+
+                    std::string(1,static_cast<char>(c))+
+                    " (programming error)");
+      }
+    }
 
     // All remaining arguments are considered to be files
     if(optind + 1 == argc) {

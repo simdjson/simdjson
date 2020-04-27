@@ -1,11 +1,11 @@
 #include <cstring>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #else
 // Microsoft can't be bothered to provide standard utils.
 #include <dirent_portable.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 
 #include <cstdio>
