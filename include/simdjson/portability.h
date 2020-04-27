@@ -25,7 +25,8 @@
 #else
 // just regular visual studio (best guess)
 #define SIMDJSON_REGULAR_VISUAL_STUDIO 1
-#endif
+#endif // __clang__
+#endif // _MSC_VER
 
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 // https://en.wikipedia.org/wiki/C_alternative_tokens
