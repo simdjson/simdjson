@@ -5,8 +5,8 @@
 #include <cctype>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 
 #include <cstdio>

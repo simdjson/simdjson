@@ -1,11 +1,11 @@
 #include <cstring>
 #ifndef _MSC_VER
 #include <dirent.h>
-#include <unistd.h>
 #else
 // Microsoft can't be bothered to provide standard utils.
 #include <dirent_portable.h>
 #endif
+#include <unistd.h>
 #include <cinttypes>
 
 #include <cstdio>
@@ -112,7 +112,6 @@ bool validate(const char *dirname) {
 }
 
 int main(int argc, char *argv[]) {
-#ifndef _MSC_VER
   int c;
   while ((c = getopt(argc, argv, "a:")) != -1) {
     switch (c) {
@@ -130,9 +129,6 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
-#else
-  int optind = 1;
-#endif
   if ((argc - optind) != 1) {
     std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
               << std::endl;

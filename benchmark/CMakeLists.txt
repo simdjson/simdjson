@@ -1,5 +1,5 @@
 include_directories( . linux )
-link_libraries(simdjson simdjson-flags)
+link_libraries(simdjson simdjson-flags simdjson-windows-headers)
 # add_executable(benchfeatures benchfeatures.cpp) # doesn't presently compile at all
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
 add_executable(perfdiff perfdiff.cpp)
@@ -35,15 +35,17 @@ if (SIMDJSON_COMPETITION)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
 endif()
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  add_test(NAME checkperf
-    COMMAND ${CMAKE_COMMAND} -E env
-      CHECKPERF_REPOSITORY=https://github.com/simdjson/simdjson
-      CHECKPERF_BRANCH=master
-      CHECKPERF_DIR=${CMAKE_CURRENT_BINARY_DIR}/simdjson-master
-      CHECKPERF_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}
-      bash ${CMAKE_CURRENT_SOURCE_DIR}/checkperf.sh ${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json)
-  set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
-  set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
-  set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+include(checkperf.cmake)
+
+# IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+#   add_test(NAME checkperf
+#     COMMAND ${CMAKE_COMMAND} -E env
+#       CHECKPERF_REPOSITORY=${SIMDJSON_GITHUB_REPOSITORY}
+#       CHECKPERF_BRANCH=master
+#       CHECKPERF_DIR=${CMAKE_CURRENT_BINARY_DIR}/simdjson-master
+#       CHECKPERF_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}
+#       bash ${CMAKE_CURRENT_SOURCE_DIR}/checkperf.sh ${PROJECT_SOURCE_DIR}/jsonexamples/twitter.json)
+  # set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
+  # set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
+  # set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
+# ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
