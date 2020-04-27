@@ -25,7 +25,7 @@ environment:
     - SIMDJSON_BUILD_STATIC: OFF
       SIMDJSON_ENABLE_THREADS: ON
       SIMDJSON_PLATFORM: x64
-      CMAKE_EXTRA_ARGS: -DCMAKE_C_COMPILER=clang.exe -DCMAKE_CXX_COMPILER=clang++.exe
+      CMAKE_EXTRA_ARGS: -T ClangCL
 
 # Under visual studio 2019, LLVM clang comes preinstalled according
 # to this grid: https://www.appveyor.com/docs/windows-images-software/#llvm
