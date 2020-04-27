@@ -4,19 +4,45 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+
+
 #ifdef _MSC_VER
+#define SIMDJSON_VISUAL_STUDIO 1
+/**
+ * We want to differentiate carefully between
+ * clang under visual studio and regular visual
+ * studio.
+ * 
+ * Under clang for Windows, we enable:
+ *  * target pragmas so that part and only part of the
+ *     code gets compiled for advanced instructions.
+ *  * computed gotos.
+ *
+ */
+#ifdef __clang__
+// clang under visual studio
+#define SIMDJSON_CLANG_VISUAL_STUDIO 1
+#else
+// just regular visual studio (best guess)
+#define SIMDJSON_REGULAR_VISUAL_STUDIO 1
+#endif
+
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+// https://en.wikipedia.org/wiki/C_alternative_tokens
+// This header should have no effect, except maybe
+// under Visual Studio.
 #include <iso646.h>
 #endif
 
 #if defined(__x86_64__) || defined(_M_AMD64)
-#define IS_X86_64 1
+#define SIMDJSON_IS_X86_64 1
 #endif
 #if defined(__aarch64__) || defined(_M_ARM64)
-#define IS_ARM64 1
+#define SIMDJSON_IS_ARM64 1
 #endif
 
-#if (!defined(IS_X86_64)) && (!defined(IS_ARM64))
-#if _MSC_VER
+#if (!defined(SIMDJSON_IS_X86_64)) && (!defined(SIMDJSON_IS_ARM64))
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 #pragma message("The simdjson library is designed\
  for 64-bit processors and it seems that you are not \
 compiling for a known 64-bit platform. All fast kernels \
@@ -27,7 +53,7 @@ use a 64-bit target such as x64 or 64-bit ARM.")
  for 64-bit processors. It seems that you are not \
 compiling for a known 64-bit platform."
 #endif
-#endif // (!defined(IS_X86_64)) && (!defined(IS_ARM64))
+#endif // (!defined(SIMDJSON_IS_X86_64)) && (!defined(SIMDJSON_IS_ARM64))
 
 // this is almost standard?
 #undef STRINGIFY_IMPLEMENTATION_
@@ -39,15 +65,15 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_FALLBACK 1
 #endif
 
-#if IS_ARM64
+#if SIMDJSON_IS_ARM64
 #ifndef SIMDJSON_IMPLEMENTATION_ARM64
 #define SIMDJSON_IMPLEMENTATION_ARM64 1
 #endif
 #define SIMDJSON_IMPLEMENTATION_HASWELL 0
 #define SIMDJSON_IMPLEMENTATION_WESTMERE 0
-#endif // IS_ARM64
+#endif // SIMDJSON_IS_ARM64
 
-#if IS_X86_64
+#if SIMDJSON_IS_X86_64
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
 #define SIMDJSON_IMPLEMENTATION_HASWELL 1
 #endif
@@ -55,10 +81,10 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_WESTMERE 1
 #endif
 #define SIMDJSON_IMPLEMENTATION_ARM64 0
-#endif // IS_X86_64
+#endif // SIMDJSON_IS_X86_64
 
 // we are going to use runtime dispatch
-#ifdef IS_X86_64
+#ifdef SIMDJSON_IS_X86_64
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -115,11 +141,18 @@ compiling for a known 64-bit platform."
 #define NO_SANITIZE_UNDEFINED
 #endif
 
-#ifdef _MSC_VER
+
+#ifdef SIMDJSON_VISUAL_STUDIO
+// We include intrin.h even if we are using clang under
+// visual studio. It is fine because clang comes with such
+// a header.
 #include <intrin.h> // visual studio
 #endif
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_VISUAL_STUDIO
+// This is one case where we do not distinguish between
+// regular visual studio and clang under visual studio.
+// clang under Windows has _stricmp (like visual studio) but not strcasecmp (as clang normally has)
 #define simdjson_strcasecmp _stricmp
 #else
 #define simdjson_strcasecmp strcasecmp
@@ -129,7 +162,7 @@ namespace simdjson {
 /** @private portable version of  posix_memalign */
 static inline void *aligned_malloc(size_t alignment, size_t size) {
   void *p;
-#ifdef _MSC_VER
+#ifdef SIMDJSON_VISUAL_STUDIO
   p = _aligned_malloc(size, alignment);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
   p = __mingw_aligned_malloc(size, alignment);
@@ -153,7 +186,7 @@ static inline void aligned_free(void *mem_block) {
   if (mem_block == nullptr) {
     return;
   }
-#ifdef _MSC_VER
+#ifdef SIMDJSON_VISUAL_STUDIO
   _aligned_free(mem_block);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
   __mingw_aligned_free(mem_block);
