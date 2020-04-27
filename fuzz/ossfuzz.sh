@@ -34,7 +34,7 @@ cmake .. \
 -DSIMDJSON_FUZZ_LINKMAIN=Off \
 -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
 
-cmake --build .
+cmake --build . --target all_fuzzers
 
 cp fuzz/fuzz_* $OUT
 

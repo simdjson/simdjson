@@ -42,10 +42,14 @@ if(ENABLE_FUZZING)
   endif ()
   target_link_libraries(simdjson-fuzzer INTERFACE simdjson-flags)
   target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
-  
+
+  # Define the fuzzers
+  add_custom_target(all_fuzzers)
+
   function(implement_fuzzer name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE simdjson-fuzzer)
+    add_dependencies(all_fuzzers ${name})
     add_test(${name} ${name})
     set_property(TEST ${name} APPEND PROPERTY LABELS fuzz)
   endfunction()
