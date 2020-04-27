@@ -110,7 +110,7 @@ char    *optarg;		/* argument associated with option */
 extern char __declspec(dllimport) *__progname;
 #endif
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__clang__) // D. Lemire (April 2020): adding __clang__
 static char EMSG[] = "";
 #else
 #define	EMSG		""
