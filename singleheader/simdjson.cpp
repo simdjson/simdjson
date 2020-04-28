@@ -1,12 +1,12 @@
-/* auto-generated on Thu Apr 23 15:36:58 PDT 2020. Do not edit! */
+/* auto-generated on Mon 27 Apr 2020 21:20:37 EDT. Do not edit! */
+/* begin file simdjson.cpp */
 #include "simdjson.h"
 
-/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
-#ifdef DMALLOC
-#include "dmalloc.h"
+#if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
 #endif
 
-/* begin file simdjson.cpp */
+
 /* begin file error.cpp */
 
 namespace simdjson {
@@ -17,7 +17,7 @@ namespace internal {
     { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
     { CAPACITY, "This parser can't support a document that big" },
     { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
-    { TAPE_ERROR, "Something went wrong while writing to the tape" },
+    { TAPE_ERROR, "The JSON document has an improper structure: missing or superfluous commas, braces, missing keys, etc." },
     { DEPTH_ERROR, "The JSON document was too deep (too many nested objects and arrays)" },
     { STRING_ERROR, "Problem while parsing a string" },
     { T_ATOM_ERROR, "Problem while parsing an atom starting with the letter 't'" },
@@ -659,15 +659,15 @@ namespace arm64 {
 // Sadly, sanitizers are not smart enough to figure it out.
 NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else // _MSC_VER
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   return __builtin_ctzll(input_num);
-#endif // _MSC_VER
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -677,7 +677,7 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
   // to least significant bit (LSB) for a set bit (1).
@@ -687,7 +687,7 @@ really_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -696,7 +696,7 @@ really_inline int count_ones(uint64_t input_num) {
 }
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 + value2;
   return *result < value1;
 #else
@@ -706,7 +706,7 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 }
 
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 * value2;
   return !!__umulh(value1, value2);
 #else
@@ -2392,11 +2392,53 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 #define SIMDJSON_HASWELL_INTRINSICS_H
 
 
-#ifdef _MSC_VER
-#include <intrin.h> // visual studio
+#ifdef SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // _MSC_VER
+#endif // SIMDJSON_VISUAL_STUDIO
+
+#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ * e.g., if __AVX2__ is set... in turn,  we normally set these
+ * macros by compiling against the corresponding architecture
+ * (e.g., arch:AVX2, -mavx2, etc.) which compiles the whole
+ * software with these advanced instructions. In simdjson, we
+ * want to compile the whole program for a generic target,
+ * and only target our specific kernels. As a workaround,
+ * we directly include the needed headers. These headers would
+ * normally guard against such usage, but we carefully included
+ * <x86intrin.h>  (or <intrin.h>) before, so the headers
+ * are fooled.
+ */
+#include <bmiintrin.h>   // for _blsr_u64
+#include <lzcntintrin.h> // for  __lzcnt64
+#include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
+#include <smmintrin.h>
+#include <tmmintrin.h>
+#include <avxintrin.h>
+#include <avx2intrin.h>
+#include <wmmintrin.h>   // for  _mm_clmulepi64_si128
+// unfortunately, we may not get _blsr_u64, but, thankfully, clang
+// has it as a macro.
+#ifndef _blsr_u64
+// we roll our own
+TARGET_HASWELL
+static really_inline uint64_t simdjson_blsr_u64(uint64_t n) {
+  return (n - 1) & n;
+}
+UNTARGET_REGION
+#define _blsr_u64(a)      (simdjson_blsr_u64((a)))
+#endif //  _blsr_u64
+#endif
+
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
 /* end file  */
@@ -2446,16 +2488,16 @@ namespace haswell {
 // Sadly, sanitizers are not smart enough to figure it out.
 NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return (int)_tzcnt_u64(input_num);
-#else // _MSC_VER
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   ////////
   // You might expect the next line to be equivalent to 
   // return (int)_tzcnt_u64(input_num);
   // but the generated code differs and might be less efficient?
   ////////
   return __builtin_ctzll(input_num);
-#endif // _MSC_VER
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -2468,7 +2510,7 @@ really_inline int leading_zeroes(uint64_t input_num) {
   return int(_lzcnt_u64(input_num));
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 really_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -2481,7 +2523,7 @@ really_inline long long int count_ones(uint64_t input_num) {
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -2490,12 +2532,12 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   uint64_t high;
   *result = _umul128(value1, value2, &high);
   return high;
@@ -3935,11 +3977,28 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_INTRINSICS_H
 #define SIMDJSON_WESTMERE_INTRINSICS_H
 
-#ifdef _MSC_VER
-#include <intrin.h> // visual studio
+#ifdef SIMDJSON_VISUAL_STUDIO
+// under clang within visual studio, this will include <x86intrin.h>
+#include <intrin.h> // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // _MSC_VER
+#endif // SIMDJSON_VISUAL_STUDIO
+
+
+#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ */
+#include <smmintrin.h>  // for _mm_alignr_epi8
+#include <wmmintrin.h>  // for  _mm_clmulepi64_si128
+#endif
+
+
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file  */
@@ -3988,15 +4047,15 @@ namespace westmere {
 // Sadly, sanitizers are not smart enough to figure it out.
 NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else // _MSC_VER
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   return __builtin_ctzll(input_num);
-#endif // _MSC_VER
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
@@ -4006,7 +4065,7 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
   // to least significant bit (LSB) for a set bit (1).
@@ -4016,10 +4075,10 @@ really_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 really_inline unsigned __int64 count_ones(uint64_t input_num) {
   // note: we do not support legacy 32-bit Windows
   return __popcnt64(input_num);// Visual Studio wants two underscores
@@ -4032,7 +4091,7 @@ really_inline long long int count_ones(uint64_t input_num) {
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   return _addcarry_u64(0, value1, value2,
                        reinterpret_cast<unsigned __int64 *>(result));
 #else
@@ -4041,12 +4100,12 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
                                 uint64_t *result) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   uint64_t high;
   *result = _umul128(value1, value2, &high);
   return high;
@@ -5789,7 +5848,7 @@ struct value128 {
   uint64_t high;
 };
 
-#if defined(_MSC_VER) && !defined(_M_X64) // _umul128 for x86, arm, arm64
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) && !defined(_M_X64) // _umul128 for x86, arm, arm64
 #if defined(_M_ARM)
 static inline uint64_t __emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
@@ -5808,7 +5867,7 @@ static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
 
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   answer.low = _umul128(value1, value2, &answer.high);
 #else
   __uint128_t r = ((__uint128_t)value1) * value2;

@@ -47,9 +47,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define DEBUG_BLOCK(name, block)
 #endif
 
-#if !defined(_MSC_VER) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
+#if !defined(SIMDJSON_REGULAR_VISUAL_STUDIO) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
+  // We assume here that *only* regular visual studio
+  // does not support computed gotos.
   // Implemented using Labels as Values which works in GCC and CLANG (and maybe
   // also in Intel's compiler), but won't work in MSVC.
+  // Compute gotos are good for performance, enable them if you can.
   #define SIMDJSON_USE_COMPUTED_GOTO
 #endif
 
@@ -59,7 +62,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
 
   #define really_inline __forceinline
   #define never_inline __declspec(noinline)
@@ -80,13 +83,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
-  #if SIMDJSON_USING_LIBRARY
-  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
-  #else
-  #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
-  #endif
-
-#else // MSC_VER
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
   #define really_inline inline __attribute__((always_inline, unused))
   #define never_inline inline __attribute__((noinline, unused))
@@ -119,19 +116,24 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
   #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 
-  #if defined(_MSC_VER) && defined(__clang__)
+
+
+#endif // MSC_VER
+
+#if defined(SIMDJSON_VISUAL_STUDIO)
+    /**
+     * It does not matter here whether you are using
+     * the regular visual studio or clang under visual
+     * studio.
+     */
     #if SIMDJSON_USING_LIBRARY
     #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
     #else
     #define SIMDJSON_DLLIMPORTEXPORT __declspec(dllexport)
     #endif
-  #else
+#else
     #define SIMDJSON_DLLIMPORTEXPORT
-  #endif
-
-#endif // MSC_VER
-
-
+#endif
 
 // C++17 requires string_view.
 #if SIMDJSON_CPLUSPLUS17

@@ -8,6 +8,8 @@ environment:
   matrix:
     - job_name: VS2019
       CMAKE_ARGS: -DSIMDJSON_CHECKPERF_BRANCH=jkeiser/parse-t
+    - job_name: VS2019CLANG
+      CMAKE_ARGS: -T ClangCL
     - job_name: VS2017 (Static, No Threads)
       image: Visual Studio 2017
       CMAKE_ARGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_ENABLE_THREADS=OFF
@@ -30,5 +32,6 @@ test_script:
   - ctest --output-on-failure -C %Configuration% --verbose %CTEST_ARGS% --parallel
     
 clone_folder: c:\projects\simdjson
+
 matrix:
   fast_finish: true

@@ -1,13 +1,9 @@
 #include "simdjson.h"
 
-#if defined(_MSC_VER) && defined(__clang__)
+#if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
 SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
 #endif
 
-/* used for http://dmalloc.com/ Dmalloc - Debug Malloc Library */
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
 
 #include "error.cpp"
 #include "implementation.cpp"
