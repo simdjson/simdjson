@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ########################################################################
 # Generates an "amalgamation build" for roaring. Inspired by similar
 # script used by whefs.
