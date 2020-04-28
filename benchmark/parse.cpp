@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
   if (!options.verbose) { progress.erase(); }
 
   for (size_t i=0; i<options.files.size(); i++) {
-    benchmarkers[i]->print(options.tabbed_output, options.iterations);
+    benchmarkers[i]->print(options.tabbed_output);
     delete benchmarkers[i];
   }
 
