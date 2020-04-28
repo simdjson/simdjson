@@ -105,7 +105,7 @@ At this point, we are require to use one of two main strategies.
 
 
 
-There are scenarios where our strategies are unworkable. If you compile with LLVM clang under Visual Studio, then the header files (intrin.h or x86intrin.h) no longer provides the intrinsic functions that are unsupported by the processor. This appears to be deliberate on the part of the LLVM engineers. To our knowledge, there is no robust workaround for such cases.
+We also handle the special case where a user is compiling using LLVM clang under Windows, [using the Visual Studio toolchain](https://devblogs.microsoft.com/cppblog/clang-llvm-support-in-visual-studio/). If you compile with LLVM clang under Visual Studio, then the header files (intrin.h or x86intrin.h) no longer provides the intrinsic functions that are unsupported by the processor. This appears to be deliberate on the part of the LLVM engineers. With a few lines of code, we handle this scenario just like LLVM clang under a POSIX system, but forcing the inclusion of the specific headers, and rolling our own intrinsic function as needed.
 
 
 
