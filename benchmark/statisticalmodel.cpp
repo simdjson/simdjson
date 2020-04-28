@@ -1,7 +1,5 @@
 #include <iostream>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include "simdjson.h"
 #ifdef __linux__
 #include "linux-perf-events.h"

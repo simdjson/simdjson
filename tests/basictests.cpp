@@ -11,9 +11,7 @@
 #include <sstream>
 #include <utility>
 #include <ciso646> 
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 
 #include "simdjson.h"
 
@@ -1905,7 +1903,6 @@ namespace format_tests {
 
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
-#ifndef _MSC_VER
   int c;
   while ((c = getopt(argc, argv, "a:")) != -1) {
     switch (c) {
@@ -1923,9 +1920,6 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
-#else
-  int optind = 1;
-#endif
 
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:

@@ -26,7 +26,7 @@ if [ ! -d $bdir ] ; then
           -DSIMDJSON_BUILD_STATIC=On \
           -DENABLE_FUZZING=On \
 	  -DSIMDJSON_FUZZ_LINKMAIN=On
-    ninja
+    ninja all_fuzzers
     cd ..
 fi
 

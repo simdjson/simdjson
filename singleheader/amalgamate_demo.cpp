@@ -1,4 +1,4 @@
-/* auto-generated on Mon 27 Apr 2020 21:19:36 EDT. Do not edit! */
+/* auto-generated on Mon 27 Apr 2020 21:20:37 EDT. Do not edit! */
 
 #include <iostream>
 #include "simdjson.h"

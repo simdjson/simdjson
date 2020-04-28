@@ -1,7 +1,5 @@
 #include <iostream>
-#ifndef _MSC_VER
 #include <unistd.h>
-#endif
 #include "simdjson.h"
 
 void usage(const char *exe) {
@@ -14,7 +12,6 @@ void usage(const char *exe) {
 int main(int argc, char *argv[]) {
   bool rawdump = false;
 
-#ifndef _MSC_VER
   int c;
 
   while ((c = getopt(argc, argv, "dh")) != -1) {
@@ -29,9 +26,6 @@ int main(int argc, char *argv[]) {
       abort();
     }
   }
-#else
-  int optind = 1;
-#endif
   if (optind >= argc) {
     usage(argv[0]);
     return EXIT_FAILURE;
