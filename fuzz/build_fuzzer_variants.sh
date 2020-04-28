@@ -27,7 +27,7 @@ if [ ! -d build-$variant ] ; then
 	  -DSIMDJSON_FUZZ_LINKMAIN=On \
 	  -DSIMDJSON_IMPLEMENTATION_HASWELL=0
     
-    ninja
+    ninja all_fuzzers
     cd ..
 fi
 
@@ -45,7 +45,7 @@ if [ ! -d build-$variant ] ; then
 	  -DENABLE_FUZZING=On \
 	  -DSIMDJSON_FUZZ_LINKMAIN=On
     
-    ninja
+    ninja all_fuzzers
     cd ..
 fi
 
@@ -71,7 +71,7 @@ if [ ! -d build-$variant ] ; then
 	  -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE \
 	  -DSIMDJSON_IMPLEMENTATION_HASWELL=0
     
-    ninja
+    ninja all_fuzzers
     cd ..
 fi
 
@@ -99,7 +99,7 @@ if which clang++-9 >/dev/null 2>&1 ; then
 	      -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE \
 	      -DSIMDJSON_IMPLEMENTATION_HASWELL=0
 	
-	ninja
+	ninja all_fuzzers
 	cd ..
     fi
 else
@@ -127,7 +127,7 @@ if [ ! -d build-$variant ] ; then
 	  -DSIMDJSON_FUZZ_LINKMAIN=Off \
 	  -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
     
-    ninja
+    ninja all_fuzzers
     cd ..
 fi
 
@@ -152,7 +152,7 @@ if which clang++-9 >/dev/null 2>&1 ; then
 	      -DSIMDJSON_FUZZ_LINKMAIN=Off \
 	      -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
 	
-	ninja
+	ninja all_fuzzers
 	
 	cd ..
     fi
