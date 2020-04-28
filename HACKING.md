@@ -64,6 +64,53 @@ While simdjson distributes just two files from the singleheader/ directory, we *
 multiple files under include/ and src/. include/simdjson.h and src/simdjson.cpp are the "spine" for
 these, and you can include
 
+
+
+Runtime Dispatching
+--------------------
+
+A key feature of simdjson is the ability to compile different processing kernels, optimized for specific instruction sets, and to select
+the most appropriate kernel at runtime. This ensures that users get the very best performance while still enabling simdjson to run everywhere.
+This technique is frequently called runtime dispatching. The simdjson achieves runtime dispatching entirely in C++: we do not assume
+that the user is building the code using CMake, for example.
+
+To make runtime dispatching work, it is critical that the code be compiled for the lowest supported processor. In particular, you should
+not use flags such as -mavx2, /arch:AVX2 and so forth while compiling simdjson. When you do so, you allow the compiler to use advanced
+instructions. In turn, these advanced instructions present in the code may cause a runtime failure if the runtime processor does not
+support them. Even a simple loop, compiled with these flags, might generate binary code that only run on advanced processors.
+
+So we compile simdjson for a generic processor. Our users should do the same if they want simdjson's runtime dispatch to work. It is important
+to understand that if runtime dispatching does not work, then simdjson will cause crashes on older processors. Of course, if a user chooses
+to compile their code for a specific instruction set (e.g., AVX2), they are responsible for the failures if they later run their code
+on a processor that does not support AVX2. Yet, if we were to entice these users to do so, we would share the blame: thus we carefully instruct
+users to compile their code in a generic way without doing anything to enable advanced instructions.
+
+
+We only use runtime dispatching on x64 (AMD/Intel) platforms, at the moment. On ARM processors, we would need a standard way to query, at runtime,
+the processor for its supported features. We do not know how to do so on ARM systems in general. Thankfully it is not yet a concern: 64-bit ARM
+processors are fairly uniform as far as the instruction sets they support.
+
+
+In all cases, simdjson uses advanced instructions by relying on  "intrinsic functions": we do not write assembly code. The intrinsic functions
+are special functions that the compiler might recognize and translate into fast code. To make runtime dispatching work, we rely on the fact that 
+the header providing these instructions
+(intrin.h under Visual Studio, x86intrin.h elsewhere) defines all of the intrinsic functions, including those that are not supported
+processor.
+
+At this point, we are require to use one of two main strategies.
+
+1. On POSIX systems, the main compilers (LLVM clang, GNU gcc) allow us to use any intrinsic function after including the header, but they fail to inline the resulting instruction if the target processor does not support them. Because we compile for a generic processor, we would not be able to use most intrinsic functions. Thankfully, more recent versions of these compilers allow us to flag a region of code with a specific target, so that we can compile only some of the code with support for advanced instructions. Thus in our C++, one might notice macros like `TARGET_HASWELL`. It is then our responsability, at runtime, to only run the regions of code (that we call kernels) matching the properties of the runtime processor. The benefit of this approach is that the compiler not only let us use intrinsic functions, but it can also optimize the rest of the code in the kernel with advanced instructions we enabled.
+
+2. Under Visual Studio, the problem is somewhat simpler. Visual Studio will not only provide the intrinsic functions, but it will also allow us to use them. They will compile just fine. It is at runtime that they may cause a crash. So we do not need to mark regions of code for compilation toward advanced processors (e.g., with  `TARGET_HASWELL` macros). The downside of the Visual Studio approach is that the compiler is not allowed to use advanced instructions others than those we specify. In principle, this means that Visual Studio has weaker optimization opportunities.
+
+
+
+We also handle the special case where a user is compiling using LLVM clang under Windows, [using the Visual Studio toolchain](https://devblogs.microsoft.com/cppblog/clang-llvm-support-in-visual-studio/). If you compile with LLVM clang under Visual Studio, then the header files (intrin.h or x86intrin.h) no longer provides the intrinsic functions that are unsupported by the processor. This appears to be deliberate on the part of the LLVM engineers. With a few lines of code, we handle this scenario just like LLVM clang under a POSIX system, but forcing the inclusion of the specific headers, and rolling our own intrinsic function as needed.
+
+
+
+
+
 Regenerating Single Headers From Master
 ---------------------------------------
 
