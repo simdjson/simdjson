@@ -8,7 +8,7 @@
 #include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+#endif // SIMDJSON_VISUAL_STUDIO
 
 #ifdef SIMDJSON_CLANG_VISUAL_STUDIO
 /**
@@ -47,7 +47,7 @@ static really_inline uint64_t simdjson_blsr_u64(uint64_t n) {
 }
 UNTARGET_REGION
 #define _blsr_u64(a)      (simdjson_blsr_u64((a)))
-#endif
+#endif //  _blsr_u64
 #endif
 
 
