@@ -1,4 +1,4 @@
-/* auto-generated on Mon 27 Apr 2020 13:17:21 EDT. Do not edit! */
+/* auto-generated on Mon Apr 27 18:03:42 PDT 2020. Do not edit! */
 /* begin file simdjson.cpp */
 #include "simdjson.h"
 
@@ -342,7 +342,7 @@ static const uint64_t thintable_epi8[256] = {
 #ifndef SIMDJSON_HASWELL_IMPLEMENTATION_H
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace haswell {
@@ -376,7 +376,7 @@ namespace simdjson { namespace internal { const haswell::implementation haswell_
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace westmere {
@@ -406,7 +406,7 @@ namespace simdjson { namespace internal { const westmere::implementation westmer
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -436,7 +436,7 @@ namespace simdjson { namespace internal { const arm64::implementation arm64_sing
 #ifndef SIMDJSON_FALLBACK_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -644,12 +644,12 @@ UNTARGET_REGION
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -719,7 +719,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file  */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -1110,8 +1110,8 @@ namespace simd {
 
 #endif // SIMDJSON_ARM64_SIMD_H
 /* end file  */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
-/* arm64/implementation.h already included: #include "arm64/implementation.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -2164,7 +2164,7 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
 #ifndef SIMDJSON_FALLBACK_STAGE1_FIND_MARKS_H
 #define SIMDJSON_FALLBACK_STAGE1_FIND_MARKS_H
 
-/* fallback/implementation.h already included: #include "fallback/implementation.h" */
+/* fallback/implementation.h already included: #include "fallback/implementation.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -2397,7 +2397,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 #include <intrin.h>  // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+#endif // SIMDJSON_VISUAL_STUDIO
 
 #ifdef SIMDJSON_CLANG_VISUAL_STUDIO
 /**
@@ -2418,7 +2418,6 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
  * <x86intrin.h>  (or <intrin.h>) before, so the headers
  * are fooled.
  */
-
 #include <bmiintrin.h>   // for _blsr_u64
 #include <lzcntintrin.h> // for  __lzcnt64
 #include <immintrin.h>   // for most things (AVX2, AVX512, _popcnt64)
@@ -2437,7 +2436,7 @@ static really_inline uint64_t simdjson_blsr_u64(uint64_t n) {
 }
 UNTARGET_REGION
 #define _blsr_u64(a)      (simdjson_blsr_u64((a)))
-#endif
+#endif //  _blsr_u64
 #endif
 
 
@@ -2472,13 +2471,13 @@ UNTARGET_REGION
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file haswell/bitmanipulation.h */
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
 
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -2554,7 +2553,7 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H
 /* end file  */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -2926,8 +2925,8 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_SIMD_H
 /* end file  */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
-/* haswell/implementation.h already included: #include "haswell/implementation.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -3983,7 +3982,23 @@ UNTARGET_REGION
 #include <intrin.h> // visual studio or clang
 #else
 #include <x86intrin.h> // elsewhere
-#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+#endif // SIMDJSON_VISUAL_STUDIO
+
+
+#ifdef SIMDJSON_CLANG_VISUAL_STUDIO
+/**
+ * You are not supposed, normally, to include these
+ * headers directly. Instead you should either include intrin.h
+ * or x86intrin.h. However, when compiling with clang
+ * under Windows (i.e., when _MSC_VER is set), these headers
+ * only get included *if* the corresponding features are detected
+ * from macros:
+ */
+#include <smmintrin.h>  // for _mm_alignr_epi8
+#include <wmmintrin.h>  // for  _mm_clmulepi64_si128
+#endif
+
+
 
 #endif // SIMDJSON_WESTMERE_INTRINSICS_H
 /* end file  */
@@ -4016,12 +4031,12 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -4107,7 +4122,7 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H
 /* end file  */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 
 
@@ -4464,8 +4479,8 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
 /* end file  */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
-/* westmere/implementation.h already included: #include "westmere/implementation.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -7003,15 +7018,15 @@ void found_bad_string(const uint8_t *buf);
 #ifndef SIMDJSON_ARM64_STAGE2_BUILD_TAPE_H
 #define SIMDJSON_ARM64_STAGE2_BUILD_TAPE_H
 
-/* arm64/implementation.h already included: #include "arm64/implementation.h" */
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
 /* begin file arm64/stringparsing.h */
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* arm64/simd.h already included: #include "arm64/simd.h" */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* arm64/simd.h already included: #include "arm64/simd.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -7184,9 +7199,9 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 
@@ -8468,12 +8483,12 @@ error:
 #define SIMDJSON_FALLBACK_STAGE2_BUILD_TAPE_H
 
 
-/* fallback/implementation.h already included: #include "fallback/implementation.h" */
+/* fallback/implementation.h already included: #include "fallback/implementation.h" */
 /* begin file fallback/stringparsing.h */
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -8631,7 +8646,7 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 /* begin file fallback/bitmanipulation.h */
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
@@ -9987,15 +10002,15 @@ error:
 #ifndef SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
 #define SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
 
-/* haswell/implementation.h already included: #include "haswell/implementation.h" */
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
 /* begin file haswell/stringparsing.h */
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* haswell/simd.h already included: #include "haswell/simd.h" */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* haswell/simd.h already included: #include "haswell/simd.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -10166,9 +10181,9 @@ UNTARGET_REGION
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 
@@ -11460,15 +11475,15 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 #define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
 
-/* westmere/implementation.h already included: #include "westmere/implementation.h" */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 /* begin file westmere/stringparsing.h */
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* westmere/simd.h already included: #include "westmere/simd.h" */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* westmere/simd.h already included: #include "westmere/simd.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -11640,9 +11655,9 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 

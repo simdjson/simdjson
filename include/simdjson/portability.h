@@ -142,14 +142,6 @@ compiling for a known 64-bit platform."
 #define NO_SANITIZE_UNDEFINED
 #endif
 
-
-#ifdef SIMDJSON_VISUAL_STUDIO
-// We include intrin.h even if we are using clang under
-// visual studio. It is fine because clang comes with such
-// a header.
-#include <intrin.h> // visual studio
-#endif
-
 #ifdef SIMDJSON_VISUAL_STUDIO
 // This is one case where we do not distinguish between
 // regular visual studio and clang under visual studio.

@@ -1,4 +1,4 @@
-/* auto-generated on Mon 27 Apr 2020 13:17:21 EDT. Do not edit! */
+/* auto-generated on Mon Apr 27 18:03:42 PDT 2020. Do not edit! */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -194,14 +194,6 @@ compiling for a known 64-bit platform."
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
 #else
 #define NO_SANITIZE_UNDEFINED
-#endif
-
-
-#ifdef SIMDJSON_VISUAL_STUDIO
-// We include intrin.h even if we are using clang under
-// visual studio. It is fine because clang comes with such
-// a header.
-#include <intrin.h> // visual studio
 #endif
 
 #ifdef SIMDJSON_VISUAL_STUDIO
@@ -4365,7 +4357,7 @@ inline std::ostream& operator<<(std::ostream& out, const escape_json_string &une
 
 namespace simdjson {
 
-class [[deprecated("Use the new DOM navigation API instead (see doc/usage.md)")]] dom::parser::Iterator {
+class [[deprecated("Use the new DOM navigation API instead (see doc/basics.md)")]] dom::parser::Iterator {
 public:
   inline Iterator(const dom::parser &parser) noexcept(false);
   inline Iterator(const Iterator &o) noexcept;
