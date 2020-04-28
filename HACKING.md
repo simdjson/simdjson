@@ -92,7 +92,7 @@ processors are fairly uniform as far as the instruction sets they support.
 
 
 In all cases, simdjson uses advanced instructions by relying on  "intrinsic functions": we do not write assembly code. The intrinsic functions
-are special functions that the compiler might recognize and translate into fast code. To make runtime dispatching work, we rely on the fact that 
+are special functions that the compiler might recognize and translate into fast code. To make runtime dispatching work, we rely on the fact that
 the header providing these instructions
 (intrin.h under Visual Studio, x86intrin.h elsewhere) defines all of the intrinsic functions, including those that are not supported
 processor.
@@ -150,7 +150,7 @@ pkg install bash
 pkg install cmake
 ```
 
-You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6. 
+You need a recent compiler like clang or gcc. We recommend at least GNU GCC/G++ 7 or LLVM clang 6.
 
 
 Building: While in the project repository, do the following:
@@ -200,9 +200,27 @@ We assume you have a common 64-bit Windows PC with at least Visual Studio 2017 a
 - Grab the simdjson code from GitHub, e.g., by cloning it using [GitHub Desktop](https://desktop.github.com/).
 - Install [CMake](https://cmake.org/download/). When you install it, make sure to ask that `cmake` be made available from the command line. Please choose a recent version of cmake.
 - Create a subdirectory within simdjson, such as `VisualStudio`.
-- Using a shell, go to this newly created directory. You can start a shell directly from GitHub Desktop (Repository > Open in Command Prompt). 
+- Using a shell, go to this newly created directory. You can start a shell directly from GitHub Desktop (Repository > Open in Command Prompt).
 - Type `cmake -DCMAKE_GENERATOR_PLATFORM=x64 ..` in the shell while in the `VisualStudio` repository. (Alternatively, if you want to build a DLL, you may use the command line `cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DSIMDJSON_BUILD_STATIC=OFF ..`.)
 - This last command (`cmake ...`) created a Visual Studio solution file in the newly created directory (e.g., `simdjson.sln`). Open this file in Visual Studio. You should now be able to build the project and run the tests. For example, in the `Solution Explorer` window (available from the `View` menu), right-click `ALL_BUILD` and select `Build`. To test the code, still in the `Solution Explorer` window, select `RUN_TESTS` and select `Build`.
+
+
+Though having Visual Studio installed is necessary, one can build simdjson using only cmake commands:
+
+- `mkdir build`
+- `cd build`
+- `cmake ..`
+- `cmake --build . -config Release`
+
+
+Furthermore, if you have installed LLVM clang on Windows, for example as a component of Visual Studio 2019, you can configure and build simdjson using LLVM clang on Windows using cmake:
+
+
+- `mkdir build`
+- `cd build`
+- `cmake ..  -T ClangCL`
+- `cmake --build . -config Release`
+
 
 ### Usage (Using `vcpkg` on 64-bit Windows, Linux and macOS)
 
