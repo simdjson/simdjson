@@ -252,7 +252,7 @@ struct benchmarker {
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
   json_stats* stats;
-  // Speed and event summary for full parse (not including allocation)
+  // Speed and event summary for full parse (including allocation, stage 1 and stage 2)
   event_aggregate all_stages{};
   // Speed and event summary for stage 1
   event_aggregate stage1{};
@@ -431,7 +431,7 @@ struct benchmarker {
     return 100.0 * a / b;
   }
 
-  void print(bool tabbed_output, size_t iterations) const {
+  void print(bool tabbed_output) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
       strcpy(filename_copy, filename);
@@ -509,7 +509,7 @@ struct benchmarker {
           freqmin, freqmax, freqall);
         }
       }
-      printf("\n%.1f documents parsed per second\n", static_cast<double>(iterations)/static_cast<double>(loop.best.elapsed_sec()));
+      printf("\n%.1f documents parsed per second (best)\n", 1.0/static_cast<double>(all_stages.best.elapsed_sec()));
     }
   }
 };
