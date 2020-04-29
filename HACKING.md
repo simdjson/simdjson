@@ -46,7 +46,7 @@ Other important files and directories:
   mkdir build
   cd build
   cmake ..
-  cmake --build . --config=Release
+  cmake --build . --config Release
   benchmark/parse ../jsonexamples/twitter.json
   ```
   The last line becomes `./benchmark/Release/parse.exe ../jsonexample/twitter.json` under Windows. You may also use Google Benchmark:
@@ -54,7 +54,7 @@ Other important files and directories:
   mkdir build
   cd build
   cmake .. -DSIMDJSON_GOOGLE_BENCHMARKS=ON
-  cmake --build . --target bench_parse_call --config=Release
+  cmake --build . --target bench_parse_call --config Release
   ./benchmark/bench_parse_call
   ```
   The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake .. `.   
