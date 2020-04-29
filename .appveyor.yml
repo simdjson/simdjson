@@ -7,7 +7,7 @@ platform: x64
 environment:
   matrix:
     - job_name: VS2019
-      CMAKE_ARGS: -DSIMDJSON_CHECKPERF_BRANCH=jkeiser/parse-t
+      CMAKE_ARGS:
     - job_name: VS2019CLANG
       CMAKE_ARGS: -T ClangCL
     - job_name: VS2017 (Static, No Threads)
