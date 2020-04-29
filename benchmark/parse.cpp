@@ -62,7 +62,8 @@ void print_usage(ostream& out) {
   out << "-v           - Verbose output." << endl;
   out << "-s stage1    - Stop after find_structural_bits." << endl;
   out << "-s all       - Run all stages." << endl;
-  out << "-H           - Make the buffers hot (reduce page allocation during parsing)" << endl;
+  out << "-C           - Leave the buffers cold (includes page allocation and related OS tasks during parsing, speed tied to OS performance)" << endl;
+  out << "-H           - Make the buffers hot (reduce page allocation and related OS tasks during parsing) [default]" << endl;
   out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
   out << "               implementation supported on the host machine." << endl;
   for (auto impl : simdjson::available_implementations) {
@@ -86,12 +87,19 @@ struct option_struct {
 
   bool verbose = false;
   bool tabbed_output = false;
-  bool hotbuffers = false;
+  /**
+   * Benchmarking on a cold parser instance means that the parsing may include
+   * memory allocation at the OS level. This may lead to apparently odd results
+   * such that higher speed under the Windows Subsystem for Linux than under the
+   * regular Windows, for the same machine. It is arguably misleading to benchmark
+   * how the OS allocates memory, when we really want to just benchmark simdjson.
+   */
+  bool hotbuffers = true;
 
   option_struct(int argc, char **argv) {
     int c;
 
-    while ((c = getopt(argc, argv, "vtn:i:a:s:H")) != -1) {
+    while ((c = getopt(argc, argv, "vtn:i:a:s:HC")) != -1) {
       switch (c) {
       case 'n':
         iterations = atoi(optarg);
@@ -118,6 +126,9 @@ struct option_struct {
         simdjson::active_implementation = impl;
         break;
       }
+      case 'C':
+        hotbuffers = false;
+        break;
       case 'H':
         hotbuffers = true;
         break;
