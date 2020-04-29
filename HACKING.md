@@ -41,7 +41,7 @@ Other important files and directories:
 * **amalgamate.sh:** Generates singleheader/simdjson.h and singleheader/simdjson.cpp for release.
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
-  for it. If you're not sure what else to do to check your performance, this is always a good start:
+  for it. Many of our benchmarks are microbenchmarks. We trying to assess a specific functions in a specific library. In this scenario, we are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnnecessary system calls, how fast and how eagerly the OS maps memory In such scenarios, we typically want to get the best performance that we can achieve... the case where we did not get interrupts, context switches, page faults... What we want is consistency and predictability. The numbers should not depend too much on how busy the machine is, on whether your upgraded your operating system recently, and so forth. This type of benchmarking is distinct from  system benchmarking. If you're not sure what else to do to check your performance, this is always a good start:
   ```bash
   mkdir build
   cd build
@@ -57,7 +57,8 @@ Other important files and directories:
   cmake --build . --target bench_parse_call --config=Release
   ./benchmark/bench_parse_call
   ```
-  The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake .. `.
+  The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake .. `.   
+* **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
   automatically, and is run in CI.
 * **jsonchecker:** A set of JSON files used to check different functionality of the parser.
