@@ -23,7 +23,7 @@ static void numbers_scan(State& state) {
     cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
     return;
   }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     for (auto e : arr) {
       double x;
@@ -47,7 +47,7 @@ static void numbers_size_scan(State& state) {
     cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
     return;
   }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     container.resize(arr.size());
     size_t pos = 0;
@@ -75,7 +75,7 @@ static void numbers_type_scan(State& state) {
     cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
     return;
   }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     for (auto e : arr) {
       dom::element_type actual_type = e.type();
@@ -102,7 +102,7 @@ static void numbers_type_size_scan(State& state) {
     cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
     return;
   }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     container.resize(arr.size());
     size_t pos = 0;
@@ -127,7 +127,7 @@ static void numbers_load_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
     parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
     if(error) {
@@ -152,7 +152,7 @@ static void numbers_load_size_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
     parser.load(NUMBERS_JSON).get<dom::array>().tie(arr, error);
     if(error) {
@@ -183,7 +183,7 @@ static void numbers_exceptions_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::array arr = parser.load(NUMBERS_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     for (double x : arr) {
       container.push_back(x);
@@ -198,7 +198,7 @@ static void numbers_exceptions_size_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::array arr = parser.load(NUMBERS_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     container.resize(arr.size());
     size_t pos = 0;
@@ -218,7 +218,7 @@ static void numbers_type_exceptions_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::array arr = parser.load(NUMBERS_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     for (auto e : arr) {
       dom::element_type actual_type = e.type();
@@ -237,7 +237,7 @@ static void numbers_type_exceptions_size_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::array arr = parser.load(NUMBERS_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::vector<double> container;
     container.resize(arr.size());
     size_t pos = 0;
@@ -258,7 +258,7 @@ BENCHMARK(numbers_type_exceptions_size_scan);
 static void numbers_exceptions_load_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
     dom::array arr = parser.load(NUMBERS_JSON);
     std::vector<double> container;
@@ -274,7 +274,7 @@ BENCHMARK(numbers_exceptions_load_scan);
 static void numbers_exceptions_load_size_scan(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
     dom::array arr = parser.load(NUMBERS_JSON);
     std::vector<double> container;
@@ -295,7 +295,7 @@ static void twitter_count(State& state) {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     uint64_t result_count = doc["search_metadata"]["count"];
     if (result_count != 100) { return; }
   }
@@ -308,7 +308,7 @@ static void iterator_twitter_count(State& state) {
   // Prints the number of results in twitter.json
   padded_string json = padded_string::load(TWITTER_JSON);
   ParsedJson pj = build_parsed_json(json);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     ParsedJson::Iterator iter(pj);
     // uint64_t result_count = doc["search_metadata"]["count"];
     if (!iter.move_to_key("search_metadata")) { return; }
@@ -326,7 +326,7 @@ static void twitter_default_profile(State& state) {
   // Count unique users with a default profile.
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<string_view> default_users;
     for (dom::object tweet : doc["statuses"].get<dom::array>()) {
       dom::object user = tweet["user"];
@@ -343,7 +343,7 @@ static void twitter_image_sizes(State& state) {
   // Count unique image sizes
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     for (dom::object tweet : doc["statuses"].get<dom::array>()) {
       auto [media, not_found] = tweet["entities"]["media"];
@@ -366,7 +366,7 @@ static void error_code_twitter_count(State& state) noexcept {
   // Prints the number of results in twitter.json
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     auto [value, error] = doc["search_metadata"]["count"].get<uint64_t>();
     if (error) { return; }
     if (value != 100) { return; }
@@ -378,7 +378,7 @@ static void error_code_twitter_default_profile(State& state) noexcept {
   // Count unique users with a default profile.
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<string_view> default_users;
 
     auto [tweets, error] = doc["statuses"].get<dom::array>();
@@ -406,7 +406,7 @@ static void iterator_twitter_default_profile(State& state) {
   // Count unique users with a default profile.
   padded_string json = padded_string::load(TWITTER_JSON);
   ParsedJson pj = build_parsed_json(json);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<string_view> default_users;
     ParsedJson::Iterator iter(pj);
 
@@ -445,7 +445,7 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
   dom::parser parser;
   dom::element doc = parser.load(TWITTER_JSON);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     auto [statuses, error] = doc["statuses"].get<dom::array>();
     if (error) { return; }
@@ -475,7 +475,7 @@ static void iterator_twitter_image_sizes(State& state) {
   // Count unique image sizes
   padded_string json = padded_string::load(TWITTER_JSON);
   ParsedJson pj = build_parsed_json(json);
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     ParsedJson::Iterator iter(pj);
 
@@ -534,7 +534,7 @@ static void print_json(State& state) noexcept {
   padded_string json = get_corpus(TWITTER_JSON);
   dom::parser parser;
   if (int error = json_parse(json, parser); error != SUCCESS) { cerr << error_message(error) << endl; return; }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     std::stringstream s;
     if (!parser.print_json(s)) { cerr << "print_json failed" << endl; return; }
   }

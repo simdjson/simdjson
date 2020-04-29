@@ -19,6 +19,7 @@ if (SIMDJSON_GOOGLE_BENCHMARKS)
   add_executable(bench_parse_call bench_parse_call.cpp)
   add_executable(bench_dom_api bench_dom_api.cpp)
   target_link_libraries(bench_dom_api test-data)
+  target_link_libraries(bench_parse_call test-data)
 endif()
 
 if (SIMDJSON_COMPETITION)

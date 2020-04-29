@@ -43,8 +43,21 @@ Other important files and directories:
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. If you're not sure what else to do to check your performance, this is always a good start:
   ```bash
-  make parse && ./parse jsonexamples/twitter.json
+  mkdir build
+  cd build
+  cmake ..
+  cmake --build . --config=Release
+  benchmark/parse ../jsonexamples/twitter.json
   ```
+  The last line becomes `./benchmark/Release/parse.exe ../jsonexample/twitter.json` under Windows. You may also use Google Benchmark:
+  ```bash
+  mkdir build
+  cd build
+  cmake .. -DSIMDJSON_GOOGLE_BENCHMARKS=ON
+  cmake --build . --target bench_parse_call --config=Release
+  ./benchmark/bench_parse_call
+  ```
+  The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake .. `.
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
   automatically, and is run in CI.
 * **jsonchecker:** A set of JSON files used to check different functionality of the parser.
@@ -55,7 +68,6 @@ Other important files and directories:
 * **singleheader:** Contains generated simdjson.h and simdjson.cpp that we release.
 * **test:** The tests are here. basictests.cpp and errortests.cpp are the primary ones.
 * **tools:** Source for executables that can be distributed with simdjson
-
 > **Don't modify the files in singleheader/ directly; these are automatically generated.**
 >
 > While we distribute those files on release, we *maintain* the files under include/ and src/.
