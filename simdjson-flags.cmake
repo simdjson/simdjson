@@ -80,7 +80,6 @@ endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 if(SIMDJSON_SANITIZE)
-  # Not sure which
   target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
   target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
 
@@ -105,14 +104,4 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
-# Workaround for https://gitlab.kitware.com/cmake/cmake/issues/15415#note_633938:
-function(export_private_library NAME)
-  install(TARGETS ${NAME}
-    EXPORT simdjson-config
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
-endfunction()
-
-export_private_library(simdjson-flags)
+install(TARGETS simdjson-flags EXPORT simdjson-config)
