@@ -26,7 +26,7 @@ static void parse_twitter(State& state) {
       return;
   }
   size_t bytes = 0;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     dom::element doc;
     bytes += docdata.size();
     parser.parse(docdata).tie(doc,error);
@@ -62,7 +62,7 @@ static void parse_gsoc(State& state) {
       return;
   }
   size_t bytes = 0;
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     dom::element doc;
     bytes += docdata.size();
     parser.parse(docdata).tie(doc,error);
@@ -88,7 +88,7 @@ SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void json_parse(State& state) {
   ParsedJson pj;
   if (!pj.allocate_capacity(EMPTY_ARRAY.length())) { return; }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     auto error = json_parse(EMPTY_ARRAY, pj);
     if (error) { return; }
   }
@@ -98,7 +98,7 @@ BENCHMARK(json_parse);
 static void parser_parse_error_code(State& state) {
   dom::parser parser;
   if (parser.allocate(EMPTY_ARRAY.length())) { return; }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     auto error = parser.parse(EMPTY_ARRAY).error();
     if (error) { return; }
   }
@@ -107,7 +107,7 @@ BENCHMARK(parser_parse_error_code);
 static void parser_parse_exception(State& state) {
   dom::parser parser;
   if (parser.allocate(EMPTY_ARRAY.length())) { return; }
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     try {
       UNUSED dom::element doc = parser.parse(EMPTY_ARRAY);
     } catch(simdjson_error &j) {
@@ -121,7 +121,7 @@ BENCHMARK(parser_parse_exception);
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void build_parsed_json(State& state) {
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     dom::parser parser = simdjson::build_parsed_json(EMPTY_ARRAY);
     if (!parser.valid) { return; }
   }
@@ -129,7 +129,7 @@ static void build_parsed_json(State& state) {
 SIMDJSON_POP_DISABLE_WARNINGS
 BENCHMARK(build_parsed_json);
 static void document_parse_error_code(State& state) {
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     dom::parser parser;
     auto error = parser.parse(EMPTY_ARRAY).error();
     if (error) { return; }
@@ -137,7 +137,7 @@ static void document_parse_error_code(State& state) {
 }
 BENCHMARK(document_parse_error_code);
 static void document_parse_exception(State& state) {
-  for (auto _ : state) {
+  for (UNUSED auto _ : state) {
     try {
       dom::parser parser;
       UNUSED dom::element doc = parser.parse(EMPTY_ARRAY);
