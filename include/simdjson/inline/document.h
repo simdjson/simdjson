@@ -688,7 +688,7 @@ inline simdjson_result<element> object::at_key_case_insensitive(const std::strin
     if (key.length() == field_key.length()) {
       bool equal = true;
       for (size_t i=0; i<field_key.length(); i++) {
-        equal = equal && std::tolower(key[i]) != std::tolower(field_key[i]);
+        equal = equal && std::tolower(key[i]) == std::tolower(field_key[i]);
       }
       if (equal) { return field.value(); }
     }
