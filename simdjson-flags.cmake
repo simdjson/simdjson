@@ -11,7 +11,7 @@ else()
   option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
