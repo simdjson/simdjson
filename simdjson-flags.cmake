@@ -78,7 +78,7 @@ endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 if(SIMDJSON_SANITIZE)
-  # Not sure which 
+  # Not sure which
   target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
   target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
 
@@ -106,14 +106,10 @@ endif()
 # Workaround for https://gitlab.kitware.com/cmake/cmake/issues/15415#note_633938:
 function(export_private_library NAME)
   install(TARGETS ${NAME}
-    EXPORT ${NAME}-config
+    EXPORT simdjson-config
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
-  install(EXPORT ${NAME}-config
-    FILE ${NAME}-config.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson-private
   )
 endfunction()
 
