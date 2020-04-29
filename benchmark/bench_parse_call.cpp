@@ -5,6 +5,83 @@ using namespace benchmark;
 using namespace std;
 
 const padded_string EMPTY_ARRAY("[]", 2);
+const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+const char *GSOC_JSON = SIMDJSON_BENCHMARK_DATA_DIR "gsoc-2018.json";
+
+
+
+static void parse_twitter(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  simdjson::error_code error;
+  padded_string::load(TWITTER_JSON).tie(docdata, error);
+  if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+  }
+  // we do not want mem. alloc. in the loop.
+  error = parser.allocate(docdata.size());
+  if(error) {
+      cout << error << endl;
+      return;
+  }
+  size_t bytes = 0;
+  for (auto _ : state) {
+    dom::element doc;
+    bytes += docdata.size();
+    parser.parse(docdata).tie(doc,error);
+    if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+    }
+    benchmark::DoNotOptimize(doc);
+  }
+  state.counters["Bytes"] = benchmark::Counter(
+	        bytes, benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1024);
+  state.counters["docs"] = Counter(state.iterations(), benchmark::Counter::kIsRate);
+}
+BENCHMARK(parse_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+
+static void parse_gsoc(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  simdjson::error_code error;
+  padded_string::load(GSOC_JSON).tie(docdata, error);
+  if(error) {
+      cerr << "could not parse gsoc-2018.json" << error << endl;
+      return;
+  }
+  // we do not want mem. alloc. in the loop.
+  error = parser.allocate(docdata.size());
+  if(error) {
+      cout << error << endl;
+      return;
+  }
+  size_t bytes = 0;
+  for (auto _ : state) {
+    dom::element doc;
+    bytes += docdata.size();
+    parser.parse(docdata).tie(doc,error);
+    if(error) {
+      cerr << "could not parse gsoc-2018.json" << error << endl;
+      return;
+    }
+    benchmark::DoNotOptimize(doc);
+  }
+  state.counters["Bytes"] = benchmark::Counter(
+	        bytes, benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1024);
+  state.counters["docs"] = Counter(state.iterations(),    benchmark::Counter::kIsRate);
+}
+BENCHMARK(parse_gsoc)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
