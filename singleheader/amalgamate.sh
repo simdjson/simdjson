@@ -124,7 +124,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${DEMOCPP}
 cat <<< '
 #include <iostream>
 #include "simdjson.h"
-#include "simdjson.cpp"
+
 int main(int argc, char *argv[]) {
   if(argc < 2) {
     std::cerr << "Please specify at least one file name. " << std::endl;

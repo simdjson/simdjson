@@ -8,7 +8,6 @@
 add_library(simdjson-include-source INTERFACE)
 target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-install(TARGETS simdjson-include-source EXPORT simdjson-config)
 
 #
 # For callers who intend to compile simdjson.cpp themselves.
@@ -19,7 +18,6 @@ install(TARGETS simdjson-include-source EXPORT simdjson-config)
 add_library(simdjson-source INTERFACE)
 target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
 target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
-install(TARGETS simdjson-source EXPORT simdjson-config)
 
 #
 # simdjson is the distributed library compiled with flags.
@@ -28,44 +26,7 @@ install(TARGETS simdjson-source EXPORT simdjson-config)
 # directory. It does not specify any compiler flags, even though simdjson.so/a was compiled with
 # target_link_libraries(simdjson PRIVATE simdjson-flags).
 #
-
-if(SIMDJSON_BUILD_STATIC)
-  MESSAGE( STATUS "Building a static library." )
-  add_library(simdjson STATIC "")
-else()
-  MESSAGE( STATUS "Building a dynamic library." )
-  add_library(simdjson SHARED "")
-  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
-  if(MSVC)
-    MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
-    set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
-  endif()
-endif()
-
-target_link_libraries(simdjson INTERFACE simdjson-headers) # Only expose the headers, not sources
-
-target_link_libraries(simdjson PRIVATE simdjson-source simdjson-flags)
-
-
-if(NOT MSVC)
-  ## We output the library at the root of the current directory where cmake is invoked
-  ## This is handy but Visual Studio will happily ignore us
-  set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${PROJECT_BINARY_DIR})
-endif()
-
-#
-# Installation
-#
-install(TARGETS simdjson
-  EXPORT simdjson-config
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(EXPORT simdjson-config
-  FILE simdjson-config.cmake
-  NAMESPACE simdjson::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson
-)
+# TODO: For some reason simdjson-internal cannot pass checkperf if built as a static library
+add_library(simdjson-internal SHARED simdjson.cpp)
+target_link_libraries(simdjson-internal PUBLIC simdjson-headers simdjson-flags)
+target_link_libraries(simdjson-internal PRIVATE simdjson-source)

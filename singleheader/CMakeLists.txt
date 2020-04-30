@@ -30,7 +30,7 @@ if (MSVC)
     )
   endif()
 
-else(MSVC) 
+else(MSVC)
 
   ##
   # Important! The script amalgamate.sh is not generally executable. It
@@ -54,7 +54,7 @@ else(MSVC)
       # It sucks that we have to build the actual library to make it happen, but it's better than\
       # nothing!
       #
-      DEPENDS amalgamate.sh simdjson
+      DEPENDS amalgamate.sh simdjson-internal
   )
 
   # This is used by "make amalgamate" to update the original source files. We obviously don't do
@@ -67,32 +67,64 @@ else(MSVC)
       DEPENDS ${SINGLEHEADER_FILES}
     )
   endif()
-
   #
   # "make amalgamate" to generate the header files directly and update the original source
   #
   add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-  
 endif(MSVC)
 
+#
+# Build the library
+#
+if(SIMDJSON_BUILD_STATIC)
+  MESSAGE( STATUS "Building a static library." )
+  add_library(simdjson STATIC "")
+else()
+  MESSAGE( STATUS "Building a dynamic library." )
+  add_library(simdjson SHARED "")
+  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
+  if(MSVC)
+    MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
+    set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+  endif()
+endif()
+
+add_dependencies(simdjson amalgamate)
+target_include_directories(simdjson PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+target_sources(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
+target_link_libraries(simdjson PRIVATE simdjson-flags)
+
+if(NOT MSVC)
+  ## We output the library at the root of the current directory where cmake is invoked
+  ## This is handy but Visual Studio will happily ignore us
+  set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+  MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${PROJECT_BINARY_DIR})
+endif()
 
 #
-# Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
+# Installation
 #
-add_library(simdjson-singleheader-include-source INTERFACE)
-target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-#
-# Include this to get "simdjson.cpp" included in your project as one of the sources.
-#
-add_library(simdjson-singleheader-source INTERFACE)
-target_sources(simdjson-singleheader-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
-target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singleheader-include-source)
-add_dependencies(simdjson-singleheader-source amalgamate)
+install(TARGETS simdjson
+  EXPORT simdjson-config
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(EXPORT simdjson-config
+  FILE simdjson-config.cmake
+  NAMESPACE simdjson::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson
+)
 
 #
 # Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
 #
 add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
-target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-flags)
+target_link_libraries(amalgamate_demo simdjson)
 add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})

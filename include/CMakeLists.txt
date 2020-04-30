@@ -9,8 +9,3 @@ target_compile_features(simdjson-headers INTERFACE cxx_std_11) # headers require
 target_include_directories(simdjson-headers INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
-
-install(TARGETS simdjson-headers EXPORT simdjson-config INCLUDES DESTINATION include)
-install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.h)
-install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.hpp)
-install(FILES simdjson.h DESTINATION include)

@@ -1,4 +1,4 @@
-/* auto-generated on Mon 27 Apr 2020 21:20:37 EDT. Do not edit! */
+/* auto-generated on Fri 01 May 2020 01:06:51 AM +03. Do not edit! */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -5297,7 +5297,7 @@ inline simdjson_result<element> object::at_key_case_insensitive(const std::strin
     if (key.length() == field_key.length()) {
       bool equal = true;
       for (size_t i=0; i<field_key.length(); i++) {
-        equal = equal && std::tolower(key[i]) != std::tolower(field_key[i]);
+        equal = equal && std::tolower(key[i]) == std::tolower(field_key[i]);
       }
       if (equal) { return field.value(); }
     }

@@ -50,7 +50,7 @@ if (NOT MSVC) # Can't get simdjson-source to compile on Windows for some reason.
 endif()
 
 # All remaining tests link with simdjson proper
-link_libraries(simdjson)
+link_libraries(simdjson-internal)
 add_cpp_test(basictests LABELS acceptance per_implementation)
 add_cpp_test(errortests LABELS acceptance per_implementation)
 add_cpp_test(integer_tests LABELS acceptance per_implementation)
