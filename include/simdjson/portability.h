@@ -147,7 +147,7 @@ compiling for a known 64-bit platform."
 // regular visual studio and clang under visual studio.
 // clang under Windows has _stricmp (like visual studio) but not strcasecmp (as clang normally has)
 #define simdjson_strcasecmp _stricmp
-#define simdjson_strcasecmp _strnicmp
+#define simdjson_strncasecmp _strnicmp
 #else
 // The strcasecmp, strncasecmp, and strcasestr functions do not work with multibyte strings (e.g. UTF-8).
 // So they are only useful for ASCII in our context.
