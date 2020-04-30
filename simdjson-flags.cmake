@@ -11,7 +11,7 @@ else()
   option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
   option(SIMDJSON_USE_LIBCPP "Use the libc++ library" OFF)
 endif()
-option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" OFF)
+option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 
@@ -73,12 +73,13 @@ endif()
 option(SIMDJSON_ENABLE_THREADS "Enable threaded operation" ON)
 if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
-  target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+  target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT} )
 endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 if(SIMDJSON_SANITIZE)
-  # Not sure which 
   target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
   target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
 
@@ -103,18 +104,4 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
 
-# Workaround for https://gitlab.kitware.com/cmake/cmake/issues/15415#note_633938:
-function(export_private_library NAME)
-  install(TARGETS ${NAME}
-    EXPORT ${NAME}-config
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
-  install(EXPORT ${NAME}-config
-    FILE ${NAME}-config.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson-private
-  )
-endfunction()
-
-export_private_library(simdjson-flags)
+install(TARGETS simdjson-flags EXPORT simdjson-config)

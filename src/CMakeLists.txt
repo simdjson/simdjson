@@ -8,7 +8,7 @@
 add_library(simdjson-include-source INTERFACE)
 target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-export_private_library(simdjson-include-source)
+install(TARGETS simdjson-include-source EXPORT simdjson-config)
 
 #
 # For callers who intend to compile simdjson.cpp themselves.
@@ -19,7 +19,7 @@ export_private_library(simdjson-include-source)
 add_library(simdjson-source INTERFACE)
 target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
 target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
-export_private_library(simdjson-source)
+install(TARGETS simdjson-source EXPORT simdjson-config)
 
 #
 # simdjson is the distributed library compiled with flags.

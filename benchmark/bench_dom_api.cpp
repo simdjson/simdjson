@@ -365,7 +365,8 @@ BENCHMARK(twitter_image_sizes);
 static void error_code_twitter_count(State& state) noexcept {
   // Prints the number of results in twitter.json
   dom::parser parser;
-  dom::element doc = parser.load(TWITTER_JSON);
+  auto [doc, error1] = parser.load(TWITTER_JSON);
+  if (error1) { return; }
   for (UNUSED auto _ : state) {
     auto [value, error] = doc["search_metadata"]["count"].get<uint64_t>();
     if (error) { return; }
@@ -377,7 +378,8 @@ BENCHMARK(error_code_twitter_count);
 static void error_code_twitter_default_profile(State& state) noexcept {
   // Count unique users with a default profile.
   dom::parser parser;
-  dom::element doc = parser.load(TWITTER_JSON);
+  auto [doc, error1] = parser.load(TWITTER_JSON);
+  if (error1) { std::cerr << error1 << std::endl; return; }
   for (UNUSED auto _ : state) {
     set<string_view> default_users;
 
@@ -404,7 +406,8 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_default_profile(State& state) {
   // Count unique users with a default profile.
-  padded_string json = padded_string::load(TWITTER_JSON);
+  auto [json, error1] = padded_string::load(TWITTER_JSON);
+  if (error1) { std::cerr << error1 << std::endl; return; }
   ParsedJson pj = build_parsed_json(json);
   for (UNUSED auto _ : state) {
     set<string_view> default_users;
@@ -444,7 +447,8 @@ BENCHMARK(iterator_twitter_default_profile);
 static void error_code_twitter_image_sizes(State& state) noexcept {
   // Count unique image sizes
   dom::parser parser;
-  dom::element doc = parser.load(TWITTER_JSON);
+  auto [doc, error1] = parser.load(TWITTER_JSON);
+  if (error1) { std::cerr << error1 << std::endl; return; }
   for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     auto [statuses, error] = doc["statuses"].get<dom::array>();
@@ -473,7 +477,8 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_image_sizes(State& state) {
   // Count unique image sizes
-  padded_string json = padded_string::load(TWITTER_JSON);
+  auto [json, error1] = padded_string::load(TWITTER_JSON);
+  if (error1) { std::cerr << error1 << std::endl; return; }
   ParsedJson pj = build_parsed_json(json);
   for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
@@ -531,7 +536,8 @@ BENCHMARK(iterator_twitter_image_sizes);
 
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
-  padded_string json = get_corpus(TWITTER_JSON);
+  auto [json, error1] = padded_string::load(TWITTER_JSON);
+  if (error1) { std::cerr << error1 << std::endl; return; }
   dom::parser parser;
   if (int error = json_parse(json, parser); error != SUCCESS) { cerr << error_message(error) << endl; return; }
   for (UNUSED auto _ : state) {

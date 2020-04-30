@@ -110,6 +110,9 @@ static void parser_parse_error_code(State& state) {
   }
 }
 BENCHMARK(parser_parse_error_code);
+
+#if SIMDJSON_EXCEPTIONS
+
 static void parser_parse_exception(State& state) {
   dom::parser parser;
   if (parser.allocate(EMPTY_ARRAY.length())) { return; }
@@ -124,6 +127,8 @@ static void parser_parse_exception(State& state) {
 }
 BENCHMARK(parser_parse_exception);
 
+#endif // SIMDJSON_EXCEPTIONS
+
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void build_parsed_json(State& state) {
@@ -133,6 +138,7 @@ static void build_parsed_json(State& state) {
   }
 }
 SIMDJSON_POP_DISABLE_WARNINGS
+
 BENCHMARK(build_parsed_json);
 static void document_parse_error_code(State& state) {
   for (UNUSED auto _ : state) {
@@ -142,6 +148,9 @@ static void document_parse_error_code(State& state) {
   }
 }
 BENCHMARK(document_parse_error_code);
+
+#if SIMDJSON_EXCEPTIONS
+
 static void document_parse_exception(State& state) {
   for (UNUSED auto _ : state) {
     try {
@@ -154,5 +163,7 @@ static void document_parse_exception(State& state) {
   }
 }
 BENCHMARK(document_parse_exception);
+
+#endif // SIMDJSON_EXCEPTIONS
 
 BENCHMARK_MAIN();
