@@ -379,17 +379,17 @@ struct benchmarker {
     run_loop(iterations);
   }
 
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
-    printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %5.2f GB/s - %5.2f GiB/s\n",
+    printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.4f GB/s\n",
       prefix,
       "Speed",
       stage.elapsed_ns() / static_cast<double>(stats->blocks), // per block
       percent(stage.elapsed_sec(), all_stages.elapsed_sec()), // %
       stage.elapsed_ns() / static_cast<double>(stats->bytes), // per byte
       stage.elapsed_ns() / static_cast<double>(stats->structurals), // per structural
-      (static_cast<double>(json.size()) / 1000000000.0) / stage.elapsed_sec(), // GB/s
-      (static_cast<double>(json.size()) / 1073741824.0) / stage.elapsed_sec() // GiB/s
+      (static_cast<double>(json.size()) / 1000000000.0) / stage.elapsed_sec() // GB/s
     );
 
     if (collector.has_events()) {

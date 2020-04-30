@@ -75,15 +75,14 @@ Usage documentation is available:
 Performance results
 -------------------
 
-The simdjson library uses three-quarters less instructions than state-of-the-art parser RapidJSON and
+The simdjson library uses three-quarters less instructions than state-of-the-art parser [RapidJSON](https://rapidjson.org) and
 fifty percent less than sajson. To our knowledge, simdjson is the first fully-validating JSON parser
-to run at gigabytes per second on commodity processors. It can parse millions of JSON documents
-per second on a single core.
+to run at [gigabytes per second](https://en.wikipedia.org/wiki/Gigabyte) (GB/s) on commodity processors. It can parse millions of JSON documents per second on a single core.
 
 The following figure represents parsing speed in GB/s for parsing various files
 on an Intel Skylake processor (3.4 GHz) using the GNU GCC 9 compiler (with the -O3 flag).
 We compare against the best and fastest C++ libraries.
-The simdjson library offers full unicode (UTF-8) validation and exact
+The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8)) validation and exact
 number parsing. The RapidJSON library is tested in two modes: fast and
 exact number parsing. The sajson library offers fast (but not exact)
 number parsing and partial unicode validation. In this data set, the file
@@ -183,8 +182,8 @@ Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing 
 License
 -------
 
-This code is made available under the Apache License 2.0.
+This code is made available under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it under the liberal (business-friendly) MIT license.
 
-For compilers that do not support C++17, we bundle the string-view library which is published under the Boost license (http://www.boost.org/LICENSE_1_0.txt). Like the Apache license, the Boost license is a permissive license allowing commercial redistribution.
+For compilers that do not support [C++17](https://en.wikipedia.org/wiki/C%2B%2B17), we bundle the string-view library which is published under the Boost license (http://www.boost.org/LICENSE_1_0.txt). Like the Apache license, the Boost license is a permissive license allowing commercial redistribution.

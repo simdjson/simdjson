@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iostream>
 
+// Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
 never_inline
 double bench(std::string filename, simdjson::padded_string& p) {
   std::chrono::time_point<std::chrono::steady_clock> start_clock =
@@ -12,7 +13,7 @@ double bench(std::string filename, simdjson::padded_string& p) {
   std::chrono::time_point<std::chrono::steady_clock> end_clock =
       std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = end_clock - start_clock;
-  return (static_cast<double>(p.size()) / (1024. * 1024. * 1024.)) / elapsed.count();
+  return (static_cast<double>(p.size()) / (1000000000.)) / elapsed.count();
 }
 
 int main(int argc, char *argv[]) {
@@ -32,8 +33,8 @@ int main(int argc, char *argv[]) {
   double meanval = 0;
   double maxval = 0;
   double minval = 10000;
-std::cout << "file size: "<<  (static_cast<double>(p.size()) / (1024. * 1024. * 1024.)) << " GB" <<std::endl;
-  size_t times = p.size() > 1024*1024*1024 ? 5 : 50;
+std::cout << "file size: "<<  (static_cast<double>(p.size()) / (1000000000.)) << " GB" <<std::endl;
+  size_t times = p.size() > 1000000000 ? 5 : 50;
 #if __cpp_exceptions
   try {
 #endif

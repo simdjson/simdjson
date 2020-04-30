@@ -86,13 +86,13 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
 
   int repeat = static_cast<int>((50000000 * repeat_multiplier) / static_cast<double>(p.size()));
   if (repeat < 10) { repeat = 10; }
-
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   if (verbose) {
     std::cout << "Input " << filename << " has ";
-    if (p.size() > 1024 * 1024)
-      std::cout << p.size() / (1024 * 1024) << " MB";
-    else if (p.size() > 1024)
-      std::cout << p.size() / 1024 << " KB";
+    if (p.size() > 1000 * 1000)
+      std::cout << p.size() / (1000 * 1000) << " MB";
+    else if (p.size() > 1000)
+      std::cout << p.size() / 1000 << " KB";
     else
       std::cout << p.size() << " B";
     std::cout << ": will run " << repeat << " iterations." << std::endl;

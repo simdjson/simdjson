@@ -36,12 +36,10 @@ static void parse_twitter(State& state) {
     }
     benchmark::DoNotOptimize(doc);
   }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["Gigabytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
-	        benchmark::Counter::OneK::kIs1000);
-  state.counters["Gigibytes"] = benchmark::Counter(
-	        double(bytes), benchmark::Counter::kIsRate,
-	        benchmark::Counter::OneK::kIs1024);
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
 BENCHMARK(parse_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
@@ -75,12 +73,10 @@ static void parse_gsoc(State& state) {
     }
     benchmark::DoNotOptimize(doc);
   }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["Gigabytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
-	        benchmark::Counter::OneK::kIs1000);
-  state.counters["Gigibytes"] = benchmark::Counter(
-	        double(bytes), benchmark::Counter::kIsRate,
-	        benchmark::Counter::OneK::kIs1024);
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
 BENCHMARK(parse_gsoc)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {

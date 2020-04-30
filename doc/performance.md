@@ -9,6 +9,8 @@ are still some scenarios where tuning can enhance performance.
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Large files and huge page support](#large-files-and-huge-page-support)
 * [Computed GOTOs](#computed-gotos)
+* [Number parsing](#number-parsing)
+* [Visual Studio](#visual-studio)
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
@@ -61,7 +63,7 @@ without bound:
 * You can set a *max capacity* when constructing a parser:
 
   ```c++
-  dom::parser parser(1024*1024); // Never grow past documents > 1MB
+  dom::parser parser(1000*1000); // Never grow past documents > 1MB
   for (web_request request : listen()) {
     auto [doc, error] = parser.parse(request.body);
     // If the document was above our limit, emit 413 = payload too large
@@ -77,7 +79,7 @@ without bound:
 
   ```c++
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
-  simdjson::error_code allocate_error = parser.allocate(1024*1024); // This allocates enough capacity to handle documents <= 1MB
+  simdjson::error_code allocate_error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
   if (allocate_error) { cerr << allocate_error << endl; exit(1); }
 
   for (web_request request : listen()) {
@@ -140,3 +142,13 @@ few hundred megabytes per second if your JSON documents are densely packed with 
 - When possible, you should favor integer values written without a decimal point, as it simpler and faster to parse decimal integer values.
 - When serializing numbers, you should not use more digits than necessary: 17 digits is all that is needed to exactly represent double-precision floating-point numbers. Using many more digits than necessary will make your files larger and slower to parse.
 - When benchmarking parsing speeds, always report whether your JSON documents are made mostly of floating-point numbers when it is the case, since number parsing can then dominate the parsing time.
+
+
+Visual Studio
+--------------
+
+On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers to build either 32-bit (x86) or 64-bit (x64) binaries. W urge you to always use 64-bit mode. Visual Studio 2019 should default on 64-bit builds when you have a 64-bit version of Windows, which we recommend.
+
+We do not recommend that you compile simdjson with architecture-specific flags such as  `arch:AVX2`. The simdjson library automatically selects the best execution kernel at runtime.
+
+Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component. You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler.
