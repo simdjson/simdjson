@@ -10,16 +10,6 @@ target_link_libraries(simdjson-include-source INTERFACE simdjson-headers)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 #
-# For callers who intend to compile simdjson.cpp themselves.
-#
-# target_link_libraries(my-object simdjson-source) gives you the header and source directories, plus
-# the .cpp sources. It does not specify any compiler flags.
-#
-add_library(simdjson-source INTERFACE)
-target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/simdjson.cpp)
-target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
-
-#
 # simdjson is the distributed library compiled with flags.
 #
 # target_link_libraries(my-object simdjson) gives you the .so or .a to link against, plus the header
@@ -29,4 +19,4 @@ target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
 # TODO: For some reason simdjson-internal cannot pass checkperf if built as a static library
 add_library(simdjson-internal SHARED simdjson.cpp)
 target_link_libraries(simdjson-internal PUBLIC simdjson-headers simdjson-flags)
-target_link_libraries(simdjson-internal PRIVATE simdjson-source)
+target_link_libraries(simdjson-internal PRIVATE simdjson-include-source)

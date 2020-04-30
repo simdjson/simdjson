@@ -43,7 +43,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     )
     set_property(
       TEST ${TEST_NAME}
-      APPEND PROPERTY DEPENDS simdjson-source ${PROJECT_SOURCE_DIR}/examples/quickstart/${SOURCE_FILE}
+      APPEND PROPERTY DEPENDS simdjson-internal ${PROJECT_SOURCE_DIR}/examples/quickstart/${SOURCE_FILE}
     )
   endfunction(add_quickstart_test)
 
