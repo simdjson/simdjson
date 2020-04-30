@@ -313,6 +313,7 @@ public:
 
   /**
    * Get the value associated with the given key in a case-insensitive manner.
+   * It is only guaranteed to work over ASCII inputs.
    *
    * Note: The key will be matched against **unescaped** JSON.
    *
