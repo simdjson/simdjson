@@ -686,10 +686,10 @@ inline simdjson_result<element> object::at_key_case_insensitive(const std::strin
   for (iterator field = begin(); field != end_field; ++field) {
     auto field_key = field.key();
     if (key.length() == field_key.length()) {
-      bool equal = true;
-      for (size_t i=0; i<field_key.length(); i++) {
-        equal = equal && std::tolower(key[i]) == std::tolower(field_key[i]);
-      }
+      // See For case-insensitive string comparisons, avoid char-by-char functions
+      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
+      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
+      const bool equal = (simdjson_strncasecmp(key.data(), field_key.data(), key.length()) == 0);
       if (equal) { return field.value(); }
     }
   }
