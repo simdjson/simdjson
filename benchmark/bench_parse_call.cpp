@@ -36,7 +36,10 @@ static void parse_twitter(State& state) {
     }
     benchmark::DoNotOptimize(doc);
   }
-  state.counters["Bytes"] = benchmark::Counter(
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000);
+  state.counters["Gigibytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1024);
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
@@ -72,7 +75,10 @@ static void parse_gsoc(State& state) {
     }
     benchmark::DoNotOptimize(doc);
   }
-  state.counters["Bytes"] = benchmark::Counter(
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000);
+  state.counters["Gigibytes"] = benchmark::Counter(
 	        double(bytes), benchmark::Counter::kIsRate,
 	        benchmark::Counter::OneK::kIs1024);
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
