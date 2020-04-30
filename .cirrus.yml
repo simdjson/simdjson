@@ -15,7 +15,7 @@ task:
     - mkdir build
     - cd build
     - cmake ..
-    - make -j2
+    - make -j4
   test_script:
     - cd build
-    - ctest  -j2 --output-on-failure -E checkperf
+    - ctest -j4 --output-on-failure -E checkperf

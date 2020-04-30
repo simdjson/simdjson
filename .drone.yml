@@ -1,9 +1,9 @@
 kind: pipeline
-name: gcc8
+name: gcc9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: gcc:8
+  image: gcc:9
   environment:
     CC: gcc
     CXX: g++
@@ -27,15 +27,14 @@ name: clang6
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: conanio/clang60
+  user: root
   environment:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -47,11 +46,11 @@ steps:
     - ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 ---
 kind: pipeline
-name: dynamic-gcc8
+name: dynamic-gcc9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: gcc:8
+  image: gcc:9
   environment:
     CC: gcc
     CXX: g++
@@ -68,20 +67,19 @@ steps:
     - ctest $CTEST_FLAGS
 ---
 kind: pipeline
-name: dynamic-clang6
+name: dynamic-clang9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: conanio/clang9
+  user: root
   environment:
-    CC: clang-6.0
-    CXX: clang++-6.0
+    CC: clang-9
+    CXX: clang++-9
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -89,14 +87,14 @@ steps:
     - ctest $CTEST_FLAGS
 ---
 kind: pipeline
-name: sanitize-gcc8
+name: sanitize-gcc9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: gcc:8
+  image: gcc:9
   environment:
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CC: gcc
     CXX: g++
   commands:
@@ -113,20 +111,19 @@ steps:
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 ---
 kind: pipeline
-name: sanitize-clang6
+name: sanitize-clang9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: ubuntu:18.04
+  image: conanio/clang9
+  user: root
   environment:
-    CC: clang-6.0
-    CXX: clang++-6.0
+    CC: clang-9
+    CXX: clang++-9
     CMAKE_FLAGS: -DSIMDJSON_SANITIZE=ON
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
-    - apt-get update -qq
-    - apt-get install -y clang cmake git
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -150,7 +147,7 @@ steps:
     CXX: g++
   commands:
     - apt-get update -qq
-    - apt-get install -y cmake 
+    - apt-get install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -236,7 +233,7 @@ steps:
     CXX: g++
   commands:
     - apt-get update -qq
-    - apt-get install -y cmake 
+    - apt-get install -y cmake libstdc++6
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -271,21 +268,21 @@ steps:
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 ---
 kind: pipeline
-name: libcpp-clang8
+name: libcpp-clang9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: conanio/clang8
+  image: conanio/clang9
   user: root
   environment:
-    CC: clang-8
-    CXX: clang++-8
+    CC: clang-9
+    CXX: clang++-9
     BUILD_FLAGS: -- -j
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CXXFLAGS: -stdlib=libc++
   commands:
     - apt-get update -qq
-    - apt-get install -y cmake 
+    - apt-get install -y cmake
     - mkdir build
     - cd build
     - cmake $CMAKE_FLAGS ..
@@ -293,11 +290,11 @@ steps:
     - ctest $CTEST_FLAGS
 ---
 kind: pipeline
-name: noexceptions-gcc8
+name: noexceptions-gcc9
 platform: { os: linux, arch: amd64 }
 steps:
 - name: Build and Test
-  image: gcc:8
+  image: gcc:9
   environment:
     CC: gcc
     CXX: g++
