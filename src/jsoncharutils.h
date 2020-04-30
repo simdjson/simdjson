@@ -255,17 +255,6 @@ static inline uint32_t hex_to_u32_nocheck(
   return v1 | v2 | v3 | v4;
 }
 
-// returns true if the provided byte value is a 
-// "continuing" UTF-8 value, that is, if it starts with
-// 0b10...
-static inline bool is_utf8_continuing(char c) {
-  // in 2 complement's notation, values start at 0b10000 (-128)... and
-  // go up to 0b11111 (-1)... so we want all values from -128 to -65 (which is 0b10111111)
-  return ((signed char)c) <= -65;
-}
-
-
-
 // given a code point cp, writes to c
 // the utf-8 code, outputting the length in
 // bytes, if the length is zero, the code point
