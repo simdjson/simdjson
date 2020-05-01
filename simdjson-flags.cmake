@@ -35,6 +35,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
 add_library(simdjson-flags INTERFACE)
+add_library(simdjson-public-flags INTERFACE)
 if(MSVC)
   target_compile_options(simdjson-flags INTERFACE /nologo /D_CRT_SECURE_NO_WARNINGS)
   target_compile_options(simdjson-flags INTERFACE /WX /W3 /sdl)
@@ -75,22 +76,23 @@ if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
   set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-  target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT} )
+  target_link_libraries(simdjson-public-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT} )
 endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
 if(SIMDJSON_SANITIZE)
-  target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
-  target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
+  target_compile_options(simdjson-public-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
+  target_link_libraries(simdjson-public-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
   if (CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+    message(WARNING ${CMAKE_C_COMPILER_ID})
+    target_link_libraries(simdjson-public-flags INTERFACE "-fuse-ld=gold")
   endif()
 endif()
 
 if(SIMDJSON_USE_LIBCPP)
-  target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
+  target_link_libraries(simdjson-public-flags INTERFACE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used
   # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++  -lc++abi")
   # The next line is needed empirically.
@@ -105,3 +107,4 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
 endif()
 
 install(TARGETS simdjson-flags EXPORT simdjson-config)
+install(TARGETS simdjson-public-flags EXPORT simdjson-config)

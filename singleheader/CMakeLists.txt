@@ -95,7 +95,7 @@ target_include_directories(simdjson PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_sources(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
-target_link_libraries(simdjson PRIVATE simdjson-flags)
+target_link_libraries(simdjson PRIVATE simdjson-flags PUBLIC simdjson-public-flags)
 
 if(NOT MSVC)
   ## We output the library at the root of the current directory where cmake is invoked
