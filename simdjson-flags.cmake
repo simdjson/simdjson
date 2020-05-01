@@ -86,7 +86,6 @@ if(SIMDJSON_SANITIZE)
 
   # Ubuntu bug for GCC 5.0+ (safe for all versions)
   if (CMAKE_COMPILER_IS_GNUCC)
-    message(WARNING ${CMAKE_C_COMPILER_ID})
     target_link_libraries(simdjson-public-flags INTERFACE "-fuse-ld=gold")
   endif()
 endif()

@@ -17,6 +17,36 @@ set(SINGLEHEADER_REPO_FILES
 )
 set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
+#
+# Build the library
+#
+if(SIMDJSON_BUILD_STATIC)
+  MESSAGE( STATUS "Building a static library." )
+  add_library(simdjson STATIC "")
+else()
+  MESSAGE( STATUS "Building a dynamic library." )
+  add_library(simdjson SHARED "")
+  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
+  if(MSVC)
+    MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
+    set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+  endif()
+endif()
+
+target_include_directories(simdjson PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+target_sources(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
+target_link_libraries(simdjson PRIVATE simdjson-flags PUBLIC simdjson-public-flags)
+
+if(NOT MSVC)
+  ## We output the library at the root of the current directory where cmake is invoked
+  ## This is handy but Visual Studio will happily ignore us
+  set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+  MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${PROJECT_BINARY_DIR})
+endif()
+
 if (MSVC)
   # MSVC doesn't have bash, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
@@ -71,38 +101,8 @@ else(MSVC)
   # "make amalgamate" to generate the header files directly and update the original source
   #
   add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+  add_dependencies(simdjson amalgamate)
 endif(MSVC)
-
-#
-# Build the library
-#
-if(SIMDJSON_BUILD_STATIC)
-  MESSAGE( STATUS "Building a static library." )
-  add_library(simdjson STATIC "")
-else()
-  MESSAGE( STATUS "Building a dynamic library." )
-  add_library(simdjson SHARED "")
-  target_compile_definitions(simdjson INTERFACE SIMDJSON_USING_LIBRARY=1)
-  if(MSVC)
-    MESSAGE( STATUS "Building a Windows DLL using Visual Studio, exporting all symbols automatically." )
-    set_target_properties(simdjson PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
-  endif()
-endif()
-
-add_dependencies(simdjson amalgamate)
-target_include_directories(simdjson PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-target_sources(simdjson PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
-target_link_libraries(simdjson PRIVATE simdjson-flags PUBLIC simdjson-public-flags)
-
-if(NOT MSVC)
-  ## We output the library at the root of the current directory where cmake is invoked
-  ## This is handy but Visual Studio will happily ignore us
-  set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${PROJECT_BINARY_DIR})
-endif()
 
 #
 # Installation
