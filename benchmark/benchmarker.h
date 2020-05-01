@@ -2,6 +2,7 @@
 #define __BENCHMARKER_H
 
 #include "event_counter.h"
+#include "simdjson.h" // For SIMDJSON_DISABLE_DEPRECATED_WARNINGS
 
 #include <cassert>
 #include <cctype>
@@ -435,7 +436,11 @@ struct benchmarker {
   void print(bool tabbed_output) const {
     if (tabbed_output) {
       char* filename_copy = (char*)malloc(strlen(filename)+1);
+      SIMDJSON_PUSH_DISABLE_WARNINGS
+      SIMDJSON_DISABLE_DEPRECATED_WARNING // Validated CRT_SECURE safe here
       strcpy(filename_copy, filename);
+      SIMDJSON_POP_DISABLE_WARNINGS
+
       #if defined(__linux__)
       char* base = ::basename(filename_copy);
       #else
