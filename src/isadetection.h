@@ -56,13 +56,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace simdjson {
 
-namespace {
-// Can be found on Intel ISA Reference for CPUID
-constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
-constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
-constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
-constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
 
 enum instruction_set {
   DEFAULT = 0x0,
@@ -73,7 +66,6 @@ enum instruction_set {
   BMI1 = 0x20,
   BMI2 = 0x40
 };
-}
 
 #if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
 
@@ -91,7 +83,20 @@ static inline uint32_t detect_supported_architectures() {
 
 #endif
 
-#else // x86
+#elif defined(__x86_64__) || defined(_M_AMD64) // x64
+
+
+namespace {
+// Can be found on Intel ISA Reference for CPUID
+constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
+constexpr uint32_t cpuid_bmi2_bit = 1 << 8;      ///< @private bit 8 of EBX for EAX=0x7
+constexpr uint32_t cpuid_sse42_bit = 1 << 20;    ///< @private bit 20 of ECX for EAX=0x1
+constexpr uint32_t cpuid_pclmulqdq_bit = 1 << 1; ///< @private bit  1 of ECX for EAX=0x1
+}
+
+
+
 static inline void cpuid(uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
                          uint32_t *edx) {
 #if defined(_MSC_VER)
@@ -147,6 +152,13 @@ static inline uint32_t detect_supported_architectures() {
 
   return host_isa;
 }
+#else // fallback
+
+
+static inline uint32_t detect_supported_architectures() {
+  return instruction_set::DEFAULT;
+}
+
 
 #endif // end SIMD extension detection code
 
