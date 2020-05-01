@@ -14,7 +14,6 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 #if defined(_MSC_VER) && defined(__clang__)
 SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
 #endif
-SIMDJSON_DISABLE_DEPRECATED_WARNING
 
 // Public API
 #include "simdjson/simdjson_version.h"

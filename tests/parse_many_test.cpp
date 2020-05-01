@@ -63,16 +63,10 @@ bool validate(const char *dirname) {
             /*  Finding the file path  */
             printf("validating: file %s ", name);
             fflush(nullptr);
-            size_t filelen = strlen(name);
-            char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
-            strcpy(fullpath, dirname);
-            if (needsep) {
-                fullpath[dirlen] = '/';
-                strcpy(fullpath + dirlen + 1, name);
-            } else {
-                strcpy(fullpath + dirlen, name);
-            }
-
+            size_t namelen = strlen(name);
+            size_t fullpathlen = dirlen + 1 + namelen + 1;
+            char *fullpath = static_cast<char *>(malloc(fullpathlen));
+            snprintf(fullpath, fullpathlen, "%s%s%s", dirname, needsep ? "/" : "", name);
 
             /* The actual test*/
             auto [json, error] = simdjson::padded_string::load(fullpath);

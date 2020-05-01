@@ -4,7 +4,6 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 #if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
 SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
 #endif
-SIMDJSON_DISABLE_DEPRECATED_WARNING
 
 #include "error.cpp"
 #include "implementation.cpp"
