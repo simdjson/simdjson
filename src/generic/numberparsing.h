@@ -13,7 +13,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
   // ACM SIGPLAN Notices. 1990
-  if (-22 <= power && power <= 22 && i <= 9007199254740991) {
+  if (-22 <= power and power <= 22 and i <= 9007199254740991) {
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
     double d = double(i);
@@ -38,7 +38,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
     *success = true;
     return d;
   }
-  // When 22 < power && power <  22 + 16, we could
+  // When 22 < power and power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
   // described by David M. Gay in  "Correctly rounded
   // binary-decimal and decimal-binary conversions." (1990)
@@ -93,7 +93,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // know that we have an exact computed value for the leading
   // 55 bits because any imprecision would play out as a +1, in
   // the worst case.
-  if (unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
+  if (unlikely((upper & 0x1FF) == 0x1FF) and (lower + i < lower)) {
     uint64_t factor_mantissa_low =
         mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
     // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
@@ -109,7 +109,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
     }
     // We want to check whether mantissa *i + i would affect our result.
     // This does happen, e.g. with 7.3177701707893310e+15.
-    if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
+    if (((product_middle + 1 == 0) and ((product_high & 0x1FF) == 0x1FF) and
          (product_low + i < product_low))) { // let us be prudent and bail out.
       *success = false;
       return 0;
@@ -131,7 +131,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
+  if (unlikely((lower == 0) and ((upper & 0x1FF) == 0) and
                ((mantissa & 3) == 1))) {
       // if mantissa & 1 == 1 we might need to round up.
       //
@@ -168,7 +168,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   mantissa &= ~(1ULL << 52);
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
-  if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
+  if (unlikely((real_exponent < 1) or (real_exponent > 2046))) {
     *success = false;
     return 0;
   }
@@ -203,14 +203,14 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // a float that does not fit in binary64. JSON for Modern C++ (nlohmann/json)
   // will flat out throw an exception.
   //
-  if ((endptr == ptr) || (!std::isfinite(*outDouble))) {
+  if ((endptr == ptr) or (not std::isfinite(*outDouble))) {
     return false;
   }
   return true;
 }
 
 really_inline bool is_integer(char c) {
-  return (c >= '0' && c <= '9');
+  return (c >= '0' and c <= '9');
   // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
 }
 
@@ -246,7 +246,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
   memcpy(&val, chars, 8);
   // a branchy method might be faster:
   // return (( val & 0xF0F0F0F0F0F0F0F0 ) == 0x3030303030303030)
-  //  && (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) ==
+  //  and (( (val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0 ) ==
   //  0x3030303030303030);
   return (((val & 0xF0F0F0F0F0F0F0F0) |
            (((val + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4)) ==
@@ -378,7 +378,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   if (found_minus) {
     ++p;
     negative = true;
-    if (!is_integer(*p)) { // a negative sign must be followed by an integer
+    if (not is_integer(*p)) { // a negative sign must be followed by an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
@@ -398,7 +398,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
     i = 0;
   } else {
-    if (!(is_integer(*p))) { // must start with an integer
+    if (not is_integer(*p)) { // must start with an integer
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
@@ -458,7 +458,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   int digit_count =
       int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
-  if (('e' == *p) || ('E' == *p)) {
+  if (('e' == *p) or ('E' == *p)) {
     is_float = true;
     ++p;
     bool neg_exp = false;
@@ -468,7 +468,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     } else if ('+' == *p) {
       ++p;
     }
-    if (!is_integer(*p)) {
+    if (not is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
@@ -509,7 +509,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       // It is possible that the integer had an overflow.
       // We have to handle the case where we have 0.0000somenumber.
       const char *start = start_digits;
-      while ((*start == '0') || (*start == '.')) {
+      while ((*start == '0') or (*start == '.')) {
         start++;
       }
       // we over-decrement by one when there is a '.'
@@ -525,7 +525,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         return slow_float_parsing((const char *) src, parser);
       }
     }
-    if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
+    if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) or
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
@@ -533,7 +533,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
-    if (!success) {
+    if (not success) {
       // we are almost never going to get here.
       success = parse_float_strtod((const char *)src, &d);
     }
