@@ -379,9 +379,10 @@ struct benchmarker {
     run_loop(iterations);
   }
 
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   template<typename T>
   void print_aggregate(const char* prefix, const T& stage) const {
-    printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.3f GB/s\n",
+    printf("%s%-13s: %8.4f ns per block (%6.2f%%) - %8.4f ns per byte - %8.4f ns per structural - %8.4f GB/s\n",
       prefix,
       "Speed",
       stage.elapsed_ns() / static_cast<double>(stats->blocks), // per block
