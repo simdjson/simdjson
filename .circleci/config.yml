@@ -7,47 +7,48 @@ executors:
       - image: gcc:7
         environment:
           CXX: g++
+          CC: gcc
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc8:
     docker:
-      - image: gcc:8
+      - image: conanio/gcc8
         environment:
-          CXX: g++
+          CXX: g++-8
+          CC: gcc-8
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc9:
     docker:
-      - image: gcc:9
+      - image: conanio/gcc9
         environment:
-          CXX: g++
+          CXX: g++-9
+          CC: gcc-9
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
+
   clang9:
     docker:
       - image: conanio/clang9
         environment:
           CXX: clang++-9
+          CC: clang-9
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
   clang6:
     docker:
-      - image: ubuntu:18.04
+      - image: conanio/clang60
         environment:
           CXX: clang++-6.0
+          CC: clang-6.0
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
-                
+
 # Reusable test commands (and initializer for clang 6)
 commands:
-  init_clang6:
-    steps:
-      - run: apt-get update -qq
-      - run: apt-get install -y clang build-essential git
-
   install_cmake:
     steps:
       - run: apt-get update -qq
@@ -98,7 +99,7 @@ jobs:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ init_clang6, install_cmake, cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test_all, cmake_install_test ]
   # libcpp
   libcpp-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
@@ -110,69 +111,69 @@ jobs:
     description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
     executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ install_cmake, cmake_test_all ]
-  sanitize-clang6:
+    steps: [ cmake_test_all ]
+  sanitize-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
-    executor: clang6
+    executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ init_clang6, install_cmake, cmake_test_all ]
+    steps: [ cmake_test_all ]
   
   # dynamic
-  dynamic-gcc7:
+  dynamic-gcc9:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake dynamic build
-    executor: gcc7
+    executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ install_cmake, cmake_test, cmake_install_test ]
-  dynamic-clang6:
+    steps: [ cmake_test, cmake_install_test ]
+  dynamic-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake dynamic build
-    executor: clang6
+    executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
-    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
   
   # unthreaded
-  unthreaded-gcc7:
+  unthreaded-gcc9:
     description: Build and run tests on GCC 7 and AVX 2 *without* threads
-    executor: gcc7
+    executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ install_cmake, cmake_test, cmake_install_test ]
-  unthreaded-clang6:
+    steps: [ cmake_test, cmake_install_test ]
+  unthreaded-clang9:
     description: Build and run tests on Clang 6 and AVX 2 *without* threads
-    executor: clang6
+    executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
-    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
 
   # noexcept
-  noexcept-gcc7:
+  noexcept-gcc9:
     description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: gcc7
+    executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ install_cmake, cmake_test, cmake_install_test ]
-  noexcept-clang6:
+    steps: [ cmake_test, cmake_install_test ]
+  noexcept-clang9:
     description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: clang6
+    executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
-    steps: [ init_clang6, install_cmake, cmake_test, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
 
   #
   # Misc.
   #
 
   # make (test and checkperf)
-  arch-haswell-gcc7:
+  arch-haswell-gcc9:
     description: Build, run tests and check performance on GCC 7 with -march=haswell
-    executor: gcc7
+    executor: gcc9
     environment: { CXXFLAGS: -march=haswell }
-    steps: [ install_cmake, cmake_test ]
-  arch-nehalem-gcc7:
+    steps: [ cmake_test ]
+  arch-nehalem-gcc9:
     description: Build, run tests and check performance on GCC 7 with -march=nehalem
-    executor: gcc7
+    executor: gcc9
     environment: { CXXFLAGS: -march=nehalem }
-    steps: [ install_cmake, cmake_test ]
-  no-computed-goto-gcc7:
+    steps: [ cmake_test ]
+  no-computed-goto-gcc9:
     description: Build, run tests and check performance on GCC 7 with -DSIMDJSON_NO_COMPUTED_GOTO=true
-    executor: gcc7
+    executor: gcc9
     environment: { CXXFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
-    steps: [ install_cmake, cmake_test ]
+    steps: [ cmake_test ]
 
 workflows:
   version: 2.1
@@ -187,16 +188,16 @@ workflows:
       
       # full single-implementation tests
       - sanitize-gcc9
-      - sanitize-clang6
-      - dynamic-gcc7
-      - dynamic-clang6
-      - unthreaded-gcc7
-      - unthreaded-clang6
+      - sanitize-clang9
+      - dynamic-gcc9
+      - dynamic-clang9
+      - unthreaded-gcc9
+      - unthreaded-clang9
 
       # quicker make single-implementation tests
-      - arch-haswell-gcc7
-      - arch-nehalem-gcc7
-      - no-computed-goto-gcc7
+      - arch-haswell-gcc9
+      - arch-nehalem-gcc9
+      - no-computed-goto-gcc9
     
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
