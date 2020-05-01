@@ -56,6 +56,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 namespace simdjson {
 
+namespace {
 // Can be found on Intel ISA Reference for CPUID
 constexpr uint32_t cpuid_avx2_bit = 1 << 5;      ///< @private Bit 5 of EBX for EAX=0x7
 constexpr uint32_t cpuid_bmi1_bit = 1 << 3;      ///< @private bit 3 of EBX for EAX=0x7
@@ -72,6 +73,7 @@ enum instruction_set {
   BMI1 = 0x20,
   BMI2 = 0x40
 };
+}
 
 #if defined(__arm__) || defined(__aarch64__) // incl. armel, armhf, arm64
 
