@@ -48,7 +48,7 @@ really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   // check for low surrogate for characters outside the Basic
   // Multilingual Plane.
   if (code_point >= 0xd800 && code_point < 0xdc00) {
-    if (((*src_ptr)[0] != '\\') || (*src_ptr)[1] != 'u') {
+    if (((*src_ptr)[0] != '\\') or (*src_ptr)[1] != 'u') {
       return false;
     }
     uint32_t code_point_2 = hex_to_u32_nocheck(*src_ptr + 2);
