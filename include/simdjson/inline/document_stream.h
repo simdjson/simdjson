@@ -88,7 +88,7 @@ static inline bool is_ascii(char c) {
 // if the string ends with  UTF-8 values, backtrack
 // up to the first ASCII character. May return 0.
 static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
-  while ((len > 0) and (not is_ascii(c[len - 1]))) {
+  while ((len > 0) && (!is_ascii(c[len - 1]))) {
     len--;
   }
   return len;

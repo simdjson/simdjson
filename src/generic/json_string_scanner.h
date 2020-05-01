@@ -118,7 +118,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
 }
 
 really_inline error_code json_string_scanner::finish(bool streaming) {
-  if (prev_in_string and (not streaming)) {
+  if (prev_in_string && !streaming) {
     return UNCLOSED_STRING;
   }
   return SUCCESS;

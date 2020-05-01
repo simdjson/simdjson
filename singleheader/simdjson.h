@@ -82,13 +82,6 @@
 #endif // __clang__
 #endif // _MSC_VER
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-// https://en.wikipedia.org/wiki/C_alternative_tokens
-// This header should have no effect, except maybe
-// under Visual Studio.
-#include <iso646.h>
-#endif
-
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define SIMDJSON_IS_X86_64 1
 #endif
@@ -5875,7 +5868,7 @@ static inline bool is_ascii(char c) {
 // if the string ends with  UTF-8 values, backtrack
 // up to the first ASCII character. May return 0.
 static inline size_t trimmed_length_safe_utf8(const char * c, size_t len) {
-  while ((len > 0) and (not is_ascii(c[len - 1]))) {
+  while ((len > 0) && (!is_ascii(c[len - 1]))) {
     len--;
   }
   return len;
@@ -6255,7 +6248,7 @@ inline padded_string::padded_string(size_t length) noexcept
 }
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
-  if ((data != nullptr) and (data_ptr != nullptr)) {
+  if ((data != nullptr) && (data_ptr != nullptr)) {
     memcpy(data_ptr, data, length);
     data_ptr[length] = '\0'; // easier when you need a c_str
   }

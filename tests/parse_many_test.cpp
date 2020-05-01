@@ -89,13 +89,13 @@ bool validate(const char *dirname) {
             if (contains("EXCLUDE", name)) {
                 // skipping
                 how_many--;
-            } else if (starts_with("pass", name) and (has_extension(extension1, name) or has_extension(extension2, name)) and error) {
+            } else if (starts_with("pass", name) && (has_extension(extension1, name) || has_extension(extension2, name)) && error) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should pass but it fails. Error is: %s\n",
                        name, error_message(error));
                 printf("size of file in bytes: %zu \n", json.size());
                 everything_fine = false;
-            } else if ( starts_with("fail", name) and (not starts_with("fail10.json", name)) and !error) {
+            } else if ( starts_with("fail", name) && (!starts_with("fail10.json", name)) && !error) {
                 is_file_as_expected[i] = false;
                 printf("warning: file %s should fail but it passes.\n", name);
                 printf("size of file in bytes: %zu \n", json.size());
