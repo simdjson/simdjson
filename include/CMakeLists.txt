@@ -11,6 +11,3 @@ target_include_directories(simdjson-headers INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCDIR}>)
 
 install(TARGETS simdjson-headers EXPORT simdjson-config INCLUDES DESTINATION include)
-install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.h)
-install(DIRECTORY simdjson DESTINATION include FILES_MATCHING PATTERN *.hpp)
-install(FILES simdjson.h DESTINATION include)
