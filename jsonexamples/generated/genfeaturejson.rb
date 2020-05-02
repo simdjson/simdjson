@@ -26,7 +26,7 @@ class ChunkWriter
 
     def write_full(filename, start1, repeat1, end1)
         puts "Writing #{filename} ..."
-        File.open(filename, "w") do |file|
+        File.open(filename, "wb") do |file|
             write_chunks(file, start1, repeat1, end1, @@file_size)
         end
         raise "OMG wrong file size #{File.size(filename)} (should be #{@@file_size})" if File.size(filename) != @@file_size
@@ -39,7 +39,7 @@ class ChunkWriter
         halfway_point = start1.bytesize + repeat1_len + repeat2.bytesize
 
         puts "Writing #{filename} ..."
-        File.open(filename, "w") do |file|
+        File.open(filename, "wb") do |file|
             write_chunks(file, start1,  repeat1, repeat2, halfway_point)
             write_chunks(file, repeat2, repeat2, end1,    @@file_size-halfway_point)
         end
@@ -55,7 +55,7 @@ class ChunkWriter
         repeat_template = (repeat_chunks - 1).step(repeat_template.size - 1, repeat_chunks).map { |i| repeat_template[i] }
 
         puts "Writing #{filename} ..."
-        File.open(filename, "w") do |file|
+        File.open(filename, "wb") do |file|
             file.write(start1)
             repeat_template.each do |should_repeat|
                 file.write(should_repeat == "1" ? repeat1 : repeat2)
@@ -83,7 +83,7 @@ class ChunkWriter
     end
 end
 
-output_dir = File.expand_path("../jsonexamples/generated", File.dirname(__FILE__))
+output_dir = ARGV[0] || File.expand_path(".", File.dirname(__FILE__))
 miss_templates = File.expand_path("miss-templates", File.dirname(__FILE__))
 Dir.mkdir(output_dir) unless File.directory?(output_dir)
 w = ChunkWriter.new(output_dir, miss_templates)
