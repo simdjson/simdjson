@@ -39,7 +39,6 @@ add_library(simdjson-internal-flags INTERFACE)
 target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 if(MSVC)
-  target_compile_options(simdjson-internal-flags INTERFACE /nologo)
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
