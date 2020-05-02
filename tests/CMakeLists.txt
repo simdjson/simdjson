@@ -44,8 +44,10 @@ include(${PROJECT_SOURCE_DIR}/tests/add_cpp_test.cmake)
 #
 add_cpp_test(numberparsingcheck LABELS acceptance per_implementation)
 target_link_libraries(numberparsingcheck simdjson-include-source simdjson-windows-headers)
+target_compile_definitions(numberparsingcheck PRIVATE NOMINMAX)
 add_cpp_test(stringparsingcheck LABELS acceptance per_implementation)
 target_link_libraries(stringparsingcheck simdjson-include-source simdjson-windows-headers)
+target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
 
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
