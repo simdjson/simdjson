@@ -6,12 +6,12 @@
 set -e
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-
+PROJECTPATH=$(realpath "$SCRIPTPATH/..");
 echo "We are about to amalgamate all simdjson files into one source file. "
 echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
 
-if [ -z "$AMALGAMATE_SOURCE_PATH" ]; then AMALGAMATE_SOURCE_PATH="$SCRIPTPATH/../src"; fi
-if [ -z "$AMALGAMATE_INCLUDE_PATH" ]; then AMALGAMATE_INCLUDE_PATH="$SCRIPTPATH/../include"; fi
+if [ -z "$AMALGAMATE_SOURCE_PATH" ]; then AMALGAMATE_SOURCE_PATH=$(realpath "$SCRIPTPATH/../src"); fi
+if [ -z "$AMALGAMATE_INCLUDE_PATH" ]; then AMALGAMATE_INCLUDE_PATH=$(realpath "$SCRIPTPATH/../include"); fi
 if [ -z "$AMALGAMATE_OUTPUT_PATH" ]; then AMALGAMATE_OUTPUT_PATH="$SCRIPTPATH"; fi
 
 # this list excludes the "src/generic headers"
@@ -66,8 +66,9 @@ function doinclude()
 function dofile()
 {
     file="$1/$2"
+    RELFILE=${file#"$PROJECTPATH/"}
     # Last lines are always ignored. Files should end by an empty lines.
-    echo "/* begin file ${2} */"
+    echo "/* begin file $RELFILE */"
     # echo "#line 8 \"$1\"" ## redefining the line/file is not nearly as useful as it sounds for debugging. It breaks IDEs.
     while IFS= read -r line || [ -n "$line" ];
     do

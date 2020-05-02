@@ -72,7 +72,6 @@ else(MSVC)
   # "make amalgamate" to generate the header files directly and update the original source
   #
   add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-
 endif(MSVC)
 
 
@@ -96,3 +95,5 @@ add_dependencies(simdjson-singleheader-source amalgamate)
 add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
 target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-internal-flags simdjson-flags)
 add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+
+install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
