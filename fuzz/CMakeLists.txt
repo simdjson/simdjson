@@ -40,7 +40,7 @@ if(ENABLE_FUZZING)
   else ()
     target_link_libraries(simdjson-fuzzer INTERFACE simdjson)
   endif ()
-  target_link_libraries(simdjson-fuzzer INTERFACE simdjson-flags simdjson-private-flags)
+  target_link_libraries(simdjson-fuzzer INTERFACE simdjson-flags simdjson-internal-flags)
   target_link_libraries(simdjson-fuzzer INTERFACE ${SIMDJSON_FUZZ_LDFLAGS})
 
   # Define the fuzzers
