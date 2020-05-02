@@ -15,7 +15,6 @@
 #ifndef _MSC_VER
 #include <dirent.h>
 #else
-// Microsoft can't be bothered to provide standard utils.
 #include <dirent_portable.h>
 #endif
 #include "simdjson.h"
