@@ -42,9 +42,8 @@ else()
   endif()
 endif()
 
-target_link_libraries(simdjson INTERFACE simdjson-headers) # Only expose the headers, not sources
-
-target_link_libraries(simdjson PRIVATE simdjson-source simdjson-flags)
+target_link_libraries(simdjson PUBLIC simdjson-headers simdjson-flags) # Only expose the headers, not sources
+target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 
 
 if(NOT MSVC)
