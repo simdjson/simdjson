@@ -1,7 +1,6 @@
 #include <cassert>
 #include <climits>
 #include <cstring>
-#include <dirent.h>
 #include <inttypes.h>
 #include <iostream>
 #include <math.h>
@@ -13,6 +12,7 @@
 #define JSON_TEST_STRINGS
 #endif
 
+#include "dirent_portable.h"
 #include "simdjson.h"
 
 char *fullpath;

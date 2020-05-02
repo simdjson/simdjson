@@ -1,5 +1,4 @@
 #include <cstring>
-#include <dirent.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
@@ -10,6 +9,7 @@
 #define JSON_TEST_NUMBERS
 #endif
 
+#include "dirent_portable.h"
 #include "simdjson.h"
 
 // ulp distance
