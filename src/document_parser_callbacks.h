@@ -89,8 +89,12 @@ really_inline bool parser::on_null_atom() noexcept {
 really_inline uint8_t *parser::on_start_string() noexcept {
   /* we advance the point, accounting for the fact that we have a NULL
     * termination         */
+  // If we limit JSON documents to strictly less 4GB of
+  // string content, then current_string_buf_loc
+  // - doc.string_buf.get() fits in 32 bits. This leaves us
+  // three free bytes.
   write_tape(current_string_buf_loc - doc.string_buf.get(), internal::tape_type::STRING);
-  return current_string_buf_loc + sizeof(uint32_t);
+  return current_string_buf_loc + sizeof(uint16_t);
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
@@ -98,11 +102,32 @@ really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
   // TODO check for overflow in case someone has a crazy string (>=4GB?)
   // But only add the overflow check when the document itself exceeds 4GB
   // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-  memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
+
+  // We have two scenarios here. Either the string length is
+  // less than 0x7fffff in which case, we have room in the string
+  // header and all is good. Otherwise, we can encode the
+  // string length in the document itself, taking care to
+  // ensure that we do so in ASCII.
+  if(likely(str_length <= 0x7fffff)) { // likely
+    doc.tape[current_loc-1] |=  uint64_t(str_length) << 32;
+    // we have a string header that must be ASCII, unused in
+    // this common case
+    current_string_buf_loc[0] = uint8_t(32); // space
+    current_string_buf_loc[1] = uint8_t(32); // space
+    // we are done!
+  } else {
+    // oh gosh, we have a long string.
+    doc.tape[current_loc-1] |=  uint64_t(0x800000 | (str_length >> 9)) << 32;
+    // we have 9 bits left to code, which we do on the string buffer
+    // using two bytes
+    current_string_buf_loc[0] = uint8_t(32 + ((str_length & 0x1f0) >> 4))
+    current_string_buf_loc[1] = 32 + uint8_t(str_length & 0xf);
+  }
   // NULL termination is still handy if you expect all your strings to
-  // be NULL terminated? It comes at a small cost
-  *dst = 0;
-  current_string_buf_loc = dst + 1;
+  // be NULL terminated? It comes at a small cost and if it is
+  // never used, we might as well drop it.
+  //*dst = 0;
+  //current_string_buf_loc = dst + 1;
   return true;
 }
 
