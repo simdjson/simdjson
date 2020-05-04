@@ -1,9 +1,7 @@
 #include "simdjson.h"
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
-#if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
-SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
-#endif
+SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 #include "error.cpp"
 #include "implementation.cpp"

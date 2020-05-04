@@ -77,9 +77,12 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define unlikely(x) x
   #endif
 
+  #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
+  // Get rid of Intellisense-only warnings (Code Analysis)
+  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
@@ -113,6 +116,11 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-variable)
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
   #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
+  #if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
+  #else
+  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
+  #endif
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_GCC_WARNING(-Wdeprecated-declarations)
   #define SIMDJSON_POP_DISABLE_WARNINGS _Pragma("GCC diagnostic pop")
 

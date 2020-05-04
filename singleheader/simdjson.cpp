@@ -1,11 +1,9 @@
-/* auto-generated on Sat May  2 15:01:27 PDT 2020. Do not edit! */
+/* auto-generated on Mon May  4 11:46:14 PDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
-#if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
-SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
-#endif
+SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 /* begin file src/error.cpp */
 
