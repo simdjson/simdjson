@@ -10,6 +10,79 @@ namespace simdjson {
 namespace arm64 {
 namespace simd {
 
+namespace {
+/**
+ * make_uint8x16_t initializes a SIMD register (uint8x16_t).
+ * This is needed because, incredibly, the syntax uint8x16_t x = {1,2,3...}
+ * is not recognized under Visual Studio! This is a workaround.
+ * Using a std::initializer_list<uint8_t>  as a parameter resulted in
+ * inefficient code. With the current approach, if the parameters are
+ * compile-time constants,
+ * GNU GCC compiles it to ldr, the same as uint8x16_t x = {1,2,3...}.
+ * You should not use this function except for compile-time constant:
+ * it is not efficient.
+ */
+uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
+                           uint8_t x5, uint8_t x6, uint8_t x7, uint8_t x8,
+                           uint8_t x9, uint8_t x10, uint8_t x11, uint8_t x12,
+                           uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
+  // Doing a load like so end ups generating worse code.
+  // uint8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
+  //                     x9, x10,x11,x12,x13,x14,x15,x16};
+  // return vld1q_u8(array);
+  uint8x16_t x{};
+  // incredibly, Visual Studio does not allow x[0] = x1
+  x = vsetq_lane_u8(x1, x, 0);
+  x = vsetq_lane_u8(x2, x, 1);
+  x = vsetq_lane_u8(x3, x, 2);
+  x = vsetq_lane_u8(x4, x, 3);
+  x = vsetq_lane_u8(x5, x, 4);
+  x = vsetq_lane_u8(x6, x, 5);
+  x = vsetq_lane_u8(x7, x, 6);
+  x = vsetq_lane_u8(x8, x, 7);
+  x = vsetq_lane_u8(x1, x, 8);
+  x = vsetq_lane_u8(x1, x, 9);
+  x = vsetq_lane_u8(x1, x, 10);
+  x = vsetq_lane_u8(x1, x, 11);
+  x = vsetq_lane_u8(x1, x, 12);
+  x = vsetq_lane_u8(x1, x, 13);
+  x = vsetq_lane_u8(x1, x, 14);
+  x = vsetq_lane_u8(x1, x, 15);
+  return x;
+}
+
+int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
+                           int8_t x5, int8_t x6, int8_t x7, int8_t x8,
+                           int8_t x9, int8_t x10, int8_t x11, int8_t x12,
+                           int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
+  // Doing a load like so end ups generating worse code.
+  // int8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
+  //                     x9, x10,x11,x12,x13,x14,x15,x16};
+  // return vld1q_s8(array);
+  int8x16_t x{};
+  // incredibly, Visual Studio does not allow x[0] = x1
+  x = vsetq_lane_s8(x1, x, 0);
+  x = vsetq_lane_s8(x2, x, 1);
+  x = vsetq_lane_s8(x3, x, 2);
+  x = vsetq_lane_s8(x4, x, 3);
+  x = vsetq_lane_s8(x5, x, 4);
+  x = vsetq_lane_s8(x6, x, 5);
+  x = vsetq_lane_s8(x7, x, 6);
+  x = vsetq_lane_s8(x8, x, 7);
+  x = vsetq_lane_s8(x1, x, 8);
+  x = vsetq_lane_s8(x1, x, 9);
+  x = vsetq_lane_s8(x1, x, 10);
+  x = vsetq_lane_s8(x1, x, 11);
+  x = vsetq_lane_s8(x1, x, 12);
+  x = vsetq_lane_s8(x1, x, 13);
+  x = vsetq_lane_s8(x1, x, 14);
+  x = vsetq_lane_s8(x1, x, 15);
+  return x;
+}
+
+} // namespace
+
+
   template<typename T>
   struct simd8;
 
@@ -61,8 +134,8 @@ namespace simd {
     // We return uint32_t instead of uint16_t because that seems to be more efficient for most
     // purposes (cutting it down to uint16_t costs performance in some compilers).
     really_inline uint32_t to_bitmask() const {
-      const uint8x16_t bit_mask = {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+      const uint8x16_t bit_mask =  make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
       auto minput = *this & bit_mask;
       uint8x16_t tmp = vpaddq_u8(minput, minput);
       tmp = vpaddq_u8(tmp, tmp);
@@ -90,10 +163,10 @@ namespace simd {
     really_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
-    ) : simd8(uint8x16_t{
+    ) : simd8( make_uint8x16_t(
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
-    }) {}
+    )) {}
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<uint8_t> repeat_16(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
@@ -167,7 +240,7 @@ namespace simd {
       uint64x2_t shufmask64 = {thintable_epi8[mask1], thintable_epi8[mask2]};
       uint8x16_t shufmask = vreinterpretq_u8_u64(shufmask64);
       // we increment by 0x08 the second half of the mask
-      uint8x16_t inc = {0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+      uint8x16_t inc = make_uint8x16_t(0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);
       shufmask = vaddq_u8(shufmask, inc);
       // this is the version "nearly pruned"
       uint8x16_t pruned = vqtbl1q_u8(*this, shufmask);
@@ -227,10 +300,10 @@ namespace simd {
     really_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
-    ) : simd8(int8x16_t{
+    ) : simd8(make_int8x16_t(
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
-    }) {}
+    )) {}
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<int8_t> repeat_16(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
@@ -246,8 +319,9 @@ namespace simd {
     really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
-    really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
-    really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(*this); }
+    // Under Visual Studio/ARM64 uint8x16_t and int8x16_t are apparently the same type.
+    // really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
+    really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(this->value); }
 
     // Math
     really_inline simd8<int8_t> operator+(const simd8<int8_t> other) const { return vaddq_s8(*this, other); }
@@ -361,10 +435,10 @@ namespace simd {
     }
 
     really_inline uint64_t to_bitmask() const {
-      const uint8x16_t bit_mask = {
+      const uint8x16_t bit_mask = make_uint8x16_t(
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
-      };
+      );
       // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
       uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
       uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);

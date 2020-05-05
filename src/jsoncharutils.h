@@ -312,12 +312,12 @@ struct value128 {
 };
 
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) &&                                 \
-    !defined(_M_X64) // _umul128 for x86, arm, arm64
-#if defined(_M_ARM)
+    !defined(_M_X64) && !defined(_M_ARM64)// _umul128 for x86, arm
+// this is a slow emulation routine for 32-bit Windows
+//
 static inline uint64_t __emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
 }
-#endif
 static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
   uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
   uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
@@ -333,8 +333,14 @@ static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-  answer.low = _umul128(value1, value2, &answer.high);
+#ifdef _M_ARM64
+  // ARM64 has native support for 64-bit multiplications, no need to emultate
+  answer.high = __umulh(value1, value2);
+  answer.low = value1 * value2;
 #else
+  answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
+#endif // _M_ARM64
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   __uint128_t r = ((__uint128_t)value1) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
