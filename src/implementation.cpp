@@ -122,7 +122,11 @@ const implementation *available_implementation_list::detect_best_supported() con
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   char *force_implementation_name = getenv("SIMDJSON_FORCE_IMPLEMENTATION");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
   if (force_implementation_name) {
     auto force_implementation = available_implementations[force_implementation_name];
     if (!force_implementation) {
