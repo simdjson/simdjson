@@ -7,30 +7,37 @@ platform: x64
 environment:
   matrix:
     - job_name: VS2019
-      CMAKE_ARGS:
+      CMAKE_ARGS:  -A %Platform%
     - job_name: VS2019CLANG
-      CMAKE_ARGS: -T ClangCL
+      CMAKE_ARGS:  -A %Platform% -T ClangCL
+    - job_name: VS2019ARM
+      CMAKE_ARGS: -A ARM64 -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0 -DRUN_HAVE_GNU_POSIX_REGEX=0 -DRUN_HAVE_STEADY_CLOCK=0
     - job_name: VS2017 (Static, No Threads)
       image: Visual Studio 2017
-      CMAKE_ARGS: -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_ENABLE_THREADS=OFF
+      CMAKE_ARGS:  -A %Platform% -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_ENABLE_THREADS=OFF
       CTEST_ARGS: -E checkperf
     - job_name: VS2019 (Win32)
       platform: Win32
-      CMAKE_ARGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_ENABLE_THREADS=ON # This should be the default. Testing anyway.
+      CMAKE_ARGS:  -A %Platform% -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_ENABLE_THREADS=ON # This should be the default. Testing anyway.
       CTEST_ARGS: -E checkperf
 
 build_script:
-  - set
   - mkdir build
   - cd build
   - cmake --version
-  - cmake -A %Platform% %CMAKE_ARGS% --parallel ..
+  - cmake %CMAKE_ARGS% --parallel ..
   - cmake -LH ..
   - cmake --build . --config %Configuration% --verbose --parallel
 
-test_script:
-  - ctest --output-on-failure -C %Configuration% --verbose %CTEST_ARGS% --parallel
-    
+for:
+-
+  matrix:
+    except:
+      - job_name: VS2019ARM
+
+  test_script:
+    - ctest --output-on-failure -C %Configuration% --verbose %CTEST_ARGS% --parallel
+
 clone_folder: c:\projects\simdjson
 
 matrix:
