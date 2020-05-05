@@ -5,6 +5,8 @@
 #include "simdprune_tables.h"
 #include "arm64/bitmanipulation.h"
 #include "arm64/intrinsics.h"
+#include <type_traits>
+
 
 namespace simdjson {
 namespace arm64 {
@@ -319,8 +321,13 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
     really_inline void store(int8_t dst[16]) const { return vst1q_s8(dst, *this); }
 
     // Explicit conversion to/from unsigned
+    //
     // Under Visual Studio/ARM64 uint8x16_t and int8x16_t are apparently the same type.
-    // really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
+    // In theory, we could check this occurence with std::same_as and std::enabled_if but it is C++14
+    // and relatively ugly and hard to read.
+#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO
+    really_inline explicit simd8(const uint8x16_t other): simd8(vreinterpretq_s8_u8(other)) {}
+#endif
     really_inline explicit operator simd8<uint8_t>() const { return vreinterpretq_u8_s8(this->value); }
 
     // Math
