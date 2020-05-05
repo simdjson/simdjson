@@ -12,6 +12,7 @@ namespace simdjson {
 namespace arm64 {
 namespace simd {
 
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 namespace {
 /**
  * make_uint8x16_t initializes a SIMD register (uint8x16_t).
@@ -24,7 +25,7 @@ namespace {
  * You should not use this function except for compile-time constant:
  * it is not efficient.
  */
-uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
+really_inline uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
                            uint8_t x5, uint8_t x6, uint8_t x7, uint8_t x8,
                            uint8_t x9, uint8_t x10, uint8_t x11, uint8_t x12,
                            uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
@@ -53,7 +54,9 @@ uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
   return x;
 }
 
-int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
+
+// We have to do the same work for make_int8x16_t
+really_inline int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
                            int8_t x5, int8_t x6, int8_t x7, int8_t x8,
                            int8_t x9, int8_t x10, int8_t x11, int8_t x12,
                            int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
@@ -83,6 +86,7 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
 }
 
 } // namespace
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 
 
   template<typename T>
@@ -136,8 +140,13 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
     // We return uint32_t instead of uint16_t because that seems to be more efficient for most
     // purposes (cutting it down to uint16_t costs performance in some compilers).
     really_inline uint32_t to_bitmask() const {
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask =  make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
                                    0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
+#else
+      const uint8x16_t bit_mask =  {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+#endif
       auto minput = *this & bit_mask;
       uint8x16_t tmp = vpaddq_u8(minput, minput);
       tmp = vpaddq_u8(tmp, tmp);
@@ -162,13 +171,24 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
     // Splat constructor
     really_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
     // Member-by-member initialization
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
     really_inline simd8(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
       uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
-    ) : simd8( make_uint8x16_t(
+    ) : simd8(make_uint8x16_t(
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     )) {}
+#else
+    really_inline simd8(
+      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
+      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15
+    ) : simd8(uint8x16_t{
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    }) {}
+#endif
+
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<uint8_t> repeat_16(
       uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,
@@ -242,7 +262,11 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
       uint64x2_t shufmask64 = {thintable_epi8[mask1], thintable_epi8[mask2]};
       uint8x16_t shufmask = vreinterpretq_u8_u64(shufmask64);
       // we increment by 0x08 the second half of the mask
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       uint8x16_t inc = make_uint8x16_t(0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);
+#else
+      uint8x16_t inc = {0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};
+#endif
       shufmask = vaddq_u8(shufmask, inc);
       // this is the version "nearly pruned"
       uint8x16_t pruned = vqtbl1q_u8(*this, shufmask);
@@ -299,6 +323,7 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
     // Array constructor
     really_inline simd8(const int8_t* values) : simd8(load(values)) {}
     // Member-by-member initialization
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
     really_inline simd8(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
       int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
@@ -306,6 +331,15 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
       v0, v1, v2, v3, v4, v5, v6, v7,
       v8, v9, v10,v11,v12,v13,v14,v15
     )) {}
+#else
+    really_inline simd8(
+      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
+      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15
+    ) : simd8(int8x16_t{
+      v0, v1, v2, v3, v4, v5, v6, v7,
+      v8, v9, v10,v11,v12,v13,v14,v15
+    }) {}
+#endif
     // Repeat 16 values as many times as necessary (usually for lookup tables)
     really_inline static simd8<int8_t> repeat_16(
       int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3,  int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,
@@ -442,10 +476,17 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
     }
 
     really_inline uint64_t to_bitmask() const {
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask = make_uint8x16_t(
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
         0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
       );
+#else
+      const uint8x16_t bit_mask = {
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      };
+#endif
       // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
       uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
       uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
