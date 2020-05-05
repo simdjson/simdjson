@@ -40,14 +40,14 @@ uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
   x = vsetq_lane_u8(x6, x, 5);
   x = vsetq_lane_u8(x7, x, 6);
   x = vsetq_lane_u8(x8, x, 7);
-  x = vsetq_lane_u8(x1, x, 8);
-  x = vsetq_lane_u8(x1, x, 9);
-  x = vsetq_lane_u8(x1, x, 10);
-  x = vsetq_lane_u8(x1, x, 11);
-  x = vsetq_lane_u8(x1, x, 12);
-  x = vsetq_lane_u8(x1, x, 13);
-  x = vsetq_lane_u8(x1, x, 14);
-  x = vsetq_lane_u8(x1, x, 15);
+  x = vsetq_lane_u8(x9, x, 8);
+  x = vsetq_lane_u8(x10, x, 9);
+  x = vsetq_lane_u8(x11, x, 10);
+  x = vsetq_lane_u8(x12, x, 11);
+  x = vsetq_lane_u8(x13, x, 12);
+  x = vsetq_lane_u8(x14, x, 13);
+  x = vsetq_lane_u8(x15, x, 14);
+  x = vsetq_lane_u8(x16, x, 15);
   return x;
 }
 
@@ -69,14 +69,14 @@ int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
   x = vsetq_lane_s8(x6, x, 5);
   x = vsetq_lane_s8(x7, x, 6);
   x = vsetq_lane_s8(x8, x, 7);
-  x = vsetq_lane_s8(x1, x, 8);
-  x = vsetq_lane_s8(x1, x, 9);
-  x = vsetq_lane_s8(x1, x, 10);
-  x = vsetq_lane_s8(x1, x, 11);
-  x = vsetq_lane_s8(x1, x, 12);
-  x = vsetq_lane_s8(x1, x, 13);
-  x = vsetq_lane_s8(x1, x, 14);
-  x = vsetq_lane_s8(x1, x, 15);
+  x = vsetq_lane_s8(x9, x, 8);
+  x = vsetq_lane_s8(x10, x, 9);
+  x = vsetq_lane_s8(x11, x, 10);
+  x = vsetq_lane_s8(x12, x, 11);
+  x = vsetq_lane_s8(x13, x, 12);
+  x = vsetq_lane_s8(x14, x, 13);
+  x = vsetq_lane_s8(x15, x, 14);
+  x = vsetq_lane_s8(x16, x, 15);
   return x;
 }
 
