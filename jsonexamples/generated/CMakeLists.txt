@@ -11,4 +11,7 @@ if (RUBY_EXECUTABLE)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
   add_custom_target(generated-data DEPENDS ${generated_files})
+else (RUBY_EXECUTABLE)
+  # TODO make this work without Ruby and make it part of the normal build
+  add_custom_target(generated-data)
 endif (RUBY_EXECUTABLE)
