@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 class ChunkWriter
     def initialize(output_dir, miss_templates, file_size=640*1000, block_size=64)
         @@output_dir = output_dir
@@ -12,7 +14,7 @@ class ChunkWriter
         end.join("")
     end
 
-    def write_files(filename, start1, repeat1, end1, repeat2: '', include_newline: true)
+    def write_files(filename, start1, repeat1, end1, repeat2='', include_newline=true)
         start1  = prepare_chunk(start1, include_newline)
         repeat1 = prepare_chunk(repeat1, include_newline)
         end1    = prepare_chunk(end1, include_newline)
@@ -87,8 +89,8 @@ output_dir = ARGV[0] || File.expand_path(".", File.dirname(__FILE__))
 miss_templates = File.expand_path("miss-templates", File.dirname(__FILE__))
 Dir.mkdir(output_dir) unless File.directory?(output_dir)
 w = ChunkWriter.new(output_dir, miss_templates)
-w.write_files "utf-8",          '["֏","֏",{}', ',"֏","֏",{}', ',"֏","֏","֏"]', repeat2: ',"ab","ab",{}'
-w.write_files "escape",         '["\\"","\\"",{}', ',"\\"","\\"",{}', ',"\\"","\\"","\\""]', repeat2: ',"ab","ab",{}'
+w.write_files "utf-8",          '["֏","֏",{}', ',"֏","֏",{}', ',"֏","֏","֏"]', ',"ab","ab",{}'
+w.write_files "escape",         '["\\"","\\"",{}', ',"\\"","\\"",{}', ',"\\"","\\"","\\""]', ',"ab","ab",{}'
 w.write_files "0-structurals",  '"ab"', '',  ''
 # w.write_files "1-structurals",  [ '[', '"ab"' ], [ ',', '"ab"' ], [ ',', '{', '}', ']' ]
 # w.write_files "2-structurals",  '["ab"', ',"ab"', [',{', '}]']
