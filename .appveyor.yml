@@ -21,6 +21,11 @@ environment:
 
 build_script:
   - set
+  - mkdir buildarm
+  - cd buildarm
+  - cmake -A ARM64 .. -DCMAKE_CROSSCOMPILING=1 -DRUN_HAVE_STD_REGEX=0 -DRUN_HAVE_POSIX_REGEX=0 -DRUN_HAVE_GNU_POSIX_REGEX=0 -DRUN_HAVE_STEADY_CLOCK=0
+  - cmake --build . --target parse
+  - cd ..
   - mkdir build
   - cd build
   - cmake --version
