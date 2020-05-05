@@ -94,22 +94,22 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     return UNESCAPED_CHARS;
   }
 
-  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes());
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
   }
-  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+  if (unlikely(parser.structural_indexes()[parser.n_structural_indexes - 1] > len)) {
     return UNEXPECTED_ERROR;
   }
-  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
+  if (len != parser.structural_indexes()[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
+    parser.structural_indexes()[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
-  parser.structural_indexes[parser.n_structural_indexes] = 0;
+  parser.structural_indexes()[parser.n_structural_indexes] = 0;
   return checker.errors();
 }
 
@@ -159,7 +159,7 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, parser
   if (unlikely(len > parser.capacity())) { return CAPACITY; }
 
   buf_block_reader<STEP_SIZE> reader(buf, len);
-  json_structural_indexer indexer(parser.structural_indexes.get());
+  json_structural_indexer indexer(parser.structural_indexes());
   while (reader.has_full_block()) {
     indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }

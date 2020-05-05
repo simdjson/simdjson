@@ -322,7 +322,8 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // parser inline implementation
 //
 really_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity},
+  : parser_state(nullptr, free),
+    _max_capacity{max_capacity},
     loaded_bytes(nullptr, &aligned_free_char)
     {}
 inline bool parser::is_valid() const noexcept { return valid; }
@@ -456,9 +457,10 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // If capacity has changed, reallocate capacity-based buffers
   //
-  if (_capacity != capacity) {
-    // Set capacity to 0 until we finish, in case there's an error
+  if (_capacity != capacity || _max_depth != max_depth) {
+    // Set capacity and max_depth to 0 until we finish, in case there's an error
     _capacity = 0;
+    _max_depth = 0;
 
     //
     // Reallocate the document
@@ -469,21 +471,21 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     //
     // Don't allocate 0 bytes, just return.
     //
-    if (capacity == 0) {
-      structural_indexes.reset();
+    if (capacity == 0 && _max_depth == 0) {
+      parser_state.reset();
       return SUCCESS;
     }
 
     //
-    // Initialize stage 1 output
+    // Initialize parser internal state
     //
-    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-    structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-    if (!structural_indexes) {
+    parser_state.reset( (char*)malloc(containing_scope_size(max_depth) + ret_address_size(max_depth) + structural_indexes_size(capacity)) );
+    if (!parser_state) {
       return MEMALLOC;
     }
 
     _capacity = capacity;
+    _max_depth = max_depth;
 
   //
   // If capacity hasn't changed, but the document was taken, allocate a new document.
@@ -493,35 +495,6 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     if (err) { return err; }
   }
 
-  //
-  // If max_depth has changed, reallocate those buffers
-  //
-  if (max_depth != _max_depth) {
-    _max_depth = 0;
-
-    if (max_depth == 0) {
-      ret_address.reset();
-      containing_scope.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 2 state
-    //
-    containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
-  #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address.reset(new (std::nothrow) void *[max_depth]);
-  #else
-    ret_address.reset(new (std::nothrow) char[max_depth]);
-  #endif
-
-    if (!ret_address || !containing_scope) {
-      // Could not allocate memory
-      return MEMALLOC;
-    }
-
-    _max_depth = max_depth;
-  }
   return SUCCESS;
 }
 
@@ -546,6 +519,42 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   }
 
   return SUCCESS;
+}
+
+really_inline size_t parser::containing_scope_size(size_t max_depth) const noexcept {
+  return max_depth * sizeof(scope_descriptor);
+}
+
+really_inline size_t parser::ret_address_size(size_t max_depth) const noexcept {
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  return max_depth * sizeof(void*);
+#else
+  return max_depth * sizeof(char);
+#endif
+}
+
+really_inline size_t parser::structural_indexes_size(size_t capacity) const noexcept {
+  return (ROUNDUP_N(capacity, 64) + 2 + 7) * sizeof(uint32_t);
+}
+
+/** @private Tape location of each open { or [ */
+really_inline scope_descriptor* parser::containing_scope() const noexcept {
+  return (scope_descriptor*)(parser_state.get());
+}
+
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+really_inline void** parser::ret_address() const noexcept {
+  return (void**)(parser_state.get() + containing_scope_size(_max_depth));
+}
+#else
+really_inline char* parser::ret_address() const noexcept {
+  return (char*)(parser_state.get() + containing_scope_size(_max_depth));
+}
+#endif
+
+/** @private Structural indices passed from stage 1 to stage 2 */
+really_inline uint32_t* parser::structural_indexes() const noexcept {
+  return (uint32_t*)(parser_state.get() + containing_scope_size(_max_depth) + ret_address_size(_max_depth));
 }
 
 //

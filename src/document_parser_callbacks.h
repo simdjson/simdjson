@@ -31,24 +31,24 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
 // must be increment in the preceding depth (depth-1) where the array or
 // the object resides.
 really_inline void parser::increment_count(uint32_t depth) noexcept {
-  containing_scope[depth].count++;
+  containing_scope()[depth].count++;
 }
 
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+  containing_scope()[depth].tape_index = current_loc;
+  containing_scope()[depth].count = 0;
   write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+  containing_scope()[depth].tape_index = current_loc;
+  containing_scope()[depth].count = 0;
   write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
   return true;
 }
 really_inline bool parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+  containing_scope()[depth].tape_index = current_loc;
+  containing_scope()[depth].count = 0;
   write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
   return true;
 }
@@ -56,19 +56,19 @@ really_inline bool parser::on_start_array(uint32_t depth) noexcept {
 really_inline bool parser::on_end_document(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::ROOT);
+  write_tape(containing_scope()[depth].tape_index, internal::tape_type::ROOT);
   end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_object(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
+  write_tape(containing_scope()[depth].tape_index, internal::tape_type::END_OBJECT);
   end_scope(depth);
   return true;
 }
 really_inline bool parser::on_end_array(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
+  write_tape(containing_scope()[depth].tape_index, internal::tape_type::END_ARRAY);
   end_scope(depth);
   return true;
 }
@@ -131,7 +131,7 @@ really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexc
 
 // this function is responsible for annotating the start of the scope
 really_inline void parser::end_scope(uint32_t depth) noexcept {
-  scope_descriptor d = containing_scope[depth];
+  scope_descriptor d = containing_scope()[depth];
   // count can overflow if it exceeds 24 bits... so we saturate
   // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
   const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;

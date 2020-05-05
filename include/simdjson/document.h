@@ -954,19 +954,6 @@ public:
 
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
-  /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
-
-  /** @private Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address{};
-#else
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address{};
-#endif
 
   /** @private Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
@@ -1027,7 +1014,29 @@ public:
 
   really_inline void increment_count(uint32_t depth) noexcept; ///< @private
   really_inline void end_scope(uint32_t depth) noexcept; ///< @private
+
+  /** @private Structural indices passed from stage 1 to stage 2 */
+  really_inline uint32_t* structural_indexes() const noexcept;
+
+  /** @private Tape location of each open { or [ */
+  really_inline scope_descriptor* containing_scope() const noexcept;
+
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+  /** @private Return address of each open { or [ */
+  really_inline void** ret_address() const noexcept;
+#else
+  /** @private Return address of each open { or [ */
+  really_inline char* ret_address() const noexcept;
+#endif
+
 private:
+
+  std::unique_ptr<char, decltype(free)*> parser_state;
+
+  really_inline size_t containing_scope_size(size_t max_depth) const noexcept;
+  really_inline size_t ret_address_size(size_t max_depth) const noexcept;
+  really_inline size_t structural_indexes_size(size_t capacity) const noexcept;
+
   /**
    * The maximum document length this parser will automatically support.
    *

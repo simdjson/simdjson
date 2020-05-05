@@ -38,7 +38,7 @@ inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const do
   if (parser.n_structural_indexes == 0)
     return 0;
   auto last_i = parser.n_structural_indexes - 1;
-  if (parser.structural_indexes[last_i] == size) {
+  if (parser.structural_indexes()[last_i] == size) {
     if (last_i == 0)
       return 0;
     last_i = parser.n_structural_indexes - 2;
@@ -46,7 +46,7 @@ inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const do
   auto arr_cnt = 0;
   auto obj_cnt = 0;
   for (auto i = last_i; i > 0; i--) {
-    auto idxb = parser.structural_indexes[i];
+    auto idxb = parser.structural_indexes()[i];
     switch (buf[idxb]) {
     case ':':
     case ',':
@@ -64,7 +64,7 @@ inline uint32_t find_last_json_buf_idx(const uint8_t *buf, size_t size, const do
       arr_cnt++;
       break;
     }
-    auto idxa = parser.structural_indexes[i - 1];
+    auto idxa = parser.structural_indexes()[i - 1];
     switch (buf[idxa]) {
     case '{':
     case '[':
@@ -192,7 +192,7 @@ inline error_code document_stream::json_parse() noexcept {
       if (stage1_is_ok_thread != simdjson::SUCCESS) {
         return stage1_is_ok_thread;
       }
-      std::swap(parser.structural_indexes, parser_thread.structural_indexes);
+      std::swap(parser.structural_indexes(), parser_thread.structural_indexes());
       parser.n_structural_indexes = parser_thread.n_structural_indexes;
       advance(last_json_buffer_loc);
       n_bytes_parsed += last_json_buffer_loc;
@@ -200,7 +200,7 @@ inline error_code document_stream::json_parse() noexcept {
     // let us decide whether we will start a new thread
     if (remaining() - _batch_size > 0) {
       last_json_buffer_loc =
-          parser.structural_indexes[internal::find_last_json_buf_idx(buf(), _batch_size, parser)];
+          parser.structural_indexes()[internal::find_last_json_buf_idx(buf(), _batch_size, parser)];
       _batch_size = (std::min)(_batch_size, remaining() - last_json_buffer_loc);
       if (_batch_size > 0) {
         _batch_size = internal::trimmed_length_safe_utf8(
@@ -225,12 +225,12 @@ inline error_code document_stream::json_parse() noexcept {
   error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
   if (res == simdjson::SUCCESS_AND_HAS_MORE) {
     n_parsed_docs++;
-    current_buffer_loc = parser.structural_indexes[next_json];
+    current_buffer_loc = parser.structural_indexes()[next_json];
     load_next_batch = (current_buffer_loc == last_json_buffer_loc);
   } else if (res == simdjson::SUCCESS) {
     n_parsed_docs++;
     if (remaining() > _batch_size) {
-      current_buffer_loc = parser.structural_indexes[next_json - 1];
+      current_buffer_loc = parser.structural_indexes()[next_json - 1];
       load_next_batch = true;
       res = simdjson::SUCCESS_AND_HAS_MORE;
     }
@@ -267,11 +267,11 @@ inline error_code document_stream::json_parse() noexcept {
   error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
   if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
     n_parsed_docs++;
-    current_buffer_loc = parser.structural_indexes[next_json];
+    current_buffer_loc = parser.structural_indexes()[next_json];
   } else if (res == simdjson::SUCCESS) {
     n_parsed_docs++;
     if (remaining() > _batch_size) {
-      current_buffer_loc = parser.structural_indexes[next_json - 1];
+      current_buffer_loc = parser.structural_indexes()[next_json - 1];
       next_json = 1;
       load_next_batch = true;
       res = simdjson::SUCCESS_AND_HAS_MORE;

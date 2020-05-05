@@ -141,7 +141,7 @@ struct json_stats {
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
       int block_structurals=0;
-      while (structural < parser.n_structural_indexes && parser.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
+      while (structural < parser.n_structural_indexes && parser.structural_indexes()[structural] < (block+1)*BYTES_PER_BLOCK) {
         block_structurals++;
         structural++;
       }
