@@ -1005,10 +1005,6 @@ public:
   // Parser callbacks: these are internal!
   //
 
-  /** @private this should be called when parsing (right before writing the tapes) */
-  inline void init_stage2() noexcept;
-  really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
-  really_inline error_code on_success(error_code success_code) noexcept; ///< @private
   really_inline bool on_true_atom() noexcept; ///< @private
   really_inline bool on_false_atom() noexcept; ///< @private
   really_inline bool on_null_atom() noexcept; ///< @private

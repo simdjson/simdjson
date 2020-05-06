@@ -277,17 +277,17 @@ struct structural_parser {
   WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
     if ( !structurals.at_end(doc_parser.n_structural_indexes) ) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
     if (doc_parser.containing_scope[depth].tape_index != 0) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
 
-    return doc_parser.on_success(SUCCESS);
+    return on_success(SUCCESS);
   }
 
   WARN_UNUSED really_inline error_code error() {
@@ -302,11 +302,11 @@ struct structural_parser {
     * carefully,
     * all without any added cost. */
     if (depth >= doc_parser.max_depth()) {
-      return doc_parser.on_error(DEPTH_ERROR);
+      return on_error(DEPTH_ERROR);
     }
     switch (structurals.current_char()) {
     case '"':
-      return doc_parser.on_error(STRING_ERROR);
+      return on_error(STRING_ERROR);
     case '0':
     case '1':
     case '2':
@@ -318,20 +318,36 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return doc_parser.on_error(NUMBER_ERROR);
+      return on_error(NUMBER_ERROR);
     case 't':
-      return doc_parser.on_error(T_ATOM_ERROR);
+      return on_error(T_ATOM_ERROR);
     case 'n':
-      return doc_parser.on_error(N_ATOM_ERROR);
+      return on_error(N_ATOM_ERROR);
     case 'f':
-      return doc_parser.on_error(F_ATOM_ERROR);
+      return on_error(F_ATOM_ERROR);
     default:
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
   }
 
+  really_inline void init() noexcept {
+    doc_parser.current_string_buf_loc = doc_parser.doc.string_buf.get();
+    doc_parser.current_loc = 0;
+    doc_parser.valid = false;
+    doc_parser.error = UNINITIALIZED;
+  }
+
+  WARN_UNUSED really_inline error_code on_error(error_code new_error_code) noexcept {
+    doc_parser.error = new_error_code;
+    return new_error_code;
+  }
+  WARN_UNUSED really_inline error_code on_success(error_code success_code) noexcept {
+    doc_parser.error = success_code;
+    doc_parser.valid = true;
+    return success_code;
+  }
   WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
-    doc_parser.init_stage2(); // sets is_valid to false
+    init(); // sets is_valid to false
     if (len > doc_parser.capacity()) {
       return CAPACITY;
     }
@@ -339,7 +355,7 @@ struct structural_parser {
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
-      return doc_parser.on_error(DEPTH_ERROR);
+      return on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
