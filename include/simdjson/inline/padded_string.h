@@ -102,7 +102,11 @@ inline padded_string::operator std::string_view() const { return std::string_vie
 
 inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
   // Open the file
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
   if (fp == nullptr) {
     return IO_ERROR;
   }

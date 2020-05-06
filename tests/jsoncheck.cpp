@@ -55,15 +55,11 @@ bool validate(const char *dirname) {
     if (has_extension(name, extension)) {
       printf("validating: file %s ", name);
       fflush(nullptr);
-      size_t filelen = strlen(name);
-      char *fullpath = static_cast<char *>(malloc(dirlen + filelen + 1 + 1));
-      strcpy(fullpath, dirname);
-      if (needsep) {
-        fullpath[dirlen] = '/';
-        strcpy(fullpath + dirlen + 1, name);
-      } else {
-        strcpy(fullpath + dirlen, name);
-      }
+      size_t namelen = strlen(name);
+      size_t fullpathlen = dirlen + 1 + namelen + 1;
+      char *fullpath = static_cast<char *>(malloc(fullpathlen));
+      snprintf(fullpath, fullpathlen, "%s%s%s", dirname, needsep ? "/" : "", name);
+
       auto [p, error] = simdjson::padded_string::load(fullpath);
       if (error) {
         std::cerr << "Could not load the file " << fullpath << std::endl;

@@ -1,11 +1,9 @@
-/* auto-generated on Tue May  5 19:45:02 EDT 2020. Do not edit! */
+/* auto-generated on Tue May  5 20:03:59 EDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
-#if defined(SIMDJSON_CLANG_VISUAL_STUDIO)
-SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
-#endif
-
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 
 /* begin file src/error.cpp */
 
@@ -575,7 +573,11 @@ const implementation *available_implementation_list::detect_best_supported() con
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   char *force_implementation_name = getenv("SIMDJSON_FORCE_IMPLEMENTATION");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
   if (force_implementation_name) {
     auto force_implementation = available_implementations[force_implementation_name];
     if (!force_implementation) {
@@ -13078,4 +13080,6 @@ UNTARGET_REGION
 /* end file src/generic/stage2_streaming_build_tape.h */
 #endif
 /* end file src/generic/stage2_streaming_build_tape.h */
+
+SIMDJSON_POP_DISABLE_WARNINGS
 /* end file src/generic/stage2_streaming_build_tape.h */
