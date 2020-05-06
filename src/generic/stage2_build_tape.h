@@ -163,12 +163,20 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    uint8_t *dst = doc_parser.on_start_string();
+    /* we advance the point, accounting for the fact that we have a NULL
+      * termination         */
+    doc_parser.write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    uint8_t *dst = doc_parser.current_string_buf_loc + sizeof(uint32_t);
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
       return true;
     }
-    return !doc_parser.on_end_string(dst);
+    uint32_t str_length = uint32_t(dst - (doc_parser.current_string_buf_loc + sizeof(uint32_t)));
+    // doc_parser.write_string_length(str_length);
+    memcpy(doc_parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    *dst = 0;
+    doc_parser.current_string_buf_loc = dst + 1;
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
