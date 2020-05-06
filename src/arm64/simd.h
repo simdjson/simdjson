@@ -14,6 +14,9 @@ namespace simd {
 
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
 namespace {
+// Start of private section with Visual Studio workaround
+
+
 /**
  * make_uint8x16_t initializes a SIMD register (uint8x16_t).
  * This is needed because, incredibly, the syntax uint8x16_t x = {1,2,3...}
@@ -22,13 +25,13 @@ namespace {
  * inefficient code. With the current approach, if the parameters are
  * compile-time constants,
  * GNU GCC compiles it to ldr, the same as uint8x16_t x = {1,2,3...}.
- * You should not use this function except for compile-time constant:
+ * You should not use this function except for compile-time constants:
  * it is not efficient.
  */
-really_inline uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4,
-                           uint8_t x5, uint8_t x6, uint8_t x7, uint8_t x8,
-                           uint8_t x9, uint8_t x10, uint8_t x11, uint8_t x12,
-                           uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
+really_inline uint8x16_t make_uint8x16_t(uint8_t x1,  uint8_t x2,  uint8_t x3,  uint8_t x4,
+                                         uint8_t x5,  uint8_t x6,  uint8_t x7,  uint8_t x8,
+                                         uint8_t x9,  uint8_t x10, uint8_t x11, uint8_t x12,
+                                         uint8_t x13, uint8_t x14, uint8_t x15, uint8_t x16) {
   // Doing a load like so end ups generating worse code.
   // uint8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
   //                     x9, x10,x11,x12,x13,x14,x15,x16};
@@ -56,10 +59,10 @@ really_inline uint8x16_t make_uint8x16_t(uint8_t x1, uint8_t x2, uint8_t x3, uin
 
 
 // We have to do the same work for make_int8x16_t
-really_inline int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x4,
-                           int8_t x5, int8_t x6, int8_t x7, int8_t x8,
-                           int8_t x9, int8_t x10, int8_t x11, int8_t x12,
-                           int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
+really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_t x4,
+                                       int8_t x5,  int8_t x6,  int8_t x7,  int8_t x8,
+                                       int8_t x9,  int8_t x10, int8_t x11, int8_t x12,
+                                       int8_t x13, int8_t x14, int8_t x15, int8_t x16) {
   // Doing a load like so end ups generating worse code.
   // int8_t array[16] = {x1, x2, x3, x4, x5, x6, x7, x8,
   //                     x9, x10,x11,x12,x13,x14,x15,x16};
@@ -85,6 +88,7 @@ really_inline int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x
   return x;
 }
 
+// End of private section with Visual Studio workaround
 } // namespace
 #endif // SIMDJSON_REGULAR_VISUAL_STUDIO
 
@@ -142,10 +146,10 @@ really_inline int8x16_t make_int8x16_t(int8_t x1, int8_t x2, int8_t x3, int8_t x
     really_inline uint32_t to_bitmask() const {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask =  make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
+                                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);
 #else
       const uint8x16_t bit_mask =  {0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+                                    0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 #endif
       auto minput = *this & bit_mask;
       uint8x16_t tmp = vpaddq_u8(minput, minput);
