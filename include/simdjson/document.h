@@ -1005,11 +1005,6 @@ public:
   // Parser callbacks: these are internal!
   //
 
-  really_inline bool on_true_atom() noexcept; ///< @private
-  really_inline bool on_false_atom() noexcept; ///< @private
-  really_inline bool on_null_atom() noexcept; ///< @private
-  really_inline uint8_t *on_start_string() noexcept; ///< @private
-  really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
   really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private

@@ -193,12 +193,26 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_string() {
-    uint8_t *dst = doc_parser.on_start_string();
+    // we advance the point, accounting for the fact that we have a NULL
+    // termination
+    doc_parser.write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    uint8_t *dst = doc_parser.current_string_buf_loc + sizeof(uint32_t);
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
       return true;
     }
-    return !doc_parser.on_end_string(dst);
+
+    // Write out the string
+    uint32_t str_length = uint32_t(dst - (doc_parser.current_string_buf_loc + sizeof(uint32_t)));
+    // TODO check for overflow in case someone has a crazy string (>=4GB?)
+    // But only add the overflow check when the document itself exceeds 4GB
+    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+    memcpy(doc_parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    // NULL termination is still handy if you expect all your strings to
+    // be NULL terminated? It comes at a small cost
+    *dst = 0;
+    doc_parser.current_string_buf_loc = dst + 1;
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
@@ -212,15 +226,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        doc_parser.on_true_atom();
+        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        doc_parser.on_false_atom();
+        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        doc_parser.on_null_atom();
+        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
@@ -232,15 +246,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.on_true_atom();
+        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.on_false_atom();
+        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.on_null_atom();
+        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
