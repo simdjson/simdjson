@@ -66,7 +66,7 @@ private:
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
-  really_inline error_code finish(parser &parser, size_t idx, size_t len, bool streaming);
+  really_inline error_code finish(parser &parser, uint32_t *structural_indexes, size_t idx, size_t len, bool streaming);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -83,7 +83,7 @@ really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, jso
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
 }
 
-really_inline error_code json_structural_indexer::finish(parser &parser, size_t idx, size_t len, bool streaming) {
+really_inline error_code json_structural_indexer::finish(parser &parser, uint32_t *structural_indexes, size_t idx, size_t len, bool streaming) {
   // Write out the final iteration's structurals
   indexer.write(uint32_t(idx-64), prev_structurals);
 
@@ -94,22 +94,22 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     return UNESCAPED_CHARS;
   }
 
-  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes());
+  parser.n_structural_indexes = uint32_t(indexer.tail - structural_indexes);
   /* a valid JSON file cannot have zero structural indexes - we should have
    * found something */
   if (unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
   }
-  if (unlikely(parser.structural_indexes()[parser.n_structural_indexes - 1] > len)) {
+  if (unlikely(structural_indexes[parser.n_structural_indexes - 1] > len)) {
     return UNEXPECTED_ERROR;
   }
-  if (len != parser.structural_indexes()[parser.n_structural_indexes - 1]) {
+  if (len != structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    parser.structural_indexes()[parser.n_structural_indexes++] = uint32_t(len);
+    structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
-  parser.structural_indexes()[parser.n_structural_indexes] = 0;
+  structural_indexes[parser.n_structural_indexes] = 0;
   return checker.errors();
 }
 
@@ -158,8 +158,10 @@ template<size_t STEP_SIZE>
 error_code json_structural_indexer::index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept {
   if (unlikely(len > parser.capacity())) { return CAPACITY; }
 
+  auto structural_indexes = parser.structural_indexes();
+
   buf_block_reader<STEP_SIZE> reader(buf, len);
-  json_structural_indexer indexer(parser.structural_indexes());
+  json_structural_indexer indexer(structural_indexes);
   while (reader.has_full_block()) {
     indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }
@@ -170,7 +172,7 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, parser
     indexer.step<STEP_SIZE>(block, reader);
   }
 
-  return indexer.finish(parser, reader.block_index(), len, streaming);
+  return indexer.finish(parser, structural_indexes, reader.block_index(), len, streaming);
 }
 
 } // namespace stage1
