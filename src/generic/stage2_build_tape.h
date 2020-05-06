@@ -128,7 +128,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
+    write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -137,7 +137,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
+    write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -146,7 +146,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
+    write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -164,14 +164,14 @@ struct structural_parser {
   really_inline bool end_object() {
     depth--;
     // write our doc.tape location to the header scope
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
+    write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
     end_scope();
     return false;
   }
   really_inline bool end_array() {
     depth--;
     // write our doc.tape location to the header scope
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
+    write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
     end_scope();
     return false;
   }
@@ -179,9 +179,13 @@ struct structural_parser {
     depth--;
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::ROOT);
+    write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::ROOT);
     end_scope();
     return false;
+  }
+
+  really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
+    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -195,7 +199,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string() {
     // we advance the point, accounting for the fact that we have a NULL
     // termination
-    doc_parser.write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
     uint8_t *dst = doc_parser.current_string_buf_loc + sizeof(uint32_t);
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
@@ -226,15 +230,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
+        write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
+        write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
+        write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
@@ -246,15 +250,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
+        write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
+        write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
+        write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
@@ -352,16 +356,16 @@ struct structural_parser {
   }
 
   really_inline void on_number_s64(int64_t value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::INT64);
+    write_tape(0, internal::tape_type::INT64);
     std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
     ++doc_parser.current_loc;
   }
   really_inline void on_number_u64(uint64_t value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::UINT64);
+    write_tape(0, internal::tape_type::UINT64);
     doc_parser.doc.tape[doc_parser.current_loc++] = value;
   }
   really_inline void on_number_double(double value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::DOUBLE);
+    write_tape(0, internal::tape_type::DOUBLE);
     static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
     memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
     // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
