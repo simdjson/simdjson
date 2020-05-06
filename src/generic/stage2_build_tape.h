@@ -116,7 +116,8 @@ public:
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
-  uint32_t depth;
+  uint32_t depth = 0;
+  uint32_t current_tape_index = 0;
   uint8_t *current_string_buf_loc;
 
   really_inline structural_parser(
@@ -132,7 +133,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
+    doc_parser.containing_scope[depth].tape_index = current_tape_index;
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
@@ -141,7 +142,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
+    doc_parser.containing_scope[depth].tape_index = current_tape_index;
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
@@ -150,7 +151,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
+    doc_parser.containing_scope[depth].tape_index = current_tape_index;
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
@@ -165,7 +166,7 @@ struct structural_parser {
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    doc_parser.doc.tape[d.tape_index] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
+    doc_parser.doc.tape[d.tape_index] |= current_tape_index | (uint64_t(cntsat) << 32);
   }
   really_inline bool end_object() {
     depth--;
@@ -191,7 +192,7 @@ struct structural_parser {
   }
 
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    doc_parser.doc.tape[current_tape_index++] = val | ((uint64_t(char(t))) << 56);
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -356,25 +357,25 @@ struct structural_parser {
 
   really_inline void init() noexcept {
     current_string_buf_loc = doc_parser.doc.string_buf.get();
-    doc_parser.current_loc = 0;
+    current_tape_index = 0;
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;
   }
 
   really_inline void on_number_s64(int64_t value) noexcept {
     write_tape(0, internal::tape_type::INT64);
-    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
-    ++doc_parser.current_loc;
+    std::memcpy(&doc_parser.doc.tape[current_tape_index], &value, sizeof(value));
+    ++current_tape_index;
   }
   really_inline void on_number_u64(uint64_t value) noexcept {
     write_tape(0, internal::tape_type::UINT64);
-    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+    doc_parser.doc.tape[current_tape_index++] = value;
   }
   really_inline void on_number_double(double value) noexcept {
     write_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
-    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
-    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[current_tape_index]), "mismatch size");
+    memcpy(&doc_parser.doc.tape[current_tape_index++], &value, sizeof(double));
+    // doc.tape[current_tape_index++] = *((uint64_t *)&d);
   }
 
   WARN_UNUSED really_inline error_code on_error(error_code new_error_code) noexcept {
