@@ -1019,14 +1019,16 @@ public:
   really_inline bool on_true_atom() noexcept; ///< @private
   really_inline bool on_false_atom() noexcept; ///< @private
   really_inline bool on_null_atom() noexcept; ///< @private
-  really_inline uint8_t *on_start_string() noexcept; ///< @private
-  really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
+  really_inline void write_string_length(uint32_t length) noexcept; ///< @private
   really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private
 
   really_inline void increment_count(uint32_t depth) noexcept; ///< @private
   really_inline void end_scope(uint32_t depth) noexcept; ///< @private
+
+  really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
+
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -1070,8 +1072,6 @@ private:
   // annotate them with a reference to the location of the opening
   //
   //
-
-  inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
