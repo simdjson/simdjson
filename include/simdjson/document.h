@@ -1001,14 +1001,6 @@ public:
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
-  //
-  // Parser callbacks: these are internal!
-  //
-
-  really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
-  really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
-  really_inline bool on_number_double(double value) noexcept; ///< @private
-
   really_inline void increment_count(uint32_t depth) noexcept; ///< @private
   really_inline void end_scope(uint32_t depth) noexcept; ///< @private
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept; ///< @private

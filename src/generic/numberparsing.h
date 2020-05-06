@@ -261,87 +261,93 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function will almost never be called!!!
 //
-never_inline bool parse_large_integer(const uint8_t *const src,
-                                      parser &parser,
-                                      bool found_minus) {
+// If there is an error, this function will return 0.
+never_inline uint64_t parse_large_unsigned_integer(const uint8_t *const src,
+                                                   bool found_minus)
+{
   const char *p = reinterpret_cast<const char *>(src);
 
-  bool negative = false;
   if (found_minus) {
     ++p;
-    negative = true;
   }
-  uint64_t i;
-  if (*p == '0') { // 0 cannot be followed by an integer
-    ++p;
-    i = 0;
-  } else {
-    unsigned char digit = static_cast<unsigned char>(*p - '0');
-    i = digit;
-    p++;
-    // the is_made_of_eight_digits_fast routine is unlikely to help here because
-    // we rarely see large integer parts like 123456789
-    while (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      if (mul_overflow(i, 10, &i)) {
+
+  unsigned char digit = static_cast<unsigned char>(*p - '0');
+  uint64_t i = digit;
+  p++;
+  // the is_made_of_eight_digits_fast routine is unlikely to help here because
+  // we rarely see large integer parts like 123456789
+  while (is_integer(*p)) {
+    digit = static_cast<unsigned char>(*p - '0');
+    if (mul_overflow(i, 10, &i)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
+      found_invalid_number(src);
 #endif
-        return false; // overflow
-      }
-      if (add_overflow(i, digit, &i)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false; // overflow
-      }
-      ++p;
+      return 0; // overflow
     }
-  }
-  if (negative) {
-    if (i > 0x8000000000000000) {
+    if (add_overflow(i, digit, &i)) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+      found_invalid_number(src);
+#endif
+      return 0; // overflow
+    }
+    ++p;
+    if (found_minus && i > 0x8000000000000000) {
       // overflows!
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
-      return false; // overflow
-    } else if (i == 0x8000000000000000) {
-      // In two's complement, we cannot represent 0x8000000000000000
-      // as a positive signed integer, but the negative version is
-      // possible.
-      constexpr int64_t signed_answer = INT64_MIN;
-      parser.on_number_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, src);
-#endif
-    } else {
-      // we can negate safely
-      int64_t signed_answer = -static_cast<int64_t>(i);
-      parser.on_number_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, src);
-#endif
-    }
-  } else {
-    // we have a positive integer, the contract is that
-    // we try to represent it as a signed integer and only
-    // fallback on unsigned integers if absolutely necessary.
-    if (i < 0x8000000000000000) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(i, src);
-#endif
-      parser.on_number_s64(i);
-    } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_unsigned_integer(i, src);
-#endif
-      parser.on_number_u64(i);
+      return 0; // overflow
     }
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) {
+    return 0;
+  }
+  return i;
 }
 
-bool slow_float_parsing(UNUSED const char * src, parser &parser) {
+// We only want to pass `parser` to inline functions, otherwise it
+// will no longer be destructured and everyone will have to access it
+// by pointers! So we split this up into parse_large_integer (inline)
+// and parse_large_unsigned_integer (non-inline)
+template<typename P>
+really_inline bool parse_large_integer(const uint8_t *const src,
+                                       P &parser,
+                                       bool found_minus) {
+  uint64_t i = parse_large_unsigned_integer(src, found_minus);
+  if (i == 0) {
+    return false;
+  }
+  int64_t signed_answer;
+  if (i >= 0x8000000000000000) {
+    // We only store it as unsigned if it can't fit in signed
+    if (!found_minus) {
+  #ifdef JSON_TEST_NUMBERS // for unit testing
+      found_unsigned_integer(i, src);
+  #endif
+      parser.on_number_u64(i);
+      return true;
+    }
+
+    // In two's complement, we cannot represent 0x8000000000000000
+    // as a positive signed integer, but the negative version is
+    // possible.
+    signed_answer = INT64_MIN;
+  } else if (found_minus) {
+    // we can negate safely
+    signed_answer = -static_cast<int64_t>(i);
+  } else {
+    signed_answer = i;
+  }
+
+#ifdef JSON_TEST_NUMBERS // for unit testing
+  found_integer(signed_answer, src);
+#endif
+  parser.on_number_s64(signed_answer);
+  return true;
+}
+
+template<typename P>
+bool slow_float_parsing(UNUSED const char * src, P &parser) {
   double d;
   if (parse_float_strtod(src, &d)) {
     parser.on_number_double(d);
@@ -365,9 +371,10 @@ bool slow_float_parsing(UNUSED const char * src, parser &parser) {
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename P>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                parser &parser) {
+                                P &parser) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
   parser.on_number_s64(0);        // always write zero

@@ -216,7 +216,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
-    return !numberparsing::parse_number(src, found_minus, doc_parser);
+    return !numberparsing::parse_number(src, found_minus, *this);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(structurals.current(), found_minus);
@@ -349,6 +349,22 @@ struct structural_parser {
     doc_parser.current_loc = 0;
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;
+  }
+
+  really_inline void on_number_s64(int64_t value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::INT64);
+    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
+    ++doc_parser.current_loc;
+  }
+  really_inline void on_number_u64(uint64_t value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::UINT64);
+    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+  }
+  really_inline void on_number_double(double value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::DOUBLE);
+    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
+    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
+    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
   }
 
   WARN_UNUSED really_inline error_code on_error(error_code new_error_code) noexcept {
