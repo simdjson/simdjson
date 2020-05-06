@@ -117,13 +117,19 @@ struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
   uint32_t depth;
+  uint8_t *current_string_buf_loc;
 
   really_inline structural_parser(
     const uint8_t *buf,
     size_t len,
     parser &_doc_parser,
     uint32_t next_structural = 0
-  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
+  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural),
+      doc_parser{_doc_parser},
+      depth{0},
+      current_string_buf_loc{doc_parser.doc.string_buf.get()}
+  {
+  }
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
@@ -199,23 +205,23 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string() {
     // we advance the point, accounting for the fact that we have a NULL
     // termination
-    write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
-    uint8_t *dst = doc_parser.current_string_buf_loc + sizeof(uint32_t);
+    write_tape(current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    uint8_t *dst = current_string_buf_loc + sizeof(uint32_t);
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
       return true;
     }
 
     // Write out the string
-    uint32_t str_length = uint32_t(dst - (doc_parser.current_string_buf_loc + sizeof(uint32_t)));
+    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
     // TODO check for overflow in case someone has a crazy string (>=4GB?)
     // But only add the overflow check when the document itself exceeds 4GB
     // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(doc_parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
     // NULL termination is still handy if you expect all your strings to
     // be NULL terminated? It comes at a small cost
     *dst = 0;
-    doc_parser.current_string_buf_loc = dst + 1;
+    current_string_buf_loc = dst + 1;
     return false;
   }
 
@@ -349,7 +355,7 @@ struct structural_parser {
   }
 
   really_inline void init() noexcept {
-    doc_parser.current_string_buf_loc = doc_parser.doc.string_buf.get();
+    current_string_buf_loc = doc_parser.doc.string_buf.get();
     doc_parser.current_loc = 0;
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;
