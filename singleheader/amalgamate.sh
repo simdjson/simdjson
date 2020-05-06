@@ -5,8 +5,11 @@
 ########################################################################
 set -e
 
+
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-PROJECTPATH=$(realpath "$SCRIPTPATH/..");
+PROJECTPATH=$SCRIPTPATH"/.."
+echo "Project at "$PROJECTPATH
+
 echo "We are about to amalgamate all simdjson files into one source file. "
 echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
 
