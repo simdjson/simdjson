@@ -115,7 +115,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.doc_parser.ret_address()[parser.depth] );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers

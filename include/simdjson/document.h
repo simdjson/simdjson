@@ -1023,10 +1023,10 @@ public:
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  really_inline void** ret_address() const noexcept;
+  void** ret_address;
 #else
   /** @private Return address of each open { or [ */
-  really_inline char* ret_address() const noexcept;
+  char* ret_address;
 #endif
 
 private:

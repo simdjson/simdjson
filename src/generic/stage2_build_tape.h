@@ -127,21 +127,21 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.on_start_document(depth);
-    doc_parser.ret_address()[depth] = continue_state;
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
     doc_parser.on_start_object(depth);
-    doc_parser.ret_address()[depth] = continue_state;
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
     doc_parser.on_start_array(depth);
-    doc_parser.ret_address()[depth] = continue_state;
+    doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
   }
@@ -407,7 +407,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.doc_parser.ret_address()[parser.depth] );
+  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
 
 //
 // Array parser states
