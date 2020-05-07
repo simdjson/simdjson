@@ -33,7 +33,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
     - mkdir build
     - cd build
@@ -168,7 +168,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y clang cmake git
@@ -210,7 +210,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure  -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y clang cmake git

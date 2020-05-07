@@ -94,12 +94,12 @@ jobs:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ install_cmake, cmake_test_all, cmake_install_test ]
+    steps: [ install_cmake, cmake_test, cmake_install_test ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
   # libcpp
   libcpp-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
