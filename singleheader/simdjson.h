@@ -1,4 +1,4 @@
-/* auto-generated on Mon May  4 11:46:14 PDT 2020. Do not edit! */
+/* auto-generated on Tue May  5 20:03:59 EDT 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
