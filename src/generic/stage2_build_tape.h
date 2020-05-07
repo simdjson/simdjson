@@ -123,7 +123,7 @@ struct structural_parser {
     size_t len,
     parser &_doc_parser,
     uint32_t next_structural = 0
-  ) : structurals(buf, len, _doc_parser.structural_indexes(), next_structural), doc_parser{_doc_parser}, depth{0} {}
+  ) : structurals(buf, len, _doc_parser.structural_indexes, next_structural), doc_parser{_doc_parser}, depth{0} {}
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.on_start_document(depth);
@@ -253,7 +253,7 @@ struct structural_parser {
     if (depth != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope()[depth].tape_index != 0) {
+    if (doc_parser.containing_scope[depth].tape_index != 0) {
       return doc_parser.on_error(TAPE_ERROR);
     }
 

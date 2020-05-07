@@ -322,8 +322,7 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 // parser inline implementation
 //
 really_inline parser::parser(size_t max_capacity) noexcept
-  : ret_address{nullptr},
-    parser_state(nullptr, free),
+  : parser_state(nullptr, free),
     _max_capacity{max_capacity},
     loaded_bytes(nullptr, &aligned_free_char)
     {}
@@ -474,24 +473,36 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     //
     if (capacity == 0 && _max_depth == 0) {
       parser_state.reset();
+      containing_scope = nullptr;
       ret_address = nullptr;
+      structural_indexes = nullptr;
       return SUCCESS;
     }
 
     //
     // Initialize parser internal state
     //
-    parser_state.reset( (char*)malloc(containing_scope_size(max_depth) + ret_address_size(max_depth) + structural_indexes_size(capacity)) );
+    size_t containing_scope_size = max_depth * sizeof(scope_descriptor);
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+    size_t ret_address_size = max_depth * sizeof(void*);
+#else
+    size_t ret_address_size = max_depth * sizeof(char);
+#endif
+    size_t structural_indexes_size = (ROUNDUP_N(capacity, 64) + 2 + 7) * sizeof(uint32_t);
+
+    parser_state.reset( (char*)malloc(containing_scope_size + ret_address_size + structural_indexes_size) );
     if (!parser_state) {
       return MEMALLOC;
     }
 
-    // Store ret_address
+    // Store pointers
+    containing_scope = (scope_descriptor*)(parser_state.get());
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address = (void**)(parser_state.get() + containing_scope_size(max_depth));
+    ret_address = (void**)(parser_state.get() + containing_scope_size);
 #else
-    ret_address = (char*)(parser_state.get() + containing_scope_size(max_depth));
+    ret_address = (char*)(parser_state.get() + containing_scope_size);
 #endif
+    structural_indexes = (uint32_t*)(parser_state.get() + containing_scope_size + ret_address_size);
 
     _capacity = capacity;
     _max_depth = max_depth;
@@ -528,32 +539,6 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   }
 
   return SUCCESS;
-}
-
-really_inline size_t parser::containing_scope_size(size_t max_depth) const noexcept {
-  return max_depth * sizeof(scope_descriptor);
-}
-
-really_inline size_t parser::ret_address_size(size_t max_depth) const noexcept {
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-  return max_depth * sizeof(void*);
-#else
-  return max_depth * sizeof(char);
-#endif
-}
-
-really_inline size_t parser::structural_indexes_size(size_t capacity) const noexcept {
-  return (ROUNDUP_N(capacity, 64) + 2 + 7) * sizeof(uint32_t);
-}
-
-/** @private Tape location of each open { or [ */
-really_inline scope_descriptor* parser::containing_scope() const noexcept {
-  return (scope_descriptor*)(parser_state.get());
-}
-
-/** @private Structural indices passed from stage 1 to stage 2 */
-really_inline uint32_t* parser::structural_indexes() const noexcept {
-  return (uint32_t*)(parser_state.get() + containing_scope_size(_max_depth) + ret_address_size(_max_depth));
 }
 
 //

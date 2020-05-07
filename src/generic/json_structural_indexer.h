@@ -158,7 +158,7 @@ template<size_t STEP_SIZE>
 error_code json_structural_indexer::index(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept {
   if (unlikely(len > parser.capacity())) { return CAPACITY; }
 
-  auto structural_indexes = parser.structural_indexes();
+  auto structural_indexes = parser.structural_indexes;
 
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_structural_indexer indexer(structural_indexes);

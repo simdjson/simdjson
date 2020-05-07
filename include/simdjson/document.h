@@ -1016,26 +1016,22 @@ public:
   really_inline void end_scope(uint32_t depth) noexcept; ///< @private
 
   /** @private Structural indices passed from stage 1 to stage 2 */
-  really_inline uint32_t* structural_indexes() const noexcept;
+  uint32_t* structural_indexes{nullptr};
 
   /** @private Tape location of each open { or [ */
-  really_inline scope_descriptor* containing_scope() const noexcept;
+  scope_descriptor* containing_scope{nullptr};
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  void** ret_address;
+  void** ret_address{nullptr};
 #else
   /** @private Return address of each open { or [ */
-  char* ret_address;
+  char* ret_address{nullptr};
 #endif
 
 private:
 
   std::unique_ptr<char, decltype(free)*> parser_state;
-
-  really_inline size_t containing_scope_size(size_t max_depth) const noexcept;
-  really_inline size_t ret_address_size(size_t max_depth) const noexcept;
-  really_inline size_t structural_indexes_size(size_t capacity) const noexcept;
 
   /**
    * The maximum document length this parser will automatically support.
