@@ -71,17 +71,24 @@ public:
   // within the string: get_string_length determines the true string length.
   inline const char *get_string() const {
       return reinterpret_cast<const char *>(
-          doc.string_buf.get() + (current_val & internal::JSON_VALUE_MASK) + sizeof(uint32_t));
+          doc.string_buf.get() + uint32_t(current_val));
   }
 
   // return the length of the string in bytes
   inline uint32_t get_string_length() const {
-      uint32_t answer;
-      memcpy(&answer,
-          reinterpret_cast<const char *>(doc.string_buf.get() +
-                                          (current_val & internal::JSON_VALUE_MASK)),
-          sizeof(uint32_t));
-      return answer;
+      uint32_t len = (current_val >> 32) & 0xFFFFFF;
+      if(unlikely(len > 0x7fffff)) {
+          uint64_t string_buf_index = current_val;
+          len ^= 0x800000;
+          len <<= 9;
+          uint32_t c1 = doc.string_buf[string_buf_index - 2] - 32;
+          len |= c1 << 4;
+          uint32_t c2 = doc.string_buf[string_buf_index - 1] - 32;
+          len |= c2;
+      }
+      // if the slow path can be avoided, then we get the string length without
+      // touching (at all) the string buffer.
+      return len;
   }
 
   // get the double value at this node; valid only if

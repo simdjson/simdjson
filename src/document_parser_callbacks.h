@@ -87,21 +87,22 @@ really_inline bool parser::on_null_atom() noexcept {
 }
 
 really_inline uint8_t *parser::on_start_string() noexcept {
-  /* we advance the point, accounting for the fact that we have a NULL
-    * termination         */
+  /* We advance the pointer. */
   // If we limit JSON documents to strictly less 4GB of
   // string content, then current_string_buf_loc
   // - doc.string_buf.get() fits in 32 bits. This leaves us
   // three free bytes.
-  write_tape(current_string_buf_loc - doc.string_buf.get(), internal::tape_type::STRING);
-  return current_string_buf_loc + sizeof(uint16_t);
+  uint32_t position = uint32_t(current_string_buf_loc - doc.string_buf.get()); // cannot overflow because documents are limited to < 4GB
+  write_tape(uint64_t(position), internal::tape_type::STRING);
+  return current_string_buf_loc;
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
-  uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
-  // TODO check for overflow in case someone has a crazy string (>=4GB?)
-  // But only add the overflow check when the document itself exceeds 4GB
-  // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+  uint32_t str_length = uint32_t(dst - current_string_buf_loc);
+  // Long document support: Currently, simdjson supports only document
+  // up to 4GB.
+  // Should we change this constraint, we should then check for overflow in case
+  // someone has a crazy string (>=4GB?).
 
   // We have two scenarios here. Either the string length is
   // less than 0x7fffff in which case, we have room in the string
@@ -110,24 +111,38 @@ really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
   // ensure that we do so in ASCII.
   if(likely(str_length <= 0x7fffff)) { // likely
     doc.tape[current_loc-1] |=  uint64_t(str_length) << 32;
-    // we have a string header that must be ASCII, unused in
-    // this common case
-    current_string_buf_loc[0] = uint8_t(32); // space
-    current_string_buf_loc[1] = uint8_t(32); // space
-    // we are done!
   } else {
-    // oh gosh, we have a long string.
-    doc.tape[current_loc-1] |=  uint64_t(0x800000 | (str_length >> 9)) << 32;
-    // we have 9 bits left to code, which we do on the string buffer
-    // using two bytes
-    current_string_buf_loc[0] = uint8_t(32 + ((str_length & 0x1f0) >> 4))
-    current_string_buf_loc[1] = 32 + uint8_t(str_length & 0xf);
+    // Oh gosh, we have a long string (8MB). We expect that this is
+    // highly uncommon. We want to keep everything else super efficient,
+    // so we will pay a complexity price for this one uncommon case.
+    int offset = 2;
+    uint64_t payload = doc.tape[current_loc-1] & 0xFFFFFFFF;
+    payload += offset;
+    payload |=  uint64_t(0x800000 | (str_length >> 9)) << 32;
+    doc.tape[current_loc-1] =  payload  | ((uint64_t(char(internal::tape_type::STRING))) << 56);
+    // We are going to make room. This copy is not free. However,
+    // it allows us to handle the common case with ease and with
+    // relatively little complexity. And a memcopy is not that slow:
+    // it may run at tens of GB/s.
+    // And we expect that it will effectively never happen in practice
+    // so there is no cause to complexify the rest of the code.
+    memmove(current_string_buf_loc + offset, current_string_buf_loc, str_length);
+    dst += offset;
+    // We have three free bytes, but
+    // we need a leading 1, so that's 24-1 = 23. 32-23=9 remaining bits.
+    // We have 9 bits left to code, which we do on the string buffer
+    // using two bytes. We encoding the binary data using ASCII characters.
+    // See https://lemire.me/blog/2020/05/02/encoding-binary-in-ascii-very-fast/
+    // for a more general approach.
+    //
+    // These two bytes will appear right before where the string is.
+    current_string_buf_loc[0] = uint8_t(32 + ((str_length & 0x1f0) >> 4)); // (0x1f0>>4)+32 = 63
+    current_string_buf_loc[1] = uint8_t(32 + (str_length & 0xf)); // 32 + 0xf = 47
   }
   // NULL termination is still handy if you expect all your strings to
-  // be NULL terminated? It comes at a small cost and if it is
-  // never used, we might as well drop it.
-  //*dst = 0;
-  //current_string_buf_loc = dst + 1;
+  // be NULL terminated? It comes at a small cost.
+  *dst = 0;
+  current_string_buf_loc = dst + 1;
   return true;
 }
 
