@@ -253,7 +253,6 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
         uint32_t len = (payload >> 32) & 0xFFFFFF; // grab 3 bytes
         uint32_t string_buf_index = uint32_t(payload);
         if(unlikely(len > 0x7fffff)) {
-          len ^= 0x800000;
           len <<= 9;
           uint32_t c1 = string_buf[string_buf_index - 2] - 32;
           len |= c1 << 4;
