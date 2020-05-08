@@ -254,10 +254,11 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
         uint32_t string_buf_index = uint32_t(payload);
         if(unlikely(len > 0x7fffff)) {
           len <<= 9;
-          uint32_t c1 = string_buf[string_buf_index - 2] - 32;
+          uint32_t c1 = string_buf[string_buf_index + 1] - 32;
           len |= c1 << 4;
-          uint32_t c2 = string_buf[string_buf_index - 1] - 32;
+          uint32_t c2 = string_buf[string_buf_index + 2] - 32;
           len |= c2;
+          string_buf_index -= len;
         }
         os << internal::escape_json_string(std::string_view(
           (const char *)(string_buf.get() +string_buf_index),
@@ -1216,13 +1217,12 @@ really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   if(unlikely(len > 0x7fffff)) {  // only go there if the highest bit is set
     uint32_t string_buf_index = uint32_t(tape_val); // we will need to touch the string buffer
     // we have a long string and we need to jump through some loops
-    len ^= 0x800000; // set the high bit to zero
     len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
     // middle 5 bites
-    uint32_t c1 = doc->string_buf[string_buf_index - 2] - 32;
+    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
     len |= c1 << 4;
     // least significant five bits
-    uint32_t c2 = doc->string_buf[string_buf_index - 1] - 32;
+    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
     len |= c2;
   }
   // if the slow path can be avoided, then we get the string length without
@@ -1234,6 +1234,18 @@ really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
 really_inline const char * internal::tape_ref::get_c_str() const noexcept {
   uint64_t tape_val = uint64_t(tape_value());
   uint32_t string_buf_index = uint32_t(tape_val);
+  uint32_t len = (tape_val >> 32) & 0xFFFFFF; // grab 3 bytes
+  if(unlikely(len > 0x7fffff)) {  // only go there if the highest bit is set
+    // we have a long string and we need to jump through some loops
+    len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
+    // middle 5 bites
+    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
+    len |= c1 << 4;
+    // least significant five bits
+    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
+    len |= c2;
+    string_buf_index -= len;
+  }
   return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index]);
 }
 

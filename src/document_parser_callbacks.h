@@ -96,33 +96,21 @@ bool parser::handle_long_string(uint8_t *dst) noexcept {
   // Oh gosh, we have a long string (8MB). We expect that this is
   // highly uncommon. We want to keep everything else super efficient,
   // so we will pay a complexity price for this one uncommon case.
-  int offset = 2;
-  uint64_t position = current_string_buf_loc - doc.string_buf.get() + offset;
+  uint64_t position = dst - doc.string_buf.get(); // note that we point at the end of the string!
   uint64_t lenmark = uint64_t(0x800000 | (str_length >> 9));
   uint64_t payload =  position |  (lenmark << 32);
   write_tape(payload, internal::tape_type::STRING);
-  // We are going to make room. This copy is not free. However,
-  // it allows us to handle the common case with ease and with
-  // relatively little complexity. And a memcopy is not that slow:
-  // it may run at tens of GB/s.
-  // And we expect that it will effectively never happen in practice
-  // so there is no cause to complexify the rest of the code.
-  memmove(current_string_buf_loc + offset, current_string_buf_loc, str_length);
-  dst += offset;
+  dst[0] = 0;
   // We have three free bytes, but
   // we need a leading 1, so that's 24-1 = 23. 32-23=9 remaining bits.
   // We have 9 bits left to code, which we do on the string buffer
   // using two bytes. We encoding the binary data using ASCII characters.
   // See https://lemire.me/blog/2020/05/02/encoding-binary-in-ascii-very-fast/
   // for a more general approach.
-  //
-  // These two bytes will appear right before where the string is.
-  current_string_buf_loc[0] = uint8_t(32 + ((str_length & 0x1f0) >> 4)); // (0x1f0>>4)+32 = 63
-  current_string_buf_loc[1] = uint8_t(32 + (str_length & 0xf)); // 32 + 0xf = 47
-  *dst = 0;
-  current_string_buf_loc = dst + 1;
+  dst[1] = uint8_t(32 + ((str_length & 0x1f0) >> 4)); // (0x1f0>>4)+32 = 63
+  dst[2] = uint8_t(32 + (str_length & 0xf)); // 32 + 0xf = 47
+  current_string_buf_loc = dst + 3;
   return true;
-
 }
 
 really_inline bool parser::on_end_string(uint8_t *dst) noexcept {

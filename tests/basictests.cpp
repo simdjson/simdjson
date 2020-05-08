@@ -214,6 +214,11 @@ namespace document_tests {
       return false;
     }
     if(doc.size() != N) {
+      printf("Strings are of different size.\n");
+      return false;
+    }
+    if(doc != std::string(N, '.')) {
+      printf("Strings differ.\n");
       return false;
     }
     return true;
