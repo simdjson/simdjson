@@ -897,7 +897,6 @@ really_inline bool element::is() const noexcept {
 #if SIMDJSON_EXCEPTIONS
 
 inline element::operator bool() const noexcept(false) { return get<bool>(); }
-inline element::operator const char*() const noexcept(false) { return get<const char *>(); }
 inline element::operator std::string_view() const noexcept(false) { return get<std::string_view>(); }
 inline element::operator uint64_t() const noexcept(false) { return get<uint64_t>(); }
 inline element::operator int64_t() const noexcept(false) { return get<int64_t>(); }
@@ -1219,10 +1218,10 @@ really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
     // we have a long string and we need to jump through some loops
     len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
     // middle 5 bites
-    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
+    uint32_t c1 = doc->string_buf[string_buf_index] - 32;
     len |= c1 << 4;
     // least significant five bits
-    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
+    uint32_t c2 = doc->string_buf[string_buf_index + 1] - 32;
     len |= c2;
   }
   // if the slow path can be avoided, then we get the string length without
@@ -1239,10 +1238,10 @@ really_inline const char * internal::tape_ref::get_c_str() const noexcept {
     // we have a long string and we need to jump through some loops
     len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
     // middle 5 bites
-    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
+    uint32_t c1 = doc->string_buf[string_buf_index] - 32;
     len |= c1 << 4;
     // least significant five bits
-    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
+    uint32_t c2 = doc->string_buf[string_buf_index + 1] - 32;
     len |= c2;
     string_buf_index -= len;
   }

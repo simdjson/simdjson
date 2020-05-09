@@ -100,16 +100,15 @@ bool parser::handle_long_string(uint8_t *dst) noexcept {
   uint64_t lenmark = uint64_t(0x800000 | (str_length >> 9));
   uint64_t payload =  position |  (lenmark << 32);
   write_tape(payload, internal::tape_type::STRING);
-  dst[0] = 0;
   // We have three free bytes, but
   // we need a leading 1, so that's 24-1 = 23. 32-23=9 remaining bits.
   // We have 9 bits left to code, which we do on the string buffer
   // using two bytes. We encoding the binary data using ASCII characters.
   // See https://lemire.me/blog/2020/05/02/encoding-binary-in-ascii-very-fast/
   // for a more general approach.
-  dst[1] = uint8_t(32 + ((str_length & 0x1f0) >> 4)); // (0x1f0>>4)+32 = 63
-  dst[2] = uint8_t(32 + (str_length & 0xf)); // 32 + 0xf = 47
-  current_string_buf_loc = dst + 3;
+  dst[0] = uint8_t(32 + ((str_length & 0x1f0) >> 4)); // (0x1f0>>4)+32 = 63
+  dst[1] = uint8_t(32 + (str_length & 0xf)); // 32 + 0xf = 47
+  current_string_buf_loc = dst + 2;
   return true;
 }
 
@@ -124,8 +123,7 @@ really_inline bool parser::on_end_string(uint8_t *dst) noexcept {
   // Should we change this constraint, we should then check for overflow in case
   // someone has a crazy string (>=4GB?).
   write_tape(position | (str_length << 32), internal::tape_type::STRING);
-  *dst = 0;
-  current_string_buf_loc = dst + 1;
+  current_string_buf_loc = dst;
   return true;
 }
 

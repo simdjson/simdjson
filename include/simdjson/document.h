@@ -476,17 +476,6 @@ public:
    * @return The string value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a string.
    */
-  inline explicit operator const char*() const noexcept(false);
-
-  /**
-   * Read this element as a null-terminated string.
-   *
-   * Does *not* convert other types to a string; requires that the JSON type of the element was
-   * an actual string.
-   *
-   * @return The string value.
-   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not a string.
-   */
   inline operator std::string_view() const noexcept(false);
 
   /**

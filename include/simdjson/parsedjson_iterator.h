@@ -65,7 +65,7 @@ public:
       return doc.tape[location + 1];
   }
 
-  // get the string value at this node (NULL ended); valid only if get_type is "
+  // get the string value at this node; valid only if get_type is "
   // note that tabs, and line endings are escaped in the returned value (see
   // print_with_escapes) return value is valid UTF-8, it may contain NULL chars
   // within the string: get_string_length determines the true string length.
@@ -75,9 +75,9 @@ public:
       if(unlikely(len > 0x7fffff)) {
           uint64_t string_buf_index = current_val;
           len <<= 9;
-          uint32_t c1 = doc.string_buf[string_buf_index + 1] - 32;
+          uint32_t c1 = doc.string_buf[string_buf_index] - 32;
           len |= c1 << 4;
-          uint32_t c2 = doc.string_buf[string_buf_index + 2] - 32;
+          uint32_t c2 = doc.string_buf[string_buf_index + 1] - 32;
           len |= c2;
           index -= len;
       }
@@ -91,9 +91,9 @@ public:
       if(unlikely(len > 0x7fffff)) {
           uint64_t string_buf_index = current_val;
           len <<= 9;
-          uint32_t c1 = doc.string_buf[string_buf_index + 1] - 32;
+          uint32_t c1 = doc.string_buf[string_buf_index] - 32;
           len |= c1 << 4;
-          uint32_t c2 = doc.string_buf[string_buf_index + 2] - 32;
+          uint32_t c2 = doc.string_buf[string_buf_index + 1] - 32;
           len |= c2;
       }
       // if the slow path can be avoided, then we get the string length without

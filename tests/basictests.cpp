@@ -699,7 +699,7 @@ namespace dom_api_tests {
       return false;
     }
     if (!iter.down()) {
-      printf("Root should not be emtpy\n");
+      printf("Root should not be empty\n");
       return false;
     }
     if (!iter.is_string()) {
@@ -710,7 +710,7 @@ namespace dom_api_tests {
       printf("We should not be able to go back from the start of the scope.\n");
       return false;
     }
-    if (strcmp(iter.get_string(),"Image")!=0) {
+    if (strncmp(iter.get_string(),"Image", iter.get_string_length())!=0) {
       printf("There should be a single key, image.\n");
       return false;
     }
@@ -731,7 +731,7 @@ namespace dom_api_tests {
       printf("We should go back to the key.\n");
       return false;
     }
-    if (strcmp(iter.get_string(),"Width")!=0) {
+    if (strncmp(iter.get_string(),"Width", iter.get_string_length())!=0) {
       printf("There should be a  key Width.\n");
       return false;
     }
@@ -761,7 +761,7 @@ namespace dom_api_tests {
   bool object_iterator() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
-    const char* expected_key[] = { "a", "b", "c" };
+    std::string_view expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
 
@@ -1012,7 +1012,7 @@ namespace dom_api_tests {
   bool object_iterator_exception() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
-    const char* expected_key[] = { "a", "b", "c" };
+    std::string_view expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
     int i = 0;
 
@@ -1048,10 +1048,8 @@ namespace dom_api_tests {
     dom::parser parser;
     auto val = parser.parse(json).get<dom::array>().begin();
 
-    if (strcmp((const char*)*val, "hi")) { cerr << "Expected const char*(\"hi\") to be \"hi\", was " << (const char*)*val << endl; return false; }
     if (string_view(*val) != "hi") { cerr << "Expected string_view(\"hi\") to be \"hi\", was " << string_view(*val) << endl; return false; }
     ++val;
-    if (strcmp((const char*)*val, "has backslash\\")) { cerr << "Expected const char*(\"has backslash\\\\\") to be \"has backslash\\\", was " << (const char*)*val << endl; return false; }
     if (string_view(*val) != "has backslash\\") { cerr << "Expected string_view(\"has backslash\\\\\") to be \"has backslash\\\", was " << string_view(*val) << endl; return false; }
     return true;
   }
@@ -1249,12 +1247,6 @@ namespace type_tests {
     return test(actual);
   }
 
-  template<>
-  template<typename A, typename F>
-  bool test_implicit_cast<const char *>::with(A, F const &) {
-    return true;
-  }
-
   template<typename T>
   template<typename A>
   bool test_implicit_cast<T>::error_with(A input, simdjson::error_code expected_error) {
@@ -1266,12 +1258,6 @@ namespace type_tests {
       ASSERT_EQUAL(e.error(), expected_error);
       return true;
     }
-  }
-
-  template<>
-  template<typename A>
-  bool test_implicit_cast<const char *>::error_with(A, simdjson::error_code) {
-    return true;
   }
 
   template<typename T>
@@ -1521,7 +1507,6 @@ namespace type_tests {
       && test_cast<dom::array>(result)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, INCORRECT_TYPE)
@@ -1540,7 +1525,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, INCORRECT_TYPE)
@@ -1559,7 +1543,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, "foo")
-      && test_cast<const char *>(result, "foo")
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, INCORRECT_TYPE)
@@ -1577,7 +1560,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, expected_value)
       && (expected_value >= 0 ?
           test_cast<uint64_t>(result, expected_value) :
@@ -1598,7 +1580,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, NUMBER_OUT_OF_RANGE)
       && test_cast<uint64_t>(result, expected_value)
       && test_cast<double>(result, static_cast<double>(expected_value))
@@ -1616,7 +1597,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, expected_value)
@@ -1635,7 +1615,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, INCORRECT_TYPE)
@@ -1653,7 +1632,6 @@ namespace type_tests {
       && test_cast<dom::array>(result, INCORRECT_TYPE)
       && test_cast<dom::object>(result, INCORRECT_TYPE)
       && test_cast<std::string_view>(result, INCORRECT_TYPE)
-      && test_cast<const char *>(result, INCORRECT_TYPE)
       && test_cast<int64_t>(result, INCORRECT_TYPE)
       && test_cast<uint64_t>(result, INCORRECT_TYPE)
       && test_cast<double>(result, INCORRECT_TYPE)

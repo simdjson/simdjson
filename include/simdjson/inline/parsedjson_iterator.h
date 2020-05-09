@@ -72,7 +72,7 @@ void dom::parser::Iterator::move_to_value() {
 bool dom::parser::Iterator::move_to_key(const char *key) {
     if (down()) {
       do {
-        const bool right_key = (strcmp(get_string(), key) == 0);
+        const bool right_key = (strncmp(get_string(), key, get_string_length()) == 0);
         move_to_value();
         if (right_key) {
           return true;
@@ -87,7 +87,7 @@ bool dom::parser::Iterator::move_to_key_insensitive(
     const char *key) {
     if (down()) {
       do {
-        const bool right_key = (simdjson_strcasecmp(get_string(), key) == 0);
+        const bool right_key = (simdjson_strncasecmp(get_string(), key, get_string_length()) == 0);
         move_to_value();
         if (right_key) {
           return true;
