@@ -226,7 +226,6 @@ inline error_code document::allocate(size_t capacity) noexcept {
 }
 
 inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
-  uint32_t string_length;
   size_t tape_idx = 0;
   uint64_t tape_val = tape[tape_idx];
   uint8_t type = uint8_t(tape_val >> 56);
@@ -249,11 +248,23 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     switch (type) {
     case '"': // we have a string
       os << "string \"";
-      memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
-      os << internal::escape_json_string(std::string_view(
-        (const char *)(string_buf.get() + payload + sizeof(uint32_t)),
-        string_length
-      ));
+      {
+        // this legacy code must die
+        uint32_t len = (payload >> 32) & 0xFFFFFF; // grab 3 bytes
+        uint32_t string_buf_index = uint32_t(payload);
+        if(unlikely(len > 0x7fffff)) {
+          len <<= 9;
+          uint32_t c1 = string_buf[string_buf_index + 1] - 32;
+          len |= c1 << 4;
+          uint32_t c2 = string_buf[string_buf_index + 2] - 32;
+          len |= c2;
+          string_buf_index -= len;
+        }
+        os << internal::escape_json_string(std::string_view(
+          (const char *)(string_buf.get() +string_buf_index),
+          len
+        ));
+      }
       os << '"';
       os << '\n';
       break;
@@ -717,8 +728,47 @@ inline uint32_t object::iterator::key_length() const noexcept {
   return get_string_length();
 }
 inline const char* object::iterator::key_c_str() const noexcept {
-  return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
+  return get_c_str();
 }
+
+
+/**
+ * Design notes:
+ * Instead of constructing a string_view and then comparing it with a
+ * user-provided strings, it is probably more performant to have dedicated
+ * functions taking as a parameter the string we want to compare against
+ * and return true when they are equal. That avoids the creation of a temporary
+ * std::string_view. Though it is possible for the compiler to avoid entirely
+ * any overhead due to string_view, relying too much on compiler magic is
+ * problematic: compiler magic sometimes fail, and then what do you do?
+ * Also, enticing users to rely on high-performance function is probably better
+ * on the long run.
+ */
+
+inline bool object::iterator::key_equals(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+    // We avoid construction of a temporary string_view instance.
+    return (memcmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
+
+inline bool object::iterator::key_equals_case_insensitive(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+      // See For case-insensitive string comparisons, avoid char-by-char functions
+      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
+      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
+      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
+
 inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
 }
@@ -1193,16 +1243,50 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 
+ /**
+ * Design notes:
+ * Instead of having references to the low-level string_buf all over the
+ * code, we hide all of the logic in get_string_length and get_c_str
+ * and build everything from there. Note that get_string_length is
+ * expected to be a very fast function, so it should be broadly available
+ */
+
 really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
-  uint64_t string_buf_index = size_t(tape_value());
-  uint32_t len;
-  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  uint64_t tape_val = uint64_t(tape_value());
+  uint32_t len = (tape_val >> 32) & 0xFFFFFF; // grab 3 bytes
+  if(unlikely(len > 0x7fffff)) {  // only go there if the highest bit is set
+    uint32_t string_buf_index = uint32_t(tape_val); // we will need to touch the string buffer
+    // we have a long string and we need to jump through some loops
+    len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
+    // middle 5 bites
+    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
+    len |= c1 << 4;
+    // least significant five bits
+    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
+    len |= c2;
+  }
+  // if the slow path can be avoided, then we get the string length without
+  // touching (at all) the string buffer.
   return len;
 }
 
+
 really_inline const char * internal::tape_ref::get_c_str() const noexcept {
-  uint64_t string_buf_index = size_t(tape_value());
-  return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+  uint64_t tape_val = uint64_t(tape_value());
+  uint32_t string_buf_index = uint32_t(tape_val);
+  uint32_t len = (tape_val >> 32) & 0xFFFFFF; // grab 3 bytes
+  if(unlikely(len > 0x7fffff)) {  // only go there if the highest bit is set
+    // we have a long string and we need to jump through some loops
+    len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
+    // middle 5 bites
+    uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
+    len |= c1 << 4;
+    // least significant five bits
+    uint32_t c2 = doc->string_buf[string_buf_index + 2] - 32;
+    len |= c2;
+    string_buf_index -= len;
+  }
+  return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index]);
 }
 
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {

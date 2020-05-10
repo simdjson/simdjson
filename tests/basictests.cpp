@@ -203,6 +203,26 @@ namespace document_tests {
     }
     return true;
   }
+  bool humongous_strings() {
+    std::cout << __func__ << std::endl;
+    size_t N = 15000000;
+    simdjson::padded_string large = std::string("\"") + std::string(N, '.') + std::string("\"");
+    simdjson::dom::parser parser;
+    auto [doc, error] = parser.parse(large).get<std::string_view>();
+    if (error) {
+      printf("This json should  be valid.\n");
+      return false;
+    }
+    if(doc.size() != N) {
+      printf("Strings are of different size.\n");
+      return false;
+    }
+    if(doc != std::string(N, '.')) {
+      printf("Strings differ.\n");
+      return false;
+    }
+    return true;
+  }
   bool count_array_example() {
     std::cout << __func__ << std::endl;
     simdjson::padded_string smalljson = "[1,2,3]"_padded;
@@ -340,7 +360,8 @@ namespace document_tests {
     return true;
   }
   bool run() {
-    return bad_example() &&
+    return humongous_strings() &&
+           bad_example() &&
            count_array_example() &&
            count_object_example() &&
            stable_test() &&
