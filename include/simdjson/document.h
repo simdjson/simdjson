@@ -222,20 +222,20 @@ public:
      */
     inline std::string_view key() const noexcept;
     /**
-    * Get the length (in bytes) of the key in this key/value pair.
-    * You should expect this function to be faster than key().size().
-    */
+     * Get the length (in bytes) of the key in this key/value pair.
+     * You should expect this function to be faster than key().size().
+     */
     inline uint32_t key_length() const noexcept;
     /**
-    * Returns true if the key in this key/value pair is equal
-    * to the provided string_view.
-    */
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view.
+     */
     inline bool key_equals(const std::string_view & o) const noexcept;
     /**
-    * Returns true if the key in this key/value pair is equal
-    * to the provided string_view in a case-insensitive manner.
-    * Case comparisons may only be handled correctly for ASCII strings.
-    */
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view in a case-insensitive manner.
+     * Case comparisons may only be handled correctly for ASCII strings.
+     */
     inline bool key_equals_case_insensitive(const std::string_view & o) const noexcept;
     /**
      * Get the key of this key/value pair.
