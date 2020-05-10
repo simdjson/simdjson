@@ -74,8 +74,8 @@ namespace number_tests {
     uint64_t maxulp = 0;
     for (int i = -1075; i < 1024; ++i) {// large negative values should be zero.
       double expected = pow(2, i);
-      auto n = sprintf(buf, "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
-      buf[n] = '\0';
+      size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
+      if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
       auto [actual, error] = parser.parse(buf, n).get<double>();
       if (error) { std::cerr << error << std::endl; return false; }
@@ -167,8 +167,8 @@ namespace number_tests {
     char buf[1024];
     simdjson::dom::parser parser;
     for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
-      auto n = sprintf(buf,"1e%d", i);
-      buf[n] = '\0';
+      size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
+      if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
 
       auto [actual, error] = parser.parse(buf, n).get<double>();
@@ -275,19 +275,22 @@ namespace document_tests {
     std::vector<std::string> data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      size_t n = snprintf(buf, sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
                       i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+      if (n >= sizeof(buf)) { abort(); }
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"counter\": %f, \"array\": [%s]}", static_cast<double>(i) * 3.1416,
-                      (i % 2) ? "true" : "false");
+      size_t n = snprintf(buf, sizeof(buf), "{\"counter\": %f, \"array\": [%s]}", static_cast<double>(i) * 3.1416,
+                        (i % 2) ? "true" : "false");
+      if (n >= sizeof(buf)) { abort(); }
       data.emplace_back(std::string(buf, n));
     }
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf, "{\"number\": %e}", static_cast<double>(i) * 10000.31321321);
+      size_t n = snprintf(buf, sizeof(buf), "{\"number\": %e}", static_cast<double>(i) * 10000.31321321);
+      if (n >= sizeof(buf)) { abort(); }
       data.emplace_back(std::string(buf, n));
     }
     data.emplace_back(std::string("true"));
@@ -396,10 +399,12 @@ namespace document_stream_tests {
     std::string data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      size_t n = snprintf(buf,
+                          sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"ete\": {\"id\": %zu, \"name\": \"eventail%zu\"}}",
                       i, i, (i % 2) ? "homme" : "femme", i % 10, i % 10);
+      if (n >= sizeof(buf)) { abort(); }
       data += std::string(buf, n);
     }
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {
@@ -444,10 +449,12 @@ namespace document_stream_tests {
     std::string data;
     char buf[1024];
     for (size_t i = 0; i < n_records; ++i) {
-      auto n = sprintf(buf,
+      size_t n = snprintf(buf,
+                        sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
                       "\"été\": {\"id\": %zu, \"name\": \"éventail%zu\"}}",
                       i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
+      if (n >= sizeof(buf)) { abort(); }
       data += std::string(buf, n);
     }
     for(size_t batch_size = 1000; batch_size < 2000; batch_size += (batch_size>1050?10:1)) {

@@ -339,7 +339,11 @@ inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
 
 inline simdjson_result<size_t> parser::read_file(const std::string &path) noexcept {
   // Open the file
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   std::FILE *fp = std::fopen(path.c_str(), "rb");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
   if (fp == nullptr) {
     return IO_ERROR;
   }
@@ -672,7 +676,7 @@ inline simdjson_result<element> object::at(const std::string_view &json_pointer)
 inline simdjson_result<element> object::at_key(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
-    if (key == field.key()) {
+    if (field.key_equals(key)) {
       return field.value();
     }
   }
@@ -684,13 +688,8 @@ inline simdjson_result<element> object::at_key(const std::string_view &key) cons
 inline simdjson_result<element> object::at_key_case_insensitive(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
-    auto field_key = field.key();
-    if (key.length() == field_key.length()) {
-      // See For case-insensitive string comparisons, avoid char-by-char functions
-      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      const bool equal = (simdjson_strncasecmp(key.data(), field_key.data(), key.length()) == 0);
-      if (equal) { return field.value(); }
+    if (field.key_equals_case_insensitive(key)) {
+      return field.value();
     }
   }
   return NO_SUCH_FIELD;
@@ -712,13 +711,10 @@ inline object::iterator& object::iterator::operator++() noexcept {
   return *this;
 }
 inline std::string_view object::iterator::key() const noexcept {
-  size_t string_buf_index = size_t(tape_value());
-  uint32_t len;
-  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
-  return std::string_view(
-    reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
-    len
-  );
+  return get_string_view();
+}
+inline uint32_t object::iterator::key_length() const noexcept {
+  return get_string_length();
 }
 inline const char* object::iterator::key_c_str() const noexcept {
   return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
@@ -727,6 +723,42 @@ inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
 }
 
+/**
+ * Design notes:
+ * Instead of constructing a string_view and then comparing it with a
+ * user-provided strings, it is probably more performant to have dedicated
+ * functions taking as a parameter the string we want to compare against
+ * and return true when they are equal. That avoids the creation of a temporary
+ * std::string_view. Though it is possible for the compiler to avoid entirely
+ * any overhead due to string_view, relying too much on compiler magic is
+ * problematic: compiler magic sometimes fail, and then what do you do?
+ * Also, enticing users to rely on high-performance function is probably better
+ * on the long run.
+ */
+
+inline bool object::iterator::key_equals(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+    // We avoid construction of a temporary string_view instance.
+    return (memcmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
+
+inline bool object::iterator::key_equals_case_insensitive(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+      // See For case-insensitive string comparisons, avoid char-by-char functions
+      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
+      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
+      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
 //
 // key_value_pair inline implementation
 //
@@ -761,8 +793,7 @@ template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
   switch (tape_ref_type()) {
     case internal::tape_type::STRING: {
-      size_t string_buf_index = size_t(tape_value());
-      return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+      return get_c_str();
     }
     default:
       return INCORRECT_TYPE;
@@ -1161,13 +1192,23 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
   return x;
 }
-inline std::string_view internal::tape_ref::get_string_view() const noexcept {
-  size_t string_buf_index = size_t(tape_value());
+
+really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
+  uint64_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  return len;
+}
+
+really_inline const char * internal::tape_ref::get_c_str() const noexcept {
+  uint64_t string_buf_index = size_t(tape_value());
+  return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+}
+
+inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   return std::string_view(
-    reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
-    len
+      get_c_str(),
+      get_string_length()
   );
 }
 

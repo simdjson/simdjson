@@ -45,7 +45,7 @@ really_inline int leading_zeroes(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int count_ones(uint64_t input_num) {
-   return vaddv_u8(vcnt_u8((uint8x8_t)input_num));
+   return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
 }
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {

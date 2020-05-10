@@ -93,7 +93,7 @@ add_dependencies(simdjson-singleheader-source amalgamate)
 # Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
 #
 add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
-target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-flags)
+target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-internal-flags)
 add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
