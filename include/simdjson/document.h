@@ -78,6 +78,8 @@ public:
   really_inline uint32_t scope_count() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
+  really_inline uint32_t get_string_length() const noexcept;
+  really_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
 
   /** The document this element references. */
@@ -219,7 +221,22 @@ public:
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
-
+    /**
+     * Get the length (in bytes) of the key in this key/value pair.
+     * You should expect this function to be faster than key().size().
+     */
+    inline uint32_t key_length() const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view.
+     */
+    inline bool key_equals(const std::string_view & o) const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view in a case-insensitive manner.
+     * Case comparisons may only be handled correctly for ASCII strings.
+     */
+    inline bool key_equals_case_insensitive(const std::string_view & o) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
