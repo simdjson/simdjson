@@ -227,12 +227,12 @@ public:
     */
     inline uint32_t key_length() const noexcept;
     /**
-    * Returns true of the the key in this key/value pair is equal
+    * Returns true if the key in this key/value pair is equal
     * to the provided string_view.
     */
     inline bool key_equals(const std::string_view & o) const noexcept;
     /**
-    * Returns true of the the key in this key/value pair is equal
+    * Returns true if the key in this key/value pair is equal
     * to the provided string_view in a case-insensitive manner.
     * Case comparisons may only be handled correctly for ASCII strings.
     */
