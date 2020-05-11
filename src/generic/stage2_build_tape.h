@@ -179,13 +179,33 @@ struct structural_parser {
     doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
+  really_inline uint8_t *on_start_string() noexcept {
+    /* we advance the point, accounting for the fact that we have a NULL
+      * termination         */
+    doc_parser.write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    return doc_parser.current_string_buf_loc + sizeof(uint32_t);
+  }
+
+  really_inline bool on_end_string(uint8_t *dst) noexcept {
+    uint32_t str_length = uint32_t(dst - (doc_parser.current_string_buf_loc + sizeof(uint32_t)));
+    // TODO check for overflow in case someone has a crazy string (>=4GB?)
+    // But only add the overflow check when the document itself exceeds 4GB
+    // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
+    memcpy(doc_parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    // NULL termination is still handy if you expect all your strings to
+    // be NULL terminated? It comes at a small cost
+    *dst = 0;
+    doc_parser.current_string_buf_loc = dst + 1;
+    return true;
+  }
+
   WARN_UNUSED really_inline bool parse_string() {
-    uint8_t *dst = doc_parser.on_start_string();
+    uint8_t *dst = on_start_string();
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
       return true;
     }
-    return !doc_parser.on_end_string(dst);
+    return !on_end_string(dst);
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
