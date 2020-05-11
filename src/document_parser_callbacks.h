@@ -27,21 +27,15 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
   return success_code;
 }
 
-really_inline bool parser::on_start_document(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+really_inline bool parser::on_start_document() noexcept {
   write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
   return true;
 }
-really_inline bool parser::on_start_object(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+really_inline bool parser::on_start_object() noexcept {
   write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
   return true;
 }
-really_inline bool parser::on_start_array(uint32_t depth) noexcept {
-  containing_scope[depth].tape_index = current_loc;
-  containing_scope[depth].count = 0;
+really_inline bool parser::on_start_array() noexcept {
   write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
   return true;
 }

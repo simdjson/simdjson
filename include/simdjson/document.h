@@ -1026,9 +1026,9 @@ public:
   inline void init_stage2() noexcept;
   really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
   really_inline error_code on_success(error_code success_code) noexcept; ///< @private
-  really_inline bool on_start_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_array(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_start_document() noexcept; ///< @private
+  really_inline bool on_start_object() noexcept; ///< @private
+  really_inline bool on_start_array() noexcept; ///< @private
   // TODO we're not checking this bool
   really_inline bool on_end_document(uint32_t depth) noexcept; ///< @private
   really_inline bool on_end_object(uint32_t depth) noexcept; ///< @private
