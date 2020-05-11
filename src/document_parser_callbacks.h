@@ -40,23 +40,23 @@ really_inline bool parser::on_start_array() noexcept {
   return true;
 }
 // TODO we're not checking this bool
-really_inline bool parser::on_end_document(uint32_t depth) noexcept {
+really_inline bool parser::on_end_document(uint32_t start_tape_index, uint32_t count) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::ROOT);
-  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
+  write_tape(start_tape_index, internal::tape_type::ROOT);
+  end_scope(start_tape_index, count);
   return true;
 }
-really_inline bool parser::on_end_object(uint32_t depth) noexcept {
+really_inline bool parser::on_end_object(const scope_descriptor &scope) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
-  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
+  write_tape(scope.tape_index, internal::tape_type::END_OBJECT);
+  end_scope(scope.tape_index, scope.count);
   return true;
 }
-really_inline bool parser::on_end_array(uint32_t depth) noexcept {
+really_inline bool parser::on_end_array(const scope_descriptor &scope) noexcept {
   // write our doc.tape location to the header scope
-  write_tape(containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
-  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
+  write_tape(scope.tape_index, internal::tape_type::END_ARRAY);
+  end_scope(scope.tape_index, scope.count);
   return true;
 }
 

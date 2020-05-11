@@ -1030,9 +1030,9 @@ public:
   really_inline bool on_start_object() noexcept; ///< @private
   really_inline bool on_start_array() noexcept; ///< @private
   // TODO we're not checking this bool
-  really_inline bool on_end_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_array(uint32_t depth) noexcept; ///< @private
+  really_inline bool on_end_document(uint32_t start_tape_index, uint32_t count) noexcept; ///< @private
+  really_inline bool on_end_object(const scope_descriptor &scope) noexcept; ///< @private
+  really_inline bool on_end_array(const scope_descriptor &scope) noexcept; ///< @private
   really_inline bool on_true_atom() noexcept; ///< @private
   really_inline bool on_false_atom() noexcept; ///< @private
   really_inline bool on_null_atom() noexcept; ///< @private
