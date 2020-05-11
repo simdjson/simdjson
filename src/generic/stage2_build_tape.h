@@ -128,7 +128,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.on_start_document();
+    doc_parser.write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -137,7 +137,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.on_start_object();
+    doc_parser.write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -146,7 +146,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.on_start_array();
+    doc_parser.write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();

@@ -1026,9 +1026,6 @@ public:
   inline void init_stage2() noexcept;
   really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
   really_inline error_code on_success(error_code success_code) noexcept; ///< @private
-  really_inline bool on_start_document() noexcept; ///< @private
-  really_inline bool on_start_object() noexcept; ///< @private
-  really_inline bool on_start_array() noexcept; ///< @private
   // TODO we're not checking this bool
   really_inline bool on_end_document(uint32_t start_tape_index) noexcept; ///< @private
   really_inline bool on_end_object(uint32_t start_tape_index) noexcept; ///< @private
@@ -1041,6 +1038,8 @@ public:
   really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private
+
+  inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -1084,8 +1083,6 @@ private:
   // annotate them with a reference to the location of the opening
   //
   //
-
-  inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
