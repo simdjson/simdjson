@@ -154,17 +154,20 @@ struct structural_parser {
 
   really_inline bool end_object() {
     depth--;
-    doc_parser.on_end_object(doc_parser.containing_scope[depth]);
+    doc_parser.on_end_object(doc_parser.containing_scope[depth].tape_index);
+    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
     return false;
   }
   really_inline bool end_array() {
     depth--;
-    doc_parser.on_end_array(doc_parser.containing_scope[depth]);
+    doc_parser.on_end_array(doc_parser.containing_scope[depth].tape_index);
+    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
     return false;
   }
   really_inline bool end_document() {
     depth--;
-    doc_parser.on_end_document(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
+    doc_parser.on_end_document(doc_parser.containing_scope[depth].tape_index);
+    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
     return false;
   }
 
