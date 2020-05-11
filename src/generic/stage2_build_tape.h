@@ -117,19 +117,22 @@ struct number_writer {
   parser &doc_parser;
   
   really_inline void write_s64(int64_t value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::INT64);
+    write_tape(0, internal::tape_type::INT64);
     std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
     ++doc_parser.current_loc;
   }
   really_inline void write_u64(uint64_t value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::UINT64);
+    write_tape(0, internal::tape_type::UINT64);
     doc_parser.doc.tape[doc_parser.current_loc++] = value;
   }
   really_inline void write_double(double value) noexcept {
-    doc_parser.write_tape(0, internal::tape_type::DOUBLE);
+    write_tape(0, internal::tape_type::DOUBLE);
     static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
     memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
     // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+  }
+  really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
+    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
   }
 }; // struct number_writer
 
@@ -148,7 +151,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_scope(internal::tape_type type, ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, type); // if the document is correct, this gets rewritten later
+    write_tape(0, type); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
@@ -171,7 +174,7 @@ struct structural_parser {
     depth--;
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, type);
+    write_tape(doc_parser.containing_scope[depth].tape_index, type);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
@@ -191,10 +194,14 @@ struct structural_parser {
     end_scope(internal::tape_type::ROOT);
   }
 
-// increment_count increments the count of keys in an object or values in an array.
-// Note that if you are at the level of the values or elements, the count
-// must be increment in the preceding depth (depth-1) where the array or
-// the object resides.
+  really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
+    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+  }
+
+  // increment_count increments the count of keys in an object or values in an array.
+  // Note that if you are at the level of the values or elements, the count
+  // must be increment in the preceding depth (depth-1) where the array or
+  // the object resides.
   really_inline void increment_count() {
     doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
   }
@@ -202,7 +209,7 @@ struct structural_parser {
   really_inline uint8_t *on_start_string() noexcept {
     /* we advance the point, accounting for the fact that we have a NULL
       * termination         */
-    doc_parser.write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
     return doc_parser.current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -240,15 +247,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
+        write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
+        write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
+        write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
@@ -260,15 +267,15 @@ struct structural_parser {
     switch (structurals.current_char()) {
       case 't':
         if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::TRUE_VALUE);
+        write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
         if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::FALSE_VALUE);
+        write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
         if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        doc_parser.write_tape(0, internal::tape_type::NULL_VALUE);
+        write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
         return true;
