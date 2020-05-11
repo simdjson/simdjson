@@ -27,23 +27,6 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
   return success_code;
 }
 
-// TODO we're not checking this bool
-really_inline bool parser::on_end_document(uint32_t start_tape_index) noexcept {
-  // write our doc.tape location to the header scope
-  // The root scope gets written *at* the previous location.
-  write_tape(start_tape_index, internal::tape_type::ROOT);
-  return true;
-}
-really_inline bool parser::on_end_object(uint32_t start_tape_index) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(start_tape_index, internal::tape_type::END_OBJECT);
-  return true;
-}
-really_inline bool parser::on_end_array(uint32_t start_tape_index) noexcept {
-  // write our doc.tape location to the header scope
-  write_tape(start_tape_index, internal::tape_type::END_ARRAY);
-  return true;
-}
 
 really_inline bool parser::on_true_atom() noexcept {
   write_tape(0, internal::tape_type::TRUE_VALUE);

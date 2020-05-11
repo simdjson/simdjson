@@ -1027,9 +1027,6 @@ public:
   really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
   really_inline error_code on_success(error_code success_code) noexcept; ///< @private
   // TODO we're not checking this bool
-  really_inline bool on_end_document(uint32_t start_tape_index) noexcept; ///< @private
-  really_inline bool on_end_object(uint32_t start_tape_index) noexcept; ///< @private
-  really_inline bool on_end_array(uint32_t start_tape_index) noexcept; ///< @private
   really_inline bool on_true_atom() noexcept; ///< @private
   really_inline bool on_false_atom() noexcept; ///< @private
   really_inline bool on_null_atom() noexcept; ///< @private

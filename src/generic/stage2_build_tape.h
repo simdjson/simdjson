@@ -165,19 +165,23 @@ struct structural_parser {
 
   really_inline bool end_object() {
     depth--;
-    doc_parser.on_end_object(doc_parser.containing_scope[depth].tape_index);
+    // write our doc.tape location to the header scope
+    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
     end_scope();
     return false;
   }
   really_inline bool end_array() {
     depth--;
-    doc_parser.on_end_array(doc_parser.containing_scope[depth].tape_index);
+    // write our doc.tape location to the header scope
+    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
     end_scope();
     return false;
   }
   really_inline bool end_document() {
     depth--;
-    doc_parser.on_end_document(doc_parser.containing_scope[depth].tape_index);
+    // write our doc.tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::ROOT);
     end_scope();
     return false;
   }
