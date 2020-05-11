@@ -152,22 +152,33 @@ struct structural_parser {
     return depth >= doc_parser.max_depth();
   }
 
+  // this function is responsible for annotating the start of the scope
+  really_inline void end_scope() noexcept {
+    // count can overflow if it exceeds 24 bits... so we saturate
+    // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
+    const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
+    const uint32_t count = doc_parser.containing_scope[depth].count;
+    const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
+    // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
+    doc_parser.doc.tape[start_tape_index] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
+  }
+
   really_inline bool end_object() {
     depth--;
     doc_parser.on_end_object(doc_parser.containing_scope[depth].tape_index);
-    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
+    end_scope();
     return false;
   }
   really_inline bool end_array() {
     depth--;
     doc_parser.on_end_array(doc_parser.containing_scope[depth].tape_index);
-    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
+    end_scope();
     return false;
   }
   really_inline bool end_document() {
     depth--;
     doc_parser.on_end_document(doc_parser.containing_scope[depth].tape_index);
-    doc_parser.end_scope(doc_parser.containing_scope[depth].tape_index, doc_parser.containing_scope[depth].count);
+    end_scope();
     return false;
   }
 

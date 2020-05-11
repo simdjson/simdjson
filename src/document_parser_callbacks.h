@@ -113,15 +113,6 @@ really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexc
   doc.tape[current_loc++] = val | ((uint64_t(char(t))) << 56);
 }
 
-// this function is responsible for annotating the start of the scope
-really_inline void parser::end_scope(uint32_t start_tape_index, uint32_t count) noexcept {
-  // count can overflow if it exceeds 24 bits... so we saturate
-  // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-  // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-  doc.tape[start_tape_index] |= current_loc | (uint64_t(cntsat) << 32);
-}
-
 } // namespace simdjson
 } // namespace dom
 
