@@ -113,6 +113,26 @@ public:
   uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
+struct number_writer {
+  parser &doc_parser;
+  
+  really_inline void write_s64(int64_t value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::INT64);
+    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
+    ++doc_parser.current_loc;
+  }
+  really_inline void write_u64(uint64_t value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::UINT64);
+    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+  }
+  really_inline void write_double(double value) noexcept {
+    doc_parser.write_tape(0, internal::tape_type::DOUBLE);
+    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
+    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
+    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+  }
+}; // struct number_writer
+
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
@@ -209,7 +229,8 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
-    return !numberparsing::parse_number(src, found_minus, doc_parser);
+    number_writer writer{doc_parser};
+    return !numberparsing::parse_number(src, found_minus, writer);
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(structurals.current(), found_minus);

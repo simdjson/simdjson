@@ -1,6 +1,5 @@
 namespace numberparsing {
 
-
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
@@ -261,8 +260,9 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function will almost never be called!!!
 //
+template<typename W>
 never_inline bool parse_large_integer(const uint8_t *const src,
-                                      parser &parser,
+                                      W writer,
                                       bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
@@ -310,14 +310,14 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      parser.on_number_s64(signed_answer);
+      writer.write_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      parser.on_number_s64(signed_answer);
+      writer.write_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
@@ -330,21 +330,22 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
-      parser.on_number_s64(i);
+      writer.write_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, src);
 #endif
-      parser.on_number_u64(i);
+      writer.write_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
 }
 
-bool slow_float_parsing(UNUSED const char * src, parser &parser) {
+template<typename W>
+bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    parser.on_number_double(d);
+    writer.write_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
@@ -365,12 +366,13 @@ bool slow_float_parsing(UNUSED const char * src, parser &parser) {
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
+template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                parser &parser) {
+                                W writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  parser.on_number_s64(0);        // always write zero
+  writer.write_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -522,14 +524,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, parser);
+        return slow_float_parsing((const char *) src, writer);
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, parser);
+      return slow_float_parsing((const char *) src, writer);
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -538,7 +540,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      parser.on_number_double(d);
+      writer.write_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
@@ -553,10 +555,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, parser, found_minus);
+      return parse_large_integer(src, writer, found_minus);
     }
     i = negative ? 0 - i : i;
-    parser.on_number_s64(i);
+    writer.write_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif

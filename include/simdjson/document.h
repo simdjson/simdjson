@@ -1022,10 +1022,6 @@ public:
   // Parser callbacks: these are internal!
   //
 
-  really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
-  really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
-  really_inline bool on_number_double(double value) noexcept; ///< @private
-
   inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 private:
   /**
