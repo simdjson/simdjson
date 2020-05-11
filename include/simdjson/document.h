@@ -1023,13 +1023,6 @@ public:
   //
 
   /** @private this should be called when parsing (right before writing the tapes) */
-  inline void init_stage2() noexcept;
-  really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
-  really_inline error_code on_success(error_code success_code) noexcept; ///< @private
-  // TODO we're not checking this bool
-  really_inline bool on_true_atom() noexcept; ///< @private
-  really_inline bool on_false_atom() noexcept; ///< @private
-  really_inline bool on_null_atom() noexcept; ///< @private
   really_inline uint8_t *on_start_string() noexcept; ///< @private
   really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
   really_inline bool on_number_s64(int64_t value) noexcept; ///< @private

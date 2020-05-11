@@ -10,37 +10,6 @@ namespace dom {
 // Parser callbacks
 //
 
-inline void parser::init_stage2() noexcept {
-  current_string_buf_loc = doc.string_buf.get();
-  current_loc = 0;
-  valid = false;
-  error = UNINITIALIZED;
-}
-
-really_inline error_code parser::on_error(error_code new_error_code) noexcept {
-  error = new_error_code;
-  return new_error_code;
-}
-really_inline error_code parser::on_success(error_code success_code) noexcept {
-  error = success_code;
-  valid = true;
-  return success_code;
-}
-
-
-really_inline bool parser::on_true_atom() noexcept {
-  write_tape(0, internal::tape_type::TRUE_VALUE);
-  return true;
-}
-really_inline bool parser::on_false_atom() noexcept {
-  write_tape(0, internal::tape_type::FALSE_VALUE);
-  return true;
-}
-really_inline bool parser::on_null_atom() noexcept {
-  write_tape(0, internal::tape_type::NULL_VALUE);
-  return true;
-}
-
 really_inline uint8_t *parser::on_start_string() noexcept {
   /* we advance the point, accounting for the fact that we have a NULL
     * termination         */
