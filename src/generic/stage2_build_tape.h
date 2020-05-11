@@ -125,35 +125,33 @@ struct structural_parser {
     uint32_t next_structural = 0
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
-  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_scope(internal::tape_type type, ret_address continue_state) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::ROOT); // if the document is correct, this gets rewritten later
+    doc_parser.write_tape(0, type); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
     return depth >= doc_parser.max_depth();
+  }
+
+  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    return start_scope(internal::tape_type::ROOT, continue_state);
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
-    doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::START_OBJECT);  // if the document is correct, this gets rewritten later
-    doc_parser.ret_address[depth] = continue_state;
-    depth++;
-    return depth >= doc_parser.max_depth();
+    return start_scope(internal::tape_type::START_OBJECT, continue_state);
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
-    doc_parser.containing_scope[depth].count = 0;
-    doc_parser.write_tape(0, internal::tape_type::START_ARRAY);  // if the document is correct, this gets rewritten later
-    doc_parser.ret_address[depth] = continue_state;
-    depth++;
-    return depth >= doc_parser.max_depth();
+    return start_scope(internal::tape_type::START_ARRAY, continue_state);
   }
 
   // this function is responsible for annotating the start of the scope
-  really_inline void end_scope() noexcept {
+  really_inline void end_scope(internal::tape_type type) noexcept {
+    depth--;
+    // write our doc.tape location to the header scope
+    // The root scope gets written *at* the previous location.
+    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, type);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
@@ -163,27 +161,14 @@ struct structural_parser {
     doc_parser.doc.tape[start_tape_index] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
   }
 
-  really_inline bool end_object() {
-    depth--;
-    // write our doc.tape location to the header scope
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
-    end_scope();
-    return false;
+  really_inline void end_object() {
+    end_scope(internal::tape_type::END_OBJECT);
   }
-  really_inline bool end_array() {
-    depth--;
-    // write our doc.tape location to the header scope
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
-    end_scope();
-    return false;
+  really_inline void end_array() {
+    end_scope(internal::tape_type::END_ARRAY);
   }
-  really_inline bool end_document() {
-    depth--;
-    // write our doc.tape location to the header scope
-    // The root scope gets written *at* the previous location.
-    doc_parser.write_tape(doc_parser.containing_scope[depth].tape_index, internal::tape_type::ROOT);
-    end_scope();
-    return false;
+  really_inline void end_document() {
+    end_scope(internal::tape_type::ROOT);
   }
 
 // increment_count increments the count of keys in an object or values in an array.
