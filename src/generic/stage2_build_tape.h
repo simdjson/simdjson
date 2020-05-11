@@ -139,6 +139,8 @@ struct number_writer {
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
+  /** Next write location in the string buf for stage 2 parsing */
+  uint8_t *current_string_buf_loc{};
   uint32_t depth;
 
   really_inline structural_parser(
@@ -209,20 +211,20 @@ struct structural_parser {
   really_inline uint8_t *on_start_string() noexcept {
     /* we advance the point, accounting for the fact that we have a NULL
       * termination         */
-    write_tape(doc_parser.current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
-    return doc_parser.current_string_buf_loc + sizeof(uint32_t);
+    write_tape(current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    return current_string_buf_loc + sizeof(uint32_t);
   }
 
   really_inline bool on_end_string(uint8_t *dst) noexcept {
-    uint32_t str_length = uint32_t(dst - (doc_parser.current_string_buf_loc + sizeof(uint32_t)));
+    uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
     // TODO check for overflow in case someone has a crazy string (>=4GB?)
     // But only add the overflow check when the document itself exceeds 4GB
     // Currently unneeded because we refuse to parse docs larger or equal to 4GB.
-    memcpy(doc_parser.current_string_buf_loc, &str_length, sizeof(uint32_t));
+    memcpy(current_string_buf_loc, &str_length, sizeof(uint32_t));
     // NULL termination is still handy if you expect all your strings to
     // be NULL terminated? It comes at a small cost
     *dst = 0;
-    doc_parser.current_string_buf_loc = dst + 1;
+    current_string_buf_loc = dst + 1;
     return true;
   }
 
@@ -376,7 +378,7 @@ struct structural_parser {
   }
 
   really_inline void init() {
-    doc_parser.current_string_buf_loc = doc_parser.doc.string_buf.get();
+    current_string_buf_loc = doc_parser.doc.string_buf.get();
     doc_parser.current_loc = 0;
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;

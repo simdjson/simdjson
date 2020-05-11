@@ -985,9 +985,6 @@ public:
   std::unique_ptr<char[]> ret_address{};
 #endif
 
-  /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */
