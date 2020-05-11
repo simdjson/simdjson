@@ -30,8 +30,8 @@ really_inline error_code parser::on_success(error_code success_code) noexcept {
 // Note that if you are at the level of the values or elements, the count
 // must be increment in the preceding depth (depth-1) where the array or
 // the object resides.
-really_inline void parser::increment_count(uint32_t depth) noexcept {
-  containing_scope[depth].count++;
+really_inline void parser::increment_count(scope_descriptor &scope) noexcept {
+  scope.count++;
 }
 
 really_inline bool parser::on_start_document(uint32_t depth) noexcept {
