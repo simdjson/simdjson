@@ -1042,7 +1042,7 @@ public:
   really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
   really_inline bool on_number_double(double value) noexcept; ///< @private
 
-  really_inline void end_scope(uint32_t depth) noexcept; ///< @private
+  really_inline void end_scope(uint32_t start_tape_index, uint32_t count) noexcept; ///< @private
 private:
   /**
    * The maximum document length this parser will automatically support.

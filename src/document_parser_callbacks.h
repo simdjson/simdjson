@@ -44,19 +44,19 @@ really_inline bool parser::on_end_document(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   // The root scope gets written *at* the previous location.
   write_tape(containing_scope[depth].tape_index, internal::tape_type::ROOT);
-  end_scope(depth);
+  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
   return true;
 }
 really_inline bool parser::on_end_object(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   write_tape(containing_scope[depth].tape_index, internal::tape_type::END_OBJECT);
-  end_scope(depth);
+  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
   return true;
 }
 really_inline bool parser::on_end_array(uint32_t depth) noexcept {
   // write our doc.tape location to the header scope
   write_tape(containing_scope[depth].tape_index, internal::tape_type::END_ARRAY);
-  end_scope(depth);
+  end_scope(containing_scope[depth].tape_index, containing_scope[depth].count);
   return true;
 }
 
@@ -117,13 +117,12 @@ really_inline void parser::write_tape(uint64_t val, internal::tape_type t) noexc
 }
 
 // this function is responsible for annotating the start of the scope
-really_inline void parser::end_scope(uint32_t depth) noexcept {
-  scope_descriptor d = containing_scope[depth];
+really_inline void parser::end_scope(uint32_t start_tape_index, uint32_t count) noexcept {
   // count can overflow if it exceeds 24 bits... so we saturate
   // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-  const uint32_t cntsat =  d.count > 0xFFFFFF ? 0xFFFFFF : d.count;
+  const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
   // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-  doc.tape[d.tape_index] |= current_loc | (uint64_t(cntsat) << 32);
+  doc.tape[start_tape_index] |= current_loc | (uint64_t(cntsat) << 32);
 }
 
 } // namespace simdjson
