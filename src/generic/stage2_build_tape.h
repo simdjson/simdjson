@@ -162,6 +162,10 @@ struct structural_parser {
     return false;
   }
 
+  really_inline void increment_count() {
+    doc_parser.increment_count(doc_parser.containing_scope[depth - 1]); // we have a key value pair in the object at parser.depth - 1
+  }
+
   WARN_UNUSED really_inline bool parse_string() {
     uint8_t *dst = doc_parser.on_start_string();
     dst = stringparsing::parse_string(structurals.current(), dst);
@@ -376,7 +380,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
-    doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a key value pair in the object at parser.depth - 1
+    parser.increment_count();
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
   }
@@ -395,7 +399,7 @@ object_key_state:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
-    doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a key value pair in the object at parser.depth - 1
+    parser.increment_count();
     FAIL_IF( parser.advance_char() != '"' );
     FAIL_IF( parser.parse_string() );
     goto object_key_state;
@@ -417,7 +421,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
-  doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a new value in the array at parser.depth - 1
+  parser.increment_count();
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -427,7 +431,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
-    doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a new value in the array at parser.depth - 1
+    parser.increment_count();
     parser.advance_char();
     goto main_array_switch;
   case ']':

@@ -97,7 +97,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
-  doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a key value pair in the object at parser.depth - 1
+  parser.increment_count();
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -125,7 +125,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
-  doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a new value in the array at parser.depth - 1
+  parser.increment_count();
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -135,7 +135,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
-    doc_parser.increment_count(doc_parser.containing_scope[parser.depth - 1]); // we have a new value in the array at parser.depth - 1
+    parser.increment_count();
     parser.advance_char();
     goto main_array_switch;
   case ']':
