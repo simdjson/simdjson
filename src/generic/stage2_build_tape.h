@@ -162,8 +162,12 @@ struct structural_parser {
     return false;
   }
 
+// increment_count increments the count of keys in an object or values in an array.
+// Note that if you are at the level of the values or elements, the count
+// must be increment in the preceding depth (depth-1) where the array or
+// the object resides.
   really_inline void increment_count() {
-    doc_parser.increment_count(doc_parser.containing_scope[depth - 1]); // we have a key value pair in the object at parser.depth - 1
+    doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   WARN_UNUSED really_inline bool parse_string() {
