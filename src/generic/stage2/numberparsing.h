@@ -1,3 +1,4 @@
+namespace stage2 {
 namespace numberparsing {
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -568,3 +569,4 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 }
 
 } // namespace numberparsing
+} // namespace stage2

@@ -29,7 +29,7 @@ simdjson's source structure, from the top level, looks like this:
     ```c++
     namespace simdjson {
       namespace haswell {
-        #include "generic/stage1.h"
+        #include "generic/stage1/json_structural_indexer.h"
       }
     }
     ```

@@ -3,6 +3,7 @@
 // We assume the file in which it is include already includes
 // "stringparsing.h" (this simplifies amalgation)
 
+namespace stage2 {
 namespace stringparsing {
 
 // begin copypasta
@@ -119,3 +120,4 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 }
 
 } // namespace stringparsing
+} // namespace stage2

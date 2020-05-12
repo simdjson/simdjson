@@ -1,3 +1,4 @@
+namespace stage2 {
 namespace atomparsing {
 
 really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
@@ -47,3 +48,4 @@ really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 }
 
 } // namespace atomparsing
+} // namespace stage2

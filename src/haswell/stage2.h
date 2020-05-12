@@ -10,10 +10,10 @@ TARGET_HASWELL
 namespace simdjson {
 namespace haswell {
 
-#include "generic/atomparsing.h"
-#include "generic/structural_iterator.h"
-#include "generic/structural_parser.h"
-#include "generic/streaming_structural_parser.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
+#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/streaming_structural_parser.h"
 
 } // namespace haswell
 } // namespace simdjson
