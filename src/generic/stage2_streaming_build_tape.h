@@ -5,13 +5,13 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
-    doc_parser.init_stage2(); // sets is_valid to false
+    init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
     advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_parser)) {
-      return doc_parser.on_error(DEPTH_ERROR);
+      return on_error(DEPTH_ERROR);
     }
     return SUCCESS;
   }
@@ -19,17 +19,17 @@ struct streaming_structural_parser: structural_parser {
   // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
     if ( structurals.past_end(doc_parser.n_structural_indexes) ) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
     if (doc_parser.containing_scope[depth].tape_index != 0) {
-      return doc_parser.on_error(TAPE_ERROR);
+      return on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
-    return doc_parser.on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
+    return on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
 
@@ -97,7 +97,7 @@ object_begin:
 
 object_key_parser:
   FAIL_IF( parser.advance_char() != ':' );
-  doc_parser.increment_count(parser.depth - 1); // we have a key value pair in the object at parser.depth - 1
+  parser.increment_count();
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -125,7 +125,7 @@ array_begin:
     parser.end_array();
     goto scope_end;
   }
-  doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
+  parser.increment_count();
 
 main_array_switch:
   /* we call update char on all paths in, so we can peek at parser.c on the
@@ -135,7 +135,7 @@ main_array_switch:
 array_continue:
   switch (parser.advance_char()) {
   case ',':
-    doc_parser.increment_count(parser.depth - 1); // we have a new value in the array at parser.depth - 1
+    parser.increment_count();
     parser.advance_char();
     goto main_array_switch;
   case ']':

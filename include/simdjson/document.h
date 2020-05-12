@@ -78,6 +78,8 @@ public:
   really_inline uint32_t scope_count() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
+  really_inline uint32_t get_string_length() const noexcept;
+  really_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
 
   /** The document this element references. */
@@ -219,7 +221,22 @@ public:
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
-
+    /**
+     * Get the length (in bytes) of the key in this key/value pair.
+     * You should expect this function to be faster than key().size().
+     */
+    inline uint32_t key_length() const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view.
+     */
+    inline bool key_equals(const std::string_view & o) const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view in a case-insensitive manner.
+     * Case comparisons may only be handled correctly for ASCII strings.
+     */
+    inline bool key_equals_case_insensitive(const std::string_view & o) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
@@ -968,9 +985,6 @@ public:
   std::unique_ptr<char[]> ret_address{};
 #endif
 
-  /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */
@@ -1001,32 +1015,6 @@ public:
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
-  //
-  // Parser callbacks: these are internal!
-  //
-
-  /** @private this should be called when parsing (right before writing the tapes) */
-  inline void init_stage2() noexcept;
-  really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
-  really_inline error_code on_success(error_code success_code) noexcept; ///< @private
-  really_inline bool on_start_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_array(uint32_t depth) noexcept; ///< @private
-  // TODO we're not checking this bool
-  really_inline bool on_end_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_array(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_true_atom() noexcept; ///< @private
-  really_inline bool on_false_atom() noexcept; ///< @private
-  really_inline bool on_null_atom() noexcept; ///< @private
-  really_inline uint8_t *on_start_string() noexcept; ///< @private
-  really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
-  really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
-  really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
-  really_inline bool on_number_double(double value) noexcept; ///< @private
-
-  really_inline void increment_count(uint32_t depth) noexcept; ///< @private
-  really_inline void end_scope(uint32_t depth) noexcept; ///< @private
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -1070,8 +1058,6 @@ private:
   // annotate them with a reference to the location of the opening
   //
   //
-
-  inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
