@@ -1,6 +1,3 @@
-#ifndef SIMDJSON_FALLBACK_STAGE2_H
-#define SIMDJSON_FALLBACK_STAGE2_H
-
 #include "simdjson.h"
 
 #include "fallback/implementation.h"
@@ -17,5 +14,3 @@ namespace fallback {
 
 } // namespace fallback
 } // namespace simdjson
-
-#endif // SIMDJSON_FALLBACK_STAGE2_H

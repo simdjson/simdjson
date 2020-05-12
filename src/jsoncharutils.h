@@ -3,6 +3,12 @@
 
 #include "simdjson.h"
 
+#ifdef JSON_TEST_STRINGS
+void found_string(const uint8_t *buf, const uint8_t *parsed_begin,
+                  const uint8_t *parsed_end);
+void found_bad_string(const uint8_t *buf);
+#endif
+
 namespace simdjson {
 // structural chars here are
 // they are { 0x7b } 0x7d : 0x3a [ 0x5b ] 0x5d , 0x2c (and NULL)

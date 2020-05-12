@@ -1,15 +1,13 @@
-#ifndef SIMDJSON_WESTMERE_STAGE1_H
-#define SIMDJSON_WESTMERE_STAGE1_H
-
 #include "simdjson.h"
-#include "westmere/bitmask.h"
-#include "westmere/simd.h"
-#include "westmere/bitmanipulation.h"
-#include "westmere/implementation.h"
 
-TARGET_WESTMERE
+#include "haswell/bitmask.h"
+#include "haswell/simd.h"
+#include "haswell/bitmanipulation.h"
+#include "haswell/implementation.h"
+
+TARGET_HASWELL
 namespace simdjson {
-namespace westmere {
+namespace haswell {
 
 using namespace simd;
 
@@ -36,12 +34,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // minifying (we only need whitespace).
 
   uint64_t whitespace = in.map([&](simd8<uint8_t> _in) {
-    return _in == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, _in));
+    return _in == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, _in));
   }).to_bitmask();
 
   uint64_t op = in.map([&](simd8<uint8_t> _in) {
     // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
-    return (_in | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, _in-','));
+    return (_in | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, _in-','));
   }).to_bitmask();
   return { whitespace, op };
 }
@@ -65,18 +63,16 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
 
 #include "generic/stage1/json_minifier.h"
 WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
-  return westmere::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
+  return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
 }
 
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
 WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
-  return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
+  return haswell::stage1::json_structural_indexer::index<128>(buf, len, parser, streaming);
 }
 
-} // namespace westmere
+} // namespace haswell
 
 } // namespace simdjson
 UNTARGET_REGION
-
-#endif // SIMDJSON_WESTMERE_STAGE1_H

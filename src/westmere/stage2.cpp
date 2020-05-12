@@ -1,22 +1,17 @@
-#ifndef SIMDJSON_HASWELL_STAGE2_H
-#define SIMDJSON_HASWELL_STAGE2_H
-
 #include "simdjson.h"
-#include "haswell/implementation.h"
-#include "haswell/stringparsing.h"
-#include "haswell/numberparsing.h"
+#include "westmere/implementation.h"
+#include "westmere/stringparsing.h"
+#include "westmere/numberparsing.h"
 
-TARGET_HASWELL
+TARGET_WESTMERE
 namespace simdjson {
-namespace haswell {
+namespace westmere {
 
 #include "generic/stage2/atomparsing.h"
 #include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
 #include "generic/stage2/streaming_structural_parser.h"
 
-} // namespace haswell
+} // namespace westmere
 } // namespace simdjson
 UNTARGET_REGION
-
-#endif // SIMDJSON_HASWELL_STAGE2_H

@@ -1,6 +1,3 @@
-#ifndef SIMDJSON_FALLBACK_STAGE1_H
-#define SIMDJSON_FALLBACK_STAGE1_H
-
 #include "simdjson.h"
 #include "fallback/implementation.h"
 
@@ -210,5 +207,3 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 } // namespace fallback
 } // namespace simdjson
-
-#endif // SIMDJSON_FALLBACK_STAGE1_H
