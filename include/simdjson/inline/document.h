@@ -773,42 +773,6 @@ inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
 }
 
-/**
- * Design notes:
- * Instead of constructing a string_view and then comparing it with a
- * user-provided strings, it is probably more performant to have dedicated
- * functions taking as a parameter the string we want to compare against
- * and return true when they are equal. That avoids the creation of a temporary
- * std::string_view. Though it is possible for the compiler to avoid entirely
- * any overhead due to string_view, relying too much on compiler magic is
- * problematic: compiler magic sometimes fail, and then what do you do?
- * Also, enticing users to rely on high-performance function is probably better
- * on the long run.
- */
-
-inline bool object::iterator::key_equals(const std::string_view & o) const noexcept {
-  // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
-  const uint32_t len = key_length();
-  if(o.size() == len) {
-    // We avoid construction of a temporary string_view instance.
-    return (memcmp(o.data(), key_c_str(), len) == 0);
-  }
-  return false;
-}
-
-inline bool object::iterator::key_equals_case_insensitive(const std::string_view & o) const noexcept {
-  // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
-  const uint32_t len = key_length();
-  if(o.size() == len) {
-      // See For case-insensitive string comparisons, avoid char-by-char functions
-      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
-  }
-  return false;
-}
 //
 // key_value_pair inline implementation
 //
@@ -1243,14 +1207,6 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 
- /**
- * Design notes:
- * Instead of having references to the low-level string_buf all over the
- * code, we hide all of the logic in get_string_length and get_c_str
- * and build everything from there. Note that get_string_length is
- * expected to be a very fast function, so it should be broadly available
- */
-
 really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   uint64_t tape_val = uint64_t(tape_value());
   uint32_t len = (tape_val >> 32) & 0xFFFFFF; // grab 3 bytes
@@ -1258,7 +1214,7 @@ really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
     uint32_t string_buf_index = uint32_t(tape_val); // we will need to touch the string buffer
     // we have a long string and we need to jump through some loops
     len <<= 9; // we are just missing 9 bits, we have 23 bits. 23 + 9 = 32
-    // middle 5 bites
+    // middle 5 bytes
     uint32_t c1 = doc->string_buf[string_buf_index + 1] - 32;
     len |= c1 << 4;
     // least significant five bits
