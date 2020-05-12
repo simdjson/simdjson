@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstring>
 #include "jsoncharutils.h"
-#include "document_parser_callbacks.h"
 
 using namespace simdjson;
 
