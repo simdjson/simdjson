@@ -5,13 +5,13 @@
 
 namespace stage2 {
 
+using internal::ret_address;
+
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address;
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
 #define GOTO(address) { goto *(address); }
 #define CONTINUE(address) { goto *(address); }
-#else
-typedef char ret_address;
+#else // SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
 #define GOTO(address)                 \
   {                                   \
@@ -33,7 +33,7 @@ typedef char ret_address;
       case 'f': goto finish;          \
     }                                 \
   }
-#endif
+#endif // SIMDJSON_USE_COMPUTED_GOTO
 
 struct unified_machine_addresses {
   ret_address array_begin;
