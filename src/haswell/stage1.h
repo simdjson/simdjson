@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
-#define SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
+#ifndef SIMDJSON_HASWELL_STAGE1_H
+#define SIMDJSON_HASWELL_STAGE1_H
 
 #include "simdjson.h"
 
@@ -80,4 +80,4 @@ WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, pa
 } // namespace simdjson
 UNTARGET_REGION
 
-#endif // SIMDJSON_HASWELL_STAGE1_FIND_MARKS_H
+#endif // SIMDJSON_HASWELL_STAGE1_H

@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
-#define SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
+#ifndef SIMDJSON_WESTMERE_STAGE2_H
+#define SIMDJSON_WESTMERE_STAGE2_H
 
 #include "simdjson.h"
 #include "westmere/implementation.h"
@@ -11,10 +11,11 @@ namespace simdjson {
 namespace westmere {
 
 #include "generic/atomparsing.h"
-#include "generic/stage2_build_tape.h"
-#include "generic/stage2_streaming_build_tape.h"
+#include "generic/structural_iterator.h"
+#include "generic/structural_parser.h"
+#include "generic/streaming_structural_parser.h"
 
 } // namespace westmere
 } // namespace simdjson
 UNTARGET_REGION
-#endif // SIMDJSON_WESTMERE_STAGE2_BUILD_TAPE_H
+#endif // SIMDJSON_WESTMERE_STAGE2_H

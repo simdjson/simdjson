@@ -1,5 +1,5 @@
-#ifndef SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
-#define SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
+#ifndef SIMDJSON_HASWELL_STAGE2_H
+#define SIMDJSON_HASWELL_STAGE2_H
 
 #include "simdjson.h"
 #include "haswell/implementation.h"
@@ -11,11 +11,12 @@ namespace simdjson {
 namespace haswell {
 
 #include "generic/atomparsing.h"
-#include "generic/stage2_build_tape.h"
-#include "generic/stage2_streaming_build_tape.h"
+#include "generic/structural_iterator.h"
+#include "generic/structural_parser.h"
+#include "generic/streaming_structural_parser.h"
 
 } // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION
 
-#endif // SIMDJSON_HASWELL_STAGE2_BUILD_TAPE_H
+#endif // SIMDJSON_HASWELL_STAGE2_H

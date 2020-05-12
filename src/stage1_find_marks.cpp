@@ -1,12 +1,12 @@
 #if SIMDJSON_IMPLEMENTATION_ARM64
-#include "arm64/stage1_find_marks.h"
+#include "arm64/stage1.h"
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
-#include "fallback/stage1_find_marks.h"
+#include "fallback/stage1.h"
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
-#include "haswell/stage1_find_marks.h"
+#include "haswell/stage1.h"
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
-#include "westmere/stage1_find_marks.h"
+#include "westmere/stage1.h"
 #endif
