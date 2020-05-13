@@ -20,6 +20,9 @@ size_t count_backslash(const uint8_t *input, size_t length) {
 
 struct stat_s {
   size_t integer_count;
+  size_t integer32_count;
+  size_t unsigned_integer32_count;
+  size_t unsigned_integer_count;
   size_t float_count;
   size_t string_count;
   size_t backslash_count;
@@ -97,10 +100,22 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
     }
   } else {
     simdjson::error_code error;
-    if (element.is<double>()) {
+    if (element.is<int64_t>()) {
+      s.integer_count++; // because an int can be sometimes represented as a double, we
+      // to check whether it is an integer first!!!
+      int64_t v;
+      element.get<int64_t>().tie(v,error);
+      if((v >= std::numeric_limits<int32_t>::min()) and (v <= std::numeric_limits<int32_t>::max()) ) {
+        s.integer32_count++;
+      }
+      if((v >= std::numeric_limits<uint32_t>::min()) and (v <= std::numeric_limits<uint32_t>::max()) ) {
+        s.unsigned_integer32_count++;
+      }
+    }
+    if(element.is<uint64_t>()) { // the else is intentionally missing
+      s.unsigned_integer_count++;
+    } else if (element.is<double>()) {
       s.float_count++;
-    } else if (element.is<int64_t>()) {
-      s.integer_count++;
     } else if (element.is<bool>()) {
       bool v;
       element.get<bool>().tie(v,error);
@@ -180,6 +195,9 @@ int main(int argc, char *argv[]) {
 
   printf(R"({
       "integer_count"            = %10zu,
+      "integer32_count"          = %10zu,
+      "unsigned_integer32_count" = %10zu,
+      "unsigned_integer_count"   = %10zu,
       "float_count"              = %10zu,
       "string_count"             = %10zu,
       "ascii_string_count"       = %10zu,
@@ -201,7 +219,8 @@ int main(int argc, char *argv[]) {
       "maximum_depth"            = %10zu
 }
 )",
-         s.integer_count, s.float_count, s.string_count, s.ascii_string_count,
+         s.integer_count,s.integer32_count,s.unsigned_integer32_count,s.unsigned_integer_count,
+         s.float_count, s.string_count, s.ascii_string_count,
          s.string_maximum_length, s.backslash_count, s.non_ascii_byte_count,
          s.object_count, s.maximum_object_size, s.array_count,
          s.maximum_array_size, s.null_count, s.true_count, s.false_count,
