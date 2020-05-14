@@ -118,21 +118,23 @@ struct number_writer {
   
   really_inline void write_s64(int64_t value) noexcept {
     write_tape(0, internal::tape_type::INT64);
-    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
-    ++doc_parser.current_loc;
+    std::memcpy(doc_parser.next_loc, &value, sizeof(value));
+    ++doc_parser.next_loc;
   }
   really_inline void write_u64(uint64_t value) noexcept {
     write_tape(0, internal::tape_type::UINT64);
-    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+    *doc_parser.next_loc = value;
+    ++doc_parser.next_loc;
   }
   really_inline void write_double(double value) noexcept {
     write_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
-    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
-    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+    static_assert(sizeof(value) == sizeof(*doc_parser.next_loc), "mismatch size");
+    memcpy(doc_parser.next_loc, &value, sizeof(double));
+    ++doc_parser.next_loc;
   }
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    *doc_parser.next_loc = val | ((uint64_t(char(t))) << 56);
+    ++doc_parser.next_loc;
   }
 }; // struct number_writer
 
@@ -151,7 +153,7 @@ struct structural_parser {
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
   WARN_UNUSED really_inline bool start_scope(internal::tape_type type, ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
+    doc_parser.containing_scope[depth].tape_index = uint32_t(doc_parser.next_loc - doc_parser.doc.tape.get());
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, type); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
@@ -183,7 +185,7 @@ struct structural_parser {
     const uint32_t count = doc_parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    doc_parser.doc.tape[start_tape_index] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
+    doc_parser.doc.tape[start_tape_index] |= uint32_t(doc_parser.next_loc - doc_parser.doc.tape.get()) | (uint64_t(cntsat) << 32);
   }
 
   really_inline void end_object() {
@@ -197,7 +199,8 @@ struct structural_parser {
   }
 
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    *doc_parser.next_loc = val | ((uint64_t(char(t))) << 56);
+    ++doc_parser.next_loc;
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -379,7 +382,7 @@ struct structural_parser {
 
   really_inline void init() {
     current_string_buf_loc = doc_parser.doc.string_buf.get();
-    doc_parser.current_loc = 0;
+    doc_parser.next_loc = doc_parser.doc.tape.get();
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;
   }
