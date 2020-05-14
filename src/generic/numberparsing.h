@@ -260,10 +260,27 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function will almost never be called!!!
 //
-template<typename W>
-never_inline bool parse_large_integer(const uint8_t *const src,
-                                      W writer,
-                                      bool found_minus) {
+struct parse_number_result {
+  internal::tape_type type;
+  union {
+    double d;
+    uint64_t u;
+    int64_t s;
+  };
+  bool success;
+  parse_number_result(bool _success) : success{_success} {}
+  parse_number_result(double value) : type{internal::tape_type::DOUBLE}, d{value}, success{true} {}
+  parse_number_result(uint64_t value) : type{internal::tape_type::UINT64}, u{value}, success{true} {}
+  parse_number_result(int64_t value) : type{internal::tape_type::INT64}, s{value}, success{true} {}
+  template<typename W>
+  void write_to(W &writer) {
+    writer.write_tape(0, type);
+    *writer.next_loc = u;
+    writer.next_loc++;
+  }
+};
+never_inline parse_number_result parse_large_integer(const uint8_t *const src,
+                                                     bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
   bool negative = false;
@@ -298,6 +315,9 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       ++p;
     }
   }
+  if (!is_structural_or_whitespace(*p)) {
+    return false;
+  }
   if (negative) {
     if (i > 0x8000000000000000) {
       // overflows!
@@ -305,40 +325,40 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       found_invalid_number(src);
 #endif
       return false; // overflow
-    } else if (i == 0x8000000000000000) {
+    }
+    if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.write_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
-    } else {
-      // we can negate safely
-      int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.write_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, src);
-#endif
+      return signed_answer;
     }
-  } else {
-    // we have a positive integer, the contract is that
-    // we try to represent it as a signed integer and only
-    // fallback on unsigned integers if absolutely necessary.
-    if (i < 0x8000000000000000) {
+    // we can negate safely
+    int64_t signed_answer = -static_cast<int64_t>(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(i, src);
+    found_integer(signed_answer, src);
 #endif
-      writer.write_s64(i);
-    } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_unsigned_integer(i, src);
-#endif
-      writer.write_u64(i);
-    }
+    return signed_answer;
   }
-  return is_structural_or_whitespace(*p);
+
+  // we have a positive integer, the contract is that
+  // we try to represent it as a signed integer and only
+  // fallback on unsigned integers if absolutely necessary.
+  if (i < 0x8000000000000000) {
+#ifdef JSON_TEST_NUMBERS // for unit testing
+    found_integer(i, src);
+#endif
+    return int64_t(i);
+  }
+
+  // Otherwise, it's a huge unsigned number and must be uint64_t
+#ifdef JSON_TEST_NUMBERS // for unit testing
+  found_unsigned_integer(i, src);
+#endif
+  return uint64_t(i);
 }
 
 template<typename W>
@@ -555,7 +575,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, writer, found_minus);
+      auto result = parse_large_integer(src, found_minus);
+      result.write_to(writer);
+      return result.success;
     }
     i = negative ? 0 - i : i;
     writer.write_s64(i);
