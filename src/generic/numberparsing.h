@@ -1,5 +1,19 @@
 namespace numberparsing {
 
+struct result {
+  internal::tape_type type;
+  union {
+    double d;
+    uint64_t u;
+    int64_t s;
+  };
+  bool success;
+  really_inline result(bool _success) : success{_success} {}
+  really_inline result(double value) : type{internal::tape_type::DOUBLE}, d{value}, success{true} {}
+  really_inline result(uint64_t value) : type{internal::tape_type::UINT64}, u{value}, success{true} {}
+  really_inline result(int64_t value) : type{internal::tape_type::INT64}, s{value}, success{true} {}
+};
+
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
@@ -260,26 +274,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 // This function will almost never be called!!!
 //
-struct parse_number_result {
-  internal::tape_type type;
-  union {
-    double d;
-    uint64_t u;
-    int64_t s;
-  };
-  bool success;
-  parse_number_result(bool _success) : success{_success} {}
-  parse_number_result(double value) : type{internal::tape_type::DOUBLE}, d{value}, success{true} {}
-  parse_number_result(uint64_t value) : type{internal::tape_type::UINT64}, u{value}, success{true} {}
-  parse_number_result(int64_t value) : type{internal::tape_type::INT64}, s{value}, success{true} {}
-  template<typename W>
-  void write_to(W &writer) {
-    writer.write_tape(0, type);
-    *writer.next_loc = u;
-    writer.next_loc++;
-  }
-};
-never_inline parse_number_result parse_large_integer(const uint8_t *const src,
+never_inline result parse_large_integer(const uint8_t *const src,
                                                      bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
@@ -361,15 +356,13 @@ never_inline parse_number_result parse_large_integer(const uint8_t *const src,
   return uint64_t(i);
 }
 
-template<typename W>
-bool slow_float_parsing(UNUSED const char * src, W writer) {
+result slow_float_parsing(UNUSED const char * src) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.write_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
-    return true;
+    return d;
   }
 #ifdef JSON_TEST_NUMBERS // for unit testing
   found_invalid_number((const uint8_t *)src);
@@ -386,14 +379,11 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
-template<typename W>
-really_inline bool parse_number(UNUSED const uint8_t *const src,
-                                UNUSED bool found_minus,
-                                W writer) {
+really_inline result parse_number(UNUSED const uint8_t *const src,
+                                  UNUSED bool found_minus) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.write_s64(0);        // always write zero
-  return true;                    // always succeeds
+  return uint64_t(0);             // always return 0
 #else
   const char *p = reinterpret_cast<const char *>(src);
   bool negative = false;
@@ -523,6 +513,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
     exponent += (neg_exp ? -exp_number : exp_number);
   }
+  if (!is_structural_or_whitespace(*p)) {
+    return false;
+  };
   if (is_float) {
     // If we frequently had to deal with long strings of digits,
     // we could extend our code by using a 128-bit integer instead
@@ -544,14 +537,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, writer);
+        return slow_float_parsing((const char *) src);
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, writer);
+      return slow_float_parsing((const char *) src);
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -560,11 +553,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.write_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
-      return true;
+      return d;
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
@@ -575,17 +567,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      auto result = parse_large_integer(src, found_minus);
-      result.write_to(writer);
-      return result.success;
+      return parse_large_integer(src, found_minus);
     }
     i = negative ? 0 - i : i;
-    writer.write_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif
+    return int64_t(i);
   }
-  return is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
