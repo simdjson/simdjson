@@ -384,9 +384,9 @@ struct structural_parser {
     doc_parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(ret_address finish_state) {
     init(); // sets is_valid to false
-    if (len > doc_parser.capacity()) {
+    if (structurals.len > doc_parser.capacity()) {
       return CAPACITY;
     }
     // Advance to the first character as soon as possible
@@ -416,7 +416,7 @@ struct structural_parser {
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
-  error_code result = parser.start(len, addresses.finish);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
