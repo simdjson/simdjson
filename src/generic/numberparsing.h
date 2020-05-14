@@ -8,7 +8,7 @@ struct result {
     int64_t s;
   };
   bool success;
-  really_inline result(bool _success) : success{_success} {}
+  really_inline result(bool _success) : type{internal::tape_type::UINT64}, u{0}, success{_success} {}
   really_inline result(double value) : type{internal::tape_type::DOUBLE}, d{value}, success{true} {}
   really_inline result(uint64_t value) : type{internal::tape_type::UINT64}, u{value}, success{true} {}
   really_inline result(int64_t value) : type{internal::tape_type::INT64}, s{value}, success{true} {}
