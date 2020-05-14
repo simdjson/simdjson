@@ -116,6 +116,7 @@ public:
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
+  uint64_t *next_loc;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
@@ -125,10 +126,10 @@ struct structural_parser {
     size_t len,
     parser &_doc_parser,
     uint32_t next_structural = 0
-  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
+  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, next_loc{_doc_parser.doc.tape.get()}, depth{0} {}
 
   WARN_UNUSED really_inline bool start_scope(internal::tape_type type, ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = uint32_t(doc_parser.next_loc - doc_parser.doc.tape.get());
+    doc_parser.containing_scope[depth].tape_index = uint32_t(next_loc - doc_parser.doc.tape.get());
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, type); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
@@ -160,7 +161,7 @@ struct structural_parser {
     const uint32_t count = doc_parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    doc_parser.doc.tape[start_tape_index] |= uint32_t(doc_parser.next_loc - doc_parser.doc.tape.get()) | (uint64_t(cntsat) << 32);
+    doc_parser.doc.tape[start_tape_index] |= uint32_t(next_loc - doc_parser.doc.tape.get()) | (uint64_t(cntsat) << 32);
   }
 
   really_inline void end_object() {
@@ -174,8 +175,8 @@ struct structural_parser {
   }
 
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
-    *doc_parser.next_loc = val | ((uint64_t(char(t))) << 56);
-    ++doc_parser.next_loc;
+    *next_loc = val | ((uint64_t(char(t))) << 56);
+    ++next_loc;
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -218,8 +219,8 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     auto result = numberparsing::parse_number(src, found_minus);
     write_tape(0, result.type);
-    *doc_parser.next_loc = result.u; // just take the unsigned version
-    doc_parser.next_loc++;
+    *next_loc = result.u; // just take the unsigned version
+    next_loc++;
     return !result.success;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
@@ -360,7 +361,7 @@ struct structural_parser {
 
   really_inline void init() {
     current_string_buf_loc = doc_parser.doc.string_buf.get();
-    doc_parser.next_loc = doc_parser.doc.tape.get();
+    next_loc = doc_parser.doc.tape.get();
     doc_parser.valid = false;
     doc_parser.error = UNINITIALIZED;
   }

@@ -966,9 +966,6 @@ public:
   /** @private Use simdjson_error instead */
   using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
-  /** @private Next location to write to in the tape */
-  uint64_t *next_loc{nullptr};
-
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** @private Structural indices passed from stage 1 to stage 2 */
