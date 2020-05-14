@@ -1334,4 +1334,4 @@ const uint64_t mantissa_128[] = {
 
 } // namespace simdjson
 
-#endif
+#endif // SIMDJSON_JSONCHARUTILS_H
