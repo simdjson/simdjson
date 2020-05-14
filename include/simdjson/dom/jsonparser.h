@@ -1,10 +1,10 @@
 // TODO Remove this -- deprecated API and files
 
-#ifndef SIMDJSON_JSONPARSER_H
-#define SIMDJSON_JSONPARSER_H
+#ifndef SIMDJSON_DOM_JSONPARSER_H
+#define SIMDJSON_DOM_JSONPARSER_H
 
-#include "simdjson/document.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson/dom/document.h"
+#include "simdjson/dom/parsedjson.h"
 #include "simdjson/jsonioutil.h"
 
 namespace simdjson {
@@ -114,4 +114,4 @@ dom::parser build_parsed_json(const char *buf) noexcept = delete;
 
 } // namespace simdjson
 
-#endif
+#endif // SIMDJSON_DOM_JSONPARSER_H

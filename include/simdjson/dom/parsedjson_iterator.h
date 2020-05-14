@@ -1,7 +1,7 @@
 // TODO Remove this -- deprecated API and files
 
-#ifndef SIMDJSON_PARSEDJSON_ITERATOR_H
-#define SIMDJSON_PARSEDJSON_ITERATOR_H
+#ifndef SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
+#define SIMDJSON_DOM_PARSEDJSON_ITERATOR_H
 
 #include <cstring>
 #include <string>
@@ -10,8 +10,8 @@
 #include <limits>
 #include <stdexcept>
 
-#include "simdjson/document.h"
-#include "simdjson/parsedjson.h"
+#include "simdjson/dom/document.h"
+#include "simdjson/dom/parsedjson.h"
 #include "simdjson/internal/jsonformatutils.h"
 
 namespace simdjson {
@@ -266,4 +266,4 @@ public:
 
 } // namespace simdjson
 
-#endif
+#endif // SIMDJSON_DOM_PARSEDJSON_ITERATOR_H

@@ -1,9 +1,9 @@
 // TODO Remove this -- deprecated API and files
 
-#ifndef SIMDJSON_PARSEDJSON_H
-#define SIMDJSON_PARSEDJSON_H
+#ifndef SIMDJSON_DOM_PARSEDJSON_H
+#define SIMDJSON_DOM_PARSEDJSON_H
 
-#include "simdjson/document.h"
+#include "simdjson/dom/document.h"
 
 namespace simdjson {
 
@@ -13,4 +13,5 @@ namespace simdjson {
 using ParsedJson [[deprecated("Use dom::parser instead")]] = dom::parser;
 
 } // namespace simdjson
-#endif
+
+#endif // SIMDJSON_DOM_PARSEDJSON_H

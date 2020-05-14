@@ -1,4 +1,4 @@
-/* auto-generated on Tue May 19 13:32:53 PDT 2020. Do not edit! */
+/* auto-generated on Tue May 19 14:39:19 PDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -532,19 +532,19 @@ const std::initializer_list<const implementation *> available_implementation_poi
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
 public:
-  WARN_UNUSED error_code parse(const uint8_t *, size_t, parser &) const noexcept final {
+  WARN_UNUSED error_code parse(const uint8_t *, size_t, dom::parser &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
   WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED error_code stage1(const uint8_t *, size_t, parser &, bool) const noexcept final {
+  WARN_UNUSED error_code stage1(const uint8_t *, size_t, dom::parser &, bool) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED error_code stage2(const uint8_t *, size_t, parser &) const noexcept final {
+  WARN_UNUSED error_code stage2(const uint8_t *, size_t, dom::parser &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED error_code stage2(const uint8_t *, size_t, parser &, size_t &) const noexcept final {
+  WARN_UNUSED error_code stage2(const uint8_t *, size_t, dom::parser &, size_t &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
 

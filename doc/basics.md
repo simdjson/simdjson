@@ -488,3 +488,10 @@ The parsed results (`dom::document`, `dom::element`, `array`, `object`) depend o
 
 The CPU detection, which runs the first time parsing is attempted and switches to the fastest
 parser for your CPU, is transparent and thread-safe.
+
+Backwards Compatibility
+-----------------------
+
+The only header file supported by simdjson is simdjson.h. Older versions of simdjson published a
+number of other include files such as document.h or ParsedJson.h alongside simdjson.h; these headers
+may be moved or removed in future versions.

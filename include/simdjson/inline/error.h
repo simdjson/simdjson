@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <string>
+#include <utility>
 #include "simdjson/error.h"
 
 namespace simdjson {

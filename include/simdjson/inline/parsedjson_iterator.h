@@ -1,7 +1,9 @@
 #ifndef SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 #define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 
-#include "simdjson/parsedjson_iterator.h"
+#include "simdjson/dom/parsedjson_iterator.h"
+#include "simdjson/portability.h"
+#include <cstring>
 
 namespace simdjson {
 

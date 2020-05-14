@@ -18,20 +18,29 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/error.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/implementation.h"
-#include "simdjson/document.h"
-#include "simdjson/document_stream.h"
+#include "simdjson/dom/array.h"
+#include "simdjson/dom/document_stream.h"
+#include "simdjson/dom/document.h"
+#include "simdjson/dom/element.h"
+#include "simdjson/dom/object.h"
+#include "simdjson/dom/parser.h"
 
-// // Deprecated API
-#include "simdjson/jsonparser.h"
-#include "simdjson/parsedjson.h"
-#include "simdjson/parsedjson_iterator.h"
+// Deprecated API
+#include "simdjson/dom/jsonparser.h"
+#include "simdjson/dom/parsedjson.h"
+#include "simdjson/dom/parsedjson_iterator.h"
 
-// // Inline functions
-#include "simdjson/inline/document.h"
+// Inline functions
+#include "simdjson/inline/array.h"
 #include "simdjson/inline/document_stream.h"
+#include "simdjson/inline/document.h"
+#include "simdjson/inline/element.h"
 #include "simdjson/inline/error.h"
+#include "simdjson/inline/object.h"
 #include "simdjson/inline/padded_string.h"
 #include "simdjson/inline/parsedjson_iterator.h"
+#include "simdjson/inline/parser.h"
+#include "simdjson/inline/tape_ref.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
 
