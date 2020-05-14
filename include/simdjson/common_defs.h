@@ -77,12 +77,19 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define unlikely(x) x
   #endif
 
-  #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
   // Get rid of Intellisense-only warnings (Code Analysis)
+  // Though __has_include is C++17, it looks like it is supported in Visual Studio 2017 or better.
+  // We are probably not supporting earlier version of Visual Studio in any case.
+  #if __has_include(<CppCoreCheck\Warnings.h>)
+  #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
+  #else
+  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
+  #endif
+
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
