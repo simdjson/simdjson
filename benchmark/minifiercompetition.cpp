@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   size_t outlength;
   uint8_t *cbuffer = (uint8_t *)buffer;
   for (auto imple : simdjson::available_implementations) {
-    BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength) ? outlength : -1),
+    BEST_TIME((std::string("simdjson->minify+")+imple->name()).c_str(), (imple->minify(cbuffer, p.size(), cbuffer, outlength) == simdjson::SUCCESS ? outlength : -1),
             outlength, memcpy(buffer, p.data(), p.size()), repeat, volume,
             !just_data);
   }
