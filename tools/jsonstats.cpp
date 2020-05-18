@@ -1,4 +1,5 @@
 #include <iostream>
+#include <set>
 
 #include "simdjson.h"
 
@@ -25,6 +26,7 @@ struct stat_s {
   size_t unsigned_integer_count;
   size_t float_count;
   size_t string_count;
+  size_t string_byte_count;
   size_t backslash_count;
   size_t non_ascii_byte_count;
   size_t object_count;
@@ -42,7 +44,11 @@ struct stat_s {
   size_t maximum_object_size;
   size_t maximum_array_size;
   size_t string_maximum_length;
+  size_t repeated_key_byte_count;
+
   bool valid;
+  std::set<std::string_view> all_keys;
+  std::set<std::string_view> repeated_keys;
 };
 
 using stat_t = struct stat_s;
@@ -80,6 +86,12 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       size_t counter = 0;
       for (auto [key, value] : object) {
         counter++;
+        if(s.all_keys.find(key) != s.all_keys.end()) {
+          s.repeated_keys.insert(key);
+          s.repeated_key_byte_count += key.size();
+        } else {
+          s.all_keys.insert(key);
+        }
         if (is_ascii(key)) {
           s.ascii_key_count++;
           s.ascii_string_count++;
@@ -91,6 +103,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
           s.string_maximum_length = key.size();
         }
         s.string_count++;
+        s.string_byte_count+= key.size();
         s.key_count++;
         recurse(value, s, depth + 1);
       }
@@ -133,10 +146,9 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       if (is_ascii(v)) {
         s.ascii_string_count++;
       }
-      std::string_view strval;
-      element.get<std::string_view>().tie(strval, error);
-      if (strval.size() > s.string_maximum_length) {
-        s.string_maximum_length = strval.size();
+      s.string_byte_count+= v.size();
+      if (v.size() > s.string_maximum_length) {
+        s.string_maximum_length = v.size();
       }
     } else {
       std::cerr << "unrecognized node." << std::endl;
@@ -200,6 +212,7 @@ int main(int argc, char *argv[]) {
       "unsigned_integer_count"   = %10zu,
       "float_count"              = %10zu,
       "string_count"             = %10zu,
+      "string_byte_count"        = %10zu,
       "ascii_string_count"       = %10zu,
       "string_maximum_length"    = %10zu,
       "backslash_count"          = %10zu,
@@ -216,15 +229,19 @@ int main(int argc, char *argv[]) {
       "key_count"                = %10zu,
       "ascii_key_count"          = %10zu,
       "key_maximum_length"       = %10zu,
+      "key_distinct_count"       = %10zu,
+      "repeated_key_distinct_count"= %10zu,
+      "repeated_key_byte_count"  = %10zu;
       "maximum_depth"            = %10zu
 }
 )",
          s.integer_count,s.integer32_count,s.unsigned_integer32_count,s.unsigned_integer_count,
-         s.float_count, s.string_count, s.ascii_string_count,
+         s.float_count, s.string_count, s.string_byte_count, s.ascii_string_count,
          s.string_maximum_length, s.backslash_count, s.non_ascii_byte_count,
          s.object_count, s.maximum_object_size, s.array_count,
          s.maximum_array_size, s.null_count, s.true_count, s.false_count,
          s.byte_count, s.structural_indexes_count, s.key_count,
-         s.ascii_key_count, s.key_maximum_length, s.maximum_depth);
+         s.ascii_key_count, s.key_maximum_length, s.all_keys.size(), s.repeated_keys.size(),
+         s.repeated_key_byte_count, s.maximum_depth);
   return EXIT_SUCCESS;
 }
