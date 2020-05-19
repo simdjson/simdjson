@@ -45,6 +45,26 @@ endif()
 target_link_libraries(simdjson PUBLIC simdjson-headers simdjson-flags) # Only expose the headers, not sources
 target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 
+##
+## In systems like R, libraries must not use stderr or abort to be acceptable.
+## Thus we make it a hard rule that one is not allowed to call abort or stderr.
+##
+find_program(GREP grep)
+find_program(NM nm)
+if((NOT GREP) OR (NOT NM))
+  message("grep and nm are unavailable on this system.")
+else()
+    add_test(
+      NAME "avoid_abort"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} abort || exit 0  && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
+      NAME "avoid_stderr"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stderr || exit 0 && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+endif()
 
 if(NOT MSVC)
   ## We output the library at the root of the current directory where cmake is invoked
