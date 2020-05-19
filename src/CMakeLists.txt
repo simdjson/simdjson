@@ -48,12 +48,14 @@ target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
 ##
 ## In systems like R, libraries must not use stderr or abort to be acceptable.
 ## Thus we make it a hard rule that one is not allowed to call abort or stderr.
+## The sanitized builds are allowed to abort.
 ##
-find_program(GREP grep)
-find_program(NM nm)
-if((NOT GREP) OR (NOT NM))
-  message("grep and nm are unavailable on this system.")
-else()
+if(NOT SIMDJSON_SANITIZE)
+  find_program(GREP grep)
+  find_program(NM nm)
+  if((NOT GREP) OR (NOT NM))
+    message("grep and nm are unavailable on this system.")
+  else()
     add_test(
       NAME "avoid_abort"
       COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} abort || exit 0  && exit 1"
@@ -64,6 +66,7 @@ else()
       COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stderr || exit 0 && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
+  endif()
 endif()
 
 if(NOT MSVC)
