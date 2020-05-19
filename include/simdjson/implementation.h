@@ -1,13 +1,17 @@
 #ifndef SIMDJSON_IMPLEMENTATION_H
 #define SIMDJSON_IMPLEMENTATION_H
 
+#include "simdjson/common_defs.h"
 #include <optional>
 #include <string>
 #include <atomic>
 #include <vector>
-#include "simdjson/document.h"
 
 namespace simdjson {
+
+namespace dom {
+  class parser;
+}
 
 /**
  * An implementation of simdjson for a particular CPU architecture.

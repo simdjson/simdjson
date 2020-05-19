@@ -3,7 +3,6 @@
 
 #include "simdjson/common_defs.h"
 #include <string>
-#include <utility>
 
 namespace simdjson {
 
