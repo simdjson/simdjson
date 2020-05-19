@@ -1044,10 +1044,10 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
       break;
 
     // These are impossible
-    case tape_type::END_ARRAY:
-    case tape_type::END_OBJECT:
-    case tape_type::ROOT:
-      abort();
+    // case tape_type::END_ARRAY:
+    // case tape_type::END_OBJECT:
+    // case tape_type::ROOT:
+    // abort() usage is forbidden in the library
     }
     iter.json_index++;
     after_value = true;

@@ -32,6 +32,15 @@ We discourage the following types of contributions:
 
 In short, most code changes should either bring new features or better performance. We want to avoid unmotivated code changes.
 
+
+Specific rules
+----------
+
+We have few hard rules, but we have some:
+
+- Printing to standard error (`stderr`, `std::cerr`) in the library is forbidden.
+- Calls to `abort()` are forbidden in the library.
+
 General Guidelines
 ----------
 
@@ -42,7 +51,6 @@ Contributors are encouraged to :
 - Modify as few lines of code as possible when working on an issue. The more lines you modify, the harder it is for your fellow human beings to understand what is going on.
 - Tools may report "problems" with the code, but we never delegate programming to tools: if there is a problem with the code, we need to understand it. Thus we will not "fix" code merely to please a static analyzer if we do not understand.
 - Provide tests for any new feature. We will not merge a new feature without tests.
-
 
 Pull Requests
 --------------

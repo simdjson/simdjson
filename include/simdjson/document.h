@@ -1190,7 +1190,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
     case element_type::NULL_VALUE:
       return out << "null";
     default:
-      abort();
+      //abort(); // abort usage is forbidden in the library
   }
 }
 
