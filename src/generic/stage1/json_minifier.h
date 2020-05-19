@@ -1,7 +1,7 @@
 // This file contains the common code every implementation uses in stage1
 // It is intended to be included multiple times and compiled multiple times
 // We assume the file in which it is included already includes
-// "simdjson/stage1_find_marks.h" (this simplifies amalgation)
+// "simdjson/stage1.h" (this simplifies amalgation)
 
 namespace stage1 {
 

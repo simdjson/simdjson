@@ -1,4 +1,4 @@
-/* auto-generated on Tue May  5 20:03:59 EDT 2020. Do not edit! */
+/* auto-generated on Tue May 19 13:32:53 PDT 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -328,12 +328,19 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define unlikely(x) x
   #endif
 
-  #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
   // Get rid of Intellisense-only warnings (Code Analysis)
+  // Though __has_include is C++17, it looks like it is supported in Visual Studio 2017 or better.
+  // We are probably not supporting earlier version of Visual Studio in any case.
+  #if __has_include(<CppCoreCheck\Warnings.h>)
+  #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
+  #else
+  #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
+  #endif
+
   #define SIMDJSON_DISABLE_DEPRECATED_WARNING SIMDJSON_DISABLE_VS_WARNING(4996)
   #define SIMDJSON_POP_DISABLE_WARNINGS __pragma(warning( pop ))
 
@@ -2482,6 +2489,8 @@ public:
   really_inline uint32_t scope_count() const noexcept;
   template<typename T>
   really_inline T next_tape_value() const noexcept;
+  really_inline uint32_t get_string_length() const noexcept;
+  really_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
 
   /** The document this element references. */
@@ -2490,6 +2499,12 @@ public:
   /** The index of this element on `doc.tape[]` */
   size_t json_index;
 };
+
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+typedef void* ret_address;
+#else
+typedef char ret_address;
+#endif
 
 } // namespace internal
 
@@ -2623,7 +2638,22 @@ public:
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
-
+    /**
+     * Get the length (in bytes) of the key in this key/value pair.
+     * You should expect this function to be faster than key().size().
+     */
+    inline uint32_t key_length() const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view.
+     */
+    inline bool key_equals(const std::string_view & o) const noexcept;
+    /**
+     * Returns true if the key in this key/value pair is equal
+     * to the provided string_view in a case-insensitive manner.
+     * Case comparisons may only be handled correctly for ASCII strings.
+     */
+    inline bool key_equals_case_insensitive(const std::string_view & o) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
@@ -3364,16 +3394,8 @@ public:
   /** @private Tape location of each open { or [ */
   std::unique_ptr<scope_descriptor[]> containing_scope{};
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address{};
-#else
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address{};
-#endif
-
-  /** @private Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
+  std::unique_ptr<internal::ret_address[]> ret_address{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -3405,32 +3427,6 @@ public:
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
-  //
-  // Parser callbacks: these are internal!
-  //
-
-  /** @private this should be called when parsing (right before writing the tapes) */
-  inline void init_stage2() noexcept;
-  really_inline error_code on_error(error_code new_error_code) noexcept; ///< @private
-  really_inline error_code on_success(error_code success_code) noexcept; ///< @private
-  really_inline bool on_start_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_start_array(uint32_t depth) noexcept; ///< @private
-  // TODO we're not checking this bool
-  really_inline bool on_end_document(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_object(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_end_array(uint32_t depth) noexcept; ///< @private
-  really_inline bool on_true_atom() noexcept; ///< @private
-  really_inline bool on_false_atom() noexcept; ///< @private
-  really_inline bool on_null_atom() noexcept; ///< @private
-  really_inline uint8_t *on_start_string() noexcept; ///< @private
-  really_inline bool on_end_string(uint8_t *dst) noexcept; ///< @private
-  really_inline bool on_number_s64(int64_t value) noexcept; ///< @private
-  really_inline bool on_number_u64(uint64_t value) noexcept; ///< @private
-  really_inline bool on_number_double(double value) noexcept; ///< @private
-
-  really_inline void increment_count(uint32_t depth) noexcept; ///< @private
-  really_inline void end_scope(uint32_t depth) noexcept; ///< @private
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -3474,8 +3470,6 @@ private:
   // annotate them with a reference to the location of the opening
   //
   //
-
-  inline void write_tape(uint64_t val, internal::tape_type t) noexcept;
 
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
@@ -5130,11 +5124,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     // Initialize stage 2 state
     //
     containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
-  #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address.reset(new (std::nothrow) void *[max_depth]);
-  #else
-    ret_address.reset(new (std::nothrow) char[max_depth]);
-  #endif
+    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
 
     if (!ret_address || !containing_scope) {
       // Could not allocate memory
@@ -5297,7 +5287,7 @@ inline simdjson_result<element> object::at(const std::string_view &json_pointer)
 inline simdjson_result<element> object::at_key(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
-    if (key == field.key()) {
+    if (field.key_equals(key)) {
       return field.value();
     }
   }
@@ -5309,13 +5299,8 @@ inline simdjson_result<element> object::at_key(const std::string_view &key) cons
 inline simdjson_result<element> object::at_key_case_insensitive(const std::string_view &key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
-    auto field_key = field.key();
-    if (key.length() == field_key.length()) {
-      // See For case-insensitive string comparisons, avoid char-by-char functions
-      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      const bool equal = (simdjson_strncasecmp(key.data(), field_key.data(), key.length()) == 0);
-      if (equal) { return field.value(); }
+    if (field.key_equals_case_insensitive(key)) {
+      return field.value();
     }
   }
   return NO_SUCH_FIELD;
@@ -5337,13 +5322,10 @@ inline object::iterator& object::iterator::operator++() noexcept {
   return *this;
 }
 inline std::string_view object::iterator::key() const noexcept {
-  size_t string_buf_index = size_t(tape_value());
-  uint32_t len;
-  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
-  return std::string_view(
-    reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
-    len
-  );
+  return get_string_view();
+}
+inline uint32_t object::iterator::key_length() const noexcept {
+  return get_string_length();
 }
 inline const char* object::iterator::key_c_str() const noexcept {
   return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
@@ -5352,6 +5334,42 @@ inline element object::iterator::value() const noexcept {
   return element(doc, json_index + 1);
 }
 
+/**
+ * Design notes:
+ * Instead of constructing a string_view and then comparing it with a
+ * user-provided strings, it is probably more performant to have dedicated
+ * functions taking as a parameter the string we want to compare against
+ * and return true when they are equal. That avoids the creation of a temporary
+ * std::string_view. Though it is possible for the compiler to avoid entirely
+ * any overhead due to string_view, relying too much on compiler magic is
+ * problematic: compiler magic sometimes fail, and then what do you do?
+ * Also, enticing users to rely on high-performance function is probably better
+ * on the long run.
+ */
+
+inline bool object::iterator::key_equals(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+    // We avoid construction of a temporary string_view instance.
+    return (memcmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
+
+inline bool object::iterator::key_equals_case_insensitive(const std::string_view & o) const noexcept {
+  // We use the fact that the key length can be computed quickly
+  // without access to the string buffer.
+  const uint32_t len = key_length();
+  if(o.size() == len) {
+      // See For case-insensitive string comparisons, avoid char-by-char functions
+      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
+      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
+      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+  }
+  return false;
+}
 //
 // key_value_pair inline implementation
 //
@@ -5386,8 +5404,7 @@ template<>
 inline simdjson_result<const char *> element::get<const char *>() const noexcept {
   switch (tape_ref_type()) {
     case internal::tape_type::STRING: {
-      size_t string_buf_index = size_t(tape_value());
-      return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+      return get_c_str();
     }
     default:
       return INCORRECT_TYPE;
@@ -5786,13 +5803,23 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   memcpy(&x,&doc->tape[json_index + 1],sizeof(uint64_t));
   return x;
 }
-inline std::string_view internal::tape_ref::get_string_view() const noexcept {
-  size_t string_buf_index = size_t(tape_value());
+
+really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
+  uint64_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  return len;
+}
+
+really_inline const char * internal::tape_ref::get_c_str() const noexcept {
+  uint64_t string_buf_index = size_t(tape_value());
+  return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+}
+
+inline std::string_view internal::tape_ref::get_string_view() const noexcept {
   return std::string_view(
-    reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]),
-    len
+      get_c_str(),
+      get_string_length()
   );
 }
 
@@ -6092,6 +6119,7 @@ inline error_code document_stream::json_parse() noexcept {
 #ifndef SIMDJSON_INLINE_ERROR_H
 #define SIMDJSON_INLINE_ERROR_H
 
+#include <cstring>
 #include <string>
 
 namespace simdjson {

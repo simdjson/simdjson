@@ -7,14 +7,14 @@ set -e
 
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-PROJECTPATH=$SCRIPTPATH"/.."
+PROJECTPATH="$(dirname $SCRIPTPATH)"
 echo "Project at "$PROJECTPATH
 
 echo "We are about to amalgamate all simdjson files into one source file. "
 echo "See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale. "
 
-if [ -z "$AMALGAMATE_SOURCE_PATH" ]; then AMALGAMATE_SOURCE_PATH="$SCRIPTPATH/../src"; fi
-if [ -z "$AMALGAMATE_INCLUDE_PATH" ]; then AMALGAMATE_INCLUDE_PATH="$SCRIPTPATH/../include"; fi
+if [ -z "$AMALGAMATE_SOURCE_PATH" ]; then AMALGAMATE_SOURCE_PATH="$PROJECTPATH/src"; fi
+if [ -z "$AMALGAMATE_INCLUDE_PATH" ]; then AMALGAMATE_INCLUDE_PATH="$PROJECTPATH/include"; fi
 if [ -z "$AMALGAMATE_OUTPUT_PATH" ]; then AMALGAMATE_OUTPUT_PATH="$SCRIPTPATH"; fi
 
 # this list excludes the "src/generic headers"

@@ -43,7 +43,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   };
 }
 
-#include "generic/stringparsing.h"
+#include "generic/stage2/stringparsing.h"
 
 } // namespace westmere
 } // namespace simdjson

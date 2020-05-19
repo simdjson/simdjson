@@ -1,4 +1,4 @@
-#include "simdjson/error.h"
+#include "simdjson.h"
 
 namespace simdjson {
 namespace internal {

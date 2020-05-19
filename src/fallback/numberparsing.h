@@ -26,7 +26,7 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #define SWAR_NUMBER_PARSING
 
-#include "generic/numberparsing.h"
+#include "generic/stage2/numberparsing.h"
 
 } // namespace fallback
 

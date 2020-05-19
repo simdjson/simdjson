@@ -509,11 +509,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     // Initialize stage 2 state
     //
     containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
-  #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address.reset(new (std::nothrow) void *[max_depth]);
-  #else
-    ret_address.reset(new (std::nothrow) char[max_depth]);
-  #endif
+    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
 
     if (!ret_address || !containing_scope) {
       // Could not allocate memory
