@@ -114,25 +114,20 @@ public:
 };
 
 struct number_writer {
-  parser &doc_parser;
+  internal::tape_type type;
+  uint64_t u;
   
   really_inline void write_s64(int64_t value) noexcept {
-    write_tape(0, internal::tape_type::INT64);
-    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
-    ++doc_parser.current_loc;
+    std::memcpy(&u, &value, sizeof(value));
+    type = internal::tape_type::INT64;
   }
   really_inline void write_u64(uint64_t value) noexcept {
-    write_tape(0, internal::tape_type::UINT64);
-    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+    u = value;
+    type = internal::tape_type::UINT64;
   }
   really_inline void write_double(double value) noexcept {
-    write_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
-    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
-    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
-  }
-  really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    std::memcpy(&u, &value, sizeof(value));
+    type = internal::tape_type::DOUBLE;
   }
 }; // struct number_writer
 
@@ -238,8 +233,11 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
-    number_writer writer{doc_parser};
-    return !numberparsing::parse_number(src, found_minus, writer);
+    number_writer writer{};
+    bool is_ok = numberparsing::parse_number(src, found_minus, writer);
+    write_tape(0, writer.type);
+    doc_parser.doc.tape[doc_parser.current_loc++] = writer.u;
+    return !is_ok;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(structurals.current(), found_minus);

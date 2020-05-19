@@ -262,7 +262,7 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 //
 template<typename W>
 never_inline bool parse_large_integer(const uint8_t *const src,
-                                      W writer,
+                                      W &writer,
                                       bool found_minus) {
   const char *p = reinterpret_cast<const char *>(src);
 
@@ -342,7 +342,7 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const char * src, W writer) {
+bool slow_float_parsing(UNUSED const char * src, W &writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
     writer.write_double(d);
@@ -369,7 +369,7 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                W writer) {
+                                W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
   writer.write_s64(0);        // always write zero
