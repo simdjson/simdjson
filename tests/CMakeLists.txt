@@ -87,7 +87,7 @@ if (BASH)
   endif()
 endif()
 
-if (NOT BASH)
+if (BASH)
   #
   # json2json tool test: check that json2json can parse twitter.json
   #

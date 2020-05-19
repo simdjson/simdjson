@@ -18,7 +18,7 @@ set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
 find_program(BASH bash)
 
-if (BASH)
+if (NOT BASH)
   # We do not have bash, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
   if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
