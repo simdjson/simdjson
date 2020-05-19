@@ -8,7 +8,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y cmake 
@@ -33,7 +33,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - mkdir build
     - cd build
@@ -56,7 +56,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y cmake 
@@ -78,7 +78,7 @@ steps:
     CXX: clang++-9
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - mkdir build
     - cd build
@@ -93,10 +93,10 @@ steps:
 - name: Build and Test
   image: gcc:9
   environment:
-    BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CC: gcc
     CXX: g++
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y cmake 
@@ -141,10 +141,10 @@ steps:
 - name: Build and Test
   image: gcc:8
   environment:
-    BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
     CC: gcc
     CXX: g++
+    BUILD_FLAGS: -- -j
+    CTEST_FLAGS: -j4 --output-on-failure
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
@@ -189,7 +189,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
@@ -210,7 +210,7 @@ steps:
     CXX: clang++-6.0
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y clang cmake git

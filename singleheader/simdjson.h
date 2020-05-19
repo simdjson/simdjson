@@ -1,4 +1,4 @@
-/* auto-generated on Tue 19 May 2020 17:35:03 EDT. Do not edit! */
+/* auto-generated on Tue 19 May 2020 17:37:09 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2500,6 +2500,12 @@ public:
   size_t json_index;
 };
 
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+typedef void* ret_address;
+#else
+typedef char ret_address;
+#endif
+
 } // namespace internal
 
 namespace dom {
@@ -3388,13 +3394,8 @@ public:
   /** @private Tape location of each open { or [ */
   std::unique_ptr<scope_descriptor[]> containing_scope{};
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address{};
-#else
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address{};
-#endif
+  std::unique_ptr<internal::ret_address[]> ret_address{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -5123,11 +5124,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     // Initialize stage 2 state
     //
     containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
-  #ifdef SIMDJSON_USE_COMPUTED_GOTO
-    ret_address.reset(new (std::nothrow) void *[max_depth]);
-  #else
-    ret_address.reset(new (std::nothrow) char[max_depth]);
-  #endif
+    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
 
     if (!ret_address || !containing_scope) {
       // Could not allocate memory
@@ -6122,6 +6119,7 @@ inline error_code document_stream::json_parse() noexcept {
 #ifndef SIMDJSON_INLINE_ERROR_H
 #define SIMDJSON_INLINE_ERROR_H
 
+#include <cstring>
 #include <string>
 
 namespace simdjson {

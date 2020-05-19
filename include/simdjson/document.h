@@ -89,6 +89,12 @@ public:
   size_t json_index;
 };
 
+#ifdef SIMDJSON_USE_COMPUTED_GOTO
+typedef void* ret_address;
+#else
+typedef char ret_address;
+#endif
+
 } // namespace internal
 
 namespace dom {
@@ -977,13 +983,8 @@ public:
   /** @private Tape location of each open { or [ */
   std::unique_ptr<scope_descriptor[]> containing_scope{};
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
   /** @private Return address of each open { or [ */
-  std::unique_ptr<void*[]> ret_address{};
-#else
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<char[]> ret_address{};
-#endif
+  std::unique_ptr<internal::ret_address[]> ret_address{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
