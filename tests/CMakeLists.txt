@@ -58,15 +58,17 @@ add_cpp_test(jsoncheck LABELS acceptance per_implementation)
 add_cpp_test(parse_many_test LABELS acceptance per_implementation)
 add_cpp_test(pointercheck LABELS acceptance per_implementation)
 add_cpp_test(extracting_values_example LABELS acceptance per_implementation)
+find_program(BASH bash) 
+
 
 # Script tests
-if (NOT MSVC) # Can't run .sh on windows
+if (BASH)
   #
   # json2json test
   #
   add_test(
     NAME testjson2json
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
+    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh
     WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
   )
   set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
@@ -79,14 +81,13 @@ if (NOT MSVC) # Can't run .sh on windows
     add_executable(allparserscheckfile allparserscheckfile.cpp)
     target_link_libraries(allparserscheckfile competition-all)
 
-    add_test(issue150 bash ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
+    add_test(issue150 ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/issue150.sh)
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation)
   endif()
 endif()
 
-# This should really test whether bash is available.
-if (NOT MSVC)
+if (NOT BASH)
   #
   # json2json tool test: check that json2json can parse twitter.json
   #

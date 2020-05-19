@@ -1,8 +1,7 @@
 #
 # Amalgamation
 #
-# We should check whether bash is available here and avoid failures on systems where
-# bash is unavailable.
+
 set(SINGLEHEADER_FILES
   ${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h
@@ -17,8 +16,10 @@ set(SINGLEHEADER_REPO_FILES
 )
 set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
-if (MSVC)
-  # MSVC doesn't have bash, so we use existing amalgamated files instead of generating them ...
+find_program(BASH bash)
+
+if (BASH)
+  # We do not have bash, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
   if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
     add_custom_command(
@@ -30,11 +31,10 @@ if (MSVC)
     )
   endif()
 
-else(MSVC)
+else(BASH)
 
   ##
-  # Important! The script amalgamate.sh is not generally executable. It
-  # assumes that bash is at /bin/bash which may not be true.
+  # Important! The script amalgamate.sh is not generally executable.
   ###
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
@@ -42,7 +42,7 @@ else(MSVC)
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      bash ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
