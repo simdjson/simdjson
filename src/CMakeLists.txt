@@ -62,6 +62,11 @@ if(NOT SIMDJSON_SANITIZE)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
     add_test(
+      NAME "avoid_stdout"
+      COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stdout || exit 0 && exit 1"
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
+    add_test(
       NAME "avoid_stderr"
       COMMAND sh -c "${NM}  $<TARGET_FILE_NAME:simdjson> |  ${GREP} stderr || exit 0 && exit 1"
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
