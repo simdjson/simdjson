@@ -293,7 +293,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
     case element_type::NULL_VALUE:
       return out << "null";
     default:
-      abort();
+      return out << "unexpected content!!!"; // abort() usage is forbidden in the library
   }
 }
 
@@ -405,7 +405,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
     case tape_type::END_ARRAY:
     case tape_type::END_OBJECT:
     case tape_type::ROOT:
-      abort();
+      out << "unexpected content!!!"; // abort() usage is forbidden in the library
     }
     iter.json_index++;
     after_value = true;

@@ -1,4 +1,4 @@
-/* auto-generated on Tue May 19 14:39:19 PDT 2020. Do not edit! */
+/* auto-generated on Wed May 20 10:23:07 EDT 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -5552,7 +5552,7 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
     case element_type::NULL_VALUE:
       return out << "null";
     default:
-      abort();
+      return out << "unexpected content!!!"; // abort() usage is forbidden in the library
   }
 }
 
@@ -5664,7 +5664,7 @@ inline std::ostream& minify<dom::element>::print(std::ostream& out) {
     case tape_type::END_ARRAY:
     case tape_type::END_OBJECT:
     case tape_type::ROOT:
-      abort();
+      out << "unexpected content!!!"; // abort() usage is forbidden in the library
     }
     iter.json_index++;
     after_value = true;
@@ -6461,7 +6461,7 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
 #else
-  if (!pj.valid) { abort(); }
+  if (!pj.valid) { return; } //  abort() usage is forbidden in the library
 #endif
 
   max_depth = pj.max_depth();

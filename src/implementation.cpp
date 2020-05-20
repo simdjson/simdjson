@@ -118,7 +118,7 @@ const implementation *available_implementation_list::detect_best_supported() con
     uint32_t required_instruction_sets = impl->required_instruction_sets();
     if ((supported_instruction_sets & required_instruction_sets) == required_instruction_sets) { return impl; }
   }
-  return &unsupported_singleton;
+  return &unsupported_singleton; // this should never happen?
 }
 
 const implementation *detect_best_supported_implementation_on_first_use::set_best() const noexcept {
@@ -129,11 +129,12 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
 
   if (force_implementation_name) {
     auto force_implementation = available_implementations[force_implementation_name];
-    if (!force_implementation) {
-      fprintf(stderr, "SIMDJSON_FORCE_IMPLEMENTATION environment variable set to '%s', which is not a supported implementation name!\n", force_implementation_name);
-      abort();
+    if (force_implementation) {
+      return active_implementation = force_implementation;
+    } else {
+      // Note: abort() and stderr usage within the library is forbidden.
+      return active_implementation = &unsupported_singleton;
     }
-    return active_implementation = force_implementation;
   }
   return active_implementation = available_implementations.detect_best_supported();
 }

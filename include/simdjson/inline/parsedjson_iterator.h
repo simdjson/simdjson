@@ -220,7 +220,7 @@ dom::parser::Iterator::Iterator(const dom::parser &pj) noexcept(false)
 #if SIMDJSON_EXCEPTIONS
   if (!pj.valid) { throw simdjson_error(pj.error); }
 #else
-  if (!pj.valid) { abort(); }
+  if (!pj.valid) { return; } //  abort() usage is forbidden in the library
 #endif
 
   max_depth = pj.max_depth();

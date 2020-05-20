@@ -5,7 +5,7 @@ The simdjson library is an open project written in C++. Contributions are invite
 agree to the project's license.
 
 We have an extensive list of issues, and contributions toward any of these issues is invited.
-Contributions can take the form of code samples, better documentation or design ideas. 
+Contributions can take the form of code samples, better documentation or design ideas.
 
 In particular, the following contributions are invited:
 
@@ -32,6 +32,17 @@ We discourage the following types of contributions:
 
 In short, most code changes should either bring new features or better performance. We want to avoid unmotivated code changes.
 
+
+Specific rules
+----------
+
+We have few hard rules, but we have some:
+
+- Printing to standard output or standard error (`stderr`, `stdout`, `std::cerr`, `std::cout`) in the core library is forbidden. This follows from the [Writing R Extensions](https://cran.r-project.org/doc/manuals/R-exts.html) manual which states that "Compiled code should not write to stdout or stderr".
+- Calls to `abort()` are forbidden in the core library. This follows from the [Writing R Extensions](https://cran.r-project.org/doc/manuals/R-exts.html) manual which states that "Under no circumstances should your compiled code ever call abort or exit".
+
+Tools, tests and benchmarks are not held to these same strict rules.
+
 General Guidelines
 ----------
 
@@ -42,7 +53,6 @@ Contributors are encouraged to :
 - Modify as few lines of code as possible when working on an issue. The more lines you modify, the harder it is for your fellow human beings to understand what is going on.
 - Tools may report "problems" with the code, but we never delegate programming to tools: if there is a problem with the code, we need to understand it. Thus we will not "fix" code merely to please a static analyzer if we do not understand.
 - Provide tests for any new feature. We will not merge a new feature without tests.
-
 
 Pull Requests
 --------------
@@ -68,7 +78,7 @@ intimidation. Everyone is welcome to contribute. If you have concerns, you can r
 
 We welcome contributions from women and less represented groups. If you need help, please reach out.
 
-Consider the following points when engaging with the project: 
+Consider the following points when engaging with the project:
 
 - We discourage arguments from authority: ideas are discusssed on their own merits and not based on who stated it.
 - Be mindful that what you may view as an aggression is maybe merely a difference of opinion or a misunderstanding.
