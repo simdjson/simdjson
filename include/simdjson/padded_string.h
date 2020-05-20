@@ -1,5 +1,6 @@
 #ifndef SIMDJSON_PADDED_STRING_H
 #define SIMDJSON_PADDED_STRING_H
+
 #include "simdjson/portability.h"
 #include "simdjson/common_defs.h" // for SIMDJSON_PADDING
 #include "simdjson/error.h"
@@ -119,6 +120,19 @@ private:
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { return out << s.data(); }
+
+#if SIMDJSON_EXCEPTIONS
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+  * @throw simdjson_error if the result being printed has an error. If there is an error with the
+ *        underlying output stream, that error will be propagated (simdjson_error will not be
+ *        thrown).
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
+#endif
 
 } // namespace simdjson
 
