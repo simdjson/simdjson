@@ -62,7 +62,7 @@ find_program(BASH bash)
 
 
 # Script tests
-if (BASH)
+if (BASH AND (NOT MSVC)) # The scripts are not robust enough to run under Windows even if bash is available
   #
   # json2json test
   #
@@ -85,9 +85,7 @@ if (BASH)
     set_property(TEST issue150 APPEND PROPERTY DEPENDS allparserscheckfile)
     set_property(TEST issue150 APPEND PROPERTY LABELS per_implementation)
   endif()
-endif()
 
-if (BASH)
   #
   # json2json tool test: check that json2json can parse twitter.json
   #
