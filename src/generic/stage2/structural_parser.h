@@ -5,48 +5,6 @@
 
 namespace stage2 {
 
-using internal::ret_address;
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
-#define GOTO(address) { goto *(address); }
-#define CONTINUE(address) { goto *(address); }
-#else // SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
-#define GOTO(address)                 \
-  {                                   \
-    switch(address) {                 \
-      case '[': goto array_begin;     \
-      case 'a': goto array_continue;  \
-      case 'e': goto error;           \
-      case 'f': goto finish;          \
-      case '{': goto object_begin;    \
-      case 'o': goto object_continue; \
-    }                                 \
-  }
-// For the more constrained end_xxx() situation
-#define CONTINUE(address)             \
-  {                                   \
-    switch(address) {                 \
-      case 'a': goto array_continue;  \
-      case 'o': goto object_continue; \
-      case 'f': goto finish;          \
-    }                                 \
-  }
-#endif // SIMDJSON_USE_COMPUTED_GOTO
-
-struct unified_machine_addresses {
-  ret_address array_begin;
-  ret_address array_continue;
-  ret_address error;
-  ret_address finish;
-  ret_address object_begin;
-  ret_address object_continue;
-};
-
-#undef FAIL_IF
-#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
-
 struct number_writer {
   parser &doc_parser;
   
@@ -70,6 +28,10 @@ struct number_writer {
   }
 }; // struct number_writer
 
+struct value_parser {
+  parser &doc_parser;
+};
+
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
@@ -84,30 +46,29 @@ struct structural_parser {
     uint32_t next_structural = 0
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
-  WARN_UNUSED really_inline bool start_scope(internal::tape_type type, ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_scope(internal::tape_type type) {
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, type); // if the document is correct, this gets rewritten later
-    doc_parser.ret_address[depth] = continue_state;
     depth++;
     bool exceeded_max_depth = depth >= doc_parser.max_depth();
     if (exceeded_max_depth) { log_error("Exceeded max depth!"); }
     return exceeded_max_depth;
   }
 
-  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_document() {
     log_start_value("document");
-    return start_scope(internal::tape_type::ROOT, continue_state);
+    return start_scope(internal::tape_type::ROOT);
   }
 
-  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_object() {
     log_start_value("object");
-    return start_scope(internal::tape_type::START_OBJECT, continue_state);
+    return start_scope(internal::tape_type::START_OBJECT);
   }
 
-  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_array() {
     log_start_value("array");
-    return start_scope(internal::tape_type::START_ARRAY, continue_state);
+    return start_scope(internal::tape_type::START_ARRAY);
   }
 
   // this function is responsible for annotating the start of the scope
@@ -215,54 +176,154 @@ struct structural_parser {
     return false;
   }
 
-  WARN_UNUSED really_inline bool parse_single_atom() {
+  WARN_UNUSED really_inline bool parse_root_atom() {
     switch (structurals.current_char()) {
       case 't':
         log_value("true");
         if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
+        return false;
       case 'f':
         log_value("false");
         if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
+        return false;
       case 'n':
         log_value("null");
         if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::NULL_VALUE);
-        break;
+        return false;
       default:
         log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
         return true;
     }
-    return false;
   }
 
-  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+  WARN_UNUSED really_inline bool parse_value() {
     switch (structurals.current_char()) {
     case '"':
-      FAIL_IF( parse_string() );
-      return continue_state;
+      return parse_string();
     case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
-      return continue_state;
+      return parse_atom();
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      FAIL_IF( parse_number(false) );
-      return continue_state;
+      return parse_number(false);
     case '-':
-      FAIL_IF( parse_number(true) );
-      return continue_state;
+      return parse_number(true);
     case '{':
-      FAIL_IF( start_object(continue_state) );
-      return addresses.object_begin;
+      return parse_object();
     case '[':
-      FAIL_IF( start_array(continue_state) );
-      return addresses.array_begin;
+      return parse_array();
     default:
       log_error("Non-value found when value was expected!");
-      return addresses.error;
+      return true;
+    }
+  }
+
+  WARN_UNUSED really_inline bool parse_root_value() {
+    // Parse the root value of the document. This is similar to parse_value(), but atoms and numbers
+    // in particular get special treatment because those parsers normally rely on being in an object
+    // or array (and thus the buffer having at least whitespace ] } or , after them).
+    switch (structurals.current_char()) {
+    case '{':
+      return parse_object();
+    case '[':
+      return parse_array();
+    case '"':
+      return parse_string();
+    case 't': case 'f': case 'n':
+      return parse_root_atom();
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return 
+        structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+          return parse_number(&copy[idx], false);
+        });
+    case '-':
+      return
+        structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+          return parse_number(&copy[idx], true);
+        });
+    default:
+      log_error("Document starts with a non-value character");
+      return true;
+    }
+  }
+
+  WARN_UNUSED really_inline bool parse_object() {
+    return parse_object(*this);
+  }
+
+  WARN_UNUSED static bool parse_object(structural_parser &parser) {
+    return parser.parse_object_inline();
+  }
+
+  WARN_UNUSED really_inline bool parse_object_inline() {
+    if (start_object()) { return true; }
+    switch (advance_char()) {
+    case '"':
+      increment_count();
+      if (parse_string(true)) { return true; }
+      while (true) {
+        if (advance_char() != ':' ) { log_error("Missing colon after key in object"); return true; }
+        advance_char();
+        if (parse_value()) { return true; }
+        switch (advance_char()) {
+        case ',':
+          increment_count();
+          if (advance_char() != '"' ) { log_error("Key string missing at beginning of field in object"); return true; }
+          if (parse_string(true)) { return true; }
+          continue;
+        case '}':
+          end_object();
+          return false;
+        default:
+          log_error("No comma between object fields");
+          return true;
+        }
+      }
+      break;
+    case '}':
+      end_object();
+      return false;
+    default:
+      log_error("Object does not start with a key");
+      return true;
+    }
+  }
+
+  WARN_UNUSED really_inline bool parse_array() {
+    return parse_array(*this);
+  }
+
+  WARN_UNUSED static bool parse_array(structural_parser &parser) {
+    return parser.parse_array_inline();
+  }
+
+  WARN_UNUSED really_inline bool parse_array_inline() {
+    if (start_array()) { return true; }
+
+    if (advance_char() == ']') {
+      end_array();
+      return false;
+    }
+    increment_count();
+
+    while (true) {
+      if (parse_value()) { return true; }
+
+      switch (advance_char()) {
+      case ',':
+        increment_count();
+        advance_char();
+        continue;
+      case ']':
+        end_array();
+        return false;
+      default:
+        log_error("Missing comma between array values");
+        return true;
+      }
     }
   }
 
@@ -342,7 +403,7 @@ struct structural_parser {
     doc_parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(size_t len) {
     log_start();
     init(); // sets is_valid to false
     if (len > doc_parser.capacity()) {
@@ -351,7 +412,7 @@ struct structural_parser {
     // Advance to the first character as soon as possible
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
-    if (start_document(finish_state)) {
+    if (start_document()) {
       return on_error(DEPTH_ERROR);
     }
     return SUCCESS;
@@ -384,10 +445,6 @@ struct structural_parser {
   }
 };
 
-// Redefine FAIL_IF to use goto since it'll be used inside the function now
-#undef FAIL_IF
-#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
-
 } // namespace stage2
 
 /************
@@ -395,122 +452,14 @@ struct structural_parser {
  * for documentation.
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
-  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
-  error_code result = parser.start(len, addresses.finish);
+  error_code result = parser.start(len);
   if (result) { return result; }
 
-  //
-  // Read first value
-  //
-  switch (parser.structurals.current_char()) {
-  case '{':
-    FAIL_IF( parser.start_object(addresses.finish) );
-    goto object_begin;
-  case '[':
-    FAIL_IF( parser.start_array(addresses.finish) );
-    goto array_begin;
-  case '"':
-    FAIL_IF( parser.parse_string() );
-    goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
-    goto finish;
-  case '0': case '1': case '2': case '3': case '4':
-  case '5': case '6': case '7': case '8': case '9':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], false);
-      })
-    );
-    goto finish;
-  case '-':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], true);
-      })
-    );
-    goto finish;
-  default:
-    parser.log_error("Document starts with a non-value character");
-    goto error;
+  if (parser.parse_root_value()) {
+    return parser.error();
   }
-
-//
-// Object parser states
-//
-object_begin:
-  switch (parser.advance_char()) {
-  case '"': {
-    parser.increment_count();
-    FAIL_IF( parser.parse_string(true) );
-    goto object_key_state;
-  }
-  case '}':
-    parser.end_object();
-    goto scope_end;
-  default:
-    parser.log_error("Object does not start with a key");
-    goto error;
-  }
-
-object_key_state:
-  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
-  GOTO( parser.parse_value(addresses, addresses.object_continue) );
-
-object_continue:
-  switch (parser.advance_char()) {
-  case ',':
-    parser.increment_count();
-    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
-    FAIL_IF( parser.parse_string(true) );
-    goto object_key_state;
-  case '}':
-    parser.end_object();
-    goto scope_end;
-  default:
-    parser.log_error("No comma between object fields");
-    goto error;
-  }
-
-scope_end:
-  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
-
-//
-// Array parser states
-//
-array_begin:
-  if (parser.advance_char() == ']') {
-    parser.end_array();
-    goto scope_end;
-  }
-  parser.increment_count();
-
-main_array_switch:
-  /* we call update char on all paths in, so we can peek at parser.c on the
-   * on paths that can accept a close square brace (post-, and at start) */
-  GOTO( parser.parse_value(addresses, addresses.array_continue) );
-
-array_continue:
-  switch (parser.advance_char()) {
-  case ',':
-    parser.increment_count();
-    parser.advance_char();
-    goto main_array_switch;
-  case ']':
-    parser.end_array();
-    goto scope_end;
-  default:
-    parser.log_error("Missing comma between array values");
-    goto error;
-  }
-
-finish:
   return parser.finish();
-
-error:
-  return parser.error();
 }
 
 WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
