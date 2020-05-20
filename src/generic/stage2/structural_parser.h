@@ -90,18 +90,23 @@ struct structural_parser {
     write_tape(0, type); // if the document is correct, this gets rewritten later
     doc_parser.ret_address[depth] = continue_state;
     depth++;
-    return depth >= doc_parser.max_depth();
+    bool exceeded_max_depth = depth >= doc_parser.max_depth();
+    if (exceeded_max_depth) { log_error("Exceeded max depth!"); }
+    return exceeded_max_depth;
   }
 
   WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+    log_start_value("document");
     return start_scope(internal::tape_type::ROOT, continue_state);
   }
 
   WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+    log_start_value("object");
     return start_scope(internal::tape_type::START_OBJECT, continue_state);
   }
 
   WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+    log_start_value("array");
     return start_scope(internal::tape_type::START_ARRAY, continue_state);
   }
 
@@ -121,12 +126,15 @@ struct structural_parser {
   }
 
   really_inline void end_object() {
+    log_end_value("object");
     end_scope(internal::tape_type::END_OBJECT);
   }
   really_inline void end_array() {
+    log_end_value("array");
     end_scope(internal::tape_type::END_ARRAY);
   }
   really_inline void end_document() {
+    log_end_value("document");
     end_scope(internal::tape_type::ROOT);
   }
 
@@ -143,13 +151,12 @@ struct structural_parser {
   }
 
   really_inline uint8_t *on_start_string() noexcept {
-    /* we advance the point, accounting for the fact that we have a NULL
-      * termination         */
+    // we advance the point, accounting for the fact that we have a NULL termination
     write_tape(current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
-  really_inline bool on_end_string(uint8_t *dst) noexcept {
+  really_inline void on_end_string(uint8_t *dst) noexcept {
     uint32_t str_length = uint32_t(dst - (current_string_buf_loc + sizeof(uint32_t)));
     // TODO check for overflow in case someone has a crazy string (>=4GB?)
     // But only add the overflow check when the document itself exceeds 4GB
@@ -159,21 +166,26 @@ struct structural_parser {
     // be NULL terminated? It comes at a small cost
     *dst = 0;
     current_string_buf_loc = dst + 1;
-    return true;
   }
 
-  WARN_UNUSED really_inline bool parse_string() {
+  WARN_UNUSED really_inline bool parse_string(bool key = false) {
+    log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
     dst = stringparsing::parse_string(structurals.current(), dst);
     if (dst == nullptr) {
+      log_error("Invalid escape in string");
       return true;
     }
-    return !on_end_string(dst);
+    on_end_string(dst);
+    return false;
   }
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
+    log_value("number");
     number_writer writer{doc_parser};
-    return !numberparsing::parse_number(src, found_minus, writer);
+    bool succeeded = numberparsing::parse_number(src, found_minus, writer);
+    if (!succeeded) { log_error("Invalid number"); }
+    return !succeeded;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
     return parse_number(structurals.current(), found_minus);
@@ -182,18 +194,22 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_atom() {
     switch (structurals.current_char()) {
       case 't':
+        log_value("true");
         if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
         write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
+        log_value("false");
         if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
         write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
+        log_value("null");
         if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
         write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
+        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
         return true;
     }
     return false;
@@ -202,18 +218,22 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_single_atom() {
     switch (structurals.current_char()) {
       case 't':
+        log_value("true");
         if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::TRUE_VALUE);
         break;
       case 'f':
+        log_value("false");
         if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::FALSE_VALUE);
         break;
       case 'n':
+        log_value("null");
         if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
         write_tape(0, internal::tape_type::NULL_VALUE);
         break;
       default:
+        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
         return true;
     }
     return false;
@@ -241,6 +261,7 @@ struct structural_parser {
       FAIL_IF( start_array(continue_state) );
       return addresses.array_begin;
     default:
+      log_error("Non-value found when value was expected!");
       return addresses.error;
     }
   }
@@ -248,13 +269,16 @@ struct structural_parser {
   WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
     if ( !structurals.at_end(doc_parser.n_structural_indexes) ) {
+      log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
+      log_error("Unclosed objects or arrays!");
       return on_error(TAPE_ERROR);
     }
     if (doc_parser.containing_scope[depth].tape_index != 0) {
+      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
 
@@ -319,6 +343,7 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
+    log_start();
     init(); // sets is_valid to false
     if (len > doc_parser.capacity()) {
       return CAPACITY;
@@ -334,6 +359,28 @@ struct structural_parser {
 
   really_inline char advance_char() {
     return structurals.advance_char();
+  }
+
+  really_inline void log_value(const char *type) {
+    logger::log_line(structurals, "", type, "");
+  }
+
+  static really_inline void log_start() {
+    logger::log_start();
+  }
+
+  really_inline void log_start_value(const char *type) {
+    logger::log_line(structurals, "+", type, "");
+    if (logger::LOG_ENABLED) { logger::log_depth++; }
+  }
+
+  really_inline void log_end_value(const char *type) {
+    if (logger::LOG_ENABLED) { logger::log_depth--; }
+    logger::log_line(structurals, "-", type, "");
+  }
+
+  really_inline void log_error(const char *error) {
+    logger::log_line(structurals, "", "ERROR", error);
   }
 };
 
@@ -385,6 +432,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
     );
     goto finish;
   default:
+    parser.log_error("Document starts with a non-value character");
     goto error;
   }
 
@@ -395,18 +443,19 @@ object_begin:
   switch (parser.advance_char()) {
   case '"': {
     parser.increment_count();
-    FAIL_IF( parser.parse_string() );
+    FAIL_IF( parser.parse_string(true) );
     goto object_key_state;
   }
   case '}':
     parser.end_object();
     goto scope_end;
   default:
+    parser.log_error("Object does not start with a key");
     goto error;
   }
 
 object_key_state:
-  FAIL_IF( parser.advance_char() != ':' );
+  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
@@ -414,13 +463,14 @@ object_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    FAIL_IF( parser.advance_char() != '"' );
-    FAIL_IF( parser.parse_string() );
+    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
+    FAIL_IF( parser.parse_string(true) );
     goto object_key_state;
   case '}':
     parser.end_object();
     goto scope_end;
   default:
+    parser.log_error("No comma between object fields");
     goto error;
   }
 
@@ -452,6 +502,7 @@ array_continue:
     parser.end_array();
     goto scope_end;
   default:
+    parser.log_error("Missing comma between array values");
     goto error;
   }
 

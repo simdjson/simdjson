@@ -9,6 +9,7 @@
 namespace simdjson {
 namespace arm64 {
 
+#include "generic/stage2/logger.h"
 #include "generic/stage2/atomparsing.h"
 #include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
