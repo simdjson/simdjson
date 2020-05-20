@@ -1,8 +1,7 @@
 #
 # Amalgamation
 #
-# We should check whether bash is available here and avoid failures on systems where
-# bash is unavailable.
+
 set(SINGLEHEADER_FILES
   ${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h
@@ -17,32 +16,16 @@ set(SINGLEHEADER_REPO_FILES
 )
 set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
-if (MSVC)
-  # MSVC doesn't have bash, so we use existing amalgamated files instead of generating them ...
-  # (Do not do this if the source and destination are the same!)
-  if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
-    add_custom_command(
-      OUTPUT ${SINGLEHEADER_FILES}
-      COMMAND ${CMAKE_COMMAND} -E copy
-        ${SINGLEHEADER_REPO_FILES}
-        ${CMAKE_CURRENT_BINARY_DIR}
-      DEPENDS ${SINGLEHEADER_REPO_FILES}
-    )
-  endif()
+find_program(BASH bash)
 
-else(MSVC)
-
-  ##
-  # Important! The script amalgamate.sh is not generally executable. It
-  # assumes that bash is at /bin/bash which may not be true.
-  ###
+if (BASH)
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      bash ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
@@ -72,7 +55,22 @@ else(MSVC)
   # "make amalgamate" to generate the header files directly and update the original source
   #
   add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-endif(MSVC)
+
+else(BASH)
+
+  # We do not have bash, so we use existing amalgamated files instead of generating them ...
+  # (Do not do this if the source and destination are the same!)
+  if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
+    add_custom_command(
+      OUTPUT ${SINGLEHEADER_FILES}
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${SINGLEHEADER_REPO_FILES}
+        ${CMAKE_CURRENT_BINARY_DIR}
+      DEPENDS ${SINGLEHEADER_REPO_FILES}
+    )
+  endif()
+
+endif(BASH)
 
 
 #
