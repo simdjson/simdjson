@@ -2,15 +2,15 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t &_next_structural)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{_next_structural}
+  really_inline structural_iterator(parser &_doc_parser, size_t _len)
+    : doc_parser{_doc_parser},
+      buf{_doc_parser.parsing_buf},
+      len{_len},
+      structural_indexes{_doc_parser.structural_indexes.get()}
     {}
   really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
+    idx = structural_indexes[doc_parser.next_structural];
+    doc_parser.next_structural++;
     c = *current();
     return c;
   }
@@ -18,7 +18,7 @@ public:
     return c;
   }
   really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
+    return buf[structural_indexes[doc_parser.next_structural]];
   }
   really_inline const uint8_t* current() {
     return &buf[idx];
@@ -52,22 +52,22 @@ public:
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural+1 > n_structural_indexes;
+    return doc_parser.next_structural+1 > n_structural_indexes;
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural+1 == n_structural_indexes;
+    return doc_parser.next_structural+1 == n_structural_indexes;
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return doc_parser.next_structural == 0;
   }
   really_inline size_t next_structural_index() {
-    return next_structural;
+    return doc_parser.next_structural;
   }
 
+  parser &doc_parser;
   const uint8_t* const buf;
   const size_t len;
   const uint32_t* const structural_indexes;
-  size_t &next_structural; // next structural index
   size_t idx{0}; // location of the structural character in the input (buf)
   uint8_t c{0};  // used to track the (structural) character we are looking at
 };
