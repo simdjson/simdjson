@@ -50,51 +50,51 @@ struct structural_parser {
     return doc_parser().doc;
   }
 
-  WARN_UNUSED really_inline bool start_scope(internal::tape_type type) {
+  WARN_UNUSED really_inline bool start_scope() {
     bool exceeded_max_depth = depth >= doc_parser().max_depth();
     if (exceeded_max_depth) { log_error("Exceeded max depth!"); return true; }
-    write_tape(0, type); // if the document is correct, this gets rewritten later
+    doc_parser().current_loc++;
     return false;
   }
 
   WARN_UNUSED really_inline bool start_document() {
     log_start_value("document");
-    return start_scope(internal::tape_type::ROOT);
+    return start_scope();
   }
 
   WARN_UNUSED really_inline bool start_object() {
     log_start_value("object");
-    return start_scope(internal::tape_type::START_OBJECT);
+    return start_scope();
   }
 
   WARN_UNUSED really_inline bool start_array() {
     log_start_value("array");
-    return start_scope(internal::tape_type::START_ARRAY);
+    return start_scope();
   }
 
   // this function is responsible for annotating the start of the scope
-  really_inline void end_scope(internal::tape_type type, uint32_t start_loc, uint32_t count) noexcept {
+  really_inline void end_scope(internal::tape_type start, internal::tape_type end, uint32_t start_loc, uint32_t count) noexcept {
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    write_tape(start_loc, type);
+    write_tape(start_loc, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    doc().tape[start_loc] |= doc_parser().current_loc | (uint64_t(cntsat) << 32);
+    doc().tape[start_loc] = doc_parser().current_loc | (uint64_t(cntsat) << 32) | ((uint64_t(char(start))) << 56);
   }
 
   really_inline void end_object(uint32_t start_loc, uint32_t count) {
     log_end_value("object");
-    end_scope(internal::tape_type::END_OBJECT, start_loc, count);
+    end_scope(internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT, start_loc, count);
   }
   really_inline void end_array(uint32_t start_loc, uint32_t count) {
     log_end_value("array");
-    end_scope(internal::tape_type::END_ARRAY, start_loc, count);
+    end_scope(internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY, start_loc, count);
   }
   really_inline void end_document(uint32_t start_loc, uint32_t count) {
     log_end_value("document");
-    end_scope(internal::tape_type::ROOT, start_loc, count);
+    end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT, start_loc, count);
   }
 
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
