@@ -355,12 +355,6 @@ public:
   /** @private Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes{};
 
-  /** @private Tape location of each open { or [ */
-  std::unique_ptr<internal::scope_descriptor[]> containing_scope{};
-
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<internal::ret_address[]> ret_address{};
-
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */

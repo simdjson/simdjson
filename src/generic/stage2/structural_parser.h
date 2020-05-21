@@ -62,8 +62,6 @@ struct structural_parser {
   WARN_UNUSED really_inline bool start_scope(internal::tape_type type) {
     bool exceeded_max_depth = depth >= doc_parser.max_depth();
     if (exceeded_max_depth) { log_error("Exceeded max depth!"); return true; }
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
-    doc_parser.containing_scope[depth].count = 0;
     write_tape(0, type); // if the document is correct, this gets rewritten later
     return false;
   }
@@ -84,42 +82,32 @@ struct structural_parser {
   }
 
   // this function is responsible for annotating the start of the scope
-  really_inline void end_scope(internal::tape_type type) noexcept {
+  really_inline void end_scope(internal::tape_type type, uint32_t start_loc, uint32_t count) noexcept {
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    write_tape(doc_parser.containing_scope[depth].tape_index, type);
+    write_tape(start_loc, type);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
-    const uint32_t count = doc_parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    doc_parser.doc.tape[start_tape_index] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
+    doc_parser.doc.tape[start_loc] |= doc_parser.current_loc | (uint64_t(cntsat) << 32);
   }
 
-  really_inline void end_object() {
+  really_inline void end_object(uint32_t start_loc, uint32_t count) {
     log_end_value("object");
-    end_scope(internal::tape_type::END_OBJECT);
+    end_scope(internal::tape_type::END_OBJECT, start_loc, count);
   }
-  really_inline void end_array() {
+  really_inline void end_array(uint32_t start_loc, uint32_t count) {
     log_end_value("array");
-    end_scope(internal::tape_type::END_ARRAY);
+    end_scope(internal::tape_type::END_ARRAY, start_loc, count);
   }
-  really_inline void end_document() {
+  really_inline void end_document(uint32_t start_loc, uint32_t count) {
     log_end_value("document");
-    end_scope(internal::tape_type::ROOT);
+    end_scope(internal::tape_type::ROOT, start_loc, count);
   }
 
   really_inline void write_tape(uint64_t val, internal::tape_type t) noexcept {
     doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-
-  // increment_count increments the count of keys in an object or values in an array.
-  // Note that if you are at the level of the values or elements, the count
-  // must be increment in the preceding depth (depth-1) where the array or
-  // the object resides.
-  really_inline void increment_count() {
-    doc_parser.containing_scope[depth].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   really_inline uint8_t *on_start_string() noexcept {
@@ -279,38 +267,41 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_object_inline() {
+    uint32_t start_loc = doc_parser.current_loc;
     if (start_object()) { return true; }
     switch (advance_char()) {
     case '"':
-      increment_count();
-      // Key
-      if (parse_string(true)) { return true; }
-      while (true) {
+      {
+        uint32_t count = 1;
+        // Key
+        if (parse_string(true)) { return true; }
+        while (true) {
 
-        // :
-        if (advance_char() != ':' ) { log_error("Missing colon after key in object"); return true; }
+          // :
+          if (advance_char() != ':' ) { log_error("Missing colon after key in object"); return true; }
 
-        // Value
-        advance_char();
-        if (parse_value()) { return true; }
+          // Value
+          advance_char();
+          if (parse_value()) { return true; }
 
-        switch (advance_char()) {
-        case ',':
-          increment_count();
-          if (advance_char() != '"' ) { log_error("Key string missing at beginning of field in object"); return true; }
-          if (parse_string(true)) { return true; }
-          continue;
-        case '}':
-          end_object();
-          return false;
-        default:
-          log_error("No comma between object fields");
-          return true;
+          switch (advance_char()) {
+          case ',':
+            count++;
+            if (advance_char() != '"' ) { log_error("Key string missing at beginning of field in object"); return true; }
+            if (parse_string(true)) { return true; }
+            continue;
+          case '}':
+            end_object(start_loc, count);
+            return false;
+          default:
+            log_error("No comma between object fields");
+            return true;
+          }
         }
       }
       break;
     case '}':
-      end_object();
+      end_object(start_loc, 0);
       return false;
     default:
       log_error("Object does not start with a key");
@@ -336,24 +327,25 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_array_inline() {
+    uint32_t start_loc = doc_parser.current_loc;
     if (start_array()) { return true; }
 
     if (advance_char() == ']') {
-      end_array();
+      end_array(start_loc, 0);
       return false;
     }
-    increment_count();
 
+    uint32_t count = 1;
     while (true) {
       if (parse_value()) { return true; }
 
       switch (advance_char()) {
       case ',':
-        increment_count();
+        count++;
         advance_char();
         continue;
       case ']':
-        end_array();
+        end_array(start_loc, count);
         return false;
       default:
         log_error("Missing comma between array values");
@@ -368,13 +360,9 @@ struct structural_parser {
       log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
-    end_document();
+    end_document(0, 1);
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return on_error(TAPE_ERROR);
-    }
-    if (doc_parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
 

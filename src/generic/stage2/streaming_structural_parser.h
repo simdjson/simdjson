@@ -23,13 +23,9 @@ struct streaming_structural_parser: structural_parser {
       log_error("IMPOSSIBLE: past the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
-    end_document();
+    end_document(0, 1);
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return on_error(TAPE_ERROR);
-    }
-    if (doc_parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);

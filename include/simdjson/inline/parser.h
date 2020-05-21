@@ -188,30 +188,10 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   }
 
   //
-  // If max_depth has changed, reallocate those buffers
+  // Set max_depth. It's obsolete, but it's still in the API.
   //
-  if (max_depth != _max_depth) {
-    _max_depth = 0;
+  _max_depth = max_depth;
 
-    if (max_depth == 0) {
-      ret_address.reset();
-      containing_scope.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 2 state
-    //
-    containing_scope.reset(new (std::nothrow) internal::scope_descriptor[max_depth]); // TODO realloc
-    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
-
-    if (!ret_address || !containing_scope) {
-      // Could not allocate memory
-      return MEMALLOC;
-    }
-
-    _max_depth = max_depth;
-  }
   return SUCCESS;
 }
 
