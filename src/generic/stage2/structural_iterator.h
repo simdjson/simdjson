@@ -17,6 +17,9 @@ public:
   really_inline char current_char() {
     return c;
   }
+  really_inline char peek_char() {
+    return buf[structural_indexes[next_structural]];
+  }
   really_inline const uint8_t* current() {
     return &buf[idx];
   }
@@ -53,6 +56,9 @@ public:
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
     return next_structural+1 == n_structural_indexes;
+  }
+  really_inline bool at_beginning() {
+    return next_structural == 0;
   }
   really_inline size_t next_structural_index() {
     return next_structural;

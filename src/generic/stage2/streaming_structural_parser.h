@@ -5,6 +5,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
+    log_start();
     init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
     // Advance to the first character as soon as possible
@@ -19,16 +20,20 @@ struct streaming_structural_parser: structural_parser {
   // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
     if ( structurals.past_end(doc_parser.n_structural_indexes) ) {
+      log_error("IMPOSSIBLE: past the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
     end_document();
     if (depth != 0) {
+      log_error("Unclosed objects or arrays!");
       return on_error(TAPE_ERROR);
     }
     if (doc_parser.containing_scope[depth].tape_index != 0) {
+      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
     bool finished = structurals.at_end(doc_parser.n_structural_indexes);
+    if (!finished) { log_value("(and has more)"); }
     return on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
 };
@@ -76,6 +81,7 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
     );
     goto finish;
   default:
+    parser.log_error("Document starts with a non-value character");
     goto error;
   }
 
@@ -85,18 +91,19 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 object_begin:
   switch (parser.advance_char()) {
   case '"': {
-    FAIL_IF( parser.parse_string() );
+    FAIL_IF( parser.parse_string(true) );
     goto object_key_parser;
   }
   case '}':
     parser.end_object();
     goto scope_end;
   default:
+    parser.log_error("Object does not start with a key");
     goto error;
   }
 
 object_key_parser:
-  FAIL_IF( parser.advance_char() != ':' );
+  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
   parser.increment_count();
   parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
@@ -104,13 +111,14 @@ object_key_parser:
 object_continue:
   switch (parser.advance_char()) {
   case ',':
-    FAIL_IF( parser.advance_char() != '"' );
-    FAIL_IF( parser.parse_string() );
+    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
+    FAIL_IF( parser.parse_string(true) );
     goto object_key_parser;
   case '}':
     parser.end_object();
     goto scope_end;
   default:
+    parser.log_error("No comma between object fields");
     goto error;
   }
 
@@ -142,6 +150,7 @@ array_continue:
     parser.end_array();
     goto scope_end;
   default:
+    parser.log_error("Missing comma between array values");
     goto error;
   }
 
