@@ -28,32 +28,44 @@ struct number_writer {
   }
 }; // struct number_writer
 
-struct value_parser {
-  parser &doc_parser;
-};
-
 struct structural_parser {
   structural_iterator structurals;
   parser &doc_parser;
   /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
+  uint8_t *&current_string_buf_loc;
   uint32_t depth;
 
   really_inline structural_parser(
     const uint8_t *buf,
     size_t len,
     parser &_doc_parser,
-    uint32_t next_structural = 0
-  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
+    size_t &next_structural,
+    uint8_t *&_current_string_buf_loc
+  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural),
+      doc_parser{_doc_parser},
+      current_string_buf_loc{_current_string_buf_loc},
+      depth{0} {
+  }
+
+  really_inline structural_parser(
+    const uint8_t *buf,
+    parser &_doc_parser,
+    size_t &next_structural,
+    uint8_t *&_current_string_buf_loc,
+    uint32_t _depth
+  ) : structurals(buf, 0, _doc_parser.structural_indexes.get(), next_structural),
+      doc_parser{_doc_parser},
+      current_string_buf_loc{_current_string_buf_loc},
+      depth{_depth} {
+  }
 
   WARN_UNUSED really_inline bool start_scope(internal::tape_type type) {
+    bool exceeded_max_depth = depth >= doc_parser.max_depth();
+    if (exceeded_max_depth) { log_error("Exceeded max depth!"); return true; }
     doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
     doc_parser.containing_scope[depth].count = 0;
     write_tape(0, type); // if the document is correct, this gets rewritten later
-    depth++;
-    bool exceeded_max_depth = depth >= doc_parser.max_depth();
-    if (exceeded_max_depth) { log_error("Exceeded max depth!"); }
-    return exceeded_max_depth;
+    return false;
   }
 
   WARN_UNUSED really_inline bool start_document() {
@@ -73,7 +85,6 @@ struct structural_parser {
 
   // this function is responsible for annotating the start of the scope
   really_inline void end_scope(internal::tape_type type) noexcept {
-    depth--;
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
     write_tape(doc_parser.containing_scope[depth].tape_index, type);
@@ -108,7 +119,7 @@ struct structural_parser {
   // must be increment in the preceding depth (depth-1) where the array or
   // the object resides.
   really_inline void increment_count() {
-    doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
+    doc_parser.containing_scope[depth].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   really_inline uint8_t *on_start_string() noexcept {
@@ -251,11 +262,20 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_object() {
-    return parse_object(*this);
+    return parse_object(structurals.buf, doc_parser, structurals.next_structural, current_string_buf_loc, depth+1);
   }
 
-  WARN_UNUSED static bool parse_object(structural_parser &parser) {
-    return parser.parse_object_inline();
+  WARN_UNUSED static bool parse_object(
+      const uint8_t *buf,
+      parser &doc_parser,
+      size_t &next_structural,
+      uint8_t *&current_string_buf_loc,
+      uint32_t depth) {
+    structural_parser parser(buf, doc_parser, next_structural, current_string_buf_loc, depth);
+    bool result = parser.parse_object_inline();
+    next_structural = parser.structurals.next_structural;
+    current_string_buf_loc = parser.current_string_buf_loc;
+    return result;
   }
 
   WARN_UNUSED really_inline bool parse_object_inline() {
@@ -263,11 +283,17 @@ struct structural_parser {
     switch (advance_char()) {
     case '"':
       increment_count();
+      // Key
       if (parse_string(true)) { return true; }
       while (true) {
+
+        // :
         if (advance_char() != ':' ) { log_error("Missing colon after key in object"); return true; }
+
+        // Value
         advance_char();
         if (parse_value()) { return true; }
+
         switch (advance_char()) {
         case ',':
           increment_count();
@@ -293,11 +319,20 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline bool parse_array() {
-    return parse_array(*this);
+    return parse_array(structurals.buf, doc_parser, structurals.next_structural, current_string_buf_loc, depth+1);
   }
 
-  WARN_UNUSED static bool parse_array(structural_parser &parser) {
-    return parser.parse_array_inline();
+  WARN_UNUSED static bool parse_array(
+      const uint8_t *buf,
+      parser &doc_parser,
+      size_t &next_structural,
+      uint8_t *&current_string_buf_loc,
+      uint32_t depth) {
+    structural_parser parser(buf, doc_parser, next_structural, current_string_buf_loc, depth);
+    bool result = parser.parse_array_inline();
+    next_structural = parser.structurals.next_structural;
+    current_string_buf_loc = parser.current_string_buf_loc;
+    return result;
   }
 
   WARN_UNUSED really_inline bool parse_array_inline() {
@@ -452,7 +487,9 @@ struct structural_parser {
  * for documentation.
  ***********/
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
-  stage2::structural_parser parser(buf, len, doc_parser);
+  size_t next_structural = 0;
+  uint8_t *current_string_buf_loc = doc_parser.doc.string_buf.get();
+  stage2::structural_parser parser(buf, len, doc_parser, next_structural, current_string_buf_loc);
   error_code result = parser.start(len);
   if (result) { return result; }
 
