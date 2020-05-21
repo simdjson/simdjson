@@ -1,4 +1,4 @@
-/* auto-generated on Wed May 20 10:23:07 EDT 2020. Do not edit! */
+/* auto-generated on Thu 21 May 2020 14:01:15 EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -3180,10 +3180,10 @@ namespace utf8_validation {
   // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
   // and emits an error anytime there is a mismatch.
   //
-  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // For example, in the string "ab", which has a 4-, 3-, 2- and 1-byte
   // characters, the file will look like this:
   //
-  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // | Character             |   |    |    |    |   |    |    |   |    | a  | b  |
   // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
   // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
   // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
@@ -4049,10 +4049,10 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
   // 10^308 It is an unimaginable large number. There will never be any piece of
   // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // are about 10^80 atoms in the universe.  The estimate for the total number
   // of electrons is similar. Using a double-precision floating-point value, we
   // can represent easily the number of atoms in the universe. We could  also
   // represent the number of ways you can pick any three individual atoms at
@@ -5872,10 +5872,10 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
   // 10^308 It is an unimaginable large number. There will never be any piece of
   // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // are about 10^80 atoms in the universe.  The estimate for the total number
   // of electrons is similar. Using a double-precision floating-point value, we
   // can represent easily the number of atoms in the universe. We could  also
   // represent the number of ways you can pick any three individual atoms at
@@ -8142,10 +8142,10 @@ namespace utf8_validation {
   // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
   // and emits an error anytime there is a mismatch.
   //
-  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // For example, in the string "ab", which has a 4-, 3-, 2- and 1-byte
   // characters, the file will look like this:
   //
-  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // | Character             |   |    |    |    |   |    |    |   |    | a  | b  |
   // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
   // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
   // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
@@ -9015,10 +9015,10 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
   // 10^308 It is an unimaginable large number. There will never be any piece of
   // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // are about 10^80 atoms in the universe.  The estimate for the total number
   // of electrons is similar. Using a double-precision floating-point value, we
   // can represent easily the number of atoms in the universe. We could  also
   // represent the number of ways you can pick any three individual atoms at
@@ -11254,10 +11254,10 @@ namespace utf8_validation {
   // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
   // and emits an error anytime there is a mismatch.
   //
-  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // For example, in the string "ab", which has a 4-, 3-, 2- and 1-byte
   // characters, the file will look like this:
   //
-  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // | Character             |   |    |    |    |   |    |    |   |    | a  | b  |
   // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
   // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
   // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
@@ -12130,10 +12130,10 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
   // 10^308 It is an unimaginable large number. There will never be any piece of
   // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // are about 10^80 atoms in the universe.  The estimate for the total number
   // of electrons is similar. Using a double-precision floating-point value, we
   // can represent easily the number of atoms in the universe. We could  also
   // represent the number of ways you can pick any three individual atoms at

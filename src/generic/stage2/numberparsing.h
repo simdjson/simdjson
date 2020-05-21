@@ -191,10 +191,10 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // If you consume a large value and you map it to "infinity", you will no
   // longer be able to serialize back a standard-compliant JSON. And there is
   // no realistic application where you might need values so large than they
-  // can't fit in binary64. The maximal value is about  1.7976931348623157 ×
+  // can't fit in binary64. The maximal value is about  1.7976931348623157 x
   // 10^308 It is an unimaginable large number. There will never be any piece of
   // engineering involving as many as 10^308 parts. It is estimated that there
-  // are about 10^80 atoms in the universe.  The estimate for the total number
+  // are about 10^80 atoms in the universe.  The estimate for the total number
   // of electrons is similar. Using a double-precision floating-point value, we
   // can represent easily the number of atoms in the universe. We could  also
   // represent the number of ways you can pick any three individual atoms at

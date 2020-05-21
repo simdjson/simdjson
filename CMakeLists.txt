@@ -38,12 +38,26 @@ add_subdirectory(singleheader)
 #
 # Compile tools / tests / benchmarks
 #
-
 add_subdirectory(dependencies)
 add_subdirectory(tests)
 add_subdirectory(examples)
 add_subdirectory(benchmark)
 add_subdirectory(fuzz)
+
+#
+# Source files should be just ASCII
+#
+find_program(FIND find)
+find_program(FILE file)
+find_program(GREP grep)
+if((FIND) AND (FILE) AND (GREP))
+    add_test(
+      NAME "just_ascii"
+      COMMAND sh -c "${FIND}  include src windows tools singleheader tests examples benchmark -name '*.h'  -o -name '*.cpp' -type f  -exec ${FILE} '{}' \; |${GREP} -v ASCII || exit 0  && exit 1"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
 
 #
 # CPack

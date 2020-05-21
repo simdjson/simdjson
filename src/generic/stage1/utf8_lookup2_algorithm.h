@@ -150,10 +150,10 @@ namespace utf8_validation {
   // This algorithm compares *expected* continuation characters with *actual* continuation bytes,
   // and emits an error anytime there is a mismatch.
   //
-  // For example, in the string "𝄞₿֏ab", which has a 4-, 3-, 2- and 1-byte
+  // For example, in the string "ab", which has a 4-, 3-, 2- and 1-byte
   // characters, the file will look like this:
   //
-  // | Character             | 𝄞  |    |    |    | ₿  |    |    | ֏  |    | a  | b  |
+  // | Character             |   |    |    |    |   |    |    |   |    | a  | b  |
   // |-----------------------|----|----|----|----|----|----|----|----|----|----|----|
   // | Character Length      |  4 |    |    |    |  3 |    |    |  2 |    |  1 |  1 |
   // | Byte                  | F0 | 9D | 84 | 9E | E2 | 82 | BF | D6 | 8F | 61 | 62 |
