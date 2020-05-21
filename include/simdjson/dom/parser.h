@@ -349,6 +349,8 @@ public:
 
   /** @private Next location to write to in the tape */
   uint32_t current_loc{0};
+  /** @private Current location in string buffer */
+  uint8_t *current_string_buf_loc;
 
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
