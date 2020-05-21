@@ -4,9 +4,10 @@ set(generated_files
 )
 find_package(Ruby QUIET)
 if (RUBY_EXECUTABLE)
+  file(GLOB template_files ${CMAKE_CURRENT_SOURCE_DIR}/miss-templates/*.txt)
   add_custom_command(
     OUTPUT ${generated_files}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/miss-templates/*.txt
+    DEPENDS ${template_files}
     COMMAND ${RUBY_EXECUTABLE} genfeaturejson.rb ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
