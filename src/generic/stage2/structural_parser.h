@@ -34,15 +34,7 @@ struct structural_parser {
   structural_iterator structurals;
   uint32_t depth;
 
-  really_inline structural_parser(
-    size_t len,
-    parser &_doc_parser
-  ) : structurals(_doc_parser, len), depth{0} {}
-
-  really_inline structural_parser(
-    parser &_doc_parser,
-    uint32_t _depth
-  ) : structurals(_doc_parser, 0), depth{_depth} {}
+  really_inline structural_parser(parser &_doc_parser, uint32_t _depth=0) : structurals(_doc_parser), depth{_depth} {}
 
   really_inline parser &doc_parser() {
     return structurals.doc_parser;
@@ -168,21 +160,21 @@ struct structural_parser {
     return false;
   }
 
-  WARN_UNUSED really_inline bool parse_root_atom() {
+  WARN_UNUSED really_inline bool parse_root_atom(size_t len) {
     switch (structurals.current_char()) {
       case 't':
         log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        if (!atomparsing::is_valid_true_atom(structurals.current(), remaining_len(len))) { return true; }
         write_tape(0, internal::tape_type::TRUE_VALUE);
         return false;
       case 'f':
         log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        if (!atomparsing::is_valid_false_atom(structurals.current(), remaining_len(len))) { return true; }
         write_tape(0, internal::tape_type::FALSE_VALUE);
         return false;
       case 'n':
         log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
+        if (!atomparsing::is_valid_null_atom(structurals.current(), remaining_len(len))) { return true; }
         write_tape(0, internal::tape_type::NULL_VALUE);
         return false;
       default:
@@ -212,7 +204,7 @@ struct structural_parser {
     }
   }
 
-  WARN_UNUSED really_inline bool parse_root_value() {
+  WARN_UNUSED really_inline bool parse_root_value(size_t len) {
     // Parse the root value of the document. This is similar to parse_value(), but atoms and numbers
     // in particular get special treatment because those parsers normally rely on being in an object
     // or array (and thus the buffer having at least whitespace ] } or , after them).
@@ -224,18 +216,16 @@ struct structural_parser {
     case '"':
       return parse_string();
     case 't': case 'f': case 'n':
-      return parse_root_atom();
+      return parse_root_atom(len);
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      return 
-        structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-          return parse_number(&copy[idx], false);
-        });
+      return with_space_terminated_copy(len, [&](const uint8_t *copy, size_t idx) {
+               return parse_number(&copy[idx], false);
+             });
     case '-':
-      return
-        structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-          return parse_number(&copy[idx], true);
-        });
+      return with_space_terminated_copy(len, [&](const uint8_t *copy, size_t idx) {
+               return parse_number(&copy[idx], true);
+             });
     default:
       log_error("Document starts with a non-value character");
       return true;
@@ -333,7 +323,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( !structurals.at_end(doc_parser().n_structural_indexes) ) {
+    if ( !structurals.at_end() ) {
       log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
@@ -418,6 +408,36 @@ struct structural_parser {
     return structurals.advance_char();
   }
 
+  really_inline size_t remaining_len(size_t len) {
+    return len - structurals.idx;
+  }
+
+  template<typename F>
+  really_inline bool with_space_terminated_copy(size_t len, const F& f) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, doc_parser().parsing_buf, len);
+    memset(copy + len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), structurals.idx);
+    free(copy);
+    return result;
+  }
+
   really_inline void log_value(const char *type) {
     logger::log_line(structurals, "", type, "");
   }
@@ -442,8 +462,7 @@ struct structural_parser {
 };
 
 struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(size_t len, parser &_doc_parser)
-    : structural_parser(len, _doc_parser) {}
+  really_inline streaming_structural_parser(parser &_doc_parser) : structural_parser(_doc_parser) {}
 
   // override to add streaming
   WARN_UNUSED really_inline error_code start(UNUSED size_t len) {
@@ -461,7 +480,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
-    if ( structurals.past_end(doc_parser().n_structural_indexes) ) {
+    if ( structurals.past_end() ) {
       log_error("IMPOSSIBLE: past the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
@@ -470,7 +489,7 @@ struct streaming_structural_parser: structural_parser {
       log_error("Unclosed objects or arrays!");
       return on_error(TAPE_ERROR);
     }
-    bool finished = structurals.at_end(doc_parser().n_structural_indexes);
+    bool finished = structurals.at_end();
     if (!finished) { log_value("(and has more)"); }
     return on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
@@ -487,11 +506,11 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   doc_parser.parsing_buf = buf;
   doc_parser.next_structural = 0;
-  stage2::structural_parser parser(len, doc_parser);
+  stage2::structural_parser parser(doc_parser);
   error_code result = parser.start(len);
   if (result) { return result; }
 
-  if (parser.parse_root_value()) {
+  if (parser.parse_root_value(len)) {
     return parser.error();
   }
   return parser.finish();
@@ -504,11 +523,11 @@ WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, pa
 WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser, size_t &next_json) const noexcept {
   doc_parser.parsing_buf = buf;
   doc_parser.next_structural = next_json;
-  stage2::streaming_structural_parser parser(len, doc_parser);
+  stage2::streaming_structural_parser parser(doc_parser);
   error_code result = parser.start(len);
   if (result) { return result; }
 
-  if (parser.parse_root_value()) {
+  if (parser.parse_root_value(len)) {
     return parser.error();
   }
   next_json = doc_parser.next_structural;
