@@ -63,7 +63,7 @@
 #
 # Then you can run comparisons:
 #
-# docker run -it --privileged -v $(pwd):/project:Z  simdjson sh -c "for i in jsonexamples/*.json; do echo \$i; dockerbuildchmark/parse \$i| grep GB| head -n 1; simdjson/build/benchmark/parse \$i | grep GB |head -n 1;  done"
+# docker run -it --privileged -v $(pwd):/project:Z  simdjson sh -c "for i in jsonexamples/*.json; do echo \$i; dockerbuild/benchmark/parse \$i| grep GB| head -n 1; simdjson/build/benchmark/parse \$i | grep GB |head -n 1;  done"
 #
 ####
 FROM ubuntu:20.10
