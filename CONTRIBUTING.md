@@ -40,6 +40,7 @@ We have few hard rules, but we have some:
 
 - Printing to standard output or standard error (`stderr`, `stdout`, `std::cerr`, `std::cout`) in the core library is forbidden. This follows from the [Writing R Extensions](https://cran.r-project.org/doc/manuals/R-exts.html) manual which states that "Compiled code should not write to stdout or stderr".
 - Calls to `abort()` are forbidden in the core library. This follows from the [Writing R Extensions](https://cran.r-project.org/doc/manuals/R-exts.html) manual which states that "Under no circumstances should your compiled code ever call abort or exit".
+- All source code files (.h, .cpp) must be ASCII.
 
 Tools, tests and benchmarks are not held to these same strict rules.
 

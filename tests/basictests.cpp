@@ -10,7 +10,7 @@
 #include <string_view>
 #include <sstream>
 #include <utility>
-#include <ciso646> 
+#include <ciso646>
 #include <unistd.h>
 
 #include "simdjson.h"
@@ -62,7 +62,7 @@ namespace number_tests {
           std::cerr << "JSON '" << str << "' parsed to " << actual << " instead of " << i << std::endl;
           return false;
         }
-      } 
+      }
     }
     return true;
   }
@@ -79,7 +79,7 @@ namespace number_tests {
       fflush(NULL);
       auto [actual, error] = parser.parse(buf, n).get<double>();
       if (error) { std::cerr << error << std::endl; return false; }
-      uint64_t ulp = f64_ulp_dist(actual,expected);  
+      uint64_t ulp = f64_ulp_dist(actual,expected);
       if(ulp > maxulp) maxulp = ulp;
       if(ulp > 0) {
         std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
@@ -452,8 +452,8 @@ namespace document_stream_tests {
       size_t n = snprintf(buf,
                         sizeof(buf),
                       "{\"id\": %zu, \"name\": \"name%zu\", \"gender\": \"%s\", "
-                      "\"été\": {\"id\": %zu, \"name\": \"éventail%zu\"}}",
-                      i, i, (i % 2) ? "⺃" : "⺕", i % 10, i % 10);
+                      "\"\xC3\xA9t\xC3\xA9\": {\"id\": %zu, \"name\": \"\xC3\xA9ventail%zu\"}}",
+                      i, i, (i % 2) ? "\xE2\xBA\x83" : "\xE2\xBA\x95", i % 10, i % 10);
       if (n >= sizeof(buf)) { abort(); }
       data += std::string(buf, n);
     }
@@ -678,7 +678,7 @@ namespace dom_api_tests {
     }
     if (iter.move_to_key_insensitive("bad key")) {
       printf("We should not move to a non-existing key\n");
-      return false;    
+      return false;
     }
     if (!iter.is_object()) {
       printf("We should have remained at the object.\n");
@@ -726,7 +726,7 @@ namespace dom_api_tests {
     }
     if (!iter.move_to_key("IDs")) {
       printf("We should be able to move to an existing key\n");
-      return false;    
+      return false;
     }
     if (!iter.is_array()) {
       printf("Value of IDs should be array, it is %c \n", iter.get_type());
@@ -734,7 +734,7 @@ namespace dom_api_tests {
     }
     if (iter.move_to_index(4)) {
       printf("We should not be able to move to a non-existing index\n");
-      return false;    
+      return false;
     }
     if (!iter.is_array()) {
       printf("We should have remained at the array\n");
@@ -1930,8 +1930,8 @@ int main(int argc, char *argv[]) {
 
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
-  if (simdjson::active_implementation->name() == "unsupported") { 
-    printf("unsupported CPU\n"); 
+  if (simdjson::active_implementation->name() == "unsupported") {
+    printf("unsupported CPU\n");
   }
   std::cout << "Running basic tests." << std::endl;
   if (parse_api_tests::run() &&
