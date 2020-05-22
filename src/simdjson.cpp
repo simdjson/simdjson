@@ -13,18 +13,22 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdprune_tables.h"
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
+#include "arm64/parser_state.cpp"
 #include "arm64/stage1.cpp"
 #include "arm64/stage2.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
+#include "fallback/parser_state.cpp"
 #include "fallback/stage1.cpp"
 #include "fallback/stage2.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
+#include "haswell/parser_state.cpp"
 #include "haswell/stage1.cpp"
 #include "haswell/stage2.cpp"
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
+#include "westmere/parser_state.cpp"
 #include "westmere/stage1.cpp"
 #include "westmere/stage2.cpp"
 #endif

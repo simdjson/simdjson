@@ -53,6 +53,9 @@ public:
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept final {
     return set_best()->stage2(buf, len, parser, next_json);
   }
+  WARN_UNUSED error_code allocate(dom::parser &parser, size_t capacity, size_t max_len) const noexcept final {
+    return set_best()->allocate(parser, capacity, max_len);
+  }
 
   really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
@@ -94,6 +97,9 @@ public:
     return UNSUPPORTED_ARCHITECTURE;
   }
   WARN_UNUSED error_code stage2(const uint8_t *, size_t, dom::parser &, size_t &) const noexcept final {
+    return UNSUPPORTED_ARCHITECTURE;
+  }
+  WARN_UNUSED error_code allocate(dom::parser &, size_t, size_t) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
 

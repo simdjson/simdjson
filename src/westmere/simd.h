@@ -6,8 +6,6 @@
 #include "westmere/bitmanipulation.h"
 #include "westmere/intrinsics.h"
 
-
-
 TARGET_WESTMERE
 namespace simdjson {
 namespace westmere {

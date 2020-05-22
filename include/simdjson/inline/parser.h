@@ -27,6 +27,11 @@ inline bool parser::print_json(std::ostream &os) const noexcept {
   os << doc.root();
   return true;
 }
+
+really_inline parser::~parser() noexcept {
+  UNUSED auto result = allocate(0, 0);
+}
+
 inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
   return valid ? doc.dump_raw_tape(os) : false;
 }
@@ -150,68 +155,22 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // If capacity has changed, reallocate capacity-based buffers
   //
-  if (_capacity != capacity) {
-    // Set capacity to 0 until we finish, in case there's an error
-    _capacity = 0;
-
-    //
-    // Reallocate the document
-    //
+  if (_capacity != capacity || !doc.tape) {
     error_code err = doc.allocate(capacity);
     if (err) { return err; }
-
-    //
-    // Don't allocate 0 bytes, just return.
-    //
-    if (capacity == 0) {
-      structural_indexes.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 1 output
-    //
-    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-    structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-    if (!structural_indexes) {
-      return MEMALLOC;
+  }
+  if (_capacity != capacity || _max_depth != max_depth) {
+    error_code err = active_implementation->allocate(*this, capacity, max_depth);
+    if (err) {
+      _capacity = 0;
+      _max_depth = 0;
+      return err;
     }
 
     _capacity = capacity;
-
-  //
-  // If capacity hasn't changed, but the document was taken, allocate a new document.
-  //
-  } else if (!doc.tape) {
-    error_code err = doc.allocate(capacity);
-    if (err) { return err; }
-  }
-
-  //
-  // If max_depth has changed, reallocate those buffers
-  //
-  if (max_depth != _max_depth) {
-    _max_depth = 0;
-
-    if (max_depth == 0) {
-      ret_address.reset();
-      containing_scope.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 2 state
-    //
-    containing_scope.reset(new (std::nothrow) internal::scope_descriptor[max_depth]); // TODO realloc
-    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
-
-    if (!ret_address || !containing_scope) {
-      // Could not allocate memory
-      return MEMALLOC;
-    }
-
     _max_depth = max_depth;
   }
+
   return SUCCESS;
 }
 
@@ -236,6 +195,12 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   }
 
   return SUCCESS;
+}
+
+template<typename T>
+inline T& parser::implementation_state() noexcept {
+  static_assert(sizeof(T) <= sizeof(_implementation_state), "Implementation state doesn't fit in the parser!");
+  return *reinterpret_cast<T*>(&_implementation_state);
 }
 
 } // namespace dom

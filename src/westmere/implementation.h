@@ -18,6 +18,7 @@ public:
   WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept final;
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser) const noexcept final;
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, parser &parser, size_t &next_json) const noexcept final;
+  WARN_UNUSED error_code allocate(parser &parser, size_t capacity, size_t max_depth) const noexcept final;
 };
 
 } // namespace westmere

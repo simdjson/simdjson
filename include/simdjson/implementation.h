@@ -124,6 +124,25 @@ public:
    */
   WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept = 0;
 
+  /**
+   * @private For internal implementation use
+   *
+   * Allocate persistent memory for parsing. Called before parse, stage1 or stage2.
+   *
+   * When this function is called, parser.capacity() reflects the *current* capacity and
+   * max_depth (before the call). It is set to 0 if allocate() has never been called.
+   * capacity and max_depth will be set to their new values if allocate() returns with a
+   * SUCCESS error code, and set to 0 if there is an error.
+   *
+   * Overridden by each implementation.
+   *
+   * @param parser the parser with the buffers to use.
+   * @param capacity The new capacity.
+   * @param max_depth The new max_depth.
+   * @return the error code, or SUCCESS if there was no error.
+   */
+  WARN_UNUSED virtual error_code allocate(dom::parser &parser, size_t capacity, size_t max_len) const noexcept = 0;
+
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
   really_inline implementation(

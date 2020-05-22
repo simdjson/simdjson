@@ -16,6 +16,10 @@ namespace simdjson {
 
 namespace internal {
 
+struct parser_state_placeholder {
+  uint64_t state{0};
+};
+
 // expectation: sizeof(scope_descriptor) = 64/8.
 struct scope_descriptor {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
@@ -78,7 +82,7 @@ public:
   parser &operator=(const parser &) = delete; ///< @private Disallow copying
 
   /** Deallocate the JSON parser. */
-  ~parser()=default;
+  really_inline ~parser() noexcept;
 
   /**
    * Load a JSON document from a file and return a reference to it.
@@ -347,6 +351,7 @@ public:
   /** @private Use simdjson_error instead */
   using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
+
   /** @private Next location to write to in the tape */
   uint32_t current_loc{0};
 
@@ -390,6 +395,10 @@ public:
 
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
+
+  /** @private Internal parser state. For use by parser implementations only. */
+  template<typename T>
+  really_inline T& implementation_state() noexcept;
 
 private:
   /**
@@ -443,6 +452,9 @@ private:
 
   /** Read the file into loaded_bytes */
   inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
+
+  /** Internal state to be passed to the parser */
+  internal::parser_state_placeholder _implementation_state{};
 
   friend class parser::Iterator;
   friend class document_stream;
