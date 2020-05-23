@@ -18,13 +18,8 @@ namespace internal {
 
 struct parser_state_placeholder {
   uint64_t state{0};
+  uint64_t state2{0};
 };
-
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
-  uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
-  uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
 
 } // namespace internal
 
@@ -354,12 +349,14 @@ public:
   /** @private Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes{};
 
-  /** @private Tape location of each open { or [ */
-  std::unique_ptr<internal::scope_descriptor[]> containing_scope{};
-
-  /** Internal state to be passed to the parser */
+private:
+  /**
+    * Internal state to be passed to the parser. This is just a placeholder: the parser will
+    * transform this memory into its own type with parser.implementation_state<T>().
+    */
   internal::parser_state_placeholder _implementation_state{};
 
+public:
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */

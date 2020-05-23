@@ -83,8 +83,8 @@ struct structural_parser {
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
-    doc_parser.containing_scope[depth].count = 0;
+    state().containing_scope[depth].tape_index = doc_parser.current_loc;
+    state().containing_scope[depth].count = 0;
     doc_parser.current_loc++; // We don't actually *write* the start element until the end.
     state().ret_address[depth] = continue_state;
     depth++;
@@ -113,11 +113,11 @@ struct structural_parser {
     depth--;
     // write our doc.tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(doc_parser.containing_scope[depth].tape_index, end);
+    append_tape(state().containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
-    const uint32_t count = doc_parser.containing_scope[depth].count;
+    const uint32_t start_tape_index = state().containing_scope[depth].tape_index;
+    const uint32_t count = state().containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
     write_tape(start_tape_index, doc_parser.current_loc | (uint64_t(cntsat) << 32), start);
@@ -149,7 +149,7 @@ struct structural_parser {
   // must be increment in the preceding depth (depth-1) where the array or
   // the object resides.
   really_inline void increment_count() {
-    doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
+    state().containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   really_inline uint8_t *on_start_string() noexcept {
@@ -279,7 +279,7 @@ struct structural_parser {
       log_error("Unclosed objects or arrays!");
       return on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope[depth].tape_index != 0) {
+    if (state().containing_scope[depth].tape_index != 0) {
       log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
