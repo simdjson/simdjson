@@ -16,6 +16,8 @@ struct scope_descriptor {
  * State stored in the parser for stage 2
  */
 struct stage2_state {
+  /** @private Next location to write to in the tape */
+  uint32_t current_loc{0};
   /** @private Tape location of each open { or [ */
   std::unique_ptr<scope_descriptor[]> containing_scope{};
   /** @private Return address of each open { or [ */

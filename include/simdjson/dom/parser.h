@@ -19,6 +19,7 @@ namespace internal {
 struct parser_state_placeholder {
   uint64_t state{0};
   uint64_t state2{0};
+  uint64_t state3{0};
 };
 
 } // namespace internal
@@ -340,15 +341,6 @@ public:
   /** @private Use simdjson_error instead */
   using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
-  /** @private Next location to write to in the tape */
-  uint32_t current_loc{0};
-
-  /** @private Number of structural indices passed from stage 1 to stage 2 */
-  uint32_t n_structural_indexes{0};
-
-  /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
-
 private:
   /**
     * Internal state to be passed to the parser. This is just a placeholder: the parser will
@@ -357,6 +349,12 @@ private:
   internal::parser_state_placeholder _implementation_state{};
 
 public:
+  /** @private Number of structural indices passed from stage 1 to stage 2 */
+  uint32_t n_structural_indexes{0};
+
+  /** @private Structural indices passed from stage 1 to stage 2 */
+  std::unique_ptr<uint32_t[]> structural_indexes{};
+
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */
