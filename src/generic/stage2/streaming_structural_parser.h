@@ -4,7 +4,7 @@ struct streaming_structural_parser: structural_parser {
   really_inline streaming_structural_parser(const uint8_t *buf, size_t len, parser &_doc_parser, uint32_t next_structural) : structural_parser(buf, len, _doc_parser, next_structural) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address finish_parser) {
+  WARN_UNUSED really_inline error_code start(UNUSED size_t len, ret_address_t finish_parser) {
     log_start();
     init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
@@ -123,7 +123,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
+  CONTINUE( parser.state().ret_address[parser.depth] );
 
 //
 // Array parser parsers

@@ -200,7 +200,8 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
 template<typename T>
 inline T& parser::implementation_state() noexcept {
   static_assert(sizeof(T) <= sizeof(_implementation_state), "Implementation state doesn't fit in the parser!");
-  return *reinterpret_cast<T*>(&_implementation_state);
+  auto void_ptr = reinterpret_cast<void*>(&_implementation_state);
+  return *reinterpret_cast<T*>(void_ptr);
 }
 
 } // namespace dom

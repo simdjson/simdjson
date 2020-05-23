@@ -26,12 +26,6 @@ struct scope_descriptor {
   uint32_t count; // how many elements in the scope
 }; // struct scope_descriptor
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address;
-#else
-typedef char ret_address;
-#endif
-
 } // namespace internal
 
 namespace dom {
@@ -351,20 +345,20 @@ public:
   /** @private Use simdjson_error instead */
   using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
-
   /** @private Next location to write to in the tape */
   uint32_t current_loc{0};
 
   /** @private Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
+
   /** @private Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes{};
 
   /** @private Tape location of each open { or [ */
   std::unique_ptr<internal::scope_descriptor[]> containing_scope{};
 
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<internal::ret_address[]> ret_address{};
+  /** Internal state to be passed to the parser */
+  internal::parser_state_placeholder _implementation_state{};
 
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
@@ -452,9 +446,6 @@ private:
 
   /** Read the file into loaded_bytes */
   inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
-
-  /** Internal state to be passed to the parser */
-  internal::parser_state_placeholder _implementation_state{};
 
   friend class parser::Iterator;
   friend class document_stream;
