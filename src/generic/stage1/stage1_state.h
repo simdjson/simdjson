@@ -14,10 +14,12 @@ really_inline error_code stage1_state::allocate_stage1(parser &parser, size_t ca
     return SUCCESS;
   }
 
-  size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-  parser.structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-  if (!parser.structural_indexes) {
-    return MEMALLOC;
+  if (capacity != parser.capacity()) {
+    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+    parser.structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
+    if (!parser.structural_indexes) {
+      return MEMALLOC;
+    }
   }
 
   return SUCCESS;

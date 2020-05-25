@@ -26,18 +26,20 @@ struct stage2_state {
   really_inline error_code allocate_stage2(parser &parser, size_t capacity, size_t max_depth);
 }; // struct stage2_state
 
-really_inline error_code stage2_state::allocate_stage2(UNUSED parser &parser, UNUSED size_t capacity, size_t max_depth) {
+really_inline error_code stage2_state::allocate_stage2(parser &parser, UNUSED size_t capacity, size_t max_depth) {
   if (max_depth == 0) {
     ret_address.reset(); // Don't allocate 0 bytes
     containing_scope.reset(); // Don't allocate 0 bytes
     return SUCCESS;
   }
 
-  ret_address.reset(new (std::nothrow) ret_address_t[max_depth]);
-  containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
+  if (max_depth != parser.max_depth()) {
+    ret_address.reset(new (std::nothrow) ret_address_t[max_depth]);
+    containing_scope.reset(new (std::nothrow) scope_descriptor[max_depth]); // TODO realloc
 
-  if (!ret_address || !containing_scope) {
-    return MEMALLOC;
+    if (!ret_address || !containing_scope) {
+      return MEMALLOC;
+    }
   }
 
   return SUCCESS;
