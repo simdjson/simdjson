@@ -155,25 +155,31 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // If capacity has changed, reallocate capacity-based buffers
   //
-  if (_capacity != capacity || !doc.tape) {
-    error_code err = doc.allocate(capacity);
-    if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
-  }
-  if (_capacity != capacity) {
-    if (capacity == 0) {
-      structural_indexes.reset();
-    } else {
-      size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-      structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
-      if (!structural_indexes) { _capacity = _max_depth = 0; return MEMALLOC; }
-    }
-  }
+  // PERF NOTE: we allocate in declaration order because some memory allocation systems (Windows)
+  // can do better when deallocations are in reverse order of allocations. We haven't seen a
+  // specific performance benefit from this, but it doesn't hurt either.
   if (_capacity != capacity || _max_depth != max_depth) {
     error_code err = active_implementation->allocate(*this, capacity, max_depth);
     if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
 
+    if (_capacity != capacity) {
+      if (capacity == 0) {
+        structural_indexes.reset();
+      } else {
+        size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+        structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
+        if (!structural_indexes) { _capacity = _max_depth = 0; return MEMALLOC; }
+      }
+
+      err = doc.allocate(capacity);
+      if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
+    }
+
     _capacity = capacity;
     _max_depth = max_depth;
+  } else if (!doc.tape) {
+    error_code err = doc.allocate(capacity);
+    if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
   }
 
   return SUCCESS;
