@@ -157,15 +157,20 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   if (_capacity != capacity || !doc.tape) {
     error_code err = doc.allocate(capacity);
-    if (err) { return err; }
+    if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
+  }
+  if (_capacity != capacity) {
+    if (capacity == 0) {
+      structural_indexes.reset();
+    } else {
+      size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+      structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
+      if (!structural_indexes) { _capacity = _max_depth = 0; return MEMALLOC; }
+    }
   }
   if (_capacity != capacity || _max_depth != max_depth) {
     error_code err = active_implementation->allocate(*this, capacity, max_depth);
-    if (err) {
-      _capacity = 0;
-      _max_depth = 0;
-      return err;
-    }
+    if (err) { _capacity = _max_depth = 0; return MEMALLOC; }
 
     _capacity = capacity;
     _max_depth = max_depth;
