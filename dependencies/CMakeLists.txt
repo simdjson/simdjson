@@ -62,6 +62,10 @@ if (SIMDJSON_COMPETITION)
   add_library(competition-ujson4c ujson4c/src/ujdecode.c)
   target_include_directories(competition-ujson4c PUBLIC ujson4c/3rdparty ujson4c/src)
 
+  initialize_submodule(cxxopts)
+  add_library(cxxopts INTERFACE)
+  target_include_directories(cxxopts INTERFACE cxxopts/include)
+
   add_library(competition-core INTERFACE)
   target_link_libraries(competition-core INTERFACE competition-json competition-rapidjson competition-sajson competition-cJSON competition-jsmn)
 

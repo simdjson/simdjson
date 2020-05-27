@@ -1,40 +1,47 @@
 #include <iostream>
 #include <unistd.h>
 #include "simdjson.h"
+#include "cxxopts.hpp"
 
-void usage(const char *exe) {
-  std::cerr << exe << " v" << STRINGIFY(SIMDJSON_VERSION) << " (" << simdjson::active_implementation->name() << ")" << std::endl;
-  std::cerr << std::endl;
-  std::cerr << "Reads json in, out the result of the parsing. " << std::endl;
-  std::cerr << "Usage: " << exe << " <jsonfile>" << std::endl;
-  std::cerr << "The -d flag dumps the raw content of the tape." << std::endl;
-}
 int main(int argc, char *argv[]) {
-  bool rawdump = false;
+  std::string progName = "json2json";
 
-  int c;
+  std::string progUsage = "json2json version ";
+  progUsage += STRINGIFY(SIMDJSON_VERSION);
+  progUsage += " (";
+  progUsage += simdjson::active_implementation->name();
+  progUsage += ")\n";
+  progUsage += "Reads json in, out the result of the parsing.\n";
+  progUsage += argv[0];
+  progUsage += " <jsonfile>\n";
 
-  while ((c = getopt(argc, argv, "dh")) != -1) {
-    switch (c) {
-    case 'd':
-      rawdump = true;
-      break;
-    case 'h':
-      usage(argv[0]);
-      return EXIT_SUCCESS;
-    default:
-      abort();
-    }
+  cxxopts::Options options(progName, progUsage);
+
+  options.add_options()
+  	("d,rawdump", "Dumps the raw content of the tape.", cxxopts::value<bool>()->default_value("false"))
+  	("f,file", "File name.", cxxopts::value<std::string>())
+  	("h,help", "Print usage.")
+  ;
+
+  // the first argument without an option name will be parsed into file
+  options.parse_positional({"file"});
+  auto result = options.parse(argc, argv);
+
+  if(result.count("help")) {
+  	std::cerr << options.help() << std::endl;
+  	exit(1);
   }
-  if (optind >= argc) {
-    usage(argv[0]);
-    return EXIT_FAILURE;
+
+  bool rawdump = result["rawdump"].as<bool>();
+
+  if(!result.count("file")) {
+    std::cerr << "No filename specified." << std::endl;
+    std::cerr << options.help() << std::endl;
+    exit(1);
   }
-  const char *filename = argv[optind];
-  if (optind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[optind + 1]
-              << std::endl;
-  }
+
+  const char *filename = result["file"].as<std::string>().c_str();
+
   simdjson::dom::parser parser;
   auto [doc, error] = parser.load(filename); // do the parsing, return false on error
   if (error != simdjson::SUCCESS) {

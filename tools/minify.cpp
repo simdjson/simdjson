@@ -5,74 +5,43 @@
 #include <unistd.h>
 
 #include "simdjson.h"
+#include "cxxopts.hpp"
 
-// Stash the exe_name in main() for functions to use
-char* exe_name;
-
-void print_usage(std::ostream& out) {
-  out << "Usage: " << exe_name << "  [-a ARCH] <jsonfile>" << std::endl;
-  out << std::endl;
-  out << "Runs the parser against the given json files in a loop, measuring speed and other statistics." << std::endl;
-  out << std::endl;
-  out << "Options:" << std::endl;
-  out << std::endl;
-  out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << std::endl;
-  out << "               implementation supported on the host machine." << std::endl;
-  for (auto impl : simdjson::available_implementations) {
-    out << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
-  }
-}
+cxxopts::Options options("minify", "Runs the parser against the given json files in a loop, measuring speed and other statistics.");
 
 void exit_usage(std::string message) {
   std::cerr << message << std::endl;
-  std::cerr << std::endl;
-  print_usage(std::cerr);
-  exit(EXIT_FAILURE);
+  std::cerr << options.help() << std::endl;
+  std::cerr << "Available parser implementations:" << std::endl;
+  for (auto impl : simdjson::available_implementations) {
+    std::cerr << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
+  }
+  exit(1);
 }
 
-
-struct option_struct {
-  char* filename{};
- 
-  option_struct(int argc, char **argv) {
-    int c;
-
-    while ((c = getopt(argc, argv, "a:")) != -1) {
-      switch (c) {
-      case 'a': {
-        const simdjson::implementation *impl = simdjson::available_implementations[optarg];
-        if (!impl) {
-          std::string exit_message = std::string("Unsupported option value -a ") + optarg + ": expected -a  with one of ";
-          for (auto imple : simdjson::available_implementations) {
-            exit_message += imple->name();
-            exit_message += " ";
-          }
-          exit_usage(exit_message);
-        }
-        simdjson::active_implementation = impl;
-        break;
-      }
-      default:
-        // reaching here means an argument was given to getopt() which did not have a case label
-        exit_usage("Unexpected argument - missing case for option "+
-                    std::string(1,static_cast<char>(c))+
-                    " (programming error)");
-      }
-    }
-
-    // All remaining arguments are considered to be files
-    if(optind + 1 == argc) {
-      filename = argv[optind];
-    } else {
-      exit_usage("Please specify exactly one input file.");
-    }
-  }
-};
-
 int main(int argc, char *argv[]) {
-  exe_name = argv[0];
-  option_struct options(argc, argv);
-  std::string filename = options.filename;
+  options.add_options()
+    ("a,arch", "Parser implementation (by default, detects the most advanced implementation supported on the host machine).", cxxopts::value<std::string>())
+    ("f,file", "File name.", cxxopts::value<std::string>())
+    ("h,help", "Print usage.")
+  ;
+
+  options.parse_positional({"file"});
+  auto result = options.parse(argc, argv);
+
+  if(result.count("help")) {
+    exit_usage("");
+  }
+
+  if(!result.count("arch")) exit_usage("No implementation specified.");
+  if(!result.count("file")) exit_usage("No filename specified.");
+
+  const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
+  if(!impl) exit_usage("Unsupported implementation.");
+  simdjson::active_implementation = impl;
+
+  std::string filename = result["file"].as<std::string>();
+
   auto [p, error] = simdjson::padded_string::load(filename);
   if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;

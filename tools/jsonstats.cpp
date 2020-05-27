@@ -2,6 +2,7 @@
 #include <set>
 
 #include "simdjson.h"
+#include "cxxopts.hpp"
 
 size_t count_nonasciibytes(const uint8_t *input, size_t length) {
   size_t count = 0;
@@ -180,17 +181,33 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
 }
 
 int main(int argc, char *argv[]) {
-  int myoptind = 1;
-  if (myoptind >= argc) {
-    std::cerr << "Reads json, prints stats. " << std::endl;
-    std::cerr << "Usage: " << argv[0] << " <jsonfile>" << std::endl;
+  std::string progName = "jsonstat";
+  std::string progUsage = "Reads json, prints stats.\n";
+  progUsage += argv[0];
+  progUsage += " <jsonfile>";
+
+  cxxopts::Options options(progName, progUsage);
+
+  options.add_options()
+    ("h,help", "Print usage.")
+    ("f,file", "File name.", cxxopts::value<std::string>())
+  ;
+
+  options.parse_positional({"file"});
+  auto result = options.parse(argc, argv);
+
+  if(result.count("help")) {
+    std::cerr << options.help() << std::endl;
     exit(1);
   }
-  const char *filename = argv[myoptind];
-  if (myoptind + 1 < argc) {
-    std::cerr << "warning: ignoring everything after " << argv[myoptind + 1]
-              << std::endl;
+
+  if(!result.count("file")) {
+    std::cerr << "No filename specified." << std::endl;
+    std::cerr << options.help() << std::endl;
+    exit(1);
   }
+
+  const char *filename = result["file"].as<std::string>().c_str();
 
   auto [p, error] = simdjson::padded_string::load(filename);
   if (error) {
