@@ -9,14 +9,13 @@
 
 cxxopts::Options options("minify", "Runs the parser against the given json files in a loop, measuring speed and other statistics.");
 
-void exit_usage(std::string message) {
+void usage(std::string message) {
   std::cerr << message << std::endl;
   std::cerr << options.help() << std::endl;
   std::cerr << "Available parser implementations:" << std::endl;
   for (auto impl : simdjson::available_implementations) {
     std::cerr << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
   }
-  exit(1);
 }
 
 int main(int argc, char *argv[]) {
@@ -30,14 +29,21 @@ int main(int argc, char *argv[]) {
   auto result = options.parse(argc, argv);
 
   if(result.count("help")) {
-    exit_usage("");
+    usage("");
+    return EXIT_SUCCESS;
   }
 
-  if(!result.count("file")) exit_usage("No filename specified.");
+  if(!result.count("file")) {
+    usage("No filename specified.");
+    return EXIT_FAILURE;
+  }
 
   if(result.count("arch")) {
     const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
-    if(!impl) exit_usage("Unsupported implementation.");
+    if(!impl) {
+      usage("Unsupported implementation.");
+      return EXIT_FAILURE;
+    }
     simdjson::active_implementation = impl;
   }
 
