@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   if(!result.count("file")) {
     std::cerr << "No filename specified." << std::endl;
     std::cerr << options.help() << std::endl;
-    exit(1);
+    return EXIT_SUCCESS;
   }
 
   const char *filename = result["file"].as<std::string>().c_str();
