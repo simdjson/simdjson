@@ -33,12 +33,13 @@ int main(int argc, char *argv[]) {
     exit_usage("");
   }
 
-  if(!result.count("arch")) exit_usage("No implementation specified.");
   if(!result.count("file")) exit_usage("No filename specified.");
 
-  const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
-  if(!impl) exit_usage("Unsupported implementation.");
-  simdjson::active_implementation = impl;
+  if(result.count("arch")) {
+    const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
+    if(!impl) exit_usage("Unsupported implementation.");
+    simdjson::active_implementation = impl;
+  }
 
   std::string filename = result["file"].as<std::string>();
 
