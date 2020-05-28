@@ -1,9 +1,15 @@
 #include <iostream>
 #include <unistd.h>
 #include "simdjson.h"
+#ifndef __cpp_exceptions
+#define CXXOPTS_NO_EXCEPTIONS
+#endif
 #include "cxxopts.hpp"
 
 int main(int argc, char *argv[]) {
+#ifdef __cpp_exceptions
+  try {
+#endif
   std::string progName = "json2json";
 
   std::string progUsage = "json2json version ";
@@ -55,4 +61,10 @@ int main(int argc, char *argv[]) {
     std::cout << doc;
   }
   return EXIT_SUCCESS;
+#ifdef __cpp_exceptions
+  } catch (const cxxopts::OptionException& e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
+#endif
 }

@@ -5,6 +5,9 @@
 #include <unistd.h>
 
 #include "simdjson.h"
+#ifndef __cpp_exceptions
+#define CXXOPTS_NO_EXCEPTIONS
+#endif
 #include "cxxopts.hpp"
 
 cxxopts::Options options("minify", "Runs the parser against the given json files in a loop, measuring speed and other statistics.");
@@ -12,15 +15,20 @@ cxxopts::Options options("minify", "Runs the parser against the given json files
 void usage(std::string message) {
   std::cerr << message << std::endl;
   std::cerr << options.help() << std::endl;
-  std::cerr << "Available parser implementations:" << std::endl;
-  for (auto impl : simdjson::available_implementations) {
-    std::cerr << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
-  }
 }
 
 int main(int argc, char *argv[]) {
+#ifdef __cpp_exceptions
+  try {
+#endif
+  std::stringstream ss;
+  ss << "Parser implementation (by default, detects the most advanced implementation supported on the host machine)."  << std::endl;
+  ss << "Available parser implementations:" << std::endl;
+  for (auto impl : simdjson::available_implementations) {
+    ss << "-a " << std::left << std::setw(9) << impl->name() << " - Use the " << impl->description() << " parser implementation." << std::endl;
+  }
   options.add_options()
-    ("a,arch", "Parser implementation (by default, detects the most advanced implementation supported on the host machine).", cxxopts::value<std::string>())
+    ("a,arch", ss.str(), cxxopts::value<std::string>())
     ("f,file", "File name.", cxxopts::value<std::string>())
     ("h,help", "Print usage.")
   ;
@@ -37,7 +45,6 @@ int main(int argc, char *argv[]) {
     usage("No filename specified.");
     return EXIT_FAILURE;
   }
-
   if(result.count("arch")) {
     const simdjson::implementation *impl = simdjson::available_implementations[result["arch"].as<std::string>().c_str()];
     if(!impl) {
@@ -59,4 +66,10 @@ int main(int argc, char *argv[]) {
   error = simdjson::active_implementation->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
   if (error) { std::cerr << error << std::endl; return 1; }
   printf("%s", copy.data());
+#ifdef __cpp_exceptions
+  } catch (const cxxopts::OptionException& e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
+#endif
 }
