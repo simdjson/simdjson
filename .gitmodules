@@ -31,3 +31,6 @@
 [submodule "dependencies/benchmark"]
 	path = dependencies/benchmark
 	url = https://github.com/google/benchmark.git
+[submodule "dependencies/cxxopts"]
+	path = dependencies/cxxopts
+	url = https://github.com/jarro2783/cxxopts

@@ -68,3 +68,7 @@ if (SIMDJSON_COMPETITION)
   add_library(competition-all INTERFACE)
   target_link_libraries(competition-all INTERFACE competition-core competition-jsoncppdist competition-json11 competition-fastjson competition-gason competition-ujson4c)
 endif()
+
+initialize_submodule(cxxopts)
+add_library(cxxopts INTERFACE)
+target_include_directories(cxxopts INTERFACE cxxopts/include)
