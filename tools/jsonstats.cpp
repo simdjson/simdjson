@@ -2,6 +2,9 @@
 #include <set>
 
 #include "simdjson.h"
+#ifndef __cpp_exceptions
+#define CXXOPTS_NO_EXCEPTIONS
+#endif
 #include "cxxopts.hpp"
 
 size_t count_nonasciibytes(const uint8_t *input, size_t length) {
@@ -181,6 +184,9 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef __cpp_exceptions
+  try {
+#endif
   std::string progName = "jsonstat";
   std::string progUsage = "Reads json, prints stats.\n";
   progUsage += argv[0];
@@ -223,33 +229,33 @@ int main(int argc, char *argv[]) {
   // a JSON object and then to serialize it.
 
   printf(R"({
-      "integer_count"            = %10zu,
-      "integer32_count"          = %10zu,
-      "unsigned_integer32_count" = %10zu,
-      "unsigned_integer_count"   = %10zu,
-      "float_count"              = %10zu,
-      "string_count"             = %10zu,
-      "string_byte_count"        = %10zu,
-      "ascii_string_count"       = %10zu,
-      "string_maximum_length"    = %10zu,
-      "backslash_count"          = %10zu,
-      "non_ascii_byte_count"     = %10zu,
-      "object_count"             = %10zu,
-      "maximum_object_size"      = %10zu,
-      "array_count"              = %10zu,
-      "maximum_array_size"       = %10zu,
-      "null_count"               = %10zu,
-      "true_count"               = %10zu,
-      "false_count"              = %10zu,
-      "byte_count"               = %10zu,
-      "structural_indexes_count" = %10zu,
-      "key_count"                = %10zu,
-      "ascii_key_count"          = %10zu,
-      "key_maximum_length"       = %10zu,
-      "key_distinct_count"       = %10zu,
+      "integer_count"              = %10zu,
+      "integer32_count"            = %10zu,
+      "unsigned_integer32_count"   = %10zu,
+      "unsigned_integer_count"     = %10zu,
+      "float_count"                = %10zu,
+      "string_count"               = %10zu,
+      "string_byte_count"          = %10zu,
+      "ascii_string_count"         = %10zu,
+      "string_maximum_length"      = %10zu,
+      "backslash_count"            = %10zu,
+      "non_ascii_byte_count"       = %10zu,
+      "object_count"               = %10zu,
+      "maximum_object_size"        = %10zu,
+      "array_count"                = %10zu,
+      "maximum_array_size"         = %10zu,
+      "null_count"                 = %10zu,
+      "true_count"                 = %10zu,
+      "false_count"                = %10zu,
+      "byte_count"                 = %10zu,
+      "structural_indexes_count"   = %10zu,
+      "key_count"                  = %10zu,
+      "ascii_key_count"            = %10zu,
+      "key_maximum_length"         = %10zu,
+      "key_distinct_count"         = %10zu,
       "repeated_key_distinct_count"= %10zu,
-      "repeated_key_byte_count"  = %10zu;
-      "maximum_depth"            = %10zu
+      "repeated_key_byte_count"    = %10zu;
+      "maximum_depth"              = %10zu
 }
 )",
          s.integer_count,s.integer32_count,s.unsigned_integer32_count,s.unsigned_integer_count,
@@ -261,4 +267,10 @@ int main(int argc, char *argv[]) {
          s.ascii_key_count, s.key_maximum_length, s.all_keys.size(), s.repeated_keys.size(),
          s.repeated_key_byte_count, s.maximum_depth);
   return EXIT_SUCCESS;
+#ifdef __cpp_exceptions
+  } catch (const cxxopts::OptionException& e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
+#endif
 }
