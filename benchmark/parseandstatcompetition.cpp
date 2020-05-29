@@ -95,7 +95,7 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   }
 }
 
-__attribute__((noinline)) stat_t
+never_inline stat_t
 simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t s{};
   simdjson::dom::parser parser;
@@ -152,9 +152,9 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
-__attribute__((noinline)) stat_t
+never_inline stat_t
 sasjon_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
+  stat_t answer{};
   char *buffer = (char *)malloc(p.size());
   if (buffer == nullptr) {
     return answer;
@@ -214,9 +214,9 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
   }
 }
 
-__attribute__((noinline)) stat_t
+never_inline stat_t
 rapid_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
+  stat_t answer{};
   char *buffer = (char *)malloc(p.size() + 1);
   if (buffer == nullptr) {
     return answer;
@@ -241,9 +241,9 @@ rapid_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-__attribute__((noinline)) stat_t
+never_inline stat_t
 rapid_accurate_compute_stats(const simdjson::padded_string &p) {
-  stat_t answer;
+  stat_t answer{};
   char *buffer = (char *)malloc(p.size() + 1);
   if (buffer == nullptr) {
     return answer;
