@@ -5,8 +5,6 @@
 
 namespace stage2 {
 
-using internal::ret_address;
-
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
 #define GOTO(address) { goto *(address); }
@@ -36,12 +34,12 @@ using internal::ret_address;
 #endif // SIMDJSON_USE_COMPUTED_GOTO
 
 struct unified_machine_addresses {
-  ret_address array_begin;
-  ret_address array_continue;
-  ret_address error;
-  ret_address finish;
-  ret_address object_begin;
-  ret_address object_continue;
+  ret_address_t array_begin;
+  ret_address_t array_continue;
+  ret_address_t error;
+  ret_address_t finish;
+  ret_address_t object_begin;
+  ret_address_t object_continue;
 };
 
 #undef FAIL_IF
@@ -82,7 +80,7 @@ struct structural_parser {
     uint32_t next_structural = 0
   ) : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural), parser{_parser}, depth{0} {}
 
-  WARN_UNUSED really_inline bool start_scope(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
     parser.containing_scope[depth].tape_index = parser.current_loc;
     parser.containing_scope[depth].count = 0;
     parser.current_loc++; // We don't actually *write* the start element until the end.
@@ -93,17 +91,17 @@ struct structural_parser {
     return exceeded_max_depth;
   }
 
-  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_document(ret_address_t continue_state) {
     log_start_value("document");
     return start_scope(continue_state);
   }
 
-  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_object(ret_address_t continue_state) {
     log_start_value("object");
     return start_scope(continue_state);
   }
 
-  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_array(ret_address_t continue_state) {
     log_start_value("array");
     return start_scope(continue_state);
   }
@@ -241,7 +239,7 @@ struct structural_parser {
     return false;
   }
 
-  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+  WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
     switch (structurals.current_char()) {
     case '"':
       FAIL_IF( parse_string() );
@@ -333,7 +331,7 @@ struct structural_parser {
     parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(size_t len, ret_address_t finish_state) {
     log_start();
     init(); // sets is_valid to false
     if (len > parser.capacity()) {

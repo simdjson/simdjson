@@ -13,18 +13,6 @@ class document;
 
 namespace internal {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
-  uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
-  uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address;
-#else
-typedef char ret_address;
-#endif
-
 /**
  * An implementation of simdjson's DOM parser for a particular CPU architecture.
  *
@@ -129,15 +117,6 @@ public:
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes{};
-
-  /** Tape location of each open { or [ */
-  std::unique_ptr<internal::scope_descriptor[]> containing_scope{};
-
-  /** Return address of each open { or [ */
-  std::unique_ptr<internal::ret_address[]> ret_address{};
-
-  /** Error code, used ENTIRELY to make gcc not be slower than before. Not actually consumed. */
-  error_code error{UNINITIALIZED};
 
   /**
    * The largest document this parser can support without reallocating.

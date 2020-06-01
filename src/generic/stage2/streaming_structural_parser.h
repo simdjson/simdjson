@@ -4,7 +4,7 @@ struct streaming_structural_parser: structural_parser {
   really_inline streaming_structural_parser(dom_parser_implementation &_parser, uint32_t next_structural) : structural_parser(_parser, next_structural) {}
 
   // override to add streaming
-  WARN_UNUSED really_inline error_code start(ret_address finish_parser) {
+  WARN_UNUSED really_inline error_code start(ret_address_t finish_parser) {
     log_start();
     init(); // sets is_valid to false
     // Capacity ain't no thang for streaming, so we don't check it.
