@@ -19,7 +19,7 @@ struct streaming_structural_parser: structural_parser {
 
   // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
-    if ( structurals.past_end(doc_parser.n_structural_indexes) ) {
+    if ( structurals.past_end(parser.n_structural_indexes) ) {
       log_error("IMPOSSIBLE: past the end of the JSON!");
       return on_error(TAPE_ERROR);
     }
@@ -28,11 +28,11 @@ struct streaming_structural_parser: structural_parser {
       log_error("Unclosed objects or arrays!");
       return on_error(TAPE_ERROR);
     }
-    if (doc_parser.containing_scope[depth].tape_index != 0) {
+    if (parser.containing_scope[depth].tape_index != 0) {
       log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return on_error(TAPE_ERROR);
     }
-    bool finished = structurals.at_end(doc_parser.n_structural_indexes);
+    bool finished = structurals.at_end(parser.n_structural_indexes);
     if (!finished) { log_value("(and has more)"); }
     return on_success(finished ? SUCCESS : SUCCESS_AND_HAS_MORE);
   }
@@ -123,7 +123,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
+  CONTINUE( parser.parser.ret_address[parser.depth] );
 
 //
 // Array parser parsers

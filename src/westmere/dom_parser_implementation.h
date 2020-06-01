@@ -30,10 +30,10 @@ WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t) noexcept
   return SUCCESS;
 }
 
-WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *buf, size_t len, dom::parser &doc_parser) noexcept {
-  error_code code = stage1(buf, len, doc_parser, false);
+WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *buf, size_t len, dom::parser &parser) noexcept {
+  error_code code = stage1(buf, len, parser, false);
   if (!code) {
-    code = stage2(buf, len, doc_parser);
+    code = stage2(buf, len, parser);
   }
   return code;
 }

@@ -12,8 +12,8 @@ namespace stage1 {
 class structural_scanner {
 public:
 
-really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, dom::parser &_doc_parser, bool _streaming)
-  : buf{_buf}, next_structural_index{_doc_parser.structural_indexes.get()}, doc_parser{_doc_parser}, idx{0}, len{_len}, error{SUCCESS}, streaming{_streaming} {}
+really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, dom::parser &_parser, bool _streaming)
+  : buf{_buf}, next_structural_index{_parser.structural_indexes.get()}, parser{_parser}, idx{0}, len{_len}, error{SUCCESS}, streaming{_streaming} {}
 
 really_inline void add_structural() {
   *next_structural_index = idx;
@@ -123,19 +123,19 @@ really_inline error_code scan() {
         break;
     }
   }
-  if (unlikely(next_structural_index == doc_parser.structural_indexes.get())) {
+  if (unlikely(next_structural_index == parser.structural_indexes.get())) {
     return EMPTY;
   }
   *next_structural_index = len;
   next_structural_index++;
-  doc_parser.n_structural_indexes = uint32_t(next_structural_index - doc_parser.structural_indexes.get());
+  parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   return error;
 }
 
 private:
   const uint8_t *buf;
   uint32_t *next_structural_index;
-  dom::parser &doc_parser;
+  dom::parser &parser;
   uint32_t idx;
   uint32_t len;
   error_code error;
