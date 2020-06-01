@@ -14,12 +14,12 @@ public:
 
   really_inline dom_parser_implementation();
   dom_parser_implementation(const dom_parser_implementation &) = delete;
-  dom_parser_implementation &operator =(const dom_parser_implementation &) = delete;
+  dom_parser_implementation & operator=(const dom_parser_implementation &) = delete;
   
-  WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) noexcept;
-  WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) noexcept;
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) noexcept;
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) noexcept;
+  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) noexcept final;
+  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) noexcept final;
+  WARN_UNUSED error_code stage2(dom::parser &parser) noexcept final;
+  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) noexcept final;
   WARN_UNUSED error_code set_capacity(size_t capacity) noexcept final;
   WARN_UNUSED error_code set_max_depth(size_t max_depth) noexcept final;
 };

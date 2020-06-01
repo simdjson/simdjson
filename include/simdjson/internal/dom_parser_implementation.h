@@ -60,12 +60,10 @@ public:
    *
    * Overridden by each implementation.
    *
-   * @param buf The json document to parse. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
-   * @param len The length of the json document.
    * @param parser The parser object. TODO replace this with dom::document & when state is moved to the implementation.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) noexcept = 0;
+  WARN_UNUSED virtual error_code stage2(dom::parser &parser) noexcept = 0;
 
   /**
    * @private For internal implementation use

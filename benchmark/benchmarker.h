@@ -334,7 +334,7 @@ struct benchmarker {
     } else {
       event_count stage2_count;
       collector.start();
-      error = parser.implementation->stage2((const uint8_t *)json.data(), json.size(), parser);
+      error = parser.implementation->stage2(parser);
       if (error) {
         exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error_message(error));
       }
@@ -345,7 +345,7 @@ struct benchmarker {
     // Calculate stats the first time we parse
     if (stats == NULL) {
       if (stage1_only) { //  we need stage 2 once
-        error = parser.implementation->stage2((const uint8_t *)json.data(), json.size(), parser);
+        error = parser.implementation->stage2(parser);
         if (error) {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }
