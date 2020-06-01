@@ -274,25 +274,19 @@ struct structural_parser {
     // the string might not be NULL terminated.
     if ( !structurals.at_end(parser.n_structural_indexes) ) {
       log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return parser.error = TAPE_ERROR;
+      return TAPE_ERROR;
     }
     end_document();
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return parser.error = TAPE_ERROR;
+      return TAPE_ERROR;
     }
     if (parser.containing_scope[depth].tape_index != 0) {
       log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
-      return parser.error = TAPE_ERROR;
+      return TAPE_ERROR;
     }
 
-    return on_success(SUCCESS);
-  }
-
-  really_inline error_code on_success(error_code success_code) noexcept {
-    parser.error = success_code;
-    parser.valid = true;
-    return success_code;
+    return SUCCESS;
   }
 
   WARN_UNUSED really_inline error_code error() {
@@ -307,11 +301,11 @@ struct structural_parser {
     * carefully,
     * all without any added cost. */
     if (depth >= parser.max_depth()) {
-      return parser.error = DEPTH_ERROR;
+      return DEPTH_ERROR;
     }
     switch (structurals.current_char()) {
     case '"':
-      return parser.error = STRING_ERROR;
+      return STRING_ERROR;
     case '0':
     case '1':
     case '2':
@@ -323,23 +317,21 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return parser.error = NUMBER_ERROR;
+      return NUMBER_ERROR;
     case 't':
-      return parser.error = T_ATOM_ERROR;
+      return T_ATOM_ERROR;
     case 'n':
-      return parser.error = N_ATOM_ERROR;
+      return N_ATOM_ERROR;
     case 'f':
-      return parser.error = F_ATOM_ERROR;
+      return F_ATOM_ERROR;
     default:
-      return parser.error = TAPE_ERROR;
+      return TAPE_ERROR;
     }
   }
 
   really_inline void init() {
     current_string_buf_loc = parser.doc.string_buf.get();
     parser.current_loc = 0;
-    parser.valid = false;
-    parser.error = UNINITIALIZED;
   }
 
   WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
@@ -352,7 +344,7 @@ struct structural_parser {
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
-      return parser.error = DEPTH_ERROR;
+      return DEPTH_ERROR;
     }
     return SUCCESS;
   }
