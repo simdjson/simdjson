@@ -65,16 +65,20 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
-never_inline size_t sum_line_lengths(char * data, size_t length) {
-  std::stringstream is;
-  is.rdbuf()->pubsetbuf(data, length);
+never_inline size_t sum_line_lengths(std::stringstream & is) {
   std::string line;
   size_t sumofalllinelengths{0};
-  while(getline(is, line)) {
+  while(std::getline(is, line)) {
     sumofalllinelengths += line.size();
   }
   return sumofalllinelengths;
 }
+
+inline void reset_stream(std::stringstream & is) {
+  is.clear();
+  is.seekg(0,std::ios::beg);
+}
+
 
 
 bool bench(const char *filename, bool verbose, bool just_data, double repeat_multiplier) {
@@ -103,8 +107,11 @@ bool bench(const char *filename, bool verbose, bool just_data, double repeat_mul
            "cycles_per_byte_err", "gb_per_s", "gb_per_s_err");
   }
   if (!just_data) {
-    size_t lc = sum_line_lengths(p.data(), p.size());
-    BEST_TIME("getline ",sum_line_lengths(p.data(), p.size()) , lc, , 
+    const std::string inputcopy(p.data(), p.data()+p.size());
+    std::stringstream is;
+    is.str(inputcopy);
+    const size_t lc = sum_line_lengths(is);
+    BEST_TIME("getline ",sum_line_lengths(is) , lc, reset_stream(is),
        repeat, volume, !just_data);
   }
 

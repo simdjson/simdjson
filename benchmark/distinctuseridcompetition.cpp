@@ -107,7 +107,7 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) 
   }
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 simdjson_just_dom(simdjson::dom::element doc) {
   std::vector<int64_t> answer;
   simdjson_recurse(answer, doc);
@@ -115,7 +115,7 @@ simdjson_just_dom(simdjson::dom::element doc) {
   return answer;
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   simdjson::dom::parser parser;
@@ -129,7 +129,7 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-__attribute__((noinline)) simdjson::error_code
+really_inline simdjson::error_code
 simdjson_just_parse(const simdjson::padded_string &p) {
   simdjson::dom::parser parser;
   return parser.parse(p).error();
@@ -187,7 +187,7 @@ void sajson_traverse(std::vector<int64_t> &answer, const sajson::value &node) {
   }
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 sasjon_just_dom(sajson::document &d) {
   std::vector<int64_t> answer;
   sajson_traverse(answer, d.get_root());
@@ -195,7 +195,7 @@ sasjon_just_dom(sajson::document &d) {
   return answer;
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 sasjon_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size());
@@ -212,7 +212,7 @@ sasjon_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-__attribute__((noinline)) bool
+really_inline bool
 sasjon_just_parse(const simdjson::padded_string &p) {
   char *buffer = (char *)malloc(p.size());
   memcpy(buffer, p.data(), p.size());
@@ -263,7 +263,7 @@ void rapid_traverse(std::vector<int64_t> &answer, const rapidjson::Value &v) {
   }
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 rapid_just_dom(rapidjson::Document &d) {
   std::vector<int64_t> answer;
   rapid_traverse(answer, d);
@@ -271,7 +271,7 @@ rapid_just_dom(rapidjson::Document &d) {
   return answer;
 }
 
-__attribute__((noinline)) std::vector<int64_t>
+really_inline std::vector<int64_t>
 rapid_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   char *buffer = (char *)malloc(p.size() + 1);
@@ -289,7 +289,7 @@ rapid_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-__attribute__((noinline)) bool
+really_inline bool
 rapid_just_parse(const simdjson::padded_string &p) {
   char *buffer = (char *)malloc(p.size() + 1);
   memcpy(buffer, p.data(), p.size());
