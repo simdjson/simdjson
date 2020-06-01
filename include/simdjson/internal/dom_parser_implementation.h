@@ -136,6 +136,9 @@ public:
   /** Return address of each open { or [ */
   std::unique_ptr<internal::ret_address[]> ret_address{};
 
+  /** Error code, used ENTIRELY to make gcc not be slower than before. Not actually consumed. */
+  error_code error{UNINITIALIZED};
+
   /**
    * The largest document this parser can support without reallocating.
    *
