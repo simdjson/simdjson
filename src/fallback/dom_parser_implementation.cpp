@@ -145,11 +145,13 @@ private:
 } // namespace stage1
 
 
-WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) noexcept {
-  if (unlikely(len > parser.capacity())) {
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, dom::parser &parser, bool streaming) noexcept {
+  if (unlikely(_len > parser.capacity())) {
     return CAPACITY;
   }
-  stage1::structural_scanner scanner(buf, uint32_t(len), parser, streaming);
+  this->buf = _buf;
+  this->len = _len;
+  stage1::structural_scanner scanner(_buf, uint32_t(_len), parser, streaming);
   return scanner.scan();
 }
 

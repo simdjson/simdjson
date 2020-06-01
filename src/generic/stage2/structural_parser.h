@@ -398,10 +398,10 @@ struct structural_parser {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED error_code dom_parser_implementation::stage2(const uint8_t *buf, size_t len, dom::parser &doc_parser) noexcept {
+WARN_UNUSED error_code dom_parser_implementation::stage2(const uint8_t *_buf, size_t _len, dom::parser &doc_parser) noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(buf, len, doc_parser);
-  error_code result = parser.start(len, addresses.finish);
+  stage2::structural_parser parser(_buf, _len, doc_parser);
+  error_code result = parser.start(_len, addresses.finish);
   if (result) { return result; }
 
   //

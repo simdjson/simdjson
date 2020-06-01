@@ -73,8 +73,10 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
-WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) noexcept {
-  return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, parser &parser, bool streaming) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+  return westmere::stage1::json_structural_indexer::index<64>(_buf, _len, parser, streaming);
 }
 
 } // namespace westmere
