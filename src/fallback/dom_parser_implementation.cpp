@@ -1,6 +1,10 @@
 #include "simdjson.h"
 #include "fallback/implementation.h"
+#include "fallback/dom_parser_implementation.h"
 
+//
+// Stage 1
+//
 namespace simdjson {
 namespace fallback {
 namespace stage1 {
@@ -8,7 +12,7 @@ namespace stage1 {
 class structural_scanner {
 public:
 
-really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, parser &_doc_parser, bool _streaming)
+really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, dom::parser &_doc_parser, bool _streaming)
   : buf{_buf}, next_structural_index{_doc_parser.structural_indexes.get()}, doc_parser{_doc_parser}, idx{0}, len{_len}, error{SUCCESS}, streaming{_streaming} {}
 
 really_inline void add_structural() {
@@ -131,7 +135,7 @@ really_inline error_code scan() {
 private:
   const uint8_t *buf;
   uint32_t *next_structural_index;
-  parser &doc_parser;
+  dom::parser &doc_parser;
   uint32_t idx;
   uint32_t len;
   error_code error;
@@ -141,7 +145,7 @@ private:
 } // namespace stage1
 
 
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) noexcept {
   if (unlikely(len > parser.capacity())) {
     return CAPACITY;
   }
@@ -204,6 +208,24 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
   // for fear of aliasing
   return SUCCESS;
 }
+
+} // namespace fallback
+} // namespace simdjson
+
+//
+// Stage 2
+//
+#include "fallback/stringparsing.h"
+#include "fallback/numberparsing.h"
+
+namespace simdjson {
+namespace fallback {
+
+#include "generic/stage2/logger.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
+#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/streaming_structural_parser.h"
 
 } // namespace fallback
 } // namespace simdjson

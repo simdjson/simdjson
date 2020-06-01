@@ -38,20 +38,15 @@ public:
   const std::string &name() const noexcept final { return set_best()->name(); }
   const std::string &description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
-  WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
-    return set_best()->parse(buf, len, parser);
+  WARN_UNUSED error_code create_dom_parser_implementation(
+    size_t capacity,
+    size_t max_length,
+    std::unique_ptr<internal::dom_parser_implementation>& dst
+  ) const noexcept final {
+    return set_best()->create_dom_parser_implementation(capacity, max_length, dst);
   }
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
-  }
-  WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, dom::parser &parser, bool streaming) const noexcept final {
-    return set_best()->stage1(buf, len, parser, streaming);
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser) const noexcept final {
-    return set_best()->stage2(buf, len, parser);
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::parser &parser, size_t &next_json) const noexcept final {
-    return set_best()->stage2(buf, len, parser, next_json);
   }
 
   really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
@@ -81,19 +76,14 @@ const std::initializer_list<const implementation *> available_implementation_poi
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
 public:
-  WARN_UNUSED error_code parse(const uint8_t *, size_t, dom::parser &) const noexcept final {
+  WARN_UNUSED error_code create_dom_parser_implementation(
+    size_t,
+    size_t,
+    std::unique_ptr<internal::dom_parser_implementation>&
+  ) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
   WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final {
-    return UNSUPPORTED_ARCHITECTURE;
-  }
-  WARN_UNUSED error_code stage1(const uint8_t *, size_t, dom::parser &, bool) const noexcept final {
-    return UNSUPPORTED_ARCHITECTURE;
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *, size_t, dom::parser &) const noexcept final {
-    return UNSUPPORTED_ARCHITECTURE;
-  }
-  WARN_UNUSED error_code stage2(const uint8_t *, size_t, dom::parser &, size_t &) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
 

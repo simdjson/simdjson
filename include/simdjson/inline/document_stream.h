@@ -172,7 +172,7 @@ inline error_code document_stream::json_parse() noexcept {
       if (_batch_size == 0) {
         return simdjson::UTF8_ERROR;
       }
-      auto stage1_is_ok = error_code(simdjson::active_implementation->stage1(buf(), _batch_size, parser, true));
+      auto stage1_is_ok = error_code(parser.implementation->stage1(buf(), _batch_size, parser, true));
       if (stage1_is_ok != simdjson::SUCCESS) {
         return stage1_is_ok;
       }
@@ -214,14 +214,14 @@ inline error_code document_stream::json_parse() noexcept {
         // this->stage1_is_ok_thread
         // there is only one thread that may write to this value
         stage_1_thread = std::thread([this, b, bs] {
-          this->stage1_is_ok_thread = error_code(simdjson::active_implementation->stage1(b, bs, this->parser_thread, true));
+          this->stage1_is_ok_thread = error_code(parser_thread.implementation->stage1(b, bs, this->parser_thread, true));
         });
       }
     }
     next_json = 0;
     load_next_batch = false;
   } // load_next_batch
-  error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  error_code res = parser.implementation->stage2(buf(), remaining(), parser, next_json);
   if (res == simdjson::SUCCESS_AND_HAS_MORE) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];
@@ -249,7 +249,7 @@ inline error_code document_stream::json_parse() noexcept {
     n_bytes_parsed += current_buffer_loc;
     _batch_size = (std::min)(_batch_size, remaining());
     _batch_size = internal::trimmed_length_safe_utf8((const char *)buf(), _batch_size);
-    auto stage1_is_ok = (error_code)simdjson::active_implementation->stage1(buf(), _batch_size, parser, true);
+    auto stage1_is_ok = (error_code)parser.implementation->stage1(buf(), _batch_size, parser, true);
     if (stage1_is_ok != simdjson::SUCCESS) {
       return stage1_is_ok;
     }
@@ -263,7 +263,7 @@ inline error_code document_stream::json_parse() noexcept {
     }
     load_next_batch = false;
   } // load_next_batch
-  error_code res = simdjson::active_implementation->stage2(buf(), remaining(), parser, next_json);
+  error_code res = parser.implementation->stage2(buf(), remaining(), parser, next_json);
   if (likely(res == simdjson::SUCCESS_AND_HAS_MORE)) {
     n_parsed_docs++;
     current_buffer_loc = parser.structural_indexes[next_json];

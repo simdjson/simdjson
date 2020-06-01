@@ -48,7 +48,7 @@ struct unified_machine_addresses {
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
 struct number_writer {
-  parser &doc_parser;
+  dom::parser &doc_parser;
   
   really_inline void write_s64(int64_t value) noexcept {
     append_tape(0, internal::tape_type::INT64);
@@ -72,7 +72,7 @@ struct number_writer {
 
 struct structural_parser {
   structural_iterator structurals;
-  parser &doc_parser;
+  dom::parser &doc_parser;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
@@ -80,7 +80,7 @@ struct structural_parser {
   really_inline structural_parser(
     const uint8_t *buf,
     size_t len,
-    parser &_doc_parser,
+    dom::parser &_doc_parser,
     uint32_t next_structural = 0
   ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
 
@@ -398,7 +398,7 @@ struct structural_parser {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
+WARN_UNUSED error_code dom_parser_implementation::stage2(const uint8_t *buf, size_t len, dom::parser &doc_parser) noexcept {
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(buf, len, doc_parser);
   error_code result = parser.start(len, addresses.finish);
@@ -515,12 +515,4 @@ finish:
 
 error:
   return parser.error();
-}
-
-WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
-  error_code code = stage1(buf, len, doc_parser, false);
-  if (!code) {
-    code = stage2(buf, len, doc_parser);
-  }
-  return code;
 }

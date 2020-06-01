@@ -4,6 +4,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/dom/document.h"
 #include "simdjson/error.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 #include "simdjson/internal/tape_ref.h"
 #include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
@@ -334,7 +335,8 @@ public:
   /**
    * Set max_capacity. This is the largest document this parser can automatically support.
    *
-   * The parser may reallocate internal buffers as needed up to this amount.
+   * The parser may reallocate internal buffers as needed up to this amount as documents are passed
+   * to it.
    *
    * This call will not allocate or deallocate, even if capacity is currently above max_capacity.
    *
@@ -347,6 +349,10 @@ public:
   /** @private Use simdjson_error instead */
   using InvalidJSON [[deprecated("Use simdjson_error instead")]] = simdjson_error;
 
+  /** @private [for benchmarking access] The implementation to use */
+  std::unique_ptr<internal::dom_parser_implementation> implementation{};
+
+public:
   /** @private Next location to write to in the tape */
   uint32_t current_loc{0};
 

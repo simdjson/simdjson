@@ -101,7 +101,7 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
     memcpy((void *)buf, tmp_buf, len);
   }
 
-  code = simdjson::active_implementation->parse(buf, len, *this);
+  code = implementation->parse(buf, len, *this);
   if (realloc_if_needed) {
     aligned_free((void *)buf); // must free before we exit
   }
@@ -150,34 +150,54 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // If capacity has changed, reallocate capacity-based buffers
   //
-  if (_capacity != capacity) {
-    // Set capacity to 0 until we finish, in case there's an error
-    _capacity = 0;
+  if (_capacity != capacity || _max_depth != max_depth) {
+    error_code err;
+    if (_capacity != capacity) {
+      //
+      // Reallocate the document
+      //
+      err = doc.allocate(capacity);
 
-    //
-    // Reallocate the document
-    //
-    error_code err = doc.allocate(capacity);
-    if (err) { return err; }
+      //
+      // Initialize stage 1 output
+      //
+      size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+      structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
+      if (!structural_indexes) { _capacity = _max_depth = 0; return err; }
 
-    //
-    // Don't allocate 0 bytes, just return.
-    //
-    if (capacity == 0) {
-      structural_indexes.reset();
-      return SUCCESS;
+      //
+      // Reallocate implementation capacity
+      //
+      if (implementation && !err) { err = implementation->set_capacity(capacity); }
+    }
+
+    if (_max_depth != max_depth && !err) {
+      //
+      // Reallocate stage 2 state
+      //
+      containing_scope.reset(new (std::nothrow) internal::scope_descriptor[max_depth]); // TODO realloc
+      ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
+
+      if (!ret_address || !containing_scope) {
+        err = MEMALLOC;
+      }
+
+      //
+      // Reallocate implementation max depth
+      //
+      if (implementation && !err) { err = implementation->set_max_depth(max_depth); }
     }
 
     //
-    // Initialize stage 1 output
+    // Create the implementation if it doesn't already exist
     //
-    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-    structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-    if (!structural_indexes) {
-      return MEMALLOC;
+    if (!implementation && !err) {
+      err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
     }
 
+    if (err) { _capacity = _max_depth = 0; return err; }
     _capacity = capacity;
+    _max_depth = max_depth;
 
   //
   // If capacity hasn't changed, but the document was taken, allocate a new document.
@@ -187,31 +207,6 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     if (err) { return err; }
   }
 
-  //
-  // If max_depth has changed, reallocate those buffers
-  //
-  if (max_depth != _max_depth) {
-    _max_depth = 0;
-
-    if (max_depth == 0) {
-      ret_address.reset();
-      containing_scope.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 2 state
-    //
-    containing_scope.reset(new (std::nothrow) internal::scope_descriptor[max_depth]); // TODO realloc
-    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
-
-    if (!ret_address || !containing_scope) {
-      // Could not allocate memory
-      return MEMALLOC;
-    }
-
-    _max_depth = max_depth;
-  }
   return SUCCESS;
 }
 
