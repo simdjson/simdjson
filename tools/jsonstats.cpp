@@ -176,7 +176,7 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   s.non_ascii_byte_count = count_nonasciibytes(
       reinterpret_cast<const uint8_t *>(p.data()), p.size());
   s.byte_count = p.size();
-  s.structural_indexes_count = parser.n_structural_indexes;
+  s.structural_indexes_count = parser.implementation->n_structural_indexes;
 
   //  simdjson::document::iterator iter(doc);
   recurse(doc, s, 0);

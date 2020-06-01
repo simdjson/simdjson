@@ -15,22 +15,6 @@
 
 namespace simdjson {
 
-namespace internal {
-
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
-  uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
-  uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
-
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address;
-#else
-typedef char ret_address;
-#endif
-
-} // namespace internal
-
 namespace dom {
 
 class document_stream;
@@ -68,14 +52,14 @@ public:
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  parser(parser &&other) = default;
+  really_inline parser(parser &&other) noexcept;
   parser(const parser &) = delete; ///< @private Disallow copying
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  parser &operator=(parser &&other) = default;
+  really_inline parser &operator=(parser &&other) noexcept;
   parser &operator=(const parser &) = delete; ///< @private Disallow copying
 
   /** Deallocate the JSON parser. */
@@ -352,21 +336,6 @@ public:
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<internal::dom_parser_implementation> implementation{};
 
-public:
-  /** @private Next location to write to in the tape */
-  uint32_t current_loc{0};
-
-  /** @private Number of structural indices passed from stage 1 to stage 2 */
-  uint32_t n_structural_indexes{0};
-  /** @private Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
-
-  /** @private Tape location of each open { or [ */
-  std::unique_ptr<internal::scope_descriptor[]> containing_scope{};
-
-  /** @private Return address of each open { or [ */
-  std::unique_ptr<internal::ret_address[]> ret_address{};
-
   /** @private Use `if (parser.parse(...).error())` instead */
   bool valid{false};
   /** @private Use `parser.parse(...).error()` instead */
@@ -404,20 +373,6 @@ private:
    * The parser will not be automatically allocated above this amount.
    */
   size_t _max_capacity;
-
-  /**
-   * The maximum document length this parser supports.
-   *
-   * Buffers are large enough to handle any document up to this length.
-   */
-  size_t _capacity{0};
-
-  /**
-   * The maximum depth (number of nested objects and arrays) supported by this parser.
-   *
-   * Defaults to DEFAULT_MAX_DEPTH.
-   */
-  size_t _max_depth{0};
 
   /**
    * The loaded buffer (reused each time load() is called)

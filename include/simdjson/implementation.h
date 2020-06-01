@@ -11,7 +11,7 @@
 namespace simdjson {
 
 namespace dom {
-  class parser;
+  class document;
 } // namespace dom
 
 /**

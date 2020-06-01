@@ -12,8 +12,13 @@ namespace stage1 {
 class structural_scanner {
 public:
 
-really_inline structural_scanner(const uint8_t *_buf, uint32_t _len, dom::parser &_parser, bool _streaming)
-  : buf{_buf}, next_structural_index{_parser.structural_indexes.get()}, parser{_parser}, idx{0}, len{_len}, error{SUCCESS}, streaming{_streaming} {}
+really_inline structural_scanner(dom_parser_implementation &_parser, bool _streaming)
+  : buf{_parser.buf},
+    next_structural_index{_parser.structural_indexes.get()},
+    parser{_parser},
+    len{static_cast<uint32_t>(_parser.len)},
+    streaming{_streaming} {
+}
 
 really_inline void add_structural() {
   *next_structural_index = idx;
@@ -135,23 +140,20 @@ really_inline error_code scan() {
 private:
   const uint8_t *buf;
   uint32_t *next_structural_index;
-  dom::parser &parser;
-  uint32_t idx;
+  dom_parser_implementation &parser;
   uint32_t len;
-  error_code error;
+  uint32_t idx{0};
+  error_code error{SUCCESS};
   bool streaming;
 }; // structural_scanner
 
 } // namespace stage1
 
 
-WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, dom::parser &parser, bool streaming) noexcept {
-  if (unlikely(_len > parser.capacity())) {
-    return CAPACITY;
-  }
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
-  stage1::structural_scanner scanner(_buf, uint32_t(_len), parser, streaming);
+  stage1::structural_scanner scanner(*this, streaming);
   return scanner.scan();
 }
 
@@ -228,6 +230,12 @@ namespace fallback {
 #include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
 #include "generic/stage2/streaming_structural_parser.h"
+
+WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+  error_code err = stage1(_buf, _len, false);
+  if (err) { return err; }
+  return stage2(_doc);
+}
 
 } // namespace fallback
 } // namespace simdjson

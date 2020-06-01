@@ -84,7 +84,7 @@ struct json_stats {
     bytes = json.size();
     blocks = bytes / BYTES_PER_BLOCK;
     if (bytes % BYTES_PER_BLOCK > 0) { blocks++; } // Account for remainder block
-    structurals = parser.n_structural_indexes-1;
+    structurals = parser.implementation->n_structural_indexes-1;
 
     // Calculate stats on blocks that will trigger utf-8 if statements / mispredictions
     bool last_block_has_utf8 = false;
@@ -141,7 +141,7 @@ struct json_stats {
     for (size_t block=0; block<blocks; block++) {
       // Count structurals in the block
       int block_structurals=0;
-      while (structural < parser.n_structural_indexes && parser.structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
+      while (structural < parser.implementation->n_structural_indexes && parser.implementation->structural_indexes[structural] < (block+1)*BYTES_PER_BLOCK) {
         block_structurals++;
         structural++;
       }
@@ -320,7 +320,7 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
-    error = parser.implementation->stage1((const uint8_t *)json.data(), json.size(), parser, false);
+    error = parser.implementation->stage1((const uint8_t *)json.data(), json.size(), false);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {
@@ -334,7 +334,7 @@ struct benchmarker {
     } else {
       event_count stage2_count;
       collector.start();
-      error = parser.implementation->stage2(parser);
+      error = parser.implementation->stage2(parser.doc);
       if (error) {
         exit_error(string("Failed to parse ") + filename + " during stage 2 parsing " + error_message(error));
       }
@@ -345,7 +345,7 @@ struct benchmarker {
     // Calculate stats the first time we parse
     if (stats == NULL) {
       if (stage1_only) { //  we need stage 2 once
-        error = parser.implementation->stage2(parser);
+        error = parser.implementation->stage2(parser.doc);
         if (error) {
           printf("Warning: failed to parse during stage 2. Unable to acquire statistics.\n");
         }
