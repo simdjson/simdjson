@@ -601,33 +601,6 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
 - `jsonpointer mydoc.json <jsonpath> <jsonpath> ... <jsonpath>` parses the document, constructs a model and then processes a series of [JSON Pointer paths](https://tools.ietf.org/html/rfc6901). The result is itself a JSON document.
 
-### In-depth comparisons
-
-If you want to see how a wide range of parsers validate a given JSON file:
-
-```
-make allparserscheckfile
-./allparserscheckfile myfile.json
-```
-
-For performance comparisons:
-
-```
-make parsingcompetition
-./parsingcompetition myfile.json
-```
-
-For broader comparisons:
-
-```
-make allparsingcompetition
-./allparsingcompetition myfile.json
-```
-
-Both the `parsingcompetition` and `allparsingcompetition` tools take a `-t` flag which produces
-a table-oriented output that can be conveniently parsed by other tools.
-
-
 
 ### Various References
 
