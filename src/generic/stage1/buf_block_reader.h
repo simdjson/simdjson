@@ -6,8 +6,16 @@ public:
   really_inline size_t block_index();
   really_inline bool has_full_block() const;
   really_inline const uint8_t *full_block() const;
-  really_inline bool has_remainder() const;
-  really_inline void get_remainder(uint8_t *tmp_buf) const;
+  /**
+   * Get the last block, padded with spaces.
+   *
+   * There will always be a last block, with at least 1 byte, unless len == 0 (in which case this
+   * function fills the buffer with spaces and returns 0. In particular, if len == STEP_SIZE there
+   * will be 0 full_blocks and 1 remainder block with STEP_SIZE bytes and no spaces for padding.
+   *
+   * @return the number of effective characters in the last block.
+   */
+  really_inline size_t get_remainder(uint8_t *dst) const;
   really_inline void advance();
 private:
   const uint8_t *buf;
@@ -33,14 +41,10 @@ really_inline const uint8_t *buf_block_reader<STEP_SIZE>::full_block() const {
 }
 
 template<size_t STEP_SIZE>
-really_inline bool buf_block_reader<STEP_SIZE>::has_remainder() const {
-  return idx < len;
-}
-
-template<size_t STEP_SIZE>
-really_inline void buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *tmp_buf) const {
-  memset(tmp_buf, 0x20, STEP_SIZE);
-  memcpy(tmp_buf, buf + idx, len - idx);
+really_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) const {
+  memset(dst, 0x20, STEP_SIZE); // memset STEP_SIZE because it's more efficient to write out 8 or 16 bytes at once.
+  memcpy(dst, buf + idx, len - idx);
+  return len - idx;
 }
 
 template<size_t STEP_SIZE>

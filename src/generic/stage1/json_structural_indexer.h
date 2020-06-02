@@ -106,15 +106,16 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
 
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_structural_indexer indexer(parser.structural_indexes.get());
+
+  // Read all but the last block
   while (reader.has_full_block()) {
     indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }
 
-  if (likely(reader.has_remainder())) {
-    uint8_t block[STEP_SIZE];
-    reader.get_remainder(block);
-    indexer.step<STEP_SIZE>(block, reader);
-  }
+  // Take care of the last block (will always be there unless file is empty)
+  uint8_t block[STEP_SIZE];
+  if (unlikely(reader.get_remainder(block) == 0)) { return EMPTY; }
+  indexer.step<STEP_SIZE>(block, reader);
 
   return indexer.finish(parser, reader.block_index(), len, streaming);
 }
