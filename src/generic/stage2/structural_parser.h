@@ -520,6 +520,18 @@ error:
 WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   error_code code = stage1(buf, len, doc_parser, false);
   if (!code) {
+    // We know at this point that parser.n_structural_indexes > 0 since otherwise the error_code EMPTY is thrown
+    // by stage 1.
+    // Before we engage stage 2, however, we want to make sure that its tail is sane. One character is forbidden
+    // at the end of the document, and it is [ as it can lead to odd bug and we need to catch it before we enter
+    // into stage 2.
+    // See https://github.com/simdjson/simdjson/issues/906 for details.
+    const size_t last_index = doc_parser.structural_indexes.get()[doc_parser.n_structural_indexes - 1];
+    const char last_character = char(buf[last_index]);
+    if(last_character == '[') { // this is obviously a problem
+      return error_code::TAPE_ERROR;
+    }
+    // We now can proceed safely into stage 2.
     code = stage2(buf, len, doc_parser);
   }
   return code;

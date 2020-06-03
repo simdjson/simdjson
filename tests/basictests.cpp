@@ -233,6 +233,17 @@ namespace document_tests {
     }
     return true;
   }
+  bool padded_with_open_bracket() {
+    std::cout << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    // This is an invalid document padded with open braces.
+    auto error1 = parser.parse("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error();
+    if (!error1) { std::cerr << "We expected an error but got: " << error1 << std::endl; return false; }
+    // This is a valid document padded with open braces.
+    auto error2 = parser.parse("[][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error();
+    if (error2) { std::cerr << "Error: " << error2 << std::endl; return false; }
+    return true;
+  }
   // returns true if successful
   bool stable_test() {
     std::cout << __func__ << std::endl;
@@ -340,7 +351,8 @@ namespace document_tests {
     return true;
   }
   bool run() {
-    return bad_example() &&
+    return padded_with_open_bracket() &&
+           bad_example() &&
            count_array_example() &&
            count_object_example() &&
            stable_test() &&

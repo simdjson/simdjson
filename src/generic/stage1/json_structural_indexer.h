@@ -106,6 +106,7 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
   if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
+    /* This patching is almost certainly superfluous and could be done away with. */
     parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
