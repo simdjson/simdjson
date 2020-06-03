@@ -43,7 +43,7 @@ public:
     really_inline bool operator!=(const iterator &other) const noexcept;
 
   private:
-    iterator(document_stream& stream, bool finished) noexcept;
+    really_inline iterator(document_stream &s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
     document_stream& stream;
     /** Whether we're finished or not. */
@@ -66,7 +66,23 @@ private:
 
   document_stream(document_stream &other) = delete;    // Disallow copying
 
-  really_inline document_stream(dom::parser &parser, const uint8_t *buf, size_t len, size_t batch_size, error_code error = SUCCESS) noexcept;
+  /**
+   * Construct a document_stream. Does not allocate or parse anything until the iterator is
+   * used.
+   */
+  really_inline document_stream(
+    dom::parser &parser,
+    const uint8_t *buf,
+    size_t len,
+    size_t batch_size,
+    error_code error = SUCCESS
+  ) noexcept;
+
+  /**
+   * Parse the first document in the buffer. Used by begin(), to handle allocation and
+   * initialization.
+   */
+  inline void start() noexcept;
 
   /**
    * Parse the next document found in the buffer previously given to document_stream.
@@ -79,10 +95,7 @@ private:
    * pre-allocating a capacity defined by the batch_size defined when creating the
    * document_stream object.
    *
-   * The function returns simdjson::SUCCESS_AND_HAS_MORE (an integer = 1) in case
-   * of success and indicates that the buffer still contains more data to be parsed,
-   * meaning this function can be called again to return the next JSON document
-   * after this one.
+   * The function returns simdjson::EMPTY if there is no more data to be parsed.
    *
    * The function returns simdjson::SUCCESS (as integer = 0) in case of success
    * and indicates that the buffer has successfully been parsed to the end.
@@ -93,55 +106,52 @@ private:
    * the simdjson::error_message function converts these error codes into a string).
    *
    * You can also check validity by calling parser.is_valid(). The same parser can
-   * and should be reused for the other documents in the buffer. */
-  inline error_code json_parse() noexcept;
+   * and should be reused for the other documents in the buffer.
+   */
+  inline void next() noexcept;
 
   /**
-   * Returns the location (index) of where the next document should be in the
-   * buffer.
-   * Can be used for debugging, it tells the user the position of the end of the
-   * last
-   * valid JSON document parsed
+   * Pass the next batch through stage 1 and return when finished.
+   * When threads are enabled, this may wait for the stage 1 thread to finish.
    */
-  inline size_t get_current_buffer_loc() const { return current_buffer_loc; }
+  inline void load_batch() noexcept;
 
-  /**
-   * Returns the total amount of complete documents parsed by the document_stream,
-   * in the current buffer, at the given time.
-   */
-  inline size_t get_n_parsed_docs() const { return n_parsed_docs; }
+  /** Get the next document index. */
+  inline size_t next_batch_start() const noexcept;
 
-  /**
-   * Returns the total amount of data (in bytes) parsed by the document_stream,
-   * in the current buffer, at the given time.
-   */
-  inline size_t get_n_bytes_parsed() const { return n_bytes_parsed; }
-
-  inline const uint8_t *buf() const { return _buf + buf_start; }
-
-  inline void advance(size_t offset) { buf_start += offset; }
-
-  inline size_t remaining() const { return _len - buf_start; }
+  /** Pass the next batch through stage 1 with the given parser. */
+  inline void run_stage1(dom::parser &p, size_t batch_start) noexcept;
 
   dom::parser &parser;
-  const uint8_t *_buf;
-  const size_t _len;
-  size_t _batch_size; // this is actually variable!
-  size_t buf_start{0};
-  size_t next_json{0};
-  bool load_next_batch{true};
-  size_t current_buffer_loc{0};
+  const uint8_t *buf;
+  const size_t len;
+  const size_t batch_size;
+  size_t batch_start{0};
+  /** The error (or lack thereof) from the current document. */
+  error_code error;
+
 #ifdef SIMDJSON_THREADS_ENABLED
-  size_t last_json_buffer_loc{0};
-#endif
-  size_t n_parsed_docs{0};
-  size_t n_bytes_parsed{0};
-  error_code error{SUCCESS_AND_HAS_MORE};
-#ifdef SIMDJSON_THREADS_ENABLED
-  error_code stage1_is_ok_thread{SUCCESS};
-  std::thread stage_1_thread{};
-  dom::parser parser_thread{};
-#endif
+  /**
+   * Start a thread to run stage 1 on the next batch.
+   */
+  inline void start_stage1_thread() noexcept;
+
+  /**
+   * Wait for the stage 1 thread to finish and capture the results.
+   */
+  inline void finish_stage1_thread() noexcept;
+
+  /** The error returned from the stage 1 thread. */
+  error_code stage1_thread_error{UNINITIALIZED};
+  /** The thread used to run stage 1 against the next batch in the background. */
+  std::thread stage1_thread{};
+  /**
+   * The parser used to run stage 1 in the background. Will be swapped
+   * with the regular parser when finished.
+   */
+  dom::parser stage1_thread_parser{};
+#endif // SIMDJSON_THREADS_ENABLED
+
   friend class dom::parser;
 }; // class document_stream
 

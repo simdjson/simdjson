@@ -72,16 +72,14 @@ public:
    *
    * Stage 2 of the document parser for parser::parse_many.
    *
-   * Guaranteed only to be called after stage1(), with buf and len being a subset of the total stage1 buf/len.
+   * Guaranteed only to be called after stage1().
    * Overridden by each implementation.
    *
-   * @param buf The json document to parse.
-   * @param len The length of the json document.
    * @param doc The document to output to.
    * @param next_json The next structural index. Start this at 0 the first time, and it will be updated to the next value to pass each time.
    * @return The error code, SUCCESS if there was no error, or SUCCESS_AND_HAS_MORE if there was no error and stage2 can be called again.
    */
-  WARN_UNUSED virtual error_code stage2(const uint8_t *buf, size_t len, dom::document &doc, size_t &next_json) noexcept = 0;
+  WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
 
   /**
    * Change the capacity of this parser.
@@ -117,6 +115,8 @@ public:
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
   std::unique_ptr<uint32_t[]> structural_indexes{};
+  /** Next structural index to parse */
+  uint32_t next_structural_index{0};
 
   /**
    * The largest document this parser can support without reallocating.

@@ -24,6 +24,38 @@ private:
   size_t idx;
 };
 
+constexpr const int TITLE_SIZE = 12;
+
+// Routines to print masks and text for debugging bitmask operations
+UNUSED static char * format_input_text_64(const uint8_t *text) {
+  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    buf[i] = int8_t(text[i]) < ' ' ? '_' : int8_t(text[i]);
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+// Routines to print masks and text for debugging bitmask operations
+UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
+  in.store((uint8_t*)buf);
+  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
+    if (buf[i] < ' ') { buf[i] = '_'; }
+  }
+  buf[sizeof(simd8x64<uint8_t>)] = '\0';
+  return buf;
+}
+
+UNUSED static char * format_mask(uint64_t mask) {
+  static char *buf = (char*)malloc(64 + 1);
+  for (size_t i=0; i<64; i++) {
+    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
+  }
+  buf[64] = '\0';
+  return buf;
+}
+
 template<size_t STEP_SIZE>
 really_inline buf_block_reader<STEP_SIZE>::buf_block_reader(const uint8_t *_buf, size_t _len) : buf{_buf}, len{_len}, lenminusstep{len < STEP_SIZE ? 0 : len - STEP_SIZE}, idx{0} {}
 
@@ -50,24 +82,4 @@ really_inline size_t buf_block_reader<STEP_SIZE>::get_remainder(uint8_t *dst) co
 template<size_t STEP_SIZE>
 really_inline void buf_block_reader<STEP_SIZE>::advance() {
   idx += STEP_SIZE;
-}
-
-// Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
-  static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
-  in.store((uint8_t*)buf);
-  for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
-    if (buf[i] < ' ') { buf[i] = '_'; }
-  }
-  buf[sizeof(simd8x64<uint8_t>)] = '\0';
-  return buf;
-}
-
-UNUSED static char * format_mask(uint64_t mask) {
-  static char *buf = (char*)malloc(64 + 1);
-  for (size_t i=0; i<64; i++) {
-    buf[i] = (mask & (size_t(1) << i)) ? 'X' : ' ';
-  }
-  buf[64] = '\0';
-  return buf;
 }

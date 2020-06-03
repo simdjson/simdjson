@@ -52,10 +52,10 @@ public:
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural+1 > n_structural_indexes;
+    return next_structural > n_structural_indexes;
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural+1 == n_structural_indexes;
+    return next_structural == n_structural_indexes;
   }
   really_inline bool at_beginning() {
     return next_structural == 0;

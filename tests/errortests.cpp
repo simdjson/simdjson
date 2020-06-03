@@ -24,7 +24,7 @@ const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 #define TEST_FAIL(MESSAGE) { cerr << "FAIL: " << (MESSAGE) << endl; return false; }
 #define TEST_SUCCEED() { return true; }
 namespace parser_load {
-  const char * NONEXISTENT_FILE = "this_file_does_not_exit.json";
+  const char * NONEXISTENT_FILE = "this_file_does_not_exist.json";
   bool parser_load_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
