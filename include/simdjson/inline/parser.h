@@ -171,7 +171,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
     //
     // Initialize stage 1 output
     //
-    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
+    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7 + 1;
     structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
     if (!structural_indexes) {
       return MEMALLOC;

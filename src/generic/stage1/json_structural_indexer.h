@@ -110,7 +110,8 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
     parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
-  parser.structural_indexes[parser.n_structural_indexes] = 0;
+  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+  parser.structural_indexes[parser.n_structural_indexes + 1] = 0;
   return checker.errors();
 }
 
