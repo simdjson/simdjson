@@ -394,8 +394,10 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-      goto error;
+    if (!STREAMING) {
+      if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        goto error;
+      }
     }
     goto array_begin;
   case '"':
