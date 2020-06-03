@@ -393,7 +393,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   uint64_t i;      // an unsigned int avoids signed overflows (which are bad)
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
-    if (is_not_structural_or_whitespace_or_exponent_or_decimal(*p)) {
+    if (is_integer(*p)) {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_invalid_number(src);
 #endif
