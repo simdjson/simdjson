@@ -1,8 +1,13 @@
 #include "simdjson.h"
+#include "arm64/implementation.h"
+#include "arm64/dom_parser_implementation.h"
+
+//
+// Stage 1
+//
 #include "arm64/bitmask.h"
 #include "arm64/simd.h"
 #include "arm64/bitmanipulation.h"
-#include "arm64/implementation.h"
 
 namespace simdjson {
 namespace arm64 {
@@ -79,8 +84,35 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
-  return arm64::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+  return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
+}
+
+} // namespace arm64
+} // namespace simdjson
+
+//
+// Stage 2
+//
+
+#include "arm64/stringparsing.h"
+#include "arm64/numberparsing.h"
+
+namespace simdjson {
+namespace arm64 {
+
+#include "generic/stage2/logger.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
+#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/streaming_structural_parser.h"
+
+WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+  error_code err = stage1(_buf, _len, false);
+  if (err) { return err; }
+  return stage2(_doc);
 }
 
 } // namespace arm64

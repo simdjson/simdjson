@@ -1,4 +1,10 @@
 #include "simdjson.h"
+#include "westmere/implementation.h"
+#include "westmere/dom_parser_implementation.h"
+
+//
+// Stage 1
+//
 #include "westmere/bitmask.h"
 #include "westmere/simd.h"
 #include "westmere/bitmanipulation.h"
@@ -67,11 +73,38 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
-  return westmere::stage1::json_structural_indexer::index<64>(buf, len, parser, streaming);
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+  return westmere::stage1::json_structural_indexer::index<64>(_buf, _len, *this, streaming);
 }
 
 } // namespace westmere
+} // namespace simdjson
+UNTARGET_REGION
 
+//
+// Stage 2
+//
+#include "westmere/stringparsing.h"
+#include "westmere/numberparsing.h"
+
+TARGET_WESTMERE
+namespace simdjson {
+namespace westmere {
+
+#include "generic/stage2/logger.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
+#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/streaming_structural_parser.h"
+
+WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+  error_code err = stage1(_buf, _len, false);
+  if (err) { return err; }
+  return stage2(_doc);
+}
+
+} // namespace westmere
 } // namespace simdjson
 UNTARGET_REGION
