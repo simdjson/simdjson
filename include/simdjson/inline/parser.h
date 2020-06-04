@@ -17,8 +17,11 @@ namespace dom {
 //
 really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
-    loaded_bytes(nullptr, &aligned_free_char)
-    {}
+    loaded_bytes(nullptr, &aligned_free_char) {
+}
+really_inline parser::parser(parser &&other) noexcept = default;
+really_inline parser &parser::operator=(parser &&other) noexcept = default;
+
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
 inline std::string parser::get_error_message() const noexcept { return error_message(error); }
@@ -101,15 +104,12 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
     memcpy((void *)buf, tmp_buf, len);
   }
 
-  code = simdjson::active_implementation->parse(buf, len, *this);
+  code = implementation->parse(buf, len, doc);
   if (realloc_if_needed) {
     aligned_free((void *)buf); // must free before we exit
   }
   if (code) { return code; }
 
-  // We're indicating validity via the simdjson_result<element>, so set the parse state back to invalid
-  valid = false;
-  error = UNINITIALIZED;
   return doc.root();
 }
 really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
@@ -136,81 +136,30 @@ inline document_stream parser::parse_many(const padded_string &s, size_t batch_s
 }
 
 really_inline size_t parser::capacity() const noexcept {
-  return _capacity;
+  return implementation ? implementation->capacity() : 0;
 }
 really_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
 really_inline size_t parser::max_depth() const noexcept {
-  return _max_depth;
+  return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
 
 WARN_UNUSED
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
-  // If capacity has changed, reallocate capacity-based buffers
+  // Reallocate implementation and document if needed
   //
-  if (_capacity != capacity) {
-    // Set capacity to 0 until we finish, in case there's an error
-    _capacity = 0;
-
-    //
-    // Reallocate the document
-    //
-    error_code err = doc.allocate(capacity);
-    if (err) { return err; }
-
-    //
-    // Don't allocate 0 bytes, just return.
-    //
-    if (capacity == 0) {
-      structural_indexes.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 1 output
-    //
-    size_t max_structures = ROUNDUP_N(capacity, 64) + 2 + 7;
-    structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] ); // TODO realloc
-    if (!structural_indexes) {
-      return MEMALLOC;
-    }
-
-    _capacity = capacity;
-
-  //
-  // If capacity hasn't changed, but the document was taken, allocate a new document.
-  //
-  } else if (!doc.tape) {
-    error_code err = doc.allocate(capacity);
-    if (err) { return err; }
+  error_code err;
+  if (implementation) {
+    err = implementation->allocate(capacity, max_depth);
+  } else {
+    err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
+  if (err) { return err; }
 
-  //
-  // If max_depth has changed, reallocate those buffers
-  //
-  if (max_depth != _max_depth) {
-    _max_depth = 0;
-
-    if (max_depth == 0) {
-      ret_address.reset();
-      containing_scope.reset();
-      return SUCCESS;
-    }
-
-    //
-    // Initialize stage 2 state
-    //
-    containing_scope.reset(new (std::nothrow) internal::scope_descriptor[max_depth]); // TODO realloc
-    ret_address.reset(new (std::nothrow) internal::ret_address[max_depth]);
-
-    if (!ret_address || !containing_scope) {
-      // Could not allocate memory
-      return MEMALLOC;
-    }
-
-    _max_depth = max_depth;
+  if (implementation->capacity() != capacity || !doc.tape) {
+    return doc.allocate(capacity);
   }
   return SUCCESS;
 }
@@ -220,22 +169,22 @@ inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcep
   return !allocate(capacity, max_depth);
 }
 
-really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
-  _max_capacity = max_capacity;
-}
-
 inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   // If we don't have enough capacity, (try to) automatically bump it.
   // If the document was taken, reallocate that too.
   // Both in one if statement to minimize unlikely branching.
-  if (unlikely(desired_capacity > capacity() || !doc.tape)) {
+  if (unlikely(capacity() < desired_capacity || !doc.tape)) {
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
-    return allocate(desired_capacity, _max_depth > 0 ? _max_depth : DEFAULT_MAX_DEPTH);
+    return allocate(desired_capacity, max_depth());
   }
 
   return SUCCESS;
+}
+
+really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+  _max_capacity = max_capacity;
 }
 
 } // namespace dom

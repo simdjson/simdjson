@@ -5,8 +5,6 @@
 
 namespace stage2 {
 
-using internal::ret_address;
-
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
 #define GOTO(address) { goto *(address); }
@@ -36,76 +34,74 @@ using internal::ret_address;
 #endif // SIMDJSON_USE_COMPUTED_GOTO
 
 struct unified_machine_addresses {
-  ret_address array_begin;
-  ret_address array_continue;
-  ret_address error;
-  ret_address finish;
-  ret_address object_begin;
-  ret_address object_continue;
+  ret_address_t array_begin;
+  ret_address_t array_continue;
+  ret_address_t error;
+  ret_address_t finish;
+  ret_address_t object_begin;
+  ret_address_t object_continue;
 };
 
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
 struct number_writer {
-  parser &doc_parser;
+  dom_parser_implementation &parser;
   
   really_inline void write_s64(int64_t value) noexcept {
     append_tape(0, internal::tape_type::INT64);
-    std::memcpy(&doc_parser.doc.tape[doc_parser.current_loc], &value, sizeof(value));
-    ++doc_parser.current_loc;
+    std::memcpy(&parser.doc->tape[parser.current_loc], &value, sizeof(value));
+    ++parser.current_loc;
   }
   really_inline void write_u64(uint64_t value) noexcept {
     append_tape(0, internal::tape_type::UINT64);
-    doc_parser.doc.tape[doc_parser.current_loc++] = value;
+    parser.doc->tape[parser.current_loc++] = value;
   }
   really_inline void write_double(double value) noexcept {
     append_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(doc_parser.doc.tape[doc_parser.current_loc]), "mismatch size");
-    memcpy(&doc_parser.doc.tape[doc_parser.current_loc++], &value, sizeof(double));
-    // doc.tape[doc.current_loc++] = *((uint64_t *)&d);
+    static_assert(sizeof(value) == sizeof(parser.doc->tape[parser.current_loc]), "mismatch size");
+    memcpy(&parser.doc->tape[parser.current_loc++], &value, sizeof(double));
+    // doc->tape[doc->current_loc++] = *((uint64_t *)&d);
   }
   really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
   }
 }; // struct number_writer
 
 struct structural_parser {
   structural_iterator structurals;
-  parser &doc_parser;
+  dom_parser_implementation &parser;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
 
   really_inline structural_parser(
-    const uint8_t *buf,
-    size_t len,
-    parser &_doc_parser,
+    dom_parser_implementation &_parser,
     uint32_t next_structural = 0
-  ) : structurals(buf, len, _doc_parser.structural_indexes.get(), next_structural), doc_parser{_doc_parser}, depth{0} {}
+  ) : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural), parser{_parser}, depth{0} {}
 
-  WARN_UNUSED really_inline bool start_scope(ret_address continue_state) {
-    doc_parser.containing_scope[depth].tape_index = doc_parser.current_loc;
-    doc_parser.containing_scope[depth].count = 0;
-    doc_parser.current_loc++; // We don't actually *write* the start element until the end.
-    doc_parser.ret_address[depth] = continue_state;
+  WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
+    parser.containing_scope[depth].tape_index = parser.current_loc;
+    parser.containing_scope[depth].count = 0;
+    parser.current_loc++; // We don't actually *write* the start element until the end.
+    parser.ret_address[depth] = continue_state;
     depth++;
-    bool exceeded_max_depth = depth >= doc_parser.max_depth();
+    bool exceeded_max_depth = depth >= parser.max_depth();
     if (exceeded_max_depth) { log_error("Exceeded max depth!"); }
     return exceeded_max_depth;
   }
 
-  WARN_UNUSED really_inline bool start_document(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_document(ret_address_t continue_state) {
     log_start_value("document");
     return start_scope(continue_state);
   }
 
-  WARN_UNUSED really_inline bool start_object(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_object(ret_address_t continue_state) {
     log_start_value("object");
     return start_scope(continue_state);
   }
 
-  WARN_UNUSED really_inline bool start_array(ret_address continue_state) {
+  WARN_UNUSED really_inline bool start_array(ret_address_t continue_state) {
     log_start_value("array");
     return start_scope(continue_state);
   }
@@ -113,16 +109,16 @@ struct structural_parser {
   // this function is responsible for annotating the start of the scope
   really_inline void end_scope(internal::tape_type start, internal::tape_type end) noexcept {
     depth--;
-    // write our doc.tape location to the header scope
+    // write our doc->tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(doc_parser.containing_scope[depth].tape_index, end);
+    append_tape(parser.containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t start_tape_index = doc_parser.containing_scope[depth].tape_index;
-    const uint32_t count = doc_parser.containing_scope[depth].count;
+    const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
+    const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    // This is a load and an OR. It would be possible to just write once at doc.tape[d.tape_index]
-    write_tape(start_tape_index, doc_parser.current_loc | (uint64_t(cntsat) << 32), start);
+    // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
+    write_tape(start_tape_index, parser.current_loc | (uint64_t(cntsat) << 32), start);
   }
 
   really_inline void end_object() {
@@ -139,11 +135,11 @@ struct structural_parser {
   }
 
   really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[doc_parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
+    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
   }
 
   really_inline void write_tape(uint32_t loc, uint64_t val, internal::tape_type t) noexcept {
-    doc_parser.doc.tape[loc] = val | ((uint64_t(char(t))) << 56);
+    parser.doc->tape[loc] = val | ((uint64_t(char(t))) << 56);
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -151,12 +147,12 @@ struct structural_parser {
   // must be increment in the preceding depth (depth-1) where the array or
   // the object resides.
   really_inline void increment_count() {
-    doc_parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
+    parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    append_tape(current_string_buf_loc - doc_parser.doc.string_buf.get(), internal::tape_type::STRING);
+    append_tape(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -186,7 +182,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     log_value("number");
-    number_writer writer{doc_parser};
+    number_writer writer{parser};
     bool succeeded = numberparsing::parse_number(src, found_minus, writer);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
@@ -243,7 +239,7 @@ struct structural_parser {
     return false;
   }
 
-  WARN_UNUSED really_inline ret_address parse_value(const unified_machine_addresses &addresses, ret_address continue_state) {
+  WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
     switch (structurals.current_char()) {
     case '"':
       FAIL_IF( parse_string() );
@@ -272,37 +268,27 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     // the string might not be NULL terminated.
-    if ( !structurals.at_end(doc_parser.n_structural_indexes) ) {
+    if ( !structurals.at_end(parser.n_structural_indexes) ) {
       log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return on_error(TAPE_ERROR);
+      return parser.error = TAPE_ERROR;
     }
     end_document();
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return on_error(TAPE_ERROR);
+      return parser.error = TAPE_ERROR;
     }
-    if (doc_parser.containing_scope[depth].tape_index != 0) {
+    if (parser.containing_scope[depth].tape_index != 0) {
       log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
-      return on_error(TAPE_ERROR);
+      return parser.error = TAPE_ERROR;
     }
 
-    return on_success(SUCCESS);
-  }
-
-  really_inline error_code on_error(error_code new_error_code) noexcept {
-    doc_parser.error = new_error_code;
-    return new_error_code;
-  }
-  really_inline error_code on_success(error_code success_code) noexcept {
-    doc_parser.error = success_code;
-    doc_parser.valid = true;
-    return success_code;
+    return SUCCESS;
   }
 
   WARN_UNUSED really_inline error_code error() {
-    /* We do not need the next line because this is done by doc_parser.init_stage2(),
+    /* We do not need the next line because this is done by parser.init_stage2(),
     * pessimistically.
-    * doc_parser.is_valid  = false;
+    * parser.is_valid  = false;
     * At this point in the code, we have all the time in the world.
     * Note that we know exactly where we are in the document so we could,
     * without any overhead on the processing code, report a specific
@@ -310,12 +296,12 @@ struct structural_parser {
     * We could even trigger special code paths to assess what happened
     * carefully,
     * all without any added cost. */
-    if (depth >= doc_parser.max_depth()) {
-      return on_error(DEPTH_ERROR);
+    if (depth >= parser.max_depth()) {
+      return parser.error = DEPTH_ERROR;
     }
     switch (structurals.current_char()) {
     case '"':
-      return on_error(STRING_ERROR);
+      return parser.error = STRING_ERROR;
     case '0':
     case '1':
     case '2':
@@ -327,36 +313,35 @@ struct structural_parser {
     case '8':
     case '9':
     case '-':
-      return on_error(NUMBER_ERROR);
+      return parser.error = NUMBER_ERROR;
     case 't':
-      return on_error(T_ATOM_ERROR);
+      return parser.error = T_ATOM_ERROR;
     case 'n':
-      return on_error(N_ATOM_ERROR);
+      return parser.error = N_ATOM_ERROR;
     case 'f':
-      return on_error(F_ATOM_ERROR);
+      return parser.error = F_ATOM_ERROR;
     default:
-      return on_error(TAPE_ERROR);
+      return parser.error = TAPE_ERROR;
     }
   }
 
   really_inline void init() {
-    current_string_buf_loc = doc_parser.doc.string_buf.get();
-    doc_parser.current_loc = 0;
-    doc_parser.valid = false;
-    doc_parser.error = UNINITIALIZED;
+    current_string_buf_loc = parser.doc->string_buf.get();
+    parser.current_loc = 0;
+    parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address finish_state) {
+  WARN_UNUSED really_inline error_code start(size_t len, ret_address_t finish_state) {
     log_start();
     init(); // sets is_valid to false
-    if (len > doc_parser.capacity()) {
-      return CAPACITY;
+    if (len > parser.capacity()) {
+      return parser.error = CAPACITY;
     }
     // Advance to the first character as soon as possible
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
-      return on_error(DEPTH_ERROR);
+      return parser.error = DEPTH_ERROR;
     }
     return SUCCESS;
   }
@@ -398,9 +383,10 @@ struct structural_parser {
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
  ***********/
-WARN_UNUSED error_code implementation::stage2(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
+WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+  this->doc = &_doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(buf, len, doc_parser);
+  stage2::structural_parser parser(*this);
   error_code result = parser.start(len, addresses.finish);
   if (result) { return result; }
 
@@ -479,7 +465,7 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.doc_parser.ret_address[parser.depth] );
+  CONTINUE( parser.parser.ret_address[parser.depth] );
 
 //
 // Array parser states
@@ -515,12 +501,4 @@ finish:
 
 error:
   return parser.error();
-}
-
-WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
-  error_code code = stage1(buf, len, doc_parser, false);
-  if (!code) {
-    code = stage2(buf, len, doc_parser);
-  }
-  return code;
 }

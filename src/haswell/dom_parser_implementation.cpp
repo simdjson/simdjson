@@ -1,9 +1,13 @@
 #include "simdjson.h"
+#include "haswell/implementation.h"
+#include "haswell/dom_parser_implementation.h"
 
+//
+// Stage 1
+//
 #include "haswell/bitmask.h"
 #include "haswell/simd.h"
 #include "haswell/bitmanipulation.h"
-#include "haswell/implementation.h"
 
 TARGET_HASWELL
 namespace simdjson {
@@ -68,11 +72,38 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 
 #include "generic/stage1/utf8_lookup2_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
-WARN_UNUSED error_code implementation::stage1(const uint8_t *buf, size_t len, parser &parser, bool streaming) const noexcept {
-  return haswell::stage1::json_structural_indexer::index<128>(buf, len, parser, streaming);
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+  return haswell::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
 }
 
 } // namespace haswell
+} // namespace simdjson
+UNTARGET_REGION
 
+//
+// Stage 2
+//
+#include "haswell/stringparsing.h"
+#include "haswell/numberparsing.h"
+
+TARGET_HASWELL
+namespace simdjson {
+namespace haswell {
+
+#include "generic/stage2/logger.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
+#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/streaming_structural_parser.h"
+
+WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+  error_code err = stage1(_buf, _len, false);
+  if (err) { return err; }
+  return stage2(_doc);
+}
+
+} // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION

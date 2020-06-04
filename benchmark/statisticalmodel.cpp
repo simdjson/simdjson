@@ -106,7 +106,7 @@ stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   answer.non_ascii_byte_count = count_nonasciibytes(
       reinterpret_cast<const uint8_t *>(p.data()), p.size());
   answer.byte_count = p.size();
-  answer.structural_indexes_count = parser.n_structural_indexes;
+  answer.structural_indexes_count = parser.implementation->n_structural_indexes;
   simdjson_recurse(answer, doc);
   return answer;
 }
@@ -163,7 +163,6 @@ int main(int argc, char *argv[]) {
          s.true_count, s.false_count, s.byte_count, s.structural_indexes_count);
 #ifdef __linux__
   simdjson::dom::parser parser;
-  const simdjson::implementation &stage_parser = *simdjson::active_implementation;
   simdjson::error_code alloc_error = parser.allocate(p.size());
   if (alloc_error) {
     std::cerr << alloc_error << std::endl;
@@ -181,14 +180,14 @@ int main(int argc, char *argv[]) {
   for (uint32_t i = 0; i < iterations; i++) {
     unified.start();
     // The default template is simdjson::architecture::NATIVE.
-    bool isok = (stage_parser.stage1((const uint8_t *)p.data(), p.size(), parser, false) == simdjson::SUCCESS);
+    bool isok = (parser.implementation->stage1((const uint8_t *)p.data(), p.size(), false) == simdjson::SUCCESS);
     unified.end(results);
 
     cy1 += results[0];
     cl1 += results[1];
 
     unified.start();
-    isok = isok && (stage_parser.stage2((const uint8_t *)p.data(), p.size(), parser) == simdjson::SUCCESS);
+    isok = isok && (parser.implementation->stage2(parser.doc) == simdjson::SUCCESS);
     unified.end(results);
 
     cy2 += results[0];
