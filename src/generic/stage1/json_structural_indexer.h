@@ -106,12 +106,25 @@ really_inline error_code json_structural_indexer::finish(parser &parser, size_t 
   if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
     /* the string might not be NULL terminated, but we add a virtual NULL
      * ending character. */
-    /* This patching is almost certainly superfluous and could be done away with. */
     parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
   }
   /* make it safe to dereference one beyond this array */
   parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 1] = 0;
+  /***
+   * This is related to https://github.com/simdjson/simdjson/issues/906
+   * Basically, we want to make sure that if the parsing continues beyond the last (valid)
+   * structural character, it quickly stops.
+   * Only three structural characters can be repeated without triggering an error in JSON:  [,] and }.
+   * We repeat the padding character (at 'len'). We don't know what it is, but if the parsing
+   * continues, then it must be [,] or }.
+   * Suppose it is ] or }. We backtrack to the first character, what could it be that would
+   * not trigger an error? It could be ] or } but no, because you can't start a document that way.
+   * It can't be a comma, a colon or any simple value. So the only way we could continue is
+   * if the repeated character is [. But if so, the document must start with [. But if the document
+   * starts with [, it should end with ]. If we enforce that rule, then we would get
+   * ][[ which is invalid.
+   **/
   return checker.errors();
 }
 

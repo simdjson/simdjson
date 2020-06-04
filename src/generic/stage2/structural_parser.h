@@ -520,18 +520,24 @@ error:
 WARN_UNUSED error_code implementation::parse(const uint8_t *buf, size_t len, parser &doc_parser) const noexcept {
   error_code code = stage1(buf, len, doc_parser, false);
   if (!code) {
-    // We know at this point that parser.n_structural_indexes > 0 since otherwise the error_code EMPTY is thrown
+    // We know at this point that parser.n_structural_indexes >= 2 since otherwise the error_code EMPTY is thrown
     // by stage 1.
-    // Before we engage stage 2, however, we want to make sure that its tail is sane. One character is forbidden
-    // at the end of the document, and it is [ as it can lead to odd bug and we need to catch it before we enter
-    // into stage 2.
+    // Before we engage stage 2, however, we want to make sure there is no risk that we could end with [ and
+    // loop back at the start with [. That is, we want to make sure that if the first character is [, then 
+    // the last one is ].
     // See https://github.com/simdjson/simdjson/issues/906 for details.
-    const size_t last_index = doc_parser.structural_indexes.get()[doc_parser.n_structural_indexes - 2];
+    const size_t first_index = doc_parser.structural_indexes[0];
+    const char first_character = char(buf[first_index]);
+
+    const size_t last_index = doc_parser.structural_indexes[doc_parser.n_structural_indexes - 2]; // safe
     const char last_character = char(buf[last_index]);
-    if(last_character == '[') { // this is obviously a problem
+
+    if((first_character == '[') and (last_character != ']')) { // this is obviously a problem
       return error_code::TAPE_ERROR;
     }
+    //
     // We now can proceed safely into stage 2.
+    //
     code = stage2(buf, len, doc_parser);
   }
   return code;
