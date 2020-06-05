@@ -72,13 +72,13 @@ inline void document_stream::start() noexcept {
 
   // Always run the first stage 1 parse immediately
   batch_start = 0;
-  run_stage1(parser, batch_start);
+  error = run_stage1(parser, batch_start);
   if (error) { return; }
 
 #ifdef SIMDJSON_THREADS_ENABLED
   if (next_batch_start() < len) {
     // Kick off the first thread if needed
-    error = thread_parser.ensure_capacity(batch_size);
+    error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
     start_stage1_thread();
     if (error) { return; }
@@ -102,7 +102,7 @@ inline void document_stream::next() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
     load_from_stage1_thread();
 #else
-    run_stage1(parser, batch_start);
+    error = run_stage1(parser, batch_start);
 #endif
     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
 
@@ -115,13 +115,13 @@ inline size_t document_stream::next_batch_start() const noexcept {
   return batch_start + parser.implementation->structural_indexes[parser.implementation->n_structural_indexes];
 }
 
-inline void document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
+inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
   // If this is the final batch, pass partial = false
   size_t remaining = len - _batch_start;
   if (remaining <= batch_size) {
-    error = p.implementation->stage1(&buf[_batch_start], remaining, false);
+    return p.implementation->stage1(&buf[_batch_start], remaining, false);
   } else {
-    error = p.implementation->stage1(&buf[_batch_start], batch_size, true);
+    return p.implementation->stage1(&buf[_batch_start], batch_size, true);
   }
 }
 
@@ -132,10 +132,9 @@ inline void document_stream::load_from_stage1_thread() noexcept {
 
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
-  error = parser.ensure_capacity(batch_size);
-  if (error) { return error; }
   std::swap(parser, stage1_thread_parser);
-  if (stage1_thread_error) { return stage1_thread_error; }
+  error = stage1_thread_error;
+  if (error) { return; }
 
   // If there's anything left, start the stage 1 thread!
   if (next_batch_start() < len) {
@@ -149,11 +148,9 @@ inline void document_stream::start_stage1_thread() noexcept {
   // there is only one thread that may write to this value
   // TODO this is NOT exception-safe.
   this->stage1_thread_error = UNINITIALIZED; // In case something goes wrong, make sure it's an error
-  stage1_thread = std::thread([this] {
-    this->stage1_thread_error = this->thread_parser.ensure_capacity(this->batch_size);
-    if (!this->stage1_thread_error) {
-      this->stage1_thread_error = run_stage1(this->stage1_thread_parser, this->next_batch_start());
-    }
+  size_t _next_batch_start = this->next_batch_start();
+  stage1_thread = std::thread([this, _next_batch_start] {
+    this->stage1_thread_error = run_stage1(this->stage1_thread_parser, _next_batch_start);
   });
 }
 

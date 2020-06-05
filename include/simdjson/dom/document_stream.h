@@ -120,7 +120,7 @@ private:
   inline size_t next_batch_start() const noexcept;
 
   /** Pass the next batch through stage 1 with the given parser. */
-  inline void run_stage1(dom::parser &p, size_t batch_start) noexcept;
+  inline error_code run_stage1(dom::parser &p, size_t batch_start) noexcept;
 
   dom::parser &parser;
   const uint8_t *buf;
@@ -131,20 +131,19 @@ private:
   error_code error;
 
 #ifdef SIMDJSON_THREADS_ENABLED
-  /**
-   * Start a thread to run stage 1 on the next batch.
-   */
+  inline void load_from_stage1_thread() noexcept;
+
+  /** Start a thread to run stage 1 on the next batch. */
   inline void start_stage1_thread() noexcept;
 
-  /**
-   * Wait for the stage 1 thread to finish and capture the results.
-   */
+  /** Wait for the stage 1 thread to finish and capture the results. */
   inline void finish_stage1_thread() noexcept;
 
   /** The error returned from the stage 1 thread. */
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
   std::thread stage1_thread{};
+
   /**
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.

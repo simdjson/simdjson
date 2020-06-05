@@ -561,9 +561,6 @@ namespace parse_api_tests {
     memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
     memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
     memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
-    for (int i=0; i<16; i++) {
-      printf("| %.*s |", BATCH_SIZE, &empty_batches_ndjson[BATCH_SIZE*i]);
-    }
     for (auto [doc, error] : parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16)) {
       if (error) { cerr << "Error in parse_many: " << error << endl; return false; }
       count++;
