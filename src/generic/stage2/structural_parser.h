@@ -75,7 +75,16 @@ struct structural_parser {
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
 
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural = 0) : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural), parser{_parser}, depth{0} {}
+  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
+    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
+      parser{_parser},
+      depth{0} {
+  }
+  // For streaming: pick up after the previous document
+  really_inline structural_parser(dom_parser_implementation &_parser)
+    : structural_parser(_parser, _parser.next_structural_index) {
+  }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
     parser.containing_scope[depth].tape_index = parser.current_loc;
@@ -263,13 +272,46 @@ struct structural_parser {
     }
   }
 
+  // override to add streaming
   WARN_UNUSED really_inline error_code finish() {
-    // the string might not be NULL terminated.
-    if ( !structurals.at_end(parser.n_structural_indexes) ) {
-      log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    if ( structurals.past_end(parser.n_structural_indexes) ) {
+      log_error("IMPOSSIBLE: past the end of the JSON!");
       return parser.error = TAPE_ERROR;
     }
     end_document();
+    if (depth != 0) {
+      log_error("Unclosed objects or arrays!");
+      return parser.error = TAPE_ERROR;
+    }
+    if (parser.containing_scope[depth].tape_index != 0) {
+      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
+      return parser.error = TAPE_ERROR;
+    }
+    return SUCCESS;
+  }
+
+  template<bool STREAMING>
+  WARN_UNUSED really_inline error_code finish() {
+    // Check if we're at (or past) the end
+    if (STREAMING) {
+      if ( structurals.past_end(parser.n_structural_indexes) ) {
+        log_error("IMPOSSIBLE: past the end of the JSON!");
+        return parser.error = TAPE_ERROR;
+      }
+    } else {
+      // the string might not be NULL terminated.
+      if ( !structurals.at_end(parser.n_structural_indexes) ) {
+        log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+        return parser.error = TAPE_ERROR;
+      }
+    }
+
+    end_document();
+
+    if (STREAMING) {
+      parser.next_structural_index = uint32_t(structurals.next_structural_index());
+    }
+
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
       return parser.error = TAPE_ERROR;
@@ -328,11 +370,21 @@ struct structural_parser {
     parser.error = UNINITIALIZED;
   }
 
+  template<bool STREAMING>
   WARN_UNUSED really_inline error_code start(size_t len, ret_address_t finish_state) {
+    if (STREAMING) {
+      // If there are no structurals left, return EMPTY
+      if (structurals.at_end(parser.n_structural_indexes)) {
+        return parser.error = EMPTY;
+      }
+    }
+
     log_start();
     init();
-    if (len > parser.capacity()) {
-      return parser.error = CAPACITY;
+    if (!STREAMING) {
+      if (len > parser.capacity()) {
+        return parser.error = CAPACITY;
+      }
     }
     // Advance to the first character as soon as possible
     structurals.advance_char();
@@ -377,8 +429,8 @@ struct structural_parser {
 WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(dom_parser);
-  error_code result = parser.start(dom_parser.len, addresses.finish);
+  stage2::structural_parser parser(dom_parser, 0);
+  error_code result = parser.start<false>(dom_parser.len, addresses.finish);
   if (result) { return result; }
 
   //
@@ -493,7 +545,7 @@ array_continue:
   }
 
 finish:
-  return parser.finish();
+  return parser.finish<false>();
 
 error:
   return parser.error();
@@ -509,53 +561,6 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
   return stage2::parse_structurals(*this, _doc);
 }
 
-namespace stage2 {
-
-struct streaming_structural_parser: structural_parser {
-  really_inline streaming_structural_parser(dom_parser_implementation &_parser) : structural_parser(_parser, _parser.next_structural_index) {}
-
-  // override to add streaming
-  WARN_UNUSED really_inline error_code start(ret_address_t finish_parser) {
-    // If there are no structurals left, return EMPTY
-    if (structurals.at_end(parser.n_structural_indexes)) {
-      return parser.error = EMPTY;
-    }
-
-    log_start();
-    init();
-
-    // Capacity ain't no thang for streaming, so we don't check it.
-    // Advance to the first character as soon as possible
-    advance_char();
-    // Push the root scope (there is always at least one scope)
-    if (start_document(finish_parser)) {
-      return parser.error = DEPTH_ERROR;
-    }
-    return SUCCESS;
-  }
-
-  // override to add streaming
-  WARN_UNUSED really_inline error_code finish() {
-    if ( structurals.past_end(parser.n_structural_indexes) ) {
-      log_error("IMPOSSIBLE: past the end of the JSON!");
-      return parser.error = TAPE_ERROR;
-    }
-    end_document();
-    parser.next_structural_index = uint32_t(structurals.next_structural_index());
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return parser.error = TAPE_ERROR;
-    }
-    if (parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
-      return parser.error = TAPE_ERROR;
-    }
-    return SUCCESS;
-  }
-};
-
-} // namespace stage2
-
 /************
  * The JSON is parsed to a tape, see the accompanying tape.md file
  * for documentation.
@@ -563,8 +568,8 @@ struct streaming_structural_parser: structural_parser {
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   this->doc = &_doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::streaming_structural_parser parser(*this);
-  error_code result = parser.start(addresses.finish);
+  stage2::structural_parser parser(*this, next_structural_index);
+  error_code result = parser.start<true>(len, addresses.finish);
   if (result) { return result; }
   //
   // Read first value
@@ -672,7 +677,7 @@ array_continue:
   }
 
 finish:
-  return parser.finish();
+  return parser.finish<true>();
 
 error:
   return parser.error();
