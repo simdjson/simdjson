@@ -271,32 +271,20 @@ struct structural_parser {
 
   template<bool STREAMING>
   WARN_UNUSED really_inline error_code finish() {
-    // Check if we're at (or past) the end
+    end_document();
+
     if (STREAMING) {
-      if ( structurals.past_end(parser.n_structural_indexes) ) {
-        log_error("IMPOSSIBLE: past the end of the JSON!");
-        return parser.error = TAPE_ERROR;
-      }
+      parser.next_structural_index = uint32_t(structurals.next_structural_index());
     } else {
-      // the string might not be NULL terminated.
+      // Check if we're at the end or if there is stuff left still
       if ( !structurals.at_end(parser.n_structural_indexes) ) {
         log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
         return parser.error = TAPE_ERROR;
       }
     }
 
-    end_document();
-
-    if (STREAMING) {
-      parser.next_structural_index = uint32_t(structurals.next_structural_index());
-    }
-
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return parser.error = TAPE_ERROR;
-    }
-    if (parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return parser.error = TAPE_ERROR;
     }
 
@@ -349,22 +337,14 @@ struct structural_parser {
     parser.error = UNINITIALIZED;
   }
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address_t finish_state) {
-    if (STREAMING) {
-      // If there are no structurals left, return EMPTY
-      if (structurals.at_end(parser.n_structural_indexes)) {
-        return parser.error = EMPTY;
-      }
+  WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
+    // If there are no structurals left, return EMPTY
+    if (structurals.at_end(parser.n_structural_indexes)) {
+      return parser.error = EMPTY;
     }
 
     log_start();
     init();
-    if (!STREAMING) {
-      if (len > parser.capacity()) {
-        return parser.error = CAPACITY;
-      }
-    }
     // Advance to the first character as soon as possible
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
@@ -410,7 +390,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   dom_parser.doc = &doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-  error_code result = parser.start<STREAMING>(dom_parser.len, addresses.finish);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
