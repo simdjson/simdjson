@@ -31,6 +31,7 @@ public:
     
   WARN_UNUSED error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
   WARN_UNUSED error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept final;
+  WARN_UNUSED error_code check_for_unclosed_array() noexcept;
   WARN_UNUSED error_code stage2(dom::document &doc) noexcept final;
   WARN_UNUSED error_code stage2(const uint8_t *buf, size_t len, dom::document &doc, size_t &next_json) noexcept final;
   WARN_UNUSED error_code set_capacity(size_t capacity) noexcept final;
@@ -54,5 +55,24 @@ WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t max_depth
   error_code err = stage2::allocate::set_max_depth(*this, max_depth);
   if (err) { _max_depth = 0; return err; }
   _max_depth = max_depth;
+  return SUCCESS;
+}
+
+
+WARN_UNUSED error_code dom_parser_implementation::check_for_unclosed_array() noexcept {
+  // Before we engage stage 2, we want to make sure there is no risk that we could end with [ and
+  // loop back at the start with [. That is, we want to make sure that if the first character is [, then
+  // the last one is ].
+  // See https://github.com/simdjson/simdjson/issues/906 for details.
+  if(n_structural_indexes < 2) {
+    return UNEXPECTED_ERROR;
+  }
+  const size_t first_index = structural_indexes[0];
+  const size_t last_index = structural_indexes[n_structural_indexes - 2];
+  const char first_character = char(buf[first_index]);
+  const char last_character = char(buf[last_index]);
+  if((first_character == '[') and (last_character != ']')) {
+    return TAPE_ERROR;
+  }
   return SUCCESS;
 }

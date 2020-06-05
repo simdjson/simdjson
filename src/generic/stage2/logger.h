@@ -7,6 +7,7 @@ namespace logger {
   static constexpr const int LOG_EVENT_LEN = 30;
   static constexpr const int LOG_BUFFER_LEN = 20;
   static constexpr const int LOG_DETAIL_LEN = 50;
+  static constexpr const int LOG_INDEX_LEN = 10;
 
   static int log_depth; // Not threadsafe. Log only.
 
@@ -24,8 +25,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -57,6 +58,7 @@ namespace logger {
       printf("|    %c ", printable_char(structurals.peek_char()));
       printf("| %5zd ", structurals.next_structural);
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
+      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
       printf("|\n");
     }
   }

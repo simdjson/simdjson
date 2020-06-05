@@ -133,6 +133,10 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
+  // We pad beyond.
+  // https://github.com/simdjson/simdjson/issues/906
+  next_structural_index[0] = len;
+  next_structural_index[1] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   return error;
 }
@@ -233,6 +237,8 @@ namespace fallback {
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
+  if (err) { return err; }
+  err = check_for_unclosed_array();
   if (err) { return err; }
   return stage2(_doc);
 }
