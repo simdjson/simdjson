@@ -133,6 +133,10 @@ really_inline error_code scan() {
   }
   *next_structural_index = len;
   next_structural_index++;
+  // We pad beyond.
+  // https://github.com/simdjson/simdjson/issues/906
+  next_structural_index[0] = len;
+  next_structural_index[1] = 0;
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   return error;
 }
