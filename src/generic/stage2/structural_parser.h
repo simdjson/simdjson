@@ -368,23 +368,17 @@ struct structural_parser {
   really_inline void log_error(const char *error) {
     logger::log_line(structurals, "", "ERROR", error);
   }
-};
+}; // struct structural_parser
 
 // Redefine FAIL_IF to use goto since it'll be used inside the function now
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
-} // namespace stage2
-
-/************
- * The JSON is parsed to a tape, see the accompanying tape.md file
- * for documentation.
- ***********/
-WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  this->doc = &_doc;
+WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(*this);
-  error_code result = parser.start(len, addresses.finish);
+  stage2::structural_parser parser(dom_parser);
+  error_code result = parser.start(dom_parser.len, addresses.finish);
   if (result) { return result; }
 
   //
@@ -398,7 +392,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (buf[structural_indexes[n_structural_indexes - 1]] != ']') {
+    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
       goto error;
     }
     goto array_begin;
@@ -503,6 +497,16 @@ finish:
 
 error:
   return parser.error();
+}
+
+} // namespace stage2
+
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+  return stage2::parse_structurals(*this, _doc);
 }
 
 namespace stage2 {
