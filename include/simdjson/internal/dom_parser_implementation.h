@@ -76,8 +76,7 @@ public:
    * Overridden by each implementation.
    *
    * @param doc The document to output to.
-   * @param next_json The next structural index. Start this at 0 the first time, and it will be updated to the next value to pass each time.
-   * @return The error code, SUCCESS if there was no error, or SUCCESS_AND_HAS_MORE if there was no error and stage2 can be called again.
+   * @return The error code, SUCCESS if there was no error, or EMPTY if all documents have been parsed.
    */
   WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
 
