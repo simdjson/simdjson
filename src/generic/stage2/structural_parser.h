@@ -269,19 +269,9 @@ struct structural_parser {
     }
   }
 
-  template<bool STREAMING>
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-
-    if (STREAMING) {
-      parser.next_structural_index = uint32_t(structurals.next_structural_index());
-    } else {
-      // Check if we're at the end or if there is stuff left still
-      if ( !structurals.at_end(parser.n_structural_indexes) ) {
-        log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-        return parser.error = TAPE_ERROR;
-      }
-    }
+    parser.next_structural_index = uint32_t(structurals.next_structural_index());
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -505,7 +495,7 @@ array_continue:
   }
 
 finish:
-  return parser.finish<STREAMING>();
+  return parser.finish();
 
 error:
   return parser.error();
@@ -519,7 +509,16 @@ error:
  * for documentation.
  ***********/
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  return stage2::parse_structurals<false>(*this, _doc);
+  error_code result = stage2::parse_structurals<false>(*this, _doc);
+  if (result) { return result; }
+
+  // If we didn't make it to the end, it's an error
+  if ( next_structural_index != n_structural_indexes ) {
+    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return error = TAPE_ERROR;
+  }
+
+  return SUCCESS;
 }
 
 /************
