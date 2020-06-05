@@ -42,6 +42,57 @@ namespace parser_load {
     TEST_FAIL("No documents returned");
   }
 
+  bool parser_parse_many_documents_error_in_the_middle() {
+    TEST_START();
+    const padded_string DOC = "1 2 [} 3"_padded;
+    size_t count = 0;
+    dom::parser parser;
+    for (auto doc : parser.parse_many(DOC)) {
+      count++;
+      auto [val, error] = doc.get<uint64_t>();
+      if (count == 3) {
+        ASSERT_ERROR(error, TAPE_ERROR);
+      } else {
+        if (error) { TEST_FAIL(error); }
+        if (val != count) { cerr << "FAIL: expected " << count << ", got " << val << endl; return false; }
+      }
+    }
+    if (count != 3) { cerr << "FAIL: expected 2 documents and 1 error, got " << count << " total things" << endl; return false; }
+    TEST_SUCCEED();
+  }
+
+  bool parser_parse_many_documents_partial() {
+    TEST_START();
+    const padded_string DOC = "["_padded;
+    size_t count = 0;
+    dom::parser parser;
+    for (auto doc : parser.parse_many(DOC)) {
+      count++;
+      ASSERT_ERROR(doc.error(), TAPE_ERROR);
+    }
+    if (count != 1) { cerr << "FAIL: expected no documents and 1 error, got " << count << " total things" << endl; return false; }
+    TEST_SUCCEED();
+  }
+
+  bool parser_parse_many_documents_partial_at_the_end() {
+    TEST_START();
+    const padded_string DOC = "1 2 ["_padded;
+    size_t count = 0;
+    dom::parser parser;
+    for (auto doc : parser.parse_many(DOC)) {
+      count++;
+      auto [val, error] = doc.get<uint64_t>();
+      if (count == 3) {
+        ASSERT_ERROR(error, TAPE_ERROR);
+      } else {
+        if (error) { TEST_FAIL(error); }
+        if (val != count) { cerr << "FAIL: expected " << count << ", got " << val << endl; return false; }
+      }
+    }
+    if (count != 3) { cerr << "FAIL: expected 2 documents and 1 error, got " << count << " total things" << endl; return false; }
+    TEST_SUCCEED();
+  }
+
   bool parser_load_nonexistent() {
     TEST_START();
     dom::parser parser;
@@ -83,9 +134,18 @@ namespace parser_load {
     TEST_FAIL("No documents returned");
   }
   bool run() {
-    return parser_load_capacity() && parser_load_many_capacity()
-        && parser_load_nonexistent() && parser_load_many_nonexistent() && padded_string_load_nonexistent()
-        && parser_load_chain() && parser_load_many_chain();
+    return true
+        && parser_load_capacity()
+        && parser_load_many_capacity()
+        && parser_load_nonexistent()
+        && parser_load_many_nonexistent()
+        && padded_string_load_nonexistent()
+        && parser_load_chain()
+        && parser_load_many_chain()
+        && parser_parse_many_documents_error_in_the_middle()
+        && parser_parse_many_documents_partial()
+        && parser_parse_many_documents_partial_at_the_end()
+    ;
   }
 }
 

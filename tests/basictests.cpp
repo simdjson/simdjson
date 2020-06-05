@@ -515,9 +515,9 @@ namespace parse_api_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
 
-  const padded_string BASIC_JSON = string("[1,2,3]");
-  const padded_string BASIC_NDJSON = string("[1,2,3]\n[4,5,6]");
-  // const padded_string EMPTY_NDJSON = string("");
+  const padded_string BASIC_JSON = "[1,2,3]"_padded;
+  const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
+  const padded_string EMPTY_NDJSON = ""_padded;
 
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
@@ -532,24 +532,48 @@ namespace parse_api_tests {
     dom::parser parser;
     int count = 0;
     for (auto [doc, error] : parser.parse_many(BASIC_NDJSON)) {
-      if (error) { cerr << error << endl; return false; }
+      if (error) { cerr << "Error in parse_many: " << endl; return false; }
       if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
       count++;
     }
     if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
     return true;
   }
-  // bool parser_parse_many_empty() {
-  //   std::cout << "Running " << __func__ << std::endl;
-  //   dom::parser parser;
-  //   int count = 0;
-  //   for (auto [doc, error] : parser.parse_many(EMPTY_NDJSON)) {
-  //     if (error) { cerr << error << endl; return false; }
-  //     count++;
-  //   }
-  //   if (count != 0) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
-  //   return true;
-  // }
+  bool parser_parse_many_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    int count = 0;
+    for (auto doc : parser.parse_many(EMPTY_NDJSON)) {
+      if (doc.error()) { cerr << "Error in parse_many: " << doc.error() << endl; return false; }
+      count++;
+    }
+    if (count != 0) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
+    return true;
+  }
+
+  bool parser_parse_many_empty_batches() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    uint64_t count = 0;
+    constexpr const int BATCH_SIZE = 128;
+    uint8_t empty_batches_ndjson[BATCH_SIZE*16+SIMDJSON_PADDING];
+    memset(&empty_batches_ndjson[0], ' ', BATCH_SIZE*16+SIMDJSON_PADDING);
+    memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
+    memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
+    memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
+    for (int i=0; i<16; i++) {
+      printf("| %.*s |", BATCH_SIZE, &empty_batches_ndjson[BATCH_SIZE*i]);
+    }
+    for (auto [doc, error] : parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16)) {
+      if (error) { cerr << "Error in parse_many: " << error << endl; return false; }
+      count++;
+      auto [val, val_error] = doc.get<uint64_t>();
+      if (val_error) { cerr << "Document is not an unsigned int: " << val_error << endl; return false; }
+      if (val != count) { cerr << "Expected document #" << count << " to equal " << count << ", but got " << val << " instead!" << endl; return false; }
+    }
+    if (count != 3) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
+    return true;
+  }
 
   bool parser_load() {
     std::cout << "Running " << __func__ << " on " << TWITTER_JSON << std::endl;
@@ -633,7 +657,8 @@ namespace parse_api_tests {
   bool run() {
     return parser_parse() &&
            parser_parse_many() &&
-//           parser_parse_many_empty() &&
+           parser_parse_many_empty() &&
+           parser_parse_many_empty_batches() &&
            parser_load() &&
            parser_load_many() &&
 #if SIMDJSON_EXCEPTIONS
