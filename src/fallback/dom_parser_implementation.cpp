@@ -260,7 +260,6 @@ namespace fallback {
 #include "generic/stage2/atomparsing.h"
 #include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
-#include "generic/stage2/streaming_structural_parser.h"
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
