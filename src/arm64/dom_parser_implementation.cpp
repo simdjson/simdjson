@@ -112,8 +112,6 @@ namespace arm64 {
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
   if (err) { return err; }
-  err = check_for_unclosed_array();
-  if (err) { return err; }
   return stage2(_doc);
 }
 
