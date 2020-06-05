@@ -399,6 +399,11 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
     goto object_begin;
   case '[':
     FAIL_IF( parser.start_array(addresses.finish) );
+    // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
+    // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (buf[structural_indexes[n_structural_indexes - 2]] != ']') {
+      goto error;
+    }
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
