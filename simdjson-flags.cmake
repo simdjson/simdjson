@@ -74,10 +74,11 @@ endif()
 
 option(SIMDJSON_ENABLE_THREADS "Enable threaded operation" ON)
 if(SIMDJSON_ENABLE_THREADS)
-  find_package(Threads REQUIRED)
   set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-  target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT} )
+  find_package(Threads REQUIRED)
+  target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+  target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
