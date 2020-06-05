@@ -4,6 +4,7 @@
 // "simdjson/stage2.h" (this simplifies amalgation)
 
 namespace stage2 {
+namespace { // Make everything here private
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -80,10 +81,6 @@ struct structural_parser {
     : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
       parser{_parser},
       depth{0} {
-  }
-  // For streaming: pick up after the previous document
-  really_inline structural_parser(dom_parser_implementation &_parser)
-    : structural_parser(_parser, _parser.next_structural_index) {
   }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
@@ -272,24 +269,6 @@ struct structural_parser {
     }
   }
 
-  // override to add streaming
-  WARN_UNUSED really_inline error_code finish() {
-    if ( structurals.past_end(parser.n_structural_indexes) ) {
-      log_error("IMPOSSIBLE: past the end of the JSON!");
-      return parser.error = TAPE_ERROR;
-    }
-    end_document();
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return parser.error = TAPE_ERROR;
-    }
-    if (parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
-      return parser.error = TAPE_ERROR;
-    }
-    return SUCCESS;
-  }
-
   template<bool STREAMING>
   WARN_UNUSED really_inline error_code finish() {
     // Check if we're at (or past) the end
@@ -426,11 +405,12 @@ struct structural_parser {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+template<bool STREAMING>
 WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(dom_parser, 0);
-  error_code result = parser.start<false>(dom_parser.len, addresses.finish);
+  stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  error_code result = parser.start<STREAMING>(dom_parser.len, addresses.finish);
   if (result) { return result; }
 
   //
@@ -545,12 +525,13 @@ array_continue:
   }
 
 finish:
-  return parser.finish<false>();
+  return parser.finish<STREAMING>();
 
 error:
   return parser.error();
 }
 
+} // namespace {}
 } // namespace stage2
 
 /************
@@ -558,7 +539,7 @@ error:
  * for documentation.
  ***********/
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  return stage2::parse_structurals(*this, _doc);
+  return stage2::parse_structurals<false>(*this, _doc);
 }
 
 /************
@@ -566,119 +547,5 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
  * for documentation.
  ***********/
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  this->doc = &_doc;
-  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(*this, next_structural_index);
-  error_code result = parser.start<true>(len, addresses.finish);
-  if (result) { return result; }
-  //
-  // Read first value
-  //
-  switch (parser.structurals.current_char()) {
-  case '{':
-    FAIL_IF( parser.start_object(addresses.finish) );
-    goto object_begin;
-  case '[':
-    FAIL_IF( parser.start_array(addresses.finish) );
-    goto array_begin;
-  case '"':
-    FAIL_IF( parser.parse_string() );
-    goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
-    goto finish;
-  case '0': case '1': case '2': case '3': case '4':
-  case '5': case '6': case '7': case '8': case '9':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], false);
-      })
-    );
-    goto finish;
-  case '-':
-    FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], true);
-      })
-    );
-    goto finish;
-  default:
-    parser.log_error("Document starts with a non-value character");
-    goto error;
-  }
-
-//
-// Object parser parsers
-//
-object_begin:
-  switch (parser.advance_char()) {
-  case '"': {
-    FAIL_IF( parser.parse_string(true) );
-    goto object_key_parser;
-  }
-  case '}':
-    parser.end_object();
-    goto scope_end;
-  default:
-    parser.log_error("Object does not start with a key");
-    goto error;
-  }
-
-object_key_parser:
-  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.increment_count();
-  parser.advance_char();
-  GOTO( parser.parse_value(addresses, addresses.object_continue) );
-
-object_continue:
-  switch (parser.advance_char()) {
-  case ',':
-    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
-    FAIL_IF( parser.parse_string(true) );
-    goto object_key_parser;
-  case '}':
-    parser.end_object();
-    goto scope_end;
-  default:
-    parser.log_error("No comma between object fields");
-    goto error;
-  }
-
-scope_end:
-  CONTINUE( parser.parser.ret_address[parser.depth] );
-
-//
-// Array parser parsers
-//
-array_begin:
-  if (parser.advance_char() == ']') {
-    parser.end_array();
-    goto scope_end;
-  }
-  parser.increment_count();
-
-main_array_switch:
-  /* we call update char on all paths in, so we can peek at parser.c on the
-   * on paths that can accept a close square brace (post-, and at start) */
-  GOTO( parser.parse_value(addresses, addresses.array_continue) );
-
-array_continue:
-  switch (parser.advance_char()) {
-  case ',':
-    parser.increment_count();
-    parser.advance_char();
-    goto main_array_switch;
-  case ']':
-    parser.end_array();
-    goto scope_end;
-  default:
-    parser.log_error("Missing comma between array values");
-    goto error;
-  }
-
-finish:
-  return parser.finish<true>();
-
-error:
-  return parser.error();
+  return stage2::parse_structurals<true>(*this, _doc);
 }
