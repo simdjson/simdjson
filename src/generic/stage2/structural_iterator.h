@@ -4,7 +4,6 @@ class structural_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
-  size_t idx{0}; // location of the structural character in the input (buf)
   uint8_t c{0};  // used to track the (structural) character we are looking at
   dom_parser_implementation &parser;
 
@@ -14,9 +13,8 @@ public:
       parser{_parser} {
   }
   really_inline char advance_char() {
-    idx = *next_structural;
+    c = buf[*next_structural];
     next_structural++;
-    c = *current();
     return c;
   }
   really_inline char current_char() {
@@ -26,10 +24,13 @@ public:
     return buf[*next_structural];
   }
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[current_structural_index()];
   }
   really_inline size_t remaining_len() {
-    return parser.len - idx;
+    return parser.len - current_structural_index();
+  }
+  really_inline uint32_t current_structural_index() {
+    return *(next_structural-1);
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -52,7 +53,7 @@ public:
     }
     memcpy(copy, buf, parser.len);
     memset(copy + parser.len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), current_structural_index());
     free(copy);
     return result;
   }

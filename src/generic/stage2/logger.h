@@ -64,7 +64,7 @@ namespace logger {
       printf("|    %c ", printable_char(structurals.peek_char()));
       printf("| %5u ", structurals.parser.structural_indexes[*structurals.next_structural]);
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
-      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
+      printf("| %*u ", LOG_INDEX_LEN, *(structurals.next_structural-1));
       printf("|\n");
     }
   }
