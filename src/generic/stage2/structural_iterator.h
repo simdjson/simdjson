@@ -3,20 +3,18 @@ namespace stage2 {
 class structural_iterator {
 public:
   const uint8_t* const buf;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
+  uint32_t *next_structural;
   size_t idx{0}; // location of the structural character in the input (buf)
   uint8_t c{0};  // used to track the (structural) character we are looking at
   dom_parser_implementation &parser;
 
-  really_inline structural_iterator(dom_parser_implementation &_parser, size_t _next_structural)
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t next_structural_index)
     : buf{_parser.buf},
-      structural_indexes{_parser.structural_indexes.get()},
-      next_structural{_next_structural},
+      next_structural{&_parser.structural_indexes[next_structural_index]},
       parser{_parser} {
   }
   really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
+    idx = *next_structural;
     next_structural++;
     c = *current();
     return c;
@@ -25,7 +23,7 @@ public:
     return c;
   }
   really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
+    return buf[*next_structural];
   }
   really_inline const uint8_t* current() {
     return &buf[idx];
@@ -59,16 +57,13 @@ public:
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return next_structural > &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return next_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
-  }
-  really_inline size_t next_structural_index() {
-    return next_structural;
+    return next_structural == &parser.structural_indexes[0];
   }
 };
 

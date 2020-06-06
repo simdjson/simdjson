@@ -268,7 +268,7 @@ struct structural_parser : structural_iterator {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(next_structural_index());
+    parser.next_structural_index = uint32_t(next_structural - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -388,7 +388,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
     if (!STREAMING) {
-      if (parser.buf[parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
         goto error;
       }
     }
