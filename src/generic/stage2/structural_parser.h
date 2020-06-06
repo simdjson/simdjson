@@ -72,11 +72,12 @@ struct number_writer {
 struct structural_parser : structural_iterator {
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
+  /** Current depth (nested objects and arrays) */
   uint32_t depth;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t _next_structural)
-    : structural_iterator(_parser, _next_structural),
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
+    : structural_iterator(_parser, start_structural_index),
       depth{0} {
   }
 
@@ -232,7 +233,7 @@ struct structural_parser : structural_iterator {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(next_structural - &parser.structural_indexes[0]);
+    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -283,6 +284,7 @@ struct structural_parser : structural_iterator {
   }
 
   really_inline void init() {
+    log_start();
     current_string_buf_loc = parser.doc->string_buf.get();
     parser.current_loc = 0;
     parser.error = UNINITIALIZED;
@@ -294,10 +296,7 @@ struct structural_parser : structural_iterator {
       return parser.error = EMPTY;
     }
 
-    log_start();
     init();
-    // Advance to the first character as soon as possible
-    advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return parser.error = DEPTH_ERROR;

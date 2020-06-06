@@ -3,34 +3,33 @@ namespace stage2 {
 class structural_iterator {
 public:
   const uint8_t* const buf;
-  uint32_t *next_structural;
-  uint8_t c{0};  // used to track the (structural) character we are looking at
+  uint32_t *current_structural;
   dom_parser_implementation &parser;
 
-  really_inline structural_iterator(dom_parser_implementation &_parser, size_t next_structural_index)
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
     : buf{_parser.buf},
-      next_structural{&_parser.structural_indexes[next_structural_index]},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
       parser{_parser} {
   }
-  really_inline char advance_char() {
-    c = buf[*next_structural];
-    next_structural++;
-    return c;
-  }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[*next_structural];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[current_structural_index()];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return parser.len - current_structural_index();
-  }
-  really_inline uint32_t current_structural_index() {
-    return *(next_structural-1);
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -53,18 +52,18 @@ public:
     }
     memcpy(copy, buf, parser.len);
     memset(copy + parser.len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), current_structural_index());
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > &parser.structural_indexes[n_structural_indexes];
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == &parser.structural_indexes[n_structural_indexes];
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == &parser.structural_indexes[0];
+    return current_structural == parser.structural_indexes.get();
   }
 };
 
