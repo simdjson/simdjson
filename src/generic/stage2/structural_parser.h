@@ -191,61 +191,25 @@ struct structural_parser : structural_iterator {
     return parse_number(current(), found_minus);
   }
 
-  WARN_UNUSED really_inline bool parse_atom() {
-    switch (current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(current())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(current())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(current())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
-  WARN_UNUSED really_inline bool parse_single_atom() {
-    switch (current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(current(), remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(current(), remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(current(), remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (current_char()) {
+    switch (advance_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
-    case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
+    case 't':
+      log_value("true");
+      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
+      append_tape(0, internal::tape_type::TRUE_VALUE);
+      return continue_state;
+    case 'f':
+      log_value("false");
+      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
+      append_tape(0, internal::tape_type::FALSE_VALUE);
+      return continue_state;
+    case 'n':
+      log_value("null");
+      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
+      append_tape(0, internal::tape_type::NULL_VALUE);
       return continue_state;
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -396,8 +360,20 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   case '"':
     FAIL_IF( parser.parse_string() );
     goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
+  case 't':
+    parser.log_value("true");
+    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
+    parser.append_tape(0, internal::tape_type::TRUE_VALUE);
+    goto finish;
+  case 'f':
+    parser.log_value("false");
+    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
+    parser.append_tape(0, internal::tape_type::FALSE_VALUE);
+    goto finish;
+  case 'n':
+    parser.log_value("null");
+    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
+    parser.append_tape(0, internal::tape_type::NULL_VALUE);
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
@@ -439,7 +415,6 @@ object_begin:
 
 object_key_state:
   if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
@@ -464,7 +439,8 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.advance_char() == ']') {
+  if (parser.peek_char() == ']') {
+    parser.advance_char();
     parser.end_array();
     goto scope_end;
   }
@@ -479,7 +455,6 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    parser.advance_char();
     goto main_array_switch;
   case ']':
     parser.end_array();
