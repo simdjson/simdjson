@@ -70,15 +70,13 @@ struct number_writer {
 }; // struct number_writer
 
 struct structural_parser : structural_iterator {
-  dom_parser_implementation &parser;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_parser, uint32_t _next_structural)
-    : structural_iterator(_parser.buf, _parser.len, _parser.structural_indexes.get(), _next_structural),
-      parser{_parser},
+    : structural_iterator(_parser, _next_structural),
       depth{0} {
   }
 

@@ -2,12 +2,21 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
+  const uint8_t* const buf;
+  const size_t len;
+  const uint32_t* const structural_indexes;
+  size_t next_structural; // next structural index
+  size_t idx{0}; // location of the structural character in the input (buf)
+  uint8_t c{0};  // used to track the (structural) character we are looking at
+  dom_parser_implementation &parser;
+
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t _next_structural)
+    : buf{_parser.buf},
+      len{_parser.len},
+      structural_indexes{_parser.structural_indexes.get()},
+      next_structural{_next_structural},
+      parser{_parser} {
+  }
   really_inline char advance_char() {
     idx = structural_indexes[next_structural];
     next_structural++;
@@ -63,13 +72,6 @@ public:
   really_inline size_t next_structural_index() {
     return next_structural;
   }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
