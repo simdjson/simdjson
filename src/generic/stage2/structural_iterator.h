@@ -3,7 +3,6 @@ namespace stage2 {
 class structural_iterator {
 public:
   const uint8_t* const buf;
-  const size_t len;
   const uint32_t* const structural_indexes;
   size_t next_structural; // next structural index
   size_t idx{0}; // location of the structural character in the input (buf)
@@ -12,7 +11,6 @@ public:
 
   really_inline structural_iterator(dom_parser_implementation &_parser, size_t _next_structural)
     : buf{_parser.buf},
-      len{_parser.len},
       structural_indexes{_parser.structural_indexes.get()},
       next_structural{_next_structural},
       parser{_parser} {
@@ -33,7 +31,7 @@ public:
     return &buf[idx];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - idx;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -50,12 +48,12 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
     bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
     free(copy);
     return result;
