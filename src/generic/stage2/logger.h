@@ -25,8 +25,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", 5, "Tape#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -44,25 +44,17 @@ namespace logger {
       {
         // Print the next N characters in the buffer.
         printf("| ");
-        if (structurals.at_beginning()) {
-          // If the pointer is at the beginning, print a space followed by the beginning characters
-          // Print spaces for unprintable or newline characters.
-          printf(" ");
-          for (int i=0;i<LOG_BUFFER_LEN-1;i++) {
-            printf("%c", printable_char(structurals.buf[i]));
-          }
-        } else {
-          // Otherwise, print the characters starting from the buffer position.
-          // Print spaces for unprintable or newline characters.
-          for (int i=0;i<LOG_BUFFER_LEN;i++) {
-            printf("%c", printable_char(structurals.current()[i]));
-          }
+        // Otherwise, print the characters starting from the buffer position.
+        // Print spaces for unprintable or newline characters.
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+          printf("%c", printable_char(structurals.current()[i]));
         }
         printf(" ");
       }
-      printf("|    %c ", printable_char(structurals.at_beginning() ? ' ' : structurals.current_char()));
+      printf("|    %c ", printable_char(structurals.current_char()));
       printf("|    %c ", printable_char(structurals.peek_next_char()));
       printf("| %5u ", structurals.parser.structural_indexes[*(structurals.current_structural+1)]);
+      printf("| %5u ", structurals.next_tape_index());
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
       printf("| %*u ", LOG_INDEX_LEN, *structurals.current_structural);
       printf("|\n");
