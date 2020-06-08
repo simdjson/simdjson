@@ -6,10 +6,34 @@
 #include "simdjson/error.h"
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #endif
 
 namespace simdjson {
 namespace dom {
+
+
+#ifdef SIMDJSON_THREADS_ENABLED
+
+struct stage1_worker {
+  stage1_worker();
+  ~stage1_worker() {
+    if(thread.joinable()) {
+      thread.detach();
+    }
+  }
+  void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
+private:
+  std::thread thread;
+  dom::parser * stage1_thread_parser{};
+  size_t _next_batch_start{};
+  document_stream * owner;
+  std::mutex m{};
+  std::condition_variable cv{};
+  bool has_work{false};
+};
+#endif
 
 /**
  * A forward-only stream of documents.
@@ -61,6 +85,11 @@ public:
   really_inline iterator end() noexcept;
 
 private:
+#ifdef SIMDJSON_THREADS_ENABLED
+  friend struct stage1_worker;
+
+  stage1_worker worker{};
+#endif
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
 

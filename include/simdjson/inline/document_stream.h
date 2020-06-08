@@ -5,9 +5,34 @@
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
-
 namespace simdjson {
 namespace dom {
+
+#ifdef SIMDJSON_THREADS_ENABLED
+
+void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
+    if(!thread.joinable()) {
+      thread = std::thread([this]{
+        while(true) {
+          std::unique_lock<std::mutex> lock(this->m);
+          this->cv.wait(lock, [this]{return has_work;});
+          this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
+              this->_next_batch_start);
+          this->has_work = false;
+        }
+      });
+    }
+    std::unique_lock<std::mutex> lock(m);
+    cv.wait(lock, [this]{return has_work == false;});
+    owner = ds;
+    _next_batch_start = next_batch_start;
+    stage1_thread_parser = stage1;
+    has_work = true;
+    lock.unlock();
+    cv.notify_one();
+}
+stage1_worker::stage1_worker() = default;
+#endif
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
