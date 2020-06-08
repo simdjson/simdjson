@@ -11,7 +11,6 @@ namespace simdjson {
  */
 enum error_code {
   SUCCESS = 0,              ///< No error
-  SUCCESS_AND_HAS_MORE,     ///< @private No error and buffer still has more data
   CAPACITY,                 ///< This parser can't support a document that big
   MEMALLOC,                 ///< Error allocating memory, most likely out of memory
   TAPE_ERROR,               ///< Something went wrong while writing to the tape (stage 2), this is a generic error

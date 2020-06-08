@@ -5,7 +5,6 @@ namespace internal {
 
   SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[] {
     { SUCCESS, "No error" },
-    { SUCCESS_AND_HAS_MORE, "No error and buffer still has more data" },
     { CAPACITY, "This parser can't support a document that big" },
     { MEMALLOC, "Error allocating memory, we're most likely out of memory" },
     { TAPE_ERROR, "The JSON document has an improper structure: missing or superfluous commas, braces, missing keys, etc." },

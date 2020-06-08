@@ -59,13 +59,15 @@ template<size_t STEP_SIZE>
 error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept {
   buf_block_reader<STEP_SIZE> reader(buf, len);
   json_minifier minifier(dst);
+
+  // Index the first n-1 blocks
   while (reader.has_full_block()) {
     minifier.step<STEP_SIZE>(reader.full_block(), reader);
   }
 
-  if (likely(reader.has_remainder())) {
-    uint8_t block[STEP_SIZE];
-    reader.get_remainder(block);
+  // Index the last (remainder) block, padded with spaces
+  uint8_t block[STEP_SIZE];
+  if (likely(reader.get_remainder(block)) > 0) {
     minifier.step<STEP_SIZE>(block, reader);
   }
 

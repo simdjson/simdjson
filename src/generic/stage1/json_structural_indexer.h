@@ -57,16 +57,22 @@ public:
 
 class json_structural_indexer {
 public:
+  /**
+   * Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
+   *
+   * @param partial Setting the partial parameter to true allows the find_structural_bits to
+   *   tolerate unclosed strings. The caller should still ensure that the input is valid UTF-8. If
+   *   you are processing substrings, you may want to call on a function like trimmed_length_safe_utf8.
+   */
   template<size_t STEP_SIZE>
-  static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool streaming) noexcept;
+  static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool partial) noexcept;
 
 private:
-  really_inline json_structural_indexer(uint32_t *structural_indexes)
-  : indexer{structural_indexes} {}
+  really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
-  really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool streaming);
+  really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -75,57 +81,44 @@ private:
   uint64_t unescaped_chars_error = 0;
 };
 
-really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
-  uint64_t unescaped = in.lteq(0x1F);
-  checker.check_next_input(in);
-  indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
-  prev_structurals = block.structural_start();
-  unescaped_chars_error |= block.non_quote_inside_string(unescaped);
-}
+really_inline json_structural_indexer::json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
 
-really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, bool streaming) {
-  // Write out the final iteration's structurals
-  indexer.write(uint32_t(idx-64), prev_structurals);
+//
+// PERF NOTES:
+// We pipe 2 inputs through these stages:
+// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
+//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
+// 2. Scan the JSON for critical data: strings, scalars and operators. This is the critical path.
+//    The output of step 1 depends entirely on this information. These functions don't quite use
+//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
+//    at a time. The second input's scans has some dependency on the first ones finishing it, but
+//    they can make a lot of progress before they need that information.
+// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
+//    to finish: utf-8 checks and generating the output from the last iteration.
+//
+// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
+// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
+// workout.
+//
+template<size_t STEP_SIZE>
+error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool partial) noexcept {
+  if (unlikely(len > parser.capacity())) { return CAPACITY; }
+  if (partial) { len = trim_partial_utf8(buf, len); }
 
-  error_code error = scanner.finish(streaming);
-  if (unlikely(error != SUCCESS)) { return error; }
+  buf_block_reader<STEP_SIZE> reader(buf, len);
+  json_structural_indexer indexer(parser.structural_indexes.get());
 
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
+  // Read all but the last block
+  while (reader.has_full_block()) {
+    indexer.step<STEP_SIZE>(reader.full_block(), reader);
   }
 
-  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
-  /* a valid JSON file cannot have zero structural indexes - we should have
-   * found something */
-  if (unlikely(parser.n_structural_indexes == 0u)) {
-    return EMPTY;
-  }
-  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
-    return UNEXPECTED_ERROR;
-  }
-  if (len != parser.structural_indexes[parser.n_structural_indexes - 1]) {
-    /* the string might not be NULL terminated, but we add a virtual NULL
-     * ending character. */
-    parser.structural_indexes[parser.n_structural_indexes++] = uint32_t(len);
-  }
-  /* make it safe to dereference one beyond this array */
-  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
-  parser.structural_indexes[parser.n_structural_indexes + 1] = 0;
-  /***
-   * This is related to https://github.com/simdjson/simdjson/issues/906
-   * Basically, we want to make sure that if the parsing continues beyond the last (valid)
-   * structural character, it quickly stops.
-   * Only three structural characters can be repeated without triggering an error in JSON:  [,] and }.
-   * We repeat the padding character (at 'len'). We don't know what it is, but if the parsing
-   * continues, then it must be [,] or }.
-   * Suppose it is ] or }. We backtrack to the first character, what could it be that would
-   * not trigger an error? It could be ] or } but no, because you can't start a document that way.
-   * It can't be a comma, a colon or any simple value. So the only way we could continue is
-   * if the repeated character is [. But if so, the document must start with [. But if the document
-   * starts with [, it should end with ]. If we enforce that rule, then we would get
-   * ][[ which is invalid.
-   **/
-  return checker.errors();
+  // Take care of the last block (will always be there unless file is empty)
+  uint8_t block[STEP_SIZE];
+  if (unlikely(reader.get_remainder(block) == 0)) { return EMPTY; }
+  indexer.step<STEP_SIZE>(block, reader);
+
+  return indexer.finish(parser, reader.block_index(), len, partial);
 }
 
 template<>
@@ -147,45 +140,59 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
   reader.advance();
 }
 
-//
-// Find the important bits of JSON in a 128-byte chunk, and add them to structural_indexes.
-//
-// PERF NOTES:
-// We pipe 2 inputs through these stages:
-// 1. Load JSON into registers. This takes a long time and is highly parallelizable, so we load
-//    2 inputs' worth at once so that by the time step 2 is looking for them input, it's available.
-// 2. Scan the JSON for critical data: strings, scalars and operators. This is the critical path.
-//    The output of step 1 depends entirely on this information. These functions don't quite use
-//    up enough CPU: the second half of the functions is highly serial, only using 1 execution core
-//    at a time. The second input's scans has some dependency on the first ones finishing it, but
-//    they can make a lot of progress before they need that information.
-// 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
-//    to finish: utf-8 checks and generating the output from the last iteration.
-//
-// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
-// available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
-// workout.
-//
-// Setting the streaming parameter to true allows the find_structural_bits to tolerate unclosed strings.
-// The caller should still ensure that the input is valid UTF-8. If you are processing substrings,
-// you may want to call on a function like trimmed_length_safe_utf8.
-template<size_t STEP_SIZE>
-error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, bool streaming) noexcept {
-  if (unlikely(len > parser.capacity())) { return CAPACITY; }
+really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
+  uint64_t unescaped = in.lteq(0x1F);
+  checker.check_next_input(in);
+  indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
+  prev_structurals = block.structural_start();
+  unescaped_chars_error |= block.non_quote_inside_string(unescaped);
+}
 
-  buf_block_reader<STEP_SIZE> reader(buf, len);
-  json_structural_indexer indexer(parser.structural_indexes.get());
-  while (reader.has_full_block()) {
-    indexer.step<STEP_SIZE>(reader.full_block(), reader);
+really_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial) {
+  // Write out the final iteration's structurals
+  indexer.write(uint32_t(idx-64), prev_structurals);
+
+  error_code error = scanner.finish(partial);
+  if (unlikely(error != SUCCESS)) { return error; }
+
+  if (unescaped_chars_error) {
+    return UNESCAPED_CHARS;
   }
 
-  if (likely(reader.has_remainder())) {
-    uint8_t block[STEP_SIZE];
-    reader.get_remainder(block);
-    indexer.step<STEP_SIZE>(block, reader);
+  parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
+  /***
+   * This is related to https://github.com/simdjson/simdjson/issues/906
+   * Basically, we want to make sure that if the parsing continues beyond the last (valid)
+   * structural character, it quickly stops.
+   * Only three structural characters can be repeated without triggering an error in JSON:  [,] and }.
+   * We repeat the padding character (at 'len'). We don't know what it is, but if the parsing
+   * continues, then it must be [,] or }.
+   * Suppose it is ] or }. We backtrack to the first character, what could it be that would
+   * not trigger an error? It could be ] or } but no, because you can't start a document that way.
+   * It can't be a comma, a colon or any simple value. So the only way we could continue is
+   * if the repeated character is [. But if so, the document must start with [. But if the document
+   * starts with [, it should end with ]. If we enforce that rule, then we would get
+   * ][[ which is invalid.
+   **/
+  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+  parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
+  parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
+  parser.next_structural_index = 0;
+  // a valid JSON file cannot have zero structural indexes - we should have found something
+  if (unlikely(parser.n_structural_indexes == 0u)) {
+    return EMPTY;
   }
-
-  return indexer.finish(parser, reader.block_index(), len, streaming);
+  if (unlikely(parser.structural_indexes[parser.n_structural_indexes - 1] > len)) {
+    return UNEXPECTED_ERROR;
+  }
+  if (partial) {
+    auto new_structural_indexes = find_next_document_index(parser);
+    if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
+      return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
+    }
+    parser.n_structural_indexes = new_structural_indexes;
+  }
+  return checker.errors();
 }
 
 } // namespace stage1
