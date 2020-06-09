@@ -9,6 +9,12 @@ namespace simdjson {
 namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
+namespace {
+  // Putting those inside the stage1_worker class may create problems with move constructors
+  // since a mutex is not supposed to be moved.
+  std::mutex m{};
+  std::condition_variable cv{};
+}
 inline void stage1_worker::finish() {
   std::unique_lock<std::mutex> lock(m);
   cv.wait(lock, [this]{return has_work == false;});
@@ -22,8 +28,8 @@ inline stage1_worker::~stage1_worker() {
 inline void stage1_worker::start_thread() {
   thread = std::thread([this]{
       while(can_work) {
-        std::unique_lock<std::mutex> thread_lock(this->m);
-        this->cv.wait(thread_lock, [this]{return has_work || !can_work;});
+        std::unique_lock<std::mutex> thread_lock(m);
+        cv.wait(thread_lock, [this]{return has_work || !can_work;});
         if(!can_work) {
           break;
         }
@@ -31,7 +37,7 @@ inline void stage1_worker::start_thread() {
               this->_next_batch_start);
         this->has_work = false;
         thread_lock.unlock();
-        this->cv.notify_one();
+        cv.notify_one();
       }
     }
   );

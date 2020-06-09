@@ -18,7 +18,7 @@ namespace dom {
 struct stage1_worker {
   stage1_worker() = default;
   stage1_worker(const stage1_worker&) = delete;
-  stage1_worker(stage1_worker&&) = delete;
+  stage1_worker(stage1_worker&&) = default;
 
   ~stage1_worker();
 
@@ -37,8 +37,6 @@ private:
   dom::parser * stage1_thread_parser{};
   size_t _next_batch_start{};
   document_stream * owner;
-  std::mutex m{};
-  std::condition_variable cv{};
   bool has_work{false};
   bool can_work{true};
 };
@@ -53,11 +51,7 @@ private:
 class document_stream {
 public:
   /** Move one document_stream to another. */
-#ifdef SIMDJSON_THREADS_ENABLED
-  really_inline document_stream(document_stream && other) noexcept = delete;
-#else
   really_inline document_stream(document_stream && other) noexcept = default;
-#endif
   really_inline ~document_stream() noexcept;
 
   /**
