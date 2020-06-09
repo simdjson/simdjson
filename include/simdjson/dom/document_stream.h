@@ -19,24 +19,28 @@ struct stage1_worker {
   stage1_worker() = default;
   stage1_worker(const stage1_worker&) = delete;
   stage1_worker(stage1_worker&&) = default;
-
   ~stage1_worker();
 
-  /** start a stage 1 job, this blocks until the previous job is completed  **/
+  /** Start a stage 1 job. You should first call 'run', then 'finish'.  **/
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
-  /** wait for the run to finish (blocking) **/
+  /** Wait for the run to finish (blocking). You should first call 'run', then 'finish'. **/
   void finish();
 
 private:
-  /** we only start the thread when it is needed, not at object construction, this may throw **/
+  /** We only start the thread when it is needed, not at object construction, this may throw. **/
   void start_thread();
-
+  /** Normally, we would never stop the thread. But we do in the destructor. **/
   void stop_thread();
 
-  std::thread thread;
+  std::thread thread{};
+  /** These three variables define the work done by the thread. **/
   dom::parser * stage1_thread_parser{};
   size_t _next_batch_start{};
-  document_stream * owner;
+  document_stream * owner{};
+  /** 
+   * We have two state variables. This could be streamlined to one variable in the future but 
+   * we use two for clarity.
+   */
   bool has_work{false};
   bool can_work{true};
 };
