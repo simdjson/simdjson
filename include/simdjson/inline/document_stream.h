@@ -18,7 +18,6 @@ namespace {
 inline void stage1_worker::finish() {
   std::unique_lock<std::mutex> lock(m);
   cv.wait(lock, [this]{return has_work == false;});
-  cv.notify_one();
 }
 
 inline stage1_worker::~stage1_worker() {
@@ -37,7 +36,7 @@ inline void stage1_worker::start_thread() {
               this->_next_batch_start);
         this->has_work = false;
         thread_lock.unlock();
-        cv.notify_one();
+        cv.notify_one(); // will notify "finish"
       }
     }
   );
@@ -57,20 +56,16 @@ inline void stage1_worker::stop_thread() {
 }
 
 inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
+    if(!thread.joinable()) {
+      start_thread();
+    }
     std::unique_lock<std::mutex> lock(m);
     owner = ds;
     _next_batch_start = next_batch_start;
     stage1_thread_parser = stage1;
-    if(!thread.joinable()) {
-      start_thread();
-    }
-    // Strictly speaking, we would not need a lock here because we always call "finish" before calling "run".
-    // However, hasty tests reveals that it cost little to synchronize the run function, and it brings added safety
-    // in case we get confused. This could be optimized away in the future.
-    cv.wait(lock, [this]{return has_work == false;});
     has_work = true;
     lock.unlock();
-    cv.notify_one();
+    cv.notify_one();// will notify the thread lock
 }
 #endif
 
