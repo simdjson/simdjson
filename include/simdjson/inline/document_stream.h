@@ -19,6 +19,10 @@ inline stage1_worker::~stage1_worker() {
 }
 
 inline void stage1_worker::start_thread() {
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  if(thread.joinable()) {
+    return; // This should never happen but we never want to create more than one thread.
+  }
   thread = std::thread([this]{
       while(can_work) {
         std::unique_lock<std::mutex> thread_lock(locking_mutex);
@@ -50,13 +54,13 @@ inline void stage1_worker::stop_thread() {
 }
 
 inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
-    std::unique_lock<std::mutex> lock(locking_mutex);
-    owner = ds;
-    _next_batch_start = next_batch_start;
-    stage1_thread_parser = stage1;
-    has_work = true;
-    lock.unlock();
-    cond_var.notify_one();// will notify the thread lock
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  owner = ds;
+  _next_batch_start = next_batch_start;
+  stage1_thread_parser = stage1;
+  has_work = true;
+  lock.unlock();
+  cond_var.notify_one();// will notify the thread lock
 }
 #endif
 
