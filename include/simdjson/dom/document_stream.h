@@ -16,9 +16,9 @@ namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
 struct stage1_worker {
-  stage1_worker() = default;
+  stage1_worker() noexcept = default;
   stage1_worker(const stage1_worker&) = delete;
-  stage1_worker(stage1_worker&&) = default;
+  stage1_worker(stage1_worker&&) = delete;
   stage1_worker operator=(const stage1_worker&) = delete;
   ~stage1_worker();
 
@@ -44,6 +44,12 @@ private:
    */
   bool has_work{false};
   bool can_work{true};
+
+  /**
+   * We lock using a mutex.
+   */
+  std::mutex locking_mutex{};
+  std::condition_variable cond_var{};
 };
 #endif
 
@@ -179,7 +185,7 @@ private:
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
   friend struct stage1_worker;
-  stage1_worker worker{};
+  std::unique_ptr<stage1_worker> worker{new stage1_worker()};
   /**
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.

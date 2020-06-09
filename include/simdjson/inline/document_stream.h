@@ -9,15 +9,9 @@ namespace simdjson {
 namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
-namespace {
-  // Putting those inside the stage1_worker class may create problems with move constructors
-  // since a mutex is not supposed to be moved.
-  std::mutex m{};
-  std::condition_variable cv{};
-}
 inline void stage1_worker::finish() {
-  std::unique_lock<std::mutex> lock(m);
-  cv.wait(lock, [this]{return has_work == false;});
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  cond_var.wait(lock, [this]{return has_work == false;});
 }
 
 inline stage1_worker::~stage1_worker() {
@@ -27,8 +21,8 @@ inline stage1_worker::~stage1_worker() {
 inline void stage1_worker::start_thread() {
   thread = std::thread([this]{
       while(can_work) {
-        std::unique_lock<std::mutex> thread_lock(m);
-        cv.wait(thread_lock, [this]{return has_work || !can_work;});
+        std::unique_lock<std::mutex> thread_lock(locking_mutex);
+        cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
         if(!can_work) {
           break;
         }
@@ -36,7 +30,7 @@ inline void stage1_worker::start_thread() {
               this->_next_batch_start);
         this->has_work = false;
         thread_lock.unlock();
-        cv.notify_one(); // will notify "finish"
+        cond_var.notify_one(); // will notify "finish"
       }
     }
   );
@@ -44,12 +38,12 @@ inline void stage1_worker::start_thread() {
 
 
 inline void stage1_worker::stop_thread() {
-  std::unique_lock<std::mutex> lock(m);
+  std::unique_lock<std::mutex> lock(locking_mutex);
   // We have to make sure that all locks can be released.
   can_work = false;
   has_work = false;
   lock.unlock();
-  cv.notify_all();
+  cond_var.notify_all();
   if(thread.joinable()) {
     thread.join();
   }
@@ -59,13 +53,13 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
     if(!thread.joinable()) {
       start_thread();
     }
-    std::unique_lock<std::mutex> lock(m);
+    std::unique_lock<std::mutex> lock(locking_mutex);
     owner = ds;
     _next_batch_start = next_batch_start;
     stage1_thread_parser = stage1;
     has_work = true;
     lock.unlock();
-    cv.notify_one();// will notify the thread lock
+    cond_var.notify_one();// will notify the thread lock
 }
 #endif
 
@@ -180,7 +174,7 @@ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_star
 #ifdef SIMDJSON_THREADS_ENABLED
 
 inline void document_stream::load_from_stage1_thread() noexcept {
-  worker.finish();
+  worker->finish();
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
   std::swap(parser, stage1_thread_parser);
@@ -201,7 +195,7 @@ inline void document_stream::start_stage1_thread() noexcept {
   this->stage1_thread_error = UNINITIALIZED; // In case something goes wrong, make sure it's an error
   size_t _next_batch_start = this->next_batch_start();
 
-  worker.run(this, & this->stage1_thread_parser, _next_batch_start);
+  worker->run(this, & this->stage1_thread_parser, _next_batch_start);
 }
 
 #endif // SIMDJSON_THREADS_ENABLED
