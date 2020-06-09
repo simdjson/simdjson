@@ -96,7 +96,7 @@ really_inline json_structural_indexer::json_structural_indexer(uint32_t *structu
 // 3. Step 1 doesn't use enough capacity, so we run some extra stuff while we're waiting for that
 //    to finish: utf-8 checks and generating the output from the last iteration.
 //
-// The reason we run 2 inputs at a time, is steps 2 and 3 are//still* not enough to soak up all
+// The reason we run 2 inputs at a time, is steps 2 and 3 are *still* not enough to soak up all
 // available capacity with just one input. Running 2 at a time seems to give the CPU a good enough
 // workout.
 //

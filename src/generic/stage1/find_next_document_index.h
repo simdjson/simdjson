@@ -16,12 +16,12 @@
   * where the batch's structural indexes contain a perfect amount of documents.
   * In such a case, we do not have access to the structural index which follows
   * the last document, therefore, we do not have access to the second element in
-  * the pair, and means that we cannot identify the last document. To fix this
+  * the pair, and that means we cannot identify the last document. To fix this
   * issue, we keep a count of the open and closed curly/square braces we found
   * while searching for the pair. When we find a pair AND the count of open and
   * closed curly/square braces is the same, we know that we just passed a
-  * complete
-  * document, therefore the last json buffer location is the end of the batch
+  * complete document, therefore the last json buffer location is the end of the
+  * batch.
   */
 really_inline static uint32_t find_next_document_index(dom_parser_implementation &parser) {
   // TODO don't count separately, just figure out depth

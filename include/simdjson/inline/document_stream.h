@@ -68,12 +68,6 @@ really_inline document_stream::document_stream(
 }
 
 inline document_stream::~document_stream() noexcept {
-#ifdef SIMDJSON_THREADS_ENABLED
-  // TODO kill the thread, why should people have to wait for a non-side-effecting operation to complete
-  //if (stage1_thread.joinable()) {
-  //  stage1_thread.join();
-  //}
-#endif
 }
 
 really_inline document_stream::iterator document_stream::begin() noexcept {
@@ -192,10 +186,6 @@ inline void document_stream::start_stage1_thread() noexcept {
   size_t _next_batch_start = this->next_batch_start();
 
   worker.run(this, & this->stage1_thread_parser, _next_batch_start);
-
-//  stage1_thread = std::thread([this, _next_batch_start] {
-//    this->stage1_thread_error = run_stage1(this->stage1_thread_parser, _next_batch_start);
-//  });
 }
 
 #endif // SIMDJSON_THREADS_ENABLED

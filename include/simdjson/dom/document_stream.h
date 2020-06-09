@@ -86,11 +86,6 @@ public:
   really_inline iterator end() noexcept;
 
 private:
-#ifdef SIMDJSON_THREADS_ENABLED
-  friend struct stage1_worker;
-
-  stage1_worker worker{};
-#endif
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
 
@@ -172,8 +167,8 @@ private:
   /** The error returned from the stage 1 thread. */
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
- // std::thread stage1_thread{};
-
+  friend struct stage1_worker;
+  stage1_worker worker{};
   /**
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.
