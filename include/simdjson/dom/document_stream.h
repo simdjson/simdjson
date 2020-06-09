@@ -17,12 +17,8 @@ namespace dom {
 #ifdef SIMDJSON_THREADS_ENABLED
 
 struct stage1_worker {
-  stage1_worker();
-  ~stage1_worker() {
-    if(thread.joinable()) {
-      thread.detach();
-    }
-  }
+  stage1_worker() = default;;
+  ~stage1_worker();
 
   /** start a stage 1 job, this blocks until the previous job is completed  **/
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
@@ -36,7 +32,7 @@ struct stage1_worker {
   std::mutex m{};
   std::condition_variable cv{};
   bool has_work{false};
-  bool can_work{false};
+  bool can_work{true};
 };
 #endif
 

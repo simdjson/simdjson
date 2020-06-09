@@ -15,25 +15,34 @@ void stage1_worker::finish() {
   cv.notify_one();
 }
 
+stage1_worker::~stage1_worker() {
+    can_work = false;
+    cv.notify_one();
+    if(thread.joinable()) {
+      thread.join();
+    }
+}
 
 void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
     std::unique_lock<std::mutex> lock(m);
     owner = ds;
     _next_batch_start = next_batch_start;
     stage1_thread_parser = stage1;
-    if(thread.joinable()) {thread.join();}
     if(!thread.joinable()) {
       thread = std::thread([this]{
-        //while(true) {
+        while(can_work) {
           std::unique_lock<std::mutex> thread_lock(this->m);
-          this->cv.wait(thread_lock, [this]{return has_work ;});
+          this->cv.wait(thread_lock, [this]{return has_work || !can_work;});
+          if(!can_work) {
+            break;
+          }
           this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
               this->_next_batch_start);
           this->has_work = false;
           thread_lock.unlock();
           this->cv.notify_one();
         }
-      //}
+      }
       );
     }
     cv.wait(lock, [this]{return has_work == false;});
@@ -41,7 +50,6 @@ void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_
     lock.unlock();
     cv.notify_one();
 }
-stage1_worker::stage1_worker() = default;
 #endif
 
 really_inline document_stream::document_stream(
