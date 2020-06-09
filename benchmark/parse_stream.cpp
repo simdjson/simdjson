@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         for (auto result : parser.parse_many(p, i)) {
           error = result.error();
           if (error != simdjson::SUCCESS) {
-            std::wcerr << "Parsing failed with: " << error << std::endl;
+            std::wcerr << "Parsing failed with: " <<  error_message(error) << std::endl;
             exit(1);
           }
           count++;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
       for (auto result : parser.parse_many(p, optimal_batch_size)) {
         error = result.error();
         if (error != simdjson::SUCCESS) {
-          std::wcerr << "Parsing failed with: " << error << std::endl;
+          std::wcerr << "Parsing failed with: " << error_message(error) << std::endl;
           exit(1);
         }
       }

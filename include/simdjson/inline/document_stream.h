@@ -73,6 +73,9 @@ really_inline document_stream::document_stream(
     batch_size{_batch_size},
     error{_error}
 {
+  if(worker.get() == nullptr) {
+    error = MEMALLOC;
+  }
 }
 
 inline document_stream::~document_stream() noexcept {

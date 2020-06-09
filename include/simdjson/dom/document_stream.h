@@ -195,7 +195,7 @@ private:
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
   friend struct stage1_worker;
-  std::unique_ptr<stage1_worker> worker{new stage1_worker()};
+  std::unique_ptr<stage1_worker> worker{new(std::nothrow) stage1_worker()};
   /**
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.
