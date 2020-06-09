@@ -23,8 +23,12 @@ struct stage1_worker {
       thread.detach();
     }
   }
+
+  /** start a stage 1 job, this blocks until the previous job is completed  **/
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
-private:
+  /** wait for the run to finish (blocking) **/
+  void finish();
+
   std::thread thread;
   dom::parser * stage1_thread_parser{};
   size_t _next_batch_start{};
@@ -32,6 +36,7 @@ private:
   std::mutex m{};
   std::condition_variable cv{};
   bool has_work{false};
+  bool can_work{false};
 };
 #endif
 
@@ -171,7 +176,7 @@ private:
   /** The error returned from the stage 1 thread. */
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
-  std::thread stage1_thread{};
+ // std::thread stage1_thread{};
 
   /**
    * The parser used to run stage 1 in the background. Will be swapped
