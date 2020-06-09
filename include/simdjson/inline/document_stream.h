@@ -50,9 +50,6 @@ inline void stage1_worker::stop_thread() {
 }
 
 inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
-    if(!thread.joinable()) {
-      start_thread();
-    }
     std::unique_lock<std::mutex> lock(locking_mutex);
     owner = ds;
     _next_batch_start = next_batch_start;
@@ -128,6 +125,7 @@ inline void document_stream::start() noexcept {
     // Kick off the first thread if needed
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
+    worker->start_thread();
     start_stage1_thread();
     if (error) { return; }
   }

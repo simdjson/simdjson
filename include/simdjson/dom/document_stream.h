@@ -21,16 +21,26 @@ struct stage1_worker {
   stage1_worker(stage1_worker&&) = delete;
   stage1_worker operator=(const stage1_worker&) = delete;
   ~stage1_worker();
-
-  /** Start a stage 1 job. You should first call 'run', then 'finish'.  **/
+  /** 
+   * We only start the thread when it is needed, not at object construction, this may throw.
+   * You should only call this once. 
+   **/
+  void start_thread();
+  /** 
+   * Start a stage 1 job. You should first call 'run', then 'finish'. 
+   * You must call start_thread once before.
+   */
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
   /** Wait for the run to finish (blocking). You should first call 'run', then 'finish'. **/
   void finish();
 
 private:
-  /** We only start the thread when it is needed, not at object construction, this may throw. **/
-  void start_thread();
-  /** Normally, we would never stop the thread. But we do in the destructor. **/
+
+  /** 
+   * Normally, we would never stop the thread. But we do in the destructor.
+   * This function is only safe assuming that you are not waiting for results. You 
+   * should have called run, then finish, and be done. 
+   **/
   void stop_thread();
 
   std::thread thread{};
