@@ -19,6 +19,7 @@ struct stage1_worker {
   stage1_worker() = default;
   stage1_worker(const stage1_worker&) = delete;
   stage1_worker(stage1_worker&&) = default;
+  stage1_worker operator=(const stage1_worker&) = delete;
   ~stage1_worker();
 
   /** Start a stage 1 job. You should first call 'run', then 'finish'.  **/
