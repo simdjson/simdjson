@@ -73,9 +73,11 @@ really_inline document_stream::document_stream(
     batch_size{_batch_size},
     error{_error}
 {
+#ifdef SIMDJSON_THREADS_ENABLED
   if(worker.get() == nullptr) {
     error = MEMALLOC;
   }
+#endif
 }
 
 inline document_stream::~document_stream() noexcept {
