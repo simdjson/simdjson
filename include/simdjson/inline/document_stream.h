@@ -39,7 +39,11 @@ inline void stage1_worker::start_thread() {
 
 
 inline void stage1_worker::stop_thread() {
+  std::unique_lock<std::mutex> lock(m);
+  // We have to make sure that all locks can be released.
   can_work = false;
+  has_work = false;
+  lock.unlock();
   cv.notify_all();
   if(thread.joinable()) {
     thread.join();
