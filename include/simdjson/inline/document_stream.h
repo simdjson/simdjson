@@ -9,42 +9,54 @@ namespace simdjson {
 namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
-void stage1_worker::finish() {
+inline void stage1_worker::finish() {
   std::unique_lock<std::mutex> lock(m);
   cv.wait(lock, [this]{return has_work == false;});
   cv.notify_one();
 }
 
-stage1_worker::~stage1_worker() {
-    can_work = false;
-    cv.notify_one();
-    if(thread.joinable()) {
-      thread.join();
-    }
+inline stage1_worker::~stage1_worker() {
+  stop_thread();
 }
 
-void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
+inline void stage1_worker::start_thread() {
+  thread = std::thread([this]{
+      while(can_work) {
+        std::unique_lock<std::mutex> thread_lock(this->m);
+        this->cv.wait(thread_lock, [this]{return has_work || !can_work;});
+        if(!can_work) {
+          break;
+        }
+        this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
+              this->_next_batch_start);
+        this->has_work = false;
+        thread_lock.unlock();
+        this->cv.notify_one();
+      }
+    }
+  );
+}
+
+
+inline void stage1_worker::stop_thread() {
+  can_work = false;
+  cv.notify_all();
+  if(thread.joinable()) {
+    thread.join();
+  }
+}
+
+inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
     std::unique_lock<std::mutex> lock(m);
     owner = ds;
     _next_batch_start = next_batch_start;
     stage1_thread_parser = stage1;
     if(!thread.joinable()) {
-      thread = std::thread([this]{
-        while(can_work) {
-          std::unique_lock<std::mutex> thread_lock(this->m);
-          this->cv.wait(thread_lock, [this]{return has_work || !can_work;});
-          if(!can_work) {
-            break;
-          }
-          this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
-              this->_next_batch_start);
-          this->has_work = false;
-          thread_lock.unlock();
-          this->cv.notify_one();
-        }
-      }
-      );
+      start_thread();
     }
+    // Strictly speaking, we would not need a lock here because we always call "finish" before calling "run".
+    // However, hasty tests reveals that it cost little to synchronize the run function, and it brings added safety
+    // in case we get confused. This could be optimized away in the future.
     cv.wait(lock, [this]{return has_work == false;});
     has_work = true;
     lock.unlock();
@@ -130,7 +142,6 @@ inline void document_stream::next() noexcept {
 
   // Load the next document from the batch
   error = parser.implementation->stage2_next(parser.doc);
-
   // If that was the last document in the batch, load another batch (if available)
   while (error == EMPTY) {
     batch_start = next_batch_start();

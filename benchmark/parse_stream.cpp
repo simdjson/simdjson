@@ -7,7 +7,7 @@
 #include "simdjson.h"
 
 #define NB_ITERATION 5
-#define MIN_BATCH_SIZE 200000
+#define MIN_BATCH_SIZE 10000
 #define MAX_BATCH_SIZE 10000000
 
 bool test_baseline = false;
@@ -71,7 +71,7 @@ int main (int argc, char *argv[]){
         std::wclog << "parse_many: Speed per batch_size... from " << MIN_BATCH_SIZE
                 << " bytes to " << MAX_BATCH_SIZE << " bytes..." << std::endl;
         std::cout << "Batch Size\t" << "Gigabytes/second\t" << "Nb of documents parsed" << std::endl;
-        for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 50) {
+        for (size_t i = MIN_BATCH_SIZE; i <= MAX_BATCH_SIZE; i += (MAX_BATCH_SIZE - MIN_BATCH_SIZE) / 100) {
             batch_size_res.insert(std::pair<size_t, double>(i, 0));
             int count;
             for (size_t j = 0; j < 5; j++) {
@@ -81,7 +81,7 @@ int main (int argc, char *argv[]){
 
                 auto start = std::chrono::steady_clock::now();
                 count = 0;
-                for (auto result : parser.parse_many(p, 4000000)) {
+                for (auto result : parser.parse_many(p, i)) {
                     error = result.error();
                     count++;
                 }
@@ -119,8 +119,8 @@ int main (int argc, char *argv[]){
             simdjson::error_code error;
 
             auto start = std::chrono::steady_clock::now();
-            // TODO this includes allocation of the parser; is that intentional?
-            for (auto result : parser.parse_many(p, 4000000)) {
+            // This includes allocation of the parser
+            for (auto result : parser.parse_many(p, optimal_batch_size)) {
                 error = result.error();
             }
             auto end = std::chrono::steady_clock::now();
@@ -142,6 +142,23 @@ int main (int argc, char *argv[]){
         std::cout << "Min:  " << min_result << " bytes read: " << p.size()
                 << " Gigabytes/second: " << speedinGBs << std::endl;
     }
+#ifdef SIMDJSON_THREADS_ENABLED
+    // Multithreading probably does not help matters for small files (less than 10 MB).
+    if(p.size() < 10000000) {
+        std::cout << std::endl;
+
+        std::cout << "Warning: your file is small and the performance results are probably meaningless" << std::endl;
+        std::cout << "as far as multithreaded performance goes." << std::endl;
+
+        std::cout << std::endl;
+
+        std::cout << "Try to concatenate the file with itself to generate a large one." << std::endl;
+        std::cout << "In bash: " << std::endl;
+        std::cout << "for i in {1..1000}; do cat '" << filename << "' >> bar.ndjson; done" << std::endl;
+        std::cout << argv[0] << " bar.ndjson" << std::endl;
+
+    }
+#endif
 
     return 0;
 }

@@ -15,15 +15,23 @@ namespace dom {
 
 
 #ifdef SIMDJSON_THREADS_ENABLED
-
 struct stage1_worker {
-  stage1_worker() = default;;
+  stage1_worker() = default;
+  stage1_worker(const stage1_worker&) = delete;
+  stage1_worker(stage1_worker&&) = delete;
+
   ~stage1_worker();
 
   /** start a stage 1 job, this blocks until the previous job is completed  **/
   void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
   /** wait for the run to finish (blocking) **/
   void finish();
+
+private:
+  /** we only start the thread when it is needed, not at object construction, this may throw **/
+  void start_thread();
+
+  void stop_thread();
 
   std::thread thread;
   dom::parser * stage1_thread_parser{};
@@ -45,7 +53,11 @@ struct stage1_worker {
 class document_stream {
 public:
   /** Move one document_stream to another. */
+#ifdef SIMDJSON_THREADS_ENABLED
+  really_inline document_stream(document_stream && other) noexcept = delete;
+#else
   really_inline document_stream(document_stream && other) noexcept = default;
+#endif
   really_inline ~document_stream() noexcept;
 
   /**
