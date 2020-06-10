@@ -4,6 +4,7 @@
 // "simdjson/stage2.h" (this simplifies amalgation)
 
 namespace stage2 {
+namespace { // Make everything here private
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -75,7 +76,12 @@ struct structural_parser {
   uint8_t *current_string_buf_loc{};
   uint32_t depth;
 
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural = 0) : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural), parser{_parser}, depth{0} {}
+  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
+    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
+      parser{_parser},
+      depth{0} {
+  }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
     parser.containing_scope[depth].tape_index = parser.current_loc;
@@ -264,18 +270,11 @@ struct structural_parser {
   }
 
   WARN_UNUSED really_inline error_code finish() {
-    // the string might not be NULL terminated.
-    if ( !structurals.at_end(parser.n_structural_indexes) ) {
-      log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return parser.error = TAPE_ERROR;
-    }
     end_document();
+    parser.next_structural_index = uint32_t(structurals.next_structural_index());
+
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
-      return parser.error = TAPE_ERROR;
-    }
-    if (parser.containing_scope[depth].tape_index != 0) {
-      log_error("IMPOSSIBLE: root scope tape index did not start at 0!");
       return parser.error = TAPE_ERROR;
     }
 
@@ -328,12 +327,14 @@ struct structural_parser {
     parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(size_t len, ret_address_t finish_state) {
+  WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
+    // If there are no structurals left, return EMPTY
+    if (structurals.at_end(parser.n_structural_indexes)) {
+      return parser.error = EMPTY;
+    }
+
     log_start();
     init();
-    if (len > parser.capacity()) {
-      return parser.error = CAPACITY;
-    }
     // Advance to the first character as soon as possible
     structurals.advance_char();
     // Push the root scope (there is always at least one scope)
@@ -368,23 +369,18 @@ struct structural_parser {
   really_inline void log_error(const char *error) {
     logger::log_line(structurals, "", "ERROR", error);
   }
-};
+}; // struct structural_parser
 
 // Redefine FAIL_IF to use goto since it'll be used inside the function now
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
-} // namespace stage2
-
-/************
- * The JSON is parsed to a tape, see the accompanying tape.md file
- * for documentation.
- ***********/
-WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  this->doc = &_doc;
+template<bool STREAMING>
+WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+  dom_parser.doc = &doc;
   static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
-  stage2::structural_parser parser(*this);
-  error_code result = parser.start(len, addresses.finish);
+  stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  error_code result = parser.start(addresses.finish);
   if (result) { return result; }
 
   //
@@ -398,7 +394,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (buf[structural_indexes[n_structural_indexes - 1]] != ']') {
+    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
       goto error;
     }
     goto array_begin;
@@ -503,4 +499,32 @@ finish:
 
 error:
   return parser.error();
+}
+
+} // namespace {}
+} // namespace stage2
+
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+  error_code result = stage2::parse_structurals<false>(*this, _doc);
+  if (result) { return result; }
+
+  // If we didn't make it to the end, it's an error
+  if ( next_structural_index != n_structural_indexes ) {
+    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return error = TAPE_ERROR;
+  }
+
+  return SUCCESS;
+}
+
+/************
+ * The JSON is parsed to a tape, see the accompanying tape.md file
+ * for documentation.
+ ***********/
+WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
+  return stage2::parse_structurals<true>(*this, _doc);
 }
