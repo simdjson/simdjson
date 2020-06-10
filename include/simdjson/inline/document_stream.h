@@ -10,8 +10,10 @@ namespace dom {
 
 #ifdef SIMDJSON_THREADS_ENABLED
 inline void stage1_worker::finish() {
-  std::unique_lock<std::mutex> lock(locking_mutex);
-  cond_var.wait(lock, [this]{return has_work == false;});
+  // spinlock (burning cycles)
+  while (has_work.load(std::memory_order_acquire)) {}
+  // The acquire ensures follows the this->has_work.store(false, std::memory_order_release);
+  // line in the thread and ensures that all stores are now visible in the main thread.
 }
 
 inline stage1_worker::~stage1_worker() {
@@ -19,48 +21,43 @@ inline stage1_worker::~stage1_worker() {
 }
 
 inline void stage1_worker::start_thread() {
-  std::unique_lock<std::mutex> lock(locking_mutex);
-  if(thread.joinable()) {
-    return; // This should never happen but we never want to create more than one thread.
-  }
   thread = std::thread([this]{
-      while(can_work) {
-        std::unique_lock<std::mutex> thread_lock(locking_mutex);
-        cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
-        if(!can_work) {
-          break;
+      while(true) {
+        // spinlock (burning cycles)
+        while (!has_work.load(std::memory_order_acquire)) {
+          if (!can_work) {
+            return;
+          }
         }
         this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
               this->_next_batch_start);
-        this->has_work = false;
-        thread_lock.unlock();
-        cond_var.notify_one(); // will notify "finish"
+        this->has_work.store(false, std::memory_order_release); // going to finish
       }
-    }
+  }
   );
 }
 
 
 inline void stage1_worker::stop_thread() {
-  std::unique_lock<std::mutex> lock(locking_mutex);
   // We have to make sure that all locks can be released.
   can_work = false;
-  has_work = false;
-  lock.unlock();
-  cond_var.notify_all();
+  has_work.store(false, std::memory_order_release);
+  // The  release matches the while (!has_work.load(std::memory_order_acquire))  line
+  // in the thread. We ensure that it sees the variable that we just store.
+  // The thread will then terminate on its own. We could dispatch it.
   if(thread.joinable()) {
     thread.join();
   }
 }
 
 inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
-  std::unique_lock<std::mutex> lock(locking_mutex);
+  // Experimentally, it does not seem to happen that the thread is not already started.
   owner = ds;
   _next_batch_start = next_batch_start;
   stage1_thread_parser = stage1;
-  has_work = true;
-  lock.unlock();
-  cond_var.notify_one();// will notify the thread lock
+  has_work.store(true, std::memory_order_release);
+  // The  release matches the while (!has_work.load(std::memory_order_acquire))  line
+  // in the thread. We ensure that it sees the variable that we just store.
 }
 #endif
 
@@ -135,6 +132,10 @@ inline void document_stream::start() noexcept {
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
     worker->start_thread();
+    /**
+     * If the thread took too long to start, we could move
+     * worker->start_thread(); earlier.
+     **/
     start_stage1_thread();
     if (error) { return; }
   }

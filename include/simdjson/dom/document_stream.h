@@ -6,8 +6,6 @@
 #include "simdjson/error.h"
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #endif
 
 namespace simdjson {
@@ -52,14 +50,8 @@ private:
    * We have two state variables. This could be streamlined to one variable in the future but 
    * we use two for clarity.
    */
-  bool has_work{false};
+  std::atomic<bool> has_work{false};
   bool can_work{true};
-
-  /**
-   * We lock using a mutex.
-   */
-  std::mutex locking_mutex{};
-  std::condition_variable cond_var{};
 };
 #endif
 
