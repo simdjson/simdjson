@@ -126,8 +126,7 @@ int main(int argc, char *argv[]) {
 
   char *mini_buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
   size_t minisize;
-  auto minierror = simdjson::active_implementation->minify((const uint8_t *)p.data(), p.size(),
-                                                           (uint8_t *)mini_buffer, minisize);
+  auto minierror = minify_string(p.data(), p.size(),mini_buffer, minisize);
   if (!minierror) { std::cerr << minierror << std::endl; exit(1); }
   mini_buffer[minisize] = '\0';
 

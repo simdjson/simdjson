@@ -9,6 +9,24 @@
 
 namespace simdjson {
 
+
+
+/**
+ *
+ * Minify the input string assuming that it represents a JSON string, does not parse or validate.
+ * This function is much faster than parsing a JSON string and then writing a minified version of it.
+ * However, it does not validate the input.
+ *
+ *
+ * @param buf the json document to minify.
+ * @param len the length of the json document.
+ * @param dst the buffer to write the minified document to. *MUST* be allocated up to len + SIMDJSON_PADDING bytes.
+ * @param dst_len the number of bytes written. Output only.
+ * @return the error code, or SUCCESS if there was no error.
+ */
+WARN_UNUSED error_code minify_string(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
+
+
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
  *
