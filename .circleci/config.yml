@@ -117,7 +117,7 @@ jobs:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ install_cmake, cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test_all, cmake_install_test ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
