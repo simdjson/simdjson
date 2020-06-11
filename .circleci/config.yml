@@ -29,7 +29,25 @@ executors:
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
-  clang9:
+  gcc10:
+    docker:
+      - image: conanio/gcc10
+        environment:
+          CXX: g++-10
+          CC: gcc-10
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  clang10:
+    docker:
+      - image: conanio/clang10
+        environment:
+          CXX: clang++-10
+          CC: clang-10
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+   clang9:
     docker:
       - image: conanio/clang9
         environment:
@@ -95,11 +113,21 @@ jobs:
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ install_cmake, cmake_test_all, cmake_install_test ]
+  gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
+    executor: gcc10
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ install_cmake, cmake_test_all, cmake_install_test ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
+  clang10:
+    description: Build and run tests on clang 10 and AVX 2 with a cmake static build
+    executor: clang10
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    steps: [ cmake_test, cmake_install_test ]
   # libcpp
   libcpp-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
@@ -111,12 +139,12 @@ jobs:
     description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
     executor: gcc9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ cmake_test_all ]
+    steps: [ cmake_test ]
   sanitize-clang9:
     description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
     executor: clang9
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
-    steps: [ cmake_test_all ]
+    steps: [ cmake_test ]
   
   # dynamic
   dynamic-gcc9:
@@ -181,10 +209,12 @@ workflows:
     jobs:
       # full multi-implementation tests
       - gcc7
+      - gcc10
       - clang6
+      - clang10
       
       # libc++
-      # - libcpp-clang9 # disabled due to too many errors
+      - libcpp-clang9
       
       # full single-implementation tests
       - sanitize-gcc9
