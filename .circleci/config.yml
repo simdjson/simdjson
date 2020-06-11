@@ -47,7 +47,7 @@ executors:
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
-   clang9:
+  clang9:
     docker:
       - image: conanio/clang9
         environment:
