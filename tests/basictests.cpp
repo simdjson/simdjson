@@ -1717,7 +1717,7 @@ namespace type_tests {
 namespace minify_string_tests {
 
   bool check_minification(const char * input, size_t length, const char * expected, size_t expected_length) {
-    std::unique_ptr<char> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
+    std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
     if(buffer.get() == nullptr) {
       std::cerr << "cannot alloc "  << std::endl;
       return false;
