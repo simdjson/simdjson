@@ -144,7 +144,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
-    CTEST_FLAGS: -j4 --output-on-failure
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
     - apt-get install -y cmake
