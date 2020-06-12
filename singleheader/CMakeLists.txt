@@ -122,14 +122,17 @@ install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 #
 # By design, this will fail if the original files are missing (it should).
 #
+if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
 
-add_library(simdjson-singleheader-include-source-direct-from-repository INTERFACE)
-target_include_directories(simdjson-singleheader-include-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+  add_library(simdjson-singleheader-include-source-direct-from-repository INTERFACE)
+  target_include_directories(simdjson-singleheader-include-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(simdjson-singleheader-source-direct-from-repository INTERFACE)
-target_sources(simdjson-singleheader-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(simdjson-singleheader-source-direct-from-repository INTERFACE simdjson-singleheader-include-source-direct-from-repository)
+  add_library(simdjson-singleheader-source-direct-from-repository INTERFACE)
+  target_sources(simdjson-singleheader-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(simdjson-singleheader-source-direct-from-repository INTERFACE simdjson-singleheader-include-source-direct-from-repository)
 
-add_executable(amalgamate_demo_direct_from_repository ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp)
-target_link_libraries(amalgamate_demo_direct_from_repository simdjson-singleheader-include-source-direct-from-repository simdjson-internal-flags)
-add_test(amalgamate_demo_direct_from_repository amalgamate_demo_direct_from_repository ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+  add_executable(amalgamate_demo_direct_from_repository ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp)
+  target_link_libraries(amalgamate_demo_direct_from_repository simdjson-singleheader-include-source-direct-from-repository simdjson-internal-flags)
+  add_test(amalgamate_demo_direct_from_repository amalgamate_demo_direct_from_repository ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
+
+endif()
