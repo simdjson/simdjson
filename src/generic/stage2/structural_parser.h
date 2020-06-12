@@ -438,7 +438,7 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.peek_char() == ']') {
+  if (parser.peek_next_char() == ']') {
     parser.advance_char();
     parser.end_array();
     goto scope_end;

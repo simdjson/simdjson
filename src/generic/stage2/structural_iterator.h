@@ -21,7 +21,7 @@ public:
     return buf[*current_structural];
   }
   // Get the next structural character without advancing
-  really_inline char peek_char() {
+  really_inline char peek_next_char() {
     return buf[*(current_structural+1)];
   }
   really_inline char advance_char() {
