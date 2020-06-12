@@ -497,7 +497,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
       // we over-decrement by one when there is a '.'
       digit_count -= int(start - start_digits);
-      if (unlikely(digit_count >= 19)) {
+      if (digit_count >= 19) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
@@ -507,7 +507,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         //
         bool success = slow_float_parsing((const char *) src, writer);
         // The number was already written, but we made a copy of the writer
-        // when we passed it to the parse_large_integer() function, so 
+        // when we passed it to the parse_large_integer() function, so
         writer.skip_double();
         return success;
       }
@@ -546,7 +546,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       // need to recover: we parse the whole thing again.
       bool success = parse_large_integer(src, writer, found_minus);
       // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so 
+      // when we passed it to the parse_large_integer() function, so
       writer.skip_large_integer();
       return success;
     }
