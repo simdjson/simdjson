@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ########################################################################
-# Generates an "amalgamation build" for roaring. Inspired by similar
+# Generates an "amalgamation build" for simdjson. Inspired by similar
 # script used by whefs.
 ########################################################################
 set -e

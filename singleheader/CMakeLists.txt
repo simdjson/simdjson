@@ -40,21 +40,32 @@ if (BASH)
       DEPENDS amalgamate.sh simdjson
   )
 
-  # This is used by "make amalgamate" to update the original source files. We obviously don't do
+  ##
+  # This is used by "make amalgamate" to update the original source files.
+  # You can invoke it as cmake --build . --target amalgamate 
+  # We obviously don't do
   # this if source and generated files are in the same place--cmake gets mad!
   if (NOT (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR}))
-    add_custom_command(
-      # We don't really need want this to trigger other stuff, it's a terminal target.
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    add_custom_target(amalgamate)
+    add_custom_command(TARGET amalgamate
+      # We don't want CMake to know that it is writing to the source directory. No magic  
+      # file regeneration in the source directory without the user's knowledge.
+      # OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md
       COMMAND ${CMAKE_COMMAND} -E copy ${SINGLEHEADER_FILES} ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${SINGLEHEADER_FILES}
     )
   endif()
 
+
+  ##
+  # Adding the ability for CMake to modify the source is problematic. In particular, it will
+  # happily regenerate the source files that are missing, silently. We do not want to do this.
+  # If they are missing source files, the build should fail. You should not get silent patching
+  # by CMake. The user can easily regenerate the files, deliberately.
   #
-  # "make amalgamate" to generate the header files directly and update the original source
-  #
-  add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+  # DO NOT DO THIS:
+  # add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+  ##
 
 else(BASH)
 
@@ -72,7 +83,6 @@ else(BASH)
 
 endif(BASH)
 
-
 #
 # Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
 #
@@ -85,7 +95,14 @@ target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUIL
 add_library(simdjson-singleheader-source INTERFACE)
 target_sources(simdjson-singleheader-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
 target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singleheader-include-source)
-add_dependencies(simdjson-singleheader-source amalgamate)
+
+#
+# We do not want CMake to update the original source files automatically "in passing" as
+# part of a test that generates the files anew. This kind of side-effect is  bad.
+#
+# add_dependencies(simdjson-singleheader-source amalgamate) <=== NO NO NO
+#
+#
 
 #
 # Test the generated simdjson.cpp/simdjson.h using the generated amalgamate_demo.cpp
@@ -95,3 +112,24 @@ target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdj
 add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+
+
+
+#
+# Test the existing simdjson.cpp/simdjson.h using the existing amalgamate_demo.cpp, using
+# the files from the repository.
+#
+# By design, this will fail if the original files are missing (it should).
+#
+
+add_library(simdjson-singleheader-include-source-direct-from-repository INTERFACE)
+target_include_directories(simdjson-singleheader-include-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library(simdjson-singleheader-source-direct-from-repository INTERFACE)
+target_sources(simdjson-singleheader-source-direct-from-repository INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(simdjson-singleheader-source-direct-from-repository INTERFACE simdjson-singleheader-include-source-direct-from-repository)
+
+add_executable(amalgamate_demo_direct_from_repository ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp)
+target_link_libraries(amalgamate_demo_direct_from_repository simdjson-singleheader-include-source-direct-from-repository simdjson-internal-flags)
+add_test(amalgamate_demo_direct_from_repository amalgamate_demo_direct_from_repository ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
