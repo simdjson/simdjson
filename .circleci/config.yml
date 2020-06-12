@@ -57,34 +57,40 @@ commands:
   cmake_prep:
     steps:
       - checkout
+      - run: mkdir -p build
 
   cmake_build:
     steps:
       - cmake_prep
-      - run: cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .
-      - run: make $BUILD_FLAGS all
-      - run: tools/json2json -h # Print out the implementation we're using on this hardware
+      - run: |
+          cd build &&
+          cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .. &&
+          make $BUILD_FLAGS all &&
+          tools/json2json -h # Print out the implementation we're using on this hardware
 
   cmake_test:
     steps:
       - cmake_build
-      - run: ctest $CTEST_FLAGS -L acceptance
-      - run: ctest $CTEST_FLAGS -LE acceptance -E checkperf
+      - run: |
+          cd build &&
+          ctest $CTEST_FLAGS -L acceptance &&
+          ctest $CTEST_FLAGS -LE acceptance -E checkperf
 
   cmake_test_all:
     steps:
       - cmake_build
-      - run: ctest $CTEST_FLAGS -L acceptance -LE per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation
-      - run: SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation
-      - run: ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
+      - run: |
+          cd build &&
+          ctest $CTEST_FLAGS -L acceptance -LE per_implementation &&
+          SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation &&
+          SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation &&SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation &&
+          ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 
 
   # we not only want cmake to build and run tests, but we want also a successful installation from which we can build, link and run programs
   cmake_install_test: # this version builds, install, test and then verify from the installation
     steps:
-      - run: make install
+      - run: cd build && make install
       - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
 
 jobs:
