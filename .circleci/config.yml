@@ -129,56 +129,56 @@ jobs:
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ cmake_test, cmake_install_test ]
   # libcpp
-  libcpp-clang9:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake static build and libc++
-    executor: clang9
+  libcpp-clang10:
+    description: Build and run tests on clang 10 and AVX 2 with a cmake static build and libc++
+    executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON }
     steps: [ cmake_test_all, cmake_install_test ]
   # sanitize
-  sanitize-gcc9:
-    description: Build and run tests on GCC 9 and AVX 2 with a cmake sanitize build
-    executor: gcc9
+  sanitize-gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
+    executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, BUILD_FLAGS: "", CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ cmake_test ]
-  sanitize-clang9:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake sanitize build
-    executor: clang9
+  sanitize-clang10:
+    description: Build and run tests on clang 10 and AVX 2 with a cmake sanitize build
+    executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ cmake_test ]
   
   # dynamic
-  dynamic-gcc9:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake dynamic build
-    executor: gcc9
+  dynamic-gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake dynamic build
+    executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
     steps: [ cmake_test, cmake_install_test ]
-  dynamic-clang9:
-    description: Build and run tests on clang 6 and AVX 2 with a cmake dynamic build
-    executor: clang9
+  dynamic-clang10:
+    description: Build and run tests on clang 10 and AVX 2 with a cmake dynamic build
+    executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
     steps: [ cmake_test, cmake_install_test ]
   
   # unthreaded
-  unthreaded-gcc9:
-    description: Build and run tests on GCC 7 and AVX 2 *without* threads
-    executor: gcc9
+  unthreaded-gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 *without* threads
+    executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ cmake_test, cmake_install_test ]
-  unthreaded-clang9:
-    description: Build and run tests on Clang 6 and AVX 2 *without* threads
-    executor: clang9
+  unthreaded-clang10:
+    description: Build and run tests on Clang 10 and AVX 2 *without* threads
+    executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_ENABLE_THREADS=OFF }
     steps: [ cmake_test, cmake_install_test ]
 
   # noexcept
-  noexcept-gcc9:
-    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: gcc9
+  noexcept-gcc10:
+    description: Build and run tests on GCC 10 and AVX 2 with exceptions off
+    executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
     steps: [ cmake_test, cmake_install_test ]
-  noexcept-clang9:
-    description: Build and run tests on GCC 7 and AVX 2 with exceptions off
-    executor: clang9
+  noexcept-clang10:
+    description: Build and run tests on Clang 10 and AVX 2 with exceptions off
+    executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_EXCEPTIONS=OFF }
     steps: [ cmake_test, cmake_install_test ]
 
@@ -187,19 +187,19 @@ jobs:
   #
 
   # make (test and checkperf)
-  arch-haswell-gcc9:
+  arch-haswell-gcc10:
     description: Build, run tests and check performance on GCC 7 with -march=haswell
-    executor: gcc9
+    executor: gcc10
     environment: { CXXFLAGS: -march=haswell }
     steps: [ cmake_test ]
-  arch-nehalem-gcc9:
+  arch-nehalem-gcc10:
     description: Build, run tests and check performance on GCC 7 with -march=nehalem
-    executor: gcc9
+    executor: gcc10
     environment: { CXXFLAGS: -march=nehalem }
     steps: [ cmake_test ]
-  no-computed-goto-gcc9:
+  no-computed-goto-gcc10:
     description: Build, run tests and check performance on GCC 7 with -DSIMDJSON_NO_COMPUTED_GOTO=true
-    executor: gcc9
+    executor: gcc10
     environment: { CXXFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
     steps: [ cmake_test ]
 
@@ -209,25 +209,29 @@ workflows:
     jobs:
       # full multi-implementation tests
       - gcc7
-      - gcc10
+      #- gcc10 # this gets tested a lot below
       - clang6
-      - clang10
+      #- clang10 # this gets tested a lot below
       
       # libc++
-      - libcpp-clang9
+      - libcpp-clang10
       
       # full single-implementation tests
-      - sanitize-gcc9
-      - sanitize-clang9
-      - dynamic-gcc9
-      - dynamic-clang9
-      - unthreaded-gcc9
-      - unthreaded-clang9
+      - sanitize-gcc10
+      - sanitize-clang10
+      - dynamic-gcc10
+      - dynamic-clang10
+      - unthreaded-gcc10
+      - unthreaded-clang10
+
+      # no exceptions
+      - noexcept-gcc10
+      - noexcept-clang10
 
       # quicker make single-implementation tests
-      - arch-haswell-gcc9
-      - arch-nehalem-gcc9
-      - no-computed-goto-gcc9
+      - arch-haswell-gcc10
+      - arch-nehalem-gcc10
+      - no-computed-goto-gcc10
     
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
