@@ -107,9 +107,6 @@ public:
    */
   virtual ~dom_parser_implementation() = default;
 
-  /** Next location to write to in the tape */
-  uint32_t current_loc{0};
-
   /** Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
