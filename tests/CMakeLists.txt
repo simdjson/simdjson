@@ -58,7 +58,7 @@ add_cpp_test(jsoncheck LABELS acceptance per_implementation)
 add_cpp_test(parse_many_test LABELS acceptance per_implementation)
 add_cpp_test(pointercheck LABELS acceptance per_implementation)
 add_cpp_test(extracting_values_example LABELS acceptance per_implementation)
-find_program(BASH bash) 
+find_program(BASH bash)
 
 
 # Script tests
@@ -77,7 +77,8 @@ if (BASH AND (NOT MSVC)) # The scripts are not robust enough to run under Window
   #
   # Competition parse test
   #
-  if (SIMDJSON_COMPETITION)
+  if ((SIMDJSON_COMPETITION) AND (!SIMDJSON_SANITIZE))
+    # It looks like RapidJSON does not pass the sanitizer under some conditions (Clang 10)
     add_executable(allparserscheckfile allparserscheckfile.cpp)
     target_link_libraries(allparserscheckfile competition-all)
 
