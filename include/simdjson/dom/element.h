@@ -255,7 +255,7 @@ private:
   friend class array;
   friend struct simdjson_result<element>;
   template<typename T>
-  friend class simdjson::minify;
+  friend class simdjson::minifier;
 };
 
 /**

@@ -134,7 +134,7 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
 SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations{};
 SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-WARN_UNUSED error_code minify_string(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
+WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
   return active_implementation->minify((const uint8_t *)buf, len, (uint8_t *)dst, dst_len);
 }
 

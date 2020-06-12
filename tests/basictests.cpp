@@ -1714,7 +1714,7 @@ namespace type_tests {
 
 
 
-namespace minify_string_tests {
+namespace minify_tests {
 
   bool check_minification(const char * input, size_t length, const char * expected, size_t expected_length) {
     std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
@@ -1723,7 +1723,7 @@ namespace minify_string_tests {
       return false;
     }
     size_t newlength{};
-    auto error = simdjson::minify_string(input, length, buffer.get(), newlength);
+    auto error = simdjson::minify(input, length, buffer.get(), newlength);
     if(error != simdjson::SUCCESS) {
       std::cerr << "error " << error << std::endl;
       return false;
@@ -1742,28 +1742,28 @@ namespace minify_string_tests {
     return true;
   }
 
-  bool test_minify_string() {
+  bool test_minify() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
      const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
-  bool test_minify_string_array() {
+  bool test_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
     std::string test("[ 1,    2,    3]");
     std::string minified("[1,2,3]");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
-  bool test_minify_string_object() {
+  bool test_minify_object() {
     std::cout << "Running " << __func__ << std::endl;
     std::string test(R"({ "foo   " : 1, "b  ar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })");
     std::string minified(R"({"foo   ":1,"b  ar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool run() {
-    return test_minify_string() &&
-           test_minify_string_array() &&
-           test_minify_string_object();
+    return test_minify() &&
+           test_minify_array() &&
+           test_minify_object();
   }
 }
 
@@ -2024,7 +2024,7 @@ int main(int argc, char *argv[]) {
     printf("unsupported CPU\n");
   }
   std::cout << "Running basic tests." << std::endl;
-  if (minify_string_tests::run() &&
+  if (minify_tests::run() &&
       parse_api_tests::run() &&
       dom_api_tests::run() &&
       type_tests::run() &&

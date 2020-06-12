@@ -239,12 +239,12 @@ void performance_3() {
 SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
-void minify_string() {
+void minify() {
   const char * some_string = "[ 1, 2, 3, 4] ";
   size_t length = strlen(some_string);
   std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
   size_t new_length{};
-  auto error = simdjson::minify_string(some_string, length, buffer.get(), new_length);
+  auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
   if(error != simdjson::SUCCESS) {
     std::cerr << "error " << error << std::endl;
     abort();
@@ -269,6 +269,6 @@ int main() {
   basics_dom_2();
   basics_dom_3();
   basics_dom_4();
-  minify_string();
+  minify();
   return 0;
 }

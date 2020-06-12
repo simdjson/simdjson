@@ -24,8 +24,7 @@ namespace simdjson {
  * @param dst_len the number of bytes written. Output only.
  * @return the error code, or SUCCESS if there was no error.
  */
-WARN_UNUSED error_code minify_string(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
-
+WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
 
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
@@ -36,14 +35,14 @@ WARN_UNUSED error_code minify_string(const char *buf, size_t len, char *dst, siz
  *
  */
 template<typename T>
-class minify {
+class minifier {
 public:
   /**
    * Create a new minifier.
    *
    * @param _value The document or element to minify.
    */
-  inline minify(const T &_value) noexcept : value{_value} {}
+  inline minifier(const T &_value) noexcept : value{_value} {}
 
   /**
    * Minify JSON to a string.
@@ -58,6 +57,9 @@ private:
   const T &value;
 };
 
+template<typename T>
+inline minifier<T> minify(const T &value) noexcept { return minifier<T>(value); }
+
 /**
  * Minify JSON to an output stream.
  *
@@ -66,7 +68,7 @@ private:
  * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
  */
 template<typename T>
-inline std::ostream& operator<<(std::ostream& out, minify<T> formatter) { return formatter.print(out); }
+inline std::ostream& operator<<(std::ostream& out, minifier<T> formatter) { return formatter.print(out); }
 
 } // namespace simdjson
 
