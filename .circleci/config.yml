@@ -64,7 +64,7 @@ commands:
       - cmake_prep
       - run: |
           cd build &&
-          cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=/destination .. &&
+          cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .. &&
           make $BUILD_FLAGS all &&
           tools/json2json -h # Print out the implementation we're using on this hardware
 
@@ -91,7 +91,7 @@ commands:
   cmake_install_test: # this version builds, install, test and then verify from the installation
     steps:
       - run: cd build && make install
-      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -I/destination/include -L/destination/lib -std=c++17 -Wl,-rpath,/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
+      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Ibuild/destination/include -Lbuild/destination/lib -std=c++17 -Wl,-rpath,build/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
 
 jobs:
 
