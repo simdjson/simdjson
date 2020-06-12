@@ -1,4 +1,4 @@
-/* auto-generated on Fri Jun 12 10:16:31 EDT 2020. Do not edit! */
+/* auto-generated on Fri 12 Jun 2020 13:05:39 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -2515,9 +2515,6 @@ public:
    * Deallocate this parser.
    */
   virtual ~dom_parser_implementation() = default;
-
-  /** Next location to write to in the tape */
-  uint32_t current_loc{0};
 
   /** Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};

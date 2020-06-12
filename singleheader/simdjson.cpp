@@ -1,4 +1,4 @@
-/* auto-generated on Fri Jun 12 10:16:31 EDT 2020. Do not edit! */
+/* auto-generated on Fri 12 Jun 2020 13:05:39 EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -4226,14 +4226,14 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
@@ -4246,12 +4246,12 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
-      writer.write_s64(i);
+      writer.append_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, src);
 #endif
-      writer.write_u64(i);
+      writer.append_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -4261,7 +4261,7 @@ template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.write_double(d);
+    writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
@@ -4285,10 +4285,10 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                W writer) {
+                                W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.write_s64(0);        // always write zero
+  writer.append_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -4432,7 +4432,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
       // we over-decrement by one when there is a '.'
       digit_count -= int(start - start_digits);
-      if (digit_count >= 19) {
+      if (unlikely(digit_count >= 19)) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
@@ -4440,14 +4440,22 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, writer);
+        bool success = slow_float_parsing((const char *) src, writer);
+        // The number was already written, but we made a copy of the writer
+        // when we passed it to the parse_large_integer() function, so 
+        writer.skip_double();
+        return success;
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, writer);
+      bool success = slow_float_parsing((const char *) src, writer);
+      // The number was already written, but we made a copy of the writer when we passed it to the
+      // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+      writer.skip_double();
+      return success;
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -4456,7 +4464,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.write_double(d);
+      writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
@@ -4471,10 +4479,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, writer, found_minus);
+      bool success = parse_large_integer(src, writer, found_minus);
+      // The number was already written, but we made a copy of the writer
+      // when we passed it to the parse_large_integer() function, so 
+      writer.skip_large_integer();
+      return success;
     }
     i = negative ? 0 - i : i;
-    writer.write_s64(i);
+    writer.append_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif
@@ -4524,8 +4536,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", 5, "Tape#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -4543,27 +4555,19 @@ namespace logger {
       {
         // Print the next N characters in the buffer.
         printf("| ");
-        if (structurals.at_beginning()) {
-          // If the pointer is at the beginning, print a space followed by the beginning characters
-          // Print spaces for unprintable or newline characters.
-          printf(" ");
-          for (int i=0;i<LOG_BUFFER_LEN-1;i++) {
-            printf("%c", printable_char(structurals.buf[i]));
-          }
-        } else {
-          // Otherwise, print the characters starting from the buffer position.
-          // Print spaces for unprintable or newline characters.
-          for (int i=0;i<LOG_BUFFER_LEN;i++) {
-            printf("%c", printable_char(structurals.current()[i]));
-          }
+        // Otherwise, print the characters starting from the buffer position.
+        // Print spaces for unprintable or newline characters.
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+          printf("%c", printable_char(structurals.current()[i]));
         }
         printf(" ");
       }
-      printf("|    %c ", printable_char(structurals.at_beginning() ? ' ' : structurals.current_char()));
-      printf("|    %c ", printable_char(structurals.peek_char()));
-      printf("| %5u ", structurals.structural_indexes[structurals.next_structural]);
+      printf("|    %c ", printable_char(structurals.current_char()));
+      printf("|    %c ", printable_char(structurals.peek_next_char()));
+      printf("| %5u ", structurals.parser.structural_indexes[*(structurals.current_structural+1)]);
+      printf("| %5u ", structurals.next_tape_index());
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
-      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
+      printf("| %*u ", LOG_INDEX_LEN, *structurals.current_structural);
       printf("|\n");
     }
   }
@@ -4628,29 +4632,34 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
-  really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
-    c = *current();
-    return c;
+  const uint8_t* const buf;
+  uint32_t *current_structural;
+  dom_parser_implementation &parser;
+
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
+    : buf{_parser.buf},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
+      parser{_parser} {
   }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_next_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -4667,35 +4676,25 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return current_structural == parser.structural_indexes.get();
   }
-  really_inline size_t next_structural_index() {
-    return next_structural;
-  }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
@@ -4708,6 +4707,104 @@ public:
 
 namespace stage2 {
 namespace { // Make everything here private
+
+/* begin file src/generic/stage2/tape_writer.h */
+struct tape_writer {
+  /** The next place to write to tape */
+  uint64_t *next_tape_loc;
+  
+  /** Write a signed 64-bit value to tape. */
+  really_inline void append_s64(int64_t value) noexcept;
+
+  /** Write an unsigned 64-bit value to tape. */
+  really_inline void append_u64(uint64_t value) noexcept;
+
+  /** Write a double value to tape. */
+  really_inline void append_double(double value) noexcept;
+
+  /**
+   * Append a tape entry (an 8-bit type,and 56 bits worth of value).
+   */
+  really_inline void append(uint64_t val, internal::tape_type t) noexcept;
+
+  /**
+   * Skip the current tape entry without writing.
+   *
+   * Used to skip the start of the container, since we'll come back later to fill it in when the
+   * container ends.
+   */
+  really_inline void skip() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a large u64 or i64.
+   */
+  really_inline void skip_large_integer() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a double.
+   */
+  really_inline void skip_double() noexcept;
+
+  /**
+   * Write a value to a known location on tape.
+   *
+   * Used to go back and write out the start of a container after the container ends.
+   */
+  really_inline static void write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept;
+
+private:
+  /**
+   * Append both the tape entry, and a supplementary value following it. Used for types that need
+   * all 64 bits, such as double and uint64_t.
+   */
+  template<typename T>
+  really_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
+}; // struct number_writer
+
+really_inline void tape_writer::append_s64(int64_t value) noexcept {
+  append2(0, value, internal::tape_type::INT64);
+}
+
+really_inline void tape_writer::append_u64(uint64_t value) noexcept {
+  append(0, internal::tape_type::UINT64);
+  *next_tape_loc = value;
+  next_tape_loc++;
+}
+
+/** Write a double value to tape. */
+really_inline void tape_writer::append_double(double value) noexcept {
+  append2(0, value, internal::tape_type::DOUBLE);
+}
+
+really_inline void tape_writer::skip() noexcept {
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::skip_large_integer() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::skip_double() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::append(uint64_t val, internal::tape_type t) noexcept {
+  *next_tape_loc = val | ((uint64_t(char(t))) << 56);
+  next_tape_loc++;
+}
+
+template<typename T>
+really_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_type t) noexcept {
+  append(val, t);
+  static_assert(sizeof(val2) == sizeof(*next_tape_loc), "Type is not 64 bits!");
+  memcpy(next_tape_loc, &val2, sizeof(val2));
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
+  tape_loc = val | ((uint64_t(char(t))) << 56);
+}
+/* end file src/generic/stage2/tape_writer.h */
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -4749,47 +4846,25 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-struct number_writer {
-  dom_parser_implementation &parser;
-  
-  really_inline void write_s64(int64_t value) noexcept {
-    append_tape(0, internal::tape_type::INT64);
-    std::memcpy(&parser.doc->tape[parser.current_loc], &value, sizeof(value));
-    ++parser.current_loc;
-  }
-  really_inline void write_u64(uint64_t value) noexcept {
-    append_tape(0, internal::tape_type::UINT64);
-    parser.doc->tape[parser.current_loc++] = value;
-  }
-  really_inline void write_double(double value) noexcept {
-    append_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(parser.doc->tape[parser.current_loc]), "mismatch size");
-    memcpy(&parser.doc->tape[parser.current_loc++], &value, sizeof(double));
-    // doc->tape[doc->current_loc++] = *((uint64_t *)&d);
-  }
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-}; // struct number_writer
-
-struct structural_parser {
-  structural_iterator structurals;
-  dom_parser_implementation &parser;
+struct structural_parser : structural_iterator {
+  /** Lets you append to the tape */
+  tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-  uint32_t depth;
+  uint8_t *current_string_buf_loc;
+  /** Current depth (nested objects and arrays) */
+  uint32_t depth{0};
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
-    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
-      parser{_parser},
-      depth{0} {
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
+    : structural_iterator(_parser, start_structural_index),
+      tape{parser.doc->tape.get()},
+      current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
-    parser.containing_scope[depth].tape_index = parser.current_loc;
+    parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
-    parser.current_loc++; // We don't actually *write* the start element until the end.
+    tape.skip(); // We don't actually *write* the start element until the end.
     parser.ret_address[depth] = continue_state;
     depth++;
     bool exceeded_max_depth = depth >= parser.max_depth();
@@ -4817,14 +4892,18 @@ struct structural_parser {
     depth--;
     // write our doc->tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(parser.containing_scope[depth].tape_index, end);
+    tape.append(parser.containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
-    write_tape(start_tape_index, parser.current_loc | (uint64_t(cntsat) << 32), start);
+    tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+  }
+
+  really_inline uint32_t next_tape_index() {
+    return uint32_t(tape.next_tape_loc - parser.doc->tape.get());
   }
 
   really_inline void end_object() {
@@ -4840,14 +4919,6 @@ struct structural_parser {
     end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
   }
 
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-
-  really_inline void write_tape(uint32_t loc, uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[loc] = val | ((uint64_t(char(t))) << 56);
-  }
-
   // increment_count increments the count of keys in an object or values in an array.
   // Note that if you are at the level of the values or elements, the count
   // must be increment in the preceding depth (depth-1) where the array or
@@ -4858,7 +4929,7 @@ struct structural_parser {
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    append_tape(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
+    tape.append(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -4877,7 +4948,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string(bool key = false) {
     log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
-    dst = stringparsing::parse_string(structurals.current(), dst);
+    dst = stringparsing::parse_string(current(), dst);
     if (dst == nullptr) {
       log_error("Invalid escape in string");
       return true;
@@ -4888,70 +4959,33 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     log_value("number");
-    number_writer writer{parser};
-    bool succeeded = numberparsing::parse_number(src, found_minus, writer);
+    bool succeeded = numberparsing::parse_number(src, found_minus, tape);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(structurals.current(), found_minus);
-  }
-
-  WARN_UNUSED really_inline bool parse_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
-  WARN_UNUSED really_inline bool parse_single_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
+    return parse_number(current(), found_minus);
   }
 
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (structurals.current_char()) {
+    switch (advance_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
-    case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
+    case 't':
+      log_value("true");
+      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
+      tape.append(0, internal::tape_type::TRUE_VALUE);
+      return continue_state;
+    case 'f':
+      log_value("false");
+      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
+      tape.append(0, internal::tape_type::FALSE_VALUE);
+      return continue_state;
+    case 'n':
+      log_value("null");
+      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
+      tape.append(0, internal::tape_type::NULL_VALUE);
       return continue_state;
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -4974,7 +5008,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(structurals.next_structural_index());
+    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -4998,7 +5032,7 @@ struct structural_parser {
     if (depth >= parser.max_depth()) {
       return parser.error = DEPTH_ERROR;
     }
-    switch (structurals.current_char()) {
+    switch (current_char()) {
     case '"':
       return parser.error = STRING_ERROR;
     case '0':
@@ -5025,21 +5059,17 @@ struct structural_parser {
   }
 
   really_inline void init() {
-    current_string_buf_loc = parser.doc->string_buf.get();
-    parser.current_loc = 0;
+    log_start();
     parser.error = UNINITIALIZED;
   }
 
   WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
     // If there are no structurals left, return EMPTY
-    if (structurals.at_end(parser.n_structural_indexes)) {
+    if (at_end(parser.n_structural_indexes)) {
       return parser.error = EMPTY;
     }
 
-    log_start();
     init();
-    // Advance to the first character as soon as possible
-    structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return parser.error = DEPTH_ERROR;
@@ -5047,12 +5077,8 @@ struct structural_parser {
     return SUCCESS;
   }
 
-  really_inline char advance_char() {
-    return structurals.advance_char();
-  }
-
   really_inline void log_value(const char *type) {
-    logger::log_line(structurals, "", type, "");
+    logger::log_line(*this, "", type, "");
   }
 
   static really_inline void log_start() {
@@ -5060,17 +5086,17 @@ struct structural_parser {
   }
 
   really_inline void log_start_value(const char *type) {
-    logger::log_line(structurals, "+", type, "");
+    logger::log_line(*this, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
   really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(structurals, "-", type, "");
+    logger::log_line(*this, "-", type, "");
   }
 
   really_inline void log_error(const char *error) {
-    logger::log_line(structurals, "", "ERROR", error);
+    logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
@@ -5089,7 +5115,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   //
   // Read first value
   //
-  switch (parser.structurals.current_char()) {
+  switch (parser.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -5097,27 +5123,41 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-      goto error;
+    if (!STREAMING) {
+      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        goto error;
+      }
     }
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
     goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
+  case 't':
+    parser.log_value("true");
+    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::TRUE_VALUE);
+    goto finish;
+  case 'f':
+    parser.log_value("false");
+    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::FALSE_VALUE);
+    goto finish;
+  case 'n':
+    parser.log_value("null");
+    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::NULL_VALUE);
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -5147,7 +5187,6 @@ object_begin:
 
 object_key_state:
   if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
@@ -5172,7 +5211,8 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.advance_char() == ']') {
+  if (parser.peek_next_char() == ']') {
+    parser.advance_char();
     parser.end_array();
     goto scope_end;
   }
@@ -5187,7 +5227,6 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    parser.advance_char();
     goto main_array_switch;
   case ']':
     parser.end_array();
@@ -5231,7 +5270,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::parse_structurals<true>(*this, _doc);
 }
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -5241,7 +5280,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 
 } // namespace arm64
 } // namespace simdjson
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 /* begin file src/fallback/implementation.cpp */
@@ -6280,14 +6319,14 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
@@ -6300,12 +6339,12 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
-      writer.write_s64(i);
+      writer.append_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, src);
 #endif
-      writer.write_u64(i);
+      writer.append_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -6315,7 +6354,7 @@ template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.write_double(d);
+    writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
@@ -6339,10 +6378,10 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                W writer) {
+                                W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.write_s64(0);        // always write zero
+  writer.append_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -6486,7 +6525,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
       // we over-decrement by one when there is a '.'
       digit_count -= int(start - start_digits);
-      if (digit_count >= 19) {
+      if (unlikely(digit_count >= 19)) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
@@ -6494,14 +6533,22 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, writer);
+        bool success = slow_float_parsing((const char *) src, writer);
+        // The number was already written, but we made a copy of the writer
+        // when we passed it to the parse_large_integer() function, so 
+        writer.skip_double();
+        return success;
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, writer);
+      bool success = slow_float_parsing((const char *) src, writer);
+      // The number was already written, but we made a copy of the writer when we passed it to the
+      // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+      writer.skip_double();
+      return success;
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -6510,7 +6557,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.write_double(d);
+      writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
@@ -6525,10 +6572,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, writer, found_minus);
+      bool success = parse_large_integer(src, writer, found_minus);
+      // The number was already written, but we made a copy of the writer
+      // when we passed it to the parse_large_integer() function, so 
+      writer.skip_large_integer();
+      return success;
     }
     i = negative ? 0 - i : i;
-    writer.write_s64(i);
+    writer.append_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif
@@ -6579,8 +6630,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", 5, "Tape#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -6598,27 +6649,19 @@ namespace logger {
       {
         // Print the next N characters in the buffer.
         printf("| ");
-        if (structurals.at_beginning()) {
-          // If the pointer is at the beginning, print a space followed by the beginning characters
-          // Print spaces for unprintable or newline characters.
-          printf(" ");
-          for (int i=0;i<LOG_BUFFER_LEN-1;i++) {
-            printf("%c", printable_char(structurals.buf[i]));
-          }
-        } else {
-          // Otherwise, print the characters starting from the buffer position.
-          // Print spaces for unprintable or newline characters.
-          for (int i=0;i<LOG_BUFFER_LEN;i++) {
-            printf("%c", printable_char(structurals.current()[i]));
-          }
+        // Otherwise, print the characters starting from the buffer position.
+        // Print spaces for unprintable or newline characters.
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+          printf("%c", printable_char(structurals.current()[i]));
         }
         printf(" ");
       }
-      printf("|    %c ", printable_char(structurals.at_beginning() ? ' ' : structurals.current_char()));
-      printf("|    %c ", printable_char(structurals.peek_char()));
-      printf("| %5u ", structurals.structural_indexes[structurals.next_structural]);
+      printf("|    %c ", printable_char(structurals.current_char()));
+      printf("|    %c ", printable_char(structurals.peek_next_char()));
+      printf("| %5u ", structurals.parser.structural_indexes[*(structurals.current_structural+1)]);
+      printf("| %5u ", structurals.next_tape_index());
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
-      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
+      printf("| %*u ", LOG_INDEX_LEN, *structurals.current_structural);
       printf("|\n");
     }
   }
@@ -6683,29 +6726,34 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
-  really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
-    c = *current();
-    return c;
+  const uint8_t* const buf;
+  uint32_t *current_structural;
+  dom_parser_implementation &parser;
+
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
+    : buf{_parser.buf},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
+      parser{_parser} {
   }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_next_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -6722,35 +6770,25 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return current_structural == parser.structural_indexes.get();
   }
-  really_inline size_t next_structural_index() {
-    return next_structural;
-  }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
@@ -6763,6 +6801,104 @@ public:
 
 namespace stage2 {
 namespace { // Make everything here private
+
+/* begin file src/generic/stage2/tape_writer.h */
+struct tape_writer {
+  /** The next place to write to tape */
+  uint64_t *next_tape_loc;
+  
+  /** Write a signed 64-bit value to tape. */
+  really_inline void append_s64(int64_t value) noexcept;
+
+  /** Write an unsigned 64-bit value to tape. */
+  really_inline void append_u64(uint64_t value) noexcept;
+
+  /** Write a double value to tape. */
+  really_inline void append_double(double value) noexcept;
+
+  /**
+   * Append a tape entry (an 8-bit type,and 56 bits worth of value).
+   */
+  really_inline void append(uint64_t val, internal::tape_type t) noexcept;
+
+  /**
+   * Skip the current tape entry without writing.
+   *
+   * Used to skip the start of the container, since we'll come back later to fill it in when the
+   * container ends.
+   */
+  really_inline void skip() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a large u64 or i64.
+   */
+  really_inline void skip_large_integer() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a double.
+   */
+  really_inline void skip_double() noexcept;
+
+  /**
+   * Write a value to a known location on tape.
+   *
+   * Used to go back and write out the start of a container after the container ends.
+   */
+  really_inline static void write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept;
+
+private:
+  /**
+   * Append both the tape entry, and a supplementary value following it. Used for types that need
+   * all 64 bits, such as double and uint64_t.
+   */
+  template<typename T>
+  really_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
+}; // struct number_writer
+
+really_inline void tape_writer::append_s64(int64_t value) noexcept {
+  append2(0, value, internal::tape_type::INT64);
+}
+
+really_inline void tape_writer::append_u64(uint64_t value) noexcept {
+  append(0, internal::tape_type::UINT64);
+  *next_tape_loc = value;
+  next_tape_loc++;
+}
+
+/** Write a double value to tape. */
+really_inline void tape_writer::append_double(double value) noexcept {
+  append2(0, value, internal::tape_type::DOUBLE);
+}
+
+really_inline void tape_writer::skip() noexcept {
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::skip_large_integer() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::skip_double() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::append(uint64_t val, internal::tape_type t) noexcept {
+  *next_tape_loc = val | ((uint64_t(char(t))) << 56);
+  next_tape_loc++;
+}
+
+template<typename T>
+really_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_type t) noexcept {
+  append(val, t);
+  static_assert(sizeof(val2) == sizeof(*next_tape_loc), "Type is not 64 bits!");
+  memcpy(next_tape_loc, &val2, sizeof(val2));
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
+  tape_loc = val | ((uint64_t(char(t))) << 56);
+}
+/* end file src/generic/stage2/tape_writer.h */
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -6804,47 +6940,25 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-struct number_writer {
-  dom_parser_implementation &parser;
-  
-  really_inline void write_s64(int64_t value) noexcept {
-    append_tape(0, internal::tape_type::INT64);
-    std::memcpy(&parser.doc->tape[parser.current_loc], &value, sizeof(value));
-    ++parser.current_loc;
-  }
-  really_inline void write_u64(uint64_t value) noexcept {
-    append_tape(0, internal::tape_type::UINT64);
-    parser.doc->tape[parser.current_loc++] = value;
-  }
-  really_inline void write_double(double value) noexcept {
-    append_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(parser.doc->tape[parser.current_loc]), "mismatch size");
-    memcpy(&parser.doc->tape[parser.current_loc++], &value, sizeof(double));
-    // doc->tape[doc->current_loc++] = *((uint64_t *)&d);
-  }
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-}; // struct number_writer
-
-struct structural_parser {
-  structural_iterator structurals;
-  dom_parser_implementation &parser;
+struct structural_parser : structural_iterator {
+  /** Lets you append to the tape */
+  tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-  uint32_t depth;
+  uint8_t *current_string_buf_loc;
+  /** Current depth (nested objects and arrays) */
+  uint32_t depth{0};
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
-    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
-      parser{_parser},
-      depth{0} {
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
+    : structural_iterator(_parser, start_structural_index),
+      tape{parser.doc->tape.get()},
+      current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
-    parser.containing_scope[depth].tape_index = parser.current_loc;
+    parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
-    parser.current_loc++; // We don't actually *write* the start element until the end.
+    tape.skip(); // We don't actually *write* the start element until the end.
     parser.ret_address[depth] = continue_state;
     depth++;
     bool exceeded_max_depth = depth >= parser.max_depth();
@@ -6872,14 +6986,18 @@ struct structural_parser {
     depth--;
     // write our doc->tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(parser.containing_scope[depth].tape_index, end);
+    tape.append(parser.containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
-    write_tape(start_tape_index, parser.current_loc | (uint64_t(cntsat) << 32), start);
+    tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+  }
+
+  really_inline uint32_t next_tape_index() {
+    return uint32_t(tape.next_tape_loc - parser.doc->tape.get());
   }
 
   really_inline void end_object() {
@@ -6895,14 +7013,6 @@ struct structural_parser {
     end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
   }
 
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-
-  really_inline void write_tape(uint32_t loc, uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[loc] = val | ((uint64_t(char(t))) << 56);
-  }
-
   // increment_count increments the count of keys in an object or values in an array.
   // Note that if you are at the level of the values or elements, the count
   // must be increment in the preceding depth (depth-1) where the array or
@@ -6913,7 +7023,7 @@ struct structural_parser {
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    append_tape(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
+    tape.append(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -6932,7 +7042,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string(bool key = false) {
     log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
-    dst = stringparsing::parse_string(structurals.current(), dst);
+    dst = stringparsing::parse_string(current(), dst);
     if (dst == nullptr) {
       log_error("Invalid escape in string");
       return true;
@@ -6943,70 +7053,33 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     log_value("number");
-    number_writer writer{parser};
-    bool succeeded = numberparsing::parse_number(src, found_minus, writer);
+    bool succeeded = numberparsing::parse_number(src, found_minus, tape);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(structurals.current(), found_minus);
-  }
-
-  WARN_UNUSED really_inline bool parse_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
-  WARN_UNUSED really_inline bool parse_single_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
+    return parse_number(current(), found_minus);
   }
 
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (structurals.current_char()) {
+    switch (advance_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
-    case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
+    case 't':
+      log_value("true");
+      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
+      tape.append(0, internal::tape_type::TRUE_VALUE);
+      return continue_state;
+    case 'f':
+      log_value("false");
+      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
+      tape.append(0, internal::tape_type::FALSE_VALUE);
+      return continue_state;
+    case 'n':
+      log_value("null");
+      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
+      tape.append(0, internal::tape_type::NULL_VALUE);
       return continue_state;
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -7029,7 +7102,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(structurals.next_structural_index());
+    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -7053,7 +7126,7 @@ struct structural_parser {
     if (depth >= parser.max_depth()) {
       return parser.error = DEPTH_ERROR;
     }
-    switch (structurals.current_char()) {
+    switch (current_char()) {
     case '"':
       return parser.error = STRING_ERROR;
     case '0':
@@ -7080,21 +7153,17 @@ struct structural_parser {
   }
 
   really_inline void init() {
-    current_string_buf_loc = parser.doc->string_buf.get();
-    parser.current_loc = 0;
+    log_start();
     parser.error = UNINITIALIZED;
   }
 
   WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
     // If there are no structurals left, return EMPTY
-    if (structurals.at_end(parser.n_structural_indexes)) {
+    if (at_end(parser.n_structural_indexes)) {
       return parser.error = EMPTY;
     }
 
-    log_start();
     init();
-    // Advance to the first character as soon as possible
-    structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return parser.error = DEPTH_ERROR;
@@ -7102,12 +7171,8 @@ struct structural_parser {
     return SUCCESS;
   }
 
-  really_inline char advance_char() {
-    return structurals.advance_char();
-  }
-
   really_inline void log_value(const char *type) {
-    logger::log_line(structurals, "", type, "");
+    logger::log_line(*this, "", type, "");
   }
 
   static really_inline void log_start() {
@@ -7115,17 +7180,17 @@ struct structural_parser {
   }
 
   really_inline void log_start_value(const char *type) {
-    logger::log_line(structurals, "+", type, "");
+    logger::log_line(*this, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
   really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(structurals, "-", type, "");
+    logger::log_line(*this, "-", type, "");
   }
 
   really_inline void log_error(const char *error) {
-    logger::log_line(structurals, "", "ERROR", error);
+    logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
@@ -7144,7 +7209,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   //
   // Read first value
   //
-  switch (parser.structurals.current_char()) {
+  switch (parser.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -7152,27 +7217,41 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-      goto error;
+    if (!STREAMING) {
+      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        goto error;
+      }
     }
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
     goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
+  case 't':
+    parser.log_value("true");
+    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::TRUE_VALUE);
+    goto finish;
+  case 'f':
+    parser.log_value("false");
+    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::FALSE_VALUE);
+    goto finish;
+  case 'n':
+    parser.log_value("null");
+    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::NULL_VALUE);
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -7202,7 +7281,6 @@ object_begin:
 
 object_key_state:
   if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
@@ -7227,7 +7305,8 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.advance_char() == ']') {
+  if (parser.peek_next_char() == ']') {
+    parser.advance_char();
     parser.end_array();
     goto scope_end;
   }
@@ -7242,7 +7321,6 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    parser.advance_char();
     goto main_array_switch;
   case ']':
     parser.end_array();
@@ -7286,7 +7364,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::parse_structurals<true>(*this, _doc);
 }
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -7296,7 +7374,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 
 } // namespace fallback
 } // namespace simdjson
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 /* begin file src/haswell/implementation.cpp */
@@ -9478,14 +9556,14 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
@@ -9498,12 +9576,12 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
-      writer.write_s64(i);
+      writer.append_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, src);
 #endif
-      writer.write_u64(i);
+      writer.append_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -9513,7 +9591,7 @@ template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.write_double(d);
+    writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
@@ -9537,10 +9615,10 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                W writer) {
+                                W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.write_s64(0);        // always write zero
+  writer.append_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -9684,7 +9762,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
       // we over-decrement by one when there is a '.'
       digit_count -= int(start - start_digits);
-      if (digit_count >= 19) {
+      if (unlikely(digit_count >= 19)) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
@@ -9692,14 +9770,22 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, writer);
+        bool success = slow_float_parsing((const char *) src, writer);
+        // The number was already written, but we made a copy of the writer
+        // when we passed it to the parse_large_integer() function, so 
+        writer.skip_double();
+        return success;
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, writer);
+      bool success = slow_float_parsing((const char *) src, writer);
+      // The number was already written, but we made a copy of the writer when we passed it to the
+      // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+      writer.skip_double();
+      return success;
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -9708,7 +9794,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.write_double(d);
+      writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
@@ -9723,10 +9809,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, writer, found_minus);
+      bool success = parse_large_integer(src, writer, found_minus);
+      // The number was already written, but we made a copy of the writer
+      // when we passed it to the parse_large_integer() function, so 
+      writer.skip_large_integer();
+      return success;
     }
     i = negative ? 0 - i : i;
-    writer.write_s64(i);
+    writer.append_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif
@@ -9779,8 +9869,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", 5, "Tape#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -9798,27 +9888,19 @@ namespace logger {
       {
         // Print the next N characters in the buffer.
         printf("| ");
-        if (structurals.at_beginning()) {
-          // If the pointer is at the beginning, print a space followed by the beginning characters
-          // Print spaces for unprintable or newline characters.
-          printf(" ");
-          for (int i=0;i<LOG_BUFFER_LEN-1;i++) {
-            printf("%c", printable_char(structurals.buf[i]));
-          }
-        } else {
-          // Otherwise, print the characters starting from the buffer position.
-          // Print spaces for unprintable or newline characters.
-          for (int i=0;i<LOG_BUFFER_LEN;i++) {
-            printf("%c", printable_char(structurals.current()[i]));
-          }
+        // Otherwise, print the characters starting from the buffer position.
+        // Print spaces for unprintable or newline characters.
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+          printf("%c", printable_char(structurals.current()[i]));
         }
         printf(" ");
       }
-      printf("|    %c ", printable_char(structurals.at_beginning() ? ' ' : structurals.current_char()));
-      printf("|    %c ", printable_char(structurals.peek_char()));
-      printf("| %5u ", structurals.structural_indexes[structurals.next_structural]);
+      printf("|    %c ", printable_char(structurals.current_char()));
+      printf("|    %c ", printable_char(structurals.peek_next_char()));
+      printf("| %5u ", structurals.parser.structural_indexes[*(structurals.current_structural+1)]);
+      printf("| %5u ", structurals.next_tape_index());
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
-      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
+      printf("| %*u ", LOG_INDEX_LEN, *structurals.current_structural);
       printf("|\n");
     }
   }
@@ -9883,29 +9965,34 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
-  really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
-    c = *current();
-    return c;
+  const uint8_t* const buf;
+  uint32_t *current_structural;
+  dom_parser_implementation &parser;
+
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
+    : buf{_parser.buf},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
+      parser{_parser} {
   }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_next_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -9922,35 +10009,25 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return current_structural == parser.structural_indexes.get();
   }
-  really_inline size_t next_structural_index() {
-    return next_structural;
-  }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
@@ -9963,6 +10040,104 @@ public:
 
 namespace stage2 {
 namespace { // Make everything here private
+
+/* begin file src/generic/stage2/tape_writer.h */
+struct tape_writer {
+  /** The next place to write to tape */
+  uint64_t *next_tape_loc;
+  
+  /** Write a signed 64-bit value to tape. */
+  really_inline void append_s64(int64_t value) noexcept;
+
+  /** Write an unsigned 64-bit value to tape. */
+  really_inline void append_u64(uint64_t value) noexcept;
+
+  /** Write a double value to tape. */
+  really_inline void append_double(double value) noexcept;
+
+  /**
+   * Append a tape entry (an 8-bit type,and 56 bits worth of value).
+   */
+  really_inline void append(uint64_t val, internal::tape_type t) noexcept;
+
+  /**
+   * Skip the current tape entry without writing.
+   *
+   * Used to skip the start of the container, since we'll come back later to fill it in when the
+   * container ends.
+   */
+  really_inline void skip() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a large u64 or i64.
+   */
+  really_inline void skip_large_integer() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a double.
+   */
+  really_inline void skip_double() noexcept;
+
+  /**
+   * Write a value to a known location on tape.
+   *
+   * Used to go back and write out the start of a container after the container ends.
+   */
+  really_inline static void write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept;
+
+private:
+  /**
+   * Append both the tape entry, and a supplementary value following it. Used for types that need
+   * all 64 bits, such as double and uint64_t.
+   */
+  template<typename T>
+  really_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
+}; // struct number_writer
+
+really_inline void tape_writer::append_s64(int64_t value) noexcept {
+  append2(0, value, internal::tape_type::INT64);
+}
+
+really_inline void tape_writer::append_u64(uint64_t value) noexcept {
+  append(0, internal::tape_type::UINT64);
+  *next_tape_loc = value;
+  next_tape_loc++;
+}
+
+/** Write a double value to tape. */
+really_inline void tape_writer::append_double(double value) noexcept {
+  append2(0, value, internal::tape_type::DOUBLE);
+}
+
+really_inline void tape_writer::skip() noexcept {
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::skip_large_integer() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::skip_double() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::append(uint64_t val, internal::tape_type t) noexcept {
+  *next_tape_loc = val | ((uint64_t(char(t))) << 56);
+  next_tape_loc++;
+}
+
+template<typename T>
+really_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_type t) noexcept {
+  append(val, t);
+  static_assert(sizeof(val2) == sizeof(*next_tape_loc), "Type is not 64 bits!");
+  memcpy(next_tape_loc, &val2, sizeof(val2));
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
+  tape_loc = val | ((uint64_t(char(t))) << 56);
+}
+/* end file src/generic/stage2/tape_writer.h */
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -10004,47 +10179,25 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-struct number_writer {
-  dom_parser_implementation &parser;
-  
-  really_inline void write_s64(int64_t value) noexcept {
-    append_tape(0, internal::tape_type::INT64);
-    std::memcpy(&parser.doc->tape[parser.current_loc], &value, sizeof(value));
-    ++parser.current_loc;
-  }
-  really_inline void write_u64(uint64_t value) noexcept {
-    append_tape(0, internal::tape_type::UINT64);
-    parser.doc->tape[parser.current_loc++] = value;
-  }
-  really_inline void write_double(double value) noexcept {
-    append_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(parser.doc->tape[parser.current_loc]), "mismatch size");
-    memcpy(&parser.doc->tape[parser.current_loc++], &value, sizeof(double));
-    // doc->tape[doc->current_loc++] = *((uint64_t *)&d);
-  }
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-}; // struct number_writer
-
-struct structural_parser {
-  structural_iterator structurals;
-  dom_parser_implementation &parser;
+struct structural_parser : structural_iterator {
+  /** Lets you append to the tape */
+  tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-  uint32_t depth;
+  uint8_t *current_string_buf_loc;
+  /** Current depth (nested objects and arrays) */
+  uint32_t depth{0};
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
-    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
-      parser{_parser},
-      depth{0} {
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
+    : structural_iterator(_parser, start_structural_index),
+      tape{parser.doc->tape.get()},
+      current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
-    parser.containing_scope[depth].tape_index = parser.current_loc;
+    parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
-    parser.current_loc++; // We don't actually *write* the start element until the end.
+    tape.skip(); // We don't actually *write* the start element until the end.
     parser.ret_address[depth] = continue_state;
     depth++;
     bool exceeded_max_depth = depth >= parser.max_depth();
@@ -10072,14 +10225,18 @@ struct structural_parser {
     depth--;
     // write our doc->tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(parser.containing_scope[depth].tape_index, end);
+    tape.append(parser.containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
-    write_tape(start_tape_index, parser.current_loc | (uint64_t(cntsat) << 32), start);
+    tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+  }
+
+  really_inline uint32_t next_tape_index() {
+    return uint32_t(tape.next_tape_loc - parser.doc->tape.get());
   }
 
   really_inline void end_object() {
@@ -10095,14 +10252,6 @@ struct structural_parser {
     end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
   }
 
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-
-  really_inline void write_tape(uint32_t loc, uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[loc] = val | ((uint64_t(char(t))) << 56);
-  }
-
   // increment_count increments the count of keys in an object or values in an array.
   // Note that if you are at the level of the values or elements, the count
   // must be increment in the preceding depth (depth-1) where the array or
@@ -10113,7 +10262,7 @@ struct structural_parser {
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    append_tape(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
+    tape.append(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -10132,7 +10281,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string(bool key = false) {
     log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
-    dst = stringparsing::parse_string(structurals.current(), dst);
+    dst = stringparsing::parse_string(current(), dst);
     if (dst == nullptr) {
       log_error("Invalid escape in string");
       return true;
@@ -10143,70 +10292,33 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     log_value("number");
-    number_writer writer{parser};
-    bool succeeded = numberparsing::parse_number(src, found_minus, writer);
+    bool succeeded = numberparsing::parse_number(src, found_minus, tape);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(structurals.current(), found_minus);
-  }
-
-  WARN_UNUSED really_inline bool parse_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
-  WARN_UNUSED really_inline bool parse_single_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
+    return parse_number(current(), found_minus);
   }
 
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (structurals.current_char()) {
+    switch (advance_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
-    case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
+    case 't':
+      log_value("true");
+      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
+      tape.append(0, internal::tape_type::TRUE_VALUE);
+      return continue_state;
+    case 'f':
+      log_value("false");
+      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
+      tape.append(0, internal::tape_type::FALSE_VALUE);
+      return continue_state;
+    case 'n':
+      log_value("null");
+      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
+      tape.append(0, internal::tape_type::NULL_VALUE);
       return continue_state;
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -10229,7 +10341,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(structurals.next_structural_index());
+    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -10253,7 +10365,7 @@ struct structural_parser {
     if (depth >= parser.max_depth()) {
       return parser.error = DEPTH_ERROR;
     }
-    switch (structurals.current_char()) {
+    switch (current_char()) {
     case '"':
       return parser.error = STRING_ERROR;
     case '0':
@@ -10280,21 +10392,17 @@ struct structural_parser {
   }
 
   really_inline void init() {
-    current_string_buf_loc = parser.doc->string_buf.get();
-    parser.current_loc = 0;
+    log_start();
     parser.error = UNINITIALIZED;
   }
 
   WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
     // If there are no structurals left, return EMPTY
-    if (structurals.at_end(parser.n_structural_indexes)) {
+    if (at_end(parser.n_structural_indexes)) {
       return parser.error = EMPTY;
     }
 
-    log_start();
     init();
-    // Advance to the first character as soon as possible
-    structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return parser.error = DEPTH_ERROR;
@@ -10302,12 +10410,8 @@ struct structural_parser {
     return SUCCESS;
   }
 
-  really_inline char advance_char() {
-    return structurals.advance_char();
-  }
-
   really_inline void log_value(const char *type) {
-    logger::log_line(structurals, "", type, "");
+    logger::log_line(*this, "", type, "");
   }
 
   static really_inline void log_start() {
@@ -10315,17 +10419,17 @@ struct structural_parser {
   }
 
   really_inline void log_start_value(const char *type) {
-    logger::log_line(structurals, "+", type, "");
+    logger::log_line(*this, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
   really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(structurals, "-", type, "");
+    logger::log_line(*this, "-", type, "");
   }
 
   really_inline void log_error(const char *error) {
-    logger::log_line(structurals, "", "ERROR", error);
+    logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
@@ -10344,7 +10448,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   //
   // Read first value
   //
-  switch (parser.structurals.current_char()) {
+  switch (parser.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -10352,27 +10456,41 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-      goto error;
+    if (!STREAMING) {
+      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        goto error;
+      }
     }
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
     goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
+  case 't':
+    parser.log_value("true");
+    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::TRUE_VALUE);
+    goto finish;
+  case 'f':
+    parser.log_value("false");
+    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::FALSE_VALUE);
+    goto finish;
+  case 'n':
+    parser.log_value("null");
+    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::NULL_VALUE);
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -10402,7 +10520,6 @@ object_begin:
 
 object_key_state:
   if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
@@ -10427,7 +10544,8 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.advance_char() == ']') {
+  if (parser.peek_next_char() == ']') {
+    parser.advance_char();
     parser.end_array();
     goto scope_end;
   }
@@ -10442,7 +10560,6 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    parser.advance_char();
     goto main_array_switch;
   case ']':
     parser.end_array();
@@ -10486,7 +10603,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::parse_structurals<true>(*this, _doc);
 }
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -10497,7 +10614,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 } // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 /* begin file src/westmere/implementation.cpp */
@@ -12650,14 +12767,14 @@ never_inline bool parse_large_integer(const uint8_t *const src,
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.write_s64(signed_answer);
+      writer.append_s64(signed_answer);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(signed_answer, src);
 #endif
@@ -12670,12 +12787,12 @@ never_inline bool parse_large_integer(const uint8_t *const src,
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_integer(i, src);
 #endif
-      writer.write_s64(i);
+      writer.append_s64(i);
     } else {
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_unsigned_integer(i, src);
 #endif
-      writer.write_u64(i);
+      writer.append_u64(i);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -12685,7 +12802,7 @@ template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.write_double(d);
+    writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_float(d, (const uint8_t *)src);
 #endif
@@ -12709,10 +12826,10 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
                                 UNUSED bool found_minus,
-                                W writer) {
+                                W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
-  writer.write_s64(0);        // always write zero
+  writer.append_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
   const char *p = reinterpret_cast<const char *>(src);
@@ -12856,7 +12973,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       }
       // we over-decrement by one when there is a '.'
       digit_count -= int(start - start_digits);
-      if (digit_count >= 19) {
+      if (unlikely(digit_count >= 19)) {
         // Ok, chances are good that we had an overflow!
         // this is almost never going to get called!!!
         // we start anew, going slowly!!!
@@ -12864,14 +12981,22 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         // 10000000000000000000000000000000000000000000e+308
         // 3.1415926535897932384626433832795028841971693993751
         //
-        return slow_float_parsing((const char *) src, writer);
+        bool success = slow_float_parsing((const char *) src, writer);
+        // The number was already written, but we made a copy of the writer
+        // when we passed it to the parse_large_integer() function, so 
+        writer.skip_double();
+        return success;
       }
     }
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
       // we start anew, going slowly!!!
-      return slow_float_parsing((const char *) src, writer);
+      bool success = slow_float_parsing((const char *) src, writer);
+      // The number was already written, but we made a copy of the writer when we passed it to the
+      // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+      writer.skip_double();
+      return success;
     }
     bool success = true;
     double d = compute_float_64(exponent, i, negative, &success);
@@ -12880,7 +13005,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.write_double(d);
+      writer.append_double(d);
 #ifdef JSON_TEST_NUMBERS // for unit testing
       found_float(d, src);
 #endif
@@ -12895,10 +13020,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
-      return parse_large_integer(src, writer, found_minus);
+      bool success = parse_large_integer(src, writer, found_minus);
+      // The number was already written, but we made a copy of the writer
+      // when we passed it to the parse_large_integer() function, so 
+      writer.skip_large_integer();
+      return success;
     }
     i = negative ? 0 - i : i;
-    writer.write_s64(i);
+    writer.append_s64(i);
 #ifdef JSON_TEST_NUMBERS // for unit testing
     found_integer(i, src);
 #endif
@@ -12951,8 +13080,8 @@ namespace logger {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
-      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
-      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
+      printf("| %-*s | %-*s | %*s | %*s | %*s | %-*s | %-*s | %-*s |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", 4, "Curr", 4, "Next", 5, "Next#", 5, "Tape#", LOG_DETAIL_LEN, "Detail", LOG_INDEX_LEN, "index");
+      printf("|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|%.*s|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, 4+2, DASHES, 4+2, DASHES, 5+2, DASHES, 5+2, DASHES, LOG_DETAIL_LEN+2, DASHES, LOG_INDEX_LEN+2, DASHES);
     }
   }
 
@@ -12970,27 +13099,19 @@ namespace logger {
       {
         // Print the next N characters in the buffer.
         printf("| ");
-        if (structurals.at_beginning()) {
-          // If the pointer is at the beginning, print a space followed by the beginning characters
-          // Print spaces for unprintable or newline characters.
-          printf(" ");
-          for (int i=0;i<LOG_BUFFER_LEN-1;i++) {
-            printf("%c", printable_char(structurals.buf[i]));
-          }
-        } else {
-          // Otherwise, print the characters starting from the buffer position.
-          // Print spaces for unprintable or newline characters.
-          for (int i=0;i<LOG_BUFFER_LEN;i++) {
-            printf("%c", printable_char(structurals.current()[i]));
-          }
+        // Otherwise, print the characters starting from the buffer position.
+        // Print spaces for unprintable or newline characters.
+        for (int i=0;i<LOG_BUFFER_LEN;i++) {
+          printf("%c", printable_char(structurals.current()[i]));
         }
         printf(" ");
       }
-      printf("|    %c ", printable_char(structurals.at_beginning() ? ' ' : structurals.current_char()));
-      printf("|    %c ", printable_char(structurals.peek_char()));
-      printf("| %5u ", structurals.structural_indexes[structurals.next_structural]);
+      printf("|    %c ", printable_char(structurals.current_char()));
+      printf("|    %c ", printable_char(structurals.peek_next_char()));
+      printf("| %5u ", structurals.parser.structural_indexes[*(structurals.current_structural+1)]);
+      printf("| %5u ", structurals.next_tape_index());
       printf("| %-*s ", LOG_DETAIL_LEN, detail);
-      printf("| %*zu ", LOG_INDEX_LEN, structurals.idx);
+      printf("| %*u ", LOG_INDEX_LEN, *structurals.current_structural);
       printf("|\n");
     }
   }
@@ -13055,29 +13176,34 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
-  really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
-    c = *current();
-    return c;
+  const uint8_t* const buf;
+  uint32_t *current_structural;
+  dom_parser_implementation &parser;
+
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
+    : buf{_parser.buf},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
+      parser{_parser} {
   }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_next_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -13094,35 +13220,25 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return current_structural == parser.structural_indexes.get();
   }
-  really_inline size_t next_structural_index() {
-    return next_structural;
-  }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
@@ -13135,6 +13251,104 @@ public:
 
 namespace stage2 {
 namespace { // Make everything here private
+
+/* begin file src/generic/stage2/tape_writer.h */
+struct tape_writer {
+  /** The next place to write to tape */
+  uint64_t *next_tape_loc;
+  
+  /** Write a signed 64-bit value to tape. */
+  really_inline void append_s64(int64_t value) noexcept;
+
+  /** Write an unsigned 64-bit value to tape. */
+  really_inline void append_u64(uint64_t value) noexcept;
+
+  /** Write a double value to tape. */
+  really_inline void append_double(double value) noexcept;
+
+  /**
+   * Append a tape entry (an 8-bit type,and 56 bits worth of value).
+   */
+  really_inline void append(uint64_t val, internal::tape_type t) noexcept;
+
+  /**
+   * Skip the current tape entry without writing.
+   *
+   * Used to skip the start of the container, since we'll come back later to fill it in when the
+   * container ends.
+   */
+  really_inline void skip() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a large u64 or i64.
+   */
+  really_inline void skip_large_integer() noexcept;
+
+  /**
+   * Skip the number of tape entries necessary to write a double.
+   */
+  really_inline void skip_double() noexcept;
+
+  /**
+   * Write a value to a known location on tape.
+   *
+   * Used to go back and write out the start of a container after the container ends.
+   */
+  really_inline static void write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept;
+
+private:
+  /**
+   * Append both the tape entry, and a supplementary value following it. Used for types that need
+   * all 64 bits, such as double and uint64_t.
+   */
+  template<typename T>
+  really_inline void append2(uint64_t val, T val2, internal::tape_type t) noexcept;
+}; // struct number_writer
+
+really_inline void tape_writer::append_s64(int64_t value) noexcept {
+  append2(0, value, internal::tape_type::INT64);
+}
+
+really_inline void tape_writer::append_u64(uint64_t value) noexcept {
+  append(0, internal::tape_type::UINT64);
+  *next_tape_loc = value;
+  next_tape_loc++;
+}
+
+/** Write a double value to tape. */
+really_inline void tape_writer::append_double(double value) noexcept {
+  append2(0, value, internal::tape_type::DOUBLE);
+}
+
+really_inline void tape_writer::skip() noexcept {
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::skip_large_integer() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::skip_double() noexcept {
+  next_tape_loc += 2;
+}
+
+really_inline void tape_writer::append(uint64_t val, internal::tape_type t) noexcept {
+  *next_tape_loc = val | ((uint64_t(char(t))) << 56);
+  next_tape_loc++;
+}
+
+template<typename T>
+really_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_type t) noexcept {
+  append(val, t);
+  static_assert(sizeof(val2) == sizeof(*next_tape_loc), "Type is not 64 bits!");
+  memcpy(next_tape_loc, &val2, sizeof(val2));
+  next_tape_loc++;
+}
+
+really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
+  tape_loc = val | ((uint64_t(char(t))) << 56);
+}
+/* end file src/generic/stage2/tape_writer.h */
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -13176,47 +13390,25 @@ struct unified_machine_addresses {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
 
-struct number_writer {
-  dom_parser_implementation &parser;
-  
-  really_inline void write_s64(int64_t value) noexcept {
-    append_tape(0, internal::tape_type::INT64);
-    std::memcpy(&parser.doc->tape[parser.current_loc], &value, sizeof(value));
-    ++parser.current_loc;
-  }
-  really_inline void write_u64(uint64_t value) noexcept {
-    append_tape(0, internal::tape_type::UINT64);
-    parser.doc->tape[parser.current_loc++] = value;
-  }
-  really_inline void write_double(double value) noexcept {
-    append_tape(0, internal::tape_type::DOUBLE);
-    static_assert(sizeof(value) == sizeof(parser.doc->tape[parser.current_loc]), "mismatch size");
-    memcpy(&parser.doc->tape[parser.current_loc++], &value, sizeof(double));
-    // doc->tape[doc->current_loc++] = *((uint64_t *)&d);
-  }
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-}; // struct number_writer
-
-struct structural_parser {
-  structural_iterator structurals;
-  dom_parser_implementation &parser;
+struct structural_parser : structural_iterator {
+  /** Lets you append to the tape */
+  tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc{};
-  uint32_t depth;
+  uint8_t *current_string_buf_loc;
+  /** Current depth (nested objects and arrays) */
+  uint32_t depth{0};
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t next_structural)
-    : structurals(_parser.buf, _parser.len, _parser.structural_indexes.get(), next_structural),
-      parser{_parser},
-      depth{0} {
+  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
+    : structural_iterator(_parser, start_structural_index),
+      tape{parser.doc->tape.get()},
+      current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
   WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
-    parser.containing_scope[depth].tape_index = parser.current_loc;
+    parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
-    parser.current_loc++; // We don't actually *write* the start element until the end.
+    tape.skip(); // We don't actually *write* the start element until the end.
     parser.ret_address[depth] = continue_state;
     depth++;
     bool exceeded_max_depth = depth >= parser.max_depth();
@@ -13244,14 +13436,18 @@ struct structural_parser {
     depth--;
     // write our doc->tape location to the header scope
     // The root scope gets written *at* the previous location.
-    append_tape(parser.containing_scope[depth].tape_index, end);
+    tape.append(parser.containing_scope[depth].tape_index, end);
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
     const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
-    write_tape(start_tape_index, parser.current_loc | (uint64_t(cntsat) << 32), start);
+    tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+  }
+
+  really_inline uint32_t next_tape_index() {
+    return uint32_t(tape.next_tape_loc - parser.doc->tape.get());
   }
 
   really_inline void end_object() {
@@ -13267,14 +13463,6 @@ struct structural_parser {
     end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
   }
 
-  really_inline void append_tape(uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[parser.current_loc++] = val | ((uint64_t(char(t))) << 56);
-  }
-
-  really_inline void write_tape(uint32_t loc, uint64_t val, internal::tape_type t) noexcept {
-    parser.doc->tape[loc] = val | ((uint64_t(char(t))) << 56);
-  }
-
   // increment_count increments the count of keys in an object or values in an array.
   // Note that if you are at the level of the values or elements, the count
   // must be increment in the preceding depth (depth-1) where the array or
@@ -13285,7 +13473,7 @@ struct structural_parser {
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    append_tape(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
+    tape.append(current_string_buf_loc - parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
@@ -13304,7 +13492,7 @@ struct structural_parser {
   WARN_UNUSED really_inline bool parse_string(bool key = false) {
     log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
-    dst = stringparsing::parse_string(structurals.current(), dst);
+    dst = stringparsing::parse_string(current(), dst);
     if (dst == nullptr) {
       log_error("Invalid escape in string");
       return true;
@@ -13315,70 +13503,33 @@ struct structural_parser {
 
   WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
     log_value("number");
-    number_writer writer{parser};
-    bool succeeded = numberparsing::parse_number(src, found_minus, writer);
+    bool succeeded = numberparsing::parse_number(src, found_minus, tape);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
   }
   WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(structurals.current(), found_minus);
-  }
-
-  WARN_UNUSED really_inline bool parse_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
-  }
-
-  WARN_UNUSED really_inline bool parse_single_atom() {
-    switch (structurals.current_char()) {
-      case 't':
-        log_value("true");
-        if (!atomparsing::is_valid_true_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::TRUE_VALUE);
-        break;
-      case 'f':
-        log_value("false");
-        if (!atomparsing::is_valid_false_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::FALSE_VALUE);
-        break;
-      case 'n':
-        log_value("null");
-        if (!atomparsing::is_valid_null_atom(structurals.current(), structurals.remaining_len())) { return true; }
-        append_tape(0, internal::tape_type::NULL_VALUE);
-        break;
-      default:
-        log_error("IMPOSSIBLE: unrecognized parse_atom structural character");
-        return true;
-    }
-    return false;
+    return parse_number(current(), found_minus);
   }
 
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (structurals.current_char()) {
+    switch (advance_char()) {
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
-    case 't': case 'f': case 'n':
-      FAIL_IF( parse_atom() );
+    case 't':
+      log_value("true");
+      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
+      tape.append(0, internal::tape_type::TRUE_VALUE);
+      return continue_state;
+    case 'f':
+      log_value("false");
+      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
+      tape.append(0, internal::tape_type::FALSE_VALUE);
+      return continue_state;
+    case 'n':
+      log_value("null");
+      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
+      tape.append(0, internal::tape_type::NULL_VALUE);
       return continue_state;
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -13401,7 +13552,7 @@ struct structural_parser {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(structurals.next_structural_index());
+    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -13425,7 +13576,7 @@ struct structural_parser {
     if (depth >= parser.max_depth()) {
       return parser.error = DEPTH_ERROR;
     }
-    switch (structurals.current_char()) {
+    switch (current_char()) {
     case '"':
       return parser.error = STRING_ERROR;
     case '0':
@@ -13452,21 +13603,17 @@ struct structural_parser {
   }
 
   really_inline void init() {
-    current_string_buf_loc = parser.doc->string_buf.get();
-    parser.current_loc = 0;
+    log_start();
     parser.error = UNINITIALIZED;
   }
 
   WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
     // If there are no structurals left, return EMPTY
-    if (structurals.at_end(parser.n_structural_indexes)) {
+    if (at_end(parser.n_structural_indexes)) {
       return parser.error = EMPTY;
     }
 
-    log_start();
     init();
-    // Advance to the first character as soon as possible
-    structurals.advance_char();
     // Push the root scope (there is always at least one scope)
     if (start_document(finish_state)) {
       return parser.error = DEPTH_ERROR;
@@ -13474,12 +13621,8 @@ struct structural_parser {
     return SUCCESS;
   }
 
-  really_inline char advance_char() {
-    return structurals.advance_char();
-  }
-
   really_inline void log_value(const char *type) {
-    logger::log_line(structurals, "", type, "");
+    logger::log_line(*this, "", type, "");
   }
 
   static really_inline void log_start() {
@@ -13487,17 +13630,17 @@ struct structural_parser {
   }
 
   really_inline void log_start_value(const char *type) {
-    logger::log_line(structurals, "+", type, "");
+    logger::log_line(*this, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
   really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(structurals, "-", type, "");
+    logger::log_line(*this, "-", type, "");
   }
 
   really_inline void log_error(const char *error) {
-    logger::log_line(structurals, "", "ERROR", error);
+    logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
@@ -13516,7 +13659,7 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   //
   // Read first value
   //
-  switch (parser.structurals.current_char()) {
+  switch (parser.current_char()) {
   case '{':
     FAIL_IF( parser.start_object(addresses.finish) );
     goto object_begin;
@@ -13524,27 +13667,41 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( parser.start_array(addresses.finish) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (parser.structurals.buf[parser.structurals.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-      goto error;
+    if (!STREAMING) {
+      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        goto error;
+      }
     }
     goto array_begin;
   case '"':
     FAIL_IF( parser.parse_string() );
     goto finish;
-  case 't': case 'f': case 'n':
-    FAIL_IF( parser.parse_single_atom() );
+  case 't':
+    parser.log_value("true");
+    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::TRUE_VALUE);
+    goto finish;
+  case 'f':
+    parser.log_value("false");
+    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::FALSE_VALUE);
+    goto finish;
+  case 'n':
+    parser.log_value("null");
+    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
+    parser.tape.append(0, internal::tape_type::NULL_VALUE);
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], false);
       })
     );
     goto finish;
   case '-':
     FAIL_IF(
-      parser.structurals.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
+      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
         return parser.parse_number(&copy[idx], true);
       })
     );
@@ -13574,7 +13731,6 @@ object_begin:
 
 object_key_state:
   if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  parser.advance_char();
   GOTO( parser.parse_value(addresses, addresses.object_continue) );
 
 object_continue:
@@ -13599,7 +13755,8 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.advance_char() == ']') {
+  if (parser.peek_next_char() == ']') {
+    parser.advance_char();
     parser.end_array();
     goto scope_end;
   }
@@ -13614,7 +13771,6 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    parser.advance_char();
     goto main_array_switch;
   case ']':
     parser.end_array();
@@ -13658,7 +13814,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::parse_structurals<true>(*this, _doc);
 }
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -13669,8 +13825,8 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 } // namespace westmere
 } // namespace simdjson
 UNTARGET_REGION
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
 #endif
 
 SIMDJSON_POP_DISABLE_WARNINGS
-/* end file src/generic/stage2/structural_parser.h */
+/* end file src/generic/stage2/tape_writer.h */
