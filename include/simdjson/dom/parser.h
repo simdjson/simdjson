@@ -159,6 +159,10 @@ public:
    * documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
+   * 
+   * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
+   * Setting batch_size to excessively large or excesively small values may impact negatively the
+   * performance.
    *
    * ### Error Handling
    *
@@ -216,6 +220,10 @@ public:
    * documents that consist of an object or array may omit the whitespace between them, concatenating
    * with no separator. documents that consist of a single primitive (i.e. documents that are not
    * arrays or objects) MUST be separated with whitespace.
+   * 
+   * The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse.
+   * Setting batch_size to excessively large or excesively small values may impact negatively the
+   * performance.
    *
    * ### Error Handling
    *

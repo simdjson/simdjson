@@ -6,10 +6,62 @@
 #include "simdjson/error.h"
 #ifdef SIMDJSON_THREADS_ENABLED
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 #endif
 
 namespace simdjson {
 namespace dom {
+
+
+#ifdef SIMDJSON_THREADS_ENABLED
+struct stage1_worker {
+  stage1_worker() noexcept = default;
+  stage1_worker(const stage1_worker&) = delete;
+  stage1_worker(stage1_worker&&) = delete;
+  stage1_worker operator=(const stage1_worker&) = delete;
+  ~stage1_worker();
+  /** 
+   * We only start the thread when it is needed, not at object construction, this may throw.
+   * You should only call this once. 
+   **/
+  void start_thread();
+  /** 
+   * Start a stage 1 job. You should first call 'run', then 'finish'. 
+   * You must call start_thread once before.
+   */
+  void run(document_stream * ds, dom::parser * stage1, size_t next_batch_start);
+  /** Wait for the run to finish (blocking). You should first call 'run', then 'finish'. **/
+  void finish();
+
+private:
+
+  /** 
+   * Normally, we would never stop the thread. But we do in the destructor.
+   * This function is only safe assuming that you are not waiting for results. You 
+   * should have called run, then finish, and be done. 
+   **/
+  void stop_thread();
+
+  std::thread thread{};
+  /** These three variables define the work done by the thread. **/
+  dom::parser * stage1_thread_parser{};
+  size_t _next_batch_start{};
+  document_stream * owner{};
+  /** 
+   * We have two state variables. This could be streamlined to one variable in the future but 
+   * we use two for clarity.
+   */
+  bool has_work{false};
+  bool can_work{true};
+
+  /**
+   * We lock using a mutex.
+   */
+  std::mutex locking_mutex{};
+  std::condition_variable cond_var{};
+};
+#endif
 
 /**
  * A forward-only stream of documents.
@@ -142,8 +194,8 @@ private:
   /** The error returned from the stage 1 thread. */
   error_code stage1_thread_error{UNINITIALIZED};
   /** The thread used to run stage 1 against the next batch in the background. */
-  std::thread stage1_thread{};
-
+  friend struct stage1_worker;
+  std::unique_ptr<stage1_worker> worker{new(std::nothrow) stage1_worker()};
   /**
    * The parser used to run stage 1 in the background. Will be swapped
    * with the regular parser when finished.

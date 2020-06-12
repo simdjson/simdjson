@@ -115,11 +115,11 @@ compiling for a known 64-bit platform."
 #define TARGET_WESTMERE TARGET_REGION("sse4.2,pclmul")
 #define TARGET_ARM64
 
-// Threading is disabled
-#undef SIMDJSON_THREADS_ENABLED
 // Is threading enabled?
 #if defined(BOOST_HAS_THREADS) || defined(_REENTRANT) || defined(_MT)
+#ifndef SIMDJSON_THREADS_ENABLED
 #define SIMDJSON_THREADS_ENABLED
+#endif
 #endif
 
 
@@ -129,7 +129,9 @@ compiling for a known 64-bit platform."
 #ifndef __OPTIMIZE__
 // Apple systems have small stack sizes in secondary threads.
 // Lack of compiler optimization may generate high stack usage.
-// So we are disabling multithreaded support for safety.
+// Users may want to disable threads for safety, but only when
+// in debug mode which we detect by the fact that the __OPTIMIZE__
+// macro is not defined.
 #undef SIMDJSON_THREADS_ENABLED
 #endif
 #endif

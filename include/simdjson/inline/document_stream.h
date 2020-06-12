@@ -5,9 +5,64 @@
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
-
 namespace simdjson {
 namespace dom {
+
+#ifdef SIMDJSON_THREADS_ENABLED
+inline void stage1_worker::finish() {
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  cond_var.wait(lock, [this]{return has_work == false;});
+}
+
+inline stage1_worker::~stage1_worker() {
+  stop_thread();
+}
+
+inline void stage1_worker::start_thread() {
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  if(thread.joinable()) {
+    return; // This should never happen but we never want to create more than one thread.
+  }
+  thread = std::thread([this]{
+      while(can_work) {
+        std::unique_lock<std::mutex> thread_lock(locking_mutex);
+        cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
+        if(!can_work) {
+          break;
+        }
+        this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
+              this->_next_batch_start);
+        this->has_work = false;
+        thread_lock.unlock();
+        cond_var.notify_one(); // will notify "finish"
+      }
+    }
+  );
+}
+
+
+inline void stage1_worker::stop_thread() {
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  // We have to make sure that all locks can be released.
+  can_work = false;
+  has_work = false;
+  lock.unlock();
+  cond_var.notify_all();
+  if(thread.joinable()) {
+    thread.join();
+  }
+}
+
+inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_t next_batch_start) {
+  std::unique_lock<std::mutex> lock(locking_mutex);
+  owner = ds;
+  _next_batch_start = next_batch_start;
+  stage1_thread_parser = stage1;
+  has_work = true;
+  lock.unlock();
+  cond_var.notify_one();// will notify the thread lock
+}
+#endif
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
@@ -22,15 +77,14 @@ really_inline document_stream::document_stream(
     batch_size{_batch_size},
     error{_error}
 {
+#ifdef SIMDJSON_THREADS_ENABLED
+  if(worker.get() == nullptr) {
+    error = MEMALLOC;
+  }
+#endif
 }
 
 inline document_stream::~document_stream() noexcept {
-#ifdef SIMDJSON_THREADS_ENABLED
-  // TODO kill the thread, why should people have to wait for a non-side-effecting operation to complete
-  if (stage1_thread.joinable()) {
-    stage1_thread.join();
-  }
-#endif
 }
 
 really_inline document_stream::iterator document_stream::begin() noexcept {
@@ -80,6 +134,7 @@ inline void document_stream::start() noexcept {
     // Kick off the first thread if needed
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
+    worker->start_thread();
     start_stage1_thread();
     if (error) { return; }
   }
@@ -93,7 +148,6 @@ inline void document_stream::next() noexcept {
 
   // Load the next document from the batch
   error = parser.implementation->stage2_next(parser.doc);
-
   // If that was the last document in the batch, load another batch (if available)
   while (error == EMPTY) {
     batch_start = next_batch_start();
@@ -105,7 +159,6 @@ inline void document_stream::next() noexcept {
     error = run_stage1(parser, batch_start);
 #endif
     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
-
     // Run stage 2 on the first document in the batch
     error = parser.implementation->stage2_next(parser.doc);
   }
@@ -128,8 +181,7 @@ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_star
 #ifdef SIMDJSON_THREADS_ENABLED
 
 inline void document_stream::load_from_stage1_thread() noexcept {
-  stage1_thread.join();
-
+  worker->finish();
   // Swap to the parser that was loaded up in the thread. Make sure the parser has
   // enough memory to swap to, as well.
   std::swap(parser, stage1_thread_parser);
@@ -149,9 +201,8 @@ inline void document_stream::start_stage1_thread() noexcept {
   // TODO this is NOT exception-safe.
   this->stage1_thread_error = UNINITIALIZED; // In case something goes wrong, make sure it's an error
   size_t _next_batch_start = this->next_batch_start();
-  stage1_thread = std::thread([this, _next_batch_start] {
-    this->stage1_thread_error = run_stage1(this->stage1_thread_parser, _next_batch_start);
-  });
+
+  worker->run(this, & this->stage1_thread_parser, _next_batch_start);
 }
 
 #endif // SIMDJSON_THREADS_ENABLED
