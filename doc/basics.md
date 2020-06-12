@@ -452,7 +452,8 @@ The simdjson library also support multithreaded JSON streaming through a large f
 smaller JSON documents in either [ndjson](http://ndjson.org) or [JSON lines](http://jsonlines.org)
 format. If your JSON documents all contain arrays or objects, we even support direct file
 concatenation without whitespace. The concatenated file has no size restrictions (including larger
-than 4GB), though each individual document must be less than 4GB.
+than 4GB), though each individual document must be no large than the window size. The default
+window size is set to 1 MB.
 
 Here is a simple example, given "x.json" with this content:
 
@@ -471,6 +472,8 @@ for (dom::element doc : parser.load_many(filename)) {
 ```
 
 In-memory ndjson strings can be parsed as well, with `parser.parse_many(string)`.
+
+Both `load_many` and `parse_many` take an optional parameter `size_t batch_size` which defines the window processing size. It is set by default to a large value (`1000000` corresponding to 1 MB). None of your JSON documents should exceed this window size, or else they will not parse successfully. You cannot set this window size larger than 4 GB. For performance reasons, this window size should be relatively small: the smaller it is, the less memory the function will use. Setting the window size too small (e.g., less than 100 kB) may also impact performance negatively.
 
 See [parse_many.md](parse_many.md) for detailed information and design.
 
