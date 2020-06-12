@@ -2,29 +2,34 @@ namespace stage2 {
 
 class structural_iterator {
 public:
-  really_inline structural_iterator(const uint8_t* _buf, size_t _len, const uint32_t *_structural_indexes, size_t next_structural_index)
-    : buf{_buf},
-     len{_len},
-     structural_indexes{_structural_indexes},
-     next_structural{next_structural_index}
-    {}
-  really_inline char advance_char() {
-    idx = structural_indexes[next_structural];
-    next_structural++;
-    c = *current();
-    return c;
+  const uint8_t* const buf;
+  uint32_t *current_structural;
+  dom_parser_implementation &parser;
+
+  // Start a structural 
+  really_inline structural_iterator(dom_parser_implementation &_parser, size_t start_structural_index)
+    : buf{_parser.buf},
+      current_structural{&_parser.structural_indexes[start_structural_index]},
+      parser{_parser} {
   }
-  really_inline char current_char() {
-    return c;
-  }
-  really_inline char peek_char() {
-    return buf[structural_indexes[next_structural]];
-  }
+  // Get the buffer position of the current structural character
   really_inline const uint8_t* current() {
-    return &buf[idx];
+    return &buf[*current_structural];
+  }
+  // Get the current structural character
+  really_inline char current_char() {
+    return buf[*current_structural];
+  }
+  // Get the next structural character without advancing
+  really_inline char peek_next_char() {
+    return buf[*(current_structural+1)];
+  }
+  really_inline char advance_char() {
+    current_structural++;
+    return buf[*current_structural];
   }
   really_inline size_t remaining_len() {
-    return len - idx;
+    return parser.len - *current_structural;
   }
   template<typename F>
   really_inline bool with_space_terminated_copy(const F& f) {
@@ -41,35 +46,25 @@ public:
     * practice unless you are in the strange scenario where you have many JSON
     * documents made of single atoms.
     */
-    char *copy = static_cast<char *>(malloc(len + SIMDJSON_PADDING));
+    char *copy = static_cast<char *>(malloc(parser.len + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return true;
     }
-    memcpy(copy, buf, len);
-    memset(copy + len, ' ', SIMDJSON_PADDING);
-    bool result = f(reinterpret_cast<const uint8_t*>(copy), idx);
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    bool result = f(reinterpret_cast<const uint8_t*>(copy), *current_structural);
     free(copy);
     return result;
   }
   really_inline bool past_end(uint32_t n_structural_indexes) {
-    return next_structural > n_structural_indexes;
+    return current_structural >= &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_end(uint32_t n_structural_indexes) {
-    return next_structural == n_structural_indexes;
+    return current_structural == &parser.structural_indexes[n_structural_indexes];
   }
   really_inline bool at_beginning() {
-    return next_structural == 0;
+    return current_structural == parser.structural_indexes.get();
   }
-  really_inline size_t next_structural_index() {
-    return next_structural;
-  }
-
-  const uint8_t* const buf;
-  const size_t len;
-  const uint32_t* const structural_indexes;
-  size_t next_structural; // next structural index
-  size_t idx{0}; // location of the structural character in the input (buf)
-  uint8_t c{0};  // used to track the (structural) character we are looking at
 };
 
 } // namespace stage2
