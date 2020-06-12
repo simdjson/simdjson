@@ -186,6 +186,7 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
   // The buffer variable now has "[1,2,3,4]" and new_length has value 9.
 ```
 
+Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string `"this string is not terminated` because of the missing final quote.
 
 C++17 Support
 -------------
