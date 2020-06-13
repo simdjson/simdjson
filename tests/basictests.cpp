@@ -1751,6 +1751,62 @@ namespace type_tests {
 
 }
 
+
+
+namespace minify_tests {
+
+  bool check_minification(const char * input, size_t length, const char * expected, size_t expected_length) {
+    std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
+    if(buffer.get() == nullptr) {
+      std::cerr << "cannot alloc "  << std::endl;
+      return false;
+    }
+    size_t newlength{};
+    auto error = simdjson::minify(input, length, buffer.get(), newlength);
+    if(error != simdjson::SUCCESS) {
+      std::cerr << "error " << error << std::endl;
+      return false;
+    }
+    // memcmp
+    if(newlength != expected_length) {
+      std::cerr << "lengths do not match " << std::endl;
+      return false;
+    }
+    for(size_t i = 0; i < newlength; i++) {
+      if(buffer.get()[i] != expected[i]) {
+        std::cerr << "Inputs do not match (but same length) " << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool test_minify() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
+     const std::string minified(R"({"foo":1,"bar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+  }
+  bool test_minify_array() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string test("[ 1,    2,    3]");
+    std::string minified("[1,2,3]");
+    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+  }
+  bool test_minify_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string test(R"({ "foo   " : 1, "b  ar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })");
+    std::string minified(R"({"foo   ":1,"b  ar":[1,2,3],"baz":{"a":1,"b":2,"c":3}})");
+    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+  }
+  bool run() {
+    return test_minify() &&
+           test_minify_array() &&
+           test_minify_object();
+  }
+}
+
+
 namespace format_tests {
   using namespace simdjson;
   using namespace simdjson::dom;
@@ -2007,7 +2063,8 @@ int main(int argc, char *argv[]) {
     printf("unsupported CPU\n");
   }
   std::cout << "Running basic tests." << std::endl;
-  if (parse_api_tests::run() &&
+  if (minify_tests::run() &&
+      parse_api_tests::run() &&
       dom_api_tests::run() &&
       type_tests::run() &&
       format_tests::run() &&

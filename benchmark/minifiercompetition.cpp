@@ -45,6 +45,14 @@ std::string rapid_stringme(char *json) {
   return buffer.GetString();
 }
 
+std::string simdjson_stringme(simdjson::padded_string & json) {
+  std::stringstream ss;
+  dom::parser parser;
+  dom::element doc = parser.parse(json);
+  ss << simdjson::minify(doc);
+  return ss.str();
+}
+
 
 int main(int argc, char *argv[]) {
   int c;
@@ -103,6 +111,11 @@ int main(int argc, char *argv[]) {
   BEST_TIME_NOCHECK(
       "despacing with RapidJSON Insitu", rapid_stringme_insitu((char *)buffer),
       memcpy(buffer, p.data(), p.size()), repeat, volume, !just_data);
+
+  BEST_TIME_NOCHECK(
+      "despacing with std::minify", simdjson_stringme(p),, repeat, volume, !just_data);
+
+      
   memcpy(buffer, p.data(), p.size());
   size_t outlength;
   uint8_t *cbuffer = (uint8_t *)buffer;
@@ -126,8 +139,7 @@ int main(int argc, char *argv[]) {
 
   char *mini_buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
   size_t minisize;
-  auto minierror = simdjson::active_implementation->minify((const uint8_t *)p.data(), p.size(),
-                                                           (uint8_t *)mini_buffer, minisize);
+  auto minierror = minify(p.data(), p.size(),mini_buffer, minisize);
   if (!minierror) { std::cerr << minierror << std::endl; exit(1); }
   mini_buffer[minisize] = '\0';
 

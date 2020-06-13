@@ -68,7 +68,7 @@ public:
 private:
   inline error_code allocate(size_t len) noexcept;
   template<typename T>
-  friend class simdjson::minify;
+  friend class simdjson::minifier;
   friend class parser;
 }; // class document
 

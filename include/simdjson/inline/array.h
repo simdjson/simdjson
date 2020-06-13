@@ -121,7 +121,7 @@ inline std::ostream& operator<<(std::ostream& out, const array &value) {
 } // namespace dom
 
 template<>
-inline std::ostream& minify<dom::array>::print(std::ostream& out) {
+inline std::ostream& minifier<dom::array>::print(std::ostream& out) {
   out << '[';
   auto iter = value.begin();
   auto end = value.end();
@@ -137,7 +137,7 @@ inline std::ostream& minify<dom::array>::print(std::ostream& out) {
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-inline std::ostream& minify<simdjson_result<dom::array>>::print(std::ostream& out) {
+inline std::ostream& minifier<simdjson_result<dom::array>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<dom::array>(value.first);
 }

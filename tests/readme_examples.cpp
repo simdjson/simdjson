@@ -239,10 +239,36 @@ void performance_3() {
 SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
+void minify() {
+  const char * some_string = "[ 1, 2, 3, 4] ";
+  size_t length = strlen(some_string);
+  std::unique_ptr<char[]> buffer{new(std::nothrow) char[length + simdjson::SIMDJSON_PADDING]};
+  size_t new_length{};
+  auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
+  if(error != simdjson::SUCCESS) {
+    std::cerr << "error " << error << std::endl;
+    abort();
+  } else {
+    const char * expected_string = "[1,2,3,4]";
+    size_t expected_length = strlen(expected_string);
+    if(expected_length != new_length) {
+      std::cerr << "mismatched length (error) " << std::endl;
+      abort();
+    }
+    for(size_t i = 0; i < new_length; i++) {
+      if(expected_string[i] != buffer.get()[i]) {
+        std::cerr << "mismatched content (error) " << std::endl;
+        abort();
+      }
+    }
+  }
+}
+
 int main() {
   basics_dom_1();
   basics_dom_2();
   basics_dom_3();
   basics_dom_4();
+  minify();
   return 0;
 }
