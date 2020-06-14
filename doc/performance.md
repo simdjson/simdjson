@@ -20,7 +20,7 @@ Reusing the parser for maximum efficiency
 If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once
 and reuse it. The simdjson library will allocate and retain internal buffers between parses, keeping
 buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner,
-you can parse terabytes of JSON data without doing any allocation.
+you can parse terabytes of JSON data without doing any new allocation.
 
 ```c++
 dom::parser parser;
