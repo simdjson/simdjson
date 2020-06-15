@@ -208,7 +208,7 @@ bool ParseString(const char *j, std::string &s) {
     if (error) {
       return false;
     }
-    s = answer;
+    s.assign(answer.data(), answer.size());
     return true;
 }
 
