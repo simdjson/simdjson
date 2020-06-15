@@ -462,6 +462,7 @@ int main(int argc, char *argv[]) {
             repeat, volume, !just_data);
   if (!just_data) {
     printf("API traversal tests\n");
+    printf("Based on https://github.com/miloyip/nativejson-benchmark\n");
     simdjson::dom::parser parser;
     auto [doc, err] = parser.parse(p);
     if (err) {
