@@ -39,9 +39,9 @@ You can compile with:
 c++ myproject.cpp simdjson.cpp
 ```
 
-Note: 
+Note:
 - Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ myproject.cpp simdjson.cpp`).
-- Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`. 
+- Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`.
 
 
 The Basics: Loading and Parsing JSON Documents
@@ -95,8 +95,8 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array Index:** To get at an array value by index, use the at() method: `array.at(0)` gets the
   first element.
   > Note that array[0] does not compile, because implementing [] gives the impression indexing is a
-  > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements 
-  > using a for-loop, as in our examples. 
+  > O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements
+  > using a for-loop, as in our examples.
 * **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
   with the `size()` method.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
@@ -398,6 +398,36 @@ And another one:
 ```
 
 Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
+
+
+The next two functions will take as input a JSON document containing an array with a single element, either a string or a number. They return true upon success.
+
+```C++
+simdjson::dom::parser parser{};
+
+bool ParseDouble(const char *j, double &d) {
+    simdjson::error_code error;
+    parser.parse(j, std::strlen(j)).at(0).get<double>().tie(d, error);
+    if (error) {
+      return false;
+    }
+    return true;
+}
+
+bool ParseString(const char *j, std::string &s) {
+  simdjson::error_code error;
+  std::string_view answer;
+  parser.parse(j,strlen(j))
+        .at(0)
+        .get<std::string_view>()
+        .tie(answer, error);
+    if (error) {
+      return false;
+    }
+    s = answer;
+    return true;
+}
+```
 
 ### Exceptions
 

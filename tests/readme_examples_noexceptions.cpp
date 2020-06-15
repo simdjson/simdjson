@@ -131,6 +131,8 @@ void basics_error_5() {
 }
 
 
+
+
 #ifdef SIMDJSON_CPLUSPLUS17
 void basics_error_3_cpp17() {
   auto cars_json = R"( [
@@ -183,10 +185,50 @@ void basics_error_3_cpp17() {
 }
 #endif
 
+simdjson::dom::parser parser;
+
+// See https://github.com/miloyip/nativejson-benchmark/blob/master/src/tests/simdjsontest.cpp
+bool ParseDouble(const char *j, double &d) {
+    simdjson::error_code error;
+    parser.parse(j, std::strlen(j)).at(0).get<double>().tie(d, error);
+    if (error) {
+      return false;
+    }
+    return true;
+}
+
+// See https://github.com/miloyip/nativejson-benchmark/blob/master/src/tests/simdjsontest.cpp
+bool ParseString(const char *j, std::string &s) {
+  simdjson::error_code error;
+  std::string_view answer;
+  parser.parse(j,strlen(j))
+        .at(0)
+        .get<std::string_view>()
+        .tie(answer, error);
+    if (error) {
+      return false;
+    }
+    s = answer;
+    return true;
+}
+
+
 int main() {
+  double x{};
+  ParseDouble("[1.1]",x);
+  if(x != 1.1) {
+    std::cerr << "bug in ParseDouble!" << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::string s{};
+  ParseString("[\"my string\"]", s);
+  if(s != "my string") {
+    std::cerr << "bug in ParseString!" << std::endl;
+    return EXIT_FAILURE;
+  }
   basics_error_2();
   basics_error_3();
   basics_error_4();
   basics_error_5();
-  return 0;
+  return EXIT_SUCCESS;
 }
