@@ -73,6 +73,12 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
+really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+    simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
+    simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
+    return is_third_byte ^ is_fourth_byte;
+}
+
 #include "generic/stage1/buf_block_reader.h"
 #include "generic/stage1/json_string_scanner.h"
 #include "generic/stage1/json_scanner.h"
@@ -83,7 +89,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 }
 
 #include "generic/stage1/find_next_document_index.h"
-#include "generic/stage1/utf8_lookup2_algorithm.h"
+#include "generic/stage1/utf8_lookup3_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
 WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
   this->buf = _buf;
