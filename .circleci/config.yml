@@ -118,7 +118,7 @@ jobs:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
-    steps: [ install_cmake, cmake_test_all, cmake_install_test ]
+    steps: [ install_cmake, cmake_test, cmake_install_test ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
@@ -139,7 +139,7 @@ jobs:
     description: Build and run tests on clang 10 and AVX 2 with a cmake static build and libc++
     executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON }
-    steps: [ cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test, cmake_install_test ]
   # sanitize
   sanitize-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake sanitize build
