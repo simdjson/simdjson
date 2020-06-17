@@ -160,6 +160,8 @@ Recent versions of Microsoft Visual Studio on Windows provides support for the L
 Downclocking
 --------------
 
+You should not expect the simdjson library to cause downclocking of your recent Intel CPU cores.
+
 On some Intel processors, using SIMD instructions in a sustained manner on the same CPU core may result in a phenomenon called downclocking whereas the processor initially runs these instructions at a slow speed before reducing the frequency of the core for a short time (milliseconds). Intel refers to these states as licenses. On some current Intel processors, it occurs under two scenarios:
 
 - [Whenever 512-bit AVX-512 instructions are used](https://lemire.me/blog/2018/09/07/avx-512-when-and-how-to-use-these-new-instructions/).
