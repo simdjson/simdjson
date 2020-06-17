@@ -371,7 +371,33 @@ namespace document_stream_tests {
       simdjson::padded_string str("{}",2);
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
-
+  bool test_current_index() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string base("1         ");// one JSON!
+    std::string json;
+    for(size_t k =  0; k < 1000; k++) {
+      json += base;
+    }
+    simdjson::dom::parser parser;
+    const size_t window = 32; // deliberately small
+    auto stream = parser.parse_many(json,window);
+    auto i = stream.begin();
+    size_t count = 0;
+    for(; i != stream.end(); ++i) {
+      auto doc = *i;
+      if (doc.error()) {
+          std::cerr << doc.error() << std::endl;
+          return false;
+      }
+      if( i.current_index() != count) {
+        std::cout << "index:" << i.current_index() << std::endl;
+        std::cout << "expected index:" << count << std::endl;
+        return false;
+      }
+      count += base.size();
+    }
+    return true;
+  }
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
     auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
@@ -541,7 +567,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return small_window() &&
+    return test_current_index() &&
+           small_window() &&
            large_window() &&
            json_issue467() &&
            document_stream_test() &&
