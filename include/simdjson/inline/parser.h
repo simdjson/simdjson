@@ -151,6 +151,12 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   // Reallocate implementation and document if needed
   //
   error_code err;
+  // It is possible that we change max_depth without touching capacity, in
+  // which case, we do not want to reallocate the document buffers.
+  if (implementation->capacity() != capacity || !doc.tape) {
+    err = doc.allocate(capacity);
+    if (err) { return err; }
+  }
   if (implementation) {
     err = implementation->allocate(capacity, max_depth);
   } else {
@@ -158,7 +164,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   }
   if (err) { return err; }
 
-  return doc.allocate(capacity);
+  return SUCCESS;
 }
 
 WARN_UNUSED
