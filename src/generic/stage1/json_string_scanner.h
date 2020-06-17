@@ -13,8 +13,6 @@ struct json_string_block {
   really_inline uint64_t string_start() const { return _quote & ~_in_string; }
   // Only characters inside the string (not including the quotes)
   really_inline uint64_t string_content() const { return _in_string & ~_quote; }
-  // Whether the entire block is strings, or not
-  really_inline bool all_string() { return _in_string == 0xFFFFFFFFFFFFFFFFULL; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
   really_inline uint64_t non_quote_inside_string(uint64_t mask) const { return mask & _in_string; }
   // Return a mask of whether the given characters are inside a string (only works on non-quotes)
@@ -37,7 +35,6 @@ class json_string_scanner {
 public:
   really_inline json_string_block next(const simd::simd8x64<uint8_t> in);
   really_inline error_code finish(bool streaming);
-  really_inline bool in_unclosed_string() { return prev_in_string; }
 
 private:
   // Intended to be defined by the implementation
@@ -133,7 +130,7 @@ really_inline json_string_block json_string_scanner::next(const simd::simd8x64<u
 }
 
 really_inline error_code json_string_scanner::finish(bool streaming) {
-  if (in_unclosed_string() and (not streaming)) {
+  if (prev_in_string and (not streaming)) {
     return UNCLOSED_STRING;
   }
   return SUCCESS;
