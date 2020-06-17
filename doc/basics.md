@@ -516,3 +516,12 @@ Backwards Compatibility
 The only header file supported by simdjson is simdjson.h. Older versions of simdjson published a
 number of other include files such as document.h or ParsedJson.h alongside simdjson.h; these headers
 may be moved or removed in future versions.
+
+
+
+Further Reading
+-------------
+
+* [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
+* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
+  how you can work with it.
