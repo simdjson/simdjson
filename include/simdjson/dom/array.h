@@ -80,8 +80,18 @@ public:
   inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
 
   /**
-   * Get the value at the given index.
+   * Get the value at the given index. This function has linear-time complexity and
+   * is equivalent to the following:
+   * 
+   *    size_t i=0;
+   *    for (auto element : *this) {
+   *      if (i == index) { return element; }
+   *      i++;
+   *    }
+   *    return INDEX_OUT_OF_BOUNDS;
    *
+   * Avoid calling the at() function repeatedly.
+   * 
    * @return The value at the given index, or:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
    */
