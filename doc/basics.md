@@ -406,26 +406,22 @@ The next two functions will take as input a JSON document containing an array wi
 simdjson::dom::parser parser{};
 
 bool ParseDouble(const char *j, double &d) {
-    simdjson::error_code error;
-    parser.parse(j, std::strlen(j)).at(0).get<double>().tie(d, error);
-    if (error) {
-      return false;
-    }
-    return true;
+  simdjson::error_code error;
+  parser.parse(j, std::strlen(j))
+        .at(0)
+        .get<double>()
+        .tie(d, error);
+  if (error) { return false; }
+  return true;
 }
 
 bool ParseString(const char *j, std::string &s) {
-  simdjson::error_code error;
-  std::string_view answer;
-  parser.parse(j,strlen(j))
+  auto [answer, error] = parser.parse(j,strlen(j))
         .at(0)
-        .get<std::string_view>()
-        .tie(answer, error);
-    if (error) {
-      return false;
-    }
-    s.assign(answer.data(), answer.size());
-    return true;
+        .get<std::string_view>();
+  if (error) { return false; }
+  s.assign(answer.data(), answer.size());
+  return true;
 }
 ```
 
