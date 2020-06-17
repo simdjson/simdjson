@@ -209,7 +209,11 @@ namespace document_tests {
     simdjson::dom::parser parser1;
     for (simdjson::padded_string str : json_strings) {
       auto [element, error] = parser1.parse(str);
-      std::cout << element << std::endl;
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element << std::endl;
+      }
     }
     std::vector<std::string> file_paths{
       ADVERSARIAL_JSON,      FLATADVERSARIAL_JSON, DEMO_JSON,
@@ -218,13 +222,22 @@ namespace document_tests {
     for (auto path : file_paths) {
       simdjson::dom::parser parser2;
       std::cout << "file: " << path << std::endl;
-      UNUSED auto [element, error] = parser2.load(path);
+      auto [element, error] = parser2.load(path);
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element.type() << std::endl;
+      }
     }
     simdjson::dom::parser parser3;
     for (auto path : file_paths) {
       std::cout << "file: " << path << std::endl;
       auto [element, error] = parser3.load(path);
-      std::cout << "\t- error? " << error << std::endl;
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element.type() << std::endl;
+      }    
     }
     return true;
   }
