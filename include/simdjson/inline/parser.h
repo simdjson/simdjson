@@ -158,10 +158,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   }
   if (err) { return err; }
 
-  if (implementation->capacity() != capacity || !doc.tape) {
-    return doc.allocate(capacity);
-  }
-  return SUCCESS;
+  return doc.allocate(capacity);
 }
 
 WARN_UNUSED
