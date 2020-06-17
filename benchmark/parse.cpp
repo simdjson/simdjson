@@ -83,7 +83,7 @@ struct option_struct {
   bool stage1_only = false;
 
   int32_t iterations = 200;
-  int32_t iteration_step = 50;
+  int32_t iteration_step = -1;
 
   bool verbose = false;
   bool tabbed_output = false;
@@ -149,17 +149,18 @@ struct option_struct {
       }
     }
 
+    if (iteration_step == -1) {
+      iteration_step = iterations / 50;
+      if (iteration_step < 200) { iteration_step = 200; }
+      if (iteration_step > iterations) { iteration_step = iterations; }
+    }
+
     // All remaining arguments are considered to be files
     for (int i=optind; i<argc; i++) {
       files.push_back(argv[i]);
     }
     if (files.empty()) {
       exit_usage("No files specified");
-    }
-
-    // Keeps the numbers the same for CI (old ./parse didn't have a two-stage loop)
-    if (files.size() == 1) {
-      iteration_step = iterations;
     }
   }
 };
