@@ -151,19 +151,23 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   // Reallocate implementation and document if needed
   //
   error_code err;
+  //
   // It is possible that we change max_depth without touching capacity, in
   // which case, we do not want to reallocate the document buffers.
-  if (implementation->capacity() != capacity || !doc.tape) {
-    err = doc.allocate(capacity);
-    if (err) { return err; }
-  }
+  //
+  bool need_doc_allocation{false};
   if (implementation) {
+    need_doc_allocation = implementation->capacity() != capacity || !doc.tape;
     err = implementation->allocate(capacity, max_depth);
   } else {
+    need_doc_allocation = true;
     err = simdjson::active_implementation->create_dom_parser_implementation(capacity, max_depth, implementation);
   }
   if (err) { return err; }
-
+  if (need_doc_allocation) {
+    err = doc.allocate(capacity);
+    if (err) { return err; }
+  }
   return SUCCESS;
 }
 
