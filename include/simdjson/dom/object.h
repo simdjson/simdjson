@@ -101,6 +101,8 @@ public:
    *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
    *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
+   * This function has linear-time complexity: the keys are checked one by one.
+   *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
@@ -115,6 +117,8 @@ public:
    *   dom::parser parser;
    *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
    *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *
+   * This function has linear-time complexity: the keys are checked one by one.
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -147,6 +151,8 @@ public:
    *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
    *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
    *
+   * This function has linear-time complexity: the keys are checked one by one.
+   *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
@@ -157,6 +163,8 @@ public:
    * It is only guaranteed to work over ASCII inputs.
    *
    * Note: The key will be matched against **unescaped** JSON.
+   *
+   * This function has linear-time complexity: the keys are checked one by one.
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
