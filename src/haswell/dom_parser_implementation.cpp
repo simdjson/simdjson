@@ -61,9 +61,24 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
+really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+  simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
+  simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
+  // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
+  return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
+}
+
+
 #include "generic/stage1/buf_block_reader.h"
 #include "generic/stage1/json_string_scanner.h"
 #include "generic/stage1/json_scanner.h"
+
+namespace stage1 {
+really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
+  return find_escaped_branchless(backslash);
+}
+}
 
 #include "generic/stage1/json_minifier.h"
 WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
@@ -71,7 +86,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 }
 
 #include "generic/stage1/find_next_document_index.h"
-#include "generic/stage1/utf8_lookup2_algorithm.h"
+#include "generic/stage1/utf8_lookup3_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
 WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
   this->buf = _buf;
