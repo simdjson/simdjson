@@ -19,7 +19,19 @@
 #define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
 #endif
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+const char *TWITTER_TIMELINE_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter_timeline.json";
+const char *REPEAT_JSON = SIMDJSON_BENCHMARK_DATA_DIR "repeat.json";
 const char *AMAZON_CELLPHONES_NDJSON = SIMDJSON_BENCHMARK_DATA_DIR "amazon_cellphones.ndjson";
+
+#define SIMDJSON_BENCHMARK_SMALLDATA_DIR SIMDJSON_BENCHMARK_DATA_DIR "small/"
+
+const char *ADVERSARIAL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "adversarial.json";
+const char *FLATADVERSARIAL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "flatadversarial.json";
+const char *DEMO_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "demo.json";
+const char *SMALLDEMO_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "smalldemo.json";
+const char *TRUENULL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "truenull.json";
+
+
 
 template<typename T>
 bool equals_expected(T actual, T expected) {
@@ -191,6 +203,45 @@ namespace number_tests {
 }
 
 namespace document_tests {
+  int issue938() {
+    std::vector<std::string> json_strings{"[true,false]", "[1,2,3,null]",
+                                        R"({"yay":"json!"})"};
+    simdjson::dom::parser parser1;
+    for (simdjson::padded_string str : json_strings) {
+      auto [element, error] = parser1.parse(str);
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element << std::endl;
+      }
+    }
+    std::vector<std::string> file_paths{
+      ADVERSARIAL_JSON,      FLATADVERSARIAL_JSON, DEMO_JSON,
+      TWITTER_TIMELINE_JSON, REPEAT_JSON,         SMALLDEMO_JSON,
+      TRUENULL_JSON};
+    for (auto path : file_paths) {
+      simdjson::dom::parser parser2;
+      std::cout << "file: " << path << std::endl;
+      auto [element, error] = parser2.load(path);
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element.type() << std::endl;
+      }
+    }
+    simdjson::dom::parser parser3;
+    for (auto path : file_paths) {
+      std::cout << "file: " << path << std::endl;
+      auto [element, error] = parser3.load(path);
+      if(error) {
+        std::cerr << error << std::endl;
+      } else {
+        std::cout << element.type() << std::endl;
+      }    
+    }
+    return true;
+  }
+
   // adversarial example that once triggred overruns, see https://github.com/lemire/simdjson/issues/345
   bool bad_example() {
     std::cout << __func__ << std::endl;
@@ -351,7 +402,8 @@ namespace document_tests {
     return true;
   }
   bool run() {
-    return padded_with_open_bracket() &&
+    return issue938() &&
+           padded_with_open_bracket() &&
            bad_example() &&
            count_array_example() &&
            count_object_example() &&

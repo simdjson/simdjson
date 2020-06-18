@@ -1,6 +1,29 @@
+
+#
+# Flags used by exes and by the simdjson library (project-wide flags)
+#
+add_library(simdjson-flags INTERFACE)
+add_library(simdjson-internal-flags INTERFACE)
+target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
+
+option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
+if(SIMDJSON_SANITIZE)
+  target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
+  target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
+
+  # Ubuntu bug for GCC 5.0+ (safe for all versions)
+  if (CMAKE_COMPILER_IS_GNUCC)
+    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+  endif()
+endif()
+
+
 if (NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to Release")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  if(SIMDJSON_SANITIZE)
+    message(WARNING "No build type selected and you have enabled the sanitizer. Consider setting CMAKE_BUILD_TYPE to Debug to help identify the eventual problems.")
+  endif()
 endif()
 
 if(MSVC)
@@ -31,12 +54,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-#
-# Flags used by exes and by the simdjson library (project-wide flags)
-#
-add_library(simdjson-flags INTERFACE)
-add_library(simdjson-internal-flags INTERFACE)
-target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
 if(MSVC)
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
@@ -81,17 +98,6 @@ if(SIMDJSON_ENABLE_THREADS)
   target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1)
-endif()
-
-option(SIMDJSON_SANITIZE "Sanitize addresses" OFF)
-if(SIMDJSON_SANITIZE)
-  target_compile_options(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
-  target_link_libraries(simdjson-flags INTERFACE -fsanitize=address -fno-omit-frame-pointer -fsanitize=undefined -fno-sanitize-recover=all)
-
-  # Ubuntu bug for GCC 5.0+ (safe for all versions)
-  if (CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
-  endif()
 endif()
 
 if(SIMDJSON_USE_LIBCPP)
