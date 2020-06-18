@@ -199,16 +199,6 @@ bool ParseDouble(const char *j, double &d) {
 }
 
 // See https://github.com/miloyip/nativejson-benchmark/blob/master/src/tests/simdjsontest.cpp
-#ifdef SIMDJSON_CPLUSPLUS17
-bool ParseString(const char *j, std::string &s) {
-  auto [answer, error] = parser.parse(j,strlen(j))
-        .at(0)
-        .get<std::string_view>();
-  if (error) { return false; }
-  s.assign(answer.data(), answer.size());
-  return true;
-}
-#else
 bool ParseString(const char *j, std::string &s) {
   simdjson::error_code error;
   std::string_view answer;
@@ -220,7 +210,6 @@ bool ParseString(const char *j, std::string &s) {
   s.assign(answer.data(), answer.size());
   return true;
 }
-#endif
 
 
 int main() {

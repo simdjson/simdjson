@@ -405,7 +405,7 @@ The next two functions will take as input a JSON document containing an array wi
 ```C++
 simdjson::dom::parser parser{};
 
-bool ParseDouble(const char *j, double &d) {
+bool parse_double(const char *j, double &d) {
   simdjson::error_code error;
   parser.parse(j, std::strlen(j))
         .at(0)
@@ -415,10 +415,13 @@ bool ParseDouble(const char *j, double &d) {
   return true;
 }
 
-bool ParseString(const char *j, std::string &s) {
-  auto [answer, error] = parser.parse(j,strlen(j))
+bool parse_string(const char *j, std::string &s) {
+  simdjson::error_code error;
+  std::string_view answer;
+  parser.parse(j,strlen(j))
         .at(0)
-        .get<std::string_view>();
+        .get<std::string_view>()
+        .tie(answer, error);
   if (error) { return false; }
   s.assign(answer.data(), answer.size());
   return true;
