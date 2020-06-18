@@ -15,7 +15,7 @@ namespace dom {
 
 
 #ifdef SIMDJSON_THREADS_ENABLED
-/** @private **/
+/** @private Custom worker class **/
 struct stage1_worker {
   stage1_worker() noexcept = default;
   stage1_worker(const stage1_worker&) = delete;
@@ -95,6 +95,8 @@ public:
      */
     really_inline bool operator!=(const iterator &other) const noexcept;
     /**
+     * @private
+     * 
      * Gives the current index in the input document in bytes.
      *
      *   auto stream = parser.parse_many(json,window);
@@ -103,6 +105,10 @@ public:
      *      auto doc = *i;
      *      size_t index = i.current_index();
      *   }
+     * 
+     * This function (current_index()) is experimental and the usage
+     * may change in future versions of simdjson: we find the API somewhat
+     * awkward and we would like to offer something friendlier.  
      */
      really_inline size_t current_index() noexcept;
   private:
