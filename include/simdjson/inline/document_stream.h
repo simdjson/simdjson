@@ -143,10 +143,14 @@ inline void document_stream::start() noexcept {
   next();
 }
 
+really_inline size_t document_stream::iterator::current_index() noexcept {
+  return stream.doc_index;
+}
 inline void document_stream::next() noexcept {
   if (error) { return; }
 
   // Load the next document from the batch
+  doc_index = batch_start + parser.implementation->structural_indexes[parser.implementation->next_structural_index];
   error = parser.implementation->stage2_next(parser.doc);
   // If that was the last document in the batch, load another batch (if available)
   while (error == EMPTY) {
@@ -160,6 +164,7 @@ inline void document_stream::next() noexcept {
 #endif
     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
     // Run stage 2 on the first document in the batch
+    doc_index = batch_start + parser.implementation->structural_indexes[parser.implementation->next_structural_index];
     error = parser.implementation->stage2_next(parser.doc);
   }
 }
