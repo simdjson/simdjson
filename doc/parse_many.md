@@ -158,3 +158,11 @@ From [jsonlines.org](http://jsonlines.org/examples/):
     ```
     JSON Lines' biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to 
     work with than a directory full of XML files.
+
+
+Further Reading
+-------------
+
+* [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
+* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
+  how you can work with it.

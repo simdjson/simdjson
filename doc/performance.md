@@ -168,3 +168,10 @@ On some Intel processors, using SIMD instructions in a sustained manner on the s
 - Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).
 
 The simdjson library does not currently support AVX-512 instructions and it does not make use of heavy 256-bit instructions. Thus there should be no downclocking due to simdjson on recent processors. You may still be worried about which SIMD instruction set is used by simdjson.  Thankfully,  [you can always determine and change which architecture-specific implementation is used](implementation-selection.md). Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.
+
+
+Further Reading
+-------------
+
+* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
+  how you can work with it.

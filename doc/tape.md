@@ -134,4 +134,3 @@ In-between these two tape elements, we alternate between key (which must be stri
 All the content of the object is located between these two tape elements, including arrays and objects. 
 
 Performance consideration: We can skip the content of an object entirely by accessing the first 64-bit tape element, reading the payload and moving to the corresponding index on the tape.
- 
