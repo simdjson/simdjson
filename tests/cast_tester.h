@@ -21,14 +21,14 @@ namespace {
 template<typename T>
 class cast_tester {
 public:
-  bool test_get(element element, T expected);
-  bool test_get(simdjson_result<element> element, T expected);
+  bool test_get(element element, T expected = {});
+  bool test_get(simdjson_result<element> element, T expected = {});
   bool test_get_error(element element, error_code expected_error);
   bool test_get_error(simdjson_result<element> element, error_code expected_error);
 
 #if SIMDJSON_EXCEPTIONS
-  bool test_implicit_cast(element element, T expected);
-  bool test_implicit_cast(simdjson_result<element> element, T expected);
+  bool test_implicit_cast(element element, T expected = {});
+  bool test_implicit_cast(simdjson_result<element> element, T expected = {});
   bool test_implicit_cast_error(element element, error_code expected_error);
   bool test_implicit_cast_error(simdjson_result<element> element, error_code expected_error);
 #endif // SIMDJSON_EXCEPTIONS
@@ -37,8 +37,8 @@ public:
   bool test_is(simdjson_result<element> element, bool expected);
   bool test_is_error(simdjson_result<element> element, error_code expected_error);
 
-  // bool test_named_get(element element, T expected);
-  // bool test_named_get(simdjson_result<element> element, T expected);
+  // bool test_named_get(element element, T expected = {});
+  // bool test_named_get(simdjson_result<element> element, T expected = {});
   // bool test_named_get_error(element element, error_code expected_error);
   // bool test_named_get_error(simdjson_result<element> element, error_code expected_error);
 
