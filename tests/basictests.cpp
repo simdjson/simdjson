@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "simdjson.h"
+#include "cast_tester.h"
 #include "test_macros.h"
 
 namespace number_tests {
