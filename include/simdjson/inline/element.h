@@ -22,10 +22,7 @@ inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() 
   if (error()) { return error(); }
   return first.type();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
-  if (error()) { return error(); }
-  return first.is_null();
-}
+
 template<typename T>
 inline simdjson_result<bool> simdjson_result<dom::element>::is() const noexcept {
   if (error()) { return error(); }
@@ -35,6 +32,73 @@ template<typename T>
 inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
   if (error()) { return error(); }
   return first.get<T>();
+}
+
+inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
+  if (error()) { return error(); }
+  return first.get_array();
+}
+inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
+  if (error()) { return error(); }
+  return first.get_object();
+}
+inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
+  if (error()) { return error(); }
+  return first.get_c_str();
+}
+inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
+  if (error()) { return error(); }
+  return first.get_string();
+}
+inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_t();
+}
+inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_t();
+}
+inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
+  if (error()) { return error(); }
+  return first.get_double();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
+  if (error()) { return error(); }
+  return first.get_bool();
+}
+
+inline simdjson_result<bool> simdjson_result<dom::element>::is_array() const noexcept {
+  if (error()) { return error(); }
+  return first.is_array();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_object() const noexcept {
+  if (error()) { return error(); }
+  return first.is_object();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_string() const noexcept {
+  if (error()) { return error(); }
+  return first.is_string();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_int64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.is_int64_t();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.is_uint64_t();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_double() const noexcept {
+  if (error()) { return error(); }
+  return first.is_double();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_bool() const noexcept {
+  if (error()) { return error(); }
+  return first.is_bool();
+}
+
+inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
+  if (error()) { return error(); }
+  return first.is_null();
 }
 
 inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
@@ -111,9 +175,6 @@ really_inline element::element(const internal::tape_ref &_tape) noexcept : tape{
 inline element_type element::type() const noexcept {
   auto tape_type = tape.tape_ref_type();
   return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
-}
-really_inline bool element::is_null() const noexcept {
-  return tape.is_null_on_tape();
 }
 
 template<>
@@ -215,9 +276,30 @@ inline simdjson_result<object> element::get<object>() const noexcept {
 }
 
 template<typename T>
-really_inline bool element::is() const noexcept {
+inline bool element::is() const noexcept {
   auto result = get<T>();
   return !result.error();
+}
+
+inline simdjson_result<array> element::get_array() const noexcept { return get<array>(); }
+inline simdjson_result<object> element::get_object() const noexcept { return get<object>(); }
+inline simdjson_result<const char *> element::get_c_str() const noexcept { return get<const char *>(); }
+inline simdjson_result<std::string_view> element::get_string() const noexcept { return get<std::string_view>(); }
+inline simdjson_result<int64_t> element::get_int64_t() const noexcept { return get<int64_t>(); }
+inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept { return get<uint64_t>(); }
+inline simdjson_result<double> element::get_double() const noexcept { return get<double>(); }
+inline simdjson_result<bool> element::get_bool() const noexcept { return get<bool>(); }
+
+inline bool element::is_array() const noexcept { return is<array>(); }
+inline bool element::is_object() const noexcept { return is<object>(); }
+inline bool element::is_string() const noexcept { return is<std::string_view>(); }
+inline bool element::is_int64_t() const noexcept { return is<int64_t>(); }
+inline bool element::is_uint64_t() const noexcept { return is<uint64_t>(); }
+inline bool element::is_double() const noexcept { return is<double>(); }
+inline bool element::is_bool() const noexcept { return is<bool>(); }
+
+inline bool element::is_null() const noexcept {
+  return tape.is_null_on_tape();
 }
 
 #if SIMDJSON_EXCEPTIONS

@@ -1370,12 +1370,12 @@ namespace type_tests {
 
     RUN_TEST( tester.test_get(element) );
     RUN_TEST( tester.test_get(result) );
-    // RUN_TEST( tester.test_named_get(element) );
-    // RUN_TEST( tester.test_named_get(result) );
+    RUN_TEST( tester.test_named_get(element) );
+    RUN_TEST( tester.test_named_get(result) );
     RUN_TEST( tester.test_is(element, true) );
     RUN_TEST( tester.test_is(result, true) );
-    // RUN_TEST( tester.test_named_is(element, true) );
-    // RUN_TEST( tester.test_named_is(result, true) );
+    RUN_TEST( tester.test_named_is(element, true) );
+    RUN_TEST( tester.test_named_is(result, true) );
 #if SIMDJSON_EXCEPTIONS
     RUN_TEST( tester.test_implicit_cast(element) );
     RUN_TEST( tester.test_implicit_cast(result) );
@@ -1396,12 +1396,12 @@ namespace type_tests {
 
     RUN_TEST( tester.test_get_error(element, expected_error) );
     RUN_TEST( tester.test_get_error(result, expected_error) );
-    // RUN_TEST( tester.test_named_get_error(element, expected_error) );
-    // RUN_TEST( tester.test_named_get_error(result, expected_error) );
+    RUN_TEST( tester.test_named_get_error(element, expected_error) );
+    RUN_TEST( tester.test_named_get_error(result, expected_error) );
     RUN_TEST( tester.test_is(element, false) );
     RUN_TEST( tester.test_is(result, false) );
-    // RUN_TEST( tester.test_named_is(element, false) );
-    // RUN_TEST( tester.test_named_is(result, false) );
+    RUN_TEST( tester.test_named_is(element, false) );
+    RUN_TEST( tester.test_named_is(result, false) );
 #if SIMDJSON_EXCEPTIONS
     RUN_TEST( tester.test_implicit_cast_error(element, expected_error) );
     RUN_TEST( tester.test_implicit_cast_error(result, expected_error) );
