@@ -62,16 +62,16 @@ namespace dom {
 //
 // object inline implementation
 //
-really_inline object::object() noexcept : internal::tape_ref() {}
-really_inline object::object(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
+really_inline object::object() noexcept : tape{} {}
+really_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
-  return iterator(doc, json_index + 1);
+  return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline object::iterator object::end() const noexcept {
-  return iterator(doc, after_element() - 1);
+  return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t object::size() const noexcept {
-  return scope_count();
+  return tape.scope_count();
 }
 
 inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
@@ -142,29 +142,29 @@ inline simdjson_result<element> object::at_key_case_insensitive(const std::strin
 //
 // object::iterator inline implementation
 //
-really_inline object::iterator::iterator(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
+really_inline object::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline const key_value_pair object::iterator::operator*() const noexcept {
   return key_value_pair(key(), value());
 }
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
-  return json_index != other.json_index;
+  return tape.json_index != other.tape.json_index;
 }
 inline object::iterator& object::iterator::operator++() noexcept {
-  json_index++;
-  json_index = after_element();
+  tape.json_index++;
+  tape.json_index = tape.after_element();
   return *this;
 }
 inline std::string_view object::iterator::key() const noexcept {
-  return get_string_view();
+  return tape.get_string_view();
 }
 inline uint32_t object::iterator::key_length() const noexcept {
-  return get_string_length();
+  return tape.get_string_length();
 }
 inline const char* object::iterator::key_c_str() const noexcept {
-  return reinterpret_cast<const char *>(&doc->string_buf[size_t(tape_value()) + sizeof(uint32_t)]);
+  return reinterpret_cast<const char *>(&tape.doc->string_buf[size_t(tape.tape_value()) + sizeof(uint32_t)]);
 }
 inline element object::iterator::value() const noexcept {
-  return element(doc, json_index + 1);
+  return element(internal::tape_ref(tape.doc, tape.json_index + 1));
 }
 
 /**

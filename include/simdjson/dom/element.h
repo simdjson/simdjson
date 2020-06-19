@@ -35,7 +35,7 @@ enum class element_type {
  * References an element in a JSON document, representing a JSON null, boolean, string, number,
  * array or object.
  */
-class element : protected internal::tape_ref {
+class element {
 public:
   /** Create a new, invalid element. */
   really_inline element() noexcept;
@@ -249,7 +249,8 @@ public:
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
-  really_inline element(const document *doc, size_t json_index) noexcept;
+  really_inline element(const internal::tape_ref &tape) noexcept;
+  internal::tape_ref tape;
   friend class document;
   friend class object;
   friend class array;
