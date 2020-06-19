@@ -58,7 +58,7 @@ template<typename T>
 bool cast_tester<T>::test_get(element element, T expected) {
   T actual;
   error_code error;
-  element.get<T>().tie(actual, error);
+  element.get(actual, error);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -67,7 +67,7 @@ template<typename T>
 bool cast_tester<T>::test_get(simdjson_result<element> element, T expected) {
   T actual;
   error_code error;
-  element.get<T>().tie(actual, error);
+  element.get(actual, error);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -76,7 +76,7 @@ template<typename T>
 bool cast_tester<T>::test_get_error(element element, error_code expected_error) {
   T actual;
   error_code error;
-  element.get<T>().tie(actual, error);
+  element.get(actual, error);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -85,7 +85,7 @@ template<typename T>
 bool cast_tester<T>::test_get_error(simdjson_result<element> element, error_code expected_error) {
   T actual;
   error_code error;
-  element.get<T>().tie(actual, error);
+  element.get(actual, error);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }

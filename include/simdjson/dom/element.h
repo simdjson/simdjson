@@ -206,6 +206,63 @@ public:
   template<typename T>
   really_inline simdjson_result<T> get() const noexcept;
 
+  /**
+   * Get the value as the provided type (T).
+   *
+   * Supported types:
+   * - Boolean: bool
+   * - Number: double, uint64_t, int64_t
+   * - String: std::string_view, const char *
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
+   *
+   * @param value The variable to set to the value. May not be set if there is an error.
+   * @param error The variable to set to the error. Set to SUCCESS if there is no error.
+   *
+   * @returns true if the value was set, or false if there wsa an error.
+   */
+  template<typename T>
+  inline bool get(T &value, error_code &error) const noexcept;
+
+  /**
+   * Get the value as the provided type (T), setting error if it's not the given type.
+   *
+   * Supported types:
+   * - Boolean: bool
+   * - Number: double, uint64_t, int64_t
+   * - String: std::string_view, const char *
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
+   *
+   * @param value The variable to set to the given type. value is undefined if there is an error.
+   * @param error The variable to store the error. error is set to error_code::SUCCEED if there is an error.
+   */
+  template<typename T>
+  inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Get the value as the provided type (T).
+   *
+   * Supported types:
+   * - Boolean: bool
+   * - Number: double, uint64_t, int64_t
+   * - String: std::string_view, const char *
+   * - Array: dom::array
+   * - Object: dom::object
+   *
+   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
+   *
+   * @param value The variable to set to the given type. value is undefined if there is an error.
+   *
+   * @returns true if the value was able to be set, false if there was an error.
+   */
+  template<typename T>
+  WARN_UNUSED inline bool tie(T &value) && noexcept;
+
 #if SIMDJSON_EXCEPTIONS
   /**
    * Read this element as a boolean.
@@ -421,6 +478,8 @@ public:
   inline simdjson_result<bool> is() const noexcept;
   template<typename T>
   inline simdjson_result<T> get() const noexcept;
+  template<typename T>
+  inline bool get(T &value, error_code &error) const noexcept;
 
   inline simdjson_result<dom::array> get_array() const noexcept;
   inline simdjson_result<dom::object> get_object() const noexcept;

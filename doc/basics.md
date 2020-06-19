@@ -84,7 +84,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   double value; // variable where we store the value to be parsed
   simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
   simdjson::dom::parser parser;
-  parser.parse(numberstring).get<double>().tie(value,error);
+  parser.parse(numberstring).get(value,error);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
   ```
@@ -213,7 +213,7 @@ dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::object object;
 simdjson::error_code error;
-parser.parse(json).get<dom::object>().tie(object, error);
+parser.parse(json).get(object, error);
 for (dom::key_value_pair field : object) {
   cout << field.key << " = " << field.value << endl;
 }
@@ -299,13 +299,13 @@ auto cars_json = R"( [
 dom::parser parser;
 dom::array cars;
 simdjson::error_code error;
-parser.parse(cars_json).get<dom::array>().tie(cars, error);
+parser.parse(cars_json).get(cars, error);
 if (error) { cerr << error << endl; exit(1); }
 
 // Iterating through an array of objects
 for (dom::element car_element : cars) {
 dom::object car;
-car_element.get<dom::object>().tie(car, error);
+car_element.get(car, error);
 if (error) { cerr << error << endl; exit(1); }
 
 // Accessing a field by name
@@ -318,18 +318,18 @@ cout << "Make/Model: " << make << "/" << model << endl;
 
 // Casting a JSON element to an integer
 uint64_t year;
-car["year"].get<uint64_t>().tie(year, error);
+car["year"].get(year, error);
 if (error) { cerr << error << endl; exit(1); }
 cout << "- This car is " << 2020 - year << "years old." << endl;
 
 // Iterating through an array of floats
 double total_tire_pressure = 0;
 dom::array tire_pressure_array;
-car["tire_pressure"].get<dom::array>().tie(tire_pressure_array, error);
+car["tire_pressure"].get(tire_pressure_array, error);
 if (error) { cerr << error << endl; exit(1); }
 for (dom::element tire_pressure_element : tire_pressure_array) {
     double tire_pressure;
-    tire_pressure_element.get<double>().tie(tire_pressure, error);
+    tire_pressure_element.get(tire_pressure, error);
     if (error) { cerr << error << endl; exit(1); }
     total_tire_pressure += tire_pressure;
 }
@@ -351,31 +351,31 @@ auto abstract_json = R"( [
 dom::parser parser;
 dom::array rootarray;
 simdjson::error_code error;
-parser.parse(abstract_json).get<dom::array>().tie(rootarray, error);
+parser.parse(abstract_json).get(rootarray, error);
 if (error) { cerr << error << endl; exit(1); }
 // Iterate through an array of objects
 for (dom::element elem : rootarray) {
     dom::object obj;
-    elem.get<dom::object>().tie(obj, error);
+    elem.get(obj, error);
     if (error) { cerr << error << endl; exit(1); }
     for(auto & key_value : obj) {
       cout << "key: " << key_value.key << " : ";
       dom::object innerobj;
-      key_value.value.get<dom::object>().tie(innerobj, error);
+      key_value.value.get(innerobj, error);
       if (error) { cerr << error << endl; exit(1); }
 
       double va;
-      innerobj["a"].get<double>().tie(va, error);
+      innerobj["a"].get(va, error);
       if (error) { cerr << error << endl; exit(1); }
       cout << "a: " << va << ", ";
 
       double vb;
-      innerobj["b"].get<double>().tie(vb, error);
+      innerobj["b"].get(vb, error);
       if (error) { cerr << error << endl; exit(1); }
       cout << "b: " << vb << ", ";
 
       int64_t vc;
-      innerobj["c"].get<int64_t>().tie(vc, error);
+      innerobj["c"].get(vc, error);
       if (error) { cerr << error << endl; exit(1); }
       cout << "c: " << vc << endl;
 
@@ -392,7 +392,7 @@ And another one:
   dom::parser parser;
   double v;
   simdjson::error_code error;
-  parser.parse(abstract_json)["str"]["123"]["abc"].get<double>().tie(v, error);
+  parser.parse(abstract_json)["str"]["123"]["abc"].get(v, error);
   if (error) { cerr << error << endl; exit(1); }
   cout << "number: " << v << endl;
 ```

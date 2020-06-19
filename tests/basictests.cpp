@@ -677,7 +677,7 @@ namespace parse_api_tests {
       if (error) { cerr << error << endl; return false; }
 
       dom::array arr;
-      doc.get<dom::array>().tie(arr, error); // let us get the array
+      doc.get(arr, error); // let us get the array
       if (error) { cerr << error << endl; return false; }
 
       if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
@@ -1033,11 +1033,11 @@ namespace dom_api_tests {
     if (doc["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
     object obj;
-    doc.get<dom::object>().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    doc.get(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
     if (error) { cerr << "Error: " << error << endl; return false; }
     if (obj["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
-    obj["obj"].get<dom::object>().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    obj["obj"].get(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
     if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
     if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
     if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
@@ -1071,14 +1071,14 @@ namespace dom_api_tests {
     if (error) { cerr << "Error: " << error << endl; return false; }
     for (auto tweet : tweets) {
       object user;
-      tweet["user"].get<dom::object>().tie(user, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+      tweet["user"].get(user, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
       if (error) { cerr << "Error: " << error << endl; return false; }
       bool default_profile;
-      user["default_profile"].get<bool>().tie(default_profile, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+      user["default_profile"].get(default_profile, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
       if (error) { cerr << "Error: " << error << endl; return false; }
       if (default_profile) {
         std::string_view screen_name;
-        user["screen_name"].get<std::string_view>().tie(screen_name, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+        user["screen_name"].get(screen_name, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
         if (error) { cerr << "Error: " << error << endl; return false; }
         default_users.insert(screen_name);
       }
@@ -1099,13 +1099,13 @@ namespace dom_api_tests {
       if (!not_found) {
         for (auto image : media) {
           object sizes;
-          image["sizes"].get<dom::object>().tie(sizes, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+          image["sizes"].get(sizes, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
           if (error) { cerr << "Error: " << error << endl; return false; }
           for (auto size : sizes) {
             uint64_t width, height;
-            size.value["w"].get<uint64_t>().tie(width, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            size.value["w"].get(width, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
-            size.value["h"].get<uint64_t>().tie(height, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            size.value["h"].get(height, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
             image_sizes.insert(make_pair(width, height));
           }

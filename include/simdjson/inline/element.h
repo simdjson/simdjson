@@ -33,6 +33,15 @@ inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
   if (error()) { return error(); }
   return first.get<T>();
 }
+template<typename T>
+inline bool simdjson_result<dom::element>::get(T &value, error_code &_error) const noexcept {
+  if (error()) {
+    _error = error();
+    return !_error;
+  } else {
+    return first.get(value, _error);
+  }
+}
 
 inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
   if (error()) { return error(); }
@@ -265,6 +274,11 @@ inline simdjson_result<object> element::get_object() const noexcept {
     default:
       return INCORRECT_TYPE;
   }
+}
+
+template<typename T>
+inline bool element::get(T &value, error_code &error) const noexcept {
+  return get<T>().tie(value, error);
 }
 
 template<typename T>

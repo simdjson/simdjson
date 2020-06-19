@@ -121,7 +121,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       s.integer_count++; // because an int can be sometimes represented as a double, we
       // to check whether it is an integer first!!!
       int64_t v;
-      element.get<int64_t>().tie(v,error);
+      element.get(v,error);
       if((v >= std::numeric_limits<int32_t>::min()) and (v <= std::numeric_limits<int32_t>::max()) ) {
         s.integer32_count++;
       }
@@ -135,7 +135,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       s.float_count++;
     } else if (element.is<bool>()) {
       bool v;
-      element.get<bool>().tie(v,error);
+      element.get(v,error);
       if (v) {
         s.true_count++;
       } else {
@@ -146,7 +146,7 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
     } else if (element.is<std::string_view>()) {
       s.string_count++;
       std::string_view v;
-      element.get<std::string_view>().tie(v,error);
+      element.get(v,error);
       if (is_ascii(v)) {
         s.ascii_string_count++;
       }
