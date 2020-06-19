@@ -64,10 +64,11 @@ really_inline void simdjson_process_atom(stat_t &s,
 }
 
 void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
+  simdjson::error_code error;
   if (element.is<simdjson::dom::array>()) {
     s.array_count++;
-    auto [array, array_error] = element.get<simdjson::dom::array>();
-    if (array_error) { std::cerr << array_error << std::endl; abort(); }
+    simdjson::dom::array array;
+    if (!element.get(array, error)) { std::cerr << error << std::endl; abort(); }
     for (auto child : array) {
       if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
         simdjson_recurse(s, child);
@@ -77,8 +78,8 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
     }
   } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
-    auto [object, object_error] = element.get<simdjson::dom::object>();
-    if (object_error) { std::cerr << object_error << std::endl; abort(); }
+    simdjson::dom::object object;
+    if (!element.get(object, error)) { std::cerr << error << std::endl; abort(); }
     for (auto field : object) {
       s.string_count++; // for key
       if (field.value.is<simdjson::dom::array>() || field.value.is<simdjson::dom::object>()) {

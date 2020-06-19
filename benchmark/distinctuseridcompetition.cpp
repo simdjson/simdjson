@@ -50,7 +50,7 @@ void print_vec(const std::vector<int64_t> &v) {
   } else if (element.is<simdjson::dom::object>()) {
     auto [object, error] = element.get<simdjson::dom::object>();
     int64_t id;
-    object["user"]["id"].get<int64_t>().tie(id,error);
+    object["user"]["id"].get(id,error);
     if(!error) {
       v.push_back(id);
     }
@@ -64,46 +64,46 @@ void print_vec(const std::vector<int64_t> &v) {
 // clang-format on
 
 
-void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
-  if (element.is<simdjson::dom::array>()) {
-    simdjson::dom::array array;
-    simdjson::error_code error;
-    element.get<simdjson::dom::array>().tie(array, error);
-    for (auto child : array) {
-      if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
-        simdjson_recurse(v, child);
-      }
-    }
-  } else if (element.is<simdjson::dom::object>()) {
-    simdjson::dom::object object;
-    simdjson::error_code error;
-    element.get<simdjson::dom::object>().tie(object, error);
-    for (auto [key, value] : object) {
-      if((key.size() == 4) && (memcmp(key.data(), "user", 4) == 0)) {
-        // we are in an object under the key "user"
-        if(value.is<simdjson::dom::object>()) {
-          simdjson::dom::object child_object;
-          value.get<simdjson::dom::object>().tie(child_object, error);
-          for (auto [child_key, child_value] : child_object) {
-            if((child_key.size() == 2) && (memcmp(child_key.data(), "id", 2) == 0)) {
-              if(child_value.is<int64_t>()) {
-                int64_t x;
-                child_value.get<int64_t>().tie(x, error);
-                v.push_back(x);
-              }
+really_inline void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element);
+void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::array array) {
+  for (auto child : array) {
+    simdjson_recurse(v, child);
+  }
+}
+void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::object object) {
+  for (auto [key, value] : object) {
+    if((key.size() == 4) && (memcmp(key.data(), "user", 4) == 0)) {
+      // we are in an object under the key "user"
+      simdjson::error_code error;
+      simdjson::dom::object child_object;
+      simdjson::dom::object child_array;
+      if (value.get(child_object, error)) {
+        for (auto [child_key, child_value] : child_object) {
+          if((child_key.size() == 2) && (memcmp(child_key.data(), "id", 2) == 0)) {
+            int64_t x;
+            if (child_value.get(x, error)) {
+              v.push_back(x);
             }
-            if (child_value.is<simdjson::dom::array>() || child_value.is<simdjson::dom::object>()) {
-              simdjson_recurse(v, child_value);
-            }    
           }
-        } else if (value.is<simdjson::dom::array>()) {
-          simdjson_recurse(v, value);
+          simdjson_recurse(v, child_value);
         }
-        // end of: we are in an object under the key "user"
-      } else if (value.is<simdjson::dom::array>() || value.is<simdjson::dom::object>()) {
-          simdjson_recurse(v, value);
+      } else if (value.get(child_array, error)) {
+        simdjson_recurse(v, child_array);
       }
+      // end of: we are in an object under the key "user"
+    } else {
+      simdjson_recurse(v, value);
     }
+  }
+}
+really_inline void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
+  UNUSED simdjson::error_code error;
+  simdjson::dom::array array;
+  simdjson::dom::object object;
+  if (element.get(array, error)) {
+    simdjson_recurse(v, array);
+  } else if (element.get(object, error)) {
+    simdjson_recurse(v, object);
   }
 }
 
@@ -121,8 +121,7 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
   simdjson::error_code error;
-  parser.parse(p).tie(doc, error);
-  if(!error) {
+  if (parser.parse(p).tie(doc, error)) {
     simdjson_recurse(answer, doc);
     remove_duplicates(answer);
   }

@@ -70,10 +70,11 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
   if (depth > s.maximum_depth) {
     s.maximum_depth = depth;
   }
+  simdjson::error_code error;
   if (element.is<simdjson::dom::array>()) {
     s.array_count++;
-    auto [array, array_error] = element.get<simdjson::dom::array>();
-    if (!array_error) {
+    simdjson::dom::array array;
+    if (element.get(array, error)) {
       size_t counter = 0;
       for (auto child : array) {
         counter++;
@@ -85,8 +86,8 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
     }
   } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
-    auto [object, object_error] = element.get<simdjson::dom::object>();
-    if (!object_error) {
+    simdjson::dom::object object;
+    if (element.get(object, error)) {
       size_t counter = 0;
       for (auto [key, value] : object) {
         counter++;
@@ -116,7 +117,6 @@ void recurse(simdjson::dom::element element, stat_t &s, size_t depth) {
       }
     }
   } else {
-    simdjson::error_code error;
     if (element.is<int64_t>()) {
       s.integer_count++; // because an int can be sometimes represented as a double, we
       // to check whether it is an integer first!!!
