@@ -66,22 +66,35 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
-  const uint8_t *_buf,
-  size_t _len,
   size_t _batch_size,
-  error_code _error
+  const uint8_t *_buf,
+  size_t _len
 ) noexcept
   : parser{_parser},
     buf{_buf},
     len{_len},
     batch_size{_batch_size},
-    error{_error}
+    error{SUCCESS}
 {
 #ifdef SIMDJSON_THREADS_ENABLED
   if(worker.get() == nullptr) {
     error = MEMALLOC;
   }
 #endif
+}
+
+really_inline document_stream::document_stream(
+  dom::parser &_parser,
+  size_t _batch_size,
+  error_code _error
+) noexcept
+  : parser{_parser},
+    buf{nullptr},
+    len{0},
+    batch_size{_batch_size},
+    error{_error}
+{
+  assert(_error);
 }
 
 inline document_stream::~document_stream() noexcept {

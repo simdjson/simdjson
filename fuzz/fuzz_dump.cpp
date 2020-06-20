@@ -49,9 +49,8 @@ static void print_json(std::ostream& os, simdjson::dom::element element) {
 }
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   simdjson::dom::parser parser;
-  simdjson::error_code error;
   simdjson::dom::element elem;
-  parser.parse(Data, Size).tie(elem, error);
+  auto error = parser.parse(Data, Size).get(elem);
 
   if (error) { return 1; }
   NulOStream os;

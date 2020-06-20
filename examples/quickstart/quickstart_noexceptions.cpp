@@ -3,13 +3,11 @@
 int main(void) {
   simdjson::dom::parser parser;
   simdjson::dom::element tweets;
-  simdjson::error_code error;
-  parser.load("twitter.json").tie(tweets,error);
+  auto error = parser.load("twitter.json").get(tweets);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   simdjson::dom::element res;
 
-  tweets["search_metadata"]["count"].tie(res,error);
-  if(error) {
+  if ((error = tweets["search_metadata"]["count"].get(res))) {
     std::cerr << "could not access keys" << std::endl;
     return EXIT_FAILURE;
   }

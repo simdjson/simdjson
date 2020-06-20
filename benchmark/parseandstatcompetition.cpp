@@ -55,7 +55,7 @@ really_inline void simdjson_process_atom(stat_t &s,
   } else if (element.is<bool>()) {
     simdjson::error_code error;
     bool v;
-    if (element.get(v, error) && v) {
+    if (not (error = element.get(v)) && v) {
       s.true_count++;
     } else {
       s.false_count++;
@@ -70,7 +70,7 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   if (element.is<simdjson::dom::array>()) {
     s.array_count++;
     dom::array array;
-    if (!element.get(array, error)) {
+    if ((error = element.get(array))) {
       std::cerr << error << std::endl;
       abort();
     }
@@ -85,7 +85,7 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   } else if (element.is<simdjson::dom::object>()) {
     s.object_count++;
     dom::object object;
-    if (!element.get(object, error)) {
+    if ((error = element.get(object))) {
       std::cerr << error << std::endl;
       abort();
     }

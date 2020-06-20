@@ -22,8 +22,7 @@ void basics_error_2() {
   auto json = "1"_padded;
 
   dom::element doc;
-  simdjson::error_code error;
-  parser.parse(json).tie(doc, error); // <-- Assigns to doc and error just like "auto [doc, error]"}
+  UNUSED auto error = parser.parse(json).get(doc); // <-- Assigns to doc and error just like "auto [doc, error]"}
 }
 
 void basics_error_3() {
@@ -34,32 +33,32 @@ void basics_error_3() {
   ] )"_padded;
   dom::parser parser;
   dom::array cars;
-  simdjson::error_code error;
-  if (!parser.parse(cars_json).get(cars, error)) { cerr << error << endl; exit(1); }
+  auto error = parser.parse(cars_json).get(cars);
+  if (error) { cerr << error << endl; exit(1); }
 
   // Iterating through an array of objects
   for (dom::element car_element : cars) {
       dom::object car;
-      if (!car_element.get(car, error)) { cerr << error << endl; exit(1); }
+      if ((error = car_element.get(car))) { cerr << error << endl; exit(1); }
 
       // Accessing a field by name
       std::string_view make, model;
-      if (!car["make"].get(make, error)) { cerr << error << endl; exit(1); }
-      if (!car["model"].get(model, error)) { cerr << error << endl; exit(1); }
+      if ((error = car["make"].get(make))) { cerr << error << endl; exit(1); }
+      if ((error = car["model"].get(model))) { cerr << error << endl; exit(1); }
       cout << "Make/Model: " << make << "/" << model << endl;
 
       // Casting a JSON element to an integer
       uint64_t year;
-      if (!car["year"].get(year, error)) { cerr << error << endl; exit(1); }
+      if ((error = car["year"].get(year))) { cerr << error << endl; exit(1); }
       cout << "- This car is " << 2020 - year << "years old." << endl;
 
       // Iterating through an array of floats
       double total_tire_pressure = 0;
       dom::array tire_pressure_array;
-      if (!car["tire_pressure"].get(tire_pressure_array, error)) { cerr << error << endl; exit(1); }
+      if ((error = car["tire_pressure"].get(tire_pressure_array))) { cerr << error << endl; exit(1); }
       for (dom::element tire_pressure_element : tire_pressure_array) {
           double tire_pressure;
-          if (!tire_pressure_element.get(tire_pressure, error)) { cerr << error << endl; exit(1); }
+          if ((error = tire_pressure_element.get(tire_pressure))) { cerr << error << endl; exit(1); }
           total_tire_pressure += tire_pressure;
       }
       cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
@@ -78,27 +77,26 @@ void basics_error_4() {
       {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
     ] )"_padded;
   dom::parser parser;
-  dom::array rootarray;
-  simdjson::error_code error;
-  parser.parse(abstract_json).get(rootarray, error);
+  dom::array array;
+  auto error = parser.parse(abstract_json).get(array);
   if (error) { cerr << error << endl; exit(1); }
   // Iterate through an array of objects
-  for (dom::element elem : rootarray) {
+  for (dom::element elem : array) {
       dom::object obj;
-      if (!elem.get(obj, error)) { cerr << error << endl; exit(1); }
+      if ((error = elem.get(obj))) { cerr << error << endl; exit(1); }
       for (auto & key_value : obj) {
           cout << "key: " << key_value.key << " : ";
           dom::object innerobj;
-          if (!key_value.value.get(innerobj, error)) { cerr << error << endl; exit(1); }
+          if ((error = key_value.value.get(innerobj))) { cerr << error << endl; exit(1); }
 
           double va, vb;
-          if (!innerobj["a"].get(va, error)) { cerr << error << endl; exit(1); }
+          if ((error = innerobj["a"].get(va))) { cerr << error << endl; exit(1); }
           cout << "a: " << va << ", ";
-          if (!innerobj["b"].get(vb, error)) { cerr << error << endl; exit(1); }
+          if ((error = innerobj["b"].get(vb))) { cerr << error << endl; exit(1); }
           cout << "b: " << vb << ", ";
 
           int64_t vc;
-          if (!innerobj["c"].get(vc, error)) { cerr << error << endl; exit(1); }
+          if ((error = innerobj["c"].get(vc))) { cerr << error << endl; exit(1); }
           cout << "c: " << vc << endl;
       }
   }
@@ -109,8 +107,7 @@ void basics_error_5() {
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
   double v;
-  simdjson::error_code error;
-  parser.parse(abstract_json)["str"]["123"]["abc"].get(v, error);
+  auto error = parser.parse(abstract_json)["str"]["123"]["abc"].get(v);
   if (error) { cerr << error << endl; exit(1); }
   cout << "number: " << v << endl;
 }
@@ -126,38 +123,34 @@ void basics_error_3_cpp17() {
     { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
   ] )"_padded;
   dom::parser parser;
-  auto [cars, error] = parser.parse(cars_json).get<dom::array>();
+  dom::array cars;
+  auto error = parser.parse(cars_json).get(cars);
   if (error) { cerr << error << endl; exit(1); }
 
   // Iterating through an array of objects
   for (dom::element car_element : cars) {
     dom::object car;
-    car_element.get(car, error);
+    error = car_element.get(car);
     if (error) { cerr << error << endl; exit(1); }
 
     // Accessing a field by name
     dom::element make, model;
-    car["make"].tie(make, error);
-    if (error) { cerr << error << endl; exit(1); }
-    car["model"].tie(model, error);
-    if (error) { cerr << error << endl; exit(1); }
+    if ((error = car["make"].get(make))) { cerr << error << endl; exit(1); }
+    if ((error = car["model"].get(model))) { cerr << error << endl; exit(1); }
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
     uint64_t year;
-    car["year"].get(year, error);
-    if (error) { cerr << error << endl; exit(1); }
+    if ((error = car["year"].get(year))) { cerr << error << endl; exit(1); }
     cout << "- This car is " << 2020 - year << "years old." << endl;
 
     // Iterating through an array of floats
     double total_tire_pressure = 0;
     dom::array tire_pressure_array;
-    car["tire_pressure"].get(tire_pressure_array, error);
-    if (error) { cerr << error << endl; exit(1); }
+    if ((error = car["tire_pressure"].get(tire_pressure_array))) { cerr << error << endl; exit(1); }
     for (dom::element tire_pressure_element : tire_pressure_array) {
       double tire_pressure;
-      tire_pressure_element.get(tire_pressure, error);
-      if (error) { cerr << error << endl; exit(1); }
+      if ((error = tire_pressure_element.get(tire_pressure))) { cerr << error << endl; exit(1); }
       total_tire_pressure += tire_pressure;
     }
     cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
@@ -174,20 +167,18 @@ void basics_error_3_cpp17() {
 simdjson::dom::parser parser{};
 
 bool parse_double(const char *j, double &d) {
-  simdjson::error_code error;
-  parser.parse(j, std::strlen(j))
+  auto error = parser.parse(j, std::strlen(j))
         .at(0)
-        .get(d, error);
+        .get(d);
   if (error) { return false; }
   return true;
 }
 
 bool parse_string(const char *j, std::string &s) {
-  simdjson::error_code error;
   std::string_view answer;
-  parser.parse(j,strlen(j))
+  auto error = parser.parse(j,strlen(j))
         .at(0)
-        .get(answer, error);
+        .get(answer);
   if (error) { return false; }
   s.assign(answer.data(), answer.size());
   return true;

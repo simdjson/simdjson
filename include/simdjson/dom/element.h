@@ -204,7 +204,7 @@ public:
    *          INCORRECT_TYPE if the value cannot be cast to the given type.
    */
   template<typename T>
-  really_inline simdjson_result<T> get() const noexcept;
+  inline simdjson_result<T> get() const noexcept;
 
   /**
    * Get the value as the provided type (T).
@@ -219,12 +219,11 @@ public:
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    *
    * @param value The variable to set to the value. May not be set if there is an error.
-   * @param error The variable to set to the error. Set to SUCCESS if there is no error.
    *
-   * @returns true if the value was set, or false if there wsa an error.
+   * @returns The error that occurred, or SUCCESS if there was no error.
    */
   template<typename T>
-  inline bool get(T &value, error_code &error) const noexcept;
+  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
 
   /**
    * Get the value as the provided type (T), setting error if it's not the given type.
@@ -473,51 +472,51 @@ public:
   really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  inline simdjson_result<dom::element_type> type() const noexcept;
+  really_inline simdjson_result<dom::element_type> type() const noexcept;
   template<typename T>
-  inline simdjson_result<bool> is() const noexcept;
+  really_inline simdjson_result<bool> is() const noexcept;
   template<typename T>
-  inline simdjson_result<T> get() const noexcept;
+  really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
-  inline bool get(T &value, error_code &error) const noexcept;
+  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
 
-  inline simdjson_result<dom::array> get_array() const noexcept;
-  inline simdjson_result<dom::object> get_object() const noexcept;
-  inline simdjson_result<const char *> get_c_str() const noexcept;
-  inline simdjson_result<std::string_view> get_string() const noexcept;
-  inline simdjson_result<int64_t> get_int64_t() const noexcept;
-  inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
-  inline simdjson_result<double> get_double() const noexcept;
-  inline simdjson_result<bool> get_bool() const noexcept;
+  really_inline simdjson_result<dom::array> get_array() const noexcept;
+  really_inline simdjson_result<dom::object> get_object() const noexcept;
+  really_inline simdjson_result<const char *> get_c_str() const noexcept;
+  really_inline simdjson_result<std::string_view> get_string() const noexcept;
+  really_inline simdjson_result<int64_t> get_int64_t() const noexcept;
+  really_inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
+  really_inline simdjson_result<double> get_double() const noexcept;
+  really_inline simdjson_result<bool> get_bool() const noexcept;
 
-  inline simdjson_result<bool> is_array() const noexcept;
-  inline simdjson_result<bool> is_object() const noexcept;
-  inline simdjson_result<bool> is_string() const noexcept;
-  inline simdjson_result<bool> is_int64_t() const noexcept;
-  inline simdjson_result<bool> is_uint64_t() const noexcept;
-  inline simdjson_result<bool> is_double() const noexcept;
-  inline simdjson_result<bool> is_bool() const noexcept;
-  inline simdjson_result<bool> is_null() const noexcept;
+  really_inline simdjson_result<bool> is_array() const noexcept;
+  really_inline simdjson_result<bool> is_object() const noexcept;
+  really_inline simdjson_result<bool> is_string() const noexcept;
+  really_inline simdjson_result<bool> is_int64_t() const noexcept;
+  really_inline simdjson_result<bool> is_uint64_t() const noexcept;
+  really_inline simdjson_result<bool> is_double() const noexcept;
+  really_inline simdjson_result<bool> is_bool() const noexcept;
+  really_inline simdjson_result<bool> is_null() const noexcept;
 
-  inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
-  inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
-  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<dom::element> at(size_t index) const noexcept;
-  inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
-  inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+  really_inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
+  really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  really_inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  really_inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
+  really_inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
-  inline operator bool() const noexcept(false);
-  inline explicit operator const char*() const noexcept(false);
-  inline operator std::string_view() const noexcept(false);
-  inline operator uint64_t() const noexcept(false);
-  inline operator int64_t() const noexcept(false);
-  inline operator double() const noexcept(false);
-  inline operator dom::array() const noexcept(false);
-  inline operator dom::object() const noexcept(false);
+  really_inline operator bool() const noexcept(false);
+  really_inline explicit operator const char*() const noexcept(false);
+  really_inline operator std::string_view() const noexcept(false);
+  really_inline operator uint64_t() const noexcept(false);
+  really_inline operator int64_t() const noexcept(false);
+  really_inline operator double() const noexcept(false);
+  really_inline operator dom::array() const noexcept(false);
+  really_inline operator dom::object() const noexcept(false);
 
-  inline dom::array::iterator begin() const noexcept(false);
-  inline dom::array::iterator end() const noexcept(false);
+  really_inline dom::array::iterator begin() const noexcept(false);
+  really_inline dom::array::iterator end() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
@@ -533,7 +532,7 @@ public:
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
+really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
 #endif
 
 } // namespace simdjson

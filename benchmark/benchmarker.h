@@ -267,8 +267,7 @@ struct benchmarker {
   benchmarker(const char *_filename, event_collector& _collector)
     : filename(_filename), collector(_collector), stats(NULL) {
     verbose() << "[verbose] loading " << filename << endl;
-    simdjson::error_code error;
-    padded_string::load(filename).tie(this->json, error);
+    auto error = padded_string::load(filename).get(json);
     if (error) {
       exit_error(string("Could not load the file ") + filename);
     }

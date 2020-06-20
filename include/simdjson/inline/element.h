@@ -24,154 +24,150 @@ inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() 
 }
 
 template<typename T>
-inline simdjson_result<bool> simdjson_result<dom::element>::is() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is() const noexcept {
   if (error()) { return error(); }
   return first.is<T>();
 }
 template<typename T>
-inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
+really_inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
   if (error()) { return error(); }
   return first.get<T>();
 }
 template<typename T>
-inline bool simdjson_result<dom::element>::get(T &value, error_code &_error) const noexcept {
-  if (error()) {
-    _error = error();
-    return !_error;
-  } else {
-    return first.get(value, _error);
-  }
+WARN_UNUSED really_inline error_code simdjson_result<dom::element>::get(T &value) const noexcept {
+  if (error()) { return error(); }
+  return first.get<T>(value);
 }
 
-inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
+really_inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
   if (error()) { return error(); }
   return first.get_array();
 }
-inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
+really_inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
   if (error()) { return error(); }
   return first.get_object();
 }
-inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
+really_inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
   if (error()) { return error(); }
   return first.get_c_str();
 }
-inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
+really_inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
   if (error()) { return error(); }
   return first.get_string();
 }
-inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_t() const noexcept {
+really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_t() const noexcept {
   if (error()) { return error(); }
   return first.get_int64_t();
 }
-inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_t() const noexcept {
+really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_t() const noexcept {
   if (error()) { return error(); }
   return first.get_uint64_t();
 }
-inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
+really_inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
   if (error()) { return error(); }
   return first.get_double();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
   if (error()) { return error(); }
   return first.get_bool();
 }
 
-inline simdjson_result<bool> simdjson_result<dom::element>::is_array() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_array() const noexcept {
   if (error()) { return error(); }
   return first.is_array();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_object() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_object() const noexcept {
   if (error()) { return error(); }
   return first.is_object();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_string() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_string() const noexcept {
   if (error()) { return error(); }
   return first.is_string();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_int64_t() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_int64_t() const noexcept {
   if (error()) { return error(); }
   return first.is_int64_t();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64_t() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64_t() const noexcept {
   if (error()) { return error(); }
   return first.is_uint64_t();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_double() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_double() const noexcept {
   if (error()) { return error(); }
   return first.is_double();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_bool() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_bool() const noexcept {
   if (error()) { return error(); }
   return first.is_bool();
 }
 
-inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
   if (error()) { return error(); }
   return first.is_null();
 }
 
-inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const char *key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const char *key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view &json_pointer) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view &json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::element>::at(size_t index) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(size_t index) const noexcept {
   if (error()) { return error(); }
   return first.at(index);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(const std::string_view &key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(const std::string_view &key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
 
-inline simdjson_result<dom::element>::operator bool() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator bool() const noexcept(false) {
   return get<bool>();
 }
-inline simdjson_result<dom::element>::operator const char *() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator const char *() const noexcept(false) {
   return get<const char *>();
 }
-inline simdjson_result<dom::element>::operator std::string_view() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator std::string_view() const noexcept(false) {
   return get<std::string_view>();
 }
-inline simdjson_result<dom::element>::operator uint64_t() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator uint64_t() const noexcept(false) {
   return get<uint64_t>();
 }
-inline simdjson_result<dom::element>::operator int64_t() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator int64_t() const noexcept(false) {
   return get<int64_t>();
 }
-inline simdjson_result<dom::element>::operator double() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator double() const noexcept(false) {
   return get<double>();
 }
-inline simdjson_result<dom::element>::operator dom::array() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator dom::array() const noexcept(false) {
   return get<dom::array>();
 }
-inline simdjson_result<dom::element>::operator dom::object() const noexcept(false) {
+really_inline simdjson_result<dom::element>::operator dom::object() const noexcept(false) {
   return get<dom::object>();
 }
 
-inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
+really_inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
+really_inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
 
-#endif
+#endif // SIMDJSON_EXCEPTIONS
 
 namespace dom {
 
@@ -277,12 +273,18 @@ inline simdjson_result<object> element::get_object() const noexcept {
 }
 
 template<typename T>
-inline bool element::get(T &value, error_code &error) const noexcept {
-  return get<T>().tie(value, error);
+WARN_UNUSED really_inline error_code element::get(T &value) const noexcept {
+  return get<T>().get(value);
+}
+// An element-specific version prevents recursion with simdjson_result::get<element>(value)
+template<>
+WARN_UNUSED really_inline error_code element::get<element>(element &value) const noexcept {
+  value = element(tape);
+  return SUCCESS;
 }
 
 template<typename T>
-inline bool element::is() const noexcept {
+really_inline bool element::is() const noexcept {
   auto result = get<T>();
   return !result.error();
 }
@@ -514,12 +516,12 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-inline std::ostream& minifier<simdjson_result<dom::element>>::print(std::ostream& out) {
+really_inline std::ostream& minifier<simdjson_result<dom::element>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<dom::element>(value.first);
 }
 
-inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) {
+really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) {
   return out << minify<simdjson_result<dom::element>>(value);
 }
 #endif

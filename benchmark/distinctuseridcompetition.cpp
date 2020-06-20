@@ -50,7 +50,7 @@ void print_vec(const std::vector<int64_t> &v) {
   } else if (element.is<simdjson::dom::object>()) {
     auto [object, error] = element.get<simdjson::dom::object>();
     int64_t id;
-    object["user"]["id"].get(id,error);
+    error = object["user"]["id"].get(id);
     if(!error) {
       v.push_back(id);
     }
@@ -77,17 +77,17 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::object object) {
       simdjson::error_code error;
       simdjson::dom::object child_object;
       simdjson::dom::object child_array;
-      if (value.get(child_object, error)) {
+      if (not (error = value.get(child_object))) {
         for (auto [child_key, child_value] : child_object) {
           if((child_key.size() == 2) && (memcmp(child_key.data(), "id", 2) == 0)) {
             int64_t x;
-            if (child_value.get(x, error)) {
+            if (not (error = child_value.get(x))) {
               v.push_back(x);
             }
           }
           simdjson_recurse(v, child_value);
         }
-      } else if (value.get(child_array, error)) {
+      } else if (not (error = value.get(child_array))) {
         simdjson_recurse(v, child_array);
       }
       // end of: we are in an object under the key "user"
@@ -100,9 +100,9 @@ really_inline void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::ele
   UNUSED simdjson::error_code error;
   simdjson::dom::array array;
   simdjson::dom::object object;
-  if (element.get(array, error)) {
+  if (not (error = element.get(array))) {
     simdjson_recurse(v, array);
-  } else if (element.get(object, error)) {
+  } else if (not (error = element.get(object))) {
     simdjson_recurse(v, object);
   }
 }
@@ -120,8 +120,8 @@ simdjson_compute_stats(const simdjson::padded_string &p) {
   std::vector<int64_t> answer;
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
-  simdjson::error_code error;
-  if (parser.parse(p).tie(doc, error)) {
+  auto error = parser.parse(p).get(doc);
+  if (!error) {
     simdjson_recurse(answer, doc);
     remove_duplicates(answer);
   }
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
             volume, !just_data);
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
-  parser.parse(p).tie(doc, error);
+  error = parser.parse(p).get(doc);
   BEST_TIME("simdjson (just dom)  ", simdjson_just_dom(doc).size(), size,
             , repeat, volume, !just_data);
   char *buffer = (char *)malloc(p.size() + 1);

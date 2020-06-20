@@ -141,10 +141,18 @@ private:
    */
   really_inline document_stream(
     dom::parser &parser,
-    const uint8_t *buf,
-    size_t len,
     size_t batch_size,
-    error_code error = SUCCESS
+    const uint8_t *buf,
+    size_t len
+  ) noexcept;
+
+  /**
+   * Construct a document_stream with an initial error.
+   */
+  really_inline document_stream(
+    dom::parser &parser,
+    size_t batch_size,
+    error_code error
   ) noexcept;
 
   /**

@@ -18,7 +18,7 @@ static void numbers_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  if (!parser.load(NUMBERS_JSON).get(arr, error)) {
+  if ((error = parser.load(NUMBERS_JSON).get(arr))) {
     cerr << "could not read " << NUMBERS_JSON << " as an array: " << error << endl;
     return;
   }
@@ -26,7 +26,7 @@ static void numbers_scan(State& state) {
     std::vector<double> container;
     for (auto e : arr) {
       double x;
-      if (!e.get(x,error)) { cerr << "found a node that is not an number: " << error << endl; break;}
+      if ((error = e.get(x))) { cerr << "found a node that is not an number: " << error << endl; break;}
       container.push_back(x);
     }
     benchmark::DoNotOptimize(container.data());
@@ -40,7 +40,7 @@ static void numbers_size_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  if(!parser.load(NUMBERS_JSON).get(arr, error)) {
+  if ((error = parser.load(NUMBERS_JSON).get(arr))) {
     cerr << "could not read " << NUMBERS_JSON << " as an array: " << error << endl;
     return;
   }
@@ -50,7 +50,7 @@ static void numbers_size_scan(State& state) {
     size_t pos = 0;
     for (auto e : arr) {
       double x;
-      if (!e.get(x,error)) { cerr << "found a node that is not an number: " << error << endl; break;}
+      if ((error = e.get(x))) { cerr << "found a node that is not an number: " << error << endl; break;}
       container[pos++] = x;
     }
     if(pos != container.size()) { cerr << "bad count" << endl; }
@@ -66,7 +66,7 @@ static void numbers_type_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  if(!parser.load(NUMBERS_JSON).get(arr, error)) {
+  if ((error = parser.load(NUMBERS_JSON).get(arr))) {
     cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
     return;
   }
@@ -78,7 +78,7 @@ static void numbers_type_scan(State& state) {
         cerr << "found a node that is not an number?" << endl; break;
       }
       double x;
-      e.get(x,error);
+      error = e.get(x);
       container.push_back(x);
     }
     benchmark::DoNotOptimize(container.data());
@@ -92,7 +92,7 @@ static void numbers_type_size_scan(State& state) {
   dom::parser parser;
   dom::array arr;
   simdjson::error_code error;
-  if (!parser.load(NUMBERS_JSON).get(arr, error)) {
+  if ((error = parser.load(NUMBERS_JSON).get(arr))) {
     cerr << "could not read " << NUMBERS_JSON << " as an array: " << error << endl;
     return;
   }
@@ -106,7 +106,7 @@ static void numbers_type_size_scan(State& state) {
         cerr << "found a node that is not an number?" << endl; break;
       }
       double x;
-      e.get(x,error);
+      error = e.get(x);
       container[pos++] = x;
     }
     if(pos != container.size()) { cerr << "bad count" << endl; }
@@ -123,14 +123,14 @@ static void numbers_load_scan(State& state) {
   simdjson::error_code error;
   for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
-    if (!parser.load(NUMBERS_JSON).get(arr, error)) {
+    if ((error = parser.load(NUMBERS_JSON).get(arr))) {
       cerr << "could not read " << NUMBERS_JSON << " as an array: " << error << endl;
       break;
     }
     std::vector<double> container;
     for (auto e : arr) {
       double x;
-      if (!e.get(x,error)) { cerr << "found a node that is not an number: " << error << endl; break;}
+      if ((error = e.get(x))) { cerr << "found a node that is not an number: " << error << endl; break;}
       container.push_back(x);
     }
     benchmark::DoNotOptimize(container.data());
@@ -146,7 +146,7 @@ static void numbers_load_size_scan(State& state) {
   simdjson::error_code error;
   for (UNUSED auto _ : state) {
     // this may hit the disk, but probably just once
-    if(!parser.load(NUMBERS_JSON).get(arr, error)) {
+    if ((error = parser.load(NUMBERS_JSON).get(arr))) {
       cerr << "could not read " << NUMBERS_JSON << " as an array" << endl;
       break;
     }
@@ -155,7 +155,7 @@ static void numbers_load_size_scan(State& state) {
     size_t pos = 0;
     for (auto e : arr) {
       double x;
-      if(!e.get(x,error)) { cerr << "found a node that is not an number?" << endl; break;}
+      if ((error = e.get(x))) { cerr << "found a node that is not an number?" << endl; break;}
       container[pos++] = x;
     }
     if(pos != container.size()) { cerr << "bad count" << endl; }
@@ -338,7 +338,7 @@ static void twitter_image_sizes(State& state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     for (dom::object tweet : doc["statuses"]) {
       dom::array media;
-      if (tweet["entities"]["media"].get(media, error)) {
+      if (not (error = tweet["entities"]["media"].get(media))) {
         for (dom::object image : media) {
           for (auto size : image["sizes"].get<dom::object>()) {
             image_sizes.insert({ size.value["w"], size.value["h"] });
@@ -358,10 +358,10 @@ static void error_code_twitter_count(State& state) noexcept {
   dom::parser parser;
   simdjson::error_code error;
   dom::element doc;
-  if (!parser.load(TWITTER_JSON).get(doc, error)) { return; }
+  if ((error = parser.load(TWITTER_JSON).get(doc))) { return; }
   for (UNUSED auto _ : state) {
     uint64_t value;
-    if (!doc["search_metadata"]["count"].get(value, error)) { return; }
+    if ((error = doc["search_metadata"]["count"].get(value))) { return; }
     if (value != 100) { return; }
   }
 }
@@ -372,20 +372,20 @@ static void error_code_twitter_default_profile(State& state) noexcept {
   dom::parser parser;
   simdjson::error_code error;
   dom::element doc;
-  if (!parser.load(TWITTER_JSON).get(doc, error)) { std::cerr << error << std::endl; return; }
+  if ((error = parser.load(TWITTER_JSON).get(doc))) { std::cerr << error << std::endl; return; }
   for (UNUSED auto _ : state) {
     set<string_view> default_users;
 
     dom::array tweets;
-    if (!doc["statuses"].get(tweets, error)) { return; }
+    if ((error = doc["statuses"].get(tweets))) { return; }
     for (dom::element tweet : tweets) {
       dom::object user;
-      if (!tweet["user"].get(user, error)) { return; }
+      if ((error = tweet["user"].get(user))) { return; }
       bool default_profile;
-      if (!user["default_profile"].get(default_profile, error)) { return; }
+      if ((error = user["default_profile"].get(default_profile))) { return; }
       if (default_profile) {
         std::string_view screen_name;
-        if (!user["screen_name"].get(screen_name, error)) { return; }
+        if ((error = user["screen_name"].get(screen_name))) { return; }
         default_users.insert(screen_name);
       }
     }
@@ -399,9 +399,9 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_default_profile(State& state) {
   // Count unique users with a default profile.
-  simdjson::padded_string json;
-  simdjson::error_code error;
-  if (!padded_string::load(TWITTER_JSON).tie(json, error)) { std::cerr << error << std::endl; return; }
+  padded_string json;
+  auto error = padded_string::load(TWITTER_JSON).get(json);
+  if (error) { std::cerr << error << std::endl; return; }
   ParsedJson pj = build_parsed_json(json);
   for (UNUSED auto _ : state) {
     set<string_view> default_users;
@@ -443,20 +443,21 @@ static void error_code_twitter_image_sizes(State& state) noexcept {
   dom::parser parser;
   simdjson::error_code error;
   dom::element doc;
-  if (!parser.load(TWITTER_JSON).get(doc, error)) { std::cerr << error << std::endl; return; }
+  if ((error = parser.load(TWITTER_JSON).get(doc))) { std::cerr << error << std::endl; return; }
   for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     dom::array statuses;
-    if (!doc["statuses"].get(statuses, error)) { return; }
+    if ((error = doc["statuses"].get(statuses))) { return; }
     for (dom::element tweet : statuses) {
       dom::array images;
-      if (tweet["entities"]["media"].get(images, error)) {
+      if (not (error = tweet["entities"]["media"].get(images))) {
         for (dom::element image : images) {
           dom::object sizes;
-          if (!image["sizes"].get(sizes, error)) { return; }
+          if ((error = image["sizes"].get(sizes))) { return; }
           for (auto size : sizes) {
             uint64_t width, height;
-            if (!size.value["w"].get(width, error) || !size.value["h"].get(height, error)) { return; }
+            if ((error = size.value["w"].get(width))) { return; }
+            if ((error = size.value["h"].get(height))) { return; }
             image_sizes.insert({ width, height });
           }
         }
@@ -471,9 +472,9 @@ SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
 static void iterator_twitter_image_sizes(State& state) {
   // Count unique image sizes
-  simdjson::error_code error;
   padded_string json;
-  if (!padded_string::load(TWITTER_JSON).tie(json, error)) { std::cerr << error << std::endl; return; }
+  auto error = padded_string::load(TWITTER_JSON).get(json);
+  if (error) { std::cerr << error << std::endl; return; }
   ParsedJson pj = build_parsed_json(json);
   for (UNUSED auto _ : state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
@@ -531,10 +532,12 @@ BENCHMARK(iterator_twitter_image_sizes);
 
 static void print_json(State& state) noexcept {
   // Prints the number of results in twitter.json
-  simdjson::error_code error;
-  padded_string json;
-  if (!padded_string::load(TWITTER_JSON).tie(json, error)) { std::cerr << error << std::endl; return; }
   dom::parser parser;
+
+  padded_string json;
+  auto error = padded_string::load(TWITTER_JSON).get(json);
+  if (error) { std::cerr << error << std::endl; return; }
+
   int code = json_parse(json, parser);
   if (code) { cerr << error_message(code) << endl; return; }
   for (UNUSED auto _ : state) {

@@ -58,7 +58,7 @@ template<typename T>
 bool cast_tester<T>::test_get(element element, T expected) {
   T actual;
   error_code error;
-  element.get(actual, error);
+  error = element.get(actual);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -67,7 +67,7 @@ template<typename T>
 bool cast_tester<T>::test_get(simdjson_result<element> element, T expected) {
   T actual;
   error_code error;
-  element.get(actual, error);
+  error = element.get(actual);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -76,7 +76,7 @@ template<typename T>
 bool cast_tester<T>::test_get_error(element element, error_code expected_error) {
   T actual;
   error_code error;
-  element.get(actual, error);
+  error = element.get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -85,7 +85,7 @@ template<typename T>
 bool cast_tester<T>::test_get_error(simdjson_result<element> element, error_code expected_error) {
   T actual;
   error_code error;
-  element.get(actual, error);
+  error = element.get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -93,8 +93,7 @@ bool cast_tester<T>::test_get_error(simdjson_result<element> element, error_code
 template<typename T>
 bool cast_tester<T>::test_named_get(element element, T expected) {
   T actual;
-  error_code error;
-  named_get(element).tie(actual, error);
+  auto error = named_get(element).get(actual);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -102,8 +101,7 @@ bool cast_tester<T>::test_named_get(element element, T expected) {
 template<typename T>
 bool cast_tester<T>::test_named_get(simdjson_result<element> element, T expected) {
   T actual;
-  error_code error;
-  named_get(element).tie(actual, error);
+  auto error = named_get(element).get(actual);
   ASSERT_SUCCESS(error);
   return assert_equal(actual, expected);
 }
@@ -111,8 +109,7 @@ bool cast_tester<T>::test_named_get(simdjson_result<element> element, T expected
 template<typename T>
 bool cast_tester<T>::test_named_get_error(element element, error_code expected_error) {
   T actual;
-  error_code error;
-  named_get(element).tie(actual, error);
+  auto error = named_get(element).get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -120,8 +117,7 @@ bool cast_tester<T>::test_named_get_error(element element, error_code expected_e
 template<typename T>
 bool cast_tester<T>::test_named_get_error(simdjson_result<element> element, error_code expected_error) {
   T actual;
-  error_code error;
-  named_get(element).tie(actual, error);
+  auto error = named_get(element).get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -192,8 +188,7 @@ bool cast_tester<T>::test_is(element element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_is(simdjson_result<element> element, bool expected) {
   bool actual;
-  error_code error;
-  element.is<T>().tie(actual, error);
+  auto error = element.is<T>().get(actual);
   ASSERT_SUCCESS(error);
   ASSERT_EQUAL(actual, expected);
   return true;
@@ -202,8 +197,7 @@ bool cast_tester<T>::test_is(simdjson_result<element> element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_is_error(simdjson_result<element> element, error_code expected_error) {
   UNUSED bool actual;
-  error_code error;
-  element.is<T>().tie(actual, error);
+  auto error = element.is<T>().get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
@@ -217,8 +211,7 @@ bool cast_tester<T>::test_named_is(element element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_named_is(simdjson_result<element> element, bool expected) {
   bool actual;
-  error_code error;
-  named_is(element).tie(actual, error);
+  auto error = named_is(element).get(actual);
   ASSERT_SUCCESS(error);
   ASSERT_EQUAL(actual, expected);
   return true;
@@ -227,8 +220,7 @@ bool cast_tester<T>::test_named_is(simdjson_result<element> element, bool expect
 template<typename T>
 bool cast_tester<T>::test_named_is_error(simdjson_result<element> element, error_code expected_error) {
   bool actual;
-  error_code error;
-  named_is(element, error).tie(actual, error);
+  auto error = named_is(element).get(actual);
   ASSERT_EQUAL(error, expected_error);
   return true;
 }
