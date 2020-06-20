@@ -133,7 +133,10 @@ private:
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
 
-  document_stream(document_stream &other) = delete;    // Disallow copying
+  document_stream(document_stream &other) = delete; // Disallow copying
+
+  /** Construct an uninitialized document_stream **/
+  really_inline document_stream() noexcept;
 
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is
@@ -141,18 +144,9 @@ private:
    */
   really_inline document_stream(
     dom::parser &parser,
-    size_t batch_size,
     const uint8_t *buf,
-    size_t len
-  ) noexcept;
-
-  /**
-   * Construct a document_stream with an initial error.
-   */
-  really_inline document_stream(
-    dom::parser &parser,
-    size_t batch_size,
-    error_code error
+    size_t len,
+    size_t batch_size
   ) noexcept;
 
   /**
@@ -229,12 +223,32 @@ private:
 #endif // SIMDJSON_THREADS_ENABLED
 
   friend class dom::parser;
+  friend class internal::simdjson_result_base<dom::document_stream>;
 
   size_t doc_index{};
 
 }; // class document_stream
 
 } // namespace dom
+
+template<>
+struct simdjson_result<dom::document_stream> : public internal::simdjson_result_base<dom::document_stream> {
+public:
+  really_inline simdjson_result() noexcept; ///< @private
+  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  really_inline simdjson_result(dom::document_stream &&value) noexcept; ///< @private
+
+#if SIMDJSON_EXCEPTIONS
+  really_inline dom::document_stream::iterator begin() noexcept(false);
+  really_inline dom::document_stream::iterator end() noexcept(false);
+#else // SIMDJSON_EXCEPTIONS
+  [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
+  really_inline dom::document_stream::iterator begin() noexcept;
+  [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
+  really_inline dom::document_stream::iterator end() noexcept;
+#endif // SIMDJSON_EXCEPTIONS
+}; // struct simdjson_result<dom::document_stream>
+
 } // namespace simdjson
 
 #endif // SIMDJSON_DOCUMENT_STREAM_H

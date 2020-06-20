@@ -66,9 +66,9 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
 
 really_inline document_stream::document_stream(
   dom::parser &_parser,
-  size_t _batch_size,
   const uint8_t *_buf,
-  size_t _len
+  size_t _len,
+  size_t _batch_size
 ) noexcept
   : parser{_parser},
     buf{_buf},
@@ -81,20 +81,6 @@ really_inline document_stream::document_stream(
     error = MEMALLOC;
   }
 #endif
-}
-
-really_inline document_stream::document_stream(
-  dom::parser &_parser,
-  size_t _batch_size,
-  error_code _error
-) noexcept
-  : parser{_parser},
-    buf{nullptr},
-    len{0},
-    batch_size{_batch_size},
-    error{_error}
-{
-  assert(_error);
 }
 
 inline document_stream::~document_stream() noexcept {
@@ -226,5 +212,37 @@ inline void document_stream::start_stage1_thread() noexcept {
 #endif // SIMDJSON_THREADS_ENABLED
 
 } // namespace dom
+
+really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
+  : simdjson_result_base() {
+}
+really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
+  : simdjson_result_base(error) {
+}
+really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
+  : simdjson_result_base(std::forward<dom::document_stream>(value)) {
+}
+
+#if SIMDJSON_EXCEPTIONS
+really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.begin();
+}
+really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.end();
+}
+#else // SIMDJSON_EXCEPTIONS
+really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
+  first.error = error();
+  return first.begin();
+}
+really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
+  first.error = error();
+  return first.end();
+}
+#endif // SIMDJSON_EXCEPTIONS
+
+
 } // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
