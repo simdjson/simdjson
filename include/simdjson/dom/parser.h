@@ -205,7 +205,7 @@ public:
    * Parse a buffer containing many JSON documents.
    *
    *   dom::parser parser;
-   *   for (const element doc : parser.parse_many(buf, len)) {
+   *   for (element doc : parser.parse_many(buf, len)) {
    *     cout << std::string(doc["title"]) << endl;
    *   }
    *

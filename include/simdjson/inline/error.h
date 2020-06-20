@@ -53,9 +53,7 @@ really_inline void simdjson_result_base<T>::tie(T &value, error_code &error) && 
 
 template<typename T>
 WARN_UNUSED really_inline error_code simdjson_result_base<T>::get(T &value) && noexcept {
-  error_code error;
-  std::forward<simdjson_result_base<T>>(*this).tie(value, error);
-  return error;
+  return std::forward<simdjson_result_base<T>>(*this).get(value);
 }
 
 template<typename T>

@@ -87,10 +87,15 @@ int main(int argc, char *argv[]) {
 
         auto start = std::chrono::steady_clock::now();
         count = 0;
-        for (auto result : parser.parse_many(p, i)) {
+        simdjson::dom::document_stream docs;
+        if ((error = parser.parse_many(p, i).get(docs))) {
+          std::wcerr << "Parsing failed with: " << error << std::endl;
+          exit(1);
+        }
+        for (auto result : docs) {
           error = result.error();
-          if (error != simdjson::SUCCESS) {
-            std::wcerr << "Parsing failed with: " <<  error_message(error) << std::endl;
+          if (error) {
+            std::wcerr << "Parsing failed with: " << error << std::endl;
             exit(1);
           }
           count++;
@@ -134,10 +139,15 @@ int main(int argc, char *argv[]) {
 
       auto start = std::chrono::steady_clock::now();
       // This includes allocation of the parser
-      for (auto result : parser.parse_many(p, optimal_batch_size)) {
+      simdjson::dom::document_stream docs;
+      if ((error = parser.parse_many(p, optimal_batch_size).get(docs))) {
+        std::wcerr << "Parsing failed with: " << error << std::endl;
+        exit(1);
+      }
+      for (auto result : docs) {
         error = result.error();
-        if (error != simdjson::SUCCESS) {
-          std::wcerr << "Parsing failed with: " << error_message(error) << std::endl;
+        if (error) {
+          std::wcerr << "Parsing failed with: " << error << std::endl;
           exit(1);
         }
       }

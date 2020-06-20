@@ -26,9 +26,9 @@ template<>
 bool equals_expected<const char *>(const char *actual, const char *expected) {
   return !strcmp(actual, expected);
 }
-#define ASSERT_EQUAL(ACTUAL, EXPECTED) if (!equals_expected(ACTUAL, EXPECTED)) { std::cerr << "Expected " << #ACTUAL << " to be " << (EXPECTED) << ", got " << (ACTUAL) << " instead!" << std::endl; return false; }
+#define ASSERT_EQUAL(ACTUAL, EXPECTED) do { auto _actual = (ACTUAL); auto _expected = (EXPECTED); if (!equals_expected(_actual, _expected)) { std::cerr << "Expected " << #ACTUAL << " to be " << _expected << ", got " << _actual << " instead!" << std::endl; return false; } } while(0);
 #define ASSERT(RESULT, MESSAGE) if (!(RESULT)) { std::cerr << MESSAGE << std::endl; return false; }
 #define RUN_TEST(RESULT) if (!RESULT) { return false; }
-#define ASSERT_SUCCESS(ERROR) if (ERROR) { std::cerr << (ERROR) << std::endl; return false; }
+#define ASSERT_SUCCESS(ERROR) do { auto _error = (ERROR); if (_error) { std::cerr << _error << std::endl; return false; } } while(0);
 
 #endif // TEST_MACROS_H

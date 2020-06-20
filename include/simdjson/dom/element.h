@@ -243,25 +243,6 @@ public:
   template<typename T>
   inline void tie(T &value, error_code &error) && noexcept;
 
-  /**
-   * Get the value as the provided type (T).
-   *
-   * Supported types:
-   * - Boolean: bool
-   * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
-   * - Array: dom::array
-   * - Object: dom::object
-   *
-   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
-   *
-   * @param value The variable to set to the given type. value is undefined if there is an error.
-   *
-   * @returns true if the value was able to be set, false if there was an error.
-   */
-  template<typename T>
-  WARN_UNUSED inline bool tie(T &value) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
   /**
    * Read this element as a boolean.

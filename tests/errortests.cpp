@@ -21,6 +21,7 @@ const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 
 #define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
 #define ASSERT_ERROR(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { cerr << "FAIL: Unexpected error \"" << (ACTUAL) << "\" (expected \"" << (EXPECTED) << "\")" << endl; return false; }
+#define ASSERT_SUCCESS(CODE) do { simdjson::error_code error = CODE; if (error) { cerr << "FAIL: Unexpected error " << error << endl; return false; } } while (0);
 #define TEST_FAIL(MESSAGE) { cerr << "FAIL: " << (MESSAGE) << endl; return false; }
 #define TEST_SUCCEED() { return true; }
 namespace parser_load {
@@ -35,7 +36,9 @@ namespace parser_load {
   bool parser_load_many_capacity() {
     TEST_START();
     dom::parser parser(1); // 1 byte max capacity
-    for (auto doc : parser.load_many(TWITTER_JSON)) {
+    dom::document_stream docs;
+    ASSERT_SUCCESS(parser.load_many(TWITTER_JSON).get(docs));
+    for (auto doc : docs) {
       ASSERT_ERROR(doc.error(), CAPACITY);
       TEST_SUCCEED();
     }
@@ -47,7 +50,9 @@ namespace parser_load {
     const padded_string DOC = "1 2 [} 3"_padded;
     size_t count = 0;
     dom::parser parser;
-    for (auto doc : parser.parse_many(DOC)) {
+    dom::document_stream docs;
+    ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
+    for (auto doc : docs) {
       count++;
       auto [val, error] = doc.get<uint64_t>();
       if (count == 3) {
@@ -66,7 +71,9 @@ namespace parser_load {
     const padded_string DOC = "["_padded;
     size_t count = 0;
     dom::parser parser;
-    for (auto doc : parser.parse_many(DOC)) {
+    dom::document_stream docs;
+    ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
+    for (auto doc : docs) {
       count++;
       ASSERT_ERROR(doc.error(), TAPE_ERROR);
     }
@@ -79,7 +86,9 @@ namespace parser_load {
     const padded_string DOC = "1 2 ["_padded;
     size_t count = 0;
     dom::parser parser;
-    for (auto doc : parser.parse_many(DOC)) {
+    dom::document_stream docs;
+    ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
+    for (auto doc : docs) {
       count++;
       auto [val, error] = doc.get<uint64_t>();
       if (count == 3) {

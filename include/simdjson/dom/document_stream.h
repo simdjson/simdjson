@@ -72,8 +72,20 @@ private:
  */
 class document_stream {
 public:
+  /**
+   * Construct an uninitialized document_stream.
+   *
+   *  ```c++
+   *  document_stream docs;
+   *  error = parser.parse_many(json).get(docs);
+   *  ```
+   */
+  really_inline document_stream() noexcept;
   /** Move one document_stream to another. */
-  really_inline document_stream(document_stream && other) noexcept = default;
+  really_inline document_stream(document_stream &&other) noexcept = default;
+  /** Move one document_stream to another. */
+  really_inline document_stream &operator=(document_stream &&other) noexcept = default;
+
   really_inline ~document_stream() noexcept;
 
   /**
@@ -99,9 +111,8 @@ public:
      * 
      * Gives the current index in the input document in bytes.
      *
-     *   auto stream = parser.parse_many(json,window);
-     *   auto i = stream.begin();
-     *   for(; i != stream.end(); ++i) {
+     *   document_stream stream = parser.parse_many(json,window);
+     *   for(auto i = stream.begin(); i != stream.end(); ++i) {
      *      auto doc = *i;
      *      size_t index = i.current_index();
      *   }
@@ -134,9 +145,6 @@ private:
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
 
   document_stream(document_stream &other) = delete; // Disallow copying
-
-  /** Construct an uninitialized document_stream **/
-  really_inline document_stream() noexcept;
 
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is
@@ -193,13 +201,14 @@ private:
   /** Pass the next batch through stage 1 with the given parser. */
   inline error_code run_stage1(dom::parser &p, size_t batch_start) noexcept;
 
-  dom::parser &parser;
+  dom::parser *parser;
   const uint8_t *buf;
-  const size_t len;
-  const size_t batch_size;
-  size_t batch_start{0};
+  size_t len;
+  size_t batch_size;
   /** The error (or lack thereof) from the current document. */
   error_code error;
+  size_t batch_start{0};
+  size_t doc_index{};
 
 #ifdef SIMDJSON_THREADS_ENABLED
   inline void load_from_stage1_thread() noexcept;
@@ -223,9 +232,8 @@ private:
 #endif // SIMDJSON_THREADS_ENABLED
 
   friend class dom::parser;
+  friend class simdjson_result<dom::document_stream>;
   friend class internal::simdjson_result_base<dom::document_stream>;
-
-  size_t doc_index{};
 
 }; // class document_stream
 
