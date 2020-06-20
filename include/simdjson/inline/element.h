@@ -177,8 +177,7 @@ inline element_type element::type() const noexcept {
   return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
 
-template<>
-inline simdjson_result<bool> element::get<bool>() const noexcept {
+inline simdjson_result<bool> element::get_bool() const noexcept {
   if(tape.is_true()) {
     return true;
   } else if(tape.is_false()) {
@@ -186,8 +185,7 @@ inline simdjson_result<bool> element::get<bool>() const noexcept {
   }
   return INCORRECT_TYPE;
 }
-template<>
-inline simdjson_result<const char *> element::get<const char *>() const noexcept {
+inline simdjson_result<const char *> element::get_c_str() const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING: {
       return tape.get_c_str();
@@ -196,8 +194,7 @@ inline simdjson_result<const char *> element::get<const char *>() const noexcept
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept {
+inline simdjson_result<std::string_view> element::get_string() const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING:
       return tape.get_string_view();
@@ -205,8 +202,7 @@ inline simdjson_result<std::string_view> element::get<std::string_view>() const 
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
+inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept {
   if(unlikely(!tape.is_uint64())) { // branch rarely taken
     if(tape.is_int64()) {
       int64_t result = tape.next_tape_value<int64_t>();
@@ -219,8 +215,7 @@ inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
   }
   return tape.next_tape_value<int64_t>();
 }
-template<>
-inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
+inline simdjson_result<int64_t> element::get_int64_t() const noexcept {
   if(unlikely(!tape.is_int64())) { // branch rarely taken
     if(tape.is_uint64()) {
       uint64_t result = tape.next_tape_value<uint64_t>();
@@ -234,8 +229,7 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
   }
   return tape.next_tape_value<int64_t>();
 }
-template<>
-inline simdjson_result<double> element::get<double>() const noexcept {
+inline simdjson_result<double> element::get_double() const noexcept {
   // Performance considerations:
   // 1. Querying tape_ref_type() implies doing a shift, it is fast to just do a straight
   //   comparison.
@@ -256,8 +250,7 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // this is common:
   return tape.next_tape_value<double>();
 }
-template<>
-inline simdjson_result<array> element::get<array>() const noexcept {
+inline simdjson_result<array> element::get_array() const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_ARRAY:
       return array(tape);
@@ -265,8 +258,7 @@ inline simdjson_result<array> element::get<array>() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<object> element::get<object>() const noexcept {
+inline simdjson_result<object> element::get_object() const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(tape);
@@ -281,14 +273,14 @@ inline bool element::is() const noexcept {
   return !result.error();
 }
 
-inline simdjson_result<array> element::get_array() const noexcept { return get<array>(); }
-inline simdjson_result<object> element::get_object() const noexcept { return get<object>(); }
-inline simdjson_result<const char *> element::get_c_str() const noexcept { return get<const char *>(); }
-inline simdjson_result<std::string_view> element::get_string() const noexcept { return get<std::string_view>(); }
-inline simdjson_result<int64_t> element::get_int64_t() const noexcept { return get<int64_t>(); }
-inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept { return get<uint64_t>(); }
-inline simdjson_result<double> element::get_double() const noexcept { return get<double>(); }
-inline simdjson_result<bool> element::get_bool() const noexcept { return get<bool>(); }
+template<> inline simdjson_result<array> element::get<array>() const noexcept { return get_array(); }
+template<> inline simdjson_result<object> element::get<object>() const noexcept { return get_object(); }
+template<> inline simdjson_result<const char *> element::get<const char *>() const noexcept { return get_c_str(); }
+template<> inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept { return get_string(); }
+template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64_t(); }
+template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64_t(); }
+template<> inline simdjson_result<double> element::get<double>() const noexcept { return get_double(); }
+template<> inline simdjson_result<bool> element::get<bool>() const noexcept { return get_bool(); }
 
 inline bool element::is_array() const noexcept { return is<array>(); }
 inline bool element::is_object() const noexcept { return is<object>(); }
