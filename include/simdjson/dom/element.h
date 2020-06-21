@@ -455,7 +455,7 @@ public:
 
   really_inline simdjson_result<dom::element_type> type() const noexcept;
   template<typename T>
-  really_inline simdjson_result<bool> is() const noexcept;
+  really_inline bool is() const noexcept;
   template<typename T>
   really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
@@ -470,14 +470,14 @@ public:
   really_inline simdjson_result<double> get_double() const noexcept;
   really_inline simdjson_result<bool> get_bool() const noexcept;
 
-  really_inline simdjson_result<bool> is_array() const noexcept;
-  really_inline simdjson_result<bool> is_object() const noexcept;
-  really_inline simdjson_result<bool> is_string() const noexcept;
-  really_inline simdjson_result<bool> is_int64_t() const noexcept;
-  really_inline simdjson_result<bool> is_uint64_t() const noexcept;
-  really_inline simdjson_result<bool> is_double() const noexcept;
-  really_inline simdjson_result<bool> is_bool() const noexcept;
-  really_inline simdjson_result<bool> is_null() const noexcept;
+  really_inline bool is_array() const noexcept;
+  really_inline bool is_object() const noexcept;
+  really_inline bool is_string() const noexcept;
+  really_inline bool is_int64_t() const noexcept;
+  really_inline bool is_uint64_t() const noexcept;
+  really_inline bool is_double() const noexcept;
+  really_inline bool is_bool() const noexcept;
+  really_inline bool is_null() const noexcept;
 
   really_inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
   really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
