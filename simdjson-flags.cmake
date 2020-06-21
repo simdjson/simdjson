@@ -35,6 +35,7 @@ endif()
 option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON)
 
 option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON)
+option(SIMDJSON_IGNORE_DEPENDENCIES "Ignores the dependencies folder. Useful if you don't want benchmarks" OFF)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
 

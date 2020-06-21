@@ -38,11 +38,13 @@ add_subdirectory(singleheader)
 #
 # Compile tools / tests / benchmarks
 #
-add_subdirectory(dependencies)
-add_subdirectory(tests)
-add_subdirectory(examples)
-add_subdirectory(benchmark)
+if(NOT SIMDJSON_IGNORE_DEPENDENCIES)
+    add_subdirectory(dependencies)
+    add_subdirectory(tests)
+    add_subdirectory(benchmark)
+endif()
 add_subdirectory(fuzz)
+add_subdirectory(examples)
 
 #
 # Source files should be just ASCII
