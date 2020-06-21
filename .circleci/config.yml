@@ -118,7 +118,7 @@ jobs:
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ install_cmake, cmake_test, cmake_install_test ]
-  gcc10justlib:
+  justlib-gcc10:
     description: Build just the library, install it and do a basic test
     executor: gcc10
     environment: { CMAKE_FLAGS: -SIMDJSON_JUST_LIBRARY=ON }
@@ -242,6 +242,9 @@ workflows:
       - arch-haswell-gcc10
       - arch-nehalem-gcc10
       - no-computed-goto-gcc10
+
+      # testing "just the library"
+      - justlib-gcc10
     
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
