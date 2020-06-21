@@ -143,8 +143,7 @@ public:
 private:
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
-
-  document_stream(document_stream &other) = delete; // Disallow copying
+  document_stream(const document_stream &other) = delete; // Disallow copying
 
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is

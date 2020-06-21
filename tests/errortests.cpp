@@ -105,12 +105,8 @@ namespace parser_load {
     TEST_START();
     dom::parser parser;
     dom::document_stream stream;
-    ASSERT_SUCCESS(parser.load_many(NONEXISTENT_FILE).get(stream));
-    for (auto doc : stream) {
-      ASSERT_ERROR(doc.error(), IO_ERROR);
-      TEST_SUCCEED();
-    }
-    TEST_FAIL("No documents returned");
+    ASSERT_ERROR(parser.load_many(NONEXISTENT_FILE).get(stream), IO_ERROR);
+    TEST_SUCCEED();
   }
   bool padded_string_load_nonexistent() {
     TEST_START();
@@ -122,21 +118,16 @@ namespace parser_load {
   bool parser_load_chain() {
     TEST_START();
     dom::parser parser;
-    auto error = parser.load(NONEXISTENT_FILE)["foo"].get<uint64_t>().error();
-    ASSERT_ERROR(error, IO_ERROR);
+    UNUSED uint64_t foo;
+    ASSERT_ERROR( parser.load(NONEXISTENT_FILE)["foo"].get(foo) , IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_chain() {
     TEST_START();
     dom::parser parser;
     dom::document_stream stream;
-    ASSERT_SUCCESS( parser.load_many(NONEXISTENT_FILE).get(stream) );
-    for (auto doc : stream) {
-      auto error = doc["foo"].get<uint64_t>().error();
-      ASSERT_ERROR(error, IO_ERROR);
-      TEST_SUCCEED();
-    }
-    TEST_FAIL("No documents returned");
+    ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).get(stream) , IO_ERROR );
+    TEST_SUCCEED();
   }
   bool run() {
     return true

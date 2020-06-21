@@ -1,4 +1,4 @@
-/* auto-generated on Sat Jun 20 21:50:03 PDT 2020. Do not edit! */
+/* auto-generated on Sun Jun 21 11:49:12 PDT 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3778,8 +3778,7 @@ public:
 private:
 
   document_stream &operator=(const document_stream &) = delete; // Disallow copying
-
-  document_stream(document_stream &other) = delete; // Disallow copying
+  document_stream(const document_stream &other) = delete; // Disallow copying
 
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is
@@ -3867,8 +3866,8 @@ private:
 #endif // SIMDJSON_THREADS_ENABLED
 
   friend class dom::parser;
-  friend class simdjson_result<dom::document_stream>;
-  friend class internal::simdjson_result_base<dom::document_stream>;
+  friend struct simdjson_result<dom::document_stream>;
+  friend struct internal::simdjson_result_base<dom::document_stream>;
 
 }; // class document_stream
 
@@ -5574,7 +5573,6 @@ really_inline dom::document_stream::iterator simdjson_result<dom::document_strea
 }
 #endif // SIMDJSON_EXCEPTIONS
 
-
 } // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
 /* end file include/simdjson/inline/document_stream.h */
@@ -6302,7 +6300,9 @@ really_inline void simdjson_result_base<T>::tie(T &value, error_code &error) && 
 
 template<typename T>
 WARN_UNUSED really_inline error_code simdjson_result_base<T>::get(T &value) && noexcept {
-  return std::forward<simdjson_result_base<T>>(*this).get(value);
+  error_code error;
+  std::forward<simdjson_result_base<T>>(*this).tie(value, error);
+  return error;
 }
 
 template<typename T>
