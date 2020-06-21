@@ -105,7 +105,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
 }
-
+#include "generic/stage1/utf8_validator.h"
 } // namespace arm64
 } // namespace simdjson
 

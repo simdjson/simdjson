@@ -6,6 +6,9 @@ public:
   really_inline size_t block_index();
   really_inline bool has_full_block() const;
   really_inline const uint8_t *full_block() const;
+  really_inline bool has_remainder() const {
+    return idx < len;
+  }
   /**
    * Get the last block, padded with spaces.
    *
