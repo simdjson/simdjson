@@ -49,10 +49,10 @@ int main(int argc, char *argv[]) {
   const char *filename = result["file"].as<std::string>().c_str();
 
   simdjson::dom::parser parser;
-  auto [doc, error] = parser.load(filename); // do the parsing, return false on error
-  if (error != simdjson::SUCCESS) {
-    std::cerr << " Parsing failed. Error is '" << simdjson::error_message(error)
-              << "'." << std::endl;
+  simdjson::dom::element doc;
+  auto error = parser.load(filename).get(doc); // do the parsing, return false on error
+  if (error) {
+    std::cerr << " Parsing failed. Error is '" << error << "'." << std::endl;
     return EXIT_FAILURE;
   }
   if(rawdump) {

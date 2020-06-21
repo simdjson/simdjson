@@ -178,17 +178,14 @@ namespace number_tests {
 }
 
 namespace document_tests {
-  int issue938() {
+  bool issue938() {
     std::vector<std::string> json_strings{"[true,false]", "[1,2,3,null]",
                                         R"({"yay":"json!"})"};
     simdjson::dom::parser parser1;
     for (simdjson::padded_string str : json_strings) {
-      auto [element, error] = parser1.parse(str);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element << std::endl;
-      }
+      simdjson::dom::element element;
+      ASSERT_SUCCESS( parser1.parse(str).get(element) );
+      std::cout << element << std::endl;
     }
     std::vector<std::string> file_paths{
       ADVERSARIAL_JSON,      FLATADVERSARIAL_JSON, DEMO_JSON,
@@ -196,23 +193,17 @@ namespace document_tests {
       TRUENULL_JSON};
     for (auto path : file_paths) {
       simdjson::dom::parser parser2;
+      simdjson::dom::element element;
       std::cout << "file: " << path << std::endl;
-      auto [element, error] = parser2.load(path);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element.type() << std::endl;
-      }
+      ASSERT_SUCCESS( parser2.load(path).get(element) );
+      std::cout << element.type() << std::endl;
     }
     simdjson::dom::parser parser3;
     for (auto path : file_paths) {
+      simdjson::dom::element element;
       std::cout << "file: " << path << std::endl;
-      auto [element, error] = parser3.load(path);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element.type() << std::endl;
-      }    
+      ASSERT_SUCCESS( parser3.load(path).get(element) );
+      std::cout << element.type() << std::endl;
     }
     return true;
   }
@@ -222,11 +213,7 @@ namespace document_tests {
     std::cout << __func__ << std::endl;
     simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
     simdjson::dom::parser parser;
-    auto error = parser.parse(badjson).error();
-    if (!error) {
-      printf("This json should not be valid %s.\n", badjson.data());
-      return false;
-    }
+    ASSERT_ERROR( parser.parse(badjson), simdjson::TAPE_ERROR );
     return true;
   }
   bool count_array_example() {
@@ -251,9 +238,9 @@ namespace document_tests {
     std::cout << __func__ << std::endl;
     simdjson::dom::parser parser;
     // This is an invalid document padded with open braces.
-    ASSERT_ERROR( parser.parse("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error(), simdjson::TAPE_ERROR);
+    ASSERT_ERROR( parser.parse("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false), simdjson::TAPE_ERROR);
     // This is a valid document padded with open braces.
-    ASSERT_SUCCESS( parser.parse("[][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error() );
+    ASSERT_SUCCESS( parser.parse("[][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false) );
     return true;
   }
   // returns true if successful
@@ -400,7 +387,7 @@ namespace document_stream_tests {
     size_t count = 0;
     for(; i != stream.end(); ++i) {
       auto doc = *i;
-      ASSERT_SUCCESS(doc.error());
+      ASSERT_SUCCESS(doc);
       if( i.current_index() != count) {
         std::cout << "index:" << i.current_index() << std::endl;
         std::cout << "expected index:" << count << std::endl;
@@ -508,12 +495,7 @@ namespace document_stream_tests {
       size_t count = 0;
       simdjson::dom::document_stream stream;
       ASSERT_SUCCESS( parser.parse_many(str, batch_size).get(stream) );
-      for (auto [doc, error] : stream) {
-        if (error) {
-          printf("Error at on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error));
-          return false;
-        }
-
+      for (auto doc : stream) {
         int64_t keyid;
         ASSERT_SUCCESS( doc["id"].get(keyid) );
         ASSERT_EQUAL( keyid, int64_t(count) );
@@ -553,12 +535,7 @@ namespace document_stream_tests {
       size_t count = 0;
       simdjson::dom::document_stream stream;
       ASSERT_SUCCESS( parser.parse_many(str, batch_size).get(stream) );
-      for (auto [doc, error] : stream) {
-        if (error) {
-          printf("Error at on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error));
-          return false;
-        }
-
+      for (auto doc : stream) {
         int64_t keyid;
         ASSERT_SUCCESS( doc["id"].get(keyid) );
         ASSERT_EQUAL( keyid, int64_t(count) );
@@ -593,9 +570,9 @@ namespace parse_api_tests {
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.parse(BASIC_JSON);
-    if (error) { cerr << error << endl; return false; }
-    if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(BASIC_JSON).get(doc) );
+    ASSERT_EQUAL( doc.is<dom::array>(), true );
     return true;
   }
   bool parser_parse_many() {
@@ -604,12 +581,12 @@ namespace parse_api_tests {
     int count = 0;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(BASIC_NDJSON).get(stream) );
-    for (auto [doc, error] : stream) {
-      if (error) { cerr << "Error in parse_many: " << endl; return false; }
-      if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    for (auto doc : stream) {
+      UNUSED dom::array array;
+      ASSERT_SUCCESS( doc.get(array) );
       count++;
     }
-    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    ASSERT_EQUAL(count, 2);
     return true;
   }
 
@@ -619,12 +596,12 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto [doc, error] : parser.parse_many(BASIC_NDJSON)) {
-      if (error) { cerr << "Error in parse_many: " << endl; return false; }
-      if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    for (auto doc : parser.parse_many(BASIC_NDJSON)) {
+      UNUSED dom::array array;
+      ASSERT_SUCCESS( doc.get(array) );
       count++;
     }
-    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    ASSERT_EQUAL(count, 2);
     return true;
   }
   SIMDJSON_POP_DISABLE_WARNINGS
@@ -635,7 +612,7 @@ namespace parse_api_tests {
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(EMPTY_NDJSON).get(stream) );
     for (auto doc : stream) {
-      ASSERT_SUCCESS(doc.error());
+      ASSERT_SUCCESS( doc );
       count++;
     }
     ASSERT_EQUAL(count, 0);
@@ -654,8 +631,7 @@ namespace parse_api_tests {
     memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
-    for (auto [doc, error] : stream) {
-      ASSERT_SUCCESS(error);
+    for (auto doc : stream) {
       count++;
       uint64_t val;
       ASSERT_SUCCESS( doc.get(val) );
@@ -678,16 +654,14 @@ namespace parse_api_tests {
     int count = 0;
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.load_many(AMAZON_CELLPHONES_NDJSON).get(stream) );
-    for (auto [doc, error] : stream) {
-      ASSERT_SUCCESS( error );
-
+    for (auto doc : stream) {
       dom::array arr;
       ASSERT_SUCCESS( doc.get(arr) ); // let us get the array
-      ASSERT_EQUAL(arr.size(), 9);
+      ASSERT_EQUAL( arr.size(), 9 );
 
       size_t arr_count = 0;
       for (auto v : arr) { arr_count++; (void)v; }
-      ASSERT_EQUAL(arr_count, 9);
+      ASSERT_EQUAL( arr_count, 9 );
 
       count++;
     }
@@ -701,9 +675,7 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
-      if (error) { cerr << error << endl; return false; }
-
+    for (auto doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       dom::array arr;
       ASSERT_SUCCESS( doc.get(arr) );
       ASSERT_EQUAL( arr.size(), 9 );
@@ -902,7 +874,7 @@ namespace dom_api_tests {
     int i = 0;
     for (auto [key, value] : object) {
       ASSERT_EQUAL( key, expected_key[i] );
-      ASSERT_EQUAL( value.get<uint64_t>().value(), expected_value[i] );
+      ASSERT_EQUAL( value.get<uint64_t>().first, expected_value[i] );
       i++;
     }
     ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
@@ -987,18 +959,18 @@ namespace dom_api_tests {
     ASSERT_SUCCESS( parser.parse(json).get(array) );
 
     auto iter = array.begin();
-    ASSERT_EQUAL( (*iter).get<uint64_t>().value(), 0 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().value(), 0 );
-    ASSERT_EQUAL( (*iter).get<double>().value(), 0 );
+    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
+    ASSERT_EQUAL( (*iter).get<double>().first, 0 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<uint64_t>().value(), 1 );
-    ASSERT_EQUAL( (*iter).get<int64_t>().value(), 1 );
-    ASSERT_EQUAL( (*iter).get<double>().value(), 1 );
+    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
+    ASSERT_EQUAL( (*iter).get<double>().first, 1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<int64_t>().value(), -1 );
-    ASSERT_EQUAL( (*iter).get<double>().value(), -1 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
+    ASSERT_EQUAL( (*iter).get<double>().first, -1 );
     ++iter;
-    ASSERT_EQUAL( (*iter).get<double>().value(), 1.1 );
+    ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
     return true;
   }
 
@@ -1054,7 +1026,7 @@ namespace dom_api_tests {
     object["d"].tie(val, error);
     ASSERT_ERROR( error, NO_SUCH_FIELD );
     ASSERT_ERROR( object["d"].get(val), NO_SUCH_FIELD );
-    ASSERT_ERROR( object["d"].error(), NO_SUCH_FIELD );
+    ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
     return true;
   }
 

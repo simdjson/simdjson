@@ -82,9 +82,10 @@ inline void reset_stream(std::stringstream & is) {
 
 
 bool bench(const char *filename, bool verbose, bool just_data, double repeat_multiplier) {
-  auto [p, err] = simdjson::padded_string::load(filename);
-  if (err) {
-    std::cerr << "Could not load the file " << filename << std::endl;
+  simdjson::padded_string p;
+  auto error = simdjson::padded_string::load(filename).get(p);
+  if (error) {
+    std::cerr << "Could not load the file " << filename << ": " << error << std::endl;
     return false;
   }
 

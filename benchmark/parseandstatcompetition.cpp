@@ -105,7 +105,8 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
 never_inline stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t s{};
   simdjson::dom::parser parser;
-  auto [doc, error] = parser.parse(p);
+  simdjson::dom::element doc;
+  auto error = parser.parse(p).get(doc);
   if (error) {
     s.valid = false;
     return s;
@@ -409,7 +410,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  auto [p, error] = simdjson::padded_string::load(filename);
+  simdjson::padded_string p;
+  auto error = simdjson::padded_string::load(filename).get(p);
   if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
@@ -464,9 +466,10 @@ int main(int argc, char *argv[]) {
     printf("API traversal tests\n");
     printf("Based on https://github.com/miloyip/nativejson-benchmark\n");
     simdjson::dom::parser parser;
-    auto [doc, err] = parser.parse(p);
-    if (err) {
-      std::cerr << err << std::endl;
+    simdjson::dom::element doc;
+    auto error = parser.parse(p).get(doc);
+    if (error) {
+      std::cerr << error << std::endl;
     }
     size_t refval = simdjson_compute_stats_refplus(doc).objectCount;
 

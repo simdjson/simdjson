@@ -56,7 +56,8 @@ int main(int argc, char *argv[]) {
 
   std::string filename = result["file"].as<std::string>();
 
-  auto [p, error] = simdjson::padded_string::load(filename);
+  simdjson::padded_string p;
+  auto error = simdjson::padded_string::load(filename).get(p);
   if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;

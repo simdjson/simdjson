@@ -173,9 +173,13 @@ public:
    * the same interface, requiring you to check the error before using the document:
    *
    *   dom::parser parser;
-   *   for (auto [doc, error] : parser.load_many(path)) {
-   *     if (error) { cerr << error << endl; exit(1); }
-   *     cout << std::string(doc["title"]) << endl;
+   *   dom::document_stream docs;
+   *   auto error = parser.load_many(path).get(docs);
+   *   if (error) { cerr << error << endl; exit(1); }
+   *   for (auto doc : docs) {
+   *     std::string_view title;
+   *     if ((error = doc["title"].get(title)) { cerr << error << endl; exit(1); }
+   *     cout << title << endl;
    *   }
    *
    * ### Threads
@@ -233,9 +237,13 @@ public:
    * the same interface, requiring you to check the error before using the document:
    *
    *   dom::parser parser;
-   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error << endl; exit(1); }
-   *     cout << std::string(doc["title"]) << endl;
+   *   dom::document_stream docs;
+   *   auto error = parser.load_many(path).get(docs);
+   *   if (error) { cerr << error << endl; exit(1); }
+   *   for (auto doc : docs) {
+   *     std::string_view title;
+   *     if ((error = doc["title"].get(title)) { cerr << error << endl; exit(1); }
+   *     cout << title << endl;
    *   }
    *
    * ### REQUIRED: Buffer Padding

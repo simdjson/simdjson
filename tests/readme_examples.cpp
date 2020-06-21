@@ -216,26 +216,28 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_2() {
   dom::parser parser(1000*1000); // Never grow past documents > 1MB
-//   for (web_request request : listen()) {
-    auto [doc, error] = parser.parse("1"_padded/*request.body*/);
-//     // If the document was above our limit, emit 413 = payload too large
+  /* for (web_request request : listen()) */ {
+    dom::element doc;
+    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
+    // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
-//     // ...
-//   }
+    // ...
+  }
 }
 
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_3() {
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
-  simdjson::error_code allocate_error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
-  if (allocate_error) { cerr << allocate_error << endl; exit(1); }
+  auto error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
+  if (error) { cerr << error << endl; exit(1); }
 
-  // for (web_request request : listen()) {
-    auto [doc, error] = parser.parse("1"_padded/*request.body*/);
+  /* for (web_request request : listen()) */ {
+    dom::element doc;
+    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
     // ...
-  // }
+  }
 }
 SIMDJSON_POP_DISABLE_WARNINGS
 #endif

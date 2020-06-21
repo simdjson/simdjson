@@ -60,7 +60,8 @@ bool validate(const char *dirname) {
       char *fullpath = static_cast<char *>(malloc(fullpathlen));
       snprintf(fullpath, fullpathlen, "%s%s%s", dirname, needsep ? "/" : "", name);
 
-      auto [p, error] = simdjson::padded_string::load(fullpath);
+      simdjson::padded_string p;
+      auto error = simdjson::padded_string::load(fullpath).get(p);
       if (error) {
         std::cerr << "Could not load the file " << fullpath << std::endl;
         return EXIT_FAILURE;

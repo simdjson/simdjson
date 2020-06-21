@@ -10,7 +10,8 @@ void basics_error_1() {
   dom::parser parser;
   auto json = "1"_padded;
 
-  auto [doc, error] = parser.parse(json); // doc is a dom::element
+  dom::element doc;
+  auto error = parser.parse(json).get(doc);
   if (error) { cerr << error << endl; exit(1); }
   // Use document here now that we've checked for the error
 }
@@ -18,14 +19,6 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif
 
 void basics_error_2() {
-  dom::parser parser;
-  auto json = "1"_padded;
-
-  dom::element doc;
-  UNUSED auto error = parser.parse(json).get(doc); // <-- Assigns to doc and error just like "auto [doc, error]"}
-}
-
-void basics_error_3() {
   auto cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -70,8 +63,7 @@ void basics_error_3() {
   }
 }
 
-
-void basics_error_4() {
+void basics_error_3() {
   auto abstract_json = R"( [
       {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
       {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
@@ -102,7 +94,7 @@ void basics_error_4() {
   }
 }
 
-void basics_error_5() {
+void basics_error_4() {
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
@@ -116,7 +108,7 @@ void basics_error_5() {
 
 
 #ifdef SIMDJSON_CPLUSPLUS17
-void basics_error_3_cpp17() {
+void basics_error_2_cpp17() {
   auto cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
     { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -201,6 +193,5 @@ int main() {
   basics_error_2();
   basics_error_3();
   basics_error_4();
-  basics_error_5();
   return EXIT_SUCCESS;
 }

@@ -239,28 +239,17 @@ Error Handling
 --------------
 
 All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
-pair. The error codes and values can be accessed directly, reading the error like so:
+pair. You can retrieve the value with .get(), like so:
 
 ```c++
-auto [doc, error] = parser.parse(json); // doc is a dom::element
+dom::element doc;
+auto error = parser.parse(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
-// Use document here now that we've checked for the error
 ```
 
 When you use the code this way, it is your responsibility to check for error before using the
 result: if there is an error, the result value will not be valid and using it will caused undefined
 behavior.
-
-> Note: because of the way `auto [x, y]` works in C++, you have to define new variables each time you
-> use it. If your project treats aliased, this means you can't use the same names in `auto [x, error]`
-> without triggering warnings or error (and particularly can't use the word "error" every time). To
-> circumvent this, you can use this instead:
->
-> ```c++
-> dom::element doc;
-> auto error = parser.parse(json).get(doc); // <-- Assigns to doc and error just like "auto [doc, error]"
-> ```
-
 
 We can write a "quick start" example where we attempt to parse a file and access some data, without triggering exceptions:
 
@@ -269,11 +258,12 @@ We can write a "quick start" example where we attempt to parse a file and access
 
 int main(void) {
   simdjson::dom::parser parser;
+
   simdjson::dom::element tweets;
   auto error = parser.load("twitter.json").get(tweets);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
-  simdjson::dom::element res;
 
+  simdjson::dom::element res;
   if ((error = tweets["search_metadata"]["count"].get(res))) {
     std::cerr << "could not access keys" << std::endl;
     return EXIT_FAILURE;
