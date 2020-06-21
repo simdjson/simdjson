@@ -83,6 +83,18 @@ public:
    * @return the error code, or SUCCESS if there was no error.
    */
   WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
+  
+  
+  /**   
+   * Validate the UTF-8 string.
+   *
+   * Overridden by each implementation.
+   *
+   * @param buf the string to validate.
+   * @param len the length of the string in bytes.
+   * @return true if and only if the string is valid UTF-8.
+   */
+  WARN_UNUSED virtual bool utf8_validate(const char *buf, size_t len) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
