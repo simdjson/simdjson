@@ -7,5 +7,4 @@
 
 #include "simdjson/compiler_check.h"
 #include "simdjson/error.h"
-
 #endif // SIMDJSON_H

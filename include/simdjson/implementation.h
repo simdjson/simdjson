@@ -10,6 +10,24 @@
 
 namespace simdjson {
 
+/**
+ * Validate the UTF-8 string.
+ *
+ * @param buf the string to validate.
+ * @param len the length of the string in bytes.
+ * @return true if the string is valid UTF-8.
+ */
+WARN_UNUSED bool validate_utf8(const char * buf, size_t length) noexcept;
+
+
+/**
+ * Validate the UTF-8 string.
+ *
+ * @param p the string_view to validate.
+ * @return true if the string is valid UTF-8.
+ */
+WARN_UNUSED bool validate_utf8(std::string_view& p) noexcept;
+
 namespace dom {
   class document;
 } // namespace dom

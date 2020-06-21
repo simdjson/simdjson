@@ -141,6 +141,9 @@ SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_imple
 WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
   return active_implementation->minify((const uint8_t *)buf, len, (uint8_t *)dst, dst_len);
 }
+WARN_UNUSED bool validate_utf8(const char *buf, size_t len) noexcept {
+  return active_implementation->validate_utf8(buf, len);
+}
 
 
 } // namespace simdjson
