@@ -289,8 +289,7 @@ namespace document_tests {
     myStream << parser.parse(json);
 #else
     simdjson::dom::element doc;
-    simdjson::error_code error;
-    parser.parse(json).tie(doc, error);
+    UNUSED auto error = parser.parse(json).get(doc);
     myStream << doc;
 #endif
     std::string newjson = myStream.str();
@@ -677,7 +676,7 @@ namespace parse_api_tests {
       if (error) { cerr << error << endl; return false; }
 
       dom::array arr;
-      doc.get<dom::array>().tie(arr, error); // let us get the array
+      error = doc.get(arr); // let us get the array
       if (error) { cerr << error << endl; return false; }
 
       if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
@@ -1019,8 +1018,8 @@ namespace dom_api_tests {
     // tie(val, error) = doc["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
     doc["d"].tie(val, error);
     if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
-    error = doc["d"].error();
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    if (doc["d"].get(val) != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    if (doc["d"].error() != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
     return true;
   }
 
@@ -1033,11 +1032,11 @@ namespace dom_api_tests {
     if (doc["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
     object obj;
-    doc.get<dom::object>().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    error = doc.get(obj); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
     if (error) { cerr << "Error: " << error << endl; return false; }
     if (obj["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
 
-    obj["obj"].get<dom::object>().tie(obj, error); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
+    error = obj["obj"].get(obj); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
     if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
     if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
     if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
@@ -1047,8 +1046,7 @@ namespace dom_api_tests {
     if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
 
     UNUSED element val;
-    doc["d"].tie(val, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
+    if (doc["d"].get(val) != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
     return true;
   }
 
@@ -1071,14 +1069,14 @@ namespace dom_api_tests {
     if (error) { cerr << "Error: " << error << endl; return false; }
     for (auto tweet : tweets) {
       object user;
-      tweet["user"].get<dom::object>().tie(user, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+      error = tweet["user"].get(user); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
       if (error) { cerr << "Error: " << error << endl; return false; }
       bool default_profile;
-      user["default_profile"].get<bool>().tie(default_profile, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+      error = user["default_profile"].get(default_profile); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
       if (error) { cerr << "Error: " << error << endl; return false; }
       if (default_profile) {
         std::string_view screen_name;
-        user["screen_name"].get<std::string_view>().tie(screen_name, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+        error = user["screen_name"].get(screen_name); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
         if (error) { cerr << "Error: " << error << endl; return false; }
         default_users.insert(screen_name);
       }
@@ -1099,13 +1097,13 @@ namespace dom_api_tests {
       if (!not_found) {
         for (auto image : media) {
           object sizes;
-          image["sizes"].get<dom::object>().tie(sizes, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+          error = image["sizes"].get(sizes); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
           if (error) { cerr << "Error: " << error << endl; return false; }
           for (auto size : sizes) {
             uint64_t width, height;
-            size.value["w"].get<uint64_t>().tie(width, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            error = size.value["w"].get(width); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
-            size.value["h"].get<uint64_t>().tie(height, error); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
+            error = size.value["h"].get(height); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
             if (error) { cerr << "Error: " << error << endl; return false; }
             image_sizes.insert(make_pair(width, height));
           }
@@ -1414,8 +1412,7 @@ namespace type_tests {
     std::cout << "  test_type() expecting " << expected_type << std::endl;
     dom::element element = result.first;
     dom::element_type actual_type;
-    simdjson::error_code error;
-    result.type().tie(actual_type, error);
+    auto error = result.type().get(actual_type);
     ASSERT_SUCCESS(error);
     ASSERT_EQUAL(actual_type, expected_type);
 
@@ -1445,8 +1442,7 @@ namespace type_tests {
     // Grab the element out and check success
     dom::element element = result.first;
     bool actual_is_null;
-    simdjson::error_code error;
-    result.is_null().tie(actual_is_null, error);
+    auto error = result.is_null().get(actual_is_null);
     ASSERT_SUCCESS(error);
     ASSERT_EQUAL(actual_is_null, expected_is_null);
 

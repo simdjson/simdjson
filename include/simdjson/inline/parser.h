@@ -78,23 +78,24 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
 
 inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
   size_t len;
-  error_code code;
-  read_file(path).tie(len, code);
-  if (code) { return code; }
+  auto _error = read_file(path).get(len);
+  if (_error) { return _error; }
 
   return parse(loaded_bytes.get(), len, false);
 }
 
 inline document_stream parser::load_many(const std::string &path, size_t batch_size) noexcept {
   size_t len;
-  error_code code;
-  read_file(path).tie(len, code);
-  return document_stream(*this, (const uint8_t*)loaded_bytes.get(), len, batch_size, code);
+  auto _error = read_file(path).get(len);
+  if (_error) {
+    return document_stream(*this, batch_size, _error);
+  }
+  return document_stream(*this, batch_size, (const uint8_t*)loaded_bytes.get(), len);
 }
 
 inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
-  error_code code = ensure_capacity(len);
-  if (code) { return code; }
+  error_code _error = ensure_capacity(len);
+  if (_error) { return _error; }
 
   if (realloc_if_needed) {
     const uint8_t *tmp_buf = buf;
@@ -104,11 +105,11 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
     memcpy((void *)buf, tmp_buf, len);
   }
 
-  code = implementation->parse(buf, len, doc);
+  _error = implementation->parse(buf, len, doc);
   if (realloc_if_needed) {
     aligned_free((void *)buf); // must free before we exit
   }
-  if (code) { return code; }
+  if (_error) { return _error; }
 
   return doc.root();
 }
@@ -123,7 +124,7 @@ really_inline simdjson_result<element> parser::parse(const padded_string &s) & n
 }
 
 inline document_stream parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
-  return document_stream(*this, buf, len, batch_size);
+  return document_stream(*this, batch_size, buf, len);
 }
 inline document_stream parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
   return parse_many((const uint8_t *)buf, len, batch_size);

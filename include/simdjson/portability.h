@@ -199,5 +199,24 @@ static inline void aligned_free(void *mem_block) {
 static inline void aligned_free_char(char *mem_block) {
   aligned_free((void *)mem_block);
 }
+
+#ifdef NDEBUG
+
+#ifdef SIMDJSON_VISUAL_STUDIO
+#define SIMDJSON_UNREACHABLE() __assume(0)
+#define SIMDJSON_ASSUME(COND) __assume(COND)
+#else
+#define SIMDJSON_UNREACHABLE() __builtin_unreachable();
+#define SIMDJSON_ASSUME(COND) do { if (!(COND)) __builtin_unreachable(); } while (0)
+#endif
+
+#else // NDEBUG
+
+#include <cassert>
+#define SIMDJSON_UNREACHABLE() assert(0);
+#define SIMDJSON_ASSUME(COND) assert(COND)
+
+#endif
+
 } // namespace simdjson
 #endif // SIMDJSON_PORTABILITY_H

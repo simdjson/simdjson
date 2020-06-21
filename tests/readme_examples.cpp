@@ -155,9 +155,10 @@ void basics_cpp17_2() {
   // C++ 11 version for comparison
   dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-  dom::object object;
   simdjson::error_code error;
-  parser.parse(json).get<dom::object>().tie(object, error);
+  dom::object object;
+  error = parser.parse(json).get(object);
+  if (!error) { cerr << error << endl; return; }
   for (dom::key_value_pair field : object) {
     cout << field.key << " = " << field.value << endl;
   }

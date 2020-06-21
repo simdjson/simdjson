@@ -13,8 +13,7 @@ const char *GSOC_JSON = SIMDJSON_BENCHMARK_DATA_DIR "gsoc-2018.json";
 static void parse_twitter(State& state) {
   dom::parser parser;
   padded_string docdata;
-  simdjson::error_code error;
-  padded_string::load(TWITTER_JSON).tie(docdata, error);
+  auto error = padded_string::load(TWITTER_JSON).get(docdata);
   if(error) {
       cerr << "could not parse twitter.json" << error << endl;
       return;
@@ -29,8 +28,8 @@ static void parse_twitter(State& state) {
   for (UNUSED auto _ : state) {
     dom::element doc;
     bytes += docdata.size();
-    parser.parse(docdata).tie(doc,error);
-    if(error) {
+    ;
+    if ((error = parser.parse(docdata).get(doc))) {
       cerr << "could not parse twitter.json" << error << endl;
       return;
     }
@@ -50,8 +49,7 @@ BENCHMARK(parse_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std
 static void parse_gsoc(State& state) {
   dom::parser parser;
   padded_string docdata;
-  simdjson::error_code error;
-  padded_string::load(GSOC_JSON).tie(docdata, error);
+  auto error = padded_string::load(GSOC_JSON).get(docdata);
   if(error) {
       cerr << "could not parse gsoc-2018.json" << error << endl;
       return;
@@ -64,10 +62,9 @@ static void parse_gsoc(State& state) {
   }
   size_t bytes = 0;
   for (UNUSED auto _ : state) {
-    dom::element doc;
     bytes += docdata.size();
-    parser.parse(docdata).tie(doc,error);
-    if(error) {
+    dom::element doc;
+    if ((error = parser.parse(docdata).get(doc))) {
       cerr << "could not parse gsoc-2018.json" << error << endl;
       return;
     }

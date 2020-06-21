@@ -119,8 +119,18 @@ struct simdjson_result_base : public std::pair<T, error_code> {
 
   /**
    * Move the value and the error to the provided variables.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
   really_inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Move the value to the provided variable.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
@@ -181,8 +191,18 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 
   /**
    * Move the value and the error to the provided variables.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
-  really_inline void tie(T& t, error_code & e) && noexcept;
+  really_inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Move the value to the provided variable.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  WARN_UNUSED really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
