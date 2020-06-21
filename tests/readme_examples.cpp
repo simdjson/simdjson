@@ -88,7 +88,7 @@ void basics_dom_4() {
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
-  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 }
 
@@ -141,9 +141,10 @@ namespace treewalk_1 {
 
 #ifdef SIMDJSON_CPLUSPLUS17
 void basics_cpp17_1() {
-  dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-  auto [object, error] = parser.parse(json).get<dom::object>();
+  dom::parser parser;
+  dom::object object;
+  auto error = parser.parse(json).get(object);
   if (error) { cerr << error << endl; return; }
   for (auto [key, value] : object) {
     cout << key << " = " << value << endl;
@@ -153,11 +154,10 @@ void basics_cpp17_1() {
 
 void basics_cpp17_2() {
   // C++ 11 version for comparison
-  dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-  simdjson::error_code error;
+  dom::parser parser;
   dom::object object;
-  error = parser.parse(json).get(object);
+  auto error = parser.parse(json).get(object);
   if (!error) { cerr << error << endl; return; }
   for (dom::key_value_pair field : object) {
     cout << field.key << " = " << field.value << endl;

@@ -407,7 +407,7 @@ static void iterator_twitter_default_profile(State& state) {
     set<string_view> default_users;
     ParsedJson::Iterator iter(pj);
 
-    // for (dom::object tweet : doc["statuses"].get<dom::array>()) {
+    // for (dom::object tweet : doc["statuses"]) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
@@ -480,7 +480,7 @@ static void iterator_twitter_image_sizes(State& state) {
     set<tuple<uint64_t, uint64_t>> image_sizes;
     ParsedJson::Iterator iter(pj);
 
-    // for (dom::object tweet : doc["statuses"].get<dom::array>()) {
+    // for (dom::object tweet : doc["statuses"]) {
     if (!(iter.move_to_key("statuses") && iter.is_array())) { return; }
     if (iter.down()) { // first status
       do {
@@ -492,7 +492,7 @@ static void iterator_twitter_image_sizes(State& state) {
           if (iter.move_to_key("media")) {
             if (!iter.is_array()) { return; }
 
-            //   for (dom::object image : media.get<dom::array>()) {
+            //   for (dom::object image : media) {
             if (iter.down()) { // first media
               do {
 

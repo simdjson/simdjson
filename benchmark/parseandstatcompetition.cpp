@@ -154,11 +154,11 @@ static void GenStatPlus(Stat &stat, const dom::element &v) {
     break;
   case dom::element_type::STRING: {
     stat.stringCount++;
-    std::string_view sv = v.get<std::string_view>();
+    auto sv = std::string_view(v);
     stat.stringLength += sv.size();
   } break;
   case dom::element_type::BOOL:
-    if (v.get<bool>()) {
+    if (bool(v)) {
       stat.trueCount++;
     } else {
       stat.falseCount++;

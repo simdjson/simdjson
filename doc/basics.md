@@ -164,7 +164,7 @@ And another one:
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
-  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 ```
 
@@ -191,14 +191,13 @@ Though it does not validate the JSON input, it will detect when the document end
 C++17 Support
 -------------
 
-While the simdjson library can be used in any project using C++ 11 and above, it has special support
-for C++ 17. The APIs for field iteration and error handling in particular are designed to work
-nicely with C++17's destructuring syntax. For example:
+While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
 
 ```c++
-dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-auto [object, error] = parser.parse(json).get<dom::object>();
+dom::parser parser;
+dom::object object;
+auto error = parser.parse(json).get(object);
 if (error) { cerr << error << endl; return; }
 for (auto [key, value] : object) {
   cout << key << " = " << value << endl;
@@ -209,11 +208,10 @@ For comparison, here is the C++ 11 version of the same code:
 
 ```c++
 // C++ 11 version for comparison
-dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-simdjson::error_code error;
+dom::parser parser;
 dom::object object;
-error = parser.parse(json).get(object);
+auto error = parser.parse(json).get(object);
 if (!error) { cerr << error << endl; return; }
 for (dom::key_value_pair field : object) {
   cout << field.key << " = " << field.value << endl;
@@ -378,8 +376,7 @@ And another one:
   cout << "number: " << v << endl;
 ```
 
-Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
-
+Notice how we can string several operations (`parser.parse(abstract_json)["str"]["123"]["abc"].get(v)`) and only check for the error once, a strategy we call  *error chaining*.
 
 The next two functions will take as input a JSON document containing an array with a single element, either a string or a number. They return true upon success.
 
