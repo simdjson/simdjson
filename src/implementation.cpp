@@ -48,8 +48,8 @@ public:
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
   }
-  WARN_UNUSED bool utf8_validate(const char * buf, size_t len) const noexcept final override {
-    return set_best()->utf8_validate(buf, len);
+  WARN_UNUSED bool validate_utf8(const char * buf, size_t len) const noexcept final override {
+    return set_best()->validate_utf8(buf, len);
   }
   really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
@@ -88,7 +88,7 @@ public:
   WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED bool utf8_validate(const char *, size_t) const noexcept final override {
+  WARN_UNUSED bool validate_utf8(const char *, size_t) const noexcept final override {
     return false; // just refuse the validate
   }
   unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}

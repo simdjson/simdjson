@@ -94,6 +94,9 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   return haswell::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
 }
 #include "generic/stage1/utf8_validator.h"
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  return simdjson::haswell::stage1::utf8_validate(buf,len);
+}
 } // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION

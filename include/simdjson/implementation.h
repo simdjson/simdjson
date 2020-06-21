@@ -94,7 +94,7 @@ public:
    * @param len the length of the string in bytes.
    * @return true if and only if the string is valid UTF-8.
    */
-  WARN_UNUSED virtual bool utf8_validate(const char *buf, size_t len) const noexcept = 0;
+  WARN_UNUSED virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
