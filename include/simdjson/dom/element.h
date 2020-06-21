@@ -35,7 +35,7 @@ enum class element_type {
  * References an element in a JSON document, representing a JSON null, boolean, string, number,
  * array or object.
  */
-class element : protected internal::tape_ref {
+class element {
 public:
   /** Create a new, invalid element. */
   really_inline element() noexcept;
@@ -43,8 +43,135 @@ public:
   /** The type of this element. */
   really_inline element_type type() const noexcept;
 
-  /** Whether this element is a json `null`. */
-  really_inline bool is_null() const noexcept;
+  /**
+   * Cast this element to an array.
+   *
+   * Equivalent to get<array>().
+   *
+   * @returns An object that can be used to iterate the array, or:
+   *          INCORRECT_TYPE if the JSON element is not an array.
+   */
+  inline simdjson_result<array> get_array() const noexcept;
+  /**
+   * Cast this element to an object.
+   *
+   * Equivalent to get<object>().
+   *
+   * @returns An object that can be used to look up or iterate the object's fields, or:
+   *          INCORRECT_TYPE if the JSON element is not an object.
+   */
+  inline simdjson_result<object> get_object() const noexcept;
+  /**
+   * Cast this element to a string.
+   *
+   * Equivalent to get<const char *>().
+   *
+   * @returns An pointer to a null-terminated string. This string is stored in the parser and will
+   *          be invalidated the next time it parses a document or when it is destroyed.
+   *          Returns INCORRECT_TYPE if the JSON element is not a string.
+   */
+  inline simdjson_result<const char *> get_c_str() const noexcept;
+  /**
+   * Cast this element to a string.
+   *
+   * Equivalent to get<std::string_view>().
+   *
+   * @returns A string. The string is stored in the parser and will be invalidated the next time it
+   *          parses a document or when it is destroyed.
+   *          Returns INCORRECT_TYPE if the JSON element is not a string.
+   */
+  inline simdjson_result<std::string_view> get_string() const noexcept;
+  /**
+   * Cast this element to a signed integer.
+   *
+   * Equivalent to get<int64_t>().
+   *
+   * @returns A signed 64-bit integer.
+   *          Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE
+   *          if it is negative.
+   */
+  inline simdjson_result<int64_t> get_int64_t() const noexcept;
+  /**
+   * Cast this element to an unsigned integer.
+   *
+   * Equivalent to get<uint64_t>().
+   *
+   * @returns An unsigned 64-bit integer.
+   *          Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE
+   *          if it is too large.
+   */
+  inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
+  /**
+   * Cast this element to an double floating-point.
+   *
+   * Equivalent to get<double>().
+   *
+   * @returns A double value.
+   *          Returns INCORRECT_TYPE if the JSON element is not a number.
+   */
+  inline simdjson_result<double> get_double() const noexcept;
+  /**
+   * Cast this element to a bool.
+   *
+   * Equivalent to get<bool>().
+   *
+   * @returns A bool value.
+   *          Returns INCORRECT_TYPE if the JSON element is not a boolean.
+   */
+  inline simdjson_result<bool> get_bool() const noexcept;
+
+  /**
+   * Whether this element is a json array.
+   *
+   * Equivalent to is<array>().
+   */
+  inline bool is_array() const noexcept;
+  /**
+   * Whether this element is a json object.
+   *
+   * Equivalent to is<object>().
+   */
+  inline bool is_object() const noexcept;
+  /**
+   * Whether this element is a json string.
+   *
+   * Equivalent to is<std::string_view>() or is<const char *>().
+   */
+  inline bool is_string() const noexcept;
+  /**
+   * Whether this element is a json number that fits in a signed 64-bit integer.
+   *
+   * Equivalent to is<int64_t>().
+   */
+  inline bool is_int64_t() const noexcept;
+  /**
+   * Whether this element is a json number that fits in an unsigned 64-bit integer.
+   *
+   * Equivalent to is<uint64_t>().
+   */
+  inline bool is_uint64_t() const noexcept;
+  /**
+   * Whether this element is a json number that fits in a double.
+   *
+   * Equivalent to is<double>().
+   */
+  inline bool is_double() const noexcept;
+  /**
+   * Whether this element is a json number.
+   *
+   * Both integers and floating points will return true.
+   */
+  inline bool is_number() const noexcept;
+  /**
+   * Whether this element is a json `true` or `false`.
+   *
+   * Equivalent to is<bool>().
+   */
+  inline bool is_bool() const noexcept;
+  /**
+   * Whether this element is a json `null`.
+   */
+  inline bool is_null() const noexcept;
 
   /**
    * Tell whether the value can be cast to provided type (T).
@@ -249,7 +376,8 @@ public:
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
-  really_inline element(const document *doc, size_t json_index) noexcept;
+  really_inline element(const internal::tape_ref &tape) noexcept;
+  internal::tape_ref tape;
   friend class document;
   friend class object;
   friend class array;
@@ -289,11 +417,28 @@ public:
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element_type> type() const noexcept;
-  inline simdjson_result<bool> is_null() const noexcept;
   template<typename T>
   inline simdjson_result<bool> is() const noexcept;
   template<typename T>
   inline simdjson_result<T> get() const noexcept;
+
+  inline simdjson_result<dom::array> get_array() const noexcept;
+  inline simdjson_result<dom::object> get_object() const noexcept;
+  inline simdjson_result<const char *> get_c_str() const noexcept;
+  inline simdjson_result<std::string_view> get_string() const noexcept;
+  inline simdjson_result<int64_t> get_int64_t() const noexcept;
+  inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
+  inline simdjson_result<double> get_double() const noexcept;
+  inline simdjson_result<bool> get_bool() const noexcept;
+
+  inline simdjson_result<bool> is_array() const noexcept;
+  inline simdjson_result<bool> is_object() const noexcept;
+  inline simdjson_result<bool> is_string() const noexcept;
+  inline simdjson_result<bool> is_int64_t() const noexcept;
+  inline simdjson_result<bool> is_uint64_t() const noexcept;
+  inline simdjson_result<bool> is_double() const noexcept;
+  inline simdjson_result<bool> is_bool() const noexcept;
+  inline simdjson_result<bool> is_null() const noexcept;
 
   inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;

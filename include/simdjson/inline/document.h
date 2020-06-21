@@ -17,7 +17,7 @@ namespace dom {
 // document inline implementation
 //
 inline element document::root() const noexcept {
-  return element(this, 1);
+  return element(internal::tape_ref(this, 1));
 }
 
 WARN_UNUSED

@@ -16,12 +16,12 @@ class element;
 /**
  * JSON array.
  */
-class array : protected internal::tape_ref {
+class array {
 public:
   /** Create a new, invalid array */
   really_inline array() noexcept;
 
-  class iterator : protected internal::tape_ref {
+  class iterator {
   public:
     /**
      * Get the actual value
@@ -41,7 +41,8 @@ public:
      */
     inline bool operator!=(const iterator& other) const noexcept;
   private:
-    really_inline iterator(const document *doc, size_t json_index) noexcept;
+    really_inline iterator(const internal::tape_ref &tape) noexcept;
+    internal::tape_ref tape;
     friend class array;
   };
 
@@ -98,7 +99,8 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
 private:
-  really_inline array(const document *doc, size_t json_index) noexcept;
+  really_inline array(const internal::tape_ref &tape) noexcept;
+  internal::tape_ref tape;
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>

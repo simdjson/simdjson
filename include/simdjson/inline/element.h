@@ -22,10 +22,7 @@ inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() 
   if (error()) { return error(); }
   return first.type();
 }
-inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
-  if (error()) { return error(); }
-  return first.is_null();
-}
+
 template<typename T>
 inline simdjson_result<bool> simdjson_result<dom::element>::is() const noexcept {
   if (error()) { return error(); }
@@ -35,6 +32,73 @@ template<typename T>
 inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
   if (error()) { return error(); }
   return first.get<T>();
+}
+
+inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
+  if (error()) { return error(); }
+  return first.get_array();
+}
+inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
+  if (error()) { return error(); }
+  return first.get_object();
+}
+inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
+  if (error()) { return error(); }
+  return first.get_c_str();
+}
+inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
+  if (error()) { return error(); }
+  return first.get_string();
+}
+inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.get_int64_t();
+}
+inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.get_uint64_t();
+}
+inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
+  if (error()) { return error(); }
+  return first.get_double();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
+  if (error()) { return error(); }
+  return first.get_bool();
+}
+
+inline simdjson_result<bool> simdjson_result<dom::element>::is_array() const noexcept {
+  if (error()) { return error(); }
+  return first.is_array();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_object() const noexcept {
+  if (error()) { return error(); }
+  return first.is_object();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_string() const noexcept {
+  if (error()) { return error(); }
+  return first.is_string();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_int64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.is_int64_t();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64_t() const noexcept {
+  if (error()) { return error(); }
+  return first.is_uint64_t();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_double() const noexcept {
+  if (error()) { return error(); }
+  return first.is_double();
+}
+inline simdjson_result<bool> simdjson_result<dom::element>::is_bool() const noexcept {
+  if (error()) { return error(); }
+  return first.is_bool();
+}
+
+inline simdjson_result<bool> simdjson_result<dom::element>::is_null() const noexcept {
+  if (error()) { return error(); }
+  return first.is_null();
 }
 
 inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
@@ -105,50 +169,43 @@ namespace dom {
 //
 // element inline implementation
 //
-really_inline element::element() noexcept : internal::tape_ref() {}
-really_inline element::element(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
+really_inline element::element() noexcept : tape{} {}
+really_inline element::element(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 
 inline element_type element::type() const noexcept {
-  auto tape_type = tape_ref_type();
+  auto tape_type = tape.tape_ref_type();
   return tape_type == internal::tape_type::FALSE_VALUE ? element_type::BOOL : static_cast<element_type>(tape_type);
 }
-really_inline bool element::is_null() const noexcept {
-  return is_null_on_tape();
-}
 
-template<>
-inline simdjson_result<bool> element::get<bool>() const noexcept {
-  if(is_true()) {
+inline simdjson_result<bool> element::get_bool() const noexcept {
+  if(tape.is_true()) {
     return true;
-  } else if(is_false()) {
+  } else if(tape.is_false()) {
     return false;
   }
   return INCORRECT_TYPE;
 }
-template<>
-inline simdjson_result<const char *> element::get<const char *>() const noexcept {
-  switch (tape_ref_type()) {
+inline simdjson_result<const char *> element::get_c_str() const noexcept {
+  switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING: {
-      return get_c_str();
+      return tape.get_c_str();
     }
     default:
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept {
-  switch (tape_ref_type()) {
+inline simdjson_result<std::string_view> element::get_string() const noexcept {
+  switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING:
-      return get_string_view();
+      return tape.get_string_view();
     default:
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
-  if(unlikely(!is_uint64())) { // branch rarely taken
-    if(is_int64()) {
-      int64_t result = next_tape_value<int64_t>();
+inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept {
+  if(unlikely(!tape.is_uint64())) { // branch rarely taken
+    if(tape.is_int64()) {
+      int64_t result = tape.next_tape_value<int64_t>();
       if (result < 0) {
         return NUMBER_OUT_OF_RANGE;
       }
@@ -156,13 +213,12 @@ inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept {
     }
     return INCORRECT_TYPE;
   }
-  return next_tape_value<int64_t>();
+  return tape.next_tape_value<int64_t>();
 }
-template<>
-inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
-  if(unlikely(!is_int64())) { // branch rarely taken
-    if(is_uint64()) {
-      uint64_t result = next_tape_value<uint64_t>();
+inline simdjson_result<int64_t> element::get_int64_t() const noexcept {
+  if(unlikely(!tape.is_int64())) { // branch rarely taken
+    if(tape.is_uint64()) {
+      uint64_t result = tape.next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
       if (result > uint64_t((std::numeric_limits<int64_t>::max)())) {
         return NUMBER_OUT_OF_RANGE;
@@ -171,10 +227,9 @@ inline simdjson_result<int64_t> element::get<int64_t>() const noexcept {
     }
     return INCORRECT_TYPE;
   }
-  return next_tape_value<int64_t>();
+  return tape.next_tape_value<int64_t>();
 }
-template<>
-inline simdjson_result<double> element::get<double>() const noexcept {
+inline simdjson_result<double> element::get_double() const noexcept {
   // Performance considerations:
   // 1. Querying tape_ref_type() implies doing a shift, it is fast to just do a straight
   //   comparison.
@@ -184,40 +239,59 @@ inline simdjson_result<double> element::get<double>() const noexcept {
   // We can expect get<double> to refer to a double type almost all the time.
   // It is important to craft the code accordingly so that the compiler can use this
   // information. (This could also be solved with profile-guided optimization.)
-  if(unlikely(!is_double())) { // branch rarely taken
-    if(is_uint64()) {
-      return double(next_tape_value<uint64_t>());
-    } else if(is_int64()) {
-      return double(next_tape_value<int64_t>());
+  if(unlikely(!tape.is_double())) { // branch rarely taken
+    if(tape.is_uint64()) {
+      return double(tape.next_tape_value<uint64_t>());
+    } else if(tape.is_int64()) {
+      return double(tape.next_tape_value<int64_t>());
     }
     return INCORRECT_TYPE;
   }
   // this is common:
-  return next_tape_value<double>();
+  return tape.next_tape_value<double>();
 }
-template<>
-inline simdjson_result<array> element::get<array>() const noexcept {
-  switch (tape_ref_type()) {
+inline simdjson_result<array> element::get_array() const noexcept {
+  switch (tape.tape_ref_type()) {
     case internal::tape_type::START_ARRAY:
-      return array(doc, json_index);
+      return array(tape);
     default:
       return INCORRECT_TYPE;
   }
 }
-template<>
-inline simdjson_result<object> element::get<object>() const noexcept {
-  switch (tape_ref_type()) {
+inline simdjson_result<object> element::get_object() const noexcept {
+  switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
-      return object(doc, json_index);
+      return object(tape);
     default:
       return INCORRECT_TYPE;
   }
 }
 
 template<typename T>
-really_inline bool element::is() const noexcept {
+inline bool element::is() const noexcept {
   auto result = get<T>();
   return !result.error();
+}
+
+template<> inline simdjson_result<array> element::get<array>() const noexcept { return get_array(); }
+template<> inline simdjson_result<object> element::get<object>() const noexcept { return get_object(); }
+template<> inline simdjson_result<const char *> element::get<const char *>() const noexcept { return get_c_str(); }
+template<> inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept { return get_string(); }
+template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64_t(); }
+template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64_t(); }
+template<> inline simdjson_result<double> element::get<double>() const noexcept { return get_double(); }
+template<> inline simdjson_result<bool> element::get<bool>() const noexcept { return get_bool(); }
+
+inline bool element::is_array() const noexcept { return is<array>(); }
+inline bool element::is_object() const noexcept { return is<object>(); }
+inline bool element::is_string() const noexcept { return is<std::string_view>(); }
+inline bool element::is_int64_t() const noexcept { return is<int64_t>(); }
+inline bool element::is_uint64_t() const noexcept { return is<uint64_t>(); }
+inline bool element::is_double() const noexcept { return is<double>(); }
+inline bool element::is_bool() const noexcept { return is<bool>(); }
+
+inline bool element::is_null() const noexcept {
+  return tape.is_null_on_tape();
 }
 
 #if SIMDJSON_EXCEPTIONS
@@ -247,11 +321,11 @@ inline simdjson_result<element> element::operator[](const char *key) const noexc
   return at_key(key);
 }
 inline simdjson_result<element> element::at(const std::string_view &json_pointer) const noexcept {
-  switch (tape_ref_type()) {
+  switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
-      return object(doc, json_index).at(json_pointer);
+      return object(tape).at(json_pointer);
     case internal::tape_type::START_ARRAY:
-      return array(doc, json_index).at(json_pointer);
+      return array(tape).at(json_pointer);
     default:
       return INCORRECT_TYPE;
   }
@@ -267,7 +341,7 @@ inline simdjson_result<element> element::at_key_case_insensitive(const std::stri
 }
 
 inline bool element::dump_raw_tape(std::ostream &out) const noexcept {
-  return doc->dump_raw_tape(out);
+  return tape.doc->dump_raw_tape(out);
 }
 
 inline std::ostream& operator<<(std::ostream& out, const element &value) {
@@ -308,7 +382,7 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
   is_object[0] = false;
   bool after_value = false;
 
-  internal::tape_ref iter(value);
+  internal::tape_ref iter(value.tape);
   do {
     // print commas after each value
     if (after_value) {
@@ -326,7 +400,7 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
-        out << minify<dom::array>(dom::array(iter.doc, iter.json_index));
+        out << minify<dom::array>(dom::array(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
@@ -353,7 +427,7 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (unlikely(depth >= MAX_DEPTH)) {
-        out << minify<dom::object>(dom::object(iter.doc, iter.json_index));
+        out << minify<dom::object>(dom::object(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;

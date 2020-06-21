@@ -17,12 +17,12 @@ class key_value_pair;
 /**
  * JSON object.
  */
-class object : protected internal::tape_ref {
+class object {
 public:
   /** Create a new, invalid object */
   really_inline object() noexcept;
 
-  class iterator : protected internal::tape_ref {
+  class iterator {
   public:
     /**
      * Get the actual key/value pair
@@ -70,7 +70,10 @@ public:
      */
     inline element value() const noexcept;
   private:
-    really_inline iterator(const document *doc, size_t json_index) noexcept;
+    really_inline iterator(const internal::tape_ref &tape) noexcept;
+
+    internal::tape_ref tape;
+
     friend class object;
   };
 
@@ -172,7 +175,10 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
 
 private:
-  really_inline object(const document *doc, size_t json_index) noexcept;
+  really_inline object(const internal::tape_ref &tape) noexcept;
+
+  internal::tape_ref tape;
+
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>

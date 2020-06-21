@@ -50,16 +50,16 @@ namespace dom {
 //
 // array inline implementation
 //
-really_inline array::array() noexcept : internal::tape_ref() {}
-really_inline array::array(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) {}
+really_inline array::array() noexcept : tape{} {}
+really_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
-  return iterator(doc, json_index + 1);
+  return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
 inline array::iterator array::end() const noexcept {
-  return iterator(doc, after_element() - 1);
+  return internal::tape_ref(tape.doc, tape.after_element() - 1);
 }
 inline size_t array::size() const noexcept {
-  return scope_count();
+  return tape.scope_count();
 }
 inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
@@ -83,7 +83,7 @@ inline simdjson_result<element> array::at(const std::string_view &json_pointer) 
   if (i == 0) { return INVALID_JSON_POINTER; } // "Empty string in JSON pointer array index"
 
   // Get the child
-  auto child = array(doc, json_index).at(array_index);
+  auto child = array(tape).at(array_index);
   // If there is a /, we're not done yet, call recursively.
   if (i < json_pointer.length()) {
     child = child.at(json_pointer.substr(i+1));
@@ -102,15 +102,15 @@ inline simdjson_result<element> array::at(size_t index) const noexcept {
 //
 // array::iterator inline implementation
 //
-really_inline array::iterator::iterator(const document *_doc, size_t _json_index) noexcept : internal::tape_ref(_doc, _json_index) { }
+really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline element array::iterator::operator*() const noexcept {
-  return element(doc, json_index);
+  return element(tape);
 }
 inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
-  return json_index != other.json_index;
+  return tape.json_index != other.tape.json_index;
 }
 inline array::iterator& array::iterator::operator++() noexcept {
-  json_index = after_element();
+  tape.json_index = tape.after_element();
   return *this;
 }
 
