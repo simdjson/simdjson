@@ -251,6 +251,5 @@ really_inline dom::document_stream::iterator simdjson_result<dom::document_strea
 }
 #endif // SIMDJSON_EXCEPTIONS
 
-
 } // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H

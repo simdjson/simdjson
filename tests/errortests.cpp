@@ -14,16 +14,8 @@
 using namespace simdjson;
 using namespace std;
 
-#ifndef SIMDJSON_BENCHMARK_DATA_DIR
-#define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
-#endif
-const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+#include "test_macros.h"
 
-#define TEST_START() { cout << "Running " << __func__ << " ..." << endl; }
-#define ASSERT_ERROR(ACTUAL, EXPECTED) if ((ACTUAL) != (EXPECTED)) { cerr << "FAIL: Unexpected error \"" << (ACTUAL) << "\" (expected \"" << (EXPECTED) << "\")" << endl; return false; }
-#define ASSERT_SUCCESS(CODE) do { simdjson::error_code error = CODE; if (error) { cerr << "FAIL: Unexpected error " << error << endl; return false; } } while (0);
-#define TEST_FAIL(MESSAGE) { cerr << "FAIL: " << (MESSAGE) << endl; return false; }
-#define TEST_SUCCEED() { return true; }
 namespace parser_load {
   const char * NONEXISTENT_FILE = "this_file_does_not_exist.json";
   bool parser_load_capacity() {
@@ -112,7 +104,9 @@ namespace parser_load {
   bool parser_load_many_nonexistent() {
     TEST_START();
     dom::parser parser;
-    for (auto doc : parser.load_many(NONEXISTENT_FILE)) {
+    dom::document_stream stream;
+    ASSERT_SUCCESS(parser.load_many(NONEXISTENT_FILE).get(stream));
+    for (auto doc : stream) {
       ASSERT_ERROR(doc.error(), IO_ERROR);
       TEST_SUCCEED();
     }
@@ -135,7 +129,9 @@ namespace parser_load {
   bool parser_load_many_chain() {
     TEST_START();
     dom::parser parser;
-    for (auto doc : parser.load_many(NONEXISTENT_FILE)) {
+    dom::document_stream stream;
+    ASSERT_SUCCESS( parser.load_many(NONEXISTENT_FILE).get(stream) );
+    for (auto doc : stream) {
       auto error = doc["foo"].get<uint64_t>().error();
       ASSERT_ERROR(error, IO_ERROR);
       TEST_SUCCEED();

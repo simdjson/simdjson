@@ -232,8 +232,8 @@ private:
 #endif // SIMDJSON_THREADS_ENABLED
 
   friend class dom::parser;
-  friend class simdjson_result<dom::document_stream>;
-  friend class internal::simdjson_result_base<dom::document_stream>;
+  friend struct simdjson_result<dom::document_stream>;
+  friend struct internal::simdjson_result_base<dom::document_stream>;
 
 }; // class document_stream
 
