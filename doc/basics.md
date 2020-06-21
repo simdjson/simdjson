@@ -188,6 +188,21 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
 
 Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string `"this string is not terminated` because of the missing final quote.
 
+
+UTF-8 validation (alone)
+----------------------
+
+The simdjson library has fast functions to validate UTF-8 strings. They are many times faster than most functions commonly found in libraries. You can use our fast functions, even if you do not care about JSON.
+
+```C++
+  const char * some_string = "[ 1, 2, 3, 4] ";
+  size_t length = strlen(some_string);
+  bool is_ok = simdjson::validate_utf8(some_string, length);
+```
+
+Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string `"this string is not terminated` because of the missing final quote.
+
+
 C++17 Support
 -------------
 

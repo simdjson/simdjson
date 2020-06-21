@@ -265,6 +265,13 @@ void minify() {
   }
 }
 
+bool is_correct() {
+  const char * some_string = "[ 1, 2, 3, 4] ";
+  size_t length = strlen(some_string);
+  bool is_ok = simdjson::validate_utf8(some_string, length);
+  return is_ok;
+}
+
 int main() {
   basics_dom_1();
   basics_dom_2();
