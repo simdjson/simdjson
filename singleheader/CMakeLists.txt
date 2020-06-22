@@ -84,7 +84,7 @@ else(BASH)
 endif(BASH)
 
 #
-# Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
+# Include this if you intend to #include "simdjson.h" in your own .cpp files.
 #
 add_library(simdjson-singleheader-include-source INTERFACE)
 target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
@@ -114,6 +114,7 @@ add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 add_library(simdjson-singleheader STATIC "")
+add_dependencies(simdjson-singleheader amalgamate_demo) # This should avoid races?
 target_link_libraries(simdjson-singleheader simdjson-singleheader-source simdjson-internal-flags)
 
 #
