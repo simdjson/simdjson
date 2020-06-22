@@ -3,7 +3,7 @@ namespace stage1 {
  * Validates that the string is actual UTF-8.
  */
 template<class checker>
-bool utf8_validate(const uint8_t * input, size_t length) {
+bool generic_validate_utf8(const uint8_t * input, size_t length) {
     checker c{};
     buf_block_reader<64> reader(input, length);
     while (reader.has_full_block()) {
@@ -19,8 +19,8 @@ bool utf8_validate(const uint8_t * input, size_t length) {
     return c.errors() == error_code::SUCCESS;
 }
 
-bool utf8_validate(const char * input, size_t length) {
-    return utf8_validate<utf8_checker>((const uint8_t *)input,length);
+bool generic_validate_utf8(const char * input, size_t length) {
+    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
 }
 
 } // namespace stage1

@@ -107,7 +107,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 }
 #include "generic/stage1/utf8_validator.h"
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  return simdjson::arm64::stage1::utf8_validate(buf,len);
+  return simdjson::arm64::stage1::generic_validate_utf8(buf,len);
 }
 } // namespace arm64
 } // namespace simdjson
