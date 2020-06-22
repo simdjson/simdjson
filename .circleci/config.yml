@@ -8,7 +8,7 @@ executors:
         environment:
           CXX: g++
           CC: gcc
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc8:
@@ -17,7 +17,7 @@ executors:
         environment:
           CXX: g++-8
           CC: gcc-8
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc9:
@@ -26,7 +26,7 @@ executors:
         environment:
           CXX: g++-9
           CC: gcc-9
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc10:
@@ -35,7 +35,7 @@ executors:
         environment:
           CXX: g++-10
           CC: gcc-10
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   clang10:
@@ -44,7 +44,7 @@ executors:
         environment:
           CXX: clang++-10
           CC: clang-10
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   clang9:
@@ -53,7 +53,7 @@ executors:
         environment:
           CXX: clang++-9
           CC: clang-9
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
   clang6:
@@ -62,7 +62,7 @@ executors:
         environment:
           CXX: clang++-6.0
           CC: clang-6.0
-          BUILD_FLAGS: -j
+          BUILD_FLAGS: -j -DVERBOSE=ON
           CTEST_FLAGS: -j4 --output-on-failure
 
 # Reusable test commands (and initializer for clang 6)
