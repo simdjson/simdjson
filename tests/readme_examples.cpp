@@ -272,6 +272,20 @@ bool is_correct() {
   return is_ok;
 }
 
+bool is_correct_string_view() {
+  const char * some_string = "[ 1, 2, 3, 4] ";
+  size_t length = strlen(some_string);
+  std::string_view v(some_string, length);
+  bool is_ok = simdjson::validate_utf8(v);
+  return is_ok;
+}
+
+bool is_correct_string() {
+  const std::string some_string = "[ 1, 2, 3, 4] ";
+  bool is_ok = simdjson::validate_utf8(some_string);
+  return is_ok;
+}
+
 int main() {
   basics_dom_1();
   basics_dom_2();

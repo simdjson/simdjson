@@ -200,7 +200,7 @@ The simdjson library has fast functions to validate UTF-8 strings. They are many
   bool is_ok = simdjson::validate_utf8(some_string, length);
 ```
 
-Though it does not validate the JSON input, it will detect when the document ends with an unterminated string. E.g., it would refuse to minify the string `"this string is not terminated` because of the missing final quote.
+The UTF-8 validation function merely checks that the input is valid UTF-8: it works with strings in general, not just JSON strings.
 
 
 C++17 Support
