@@ -84,10 +84,17 @@ else(BASH)
 endif(BASH)
 
 #
+# Do not depend on singleheader files directly: depend on this target instead.
+# Otherwise the custom command may get triggered multiple times and race with itself!
+#
+add_custom_target(singleheader-files DEPENDS ${SINGLEHEADER_FILES})
+
+#
 # Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
 #
 add_library(simdjson-singleheader-include-source INTERFACE)
 target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+add_dependencies(simdjson-singleheader-include-source singleheader-files)
 
 #
 # Include this to get "simdjson.cpp" included in your project as one of the sources.
@@ -113,8 +120,8 @@ add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-
-
+add_library(simdjson-singleheader STATIC "")
+target_link_libraries(simdjson-singleheader simdjson-singleheader-source simdjson-internal-flags)
 
 #
 # Test the existing simdjson.cpp/simdjson.h using the existing amalgamate_demo.cpp, using
