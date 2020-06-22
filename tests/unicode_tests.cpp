@@ -98,6 +98,7 @@ std::vector<uint8_t> RandomUTF8::generate(size_t output_bytes, long seed) {
   return generate(output_bytes);
 }
 
+// credit: based on code from Google Fuchsia (Apache Licensed)
 WARN_UNUSED bool basic_validate_utf8(const char *buf, size_t len) noexcept {
   const uint8_t *data = (const uint8_t *)buf;
   uint64_t pos = 0;
@@ -110,28 +111,18 @@ WARN_UNUSED bool basic_validate_utf8(const char *buf, size_t len) noexcept {
       continue;
     } else if ((byte & 0b11100000) == 0b11000000) {
       next_pos = pos + 2;
-      if (next_pos > len) {
-        return false;
-      }
+      if (next_pos > len) { return false; }
       if ((data[pos + 1] & 0b11000000) != 0b10000000) {
         return false;
       }
       // range check
       code_point = (byte & 0b00011111) << 6 | (data[pos + 1] & 0b00111111);
-      if (code_point < 0x80 || 0x7ff < code_point) {
-        return false;
-      }
+      if (code_point < 0x80 || 0x7ff < code_point) { return false; }
     } else if ((byte & 0b11110000) == 0b11100000) {
       next_pos = pos + 3;
-      if (next_pos > len) {
-        return false;
-      }
-      if ((data[pos + 1] & 0b11000000) != 0b10000000) {
-        return false;
-      }
-      if ((data[pos + 2] & 0b11000000) != 0b10000000) {
-        return false;
-      }
+      if (next_pos > len) { return false; }
+      if ((data[pos + 1] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 2] & 0b11000000) != 0b10000000) { return false; }
       // range check
       code_point = (byte & 0b00001111) << 12 |
                    (data[pos + 1] & 0b00111111) << 6 |
@@ -142,18 +133,10 @@ WARN_UNUSED bool basic_validate_utf8(const char *buf, size_t len) noexcept {
       }
     } else if ((byte & 0b11111000) == 0b11110000) { // 0b11110000
       next_pos = pos + 4;
-      if (next_pos > len) {
-        return false;
-      }
-      if ((data[pos + 1] & 0b11000000) != 0b10000000) {
-        return false;
-      }
-      if ((data[pos + 2] & 0b11000000) != 0b10000000) {
-        return false;
-      }
-      if ((data[pos + 3] & 0b11000000) != 0b10000000) {
-        return false;
-      }
+      if (next_pos > len) { return false; }
+      if ((data[pos + 1] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 2] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 3] & 0b11000000) != 0b10000000) { return false; }
       // range check
       code_point =
           (byte & 0b00000111) << 18 | (data[pos + 1] & 0b00111111) << 12 |
