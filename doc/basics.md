@@ -202,6 +202,8 @@ The simdjson library has fast functions to validate UTF-8 strings. They are many
 
 The UTF-8 validation function merely checks that the input is valid UTF-8: it works with strings in general, not just JSON strings.
 
+Your input string does not need any padding. Any string will do. The `validate_utf8` function does not do any memory allocation on the heap, and it does not throw exceptions.
+
 
 C++17 Support
 -------------
