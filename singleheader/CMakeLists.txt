@@ -7,6 +7,7 @@ set(SINGLEHEADER_FILES
   ${CMAKE_CURRENT_BINARY_DIR}/simdjson.h
   ${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/README.md
+  ${CMAKE_CURRENT_SOURCE_DIR}/done.txt
 )
 set(SINGLEHEADER_REPO_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp
@@ -25,7 +26,7 @@ if (BASH)
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh
+      ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.sh && touch ${CMAKE_CURRENT_SOURCE_DIR}/done.txt
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
@@ -82,20 +83,20 @@ else(BASH)
   endif()
 
 endif(BASH)
-
+add_custom_target(amalgamate_done DEPENDS ${SINGLEHEADER_FILES})
 #
 # Include this if you intend to #include "simdjson.cpp" in your own .cpp files.
 #
 add_library(simdjson-singleheader-include-source INTERFACE)
 target_include_directories(simdjson-singleheader-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
-
+add_dependencies(simdjson-singleheader-include-source amalgamate_done)
 #
 # Include this to get "simdjson.cpp" included in your project as one of the sources.
 #
 add_library(simdjson-singleheader-source INTERFACE)
 target_sources(simdjson-singleheader-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
 target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singleheader-include-source)
-
+add_dependencies(simdjson-singleheader-source amalgamate_done)
 #
 # We do not want CMake to update the original source files automatically "in passing" as
 # part of a test that generates the files anew. This kind of side-effect is  bad.
