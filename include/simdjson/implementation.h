@@ -17,7 +17,7 @@ namespace simdjson {
  * @param len the length of the string in bytes.
  * @return true if the string is valid UTF-8.
  */
-WARN_UNUSED bool validate_utf8(const char * buf, size_t length) noexcept;
+WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
 
 
 /**
@@ -33,7 +33,7 @@ really_inline WARN_UNUSED bool validate_utf8(const std::string_view& p) noexcept
 /**
  * Validate the UTF-8 string.
  *
- * @param p the string_view to validate.
+ * @param p the string to validate.
  * @return true if the string is valid UTF-8.
  */
 really_inline WARN_UNUSED bool validate_utf8(const std::string& p) noexcept {
