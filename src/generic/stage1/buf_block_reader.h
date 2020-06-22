@@ -24,8 +24,6 @@ private:
   size_t idx;
 };
 
-constexpr const int TITLE_SIZE = 12;
-
 // Routines to print masks and text for debugging bitmask operations
 UNUSED static char * format_input_text_64(const uint8_t *text) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
