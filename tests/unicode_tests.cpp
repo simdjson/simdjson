@@ -191,7 +191,6 @@ void test() {
                                  "\xc3\xb1",
                                  "\xe2\x82\xa1",
                                  "\xf0\x90\x8c\xbc",
-                                 "안녕하세요, 세상",
                                  "\xc2\x80",         // 6.7.2
                                  "\xf0\x90\x80\x80", // 6.7.4
                                  "\xee\x80\x80",     // 6.11.2
@@ -223,7 +222,7 @@ void test() {
       "\x80",
       "\x91\x85\x95\x9e",
       "\x6c\x02\x8e\x18"};
-  for (size_t i = 0; i < 9; i++) {
+  for (size_t i = 0; i < 8; i++) {
     size_t len = strlen(goodsequences[i]);
     if (!simdjson::validate_utf8(goodsequences[i], len)) {
       printf("bug goodsequences[%zu]\n", i);
