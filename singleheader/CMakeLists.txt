@@ -116,7 +116,7 @@ add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-add_library(simdjson-singleheader STATIC "")
+add_library(simdjson-singleheader STATIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/simdjson.cpp>)
 add_dependencies(simdjson-singleheader generated_single_header) # This should avoid races?
 target_link_libraries(simdjson-singleheader simdjson-singleheader-source simdjson-internal-flags)
 
