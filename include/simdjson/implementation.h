@@ -23,11 +23,11 @@ WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
 /**
  * Validate the UTF-8 string.
  *
- * @param p the string_view to validate.
+ * @param sv the string_view to validate.
  * @return true if the string is valid UTF-8.
  */
-really_inline WARN_UNUSED bool validate_utf8(const std::string_view p) noexcept {
-  return validate_utf8(p.data(), p.size());
+really_inline WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept {
+  return validate_utf8(sv.data(), sv.size());
 }
 
 /**
@@ -36,8 +36,8 @@ really_inline WARN_UNUSED bool validate_utf8(const std::string_view p) noexcept 
  * @param p the string to validate.
  * @return true if the string is valid UTF-8.
  */
-really_inline WARN_UNUSED bool validate_utf8(const std::string& p) noexcept {
-  return validate_utf8(p.data(), p.size());
+really_inline WARN_UNUSED bool validate_utf8(const std::string& s) noexcept {
+  return validate_utf8(s.data(), s.size());
 }
 
 namespace dom {
