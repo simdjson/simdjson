@@ -83,6 +83,8 @@ else(BASH)
 
 endif(BASH)
 
+
+add_custom_target(generated_single_header DEPENDS ${SINGLEHEADER_FILES})
 #
 # Include this if you intend to #include "simdjson.h" in your own .cpp files.
 #
@@ -109,12 +111,13 @@ target_link_libraries(simdjson-singleheader-source INTERFACE simdjson-singlehead
 #
 add_executable(amalgamate_demo $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate_demo.cpp>)
 target_link_libraries(amalgamate_demo simdjson-singleheader-include-source simdjson-internal-flags)
+add_dependencies(amalgamate_demo generated_single_header) # This should avoid races?
 add_test(amalgamate_demo amalgamate_demo ${EXAMPLE_JSON} ${EXAMPLE_NDJSON})
 
 install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 add_library(simdjson-singleheader STATIC "")
-add_dependencies(simdjson-singleheader amalgamate_demo) # This should avoid races?
+add_dependencies(simdjson-singleheader generated_single_header) # This should avoid races?
 target_link_libraries(simdjson-singleheader simdjson-singleheader-source simdjson-internal-flags)
 
 #
