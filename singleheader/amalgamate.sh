@@ -105,14 +105,6 @@ AMAL_C="${AMALGAMATE_OUTPUT_PATH}/simdjson.cpp"
 DEMOCPP="${AMALGAMATE_OUTPUT_PATH}/amalgamate_demo.cpp"
 README="$AMALGAMATE_OUTPUT_PATH/README.md"
 
-echo "Creating ${AMAL_H}..."
-echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_H}
-{
-    for h in ${ALLCHEADERS}; do
-        doinclude $h "ERROR $h not found"
-    done
-} >> ${AMAL_H}
-
 
 echo "Creating ${AMAL_C}..."
 echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
@@ -121,6 +113,14 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
         dofile $AMALGAMATE_SOURCE_PATH $file
     done
 } >> ${AMAL_C}
+
+echo "Creating ${AMAL_H}..."
+echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_H}
+{
+    for h in ${ALLCHEADERS}; do
+        doinclude $h "ERROR $h not found"
+    done
+} >> ${AMAL_H}
 
 
 echo "Creating ${DEMOCPP}..."
