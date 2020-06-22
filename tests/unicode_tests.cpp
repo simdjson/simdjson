@@ -185,8 +185,7 @@ void brute_force_tests() {
     }
     for (size_t flip = 0; flip < 1000; ++flip) {
       // we are going to hack the string as long as it is UTF-8
-      UTF8[rand() % UTF8.size()] ^= uint8_t(1)
-                                    << (rand() % 8); // we flip exactly one bit
+      UTF8[rand() % UTF8.size()] ^= uint8_t(1 << (rand() % 8)); // we flip exactly one bit
       bool is_ok =
           simdjson::validate_utf8((const char *)UTF8.data(), UTF8.size());
       bool is_ok_basic =
