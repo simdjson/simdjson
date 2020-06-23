@@ -16,14 +16,20 @@ include(GNUInstallDirs)
 include(simdjson-flags.cmake)
 include(simdjson-user-cmakecache.cmake)
 
+if(SIMDJSON_JUST_LIBRARY)
+  MESSAGE( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
+endif()
+
 #
 # Set up test data
 #
-enable_testing()
-add_subdirectory(jsonchecker)
-add_subdirectory(jsonexamples)
-add_library(test-data INTERFACE)
-target_link_libraries(test-data INTERFACE jsonchecker-data jsonexamples-data)
+if(NOT(SIMDJSON_JUST_LIBRARY))
+  enable_testing()
+  add_subdirectory(jsonchecker)
+  add_subdirectory(jsonexamples)
+  add_library(test-data INTERFACE)
+  target_link_libraries(test-data INTERFACE jsonchecker-data jsonexamples-data)
+endif()
 
 #
 # Create the top level simdjson library (must be done at this level to use both src/ and include/
@@ -32,17 +38,21 @@ target_link_libraries(test-data INTERFACE jsonchecker-data jsonexamples-data)
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
-add_subdirectory(tools)
-add_subdirectory(singleheader)
+if(NOT(SIMDJSON_JUST_LIBRARY))
+  add_subdirectory(tools)
+  add_subdirectory(singleheader)
+endif()
 
 #
 # Compile tools / tests / benchmarks
 #
-add_subdirectory(dependencies)
-add_subdirectory(tests)
-add_subdirectory(examples)
-add_subdirectory(benchmark)
-add_subdirectory(fuzz)
+if(NOT(SIMDJSON_JUST_LIBRARY))
+  add_subdirectory(dependencies)
+  add_subdirectory(tests)
+  add_subdirectory(examples)
+  add_subdirectory(benchmark)
+  add_subdirectory(fuzz)
+endif()
 
 #
 # Source files should be just ASCII

@@ -83,14 +83,13 @@ commands:
       - run: |
           cd build &&
           cmake $CMAKE_FLAGS -DCMAKE_INSTALL_PREFIX:PATH=destination .. &&
-          make $BUILD_FLAGS all &&
-          tools/json2json -h # Print out the implementation we're using on this hardware
+          make $BUILD_FLAGS all
 
   cmake_test:
     steps:
       - cmake_build
       - run: |
-          cd build &&
+          cd build && tools/json2json -h &&
           ctest $CTEST_FLAGS -L acceptance &&
           ctest $CTEST_FLAGS -LE acceptance -E checkperf
 
@@ -98,7 +97,7 @@ commands:
     steps:
       - cmake_build
       - run: |
-          cd build &&
+          cd build &&  tools/json2json -h &&
           ctest $CTEST_FLAGS -L acceptance -LE per_implementation &&
           SIMDJSON_FORCE_IMPLEMENTATION=haswell ctest $CTEST_FLAGS -L per_implementation &&
           SIMDJSON_FORCE_IMPLEMENTATION=westmere ctest $CTEST_FLAGS -L per_implementation &&SIMDJSON_FORCE_IMPLEMENTATION=fallback ctest $CTEST_FLAGS -L per_implementation &&
@@ -119,6 +118,11 @@ jobs:
     executor: gcc7
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
     steps: [ install_cmake, cmake_test, cmake_install_test ]
+  justlib-gcc10:
+    description: Build just the library, install it and do a basic test
+    executor: gcc10
+    environment: { CMAKE_FLAGS: -SIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
@@ -238,6 +242,9 @@ workflows:
       - arch-haswell-gcc10
       - arch-nehalem-gcc10
       - no-computed-goto-gcc10
+
+      # testing "just the library"
+      - justlib-gcc10
     
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
