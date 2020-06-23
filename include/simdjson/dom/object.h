@@ -190,7 +190,9 @@ private:
  */
 class key_value_pair {
 public:
+  /** key in the key-value pair **/
   std::string_view key;
+  /** value in the key-value pair **/
   element value;
 
 private:
