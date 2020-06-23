@@ -98,10 +98,11 @@ Using the Parsed JSON
 
 Once you have an element, you can navigate it with idiomatic C++ iterators, operators and casts.
 
-* **Extracting Values:** You can cast a JSON element to a native type: `double(element)` or
+* **Extracting Values (with exceptions):** You can cast a JSON element to a native type: `double(element)` or
   `double x = json_element`. This works for double, uint64_t, int64_t, bool,
-  dom::object and dom::array. An exception is thrown if the cast is not possible. You can also use is<*typename*>() to test if it is a
-  given type, or use the `type()` method: e.g., `element.type() == dom::element_type::DOUBLE`. Instead of casting, you can use get<*typename*>() to get the value: casts and get<*typename*>() can be used interchangeably. You can use a variant usage of get<*typename*>() with error codes to avoid exceptions: e.g.,  
+  dom::object and dom::array. An exception is thrown if the cast is not possible.
+* **Extracting Values (without expceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`,
+  `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
   ```c++
   simdjson::error_code error;
   simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")

@@ -90,7 +90,7 @@ public:
    *          Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE
    *          if it is negative.
    */
-  inline simdjson_result<int64_t> get_int64_t() const noexcept;
+  inline simdjson_result<int64_t> get_int64() const noexcept;
   /**
    * Cast this element to an unsigned integer.
    *
@@ -100,7 +100,7 @@ public:
    *          Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE
    *          if it is too large.
    */
-  inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
+  inline simdjson_result<uint64_t> get_uint64() const noexcept;
   /**
    * Cast this element to an double floating-point.
    *
@@ -143,13 +143,13 @@ public:
    *
    * Equivalent to is<int64_t>().
    */
-  inline bool is_int64_t() const noexcept;
+  inline bool is_int64() const noexcept;
   /**
    * Whether this element is a json number that fits in an unsigned 64-bit integer.
    *
    * Equivalent to is<uint64_t>().
    */
-  inline bool is_uint64_t() const noexcept;
+  inline bool is_uint64() const noexcept;
   /**
    * Whether this element is a json number that fits in a double.
    *
@@ -465,16 +465,16 @@ public:
   really_inline simdjson_result<dom::object> get_object() const noexcept;
   really_inline simdjson_result<const char *> get_c_str() const noexcept;
   really_inline simdjson_result<std::string_view> get_string() const noexcept;
-  really_inline simdjson_result<int64_t> get_int64_t() const noexcept;
-  really_inline simdjson_result<uint64_t> get_uint64_t() const noexcept;
+  really_inline simdjson_result<int64_t> get_int64() const noexcept;
+  really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
   really_inline simdjson_result<double> get_double() const noexcept;
   really_inline simdjson_result<bool> get_bool() const noexcept;
 
   really_inline bool is_array() const noexcept;
   really_inline bool is_object() const noexcept;
   really_inline bool is_string() const noexcept;
-  really_inline bool is_int64_t() const noexcept;
-  really_inline bool is_uint64_t() const noexcept;
+  really_inline bool is_int64() const noexcept;
+  really_inline bool is_uint64() const noexcept;
   really_inline bool is_double() const noexcept;
   really_inline bool is_bool() const noexcept;
   really_inline bool is_null() const noexcept;
