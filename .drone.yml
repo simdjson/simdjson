@@ -7,7 +7,8 @@ steps:
   environment:
     CC: gcc
     CXX: g++
-    BUILD_FLAGS: -- -j -DSIMDJSON_BUILD_STATIC=ON
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -33,6 +34,7 @@ steps:
     CC: clang-6.0
     CXX: clang++-6.0
     BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - mkdir build
@@ -96,6 +98,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -144,6 +147,7 @@ steps:
     CC: gcc
     CXX: g++
     BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
   commands:
     - apt-get update -qq
@@ -228,6 +232,7 @@ steps:
   image: gcc:8
   environment:
     BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CC: gcc
     CXX: g++
@@ -278,6 +283,7 @@ steps:
     CC: clang-9
     CXX: clang++-9
     BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
     CTEST_FLAGS: -j4 --output-on-failure -E checkperf
     CXXFLAGS: -stdlib=libc++
   commands:
