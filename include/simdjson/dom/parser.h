@@ -192,7 +192,7 @@ public:
    * If the parser's current capacity is less than batch_size, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
-   * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param path File name pointing at the concatenated JSON to parse. 
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
