@@ -51,7 +51,7 @@ Using simdjson as a CMake dependency
 ------------------
 
 You can include the  simdjson repository as a folder in your CMake project. In the parent
-`CMakeLists.txt` include the following lines:
+`CMakeLists.txt`, include the following lines:
 
 ```
 set(SIMDJSON_JUST_LIBRARY ON CACHE STRING "Build just the library, nothing else." FORCE)
