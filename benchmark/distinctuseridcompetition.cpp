@@ -40,17 +40,18 @@ void print_vec(const std::vector<int64_t> &v) {
 
 // simdjson_recurse below come be implemented like so but it is slow:
 /*void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
-  if (element.is<simdjson::dom::array>()) {
-    auto [array, array_error] = element.get<simdjson::dom::array>();
+  error_code error;
+  if (element.is_array()) {
+    dom::array array;
+    error = element.get(array);
     for (auto child : array) {
       if (child.is<simdjson::dom::array>() || child.is<simdjson::dom::object>()) {
         simdjson_recurse(v, child);
       }
     }
-  } else if (element.is<simdjson::dom::object>()) {
-    auto [object, error] = element.get<simdjson::dom::object>();
+  } else if (element.is_object()) {
     int64_t id;
-    error = object["user"]["id"].get(id);
+    error = element["user"]["id"].get(id);
     if(!error) {
       v.push_back(id);
     }
@@ -330,7 +331,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "warning: ignoring everything after " << argv[optind + 1]
               << std::endl;
   }
-  auto [p, error] = simdjson::padded_string::load(filename);
+  simdjson::padded_string p;
+  auto error = simdjson::padded_string::load(filename).get(p);
   if (error) {
     std::cerr << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
