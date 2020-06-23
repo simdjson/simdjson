@@ -10,6 +10,36 @@
 
 namespace simdjson {
 
+/**
+ * Validate the UTF-8 string.
+ *
+ * @param buf the string to validate.
+ * @param len the length of the string in bytes.
+ * @return true if the string is valid UTF-8.
+ */
+WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
+
+
+/**
+ * Validate the UTF-8 string.
+ *
+ * @param sv the string_view to validate.
+ * @return true if the string is valid UTF-8.
+ */
+really_inline WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept {
+  return validate_utf8(sv.data(), sv.size());
+}
+
+/**
+ * Validate the UTF-8 string.
+ *
+ * @param p the string to validate.
+ * @return true if the string is valid UTF-8.
+ */
+really_inline WARN_UNUSED bool validate_utf8(const std::string& s) noexcept {
+  return validate_utf8(s.data(), s.size());
+}
+
 namespace dom {
   class document;
 } // namespace dom
@@ -83,6 +113,18 @@ public:
    * @return the error code, or SUCCESS if there was no error.
    */
   WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
+  
+  
+  /**   
+   * Validate the UTF-8 string.
+   *
+   * Overridden by each implementation.
+   *
+   * @param buf the string to validate.
+   * @param len the length of the string in bytes.
+   * @return true if and only if the string is valid UTF-8.
+   */
+  WARN_UNUSED virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */

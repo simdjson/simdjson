@@ -18,6 +18,7 @@ public:
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final;
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
+  WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
 } // namespace arm64

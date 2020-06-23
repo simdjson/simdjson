@@ -1649,6 +1649,31 @@ namespace type_tests {
 }
 
 
+namespace validate_tests {
+  bool test_validate() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
+    if(!simdjson::validate_utf8(test.data(), test.size())) {
+      return false;
+    }
+    return true;
+  }
+
+  bool test_bad_validate() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string test = "\x80\x81";
+    if(simdjson::validate_utf8(test.data(), test.size())) {
+      return false;
+    }
+    return true;
+  }
+  bool run() {
+    return test_validate() &&
+           test_bad_validate();
+  }
+}
+
+
 
 namespace minify_tests {
 
@@ -1960,7 +1985,8 @@ int main(int argc, char *argv[]) {
     printf("unsupported CPU\n");
   }
   std::cout << "Running basic tests." << std::endl;
-  if (minify_tests::run() &&
+  if (validate_tests::run() &&
+      minify_tests::run() &&
       parse_api_tests::run() &&
       dom_api_tests::run() &&
       type_tests::run() &&
