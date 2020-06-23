@@ -1441,27 +1441,9 @@ namespace type_tests {
     std::cout << "  test_is_null() expecting " << expected_is_null << std::endl;
     // Grab the element out and check success
     dom::element element = result.first;
-    bool actual_is_null;
-    auto error = result.is_null().get(actual_is_null);
-    ASSERT_SUCCESS(error);
-    ASSERT_EQUAL(actual_is_null, expected_is_null);
+    ASSERT_EQUAL(result.is_null(), expected_is_null);
 
-    actual_is_null = element.is_null();
-    ASSERT_EQUAL(actual_is_null, expected_is_null);
-
-#if SIMDJSON_EXCEPTIONS
-
-    try {
-
-      actual_is_null = result.is_null();
-      ASSERT_EQUAL(actual_is_null, expected_is_null);
-
-    } catch(simdjson_error &e) {
-      std::cerr << e.error() << std::endl;
-      return false;
-    }
-
-#endif // SIMDJSON_EXCEPTIONS
+    ASSERT_EQUAL(element.is_null(), expected_is_null);
 
     return true;
   }
