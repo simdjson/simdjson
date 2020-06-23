@@ -80,11 +80,11 @@ really_inline bool simdjson_result<dom::element>::is_object() const noexcept {
 really_inline bool simdjson_result<dom::element>::is_string() const noexcept {
   return !error() && first.is_string();
 }
-really_inline bool simdjson_result<dom::element>::is_int64_t() const noexcept {
-  return !error() && first.is_int64_t();
+really_inline bool simdjson_result<dom::element>::is_int64() const noexcept {
+  return !error() && first.is_int64();
 }
-really_inline bool simdjson_result<dom::element>::is_uint64_t() const noexcept {
-  return !error() && first.is_uint64_t();
+really_inline bool simdjson_result<dom::element>::is_uint64() const noexcept {
+  return !error() && first.is_uint64();
 }
 really_inline bool simdjson_result<dom::element>::is_double() const noexcept {
   return !error() && first.is_double();

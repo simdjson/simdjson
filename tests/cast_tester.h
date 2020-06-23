@@ -251,8 +251,8 @@ template<> bool cast_tester<array>::named_is(simdjson_result<element> element) {
 template<> bool cast_tester<object>::named_is(simdjson_result<element> element) { return element.is_object(); }
 template<> bool cast_tester<const char *>::named_is(simdjson_result<element> element) { return element.is_string(); }
 template<> bool cast_tester<std::string_view>::named_is(simdjson_result<element> element) { return element.is_string(); }
-template<> bool cast_tester<uint64_t>::named_is(simdjson_result<element> element) { return element.is_uint64_t(); }
-template<> bool cast_tester<int64_t>::named_is(simdjson_result<element> element) { return element.is_int64_t(); }
+template<> bool cast_tester<uint64_t>::named_is(simdjson_result<element> element) { return element.is_uint64(); }
+template<> bool cast_tester<int64_t>::named_is(simdjson_result<element> element) { return element.is_int64(); }
 template<> bool cast_tester<double>::named_is(simdjson_result<element> element) { return element.is_double(); }
 template<> bool cast_tester<bool>::named_is(simdjson_result<element> element) { return element.is_bool(); }
 

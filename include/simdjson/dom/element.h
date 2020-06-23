@@ -473,8 +473,8 @@ public:
   really_inline bool is_array() const noexcept;
   really_inline bool is_object() const noexcept;
   really_inline bool is_string() const noexcept;
-  really_inline bool is_int64_t() const noexcept;
-  really_inline bool is_uint64_t() const noexcept;
+  really_inline bool is_int64() const noexcept;
+  really_inline bool is_uint64() const noexcept;
   really_inline bool is_double() const noexcept;
   really_inline bool is_bool() const noexcept;
   really_inline bool is_null() const noexcept;
