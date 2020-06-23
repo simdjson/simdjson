@@ -1,4 +1,5 @@
 option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" OFF)
+
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #

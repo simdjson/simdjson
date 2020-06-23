@@ -37,7 +37,7 @@ endfunction()
 # Most tests need test data, and many need windows headers.
 link_libraries(simdjson-internal-flags test-data simdjson-windows-headers)
 
-include(${PROJECT_SOURCE_DIR}/tests/add_cpp_test.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
 
 #
 # These tests explicitly do #include "simdjson.cpp" so they can override stuff
