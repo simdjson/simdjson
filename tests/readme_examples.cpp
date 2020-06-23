@@ -88,7 +88,7 @@ void basics_dom_4() {
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
-  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 }
 
@@ -141,9 +141,10 @@ namespace treewalk_1 {
 
 #ifdef SIMDJSON_CPLUSPLUS17
 void basics_cpp17_1() {
-  dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-  auto [object, error] = parser.parse(json).get<dom::object>();
+  dom::parser parser;
+  dom::object object;
+  auto error = parser.parse(json).get(object);
   if (error) { cerr << error << endl; return; }
   for (auto [key, value] : object) {
     cout << key << " = " << value << endl;
@@ -153,11 +154,10 @@ void basics_cpp17_1() {
 
 void basics_cpp17_2() {
   // C++ 11 version for comparison
-  dom::parser parser;
   padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-  simdjson::error_code error;
+  dom::parser parser;
   dom::object object;
-  error = parser.parse(json).get(object);
+  auto error = parser.parse(json).get(object);
   if (!error) { cerr << error << endl; return; }
   for (dom::key_value_pair field : object) {
     cout << field.key << " = " << field.value << endl;
@@ -216,26 +216,28 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_2() {
   dom::parser parser(1000*1000); // Never grow past documents > 1MB
-//   for (web_request request : listen()) {
-    auto [doc, error] = parser.parse("1"_padded/*request.body*/);
-//     // If the document was above our limit, emit 413 = payload too large
+  /* for (web_request request : listen()) */ {
+    dom::element doc;
+    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
+    // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
-//     // ...
-//   }
+    // ...
+  }
 }
 
 // The web_request part of this is aspirational, so we compile as much as we can here
 void performance_3() {
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
-  simdjson::error_code allocate_error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
-  if (allocate_error) { cerr << allocate_error << endl; exit(1); }
+  auto error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
+  if (error) { cerr << error << endl; exit(1); }
 
-  // for (web_request request : listen()) {
-    auto [doc, error] = parser.parse("1"_padded/*request.body*/);
+  /* for (web_request request : listen()) */ {
+    dom::element doc;
+    auto error = parser.parse("1"_padded/*request.body*/).get(doc);
     // If the document was above our limit, emit 413 = payload too large
     if (error == CAPACITY) { /* request.respond(413); continue; */ }
     // ...
-  // }
+  }
 }
 SIMDJSON_POP_DISABLE_WARNINGS
 #endif

@@ -164,7 +164,7 @@ And another one:
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
-  double v = parser.parse(abstract_json)["str"]["123"]["abc"].get<double>();
+  double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 ```
 
@@ -208,14 +208,13 @@ Your input string does not need any padding. Any string will do. The `validate_u
 C++17 Support
 -------------
 
-While the simdjson library can be used in any project using C++ 11 and above, it has special support
-for C++ 17. The APIs for field iteration and error handling in particular are designed to work
-nicely with C++17's destructuring syntax. For example:
+While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
 
 ```c++
-dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-auto [object, error] = parser.parse(json).get<dom::object>();
+dom::parser parser;
+dom::object object;
+auto error = parser.parse(json).get(object);
 if (error) { cerr << error << endl; return; }
 for (auto [key, value] : object) {
   cout << key << " = " << value << endl;
@@ -226,11 +225,10 @@ For comparison, here is the C++ 11 version of the same code:
 
 ```c++
 // C++ 11 version for comparison
-dom::parser parser;
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-simdjson::error_code error;
+dom::parser parser;
 dom::object object;
-error = parser.parse(json).get(object);
+auto error = parser.parse(json).get(object);
 if (!error) { cerr << error << endl; return; }
 for (dom::key_value_pair field : object) {
   cout << field.key << " = " << field.value << endl;
@@ -258,28 +256,17 @@ Error Handling
 --------------
 
 All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
-pair. The error codes and values can be accessed directly, reading the error like so:
+pair. You can retrieve the value with .get(), like so:
 
 ```c++
-auto [doc, error] = parser.parse(json); // doc is a dom::element
+dom::element doc;
+auto error = parser.parse(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
-// Use document here now that we've checked for the error
 ```
 
 When you use the code this way, it is your responsibility to check for error before using the
 result: if there is an error, the result value will not be valid and using it will caused undefined
 behavior.
-
-> Note: because of the way `auto [x, y]` works in C++, you have to define new variables each time you
-> use it. If your project treats aliased, this means you can't use the same names in `auto [x, error]`
-> without triggering warnings or error (and particularly can't use the word "error" every time). To
-> circumvent this, you can use this instead:
->
-> ```c++
-> dom::element doc;
-> auto error = parser.parse(json).get(doc); // <-- Assigns to doc and error just like "auto [doc, error]"
-> ```
-
 
 We can write a "quick start" example where we attempt to parse a file and access some data, without triggering exceptions:
 
@@ -288,11 +275,12 @@ We can write a "quick start" example where we attempt to parse a file and access
 
 int main(void) {
   simdjson::dom::parser parser;
+
   simdjson::dom::element tweets;
   auto error = parser.load("twitter.json").get(tweets);
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
-  simdjson::dom::element res;
 
+  simdjson::dom::element res;
   if ((error = tweets["search_metadata"]["count"].get(res))) {
     std::cerr << "could not access keys" << std::endl;
     return EXIT_FAILURE;
@@ -395,8 +383,7 @@ And another one:
   cout << "number: " << v << endl;
 ```
 
-Notice how we can string several operation (`parser.parse(abstract_json)["str"]["123"]["abc"].get<double>()`) and only check for the error once, a strategy we call  *error chaining*.
-
+Notice how we can string several operations (`parser.parse(abstract_json)["str"]["123"]["abc"].get(v)`) and only check for the error once, a strategy we call  *error chaining*.
 
 The next two functions will take as input a JSON document containing an array with a single element, either a string or a number. They return true upon success.
 

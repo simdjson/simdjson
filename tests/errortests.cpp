@@ -46,15 +46,16 @@ namespace parser_load {
     ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
     for (auto doc : docs) {
       count++;
-      auto [val, error] = doc.get<uint64_t>();
+      uint64_t val;
+      auto error = doc.get(val);
       if (count == 3) {
         ASSERT_ERROR(error, TAPE_ERROR);
       } else {
-        if (error) { TEST_FAIL(error); }
-        if (val != count) { cerr << "FAIL: expected " << count << ", got " << val << endl; return false; }
+        ASSERT_SUCCESS(error);
+        ASSERT_EQUAL(val, count);
       }
     }
-    if (count != 3) { cerr << "FAIL: expected 2 documents and 1 error, got " << count << " total things" << endl; return false; }
+    ASSERT_EQUAL(count, 3);
     TEST_SUCCEED();
   }
 
@@ -69,7 +70,7 @@ namespace parser_load {
       count++;
       ASSERT_ERROR(doc.error(), TAPE_ERROR);
     }
-    if (count != 1) { cerr << "FAIL: expected no documents and 1 error, got " << count << " total things" << endl; return false; }
+    ASSERT_EQUAL(count, 1);
     TEST_SUCCEED();
   }
 
@@ -82,36 +83,34 @@ namespace parser_load {
     ASSERT_SUCCESS(parser.parse_many(DOC).get(docs));
     for (auto doc : docs) {
       count++;
-      auto [val, error] = doc.get<uint64_t>();
+      uint64_t val;
+      auto error = doc.get(val);
       if (count == 3) {
         ASSERT_ERROR(error, TAPE_ERROR);
       } else {
-        if (error) { TEST_FAIL(error); }
-        if (val != count) { cerr << "FAIL: expected " << count << ", got " << val << endl; return false; }
+        ASSERT_SUCCESS(error);
+        ASSERT_EQUAL(val, count);
       }
     }
-    if (count != 3) { cerr << "FAIL: expected 2 documents and 1 error, got " << count << " total things" << endl; return false; }
+    ASSERT_EQUAL(count, 3);
     TEST_SUCCEED();
   }
 
   bool parser_load_nonexistent() {
     TEST_START();
     dom::parser parser;
-    auto error = parser.load(NONEXISTENT_FILE).error();
-    ASSERT_ERROR(error, IO_ERROR);
+    ASSERT_ERROR( parser.load(NONEXISTENT_FILE).error(), IO_ERROR );
     TEST_SUCCEED();
   }
   bool parser_load_many_nonexistent() {
     TEST_START();
     dom::parser parser;
-    dom::document_stream stream;
-    ASSERT_ERROR(parser.load_many(NONEXISTENT_FILE).get(stream), IO_ERROR);
+    ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).error(), IO_ERROR );
     TEST_SUCCEED();
   }
   bool padded_string_load_nonexistent() {
     TEST_START();
-    auto error = padded_string::load(NONEXISTENT_FILE).error();
-    ASSERT_ERROR(error, IO_ERROR);
+    ASSERT_ERROR(padded_string::load(NONEXISTENT_FILE).error(), IO_ERROR);
     TEST_SUCCEED();
   }
 
@@ -119,16 +118,17 @@ namespace parser_load {
     TEST_START();
     dom::parser parser;
     UNUSED uint64_t foo;
-    ASSERT_ERROR( parser.load(NONEXISTENT_FILE)["foo"].get(foo) , IO_ERROR);
+    ASSERT_ERROR( parser.load(NONEXISTENT_FILE)["foo"].get(foo), IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_chain() {
     TEST_START();
     dom::parser parser;
-    dom::document_stream stream;
-    ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).get(stream) , IO_ERROR );
+    UNUSED dom::document_stream stream;
+    ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).get(stream), IO_ERROR );
     TEST_SUCCEED();
   }
+
   bool run() {
     return true
         && parser_load_capacity()
