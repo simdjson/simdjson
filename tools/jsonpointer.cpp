@@ -20,16 +20,17 @@ int main(int argc, char *argv[]) {
 
   const char *filename = argv[1];
   simdjson::dom::parser parser;
-  auto [doc, error] = parser.load(filename);
+  simdjson::dom::element doc;
+  auto error = parser.load(filename).get(doc);
   if (error) { std::cerr << "Error parsing " << filename << ": " << error << std::endl; }
 
   std::cout << "[" << std::endl;
   for (int idx = 2; idx < argc; idx++) {
     const char *json_pointer = argv[idx];
-    auto [value, pointer_error] = doc[json_pointer];
+    simdjson::dom::element value;
     std::cout << "{\"jsonpath\": \"" << json_pointer << "\"";
-    if (pointer_error) {
-      std::cout << ",\"error\":\"" << pointer_error << "\"";
+    if ((error = doc[json_pointer].get(value))) {
+      std::cout << ",\"error\":\"" << error << "\"";
     } else {
       std::cout << ",\"value\":" << value;
     }

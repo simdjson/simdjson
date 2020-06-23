@@ -17,6 +17,8 @@
 #include "cast_tester.h"
 #include "test_macros.h"
 
+const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
+
 namespace number_tests {
 
   // ulp distance
@@ -39,8 +41,8 @@ namespace number_tests {
     for (int m = 10; m < 20; m++) {
       for (int i = -1024; i < 1024; i++) {
         auto str = std::to_string(i);
-        auto [actual, error] = parser.parse(str).get<int64_t>();
-        if (error) { std::cerr << error << std::endl; return false; }
+        int64_t actual;
+        ASSERT_SUCCESS(parser.parse(str).get(actual));
         if (actual != i) {
           std::cerr << "JSON '" << str << "' parsed to " << actual << " instead of " << i << std::endl;
           return false;
@@ -60,7 +62,8 @@ namespace number_tests {
       size_t n = snprintf(buf, sizeof(buf), "%.*e", std::numeric_limits<double>::max_digits10 - 1, expected);
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
-      auto [actual, error] = parser.parse(buf, n).get<double>();
+      double actual;
+      auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       uint64_t ulp = f64_ulp_dist(actual,expected);
       if(ulp > maxulp) maxulp = ulp;
@@ -154,7 +157,8 @@ namespace number_tests {
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
 
-      auto [actual, error] = parser.parse(buf, n).get<double>();
+      double actual;
+      auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       int ulp = (int) f64_ulp_dist(actual, expected);
@@ -174,17 +178,14 @@ namespace number_tests {
 }
 
 namespace document_tests {
-  int issue938() {
+  bool issue938() {
     std::vector<std::string> json_strings{"[true,false]", "[1,2,3,null]",
                                         R"({"yay":"json!"})"};
     simdjson::dom::parser parser1;
     for (simdjson::padded_string str : json_strings) {
-      auto [element, error] = parser1.parse(str);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element << std::endl;
-      }
+      simdjson::dom::element element;
+      ASSERT_SUCCESS( parser1.parse(str).get(element) );
+      std::cout << element << std::endl;
     }
     std::vector<std::string> file_paths{
       ADVERSARIAL_JSON,      FLATADVERSARIAL_JSON, DEMO_JSON,
@@ -192,23 +193,17 @@ namespace document_tests {
       TRUENULL_JSON};
     for (auto path : file_paths) {
       simdjson::dom::parser parser2;
+      simdjson::dom::element element;
       std::cout << "file: " << path << std::endl;
-      auto [element, error] = parser2.load(path);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element.type() << std::endl;
-      }
+      ASSERT_SUCCESS( parser2.load(path).get(element) );
+      std::cout << element.type() << std::endl;
     }
     simdjson::dom::parser parser3;
     for (auto path : file_paths) {
+      simdjson::dom::element element;
       std::cout << "file: " << path << std::endl;
-      auto [element, error] = parser3.load(path);
-      if(error) {
-        std::cerr << error << std::endl;
-      } else {
-        std::cout << element.type() << std::endl;
-      }    
+      ASSERT_SUCCESS( parser3.load(path).get(element) );
+      std::cout << element.type() << std::endl;
     }
     return true;
   }
@@ -218,52 +213,34 @@ namespace document_tests {
     std::cout << __func__ << std::endl;
     simdjson::padded_string badjson = "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"_padded;
     simdjson::dom::parser parser;
-    auto error = parser.parse(badjson).error();
-    if (!error) {
-      printf("This json should not be valid %s.\n", badjson.data());
-      return false;
-    }
+    ASSERT_ERROR( parser.parse(badjson), simdjson::TAPE_ERROR );
     return true;
   }
   bool count_array_example() {
     std::cout << __func__ << std::endl;
     simdjson::padded_string smalljson = "[1,2,3]"_padded;
     simdjson::dom::parser parser;
-    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::array>();
-    if (error) {
-      printf("This json should  be valid %s.\n", smalljson.data());
-      return false;
-    }
-    if(doc.size() != 3) {
-      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
-      return false;
-    }
+    simdjson::dom::array array;
+    ASSERT_SUCCESS( parser.parse(smalljson).get(array) );
+    ASSERT_EQUAL( array.size(), 3 );
     return true;
   }
   bool count_object_example() {
     std::cout << __func__ << std::endl;
     simdjson::padded_string smalljson = "{\"1\":1,\"2\":1,\"3\":1}"_padded;
     simdjson::dom::parser parser;
-    auto [doc, error] = parser.parse(smalljson).get<simdjson::dom::object>();
-    if (error) {
-      printf("This json should  be valid %s.\n", smalljson.data());
-      return false;
-    }
-    if(doc.size() != 3) {
-      printf("This json should  have size three but found %zu : %s.\n", doc.size(), smalljson.data());
-      return false;
-    }
+    simdjson::dom::object object;
+    ASSERT_SUCCESS( parser.parse(smalljson).get(object) );
+    ASSERT_EQUAL( object.size(), 3 );
     return true;
   }
   bool padded_with_open_bracket() {
     std::cout << __func__ << std::endl;
     simdjson::dom::parser parser;
     // This is an invalid document padded with open braces.
-    auto error1 = parser.parse("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error();
-    if (!error1) { std::cerr << "We expected an error but got: " << error1 << std::endl; return false; }
+    ASSERT_ERROR( parser.parse("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false), simdjson::TAPE_ERROR);
     // This is a valid document padded with open braces.
-    auto error2 = parser.parse("[][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false).error();
-    if (error2) { std::cerr << "Error: " << error2 << std::endl; return false; }
+    ASSERT_SUCCESS( parser.parse("[][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[", 2, false) );
     return true;
   }
   // returns true if successful
@@ -385,7 +362,9 @@ namespace document_tests {
 
 namespace document_stream_tests {
   static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
-    return parser.parse_many(str);
+    simdjson::dom::document_stream stream;
+    UNUSED auto error = parser.parse_many(str).get(stream);
+    return stream;
   }
   // this is a compilation test
   UNUSED static void parse_many_stream_assign() {
@@ -402,15 +381,13 @@ namespace document_stream_tests {
     }
     simdjson::dom::parser parser;
     const size_t window = 32; // deliberately small
-    auto stream = parser.parse_many(json,window);
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json,window).get(stream) );
     auto i = stream.begin();
     size_t count = 0;
     for(; i != stream.end(); ++i) {
       auto doc = *i;
-      if (doc.error()) {
-          std::cerr << doc.error() << std::endl;
-          return false;
-      }
+      ASSERT_SUCCESS(doc);
       if( i.current_index() != count) {
         std::cout << "index:" << i.current_index() << std::endl;
         std::cout << "expected index:" << count << std::endl;
@@ -426,7 +403,9 @@ namespace document_stream_tests {
     simdjson::dom::parser parser;
     size_t count = 0;
     size_t window_size = 10; // deliberately too small
-    for (auto doc : parser.parse_many(json, window_size)) {
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
+    for (auto doc : stream) {
       if (!doc.error()) {
           std::cerr << "Expected a capacity error " << doc.error() << std::endl;
           return false;
@@ -447,7 +426,9 @@ namespace document_stream_tests {
     simdjson::dom::parser parser;
     size_t count = 0;
     uint64_t window_size{17179869184}; // deliberately too big
-    for (auto doc : parser.parse_many(json, size_t(window_size))) {
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json, size_t(window_size)).get(stream) );
+    for (auto doc : stream) {
       if (!doc.error()) {
           std::cerr << "I expected a failure (too big) but got  " << doc.error() << std::endl;
           return false;
@@ -460,7 +441,9 @@ namespace document_stream_tests {
   static bool parse_json_message_issue467(simdjson::padded_string &json, size_t expectedcount) {
     simdjson::dom::parser parser;
     size_t count = 0;
-    for (auto doc : parser.parse_many(json)) {
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json).get(stream) );
+    for (auto doc : stream) {
       if (doc.error()) {
           std::cerr << "Failed with simdjson error= " << doc.error() << std::endl;
           return false;
@@ -510,22 +493,12 @@ namespace document_stream_tests {
       simdjson::padded_string str(data);
       simdjson::dom::parser parser;
       size_t count = 0;
-      for (auto [doc, error] : parser.parse_many(str, batch_size)) {
-        if (error) {
-          printf("Error at on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error));
-          return false;
-        }
-
-        auto [keyid, error2] = doc["id"].get<int64_t>();
-        if (error2) {
-          printf("Error getting id as int64 on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error2));
-          return false;
-        }
-
-        if (keyid != int64_t(count)) {
-          printf("key does not match %" PRId64 ", expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
-          return false;
-        }
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS( parser.parse_many(str, batch_size).get(stream) );
+      for (auto doc : stream) {
+        int64_t keyid;
+        ASSERT_SUCCESS( doc["id"].get(keyid) );
+        ASSERT_EQUAL( keyid, int64_t(count) );
 
         count++;
       }
@@ -560,29 +533,16 @@ namespace document_stream_tests {
       simdjson::padded_string str(data);
       simdjson::dom::parser parser;
       size_t count = 0;
-      for (auto [doc, error] : parser.parse_many(str, batch_size)) {
-        if (error) {
-          printf("Error at on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error));
-          return false;
-        }
-
-        auto [keyid, error2] = doc["id"].get<int64_t>();
-        if (error2) {
-          printf("Error getting id as int64 on document %zd at batch size %zu: %s\n", count, batch_size, simdjson::error_message(error2));
-          return false;
-        }
-
-        if (keyid != int64_t(count)) {
-          printf("key does not match %" PRId64 ", expected %zd on document %zd at batch size %zu\n", keyid, count, count, batch_size);
-          return false;
-        }
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS( parser.parse_many(str, batch_size).get(stream) );
+      for (auto doc : stream) {
+        int64_t keyid;
+        ASSERT_SUCCESS( doc["id"].get(keyid) );
+        ASSERT_EQUAL( keyid, int64_t(count) );
 
         count++;
       }
-      if(count != n_records) {
-        printf("Found wrong number of documents %zd, expected %zd at batch size %zu\n", count, n_records, batch_size);
-        return false;
-      }
+      ASSERT_EQUAL( count, n_records )
     }
     printf("ok\n");
     return true;
@@ -610,32 +570,52 @@ namespace parse_api_tests {
   bool parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.parse(BASIC_JSON);
-    if (error) { cerr << error << endl; return false; }
-    if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(BASIC_JSON).get(doc) );
+    ASSERT_EQUAL( doc.is<dom::array>(), true );
     return true;
   }
   bool parser_parse_many() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto [doc, error] : parser.parse_many(BASIC_NDJSON)) {
-      if (error) { cerr << "Error in parse_many: " << endl; return false; }
-      if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(BASIC_NDJSON).get(stream) );
+    for (auto doc : stream) {
+      UNUSED dom::array array;
+      ASSERT_SUCCESS( doc.get(array) );
       count++;
     }
-    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    ASSERT_EQUAL(count, 2);
     return true;
   }
+
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING
+  bool parser_parse_many_deprecated() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    int count = 0;
+    for (auto doc : parser.parse_many(BASIC_NDJSON)) {
+      UNUSED dom::array array;
+      ASSERT_SUCCESS( doc.get(array) );
+      count++;
+    }
+    ASSERT_EQUAL(count, 2);
+    return true;
+  }
+  SIMDJSON_POP_DISABLE_WARNINGS
   bool parser_parse_many_empty() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto doc : parser.parse_many(EMPTY_NDJSON)) {
-      if (doc.error()) { cerr << "Error in parse_many: " << doc.error() << endl; return false; }
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(EMPTY_NDJSON).get(stream) );
+    for (auto doc : stream) {
+      ASSERT_SUCCESS( doc );
       count++;
     }
-    if (count != 0) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
+    ASSERT_EQUAL(count, 0);
     return true;
   }
 
@@ -649,92 +629,106 @@ namespace parse_api_tests {
     memcpy(&empty_batches_ndjson[BATCH_SIZE*3+2], "1", 1);
     memcpy(&empty_batches_ndjson[BATCH_SIZE*10+4], "2", 1);
     memcpy(&empty_batches_ndjson[BATCH_SIZE*11+6], "3", 1);
-    for (auto [doc, error] : parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16)) {
-      if (error) { cerr << "Error in parse_many: " << error << endl; return false; }
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(empty_batches_ndjson, BATCH_SIZE*16).get(stream) );
+    for (auto doc : stream) {
       count++;
-      auto [val, val_error] = doc.get<uint64_t>();
-      if (val_error) { cerr << "Document is not an unsigned int: " << val_error << endl; return false; }
-      if (val != count) { cerr << "Expected document #" << count << " to equal " << count << ", but got " << val << " instead!" << endl; return false; }
+      uint64_t val;
+      ASSERT_SUCCESS( doc.get(val) );
+      ASSERT_EQUAL( val, count );
     }
-    if (count != 3) { cerr << "parse_many returned " << count << " documents, expected 0" << endl; return false; }
+    ASSERT_EQUAL(count, 3);
     return true;
   }
 
   bool parser_load() {
     std::cout << "Running " << __func__ << " on " << TWITTER_JSON << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.load(TWITTER_JSON);
-    if (error) { cerr << error << endl; return false; }
-    if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
+    dom::object object;
+    ASSERT_SUCCESS( parser.load(TWITTER_JSON).get(object) );
     return true;
   }
   bool parser_load_many() {
     std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
     dom::parser parser;
     int count = 0;
-    for (auto [doc, error] : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
-      if (error) { cerr << error << endl; return false; }
-
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.load_many(AMAZON_CELLPHONES_NDJSON).get(stream) );
+    for (auto doc : stream) {
       dom::array arr;
-      error = doc.get(arr); // let us get the array
-      if (error) { cerr << error << endl; return false; }
+      ASSERT_SUCCESS( doc.get(arr) ); // let us get the array
+      ASSERT_EQUAL( arr.size(), 9 );
 
-      if(arr.size() != 9) { cerr << "bad array size"<< endl; return false; }
-
-      size_t c = 0;
-      for(auto v : arr) { c++; (void)v; }
-      if(c != 9) { cerr << "mismatched array size"<< endl; return false; }
+      size_t arr_count = 0;
+      for (auto v : arr) { arr_count++; (void)v; }
+      ASSERT_EQUAL( arr_count, 9 );
 
       count++;
     }
-    if (count != 793) { cerr << "Expected 793 documents, but load_many loaded " << count << " documents." << endl; return false; }
+    ASSERT_EQUAL(count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT);
     return true;
   }
+
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING
+  bool parser_load_many_deprecated() {
+    std::cout << "Running " << __func__ << " on " << AMAZON_CELLPHONES_NDJSON << std::endl;
+    dom::parser parser;
+    int count = 0;
+    for (auto doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
+      dom::array arr;
+      ASSERT_SUCCESS( doc.get(arr) );
+      ASSERT_EQUAL( arr.size(), 9 );
+
+      size_t arr_count = 0;
+      for (auto v : arr) { arr_count++; (void)v; }
+      ASSERT_EQUAL( arr_count, 9 );
+
+      count++;
+    }
+    ASSERT_EQUAL( count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT );
+    return true;
+  }
+  SIMDJSON_POP_DISABLE_WARNINGS
 
 #if SIMDJSON_EXCEPTIONS
 
   bool parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(BASIC_JSON);
-    if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    UNUSED dom::array array = parser.parse(BASIC_JSON);
     return true;
   }
   bool parser_parse_many_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (const element doc : parser.parse_many(BASIC_NDJSON)) {
-      if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    for (UNUSED dom::array doc : parser.parse_many(BASIC_NDJSON)) {
       count++;
     }
-    if (count != 2) { cerr << "parse_many returned " << count << " documents, expected 2" << endl; return false; }
+    ASSERT_EQUAL(count, 2);
     return true;
   }
 
   bool parser_load_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    const element doc = parser.load(TWITTER_JSON);
-    if (!doc.is<dom::object>()) { cerr << "Document did not parse as an object" << endl; return false; }
-    size_t c = 0;
-    dom::object obj = doc.get<dom::object>().value(); // let us get the object
-    for (auto x : obj) {
-      c++;
-      (void) x;
+    size_t count = 0;
+    dom::object object = parser.load(TWITTER_JSON);
+    for (UNUSED auto field : object) {
+      count++;
     }
-    if(c != obj.size()) { cerr << "Mismatched size" << endl; return false; }
+    ASSERT_EQUAL( count, object.size() );
     return true;
   }
   bool parser_load_many_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (const element doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
-      if (!doc.is<dom::array>()) { cerr << "Document did not parse as an array" << endl; return false; }
+    for (UNUSED dom::array doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       count++;
     }
-    if (count != 793) { cerr << "Expected 1 document, but load_many loaded " << count << " documents." << endl; return false; }
+    ASSERT_EQUAL( count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT );
     return true;
   }
 #endif
@@ -742,10 +736,12 @@ namespace parse_api_tests {
   bool run() {
     return parser_parse() &&
            parser_parse_many() &&
+           parser_parse_many_deprecated() &&
            parser_parse_many_empty() &&
            parser_parse_many_empty_batches() &&
            parser_load() &&
            parser_load_many() &&
+           parser_load_many_deprecated() &&
 #if SIMDJSON_EXCEPTIONS
            parser_parse_exception() &&
            parser_parse_many_exception() &&
@@ -871,16 +867,17 @@ namespace dom_api_tests {
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
     const char* expected_key[] = { "a", "b", "c" };
     uint64_t expected_value[] = { 1, 2, 3 };
-    int i = 0;
 
     dom::parser parser;
-    auto [object, error] = parser.parse(json).get<dom::object>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    int i = 0;
     for (auto [key, value] : object) {
-      if (key != expected_key[i] || value.get<uint64_t>().first != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << value << endl; return false; }
+      ASSERT_EQUAL( key, expected_key[i] );
+      ASSERT_EQUAL( value.get<uint64_t>().first, expected_value[i] );
       i++;
     }
-    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
     return true;
   }
 
@@ -888,16 +885,18 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 1, 10, 100 ])");
     uint64_t expected_value[] = { 1, 10, 100 };
-    int i=0;
 
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+    int i=0;
     for (auto value : array) {
-      if (value.get<uint64_t>().first != expected_value[i]) { cerr << "Expected " << expected_value[i] << ", got " << value << endl; return false; }
+      uint64_t v;
+      ASSERT_SUCCESS( value.get(v) );
+      ASSERT_EQUAL( v, expected_value[i] );
       i++;
     }
-    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
     return true;
   }
 
@@ -907,13 +906,13 @@ namespace dom_api_tests {
     int i = 0;
 
     dom::parser parser;
-    auto [object, error] = parser.parse(json).get<dom::object>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    for (auto [key, value] : object) {
-      cout << "Unexpected " << key << " = " << value << endl;
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    for (UNUSED auto field : object) {
+      TEST_FAIL("Unexpected field");
       i++;
     }
-    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    ASSERT_EQUAL(i, 0);
     return true;
   }
 
@@ -923,13 +922,13 @@ namespace dom_api_tests {
     int i=0;
 
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    for (auto value : array) {
-      cout << "Unexpected value " << value << endl;
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+    for (UNUSED auto value : array) {
+      TEST_FAIL("Unexpected value");
       i++;
     }
-    if (i > 0) { cout << "Expected 0 values, got " << i << endl; return false; }
+    ASSERT_EQUAL(i, 0);
     return true;
   }
 
@@ -937,13 +936,18 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ "hi", "has backslash\\" ])");
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    auto val = array.begin();
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
 
-    if ((*val).get<std::string_view>().first != "hi") { cerr << "Expected value to be \"hi\", was " << (*val).get<std::string_view>().first << endl; return false; }
-    ++val;
-    if ((*val).get<std::string_view>().first != "has backslash\\") { cerr << "Expected string_view(\"has backslash\\\\\") to be \"has backslash\\\", was " << (*val).get<std::string_view>().first << endl; return false; }
+    auto iter = array.begin();
+    std::string_view val;
+    ASSERT_SUCCESS( (*iter).get(val) );
+    ASSERT_EQUAL( val, "hi" );
+
+    ++iter;
+    ASSERT_SUCCESS( (*iter).get(val) );
+    ASSERT_EQUAL( val, "has backslash\\" );
+
     return true;
   }
 
@@ -951,22 +955,22 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ 0, 1, -1, 1.1 ])");
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    auto val = array.begin();
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
 
-    if ((*val).get<uint64_t>().first != 0) { cerr << "Expected uint64_t(0) to be 0, was " << (*val) << endl; return false; }
-    if ((*val).get<int64_t>().first != 0) { cerr << "Expected int64_t(0) to be 0, was " << (*val).get<int64_t>().first << endl; return false; }
-    if ((*val).get<double>().first != 0) { cerr << "Expected double(0) to be 0, was " << (*val).get<double>().first << endl; return false; }
-    ++val;
-    if ((*val).get<uint64_t>().first != 1) { cerr << "Expected uint64_t(1) to be 1, was " << (*val) << endl; return false; }
-    if ((*val).get<int64_t>().first != 1) { cerr << "Expected int64_t(1) to be 1, was " << (*val).get<int64_t>().first << endl; return false; }
-    if ((*val).get<double>().first != 1) { cerr << "Expected double(1) to be 1, was " << (*val).get<double>().first << endl; return false; }
-    ++val;
-    if ((*val).get<int64_t>().first != -1) { cerr << "Expected int64_t(-1) to be -1, was " << (*val).get<int64_t>().first << endl; return false; }
-    if ((*val).get<double>().first != -1) { cerr << "Expected double(-1) to be -1, was " << (*val).get<double>().first << endl; return false; }
-    ++val;
-    if ((*val).get<double>().first != 1.1) { cerr << "Expected double(1.1) to be 1.1, was " << (*val).get<double>().first << endl; return false; }
+    auto iter = array.begin();
+    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 0 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, 0 );
+    ASSERT_EQUAL( (*iter).get<double>().first, 0 );
+    ++iter;
+    ASSERT_EQUAL( (*iter).get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, 1 );
+    ASSERT_EQUAL( (*iter).get<double>().first, 1 );
+    ++iter;
+    ASSERT_EQUAL( (*iter).get<int64_t>().first, -1 );
+    ASSERT_EQUAL( (*iter).get<double>().first, -1 );
+    ++iter;
+    ASSERT_EQUAL( (*iter).get<double>().first, 1.1 );
     return true;
   }
 
@@ -974,13 +978,13 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ true, false ])");
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    auto val = array.begin();
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
 
-    if ((*val).get<bool>().first != true) { cerr << "Expected bool(true) to be true, was " << (*val) << endl; return false; }
+    auto val = array.begin();
+    ASSERT_EQUAL( (*val).get<bool>().first, true );
     ++val;
-    if ((*val).get<bool>().first != false) { cerr << "Expected bool(false) to be false, was " << (*val) << endl; return false; }
+    ASSERT_EQUAL( (*val).get<bool>().first, false );
     return true;
   }
 
@@ -988,10 +992,11 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"([ null ])");
     dom::parser parser;
-    auto [array, error] = parser.parse(json).get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+
     auto val = array.begin();
-    if (!(*val).is_null()) { cerr << "Expected null to be null!" << endl; return false; }
+    ASSERT_EQUAL( !(*val).is_null(), 0 );
     return true;
   }
 
@@ -999,27 +1004,29 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c/d": 3})");
     dom::parser parser;
-    auto [doc, error] = parser.parse(json);
-    if (doc["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
-    if (doc["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
-    if (doc["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c/d\"]) to be 3, was " << doc["c"].first << endl; return false; }
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
+    ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    if (doc["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(doc[\"c/d\"]) to be 3, was " << doc["c"].first << endl; return false; }
-    if (doc["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(doc[\"b\"]) to be 2, was " << doc["b"].first << endl; return false; }
-    if (doc["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << doc["a"].first << endl; return false; }
+    ASSERT_EQUAL( object["c/d"].get<uint64_t>().first, 3 );
+    ASSERT_EQUAL( object["b"].get<uint64_t>().first, 2 );
+    ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
 
+    simdjson::error_code error;
     UNUSED element val;
 #ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
-    std::tie(val,error) = doc["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
-    std::tie(std::ignore,error) = doc["d"];
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    std::tie(val,error) = object["d"];
+    ASSERT_ERROR( error, NO_SUCH_FIELD );
+    std::tie(std::ignore,error) = object["d"];
+    ASSERT_ERROR( error, NO_SUCH_FIELD );
 #endif
-    // tie(val, error) = doc["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
-    doc["d"].tie(val, error);
-    if (error != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
-    if (doc["d"].get(val) != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
-    if (doc["d"].error() != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(doc[\"d\"]), got " << error << endl; return false; }
+    // tie(val, error) = object["d"]; fails with "no viable overloaded '='" on Apple clang version 11.0.0	    tie(val, error) = doc["d"];
+    object["d"].tie(val, error);
+    ASSERT_ERROR( error, NO_SUCH_FIELD );
+    ASSERT_ERROR( object["d"].get(val), NO_SUCH_FIELD );
+    ASSERT_ERROR( object["d"], NO_SUCH_FIELD );
     return true;
   }
 
@@ -1027,26 +1034,25 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "obj": { "a": 1, "b": 2, "c/d": 3 } })");
     dom::parser parser;
-    auto [doc, error] = parser.parse(json);
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    if (doc["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(json).get(doc) );
+    ASSERT_EQUAL( doc["obj"]["a"].get<uint64_t>().first, 1);
 
     object obj;
-    error = doc.get(obj); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    if (obj["obj"]["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(doc[\"obj\"][\"a\"]) to be 1, was " << doc["obj"]["a"].first << endl; return false; }
+    ASSERT_SUCCESS( doc.get(obj) );
+    ASSERT_EQUAL( obj["obj"]["a"].get<uint64_t>().first, 1);
 
-    error = obj["obj"].get(obj); //  tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0
-    if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
-    if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
-    if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
+    ASSERT_SUCCESS( obj["obj"].get(obj) );
+    ASSERT_EQUAL( obj["a"].get<uint64_t>().first, 1 );
+    ASSERT_EQUAL( obj["b"].get<uint64_t>().first, 2 );
+    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().first, 3 );
     // Check all three again in backwards order, to ensure we can go backwards
-    if (obj["c/d"].get<uint64_t>().first != 3) { cerr << "Expected uint64_t(obj[\"c\"]) to be 3, was " << obj["c"].first << endl; return false; }
-    if (obj["b"].get<uint64_t>().first != 2) { cerr << "Expected uint64_t(obj[\"b\"]) to be 2, was " << obj["b"].first << endl; return false; }
-    if (obj["a"].get<uint64_t>().first != 1) { cerr << "Expected uint64_t(obj[\"a\"]) to be 1, was " << obj["a"].first << endl; return false; }
+    ASSERT_EQUAL( obj["c/d"].get<uint64_t>().first, 3 );
+    ASSERT_EQUAL( obj["b"].get<uint64_t>().first, 2 );
+    ASSERT_EQUAL( obj["a"].get<uint64_t>().first, 1 );
 
     UNUSED element val;
-    if (doc["d"].get(val) != simdjson::NO_SUCH_FIELD) { cerr << "Expected NO_SUCH_FIELD error for uint64_t(obj[\"d\"]), got " << error << endl; return false; }
+    ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
     return true;
   }
 
@@ -1054,9 +1060,9 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
     dom::parser parser;
-    auto [result_count, error] = parser.load(TWITTER_JSON)["search_metadata"]["count"].get<uint64_t>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
-    if (result_count != 100) { cerr << "Expected twitter.json[metadata_count][count] = 100, got " << result_count << endl; return false; }
+    uint64_t result_count;
+    ASSERT_SUCCESS( parser.load(TWITTER_JSON)["search_metadata"]["count"].get(result_count) );
+    ASSERT_EQUAL( result_count, 100 );
     return true;
   }
 
@@ -1065,23 +1071,20 @@ namespace dom_api_tests {
     // Print users with a default profile.
     set<string_view> default_users;
     dom::parser parser;
-    auto [tweets, error] = parser.load(TWITTER_JSON)["statuses"].get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
+    dom::array tweets;
+    ASSERT_SUCCESS( parser.load(TWITTER_JSON)["statuses"].get(tweets) );
     for (auto tweet : tweets) {
       object user;
-      error = tweet["user"].get(user); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-      if (error) { cerr << "Error: " << error << endl; return false; }
+      ASSERT_SUCCESS( tweet["user"].get(user) );
       bool default_profile;
-      error = user["default_profile"].get(default_profile); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-      if (error) { cerr << "Error: " << error << endl; return false; }
+      ASSERT_SUCCESS( user["default_profile"].get(default_profile) );
       if (default_profile) {
         std::string_view screen_name;
-        error = user["screen_name"].get(screen_name); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-        if (error) { cerr << "Error: " << error << endl; return false; }
+        ASSERT_SUCCESS( user["screen_name"].get(screen_name) );
         default_users.insert(screen_name);
       }
     }
-    if (default_users.size() != 86) { cerr << "Expected twitter.json[statuses][user] to contain 86 default_profile users, got " << default_users.size() << endl; return false; }
+    ASSERT_EQUAL( default_users.size(), 86 );
     return true;
   }
 
@@ -1089,28 +1092,26 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
+    simdjson::error_code error;
     dom::parser parser;
-    auto [tweets, error] = parser.load(TWITTER_JSON)["statuses"].get<dom::array>();
-    if (error) { cerr << "Error: " << error << endl; return false; }
+    dom::array tweets;
+    ASSERT_SUCCESS( parser.load(TWITTER_JSON)["statuses"].get(tweets) );
     for (auto tweet : tweets) {
-      auto [media, not_found] = tweet["entities"]["media"].get<dom::array>();
-      if (!not_found) {
+      dom::array media;
+      if (not (error = tweet["entities"]["media"].get(media))) {
         for (auto image : media) {
           object sizes;
-          error = image["sizes"].get(sizes); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-          if (error) { cerr << "Error: " << error << endl; return false; }
+          ASSERT_SUCCESS( image["sizes"].get(sizes) );
           for (auto size : sizes) {
             uint64_t width, height;
-            error = size.value["w"].get(width); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-            if (error) { cerr << "Error: " << error << endl; return false; }
-            error = size.value["h"].get(height); // tie(...) = fails with "no viable overloaded '='" on Apple clang version 11.0.0;
-            if (error) { cerr << "Error: " << error << endl; return false; }
+            ASSERT_SUCCESS( size.value["w"].get(width) );
+            ASSERT_SUCCESS( size.value["h"].get(height) );
             image_sizes.insert(make_pair(width, height));
           }
         }
       }
     }
-    if (image_sizes.size() != 15) { cerr << "Expected twitter.json[statuses][entities][media][sizes] to contain 15 different sizes, got " << image_sizes.size() << endl; return false; }
+    ASSERT_EQUAL( image_sizes.size(), 15 );
     return true;
   }
 
@@ -1124,12 +1125,12 @@ namespace dom_api_tests {
     int i = 0;
 
     dom::parser parser;
-    element doc = parser.parse(json);
-    for (auto [key, value] : doc.get<dom::object>()) {
-      if (key != expected_key[i] || uint64_t(value) != expected_value[i]) { cerr << "Expected " << expected_key[i] << " = " << expected_value[i] << ", got " << key << "=" << uint64_t(value) << endl; return false; }
+    for (auto [key, value] : dom::object(parser.parse(json))) {
+      ASSERT_EQUAL( key, expected_key[i]);
+      ASSERT_EQUAL( uint64_t(value), expected_value[i] );
       i++;
     }
-    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
     return true;
   }
 
@@ -1140,69 +1141,61 @@ namespace dom_api_tests {
     int i=0;
 
     dom::parser parser;
-    element doc = parser.parse(json);
-    for (uint64_t value : doc.get<dom::array>()) {
-      if (value != expected_value[i]) { cerr << "Expected " << expected_value[i] << ", got " << value << endl; return false; }
+    for (uint64_t value : parser.parse(json)) {
+      ASSERT_EQUAL( value, expected_value[i] );
       i++;
     }
-    if (i*sizeof(uint64_t) != sizeof(expected_value)) { cout << "Expected " << sizeof(expected_value) << " values, got " << i << endl; return false; }
+    ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
     return true;
   }
 
   bool string_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ "hi", "has backslash\\" ])");
     dom::parser parser;
-    auto val = parser.parse(json).get<dom::array>().begin();
-
-    if (strcmp((const char*)*val, "hi")) { cerr << "Expected const char*(\"hi\") to be \"hi\", was " << (const char*)*val << endl; return false; }
-    if (string_view(*val) != "hi") { cerr << "Expected string_view(\"hi\") to be \"hi\", was " << string_view(*val) << endl; return false; }
-    ++val;
-    if (strcmp((const char*)*val, "has backslash\\")) { cerr << "Expected const char*(\"has backslash\\\\\") to be \"has backslash\\\", was " << (const char*)*val << endl; return false; }
-    if (string_view(*val) != "has backslash\\") { cerr << "Expected string_view(\"has backslash\\\\\") to be \"has backslash\\\", was " << string_view(*val) << endl; return false; }
+    ASSERT_EQUAL( (const char *)parser.parse(R"("hi")"_padded), "hi" );
+    ASSERT_EQUAL( string_view(parser.parse(R"("hi")"_padded)), "hi" );
+    ASSERT_EQUAL( (const char *)parser.parse(R"("has backslash\\")"_padded), "has backslash\\");
+    ASSERT_EQUAL( string_view(parser.parse(R"("has backslash\\")"_padded)), "has backslash\\" );
     return true;
   }
 
   bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ 0, 1, -1, 1.1 ])");
     dom::parser parser;
-    auto val = parser.parse(json).get<dom::array>().begin();
 
-    if (uint64_t(*val) != 0) { cerr << "Expected uint64_t(0) to be 0, was " << uint64_t(*val) << endl; return false; }
-    if (int64_t(*val) != 0) { cerr << "Expected int64_t(0) to be 0, was " << int64_t(*val) << endl; return false; }
-    if (double(*val) != 0) { cerr << "Expected double(0) to be 0, was " << double(*val) << endl; return false; }
-    ++val;
-    if (uint64_t(*val) != 1) { cerr << "Expected uint64_t(1) to be 1, was " << uint64_t(*val) << endl; return false; }
-    if (int64_t(*val) != 1) { cerr << "Expected int64_t(1) to be 1, was " << int64_t(*val) << endl; return false; }
-    if (double(*val) != 1) { cerr << "Expected double(1) to be 1, was " << double(*val) << endl; return false; }
-    ++val;
-    if (int64_t(*val) != -1) { cerr << "Expected int64_t(-1) to be -1, was " << int64_t(*val) << endl; return false; }
-    if (double(*val) != -1) { cerr << "Expected double(-1) to be -1, was " << double(*val) << endl; return false; }
-    ++val;
-    if (double(*val) != 1.1) { cerr << "Expected double(1.1) to be 1.1, was " << double(*val) << endl; return false; }
+    ASSERT_EQUAL( uint64_t(parser.parse("0"_padded)), 0);
+    ASSERT_EQUAL( int64_t(parser.parse("0"_padded)), 0);
+    ASSERT_EQUAL( double(parser.parse("0"_padded)), 0);
+
+    ASSERT_EQUAL( uint64_t(parser.parse("1"_padded)), 1);
+    ASSERT_EQUAL( int64_t(parser.parse("1"_padded)), 1);
+    ASSERT_EQUAL( double(parser.parse("1"_padded)), 1);
+
+    ASSERT_EQUAL( int64_t(parser.parse("-1"_padded)), -1);
+    ASSERT_EQUAL( double(parser.parse("-1"_padded)), -1);
+
+    ASSERT_EQUAL( double(parser.parse("1.1"_padded)), 1.1);
+
     return true;
   }
 
   bool boolean_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ true, false ])");
     dom::parser parser;
-    auto val = parser.parse(json).get<dom::array>().begin();
 
-    if (bool(*val) != true) { cerr << "Expected bool(true) to be true, was " << bool(*val) << endl; return false; }
-    ++val;
-    if (bool(*val) != false) { cerr << "Expected bool(false) to be false, was " << bool(*val) << endl; return false; }
+    ASSERT_EQUAL( bool(parser.parse("true"_padded)), true);
+
+    ASSERT_EQUAL( bool(parser.parse("false"_padded)), false);
+
     return true;
   }
 
   bool null_value_exception() {
     std::cout << "Running " << __func__ << std::endl;
-    string json(R"([ null ])");
     dom::parser parser;
-    auto val = parser.parse(json).get<dom::array>().begin();
 
-    if (!(*val).is_null()) { cerr << "Expected null to be null!" << endl; return false; }
+    ASSERT_EQUAL( bool(parser.parse("null"_padded).is_null()), true );
+
     return true;
   }
 
@@ -1210,8 +1203,10 @@ namespace dom_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3})");
     dom::parser parser;
-    element doc = parser.parse(json);
-    if (uint64_t(doc["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(doc["a"]) << endl; return false; }
+    auto obj = parser.parse(json);
+
+    ASSERT_EQUAL(uint64_t(obj["a"]), 1);
+
     return true;
   }
 
@@ -1220,7 +1215,9 @@ namespace dom_api_tests {
     string json(R"({ "obj": { "a": 1, "b": 2, "c": 3 } })");
     dom::parser parser;
     object obj = parser.parse(json)["obj"];
-    if (uint64_t(obj["a"]) != 1) { cerr << "Expected uint64_t(doc[\"a\"]) to be 1, was " << uint64_t(obj["a"]) << endl; return false; }
+
+    ASSERT_EQUAL( uint64_t(obj["a"]), 1);
+
     return true;
   }
 
@@ -1255,18 +1252,17 @@ namespace dom_api_tests {
     // Print image names and sizes
     set<pair<uint64_t, uint64_t>> image_sizes;
     dom::parser parser;
-    element doc = parser.load(TWITTER_JSON);
-    for (object tweet : doc["statuses"].get<dom::array>()) {
-      auto [media, not_found] = tweet["entities"]["media"];
-      if (!not_found) {
-        for (object image : media.get<dom::array>()) {
-          for (auto size : image["sizes"].get<dom::object>()) {
+    for (object tweet : parser.load(TWITTER_JSON)["statuses"]) {
+      auto media = tweet["entities"]["media"];
+      if (!media.error()) {
+        for (object image : media) {
+          for (auto size : object(image["sizes"])) {
             image_sizes.insert(make_pair(size.value["w"], size.value["h"]));
           }
         }
       }
     }
-    if (image_sizes.size() != 15) { cerr << "Expected twitter.json[statuses][entities][media][sizes] to contain 15 different sizes, got " << image_sizes.size() << endl; return false; }
+    ASSERT_EQUAL( image_sizes.size(), 15 );
     return true;
   }
 
@@ -1343,7 +1339,9 @@ namespace type_tests {
     // Grab the element out and check success
     dom::element element = result.first;
 
-    RUN_TEST( tester.test_get(element, expected ) );
+    RUN_TEST( tester.test_get_t(element, expected) );
+    RUN_TEST( tester.test_get_t(result, expected) );
+    RUN_TEST( tester.test_get(element, expected) );
     RUN_TEST( tester.test_get(result, expected) );
     // RUN_TEST( tester.test_named_get(element, expected) );
     // RUN_TEST( tester.test_named_get(result, expected) );
@@ -1366,6 +1364,8 @@ namespace type_tests {
     // Grab the element out and check success
     dom::element element = result.first;
 
+    RUN_TEST( tester.test_get_t(element) );
+    RUN_TEST( tester.test_get_t(result) );
     RUN_TEST( tester.test_get(element) );
     RUN_TEST( tester.test_get(result) );
     RUN_TEST( tester.test_named_get(element) );
@@ -1441,27 +1441,9 @@ namespace type_tests {
     std::cout << "  test_is_null() expecting " << expected_is_null << std::endl;
     // Grab the element out and check success
     dom::element element = result.first;
-    bool actual_is_null;
-    auto error = result.is_null().get(actual_is_null);
-    ASSERT_SUCCESS(error);
-    ASSERT_EQUAL(actual_is_null, expected_is_null);
+    ASSERT_EQUAL(result.is_null(), expected_is_null);
 
-    actual_is_null = element.is_null();
-    ASSERT_EQUAL(actual_is_null, expected_is_null);
-
-#if SIMDJSON_EXCEPTIONS
-
-    try {
-
-      actual_is_null = result.is_null();
-      ASSERT_EQUAL(actual_is_null, expected_is_null);
-
-    } catch(simdjson_error &e) {
-      std::cerr << e.error() << std::endl;
-      return false;
-    }
-
-#endif // SIMDJSON_EXCEPTIONS
+    ASSERT_EQUAL(element.is_null(), expected_is_null);
 
     return true;
   }
@@ -1684,21 +1666,10 @@ namespace minify_tests {
       return false;
     }
     size_t newlength{};
-    auto error = simdjson::minify(input, length, buffer.get(), newlength);
-    if(error != simdjson::SUCCESS) {
-      std::cerr << "error " << error << std::endl;
-      return false;
-    }
-    // memcmp
-    if(newlength != expected_length) {
-      std::cerr << "lengths do not match " << std::endl;
-      return false;
-    }
+    ASSERT_SUCCESS( simdjson::minify(input, length, buffer.get(), newlength) );
+    ASSERT_EQUAL( newlength, expected_length);
     for(size_t i = 0; i < newlength; i++) {
-      if(buffer.get()[i] != expected[i]) {
-        std::cerr << "Inputs do not match (but same length) " << std::endl;
-        return false;
-      }
+      ASSERT_EQUAL( buffer.get()[i], expected[i]);
     }
     return true;
   }
@@ -1748,8 +1719,8 @@ namespace format_tests {
   bool print_parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.parse(DOCUMENT);
-    if (error) { cerr << error << endl; return false; }
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT).get(doc) );
     ostringstream s;
     s << doc;
     return assert_minified(s);
@@ -1757,8 +1728,8 @@ namespace format_tests {
   bool print_minify_parser_parse() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [doc, error] = parser.parse(DOCUMENT);
-    if (error) { cerr << error << endl; return false; }
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT).get(doc) );
     ostringstream s;
     s << minify(doc);
     return assert_minified(s);
@@ -1767,8 +1738,8 @@ namespace format_tests {
   bool print_element() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["foo"];
-    if (error) { cerr << error << endl; return false; }
+    dom::element value;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["foo"].get(value) );
     ostringstream s;
     s << value;
     return assert_minified(s, "1");
@@ -1776,8 +1747,8 @@ namespace format_tests {
   bool print_minify_element() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["foo"];
-    if (error) { cerr << error << endl; return false; }
+    dom::element value;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["foo"].get(value) );
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "1");
@@ -1786,38 +1757,38 @@ namespace format_tests {
   bool print_array() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["bar"].get<dom::array>();
-    if (error) { cerr << error << endl; return false; }
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["bar"].get(array) );
     ostringstream s;
-    s << value;
+    s << array;
     return assert_minified(s, "[1,2,3]");
   }
   bool print_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["bar"].get<dom::array>();
-    if (error) { cerr << error << endl; return false; }
+    dom::array array;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["bar"].get(array) );
     ostringstream s;
-    s << minify(value);
+    s << minify(array);
     return assert_minified(s, "[1,2,3]");
   }
 
   bool print_object() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["baz"].get<dom::object>();
-    if (error) { cerr << error << endl; return false; }
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["baz"].get(object) );
     ostringstream s;
-    s << value;
+    s << object;
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
   bool print_minify_object() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    auto [value, error] = parser.parse(DOCUMENT)["baz"].get<dom::object>();
-    if (error) { cerr << error << endl; return false; }
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(DOCUMENT)["baz"].get(object) );
     ostringstream s;
-    s << minify(value);
+    s << minify(object);
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
 
@@ -1841,25 +1812,22 @@ namespace format_tests {
   bool print_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << doc["foo"];
+    s << parser.parse(DOCUMENT)["foo"];
     return assert_minified(s, "1");
   }
   bool print_minify_element_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << minify(doc["foo"]);
+    s << minify(parser.parse(DOCUMENT)["foo"]);
     return assert_minified(s, "1");
   }
 
   bool print_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
-    element value = doc["foo"];
+    element value = parser.parse(DOCUMENT)["foo"];
     ostringstream s;
     s << value;
     return assert_minified(s, "1");
@@ -1867,8 +1835,7 @@ namespace format_tests {
   bool print_minify_element_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
-    element value = doc["foo"];
+    element value = parser.parse(DOCUMENT)["foo"];
     ostringstream s;
     s << minify(value);
     return assert_minified(s, "1");
@@ -1877,66 +1844,64 @@ namespace format_tests {
   bool print_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << doc["bar"].get<dom::array>();
+    s << parser.parse(DOCUMENT)["bar"].get<dom::array>();
     return assert_minified(s, "[1,2,3]");
   }
   bool print_minify_array_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << minify(doc["bar"].get<dom::array>());
+    s << minify(parser.parse(DOCUMENT)["bar"].get<dom::array>());
     return assert_minified(s, "[1,2,3]");
   }
 
   bool print_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << doc["baz"].get<dom::object>();
+    s << parser.parse(DOCUMENT)["baz"].get<dom::object>();
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
   bool print_minify_object_result_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
     ostringstream s;
-    s << minify(doc["baz"].get<dom::object>());
+    s << minify(parser.parse(DOCUMENT)["baz"].get<dom::object>());
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
 
   bool print_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
+    dom::array array = parser.parse(DOCUMENT)["bar"];
     ostringstream s;
-    s << parser.parse(DOCUMENT)["bar"];
+    s << array;
     return assert_minified(s, "[1,2,3]");
   }
   bool print_minify_array_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
+    dom::array array = parser.parse(DOCUMENT)["bar"];
     ostringstream s;
-    s << minify(parser.parse(DOCUMENT)["bar"]);
+    s << minify(array);
     return assert_minified(s, "[1,2,3]");
   }
 
   bool print_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
+    dom::object object = parser.parse(DOCUMENT)["baz"];
     ostringstream s;
-    s << parser.parse(DOCUMENT)["baz"];
+    s << object;
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
   bool print_minify_object_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    element doc = parser.parse(DOCUMENT);
-    object value = doc["baz"];
+    dom::object object = parser.parse(DOCUMENT)["baz"];
     ostringstream s;
-    s << minify(value);
+    s << minify(object);
     return assert_minified(s, R"({"a":1,"b":2,"c":3})");
   }
 #endif // SIMDJSON_EXCEPTIONS

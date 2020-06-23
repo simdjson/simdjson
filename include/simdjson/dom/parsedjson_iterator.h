@@ -16,6 +16,7 @@
 
 namespace simdjson {
 
+/** @private **/
 class [[deprecated("Use the new DOM navigation API instead (see doc/basics.md)")]] dom::parser::Iterator {
 public:
   inline Iterator(const dom::parser &parser) noexcept(false);
@@ -104,11 +105,11 @@ public:
 
   inline bool is_string() const { return get_type() == '"'; }
 
-  // Returns true if the current type of node is an signed integer.
+  // Returns true if the current type of the node is an signed integer.
   // You can get its value with `get_integer()`.
   inline bool is_integer() const { return get_type() == 'l'; }
 
-  // Returns true if the current type of node is an unsigned integer.
+  // Returns true if the current type of the node is an unsigned integer.
   // You can get its value with `get_unsigned_integer()`.
   //
   // NOTE:
@@ -117,19 +118,19 @@ public:
   // positive integer, such as 1, 42, or 1000000, is as a signed node.
   // Be aware this function returns false for a signed node.
   inline bool is_unsigned_integer() const { return get_type() == 'u'; }
-
+  // Returns true if the current type of the node is a double floating-point number.
   inline bool is_double() const { return get_type() == 'd'; }
-
+  // Returns true if the current type of the node is a number (integer or floating-point).
   inline bool is_number() const {
       return is_integer() || is_unsigned_integer() || is_double();
   }
-
+  // Returns true if the current type of the node is a bool with true value.
   inline bool is_true() const { return get_type() == 't'; }
-
+  // Returns true if the current type of the node is a bool with false value.
   inline bool is_false() const { return get_type() == 'f'; }
-
+  // Returns true if the current type of the node is null.
   inline bool is_null() const { return get_type() == 'n'; }
-
+  // Returns true if the type byte represents an object of an array
   static bool is_object_or_array(uint8_t type) {
       return ((type == '[') || (type == '{'));
   }
@@ -243,15 +244,10 @@ public:
       ;
   }
 
-  // void to_end_scope();              // move us to
-  // the start of our current scope; always succeeds
+
 
   // print the node we are currently pointing at
   inline bool print(std::ostream &os, bool escape_strings = true) const;
-  typedef struct {
-      size_t start_of_scope;
-      uint8_t scope_type;
-  } scopeindex_t;
 
   private:
   const document &doc;
@@ -261,6 +257,11 @@ public:
   size_t tape_length{};
   uint8_t current_type{};
   uint64_t current_val{};
+  typedef struct {
+      size_t start_of_scope;
+      uint8_t scope_type;
+  } scopeindex_t;
+
   scopeindex_t *depth_index{};
 };
 

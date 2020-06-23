@@ -68,7 +68,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   dom::parser parser;
-   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])"_padded);
    *   a.at("0/foo/a/1") == 20
    *   a.at("0")["foo"]["a"].at(1) == 20
    *

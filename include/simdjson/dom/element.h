@@ -243,25 +243,6 @@ public:
   template<typename T>
   inline void tie(T &value, error_code &error) && noexcept;
 
-  /**
-   * Get the value as the provided type (T).
-   *
-   * Supported types:
-   * - Boolean: bool
-   * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
-   * - Array: dom::array
-   * - Object: dom::object
-   *
-   * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
-   *
-   * @param value The variable to set to the given type. value is undefined if there is an error.
-   *
-   * @returns true if the value was able to be set, false if there was an error.
-   */
-  template<typename T>
-  WARN_UNUSED inline bool tie(T &value) && noexcept;
-
 #if SIMDJSON_EXCEPTIONS
   /**
    * Read this element as a boolean.
@@ -355,8 +336,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -370,8 +351,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -383,7 +364,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   dom::parser parser;
-   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -410,8 +391,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -474,7 +455,7 @@ public:
 
   really_inline simdjson_result<dom::element_type> type() const noexcept;
   template<typename T>
-  really_inline simdjson_result<bool> is() const noexcept;
+  really_inline bool is() const noexcept;
   template<typename T>
   really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
@@ -489,14 +470,14 @@ public:
   really_inline simdjson_result<double> get_double() const noexcept;
   really_inline simdjson_result<bool> get_bool() const noexcept;
 
-  really_inline simdjson_result<bool> is_array() const noexcept;
-  really_inline simdjson_result<bool> is_object() const noexcept;
-  really_inline simdjson_result<bool> is_string() const noexcept;
-  really_inline simdjson_result<bool> is_int64() const noexcept;
-  really_inline simdjson_result<bool> is_uint64() const noexcept;
-  really_inline simdjson_result<bool> is_double() const noexcept;
-  really_inline simdjson_result<bool> is_bool() const noexcept;
-  really_inline simdjson_result<bool> is_null() const noexcept;
+  really_inline bool is_array() const noexcept;
+  really_inline bool is_object() const noexcept;
+  really_inline bool is_string() const noexcept;
+  really_inline bool is_int64_t() const noexcept;
+  really_inline bool is_uint64_t() const noexcept;
+  really_inline bool is_double() const noexcept;
+  really_inline bool is_bool() const noexcept;
+  really_inline bool is_null() const noexcept;
 
   really_inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
   really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
