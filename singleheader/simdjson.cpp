@@ -1,4 +1,4 @@
-/* auto-generated on Sun Jun 21 11:49:12 PDT 2020. Do not edit! */
+/* auto-generated on Tue Jun 23 09:15:19 PDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -371,6 +371,7 @@ public:
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final;
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
+  WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
 } // namespace haswell
@@ -402,6 +403,7 @@ public:
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final;
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
+  WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
 } // namespace westmere
@@ -433,6 +435,7 @@ public:
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final;
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
+  WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
 } // namespace arm64
@@ -468,6 +471,7 @@ public:
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final;
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
+  WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
 } // namespace fallback
@@ -500,7 +504,9 @@ public:
   WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
   }
-
+  WARN_UNUSED bool validate_utf8(const char * buf, size_t len) const noexcept final override {
+    return set_best()->validate_utf8(buf, len);
+  }
   really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
@@ -535,10 +541,19 @@ public:
   ) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final {
+  WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
   }
-
+  WARN_UNUSED bool validate_utf8(const char *, size_t) const noexcept final override {
+    return false; // Just refuse to validate. Given that we have a fallback implementation
+    // it seems unlikely that unsupported_implementation will ever be used. If it is used,
+    // then it will flag all strings as invalid. The alternative is to return an error_code
+    // from which the user has to figure out whether the string is valid UTF-8... which seems
+    // like a lot of work just to handle the very unlikely case that we have an unsupported
+    // implementation. And, when it does happen (that we have an unsupported implementation),
+    // what are the chances that the programmer has a fallback? Given that *we* provide the
+    // fallback, it implies that the programmer would need a fallback for our fallback.
+  }
   unsupported_implementation() : implementation("unsupported", "Unsupported CPU (no detected SIMD instructions)", 0) {}
 };
 
@@ -588,6 +603,9 @@ SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_imple
 
 WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
   return active_implementation->minify((const uint8_t *)buf, len, (uint8_t *)dst, dst_len);
+}
+WARN_UNUSED bool validate_utf8(const char *buf, size_t len) noexcept {
+  return active_implementation->validate_utf8(buf, len);
 }
 
 
@@ -3757,7 +3775,37 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
 }
+/* begin file src/generic/stage1/utf8_validator.h */
+namespace stage1 {
+/**
+ * Validates that the string is actual UTF-8.
+ */
+template<class checker>
+bool generic_validate_utf8(const uint8_t * input, size_t length) {
+    checker c{};
+    buf_block_reader<64> reader(input, length);
+    while (reader.has_full_block()) {
+      simd::simd8x64<uint8_t> in(reader.full_block());
+      c.check_next_input(in);
+      reader.advance();
+    }
+    uint8_t block[64]{};
+    reader.get_remainder(block);
+    simd::simd8x64<uint8_t> in(block);
+    c.check_next_input(in);
+    reader.advance();
+    return c.errors() == error_code::SUCCESS;
+}
 
+bool generic_validate_utf8(const char * input, size_t length) {
+    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+}
+
+} // namespace stage1
+/* end file src/generic/stage1/utf8_validator.h */
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  return simdjson::arm64::stage1::generic_validate_utf8(buf,len);
+}
 } // namespace arm64
 } // namespace simdjson
 
@@ -5796,6 +5844,70 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
   dst_len = pos; // we intentionally do not work with a reference
   // for fear of aliasing
   return SUCCESS;
+}
+
+// credit: based on code from Google Fuchsia (Apache Licensed)
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept { 
+  const uint8_t *data = (const uint8_t *)buf;
+  uint64_t pos = 0;
+  uint64_t next_pos = 0;
+  uint32_t code_point = 0;
+  while (pos < len) {
+    // check of the next 8 bytes are ascii.
+    next_pos = pos + 16;
+    if (next_pos <= len) { // if it is safe to read 8 more bytes, check that they are ascii
+      uint64_t v1;
+      memcpy(&v1, data + pos, sizeof(uint64_t));
+      uint64_t v2;
+      memcpy(&v2, data + pos + sizeof(uint64_t), sizeof(uint64_t));
+      uint64_t v{v1 | v2};
+      if ((v & 0x8080808080808080) == 0) {
+        pos = next_pos;
+        continue;
+      }
+    }
+    unsigned char byte = data[pos];
+    if (byte < 0b10000000) {
+      pos++;
+      continue;
+    } else if ((byte & 0b11100000) == 0b11000000) {
+      next_pos = pos + 2;
+      if (next_pos > len) { return false; }
+      if ((data[pos + 1] & 0b11000000) != 0b10000000) { return false; }
+      // range check
+      code_point = (byte & 0b00011111) << 6 | (data[pos + 1] & 0b00111111);
+      if (code_point < 0x80 || 0x7ff < code_point) { return false; }
+    } else if ((byte & 0b11110000) == 0b11100000) {
+      next_pos = pos + 3;
+      if (next_pos > len) { return false; }
+      if ((data[pos + 1] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 2] & 0b11000000) != 0b10000000) { return false; }
+      // range check
+      code_point = (byte & 0b00001111) << 12 |
+                   (data[pos + 1] & 0b00111111) << 6 |
+                   (data[pos + 2] & 0b00111111);
+      if (code_point < 0x800 || 0xffff < code_point ||
+          (0xd7ff < code_point && code_point < 0xe000)) {
+        return false;
+      }
+    } else if ((byte & 0b11111000) == 0b11110000) { // 0b11110000
+      next_pos = pos + 4;
+      if (next_pos > len) { return false; }
+      if ((data[pos + 1] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 2] & 0b11000000) != 0b10000000) { return false; }
+      if ((data[pos + 3] & 0b11000000) != 0b10000000) { return false; }
+      // range check
+      code_point =
+          (byte & 0b00000111) << 18 | (data[pos + 1] & 0b00111111) << 12 |
+          (data[pos + 2] & 0b00111111) << 6 | (data[pos + 3] & 0b00111111);
+      if (code_point < 0xffff || 0x10ffff < code_point) { return false; }
+    } else {
+      // we may have a continuation
+      return false;
+    }
+    pos = next_pos;
+  }
+  return true;
 }
 
 } // namespace fallback
@@ -9121,7 +9233,37 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   this->len = _len;
   return haswell::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
 }
+/* begin file src/generic/stage1/utf8_validator.h */
+namespace stage1 {
+/**
+ * Validates that the string is actual UTF-8.
+ */
+template<class checker>
+bool generic_validate_utf8(const uint8_t * input, size_t length) {
+    checker c{};
+    buf_block_reader<64> reader(input, length);
+    while (reader.has_full_block()) {
+      simd::simd8x64<uint8_t> in(reader.full_block());
+      c.check_next_input(in);
+      reader.advance();
+    }
+    uint8_t block[64]{};
+    reader.get_remainder(block);
+    simd::simd8x64<uint8_t> in(block);
+    c.check_next_input(in);
+    reader.advance();
+    return c.errors() == error_code::SUCCESS;
+}
 
+bool generic_validate_utf8(const char * input, size_t length) {
+    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+}
+
+} // namespace stage1
+/* end file src/generic/stage1/utf8_validator.h */
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  return simdjson::haswell::stage1::generic_validate_utf8(buf,len);
+}
 } // namespace haswell
 } // namespace simdjson
 UNTARGET_REGION
@@ -12368,7 +12510,37 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   this->len = _len;
   return westmere::stage1::json_structural_indexer::index<64>(_buf, _len, *this, streaming);
 }
+/* begin file src/generic/stage1/utf8_validator.h */
+namespace stage1 {
+/**
+ * Validates that the string is actual UTF-8.
+ */
+template<class checker>
+bool generic_validate_utf8(const uint8_t * input, size_t length) {
+    checker c{};
+    buf_block_reader<64> reader(input, length);
+    while (reader.has_full_block()) {
+      simd::simd8x64<uint8_t> in(reader.full_block());
+      c.check_next_input(in);
+      reader.advance();
+    }
+    uint8_t block[64]{};
+    reader.get_remainder(block);
+    simd::simd8x64<uint8_t> in(block);
+    c.check_next_input(in);
+    reader.advance();
+    return c.errors() == error_code::SUCCESS;
+}
 
+bool generic_validate_utf8(const char * input, size_t length) {
+    return generic_validate_utf8<utf8_checker>((const uint8_t *)input,length);
+}
+
+} // namespace stage1
+/* end file src/generic/stage1/utf8_validator.h */
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  return simdjson::westmere::stage1::generic_validate_utf8(buf,len);
+}
 } // namespace westmere
 } // namespace simdjson
 UNTARGET_REGION
