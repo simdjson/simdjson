@@ -229,8 +229,8 @@ template<> simdjson_result<array> cast_tester<array>::named_get(element element)
 template<> simdjson_result<object> cast_tester<object>::named_get(element element) { return element.get_object(); }
 template<> simdjson_result<const char *> cast_tester<const char *>::named_get(element element) { return element.get_c_str(); }
 template<> simdjson_result<std::string_view> cast_tester<std::string_view>::named_get(element element) { return element.get_string(); }
-template<> simdjson_result<uint64_t> cast_tester<uint64_t>::named_get(element element) { return element.get_uint64_t(); }
-template<> simdjson_result<int64_t> cast_tester<int64_t>::named_get(element element) { return element.get_int64_t(); }
+template<> simdjson_result<uint64_t> cast_tester<uint64_t>::named_get(element element) { return element.get_uint64(); }
+template<> simdjson_result<int64_t> cast_tester<int64_t>::named_get(element element) { return element.get_int64(); }
 template<> simdjson_result<double> cast_tester<double>::named_get(element element) { return element.get_double(); }
 template<> simdjson_result<bool> cast_tester<bool>::named_get(element element) { return element.get_bool(); }
 
@@ -238,8 +238,8 @@ template<> simdjson_result<array> cast_tester<array>::named_get(simdjson_result<
 template<> simdjson_result<object> cast_tester<object>::named_get(simdjson_result<element> element) { return element.get_object(); }
 template<> simdjson_result<const char *> cast_tester<const char *>::named_get(simdjson_result<element> element) { return element.get_c_str(); }
 template<> simdjson_result<std::string_view> cast_tester<std::string_view>::named_get(simdjson_result<element> element) { return element.get_string(); }
-template<> simdjson_result<uint64_t> cast_tester<uint64_t>::named_get(simdjson_result<element> element) { return element.get_uint64_t(); }
-template<> simdjson_result<int64_t> cast_tester<int64_t>::named_get(simdjson_result<element> element) { return element.get_int64_t(); }
+template<> simdjson_result<uint64_t> cast_tester<uint64_t>::named_get(simdjson_result<element> element) { return element.get_uint64(); }
+template<> simdjson_result<int64_t> cast_tester<int64_t>::named_get(simdjson_result<element> element) { return element.get_int64(); }
 template<> simdjson_result<double> cast_tester<double>::named_get(simdjson_result<element> element) { return element.get_double(); }
 template<> simdjson_result<bool> cast_tester<bool>::named_get(simdjson_result<element> element) { return element.get_bool(); }
 
@@ -247,8 +247,8 @@ template<> bool cast_tester<array>::named_is(element element) { return element.i
 template<> bool cast_tester<object>::named_is(element element) { return element.is_object(); }
 template<> bool cast_tester<const char *>::named_is(element element) { return element.is_string(); }
 template<> bool cast_tester<std::string_view>::named_is(element element) { return element.is_string(); }
-template<> bool cast_tester<uint64_t>::named_is(element element) { return element.is_uint64_t(); }
-template<> bool cast_tester<int64_t>::named_is(element element) { return element.is_int64_t(); }
+template<> bool cast_tester<uint64_t>::named_is(element element) { return element.is_uint64(); }
+template<> bool cast_tester<int64_t>::named_is(element element) { return element.is_int64(); }
 template<> bool cast_tester<double>::named_is(element element) { return element.is_double(); }
 template<> bool cast_tester<bool>::named_is(element element) { return element.is_bool(); }
 
@@ -256,8 +256,8 @@ template<> simdjson_result<bool> cast_tester<array>::named_is(simdjson_result<el
 template<> simdjson_result<bool> cast_tester<object>::named_is(simdjson_result<element> element) { return element.is_object(); }
 template<> simdjson_result<bool> cast_tester<const char *>::named_is(simdjson_result<element> element) { return element.is_string(); }
 template<> simdjson_result<bool> cast_tester<std::string_view>::named_is(simdjson_result<element> element) { return element.is_string(); }
-template<> simdjson_result<bool> cast_tester<uint64_t>::named_is(simdjson_result<element> element) { return element.is_uint64_t(); }
-template<> simdjson_result<bool> cast_tester<int64_t>::named_is(simdjson_result<element> element) { return element.is_int64_t(); }
+template<> simdjson_result<bool> cast_tester<uint64_t>::named_is(simdjson_result<element> element) { return element.is_uint64(); }
+template<> simdjson_result<bool> cast_tester<int64_t>::named_is(simdjson_result<element> element) { return element.is_int64(); }
 template<> simdjson_result<bool> cast_tester<double>::named_is(simdjson_result<element> element) { return element.is_double(); }
 template<> simdjson_result<bool> cast_tester<bool>::named_is(simdjson_result<element> element) { return element.is_bool(); }
 

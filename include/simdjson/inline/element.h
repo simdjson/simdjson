@@ -55,13 +55,13 @@ really_inline simdjson_result<std::string_view> simdjson_result<dom::element>::g
   if (error()) { return error(); }
   return first.get_string();
 }
-really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64_t() const noexcept {
+really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64() const noexcept {
   if (error()) { return error(); }
-  return first.get_int64_t();
+  return first.get_int64();
 }
-really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64_t() const noexcept {
+really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64() const noexcept {
   if (error()) { return error(); }
-  return first.get_uint64_t();
+  return first.get_uint64();
 }
 really_inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
   if (error()) { return error(); }
@@ -84,13 +84,13 @@ really_inline simdjson_result<bool> simdjson_result<dom::element>::is_string() c
   if (error()) { return error(); }
   return first.is_string();
 }
-really_inline simdjson_result<bool> simdjson_result<dom::element>::is_int64_t() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_int64() const noexcept {
   if (error()) { return error(); }
-  return first.is_int64_t();
+  return first.is_int64();
 }
-really_inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64_t() const noexcept {
+really_inline simdjson_result<bool> simdjson_result<dom::element>::is_uint64() const noexcept {
   if (error()) { return error(); }
-  return first.is_uint64_t();
+  return first.is_uint64();
 }
 really_inline simdjson_result<bool> simdjson_result<dom::element>::is_double() const noexcept {
   if (error()) { return error(); }
@@ -207,7 +207,7 @@ inline simdjson_result<std::string_view> element::get_string() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept {
+inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
   if(unlikely(!tape.is_uint64())) { // branch rarely taken
     if(tape.is_int64()) {
       int64_t result = tape.next_tape_value<int64_t>();
@@ -220,7 +220,7 @@ inline simdjson_result<uint64_t> element::get_uint64_t() const noexcept {
   }
   return tape.next_tape_value<int64_t>();
 }
-inline simdjson_result<int64_t> element::get_int64_t() const noexcept {
+inline simdjson_result<int64_t> element::get_int64() const noexcept {
   if(unlikely(!tape.is_int64())) { // branch rarely taken
     if(tape.is_uint64()) {
       uint64_t result = tape.next_tape_value<uint64_t>();
@@ -293,16 +293,16 @@ template<> inline simdjson_result<array> element::get<array>() const noexcept { 
 template<> inline simdjson_result<object> element::get<object>() const noexcept { return get_object(); }
 template<> inline simdjson_result<const char *> element::get<const char *>() const noexcept { return get_c_str(); }
 template<> inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept { return get_string(); }
-template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64_t(); }
-template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64_t(); }
+template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64(); }
+template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64(); }
 template<> inline simdjson_result<double> element::get<double>() const noexcept { return get_double(); }
 template<> inline simdjson_result<bool> element::get<bool>() const noexcept { return get_bool(); }
 
 inline bool element::is_array() const noexcept { return is<array>(); }
 inline bool element::is_object() const noexcept { return is<object>(); }
 inline bool element::is_string() const noexcept { return is<std::string_view>(); }
-inline bool element::is_int64_t() const noexcept { return is<int64_t>(); }
-inline bool element::is_uint64_t() const noexcept { return is<uint64_t>(); }
+inline bool element::is_int64() const noexcept { return is<int64_t>(); }
+inline bool element::is_uint64() const noexcept { return is<uint64_t>(); }
 inline bool element::is_double() const noexcept { return is<double>(); }
 inline bool element::is_bool() const noexcept { return is<bool>(); }
 
