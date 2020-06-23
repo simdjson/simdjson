@@ -116,7 +116,7 @@ jobs:
   gcc7:
     description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
     executor: gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ install_cmake, cmake_test, cmake_install_test ]
   justlib-gcc10:
     description: Build just the library, install it and do a basic test
@@ -126,23 +126,23 @@ jobs:
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test_all, cmake_install_test ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test, cmake_install_test ]
   clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake static build
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON  -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test, cmake_install_test ]
   # libcpp
   libcpp-clang10:
     description: Build and run tests on clang 10 and AVX 2 with a cmake static build and libc++
     executor: clang10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_USE_LIBCPP=ON  -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test, cmake_install_test ]
   # sanitize
   sanitize-gcc10:
@@ -155,7 +155,7 @@ jobs:
     executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_SANITIZE=ON, CTEST_FLAGS: -j4 --output-on-failure -E checkperf }
     steps: [ cmake_test ]
-  
+
   # dynamic
   dynamic-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake dynamic build
@@ -167,7 +167,7 @@ jobs:
     executor: clang10
     environment: { CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=OFF }
     steps: [ cmake_test, cmake_install_test ]
-  
+
   # unthreaded
   unthreaded-gcc10:
     description: Build and run tests on GCC 10 and AVX 2 *without* threads
@@ -222,10 +222,10 @@ workflows:
       #- gcc10 # this gets tested a lot below
       - clang6
       #- clang10 # this gets tested a lot below
-      
+
       # libc++
       - libcpp-clang10
-      
+
       # full single-implementation tests
       - sanitize-gcc10
       - sanitize-clang10
@@ -245,6 +245,5 @@ workflows:
 
       # testing "just the library"
       - justlib-gcc10
-    
-      # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
 
+      # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
