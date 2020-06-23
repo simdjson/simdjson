@@ -16,11 +16,11 @@ private:
 
   std::mt19937 gen;
   std::discrete_distribution<> bytes_count;
-  std::uniform_int_distribution<uint8_t> val_7bit{0x00, 0x7f}; // 0b0xxxxxxx
-  std::uniform_int_distribution<uint8_t> val_6bit{0x00, 0x3f}; // 0b10xxxxxx
-  std::uniform_int_distribution<uint8_t> val_5bit{0x00, 0x1f}; // 0b110xxxxx
-  std::uniform_int_distribution<uint8_t> val_4bit{0x00, 0x0f}; // 0b1110xxxx
-  std::uniform_int_distribution<uint8_t> val_3bit{0x00, 0x07}; // 0b11110xxx
+  std::uniform_int_distribution<int> val_7bit{0x00, 0x7f}; // 0b0xxxxxxx
+  std::uniform_int_distribution<int> val_6bit{0x00, 0x3f}; // 0b10xxxxxx
+  std::uniform_int_distribution<int> val_5bit{0x00, 0x1f}; // 0b110xxxxx
+  std::uniform_int_distribution<int> val_4bit{0x00, 0x0f}; // 0b1110xxxx
+  std::uniform_int_distribution<int> val_3bit{0x00, 0x07}; // 0b11110xxx
 };
 
 RandomUTF8::RandomUTF8(std::random_device &rd, int prob_1byte, int prob_2bytes,
@@ -35,56 +35,56 @@ std::vector<uint8_t> RandomUTF8::generate(size_t output_bytes) {
   while (result.size() < output_bytes) {
     switch (bytes_count(gen)) {
     case 0: // 1 byte
-      candidate = val_7bit(gen);
+      candidate = uint8_t(val_7bit(gen));
       while (candidate == 0) { // though strictly speaking, a stream of nulls is
                                // UTF8, it tends to break some code
-        candidate = val_7bit(gen);
+        candidate = uint8_t(val_7bit(gen));
       }
       result.push_back(candidate);
       break;
     case 1: // 2 bytes
-      candidate = 0xc0 | val_5bit(gen);
+      candidate = 0xc0 | uint8_t(val_5bit(gen));
       while (candidate < 0xC2) {
-        candidate = 0xc0 | val_5bit(gen);
+        candidate = 0xc0 | uint8_t(val_5bit(gen));
       }
       result.push_back(candidate);
-      result.push_back(0x80 | val_6bit(gen));
+      result.push_back(0x80 | uint8_t(val_6bit(gen)));
       break;
     case 2: // 3 bytes
-      head = 0xe0 | val_4bit(gen);
+      head = 0xe0 | uint8_t(val_4bit(gen));
       result.push_back(head);
-      candidate = 0x80 | val_6bit(gen);
+      candidate = 0x80 | uint8_t(val_6bit(gen));
       if (head == 0xE0) {
         while (candidate < 0xA0) {
-          candidate = 0x80 | val_6bit(gen);
+          candidate = 0x80 | uint8_t(val_6bit(gen));
         }
       } else if (head == 0xED) {
         while (candidate > 0x9F) {
-          candidate = 0x80 | val_6bit(gen);
+          candidate = 0x80 | uint8_t(val_6bit(gen));
         }
       }
       result.push_back(candidate);
-      result.push_back(0x80 | val_6bit(gen));
+      result.push_back(0x80 | uint8_t(val_6bit(gen)));
       break;
     case 3: // 4 bytes
-      head = 0xf0 | val_3bit(gen);
+      head = 0xf0 | uint8_t(val_3bit(gen));
       while (head > 0xF4) {
-        head = 0xf0 | val_3bit(gen);
+        head = 0xf0 | uint8_t(val_3bit(gen));
       }
       result.push_back(head);
-      candidate = 0x80 | val_6bit(gen);
+      candidate = 0x80 | uint8_t(val_6bit(gen));
       if (head == 0xF0) {
         while (candidate < 0x90) {
-          candidate = 0x80 | val_6bit(gen);
+          candidate = 0x80 | uint8_t(val_6bit(gen));
         }
       } else if (head == 0xF4) {
         while (candidate > 0x8F) {
-          candidate = 0x80 | val_6bit(gen);
+          candidate = 0x80 | uint8_t(val_6bit(gen));
         }
       }
       result.push_back(candidate);
-      result.push_back(0x80 | val_6bit(gen));
-      result.push_back(0x80 | val_6bit(gen));
+      result.push_back(0x80 | uint8_t(val_6bit(gen)));
+      result.push_back(0x80 | uint8_t(val_6bit(gen)));
       break;
     }
   }
