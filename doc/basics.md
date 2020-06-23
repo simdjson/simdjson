@@ -47,13 +47,8 @@ Note:
 - Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ myproject.cpp simdjson.cpp`).
 - Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`.
 
-
-
-
 Using simdjson as a CMake dependency
 ------------------
-
-
 
 You can include the  simdjson repository as a folder in your CMake project. In the parent
 `CMakeLists.txt` include the following lines:
@@ -67,7 +62,6 @@ Elsewhere in your project, you can  declare dependencies on simdjson with lines 
 
 ```
 add_executable(myprogram myprogram.cpp)
-
 target_link_libraries(myprogram simdjson)
 ```
 
