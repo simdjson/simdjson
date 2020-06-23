@@ -489,7 +489,8 @@ Here is a simple example, given "x.json" with this content:
 
 ```c++
 dom::parser parser;
-for (dom::element doc : parser.load_many(filename)) {
+dom::document_stream docs = parser.load_many(filename);
+for (dom::element doc : docs) {
   cout << doc["foo"] << endl;
 }
 // Prints 1 2 3
