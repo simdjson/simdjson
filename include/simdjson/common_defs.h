@@ -117,6 +117,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
     SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wnon-virtual-dtor) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wreturn-type) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
