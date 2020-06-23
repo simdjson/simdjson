@@ -26,6 +26,11 @@ public:
   bool test_get_error(element element, error_code expected_error);
   bool test_get_error(simdjson_result<element> element, error_code expected_error);
 
+  bool test_get_t(element element, T expected = {});
+  bool test_get_t(simdjson_result<element> element, T expected = {});
+  bool test_get_t_error(element element, error_code expected_error);
+  bool test_get_t_error(simdjson_result<element> element, error_code expected_error);
+
 #if SIMDJSON_EXCEPTIONS
   bool test_implicit_cast(element element, T expected = {});
   bool test_implicit_cast(simdjson_result<element> element, T expected = {});
@@ -57,68 +62,82 @@ private:
 template<typename T>
 bool cast_tester<T>::test_get(element element, T expected) {
   T actual;
-  error_code error;
-  error = element.get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(element.get(actual));
   return assert_equal(actual, expected);
 }
 
 template<typename T>
 bool cast_tester<T>::test_get(simdjson_result<element> element, T expected) {
   T actual;
-  error_code error;
-  error = element.get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(element.get(actual));
   return assert_equal(actual, expected);
 }
 
 template<typename T>
 bool cast_tester<T>::test_get_error(element element, error_code expected_error) {
   T actual;
-  error_code error;
-  error = element.get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(element.get(actual), expected_error);
   return true;
 }
 
 template<typename T>
 bool cast_tester<T>::test_get_error(simdjson_result<element> element, error_code expected_error) {
   T actual;
-  error_code error;
-  error = element.get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(element.get(actual), expected_error);
+  return true;
+}
+
+template<typename T>
+bool cast_tester<T>::test_get_t(element element, T expected) {
+  auto actual = element.get<T>();
+  ASSERT_SUCCESS(actual.error());
+  return assert_equal(actual.first, expected);
+}
+
+template<typename T>
+bool cast_tester<T>::test_get_t(simdjson_result<element> element, T expected) {
+  auto actual = element.get<T>();
+  ASSERT_SUCCESS(actual.error());
+  return assert_equal(actual.first, expected);
+}
+
+template<typename T>
+bool cast_tester<T>::test_get_t_error(element element, error_code expected_error) {
+  ASSERT_EQUAL(element.get<T>().error(), expected_error);
+  return true;
+}
+
+template<typename T>
+bool cast_tester<T>::test_get_t_error(simdjson_result<element> element, error_code expected_error) {
+  ASSERT_EQUAL(element.get<T>().error(), expected_error);
   return true;
 }
 
 template<typename T>
 bool cast_tester<T>::test_named_get(element element, T expected) {
   T actual;
-  auto error = named_get(element).get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(named_get(element).get(actual));
   return assert_equal(actual, expected);
 }
 
 template<typename T>
 bool cast_tester<T>::test_named_get(simdjson_result<element> element, T expected) {
   T actual;
-  auto error = named_get(element).get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(named_get(element).get(actual));
   return assert_equal(actual, expected);
 }
 
 template<typename T>
 bool cast_tester<T>::test_named_get_error(element element, error_code expected_error) {
   T actual;
-  auto error = named_get(element).get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(named_get(element).get(actual), expected_error);
   return true;
 }
 
 template<typename T>
 bool cast_tester<T>::test_named_get_error(simdjson_result<element> element, error_code expected_error) {
   T actual;
-  auto error = named_get(element).get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(named_get(element).get(actual), expected_error);
   return true;
 }
 
@@ -188,8 +207,7 @@ bool cast_tester<T>::test_is(element element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_is(simdjson_result<element> element, bool expected) {
   bool actual;
-  auto error = element.is<T>().get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(element.is<T>().get(actual));
   ASSERT_EQUAL(actual, expected);
   return true;
 }
@@ -197,8 +215,7 @@ bool cast_tester<T>::test_is(simdjson_result<element> element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_is_error(simdjson_result<element> element, error_code expected_error) {
   UNUSED bool actual;
-  auto error = element.is<T>().get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(element.is<T>().get(actual), expected_error);
   return true;
 }
 
@@ -211,8 +228,7 @@ bool cast_tester<T>::test_named_is(element element, bool expected) {
 template<typename T>
 bool cast_tester<T>::test_named_is(simdjson_result<element> element, bool expected) {
   bool actual;
-  auto error = named_is(element).get(actual);
-  ASSERT_SUCCESS(error);
+  ASSERT_SUCCESS(named_is(element).get(actual));
   ASSERT_EQUAL(actual, expected);
   return true;
 }
@@ -220,8 +236,7 @@ bool cast_tester<T>::test_named_is(simdjson_result<element> element, bool expect
 template<typename T>
 bool cast_tester<T>::test_named_is_error(simdjson_result<element> element, error_code expected_error) {
   bool actual;
-  auto error = named_is(element).get(actual);
-  ASSERT_EQUAL(error, expected_error);
+  ASSERT_EQUAL(named_is(element).get(actual), expected_error);
   return true;
 }
 
