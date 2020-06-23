@@ -5,8 +5,12 @@ An overview of what you need to know to use simdjson, with examples.
 
 * [Requirements](#requirements)
 * [Including simdjson](#including-simdjson)
+* [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
+* [C++17 Support](#c++17-support)
+* [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
+* [UTF-8 validation (alone)](#utf-8-validation-alone)
 * [JSON Pointer](#json-pointer)
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
@@ -43,6 +47,25 @@ Note:
 - Users on macOS and other platforms were default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ myproject.cpp simdjson.cpp`).
 - Visual Studio users should compile with the `_CRT_SECURE_NO_WARNINGS` flag to avoid warnings with respect to our use of standard C functions such as `fopen`.
 
+Using simdjson as a CMake dependency
+------------------
+
+You can include the  simdjson repository as a folder in your CMake project. In the parent
+`CMakeLists.txt` include the following lines:
+
+```
+set(SIMDJSON_JUST_LIBRARY ON CACHE STRING "Build just the library, nothing else." FORCE)
+add_subdirectory(simdjson EXCLUDE_FROM_ALL)
+```
+
+Elsewhere in your project, you can  declare dependencies on simdjson with lines such as these:
+
+```
+add_executable(myprogram myprogram.cpp)
+target_link_libraries(myprogram simdjson)
+```
+
+See [our CMake demonstration](https://github.com/simdjson/cmakedemo).
 
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
@@ -168,6 +191,36 @@ And another one:
   cout << "number: " << v << endl;
 ```
 
+C++17 Support
+-------------
+
+While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
+
+```c++
+padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+dom::parser parser;
+dom::object object;
+auto error = parser.parse(json).get(object);
+if (error) { cerr << error << endl; return; }
+for (auto [key, value] : object) {
+  cout << key << " = " << value << endl;
+}
+```
+
+For comparison, here is the C++ 11 version of the same code:
+
+```c++
+// C++ 11 version for comparison
+padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
+dom::parser parser;
+dom::object object;
+auto error = parser.parse(json).get(object);
+if (!error) { cerr << error << endl; return; }
+for (dom::key_value_pair field : object) {
+  cout << field.key << " = " << field.value << endl;
+}
+```
+
 Minifying JSON strings without parsing
 ----------------------
 
@@ -203,37 +256,6 @@ The simdjson library has fast functions to validate UTF-8 strings. They are many
 The UTF-8 validation function merely checks that the input is valid UTF-8: it works with strings in general, not just JSON strings.
 
 Your input string does not need any padding. Any string will do. The `validate_utf8` function does not do any memory allocation on the heap, and it does not throw exceptions.
-
-
-C++17 Support
--------------
-
-While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
-
-```c++
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-dom::parser parser;
-dom::object object;
-auto error = parser.parse(json).get(object);
-if (error) { cerr << error << endl; return; }
-for (auto [key, value] : object) {
-  cout << key << " = " << value << endl;
-}
-```
-
-For comparison, here is the C++ 11 version of the same code:
-
-```c++
-// C++ 11 version for comparison
-padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
-dom::parser parser;
-dom::object object;
-auto error = parser.parse(json).get(object);
-if (!error) { cerr << error << endl; return; }
-for (dom::key_value_pair field : object) {
-  cout << field.key << " = " << field.value << endl;
-}
-```
 
 JSON Pointer
 ------------
