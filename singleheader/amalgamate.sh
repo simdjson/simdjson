@@ -132,6 +132,7 @@ cat <<< '
 int main(int argc, char *argv[]) {
   if(argc < 2) {
     std::cerr << "Please specify at least one file name. " << std::endl;
+    return EXIT_FAILURE;
   }
   const char * filename = argv[1];
   simdjson::dom::parser parser;
