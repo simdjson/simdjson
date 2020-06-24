@@ -7,7 +7,7 @@
 
 # Clone the repository if it's not there
 find_package(Git QUIET)
-if (Git_FOUND)
+if (Git_FOUND AND (GIT_VERSION_STRING  VERSION_GREATER  "2.1.4")) # We use "-C" which requires a recent git
   # sync_git_repository(myrepo ...) creates two targets:
   # myrepo - if the repo does not exist, creates and syncs it against the origin branch
   # update_myrepo - will update the repo against the origin branch (and create if needed)
@@ -92,4 +92,4 @@ if (Git_FOUND)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
 
-endif (Git_FOUND)
+endif ()

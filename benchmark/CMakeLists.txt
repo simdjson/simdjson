@@ -14,13 +14,13 @@ target_compile_definitions(parse_nonumberparsing PRIVATE SIMDJSON_SKIPNUMBERPARS
 add_executable(parse_nostringparsing parse.cpp)
 target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARSING)
 
-if (SIMDJSON_GOOGLE_BENCHMARKS)
+if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
   add_executable(bench_parse_call bench_parse_call.cpp)
   add_executable(bench_dom_api bench_dom_api.cpp)
 endif()
 
-if (SIMDJSON_COMPETITION)
+if (TARGET competition-all)
   add_executable(distinctuseridcompetition distinctuseridcompetition.cpp)
   target_link_libraries(distinctuseridcompetition competition-core)
   add_executable(minifiercompetition minifiercompetition.cpp)
