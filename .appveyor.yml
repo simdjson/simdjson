@@ -20,6 +20,9 @@ environment:
       platform: Win32
       CMAKE_ARGS:  -A %Platform% -DSIMDJSON_BUILD_STATIC=OFF -DSIMDJSON_ENABLE_THREADS=ON # This should be the default. Testing anyway.
       CTEST_ARGS: -E checkperf
+    - job_name: MinGW
+      CMAKE_ARGS: -G "MinGW Makefiles"
+      CTEST_ARGS: -E checkperf
 
 build_script:
   - mkdir build
