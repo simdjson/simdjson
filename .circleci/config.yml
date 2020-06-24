@@ -124,7 +124,7 @@ jobs:
     environment: { CMAKE_FLAGS: -SIMDJSON_JUST_LIBRARY=ON }
     steps: [ cmake_build, cmake_install_test ]
   gcc10:
-    description: Build and run tests on GCC 10 and AVX 2 with a cmake static build
+    description: Build and run tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_test_all, cmake_install_test ]
@@ -219,7 +219,7 @@ workflows:
     jobs:
       # full multi-implementation tests
       - gcc7
-      #- gcc10 # this gets tested a lot below
+      - gcc10 # do not delete this as it tests our performance
       - clang6
       #- clang10 # this gets tested a lot below
 
