@@ -273,6 +273,29 @@ steps:
     - ASAN_OPTIONS="detect_leaks=0" ctest $CTEST_FLAGS -LE "acceptance|per_implementation" # Everything we haven't run yet, run now.
 ---
 kind: pipeline
+name: ninja-clang9
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: conanio/clang9
+  user: root
+  environment:
+    CC: clang-9
+    CXX: clang++-9
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -GNinja -DSIMDJSON_BUILD_STATIC=ON
+    CTEST_FLAGS: -j4 --output-on-failure
+    CXXFLAGS: -stdlib=libc++
+  commands:
+    - apt-get update -qq
+    - apt-get install -y cmake
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS
+---
+kind: pipeline
 name: libcpp-clang9
 platform: { os: linux, arch: amd64 }
 steps:
