@@ -3,6 +3,7 @@
 
 find_package(Git QUIET) # We want the library to build even if git is missing
 if (Git_FOUND)
+  message(STATUS "Git is available.")
   # Does NOT attempt to update or otherwise modify git submodules that are already initialized.
   function(initialize_submodule DIRECTORY)
     if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${DIRECTORY}/.git)
@@ -73,7 +74,9 @@ if (Git_FOUND)
   endif()
 
   initialize_submodule(cxxopts)
+  message(STATUS "We acquired cxxopts and we are adding it as a library and target.")
   add_library(cxxopts INTERFACE)
   target_include_directories(cxxopts INTERFACE cxxopts/include)
-
+else()
+  message(STATUS "Git is unavailable.")
 endif()

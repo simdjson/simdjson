@@ -8,6 +8,7 @@
 # Clone the repository if it's not there
 find_package(Git QUIET)
 if (Git_FOUND AND (GIT_VERSION_STRING  VERSION_GREATER  "2.1.4")) # We use "-C" which requires a recent git
+  message(STATUS "Git is available and it is recent. We are enabling checkperf targets.")
   # sync_git_repository(myrepo ...) creates two targets:
   # myrepo - if the repo does not exist, creates and syncs it against the origin branch
   # update_myrepo - will update the repo against the origin branch (and create if needed)
@@ -91,5 +92,6 @@ if (Git_FOUND AND (GIT_VERSION_STRING  VERSION_GREATER  "2.1.4")) # We use "-C" 
   set_property(TEST checkperf APPEND PROPERTY LABELS per_implementation)
   set_property(TEST checkperf APPEND PROPERTY DEPENDS parse perfdiff ${SIMDJSON_USER_CMAKECACHE})
   set_property(TEST checkperf PROPERTY RUN_SERIAL TRUE)
-
+else()
+  message(STATUS "Either git is unavailable or else it is too old. We are disabling checkperf targets.")
 endif ()
