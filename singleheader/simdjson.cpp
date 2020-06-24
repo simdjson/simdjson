@@ -1,4 +1,4 @@
-/* auto-generated on Tue Jun 23 09:15:19 PDT 2020. Do not edit! */
+/* auto-generated on Tue 23 Jun 2020 20:51:12 EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -2849,8 +2849,6 @@ private:
   const size_t lenminusstep;
   size_t idx;
 };
-
-constexpr const int TITLE_SIZE = 12;
 
 // Routines to print masks and text for debugging bitmask operations
 UNUSED static char * format_input_text_64(const uint8_t *text) {
@@ -8310,8 +8308,6 @@ private:
   size_t idx;
 };
 
-constexpr const int TITLE_SIZE = 12;
-
 // Routines to print masks and text for debugging bitmask operations
 UNUSED static char * format_input_text_64(const uint8_t *text) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
@@ -11586,8 +11582,6 @@ private:
   const size_t lenminusstep;
   size_t idx;
 };
-
-constexpr const int TITLE_SIZE = 12;
 
 // Routines to print masks and text for debugging bitmask operations
 UNUSED static char * format_input_text_64(const uint8_t *text) {

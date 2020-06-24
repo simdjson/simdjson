@@ -1,4 +1,4 @@
-/* auto-generated on Tue Jun 23 09:15:19 PDT 2020. Do not edit! */
+/* auto-generated on Tue 23 Jun 2020 20:51:12 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -389,6 +389,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
     SIMDJSON_DISABLE_GCC_WARNING(-Wextra) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wattributes) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wimplicit-fallthrough) \
+    SIMDJSON_DISABLE_GCC_WARNING(-Wnon-virtual-dtor) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wreturn-type) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wshadow) \
     SIMDJSON_DISABLE_GCC_WARNING(-Wunused-parameter) \
@@ -2017,7 +2018,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.3.1
+#define SIMDJSON_VERSION 0.4.0
 
 namespace simdjson {
 enum {
@@ -2028,11 +2029,11 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 3,
+  SIMDJSON_VERSION_MINOR = 4,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -2082,7 +2083,8 @@ enum error_code {
  * Get the error message for the given error code.
  *
  *   dom::parser parser;
- *   auto [doc, error] = parser.parse("foo");
+ *   dom::element doc;
+ *   auto error = parser.parse("foo").get(doc);
  *   if (error) { printf("Error: %s\n", error_message(error)); }
  *
  * @return The error message.
@@ -2335,7 +2337,7 @@ struct padded_string final {
   /**
    * Create a new padded string by copying the given input.
    *
-   * @param str_ the string to copy
+   * @param sv_ the string to copy
    */
   inline padded_string(std::string_view sv_) noexcept;
   /**
@@ -3095,7 +3097,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   dom::parser parser;
-   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])");
+   *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])"_padded);
    *   a.at("0/foo/a/1") == 20
    *   a.at("0")["foo"]["a"].at(1) == 20
    *
@@ -3434,9 +3436,13 @@ public:
    * the same interface, requiring you to check the error before using the document:
    *
    *   dom::parser parser;
-   *   for (auto [doc, error] : parser.load_many(path)) {
-   *     if (error) { cerr << error << endl; exit(1); }
-   *     cout << std::string(doc["title"]) << endl;
+   *   dom::document_stream docs;
+   *   auto error = parser.load_many(path).get(docs);
+   *   if (error) { cerr << error << endl; exit(1); }
+   *   for (auto doc : docs) {
+   *     std::string_view title;
+   *     if ((error = doc["title"].get(title)) { cerr << error << endl; exit(1); }
+   *     cout << title << endl;
    *   }
    *
    * ### Threads
@@ -3449,7 +3455,7 @@ public:
    * If the parser's current capacity is less than batch_size, it will allocate enough capacity
    * to handle it (up to max_capacity).
    *
-   * @param s The concatenated JSON to parse. Must have at least len + SIMDJSON_PADDING allocated bytes.
+   * @param path File name pointing at the concatenated JSON to parse. 
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
@@ -3494,9 +3500,13 @@ public:
    * the same interface, requiring you to check the error before using the document:
    *
    *   dom::parser parser;
-   *   for (auto [doc, error] : parser.parse_many(buf, len)) {
-   *     if (error) { cerr << error << endl; exit(1); }
-   *     cout << std::string(doc["title"]) << endl;
+   *   dom::document_stream docs;
+   *   auto error = parser.load_many(path).get(docs);
+   *   if (error) { cerr << error << endl; exit(1); }
+   *   for (auto doc : docs) {
+   *     std::string_view title;
+   *     if ((error = doc["title"].get(title)) { cerr << error << endl; exit(1); }
+   *     cout << title << endl;
    *   }
    *
    * ### REQUIRED: Buffer Padding
@@ -4120,7 +4130,6 @@ public:
    * - Object: dom::object
    *
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
-   * @returns true if the value can be cast to the given type, false if not.
    */
   template<typename T>
   really_inline bool is() const noexcept;
@@ -4273,8 +4282,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -4288,8 +4297,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -4301,7 +4310,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   dom::parser parser;
-   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
    *   doc.at("/foo/a/1") == 20
    *   doc.at("/")["foo"]["a"].at(1) == 20
    *   doc.at("")["foo"]["a"].at(1) == 20
@@ -4328,8 +4337,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
@@ -4557,8 +4566,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.
    *
@@ -4574,8 +4583,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.
    *
@@ -4589,7 +4598,7 @@ public:
    * Get the value associated with the given JSON pointer.
    *
    *   dom::parser parser;
-   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})");
+   *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
    *   obj.at("foo/a/1") == 20
    *   obj.at("foo")["a"].at(1) == 20
    *
@@ -4607,8 +4616,8 @@ public:
    * The key will be matched against **unescaped** JSON:
    *
    *   dom::parser parser;
-   *   parser.parse(R"({ "a\n": 1 })")["a\n"].get<uint64_t>().value == 1
-   *   parser.parse(R"({ "a\n": 1 })")["a\\n"].get<uint64_t>().error == NO_SUCH_FIELD
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\n"].get<uint64_t>().first == 1
+   *   parser.parse(R"({ "a\n": 1 })"_padded)["a\\n"].get<uint64_t>().error() == NO_SUCH_FIELD
    *
    * This function has linear-time complexity: the keys are checked one by one.
    *
@@ -4646,7 +4655,9 @@ private:
  */
 class key_value_pair {
 public:
+  /** key in the key-value pair **/
   std::string_view key;
+  /** value in the key-value pair **/
   element value;
 
 private:
@@ -4956,6 +4967,7 @@ inline std::ostream& operator<<(std::ostream& out, const escape_json_string &une
 
 namespace simdjson {
 
+/** @private **/
 class [[deprecated("Use the new DOM navigation API instead (see doc/basics.md)")]] dom::parser::Iterator {
 public:
   inline Iterator(const dom::parser &parser) noexcept(false);
@@ -5044,11 +5056,11 @@ public:
 
   inline bool is_string() const { return get_type() == '"'; }
 
-  // Returns true if the current type of node is an signed integer.
+  // Returns true if the current type of the node is an signed integer.
   // You can get its value with `get_integer()`.
   inline bool is_integer() const { return get_type() == 'l'; }
 
-  // Returns true if the current type of node is an unsigned integer.
+  // Returns true if the current type of the node is an unsigned integer.
   // You can get its value with `get_unsigned_integer()`.
   //
   // NOTE:
@@ -5057,19 +5069,19 @@ public:
   // positive integer, such as 1, 42, or 1000000, is as a signed node.
   // Be aware this function returns false for a signed node.
   inline bool is_unsigned_integer() const { return get_type() == 'u'; }
-
+  // Returns true if the current type of the node is a double floating-point number.
   inline bool is_double() const { return get_type() == 'd'; }
-
+  // Returns true if the current type of the node is a number (integer or floating-point).
   inline bool is_number() const {
       return is_integer() || is_unsigned_integer() || is_double();
   }
-
+  // Returns true if the current type of the node is a bool with true value.
   inline bool is_true() const { return get_type() == 't'; }
-
+  // Returns true if the current type of the node is a bool with false value.
   inline bool is_false() const { return get_type() == 'f'; }
-
+  // Returns true if the current type of the node is null.
   inline bool is_null() const { return get_type() == 'n'; }
-
+  // Returns true if the type byte represents an object of an array
   static bool is_object_or_array(uint8_t type) {
       return ((type == '[') || (type == '{'));
   }
@@ -5183,15 +5195,10 @@ public:
       ;
   }
 
-  // void to_end_scope();              // move us to
-  // the start of our current scope; always succeeds
+
 
   // print the node we are currently pointing at
   inline bool print(std::ostream &os, bool escape_strings = true) const;
-  typedef struct {
-      size_t start_of_scope;
-      uint8_t scope_type;
-  } scopeindex_t;
 
   private:
   const document &doc;
@@ -5201,6 +5208,11 @@ public:
   size_t tape_length{};
   uint8_t current_type{};
   uint64_t current_val{};
+  typedef struct {
+      size_t start_of_scope;
+      uint8_t scope_type;
+  } scopeindex_t;
+
   scopeindex_t *depth_index{};
 };
 
