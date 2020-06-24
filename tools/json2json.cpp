@@ -1,10 +1,13 @@
 #include <iostream>
 #include <unistd.h>
 #include "simdjson.h"
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #ifndef __cpp_exceptions
 #define CXXOPTS_NO_EXCEPTIONS
 #endif
 #include "cxxopts.hpp"
+SIMDJSON_POP_DISABLE_WARNINGS
 
 int main(int argc, char *argv[]) {
 #ifdef __cpp_exceptions

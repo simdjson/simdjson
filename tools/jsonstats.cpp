@@ -2,10 +2,13 @@
 #include <set>
 
 #include "simdjson.h"
+
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #ifndef __cpp_exceptions
 #define CXXOPTS_NO_EXCEPTIONS
 #endif
 #include "cxxopts.hpp"
+SIMDJSON_POP_DISABLE_WARNINGS
 
 size_t count_nonasciibytes(const uint8_t *input, size_t length) {
   size_t count = 0;
