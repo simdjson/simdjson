@@ -13,8 +13,8 @@ set(SIMDJSON_LIB_SOVERSION "1" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
 
 include(GNUInstallDirs)
-include(simdjson-flags.cmake)
-include(simdjson-user-cmakecache.cmake)
+include(cmake/simdjson-flags.cmake)
+include(cmake/simdjson-user-cmakecache.cmake)
 
 if(SIMDJSON_JUST_LIBRARY)
   MESSAGE( STATUS "Building just the library, omitting all tests, tools and benchmarks." )

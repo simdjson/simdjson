@@ -1,4 +1,5 @@
 option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" OFF)
+
 #
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
@@ -59,10 +60,8 @@ if(MSVC)
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
-  if (NOT SIMDJSON_GOOGLE_BENCHMARKS) # Google Benchmark can't be compiled without warnings with -Weffc++
-    target_compile_options(simdjson-internal-flags INTERFACE -Weffc++)
-  endif()
-  target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
+  target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
+  target_compile_options(simdjson-internal-flags INTERFACE -Wsign-compare -Wshadow -Wwrite-strings -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion)
 endif()
 
 # Optional flags

@@ -1,3 +1,5 @@
+include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
+
 #
 # Amalgamation
 #
@@ -122,6 +124,7 @@ install(FILES simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 add_library(simdjson-singleheader STATIC "")
 target_link_libraries(simdjson-singleheader simdjson-singleheader-source simdjson-internal-flags)
+add_compile_only_test(simdjson-singleheader)
 
 #
 # Test the existing simdjson.cpp/simdjson.h using the existing amalgamate_demo.cpp, using
