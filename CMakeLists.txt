@@ -16,8 +16,16 @@ include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
 include(cmake/simdjson-user-cmakecache.cmake)
 
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  set(SIMDJSON_IS_UNDER_GIT ON CACHE BOOL  "Whether cmake is under git control")
+  message( STATUS "The simdjson repository appears to be under git." )
+else()
+  set(SIMDJSON_IS_UNDER_GIT OFF CACHE BOOL  "Whether cmake is under git control")
+  message( STATUS "The simdjson repository does not appear to be under git." )
+endif()
+
 if(SIMDJSON_JUST_LIBRARY)
-  MESSAGE( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
+  message( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
 endif()
 
 #
