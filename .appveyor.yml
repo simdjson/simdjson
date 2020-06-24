@@ -23,6 +23,12 @@ environment:
     - job_name: MinGW
       CMAKE_ARGS: -G "MinGW Makefiles"
       CTEST_ARGS: -E checkperf
+    - job_name: MinGW32
+      CMAKE_ARGS: -G "MinGW Makefiles" -A Win32
+      CTEST_ARGS: -E checkperf
+    - job_name: MinGW64
+      CMAKE_ARGS: -G "MinGW Makefiles"  -A x64
+      CTEST_ARGS: -E checkperf
 
 build_script:
   - mkdir build
