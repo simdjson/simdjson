@@ -8,8 +8,8 @@ An overview of what you need to know to use simdjson, with examples.
 * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
-* [C++17 Support](#c++17-support)
 * [C++11 Support and string_view](#c++11-support-and-string_view)
+* [C++17 Support](#c++17-support)
 * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 * [UTF-8 validation (alone)](#utf-8-validation-alone)
 * [JSON Pointer](#json-pointer)
@@ -197,13 +197,21 @@ And another one:
 C++11 Support and string_view
 -------------
 
-The simdjson library builds on compilers supporting the C++11 standard.
-We represent parsed strings in simdjson using the `std::string_view` class. 
-This class has become standard as part of C++17 but it is not always available
-on compilers which only supports C++11. When we detect that it is unavailable,
+The simdjson library builds on compilers supporting the [C++11 standard](https://en.wikipedia.org/wiki/C%2B%2B11). It is also a strict requirement: we have no plan to support older C++ compilers.
+
+We represent parsed strings in simdjson using the `std::string_view` class. It avoids
+the need to copy the data, as would be necessary with the `std::string` class. It also
+avoids the pitfalls of null-terminated C strings.
+
+The `std::string_view` class has become standard as part of C++17 but it is not always available
+on compilers which only supports C++11. When we detect that `string_view` is natively
+available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
+
+When we detect that it is unavailable,
 we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
 substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to  
-offer the same API, irrespective of the compiler and standard library.
+offer the same API, irrespective of the compiler and standard library. The macro 
+`SIMDJSON_HAS_STRING_VIEW` will be *undefined* to indicate that we emulate `string_view`.
 
 
 C++17 Support
