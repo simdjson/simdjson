@@ -542,6 +542,22 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
   } else {
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
+      // 18-digit positive numbers never overflow, but we have to figure out whether they will
+      // fit in a signed integer or not.
+      if (!negative && digit_count == 18) {
+        if (i <= uint64_t(INT64_MAX)) {
+          writer.append_s64(i);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+          found_integer(i, src);
+#endif
+        } else {
+          writer.append_u64(i);
+#ifdef JSON_TEST_NUMBERS // for unit testing
+          found_unsigned_integer(i, src);
+#endif
+        }
+        return true;
+      }
       // there is a good chance that we had an overflow, so we need
       // need to recover: we parse the whole thing again.
       bool success = parse_large_integer(src, writer, found_minus);
