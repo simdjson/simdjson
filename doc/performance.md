@@ -175,5 +175,5 @@ The simdjson library does not currently support AVX-512 instructions and it does
 Further Reading
 -------------
 
-* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
+* [Implementation Selection](implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
