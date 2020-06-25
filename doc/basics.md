@@ -90,7 +90,7 @@ The parsed document resulting from the `parser.load` and `parser.parse` calls de
 
 During the`load` or `parse` calls, neither the input file nor the input string are ever modified. After calling `load` or `parse`, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the `parser` instance.  The parsed document is also immutable in simdjson: you do not modify it by accessing it.
 
-For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](https://github.com/simdjson/simdjson/blob/master/doc/performance.md).
+For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
 
 Using the Parsed JSON
@@ -534,7 +534,7 @@ Thread Safety
 
 We built simdjson with thread safety in mind.
 
-The simdjson library is single-threaded except for  [`parse_many`](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md) which may use secondary threads under its control when the library is compiled with thread support.
+The simdjson library is single-threaded except for  [`parse_many`](parse_many.md) which may use secondary threads under its control when the library is compiled with thread support.
 
 
 We recommend using one `dom::parser` object per thread in which case the library is thread-safe.
@@ -556,6 +556,6 @@ may be moved or removed in future versions.
 Further Reading
 -------------
 
-* [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
-* [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
+* [Performance](performance.md) shows some more advanced scenarios and how to tune for them.
+* [Implementation Selection](implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
