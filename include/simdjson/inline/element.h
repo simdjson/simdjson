@@ -50,6 +50,10 @@ really_inline simdjson_result<const char *> simdjson_result<dom::element>::get_c
   if (error()) { return error(); }
   return first.get_c_str();
 }
+really_inline simdjson_result<size_t> simdjson_result<dom::element>::get_string_length() const noexcept {
+  if (error()) { return error(); }
+  return first.get_string_length();
+}
 really_inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
   if (error()) { return error(); }
   return first.get_string();
@@ -185,6 +189,15 @@ inline simdjson_result<const char *> element::get_c_str() const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::STRING: {
       return tape.get_c_str();
+    }
+    default:
+      return INCORRECT_TYPE;
+  }
+}
+inline simdjson_result<size_t> element::get_string_length() const noexcept {
+  switch (tape.tape_ref_type()) {
+    case internal::tape_type::STRING: {
+      return tape.get_string_length();
     }
     default:
       return INCORRECT_TYPE;

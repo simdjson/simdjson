@@ -9,6 +9,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents)
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c++17-support)
+* [C++11 Support and string_view](#c++11-support-and-string_view)
 * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 * [UTF-8 validation (alone)](#utf-8-validation-alone)
 * [JSON Pointer](#json-pointer)
@@ -191,6 +192,19 @@ And another one:
   double v = parser.parse(abstract_json)["str"]["123"]["abc"];
   cout << "number: " << v << endl;
 ```
+
+
+C++11 Support and string_view
+-------------
+
+The simdjson library builds on compilers supporting the C++11 standard.
+We represent parsed strings in simdjson using the `std::string_view` class. 
+This class has become standard as part of C++17 but it is not always available
+on compilers which only supports C++11. When we detect that it is unavailable,
+we use [string-view-lite](https://github.com/martinmoene/string-view-lite) as a
+substitute. In such cases, we use the type alias `using string_view = nonstd::string_view;` to  
+offer the same API, irrespective of the compiler and standard library.
+
 
 C++17 Support
 -------------

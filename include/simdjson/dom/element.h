@@ -62,21 +62,42 @@ public:
    */
   inline simdjson_result<object> get_object() const noexcept;
   /**
-   * Cast this element to a string.
+   * Cast this element to a null-terminated C string. 
+   * 
+   * The string is guaranteed to be valid UTF-8.
    *
-   * Equivalent to get<const char *>().
+   * The get_c_str() function is equivalent to get<const char *>().
+   * 
+   * The length of the string is given by get_string_length(). Because JSON strings
+   * may contain null characters, it may be incorrect to use strlen to determine the 
+   * string length.
    *
-   * @returns An pointer to a null-terminated string. This string is stored in the parser and will
+   * It is possible to get a single string_view instance which represents both the string
+   * content and its length: see get_string().
+   *
+   * @returns A pointer to a null-terminated UTF-8 string. This string is stored in the parser and will
    *          be invalidated the next time it parses a document or when it is destroyed.
    *          Returns INCORRECT_TYPE if the JSON element is not a string.
    */
   inline simdjson_result<const char *> get_c_str() const noexcept;
   /**
-   * Cast this element to a string.
+   * Gives the length in bytes of the string.
+   * 
+   * It is possible to get a single string_view instance which represents both the string
+   * content and its length: see get_string().
+   *
+   * @returns A string length in bytes.
+   *          Returns INCORRECT_TYPE if the JSON element is not a string.
+   */
+  inline simdjson_result<size_t> get_string_length() const noexcept;
+  /**
+   * Cast this element to a string. 
+   * 
+   * The string is guaranteed to be valid UTF-8.
    *
    * Equivalent to get<std::string_view>().
    *
-   * @returns A string. The string is stored in the parser and will be invalidated the next time it
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next time it
    *          parses a document or when it is destroyed.
    *          Returns INCORRECT_TYPE if the JSON element is not a string.
    */
@@ -253,7 +274,9 @@ public:
   inline operator bool() const noexcept(false);
 
   /**
-   * Read this element as a null-terminated string.
+   * Read this element as a null-terminated UTF-8 string.
+   * 
+   * Be mindful that JSON allows strings to contain null characters.
    *
    * Does *not* convert other types to a string; requires that the JSON type of the element was
    * an actual string.
@@ -264,7 +287,7 @@ public:
   inline explicit operator const char*() const noexcept(false);
 
   /**
-   * Read this element as a null-terminated string.
+   * Read this element as a null-terminated UTF-8 string.
    *
    * Does *not* convert other types to a string; requires that the JSON type of the element was
    * an actual string.
