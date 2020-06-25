@@ -3,7 +3,6 @@
 
 #include "simdjson/common_defs.h"
 #include "simdjson/internal/dom_parser_implementation.h"
-#include <optional>
 #include <string>
 #include <atomic>
 #include <vector>
