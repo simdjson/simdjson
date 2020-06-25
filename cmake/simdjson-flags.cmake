@@ -1,4 +1,21 @@
-option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" OFF)
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  message (STATUS "The simdjson repository appears to be standalone.")  
+  option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" OFF)
+  message (STATUS "By default, we attempt to build everything.")
+else()
+  message (STATUS "The simdjson repository appears to be used as a subdirectory.")
+  option(SIMDJSON_JUST_LIBRARY "Build just the library, omit tests, tools and benchmarks" ON)
+  message (STATUS "By default, we just build the library.")
+endif()
+
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
+  set(SIMDJSON_IS_UNDER_GIT ON CACHE BOOL  "Whether cmake is under git control")
+  message( STATUS "The simdjson repository appears to be under git." )
+else()
+  set(SIMDJSON_IS_UNDER_GIT OFF CACHE BOOL  "Whether cmake is under git control")
+  message( STATUS "The simdjson repository does not appear to be under git." )
+endif()
 
 #
 # Flags used by exes and by the simdjson library (project-wide flags)

@@ -16,8 +16,10 @@ include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
 include(cmake/simdjson-user-cmakecache.cmake)
 
+
+
 if(SIMDJSON_JUST_LIBRARY)
-  MESSAGE( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
+  message( STATUS "Building just the library, omitting all tests, tools and benchmarks." )
 endif()
 
 #
@@ -39,7 +41,8 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(windows)
 if(NOT(SIMDJSON_JUST_LIBRARY))
-  add_subdirectory(tools)
+  add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
+  add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
   add_subdirectory(singleheader)
 endif()
 
@@ -47,7 +50,6 @@ endif()
 # Compile tools / tests / benchmarks
 #
 if(NOT(SIMDJSON_JUST_LIBRARY))
-  add_subdirectory(dependencies)
   add_subdirectory(tests)
   add_subdirectory(examples)
   add_subdirectory(benchmark)

@@ -1,5 +1,9 @@
-link_libraries(simdjson simdjson-internal-flags simdjson-windows-headers cxxopts)
-
-add_executable(json2json json2json.cpp)
-add_executable(jsonstats jsonstats.cpp)
-add_executable(minify minify.cpp)
+if(TARGET cxxopts) # we only build the tools if cxxopts is available
+  message(STATUS "We have cxxopts as a dependency and we are buiding the tools (e.g., json2json).")
+  link_libraries(simdjson simdjson-internal-flags simdjson-windows-headers cxxopts)
+  add_executable(json2json json2json.cpp)
+  add_executable(jsonstats jsonstats.cpp)
+  add_executable(minify minify.cpp)
+else()
+  message(STATUS "We are missing cxxopts as a dependency so the tools (e.g., json2json) are omitted.")
+endif()

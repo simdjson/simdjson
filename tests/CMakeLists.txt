@@ -64,7 +64,7 @@ find_program(BASH bash)
 
 
 # Script tests
-if (BASH AND (NOT MSVC)) # The scripts are not robust enough to run under Windows even if bash is available
+if (BASH AND (NOT MSVC) AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
   #
   # json2json test
   #
