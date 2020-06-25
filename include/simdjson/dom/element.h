@@ -487,6 +487,7 @@ public:
   really_inline simdjson_result<dom::array> get_array() const noexcept;
   really_inline simdjson_result<dom::object> get_object() const noexcept;
   really_inline simdjson_result<const char *> get_c_str() const noexcept;
+  really_inline simdjson_result<size_t> get_string_length() const noexcept;
   really_inline simdjson_result<std::string_view> get_string() const noexcept;
   really_inline simdjson_result<int64_t> get_int64() const noexcept;
   really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
