@@ -290,9 +290,8 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     }
   }
   if (negative) {
-    if (i > 0x8000000000000000) {
-      return INVALID_NUMBER(src); // overflow: -i won't fit in INT32_MIN
-    } else if (i == 0x8000000000000000) {
+    if (i > 0x8000000000000000) { return INVALID_NUMBER(src); } // overflow: -i won't fit in INT32_MIN
+    if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
       // as a positive signed integer, but the negative version is
       // possible.
@@ -385,16 +384,13 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     // the integer into a float in a lossless manner.
     ++p;
     const char *const first_after_period = p;
-    if (is_integer(*p)) {
-      unsigned char digit = static_cast<unsigned char>(*p - '0');
-      ++p;
-      i = i * 10 + digit; // might overflow + multiplication by 10 is likely
-                          // cheaper than arbitrary mult.
-      // we will handle the overflow later
-    } else {
-      // There must be at least one digit after the .
-      return INVALID_NUMBER(src);
-    }
+    if (!is_integer(*p)) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
+
+    unsigned char digit = static_cast<unsigned char>(*p - '0');
+    ++p;
+    i = i * 10 + digit; // might overflow + multiplication by 10 is likely
+                        // cheaper than arbitrary mult.
+    // we will handle the overflow later
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
     // this turns out to be frequent enough.
@@ -404,15 +400,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     }
 #endif
     while (is_integer(*p)) {
-      unsigned char digit = static_cast<unsigned char>(*p - '0');
+      digit = static_cast<unsigned char>(*p - '0');
       ++p;
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                           // because we have parse_highprecision_float later.
     }
     exponent = first_after_period - p;
   }
-  int digit_count =
-      int(p - start_digits) - 1; // used later to guard against overflows
+  int digit_count = int(p - start_digits) - 1; // used later to guard against overflows
   int64_t exp_number = 0;   // exponential part
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
@@ -492,15 +487,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     double d = compute_float_64(exponent, i, negative, &success);
     if (!success) {
       // we are almost never going to get here.
-      success = parse_float_strtod((const char *)src, &d);
+      if (!parse_float_strtod((const char *)src, &d)) { return INVALID_NUMBER(src); }
     }
-    if (success) {
-      WRITE_DOUBLE(d, src, writer);
-      return true;
-    } else {
-      // parse_float_strtod failed!
-      return INVALID_NUMBER(src);
-    }
+    WRITE_DOUBLE(d, src, writer);
+    return true;
   } else {
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
       // there is a good chance that we had an overflow, so we need
