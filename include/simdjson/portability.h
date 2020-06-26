@@ -37,13 +37,14 @@
 
 #if defined(__x86_64__) || defined(_M_AMD64)
 #define SIMDJSON_IS_X86_64 1
-#endif
-#if defined(__aarch64__) || defined(_M_ARM64)
+#elif defined(__aarch64__) || defined(_M_ARM64)
 #define SIMDJSON_IS_ARM64 1
+#else 
+#define SIMDJSON_IS_32BITS 1
 #endif
 
-#if (!defined(SIMDJSON_IS_X86_64)) && (!defined(SIMDJSON_IS_ARM64))
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#ifdef SIMDJSON_IS_32BITS
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(__GNUC__)
 #pragma message("The simdjson library is designed\
  for 64-bit processors and it seems that you are not \
 compiling for a known 64-bit platform. All fast kernels \
@@ -54,7 +55,7 @@ use a 64-bit target such as x64 or 64-bit ARM.")
  for 64-bit processors. It seems that you are not \
 compiling for a known 64-bit platform."
 #endif
-#endif // (!defined(SIMDJSON_IS_X86_64)) && (!defined(SIMDJSON_IS_ARM64))
+#endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
 #undef STRINGIFY_IMPLEMENTATION_

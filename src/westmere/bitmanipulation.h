@@ -66,7 +66,7 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,

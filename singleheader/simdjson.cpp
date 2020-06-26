@@ -1,4 +1,4 @@
-/* auto-generated on Tue 23 Jun 2020 20:51:12 EDT. Do not edit! */
+/* auto-generated on Fri Jun 26 01:04:15 UTC 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -934,9 +934,8 @@ struct value128 {
   uint64_t high;
 };
 
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) &&                                 \
-    !defined(_M_X64) && !defined(_M_ARM64)// _umul128 for x86, arm
-// this is a slow emulation routine for 32-bit Windows
+#ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
+// this is a slow emulation routine for 32-bit
 //
 static inline uint64_t __emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
@@ -955,7 +954,7 @@ static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
 
 really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
 #ifdef _M_ARM64
   // ARM64 has native support for 64-bit multiplications, no need to emultate
   answer.high = __umulh(value1, value2);
@@ -963,7 +962,7 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 #else
   answer.low = _umul128(value1, value2, &answer.high); // _umul128 not available on ARM64
 #endif // _M_ARM64
-#else // SIMDJSON_REGULAR_VISUAL_STUDIO
+#else // defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
   __uint128_t r = ((__uint128_t)value1) * value2;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
@@ -7826,7 +7825,7 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
@@ -11114,7 +11113,7 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
 #pragma intrinsic(_umul128)
 #endif
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
