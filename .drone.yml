@@ -1,4 +1,25 @@
 kind: pipeline
+name: i386
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: i386/ubuntu
+  environment:
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf -E numberparsingcheck
+  commands:
+    - apt-get update -qq
+    - apt-get install -y g++ cmake gcc
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS 
+---
+kind: pipeline
 name: gcc9
 platform: { os: linux, arch: amd64 }
 steps:
