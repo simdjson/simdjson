@@ -117,7 +117,12 @@ if(SIMDJSON_ENABLE_THREADS)
 endif()
 
 # Some users compile simdjson with thread support but still do not want simdjson to use threads.
-option(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT "Whether we enabled thread support or not (SIMDJSON_ENABLE_THREADS), do not use threads. This option does nothing when thread support is not enabled." OFF)
+#
+#  Important : Expect this option to disappear in the future.
+#
+option(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT "Whether we enabled thread support or not (SIMDJSON_ENABLE_THREADS), do not use threads.\
+ This option does nothing when thread support is not enabled. We reserve the right to remove this option in a future release in\
+ favor of a runtime approach." OFF)
 if(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=1)
 endif()
