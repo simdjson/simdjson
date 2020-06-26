@@ -1,8 +1,6 @@
 namespace stage2 {
 namespace numberparsing {
-#if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
-#warning "Your floating-point rounding default is inadequate and may lead to inexact parsing."
-#endif
+
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
@@ -15,7 +13,12 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
   // ACM SIGPLAN Notices. 1990
+#if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
+  // We cannot be certain that x/y is rounded to nearest.
+  if (0 <= power && power <= 22 && i <= 9007199254740991) {
+#else
   if (-22 <= power && power <= 22 && i <= 9007199254740991) {
+#endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
     double d = double(i);

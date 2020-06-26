@@ -208,12 +208,6 @@ bool validate(const char *dirname) {
 }
 
 int main(int argc, char *argv[]) {
-#if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
-   std::cout << "Your floating-point rounding default is inadequate and may lead to inexact parsing." << std::endl;
-   std::cout << "We are not going to check number parsing precision." << std::endl;
-   std::cout << "We are returning with a success condition nevertheless (to avoid noisy failing tests)." << std::endl;
-   return EXIT_SUCCESS;
-#endif
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <directorywithjsonfiles>"
               << std::endl;
