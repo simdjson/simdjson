@@ -1,4 +1,4 @@
-/* auto-generated on Thu Jun 25 16:43:19 PDT 2020. Do not edit! */
+/* auto-generated on Fri Jun 26 01:04:15 UTC 2020. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -7649,13 +7649,13 @@ really_inline T tape_ref::next_tape_value() const noexcept {
 really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   uint64_t string_buf_index = size_t(tape_value());
   uint32_t len;
-  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
+  memcpy(&len, &doc->string_buf[size_t(string_buf_index)], sizeof(len));
   return len;
 }
 
 really_inline const char * internal::tape_ref::get_c_str() const noexcept {
   uint64_t string_buf_index = size_t(tape_value());
-  return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
+  return reinterpret_cast<const char *>(&doc->string_buf[size_t(string_buf_index) + sizeof(uint32_t)]);
 }
 
 inline std::string_view internal::tape_ref::get_string_view() const noexcept {
