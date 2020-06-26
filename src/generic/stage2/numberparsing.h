@@ -325,6 +325,62 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
   return INVALID_NUMBER((const uint8_t *)src);
 }
 
+template<typename W>
+really_inline bool write_negative_integer(const uint8_t * const src, int digit_count, uint64_t i, W &writer) {
+  //
+  // Handle large numbers
+  //
+  if (unlikely(digit_count >= 18)) { // this is uncommon!!!
+    // 19 digits or more is an overflow.
+    if (digit_count > 18) { return invalid_number(src); }
+    constexpr const uint64_t int64_min_magnitude = uint64_t(INT64_MAX)+1;
+    // If it's 18 digits, check if it fits in a negative 64-bit integer.
+    if (i > int64_min_magnitude) { return invalid_number(src); }
+
+    // C++ can't reliably negate uint64_t INT64_MIN, it seems. Special case it.
+    if (i == int64_min_magnitude) {
+      return write_signed_integer(INT64_MIN, src, writer);
+    }
+  }
+
+  // Otherwise, just negate and return
+  return write_signed_integer(0 - i, src, writer);
+}
+
+template<typename W>
+really_inline bool write_positive_integer(const uint8_t * const src, int digit_count, uint64_t i, W &writer) {
+  //
+  // Check for overflow
+  //
+  if (unlikely(digit_count >= 19)) { // this is uncommon!
+    // 20 or more digits is overflow.
+    if (digit_count > 19) { return invalid_number(src); }
+
+    // - It is 19 digits.
+    // - 18,446,744,073,709,551,615 is the biggest uint64_t.
+    // 
+    // A leading 2-9 is therefore overflow. (0 cannot be followed by other digits anyway.)
+    if (src[0] != uint8_t('1')) { return invalid_number(src); }
+
+    // - It is 19 digits.
+    // - There is a leading 1.
+    // - 19,999,999,999,999,999,999 is the biggest number the user could have written.
+    // - 18,446,744,073,709,551,615 is the biggest uint64_t.
+    // -  1,553,255,926,290,448,383 is the overflow of the biggest number we could store.
+    // - 10,000,000,000,000,000,000 is the smallest number the user could have written.
+    // - The user could not have written an overflow.
+    // Therefore, any number the user could not have written is overflow.
+    if (i < 10000000000000000000ULL) { return invalid_number(src); }
+  }
+
+  // Write an unsigned integer if it doesn't fit in int64_t
+  if (i > uint64_t(INT64_MAX)) {
+    return write_unsigned_integer(i, src, writer);
+  }
+  // Write a signed integer if it does
+  return write_signed_integer(i, src, writer);
+}
+
 // parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
 //
@@ -492,17 +548,11 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     WRITE_DOUBLE(d, src, writer);
     return true;
   } else {
-    if (unlikely(digit_count >= 18)) { // this is uncommon!!!
-      // there is a good chance that we had an overflow, so we need
-      // need to recover: we parse the whole thing again.
-      bool success = parse_large_integer(src, writer, found_minus);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_large_integer();
-      return success;
+    if (negative) {
+      if (!write_negative_integer(src, digit_count, i, writer)) { return false; }
+    } else {
+      if (!write_positive_integer(src, digit_count, i, writer)) { return false; }
     }
-    i = negative ? 0 - i : i;
-    WRITE_INTEGER(i, src, writer);
   }
   return is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
