@@ -1,4 +1,46 @@
 kind: pipeline
+name: i386-gcc # we do not support 32-bit systems, but we run tests
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: i386/ubuntu
+  environment:
+    CC: gcc
+    CXX: g++
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf -E numberparsingcheck  # A ULP marging 1 is detected on 32-bit GCC 
+  commands:
+    - apt-get update -qq
+    - apt-get install -y g++ cmake gcc
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS 
+---
+kind: pipeline
+name: i386-clang # we do not support 32-bit systems, but we run tests
+platform: { os: linux, arch: amd64 }
+steps:
+- name: Build and Test
+  image: i386/ubuntu
+  environment:
+    CC: clang-6.0
+    CXX: clang++-6.0
+    BUILD_FLAGS: -- -j
+    CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
+  commands:
+    - apt-get update -qq
+    - apt-get install -y clang++-6.0 cmake
+    - mkdir build
+    - cd build
+    - cmake $CMAKE_FLAGS ..
+    - cmake --build . $BUILD_FLAGS
+    - ctest $CTEST_FLAGS 
+---
+kind: pipeline
 name: gcc9
 platform: { os: linux, arch: amd64 }
 steps:
