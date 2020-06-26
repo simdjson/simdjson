@@ -1,14 +1,19 @@
 namespace stage2 {
 namespace numberparsing {
 
+#ifdef JSON_TEST_NUMBERS
+#define INVALID_NUMBER(src) (found_invalid_number(src), false)
+#else
+#define INVALID_NUMBER(src) (false)
+#endif
+
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
-                                      bool *success) {
+really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -273,16 +278,10 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     while (is_integer(*p)) {
       digit = static_cast<unsigned char>(*p - '0');
       if (mul_overflow(i, 10, &i)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false; // overflow
+        return INVALID_NUMBER(src); // overflow
       }
       if (add_overflow(i, digit, &i)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false; // overflow
+        return INVALID_NUMBER(src); // overflow
       }
       ++p;
     }
@@ -290,10 +289,7 @@ never_inline bool parse_large_integer(const uint8_t *const src,
   if (negative) {
     if (i > 0x8000000000000000) {
       // overflows!
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false; // overflow
+      return INVALID_NUMBER(src); // overflow
     } else if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
       // as a positive signed integer, but the negative version is
@@ -340,10 +336,7 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
 #endif
     return true;
   }
-#ifdef JSON_TEST_NUMBERS // for unit testing
-  found_invalid_number((const uint8_t *)src);
-#endif
-  return false;
+  return INVALID_NUMBER((const uint8_t *)src);
 }
 
 // parse the number at src
@@ -370,10 +363,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     negative = true;
     if (!is_integer(*p)) { // a negative sign must be followed by an integer
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
   }
   const char *const start_digits = p;
@@ -382,18 +372,12 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   if (*p == '0') { // 0 cannot be followed by an integer
     ++p;
     if (is_integer(*p)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
     i = 0;
   } else {
     if (!(is_integer(*p))) { // must start with an integer
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
     unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
@@ -425,10 +409,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
                           // cheaper than arbitrary mult.
       // we will handle the overflow later
     } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
 #ifdef SWAR_NUMBER_PARSING
     // this helps if we have lots of decimals!
@@ -460,10 +441,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       ++p;
     }
     if (!is_integer(*p)) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
     unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
@@ -481,10 +459,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     while (is_integer(*p)) {
       if (exp_number > 0x100000000) { // we need to check for overflows
                                       // we refuse to parse this
-#ifdef JSON_TEST_NUMBERS // for unit testing
-        found_invalid_number(src);
-#endif
-        return false;
+        return INVALID_NUMBER(src);
       }
       digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
@@ -543,10 +518,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
 #endif
       return true;
     } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_invalid_number(src);
-#endif
-      return false;
+      return INVALID_NUMBER(src);
     }
   } else {
     if (unlikely(digit_count >= 18)) { // this is uncommon!!!
