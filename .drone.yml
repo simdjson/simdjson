@@ -9,7 +9,7 @@ steps:
     CXX: g++
     BUILD_FLAGS: -- -j
     CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-    CTEST_FLAGS: -j4 --output-on-failure -E checkperf -E numberparsingcheck  # A ULP marging 1 is detected on 32-bit GCC 
+    CTEST_FLAGS: -j4 --output-on-failure -E checkperf 
   commands:
     - apt-get update -qq
     - apt-get install -y g++ cmake gcc

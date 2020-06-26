@@ -1,6 +1,8 @@
 namespace stage2 {
 namespace numberparsing {
-
+#if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
+#warning "Your floating-point rounding default is inadequate and may lead to inexact parsing."
+#endif
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
 // true, negate the result.
 // This function will only work in some cases, when it does not work, success is
