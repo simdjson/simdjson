@@ -105,7 +105,7 @@ if(NOT SIMDJSON_EXCEPTIONS)
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_EXCEPTIONS=0)
 endif()
 
-option(SIMDJSON_ENABLE_THREADS "Enable threaded operation" ON)
+option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 if(SIMDJSON_ENABLE_THREADS)
   set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
   set(THREADS_PREFER_PTHREAD_FLAG TRUE)
@@ -113,7 +113,13 @@ if(SIMDJSON_ENABLE_THREADS)
   target_link_libraries(simdjson-flags INTERFACE Threads::Threads)
   target_link_libraries(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
   target_compile_options(simdjson-flags INTERFACE ${CMAKE_THREAD_LIBS_INIT})
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
+endif()
+
+# Some users compile simdjson with thread support but still do not want simdjson to use threads.
+option(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT "Whether we enabled thread support or not (SIMDJSON_ENABLE_THREADS), do not use threads. This option does nothing when thread support is not enabled." OFF)
+if(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=1)
 endif()
 
 if(SIMDJSON_USE_LIBCPP)

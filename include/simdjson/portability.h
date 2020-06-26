@@ -122,7 +122,6 @@ compiling for a known 64-bit platform."
 #endif
 #endif
 
-
 // workaround for large stack sizes under -O0.
 // https://github.com/simdjson/simdjson/issues/691
 #ifdef __APPLE__
@@ -135,6 +134,13 @@ compiling for a known 64-bit platform."
 #undef SIMDJSON_THREADS_ENABLED
 #endif
 #endif
+
+
+#if SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT
+// No matter what happened, we undefine SIMDJSON_THREADS_ENABLED and so disable threads.
+#undef SIMDJSON_THREADS_ENABLED
+#endif
+
 
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))

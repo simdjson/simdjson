@@ -101,6 +101,12 @@ A `document_stream` instance uses at most two threads: there is a main thread an
 You should expect the main thread to be fully occupied while the worker thread is partially busy
 (e.g., 80% of the time).
 
+If you compile simdjson with thread support and you still do not want simdjson to use threads,
+you can forcefully disable them by setting the SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT macro
+to 1 in C++, or by passing SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON to cmake. It is a 
+compile-time decision: if you disable the threads with SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT,
+you will not be able to use threads in simdjson unless you recompile.
+
 Support
 -------
 
