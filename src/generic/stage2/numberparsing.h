@@ -252,69 +252,6 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
           0x3333333333333333);
 }
 
-// called by parse_number when we know that the output is an integer,
-// but where there might be some integer overflow.
-// we want to catch overflows!
-// Do not call this function directly as it skips some of the checks from
-// parse_number
-//
-// This function will almost never be called!!!
-//
-template<typename W>
-never_inline bool parse_large_integer(const uint8_t *const src,
-                                      W writer,
-                                      bool found_minus) {
-  const char *p = reinterpret_cast<const char *>(src);
-
-  bool negative = false;
-  if (found_minus) {
-    ++p;
-    negative = true;
-  }
-  uint64_t i;
-  if (*p == '0') { // 0 cannot be followed by an integer
-    ++p;
-    i = 0;
-  } else {
-    unsigned char digit = static_cast<unsigned char>(*p - '0');
-    i = digit;
-    p++;
-    // the is_made_of_eight_digits_fast routine is unlikely to help here because
-    // we rarely see large integer parts like 123456789
-    while (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      // This is i = 10 * i + digit, but with overflow checks.
-      if (mul_overflow(i, 10, &i)) { return INVALID_NUMBER(src);  }
-      if (add_overflow(i, digit, &i)) { return INVALID_NUMBER(src); }
-      ++p;
-    }
-  }
-  if (negative) {
-    if (i > 0x8000000000000000) { return INVALID_NUMBER(src); } // overflow: -i won't fit in INT32_MIN
-    if (i == 0x8000000000000000) {
-      // In two's complement, we cannot represent 0x8000000000000000
-      // as a positive signed integer, but the negative version is
-      // possible.
-      constexpr int64_t signed_answer = INT64_MIN;
-      WRITE_INTEGER(signed_answer, src, writer);
-    } else {
-      // we can negate safely
-      int64_t signed_answer = -static_cast<int64_t>(i);
-      WRITE_INTEGER(signed_answer, src, writer);
-    }
-  } else {
-    // we have a positive integer, the contract is that
-    // we try to represent it as a signed integer and only
-    // fallback on unsigned integers if absolutely necessary.
-    if (i < 0x8000000000000000) {
-      WRITE_INTEGER(i, src, writer);
-    } else {
-      WRITE_UNSIGNED(i, src, writer);
-    }
-  }
-  return is_structural_or_whitespace(*p);
-}
-
 template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
@@ -325,60 +262,121 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
   return INVALID_NUMBER((const uint8_t *)src);
 }
 
-template<typename W>
-really_inline bool write_negative_integer(const uint8_t * const src, int digit_count, uint64_t i, W &writer) {
-  //
-  // Handle large numbers
-  //
-  if (unlikely(digit_count >= 18)) { // this is uncommon!!!
-    // 19 digits or more is an overflow.
-    if (digit_count > 18) { return invalid_number(src); }
-    constexpr const uint64_t int64_min_magnitude = uint64_t(INT64_MAX)+1;
-    // If it's 18 digits, check if it fits in a negative 64-bit integer.
-    if (i > int64_min_magnitude) { return invalid_number(src); }
+really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p, uint64_t &i, int64_t &exponent) {
+  // we continue with the fiction that we have an integer. If the
+  // floating point number is representable as x * 10^z for some integer
+  // z that fits in 53 bits, then we will be able to convert back the
+  // the integer into a float in a lossless manner.
+  const char *const first_after_period = p;
+  if (!is_integer(*p)) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
 
-    // C++ can't reliably negate uint64_t INT64_MIN, it seems. Special case it.
-    if (i == int64_min_magnitude) {
-      return write_signed_integer(INT64_MIN, src, writer);
-    }
+  unsigned char digit = static_cast<unsigned char>(*p - '0');
+  ++p;
+  i = i * 10 + digit; // might overflow + multiplication by 10 is likely
+                      // cheaper than arbitrary mult.
+  // we will handle the overflow later
+#ifdef SWAR_NUMBER_PARSING
+  // this helps if we have lots of decimals!
+  // this turns out to be frequent enough.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+#endif
+  while (is_integer(*p)) {
+    digit = static_cast<unsigned char>(*p - '0');
+    ++p;
+    i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
+                        // because we have parse_highprecision_float later.
+  }
+  exponent = first_after_period - p;
+  return true;
+}
+
+really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&p, int64_t &exponent) {
+  bool neg_exp = false;
+  if ('-' == *p) {
+    neg_exp = true;
+    ++p;
+  } else if ('+' == *p) {
+    ++p;
   }
 
-  // Otherwise, just negate and return
-  return write_signed_integer(0 - i, src, writer);
+  // e[+-] must be followed by a number
+  if (!is_integer(*p)) { return INVALID_NUMBER(src); }
+  unsigned char digit = static_cast<unsigned char>(*p - '0');
+  int64_t exp_number = digit;
+  p++;
+  if (is_integer(*p)) {
+    digit = static_cast<unsigned char>(*p - '0');
+    exp_number = 10 * exp_number + digit;
+    ++p;
+  }
+  if (is_integer(*p)) {
+    digit = static_cast<unsigned char>(*p - '0');
+    exp_number = 10 * exp_number + digit;
+    ++p;
+  }
+  while (is_integer(*p)) {
+    // we need to check for overflows; we refuse to parse this
+    if (exp_number > 0x100000000) { return INVALID_NUMBER(src); }
+    digit = static_cast<unsigned char>(*p - '0');
+    exp_number = 10 * exp_number + digit;
+    ++p;
+  }
+  exponent += (neg_exp ? -exp_number : exp_number);
+  return true;
 }
 
 template<typename W>
-really_inline bool write_positive_integer(const uint8_t * const src, int digit_count, uint64_t i, W &writer) {
-  //
-  // Check for overflow
-  //
-  if (unlikely(digit_count >= 19)) { // this is uncommon!
-    // 20 or more digits is overflow.
-    if (digit_count > 19) { return invalid_number(src); }
-
-    // - It is 19 digits.
-    // - 18,446,744,073,709,551,615 is the biggest uint64_t.
-    // 
-    // A leading 2-9 is therefore overflow. (0 cannot be followed by other digits anyway.)
-    if (src[0] != uint8_t('1')) { return invalid_number(src); }
-
-    // - It is 19 digits.
-    // - There is a leading 1.
-    // - 19,999,999,999,999,999,999 is the biggest number the user could have written.
-    // - 18,446,744,073,709,551,615 is the biggest uint64_t.
-    // -  1,553,255,926,290,448,383 is the overflow of the biggest number we could store.
-    // - 10,000,000,000,000,000,000 is the smallest number the user could have written.
-    // - The user could not have written an overflow.
-    // Therefore, any number the user could not have written is overflow.
-    if (i < 10000000000000000000ULL) { return invalid_number(src); }
+really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const char * start_digits, int digit_count, int64_t exponent, W &writer) {
+  // If we frequently had to deal with long strings of digits,
+  // we could extend our code by using a 128-bit integer instead
+  // of a 64-bit integer. However, this is uncommon in practice.
+  // digit count is off by 1 because of the decimal (assuming there was one).
+  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
+    // It is possible that the integer had an overflow.
+    // We have to handle the case where we have 0.0000somenumber.
+    const char *start = start_digits;
+    while ((*start == '0') || (*start == '.')) {
+      start++;
+    }
+    // we over-decrement by one when there is a '.'
+    digit_count -= int(start - start_digits);
+    if (digit_count >= 19) {
+      // Ok, chances are good that we had an overflow!
+      // this is almost never going to get called!!!
+      // we start anew, going slowly!!!
+      // This will happen in the following examples:
+      // 10000000000000000000000000000000000000000000e+308
+      // 3.1415926535897932384626433832795028841971693993751
+      //
+      bool success = slow_float_parsing((const char *) src, writer);
+      // The number was already written, but we made a copy of the writer
+      // when we passed it to the parse_large_integer() function, so
+      writer.skip_double();
+      return success;
+    }
   }
-
-  // Write an unsigned integer if it doesn't fit in int64_t
-  if (i > uint64_t(INT64_MAX)) {
-    return write_unsigned_integer(i, src, writer);
+  // TODO unlikely wraps the wrong thing here
+  if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
+      (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    bool success = slow_float_parsing((const char *) src, writer);
+    // The number was already written, but we made a copy of the writer when we passed it to the
+    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
+    writer.skip_double();
+    return success;
   }
-  // Write a signed integer if it does
-  return write_signed_integer(i, src, writer);
+  bool success = true;
+  double d = compute_float_64(exponent, i, negative, &success);
+  if (!success) {
+    // we are almost never going to get here.
+    if (!parse_float_strtod((const char *)src, &d)) { return INVALID_NUMBER(src); }
+  }
+  WRITE_DOUBLE(d, src, writer);
+  return true;
 }
 
 // parse the number at src
@@ -430,131 +428,67 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       ++p;
     }
   }
+
+  //
+  // Handle floats if there is a . or e (or both)
+  //
   int64_t exponent = 0;
   bool is_float = false;
   if ('.' == *p) {
-    is_float = true; // At this point we know that we have a float
-    // we continue with the fiction that we have an integer. If the
-    // floating point number is representable as x * 10^z for some integer
-    // z that fits in 53 bits, then we will be able to convert back the
-    // the integer into a float in a lossless manner.
+    is_float = true;
     ++p;
-    const char *const first_after_period = p;
-    if (!is_integer(*p)) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
-
-    unsigned char digit = static_cast<unsigned char>(*p - '0');
-    ++p;
-    i = i * 10 + digit; // might overflow + multiplication by 10 is likely
-                        // cheaper than arbitrary mult.
-    // we will handle the overflow later
-#ifdef SWAR_NUMBER_PARSING
-    // this helps if we have lots of decimals!
-    // this turns out to be frequent enough.
-    if (is_made_of_eight_digits_fast(p)) {
-      i = i * 100000000 + parse_eight_digits_unrolled(p);
-      p += 8;
-    }
-#endif
-    while (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      ++p;
-      i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
-                          // because we have parse_highprecision_float later.
-    }
-    exponent = first_after_period - p;
+    if (!parse_decimal(src, p, i, exponent)) { return false; }
   }
-  int digit_count = int(p - start_digits) - 1; // used later to guard against overflows
-  int64_t exp_number = 0;   // exponential part
+  int digit_count = int(p - start_digits); // used later to guard against overflows
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    bool neg_exp = false;
-    if ('-' == *p) {
-      neg_exp = true;
-      ++p;
-    } else if ('+' == *p) {
-      ++p;
-    }
-
-    // e[+-] must be followed by a number
-    if (!is_integer(*p)) { return INVALID_NUMBER(src); }
-    unsigned char digit = static_cast<unsigned char>(*p - '0');
-    exp_number = digit;
-    p++;
-    if (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    if (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    while (is_integer(*p)) {
-      // we need to check for overflows; we refuse to parse this
-      if (exp_number > 0x100000000) { return INVALID_NUMBER(src); }
-      digit = static_cast<unsigned char>(*p - '0');
-      exp_number = 10 * exp_number + digit;
-      ++p;
-    }
-    exponent += (neg_exp ? -exp_number : exp_number);
+    if (!parse_exponent(src, p, exponent)) { return false; }
   }
   if (is_float) {
-    // If we frequently had to deal with long strings of digits,
-    // we could extend our code by using a 128-bit integer instead
-    // of a 64-bit integer. However, this is uncommon in practice.
-    if (unlikely((digit_count >= 19))) { // this is uncommon
-      // It is possible that the integer had an overflow.
-      // We have to handle the case where we have 0.0000somenumber.
-      const char *start = start_digits;
-      while ((*start == '0') || (*start == '.')) {
-        start++;
-      }
-      // we over-decrement by one when there is a '.'
-      digit_count -= int(start - start_digits);
-      if (digit_count >= 19) {
-        // Ok, chances are good that we had an overflow!
-        // this is almost never going to get called!!!
-        // we start anew, going slowly!!!
-        // This will happen in the following examples:
-        // 10000000000000000000000000000000000000000000e+308
-        // 3.1415926535897932384626433832795028841971693993751
-        //
-        bool success = slow_float_parsing((const char *) src, writer);
-        // The number was already written, but we made a copy of the writer
-        // when we passed it to the parse_large_integer() function, so
-        writer.skip_double();
-        return success;
-      }
+    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+  }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
+  if (digit_count == longest_digit_count) {
+    // Anything negative above INT64_MAX is either invalid or INT64_MIN.
+    if (negative && i > uint64_t(INT64_MAX)) {
+      // If the number is negative and can't fit in a signed integer, it's invalid.
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src); }
+
+      // If it's negative, it has to be INT64_MAX+1 now (or INT64_MIN).
+      // C++ can't reliably negate uint64_t INT64_MIN, it seems. Special case it.
+      WRITE_INTEGER(INT64_MIN, src, writer);
+      return is_structural_or_whitespace(*p);
     }
-    // TODO unlikely wraps the wrong thing here
-    if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
-        (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      bool success = slow_float_parsing((const char *) src, writer);
-      // The number was already written, but we made a copy of the writer when we passed it to the
-      // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
-      writer.skip_double();
-      return success;
-    }
-    bool success = true;
-    double d = compute_float_64(exponent, i, negative, &success);
-    if (!success) {
-      // we are almost never going to get here.
-      if (!parse_float_strtod((const char *)src, &d)) { return INVALID_NUMBER(src); }
-    }
-    WRITE_DOUBLE(d, src, writer);
-    return true;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (!negative && (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX))) { return INVALID_NUMBER(src); }
+  }
+
+  // Write unsigned if it doesn't fit in a signed integer.
+  if (i > uint64_t(INT64_MAX)) {
+    WRITE_UNSIGNED(i, src, writer);
   } else {
-    if (negative) {
-      if (!write_negative_integer(src, digit_count, i, writer)) { return false; }
-    } else {
-      if (!write_positive_integer(src, digit_count, i, writer)) { return false; }
-    }
+    WRITE_INTEGER(negative ? 0 - i : i, src, writer);
   }
   return is_structural_or_whitespace(*p);
+
 #endif // SIMDJSON_SKIPNUMBERPARSING
 }
 
