@@ -83,7 +83,7 @@ really_inline T tape_ref::next_tape_value() const noexcept {
 really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   uint32_t len;
-  memcpy(&len, &doc->string_buf[size_t(string_buf_index)], sizeof(len));
+  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return len;
 }
 
