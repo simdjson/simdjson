@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cfloat>
 
 
 #ifdef _MSC_VER

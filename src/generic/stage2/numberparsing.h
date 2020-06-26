@@ -13,6 +13,9 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative,
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
   // ACM SIGPLAN Notices. 1990
+#ifndef FLT_EVAL_METHOD
+#error "FLT_EVAL_METHOD should be defined, please include cfloat."
+#endif
 #if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
   // We cannot be certain that x/y is rounded to nearest.
   if (0 <= power && power <= 22 && i <= 9007199254740991) {
