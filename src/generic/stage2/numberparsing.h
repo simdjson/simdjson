@@ -2,9 +2,15 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(src) (found_invalid_number(src), false)
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
 #else
-#define INVALID_NUMBER(src) (false)
+#define INVALID_NUMBER(SRC) (false)
+#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -277,50 +283,34 @@ never_inline bool parse_large_integer(const uint8_t *const src,
     // we rarely see large integer parts like 123456789
     while (is_integer(*p)) {
       digit = static_cast<unsigned char>(*p - '0');
-      if (mul_overflow(i, 10, &i)) {
-        return INVALID_NUMBER(src); // overflow
-      }
-      if (add_overflow(i, digit, &i)) {
-        return INVALID_NUMBER(src); // overflow
-      }
+      // This is i = 10 * i + digit, but with overflow checks.
+      if (mul_overflow(i, 10, &i)) { return INVALID_NUMBER(src);  }
+      if (add_overflow(i, digit, &i)) { return INVALID_NUMBER(src); }
       ++p;
     }
   }
   if (negative) {
     if (i > 0x8000000000000000) {
-      // overflows!
-      return INVALID_NUMBER(src); // overflow
+      return INVALID_NUMBER(src); // overflow: -i won't fit in INT32_MIN
     } else if (i == 0x8000000000000000) {
       // In two's complement, we cannot represent 0x8000000000000000
       // as a positive signed integer, but the negative version is
       // possible.
       constexpr int64_t signed_answer = INT64_MIN;
-      writer.append_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, src);
-#endif
+      WRITE_INTEGER(signed_answer, src, writer);
     } else {
       // we can negate safely
       int64_t signed_answer = -static_cast<int64_t>(i);
-      writer.append_s64(signed_answer);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(signed_answer, src);
-#endif
+      WRITE_INTEGER(signed_answer, src, writer);
     }
   } else {
     // we have a positive integer, the contract is that
     // we try to represent it as a signed integer and only
     // fallback on unsigned integers if absolutely necessary.
     if (i < 0x8000000000000000) {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_integer(i, src);
-#endif
-      writer.append_s64(i);
+      WRITE_INTEGER(i, src, writer);
     } else {
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_unsigned_integer(i, src);
-#endif
-      writer.append_u64(i);
+      WRITE_UNSIGNED(i, src, writer);
     }
   }
   return is_structural_or_whitespace(*p);
@@ -330,10 +320,7 @@ template<typename W>
 bool slow_float_parsing(UNUSED const char * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    writer.append_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-    found_float(d, (const uint8_t *)src);
-#endif
+    WRITE_DOUBLE(d, (const uint8_t *)src, writer);
     return true;
   }
   return INVALID_NUMBER((const uint8_t *)src);
@@ -362,23 +349,19 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   if (found_minus) {
     ++p;
     negative = true;
-    if (!is_integer(*p)) { // a negative sign must be followed by an integer
-      return INVALID_NUMBER(src);
-    }
+    // a negative sign must be followed by an integer
+    // TODO this is a redundant check
+    if (!is_integer(*p)) { return INVALID_NUMBER(src); }
   }
   const char *const start_digits = p;
 
   uint64_t i;      // an unsigned int avoids signed overflows (which are bad)
-  if (*p == '0') { // 0 cannot be followed by an integer
+  if (*p == '0') {
     ++p;
-    if (is_integer(*p)) {
-      return INVALID_NUMBER(src);
-    }
+    if (is_integer(*p)) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
     i = 0;
   } else {
-    if (!(is_integer(*p))) { // must start with an integer
-      return INVALID_NUMBER(src);
-    }
+    if (!is_integer(*p)) { return INVALID_NUMBER(src); } // must start with an integer
     unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
     p++;
@@ -409,6 +392,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
                           // cheaper than arbitrary mult.
       // we will handle the overflow later
     } else {
+      // There must be at least one digit after the .
       return INVALID_NUMBER(src);
     }
 #ifdef SWAR_NUMBER_PARSING
@@ -440,9 +424,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     } else if ('+' == *p) {
       ++p;
     }
-    if (!is_integer(*p)) {
-      return INVALID_NUMBER(src);
-    }
+
+    // e[+-] must be followed by a number
+    if (!is_integer(*p)) { return INVALID_NUMBER(src); }
     unsigned char digit = static_cast<unsigned char>(*p - '0');
     exp_number = digit;
     p++;
@@ -457,10 +441,8 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       ++p;
     }
     while (is_integer(*p)) {
-      if (exp_number > 0x100000000) { // we need to check for overflows
-                                      // we refuse to parse this
-        return INVALID_NUMBER(src);
-      }
+      // we need to check for overflows; we refuse to parse this
+      if (exp_number > 0x100000000) { return INVALID_NUMBER(src); }
       digit = static_cast<unsigned char>(*p - '0');
       exp_number = 10 * exp_number + digit;
       ++p;
@@ -495,6 +477,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
         return success;
       }
     }
+    // TODO unlikely wraps the wrong thing here
     if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
         (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
       // this is almost never going to get called!!!
@@ -512,12 +495,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       success = parse_float_strtod((const char *)src, &d);
     }
     if (success) {
-      writer.append_double(d);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-      found_float(d, src);
-#endif
+      WRITE_DOUBLE(d, src, writer);
       return true;
     } else {
+      // parse_float_strtod failed!
       return INVALID_NUMBER(src);
     }
   } else {
@@ -531,10 +512,7 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
       return success;
     }
     i = negative ? 0 - i : i;
-    writer.append_s64(i);
-#ifdef JSON_TEST_NUMBERS // for unit testing
-    found_integer(i, src);
-#endif
+    WRITE_INTEGER(i, src, writer);
   }
   return is_structural_or_whitespace(*p);
 #endif // SIMDJSON_SKIPNUMBERPARSING
