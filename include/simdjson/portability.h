@@ -41,20 +41,23 @@
 #define SIMDJSON_IS_ARM64 1
 #else 
 #define SIMDJSON_IS_32BITS 1
+
+// We do not support 32-bit platforms, but it can be
+// handy to identify them.
+#if defined(_M_IX86) || defined(__i386__)
+#define SIMDJSON_IS_X86_32BITS 1
+#elif defined(__arm__) || defined(_M_ARM)
+#define SIMDJSON_IS_ARM_32BITS 1
 #endif
 
+#endif // defined(__x86_64__) || defined(_M_AMD64)
+
 #ifdef SIMDJSON_IS_32BITS
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(__GNUC__)
-#pragma message("The simdjson library is designed\
- for 64-bit processors and it seems that you are not \
+#pragma message("The simdjson library is designed \
+for 64-bit processors and it seems that you are not \
 compiling for a known 64-bit platform. All fast kernels \
 will be disabled and performance may be poor. Please \
 use a 64-bit target such as x64 or 64-bit ARM.")
-#else
-#error "The simdjson library is designed\
- for 64-bit processors. It seems that you are not \
-compiling for a known 64-bit platform."
-#endif
 #endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
@@ -75,6 +78,15 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_WESTMERE 0
 #endif // SIMDJSON_IS_ARM64
 
+// Our fast kernels require 64-bit systems.
+//
+// On 32-bit x86, we lack 64-bit popcnt, lzcnt, blsr instructions. 
+// Furthermore, the number of SIMD registers is reduced. 
+//
+// On 32-bit ARM, we would have smaller registers.
+//
+// The simdjson users should still have the fallback kernel. It is 
+// slower, but it should run everywhere.
 #if SIMDJSON_IS_X86_64
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
 #define SIMDJSON_IMPLEMENTATION_HASWELL 1
@@ -85,7 +97,7 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_ARM64 0
 #endif // SIMDJSON_IS_X86_64
 
-// we are going to use runtime dispatch
+// We are going to use runtime dispatch.
 #ifdef SIMDJSON_IS_X86_64
 #ifdef __clang__
 // clang does not have GCC push pop
