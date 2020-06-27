@@ -81,11 +81,3 @@ can select the CPU architecture yourself:
 // Use the fallback implementation, even though my machine is fast enough for anything
 simdjson::active_implementation = simdjson::available_implementations["fallback"];
 ```
-
-
-Further Reading
--------------
-
-* [Performance](performance.md) shows some more advanced scenarios and how to tune for them.
-* [Implementation Selection](implementation-selection.md) describes runtime CPU detection and
-  how you can work with it.

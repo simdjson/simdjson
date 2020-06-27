@@ -1,4 +1,4 @@
-/* auto-generated on Fri Jun 26 15:35:58 UTC 2020. Do not edit! */
+/* auto-generated on Fri 26 Jun 2020 20:03:28 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -58,6 +58,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cfloat>
 
 
 #ifdef _MSC_VER
@@ -95,20 +96,23 @@
 #define SIMDJSON_IS_ARM64 1
 #else 
 #define SIMDJSON_IS_32BITS 1
+
+// We do not support 32-bit platforms, but it can be
+// handy to identify them.
+#if defined(_M_IX86) || defined(__i386__)
+#define SIMDJSON_IS_X86_32BITS 1
+#elif defined(__arm__) || defined(_M_ARM)
+#define SIMDJSON_IS_ARM_32BITS 1
 #endif
 
+#endif // defined(__x86_64__) || defined(_M_AMD64)
+
 #ifdef SIMDJSON_IS_32BITS
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(__GNUC__)
-#pragma message("The simdjson library is designed\
- for 64-bit processors and it seems that you are not \
+#pragma message("The simdjson library is designed \
+for 64-bit processors and it seems that you are not \
 compiling for a known 64-bit platform. All fast kernels \
 will be disabled and performance may be poor. Please \
 use a 64-bit target such as x64 or 64-bit ARM.")
-#else
-#error "The simdjson library is designed\
- for 64-bit processors. It seems that you are not \
-compiling for a known 64-bit platform."
-#endif
 #endif // SIMDJSON_IS_32BITS
 
 // this is almost standard?
@@ -129,6 +133,15 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_WESTMERE 0
 #endif // SIMDJSON_IS_ARM64
 
+// Our fast kernels require 64-bit systems.
+//
+// On 32-bit x86, we lack 64-bit popcnt, lzcnt, blsr instructions. 
+// Furthermore, the number of SIMD registers is reduced. 
+//
+// On 32-bit ARM, we would have smaller registers.
+//
+// The simdjson users should still have the fallback kernel. It is 
+// slower, but it should run everywhere.
 #if SIMDJSON_IS_X86_64
 #ifndef SIMDJSON_IMPLEMENTATION_HASWELL
 #define SIMDJSON_IMPLEMENTATION_HASWELL 1
@@ -139,7 +152,7 @@ compiling for a known 64-bit platform."
 #define SIMDJSON_IMPLEMENTATION_ARM64 0
 #endif // SIMDJSON_IS_X86_64
 
-// we are going to use runtime dispatch
+// We are going to use runtime dispatch.
 #ifdef SIMDJSON_IS_X86_64
 #ifdef __clang__
 // clang does not have GCC push pop
@@ -2019,7 +2032,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.4.0
+#define SIMDJSON_VERSION 0.4.1
 
 namespace simdjson {
 enum {
@@ -2034,7 +2047,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 0
+  SIMDJSON_VERSION_REVISION = 1
 };
 } // namespace simdjson
 
@@ -7649,7 +7662,7 @@ really_inline T tape_ref::next_tape_value() const noexcept {
 really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   uint32_t len;
-  memcpy(&len, &doc->string_buf[size_t(string_buf_index)], sizeof(len));
+  memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return len;
 }
 
