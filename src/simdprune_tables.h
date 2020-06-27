@@ -1,5 +1,9 @@
 #ifndef SIMDJSON_SIMDPRUNE_TABLES_H
 #define SIMDJSON_SIMDPRUNE_TABLES_H
+
+
+#if SIMDJSON_IMPLEMENTATION_ARM64 || SIMDJSON_IMPLEMENTATION_HASWELL || SIMDJSON_IMPLEMENTATION_WESTMERE
+
 #include <cstdint>
 
 namespace simdjson { // table modified and copied from
@@ -127,4 +131,6 @@ static const uint64_t thintable_epi8[256] = {
 
 } // namespace simdjson 
 
+
+#endif //  SIMDJSON_IMPLEMENTATION_ARM64 || SIMDJSON_IMPLEMENTATION_HASWELL || SIMDJSON_IMPLEMENTATION_WESTMERE
 #endif // SIMDJSON_SIMDPRUNE_TABLES_H

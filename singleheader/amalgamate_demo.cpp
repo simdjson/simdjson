@@ -1,4 +1,4 @@
-/* auto-generated on Tue 23 Jun 2020 20:51:12 EDT. Do not edit! */
+/* auto-generated on Fri Jun 26 15:35:58 UTC 2020. Do not edit! */
 
 #include <iostream>
 #include "simdjson.h"
@@ -43,3 +43,4 @@ int main(int argc, char *argv[]) {
   }
   return EXIT_SUCCESS;
 }
+
