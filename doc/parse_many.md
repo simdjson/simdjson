@@ -1,7 +1,7 @@
 parse_many
 ==========
 
-An interface providing features to work with files or streams containing multiple JSON documents. 
+An interface providing features to work with files or streams containing multiple JSON documents.
 As fast and convenient as possible.
 
 Contents
@@ -26,7 +26,7 @@ values as an array, or a possibly indeterminate-length or never-
 ending sequence of values, JSON becomes difficult to work with.
 
 Consider a sequence of one million values, each possibly one kilobyte
-when encoded -- roughly one gigabyte.  It is often desirable to process such a dataset incrementally 
+when encoded -- roughly one gigabyte.  It is often desirable to process such a dataset incrementally
 without having to first read all of it before beginning to produce results.
 
 Performance
@@ -109,7 +109,7 @@ format, we support any file that contains any amount of valid JSON document, **s
 or more character that is considered whitespace** by the JSON spec. Anything that is
  not whitespace will be parsed as a JSON document and could lead to failure.
 
-Whitespace Characters: 
+Whitespace Characters:
 - **Space**
 - **Linefeed**
 - **Carriage return**
@@ -137,16 +137,16 @@ From [jsonlines.org](http://jsonlines.org/examples/):
     ["Gilbert", "2013", 24, true]
     ["Alexa", "2013", 29, true]
     ["May", "2012B", 14, false]
-    ["Deloise", "2012A", 19, true] 
+    ["Deloise", "2012A", 19, true]
     ```
-    CSV seems so easy that many programmers have written code to generate it themselves, and almost every implementation is 
-    different. Handling broken CSV files is a common and frustrating task. CSV has no standard encoding, no standard column 
+    CSV seems so easy that many programmers have written code to generate it themselves, and almost every implementation is
+    different. Handling broken CSV files is a common and frustrating task. CSV has no standard encoding, no standard column
     separator and multiple character escaping standards. String is the only type supported for cell values, so some programs
      attempt to guess the correct types.
-    
+
     JSON Lines handles tabular data cleanly and without ambiguity. Cells may use the standard JSON types.
-    
-    The biggest missing piece is an import/export filter for popular spreadsheet programs so that non-programmers can use 
+
+    The biggest missing piece is an import/export filter for popular spreadsheet programs so that non-programmers can use
     this format.
 
 - **Easy Nested Data**
@@ -156,13 +156,5 @@ From [jsonlines.org](http://jsonlines.org/examples/):
     {"name": "May", "wins": []}
     {"name": "Deloise", "wins": [["three of a kind", "5♣"]]}
     ```
-    JSON Lines' biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to 
+    JSON Lines' biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to
     work with than a directory full of XML files.
-
-
-Further Reading
--------------
-
-* [Performance](performance.md) shows some more advanced scenarios and how to tune for them.
-* [Implementation Selection](implementation-selection.md) describes runtime CPU detection and
-  how you can work with it.
