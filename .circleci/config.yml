@@ -121,7 +121,7 @@ jobs:
   justlib-gcc10:
     description: Build just the library, install it and do a basic test
     executor: gcc10
-    environment: { CMAKE_FLAGS: -SIMDJSON_JUST_LIBRARY=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
     steps: [ cmake_build, cmake_install_test ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression

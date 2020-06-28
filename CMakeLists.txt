@@ -7,10 +7,14 @@ project(simdjson
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 4)
-set(PROJECT_VERSION_PATCH 1)
-set(SIMDJSON_LIB_VERSION "0.4.1" CACHE STRING "simdjson library version")
+set(PROJECT_VERSION_PATCH 2)
+set(SIMDJSON_LIB_VERSION "0.4.2" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "2" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
+
+# The SIMDJSON_LIB_SOVERSION is 0 for versions before 0.3.0.
+# The SIMDJSON_LIB_SOVERSION is 1 for version 0.3.
+# The SIMDJSON_LIB_SOVERSION is 2 for version 0.4.
 
 include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)
@@ -43,8 +47,8 @@ add_subdirectory(windows)
 if(NOT(SIMDJSON_JUST_LIBRARY))
   add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
   add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
-  add_subdirectory(singleheader)
 endif()
+add_subdirectory(singleheader)
 
 #
 # Compile tools / tests / benchmarks
