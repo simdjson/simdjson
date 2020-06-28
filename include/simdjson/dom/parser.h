@@ -391,7 +391,7 @@ private:
   /**
    * The loaded buffer (reused each time load() is called)
    */
-  #if _MSC_VER < 1910
+  #if defined(_MSC_VER) && _MSC_VER < 1910
   // older versions of Visual Studio lack proper support for unique_ptr.
   std::unique_ptr<char[]> loaded_bytes;
   #else

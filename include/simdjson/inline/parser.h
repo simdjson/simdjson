@@ -15,7 +15,7 @@ namespace dom {
 //
 // parser inline implementation
 //
-#if _MSC_VER < 1910
+#if defined(_MSC_VER) && _MSC_VER < 1910
 // older versions of Visual Studio lack proper support for unique_ptr.
 really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
