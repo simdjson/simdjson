@@ -74,7 +74,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 
 if(MSVC)
+if(${CMAKE_VS_PLATFORM_TOOLSET} STREQUAL "v140")
+  # Visual Studio 2015 issues warnings,  cmake -G"Visual Studio 14" ..
+  target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /wd4996)
+else()
+  # Recent version of Visual Studio expected
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
+endif()
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
   target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
