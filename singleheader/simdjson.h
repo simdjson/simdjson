@@ -1,4 +1,4 @@
-/* auto-generated on Fri 26 Jun 2020 20:03:28 EDT. Do not edit! */
+/* auto-generated on Sun 28 Jun 2020 12:39:28 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -190,7 +190,6 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #endif
 #endif
 
-
 // workaround for large stack sizes under -O0.
 // https://github.com/simdjson/simdjson/issues/691
 #ifdef __APPLE__
@@ -203,6 +202,13 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #undef SIMDJSON_THREADS_ENABLED
 #endif
 #endif
+
+
+#if SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT
+// No matter what happened, we undefine SIMDJSON_THREADS_ENABLED and so disable threads.
+#undef SIMDJSON_THREADS_ENABLED
+#endif
+
 
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
@@ -2032,7 +2038,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.4.1
+#define SIMDJSON_VERSION 0.4.2
 
 namespace simdjson {
 enum {
@@ -2047,7 +2053,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 
