@@ -391,7 +391,12 @@ private:
   /**
    * The loaded buffer (reused each time load() is called)
    */
+  #if _MSC_VER < 1910
+  // older versions of Visual Studio lack proper support for unique_ptr.
+  std::unique_ptr<char[]> loaded_bytes;
+  #else
   std::unique_ptr<char[], decltype(&aligned_free_char)> loaded_bytes;
+  #endif
 
   /** Capacity of loaded_bytes buffer. */
   size_t _loaded_bytes_capacity{0};
