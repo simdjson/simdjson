@@ -1,4 +1,4 @@
-/* auto-generated on Sun 28 Jun 2020 12:39:28 EDT. Do not edit! */
+/* auto-generated on Sun, Jun 28, 2020 12:37:30 PM. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -59,7 +59,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cfloat>
-
+#include <cassert>
 
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
@@ -286,7 +286,6 @@ static inline void aligned_free_char(char *mem_block) {
 
 #else // NDEBUG
 
-#include <cassert>
 #define SIMDJSON_UNREACHABLE() assert(0);
 #define SIMDJSON_ASSUME(COND) assert(COND)
 
@@ -373,12 +372,15 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
   // Get rid of Intellisense-only warnings (Code Analysis)
-  // Though __has_include is C++17, it looks like it is supported in Visual Studio 2017 or better.
-  // We are probably not supporting earlier version of Visual Studio in any case.
-  #if __has_include(<CppCoreCheck\Warnings.h>)
+  // Though __has_include is C++17, it is supported in Visual Studio 2017 or better (_MSC_VER>=1910).
+  #if defined(_MSC_VER) && (_MSC_VER>=1910) 
+  #if __has_include(<CppCoreCheck\Warnings.h>
   #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
-  #else
+  #endif
+  #endif
+
+  #ifndef SIMDJSON_DISABLE_UNDESIRED_WARNINGS
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS
   #endif
 
@@ -3673,7 +3675,12 @@ private:
   /**
    * The loaded buffer (reused each time load() is called)
    */
+  #if _MSC_VER < 1910
+  // older versions of Visual Studio lack proper support for unique_ptr.
+  std::unique_ptr<char[]> loaded_bytes;
+  #else
   std::unique_ptr<char[], decltype(&aligned_free_char)> loaded_bytes;
+  #endif
 
   /** Capacity of loaded_bytes buffer. */
   size_t _loaded_bytes_capacity{0};
@@ -7401,10 +7408,18 @@ namespace dom {
 //
 // parser inline implementation
 //
+#if _MSC_VER < 1910
+// older versions of Visual Studio lack proper support for unique_ptr.
+really_inline parser::parser(size_t max_capacity) noexcept
+  : _max_capacity{max_capacity},
+    loaded_bytes(nullptr) {
+}
+#else 
 really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
     loaded_bytes(nullptr, &aligned_free_char) {
 }
+#endif
 really_inline parser::parser(parser &&other) noexcept = default;
 really_inline parser &parser::operator=(parser &&other) noexcept = default;
 
