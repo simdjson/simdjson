@@ -1,4 +1,4 @@
-name: MinGW-CI
+name: MinGW32-CI
 
 on: push
 
