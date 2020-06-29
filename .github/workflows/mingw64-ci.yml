@@ -39,10 +39,12 @@ jobs:
           sudo scoop install git --global 
           sudo scoop install ninja --global
           sudo scoop install gcc --arch 64bit --global
+          $env:path
           Write-Host 'Everything has been installed, you are good!'
 
       - name: Build and Test 64-bit x64
         run: |
+          $ENV:PATH="$ENV:PATH;C:\ProgramData\scoop\apps\gcc\current\bin
           mkdir build64
           cd build64
           cmake -DSIMDJSON_BUILD_STATIC=ON ..
