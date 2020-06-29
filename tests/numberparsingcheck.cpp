@@ -89,8 +89,9 @@ void found_integer(int64_t result, const uint8_t *buf) {
   if ((endptr == (const char *)buf) || (expected != result)) {
 #if (!(__MINGW32__) && !(__MINGW64__))
     fprintf(stderr, "Error: parsed %" PRId64 " out of %.32s, ", result, buf);
+#else 
+    fprintf(stderr, "Error: parsed %ll out of %.32s, ", (long long)result, buf);
 #endif
-
     fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
@@ -103,6 +104,8 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
   if ((endptr == (const char *)buf) || (expected != result)) {
 #if (!(__MINGW32__) && !(__MINGW64__))
     fprintf(stderr, "Error: parsed %" PRIu64 " out of %.32s, ", result, buf);
+#else
+    fprintf(stderr, "Error: parsed %llu out of %.32s, ", (unsigned long long)result, buf);
 #endif
     fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;

@@ -14,7 +14,7 @@ jobs:
       BUILD_FLAGS: -- -j
       BUILD_FLAGS32: -- -j -mwin32
       CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-      CTEST_FLAGS: -j4 -E checkperf
+      CTEST_FLAGS: -j4 --output-on-failure -E checkperf
 
     strategy:
       fail-fast: false
