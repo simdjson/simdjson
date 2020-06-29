@@ -1,0 +1,61 @@
+name: MinGW-CI
+
+on: push
+
+jobs:
+  ci:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    env:
+      CMAKE_GENERATOR: Ninja
+      CC: gcc
+      CXX: g++
+      BUILD_FLAGS: -- -j
+      BUILD_FLAGS32: -- -j -mwin32
+      CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
+      CTEST_FLAGS: -j4 -E checkperf
+
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [windows-gcc]
+
+        include:
+          - name: windows-gcc
+            os: windows-2016
+            compiler: gcc
+
+          - name: windows-gcc
+            os: windows-latest
+            compiler: gcc
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Windows
+        shell: powershell
+        run: |
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          
+          scoop install sudo --global
+          sudo scoop install git --global 
+          sudo scoop install ninja --global
+          sudo scoop install gcc --global
+          echo "::set-env name=CC::gcc"
+          echo "::set-env name=CXX::g++"
+          echo "::set-env name=PATH::$env:PATH"
+      - name: Build and Test x86
+        run: |
+          mkdir build
+          cd build
+          cmake $CMAKE_FLAGS ..
+          cmake --build . $BUILD_FLAGS32
+          ctest $CTEST_FLAGS
+      - name: Build and Test x64
+        run: |
+          mkdir build
+          cd build
+          cmake $CMAKE_FLAGS ..
+          cmake --build . $BUILD_FLAGS
+          ctest $CTEST_FLAGS
