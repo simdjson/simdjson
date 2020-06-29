@@ -56,8 +56,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+#ifdef _MSC_VER
 #pragma warning(disable:4996)
+#endif
 
 #define __GETOPT_H__
 
@@ -110,7 +111,7 @@ char    *optarg;		/* argument associated with option */
 extern char __declspec(dllimport) *__progname;
 #endif
 
-#if defined(__CYGWIN__) || defined(__clang__) // D. Lemire (April 2020): adding __clang__
+#if defined(__CYGWIN__) || defined(__clang__) || defined(__MINGW32__) || defined(__MINGW64__))// D. Lemire (April 2020): adding __clang__
 static char EMSG[] = "";
 #else
 #define	EMSG		""
