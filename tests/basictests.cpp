@@ -18,6 +18,8 @@
 #include "test_macros.h"
 
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
+#define SIMDJSON_STR(x)   #x
+#define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, SIMDJSON_STR(x))
 
 namespace number_tests {
 
@@ -69,6 +71,9 @@ namespace number_tests {
       if(ulp > maxulp) maxulp = ulp;
       if(ulp > 0) {
         std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
+        printf("actual: %18.18g\n", actual);
+        printf("expected: %18.18g\n", expected);
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
       }
     }
@@ -152,18 +157,20 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
     simdjson::dom::parser parser;
-    for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
+    for (int i = -307; i <= 308; ++i) {// large negative values should be zero.
       size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
-
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
-      double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
+      double expected = testing_power_of_ten[i + 307];
       int ulp = (int) f64_ulp_dist(actual, expected);
       if(ulp > 0) {
         std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
+        printf("actual: %18.18g\n", actual);
+        printf("expected: %18.18g\n", expected);
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
       }
     }
@@ -1923,6 +1930,7 @@ namespace format_tests {
            true;
   }
 }
+
 
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
