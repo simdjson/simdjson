@@ -1,6 +1,11 @@
 #ifndef __BENCHMARKER_H
 #define __BENCHMARKER_H
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif 
+
+
 #include "event_counter.h"
 #include "simdjson.h" // For SIMDJSON_DISABLE_DEPRECATED_WARNINGS
 

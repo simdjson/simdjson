@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif 
+
 #include <cstring>
 #include <inttypes.h>
 #include <math.h>

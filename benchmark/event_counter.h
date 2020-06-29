@@ -1,6 +1,10 @@
 #ifndef __EVENT_COUNTER_H
 #define __EVENT_COUNTER_H
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+
 #include <cassert>
 #include <cctype>
 #ifndef _MSC_VER
