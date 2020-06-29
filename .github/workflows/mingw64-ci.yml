@@ -7,6 +7,7 @@ on: push
 
 # It is important to build static libraries because cmake is not smart enough under Windows/mingw to take care of the path. So
 # with a dynamic library, you could get failures due to the fact that the EXE can't find its DLL.
+
 jobs:
   ci:
     name: windows-gcc
@@ -21,11 +22,11 @@ jobs:
       - uses: actions/checkout@v2
 
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v2 # we cache the scoop setup with 64-bit GCC
         id: cache
         with:
-          path: C:/ProgramData/scoop
-          key: scoop64
+          path: C:/ProgramData/scoop  # hopefully, scoop puts all its data there
+          key: scoop64  # static key: should be good forever
 
 
       - name: Setup Windows
