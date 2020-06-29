@@ -8,11 +8,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      CMAKE_GENERATOR: Ninja
+      CMAKE_GENERATOR: Ninja # This is critical, try ' cmake  -GNinja-DSIMDJSON_BUILD_STATIC=ON .. ' if using the command line
       CC: gcc
       CXX: g++
-      BUILD_FLAGS: -- -j
-      BUILD_FLAGS32: -- -j -mwin32
+      BUILD_FLAGS: --verbose
       CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
       CTEST_FLAGS: -j4 --output-on-failure -E checkperf
 
@@ -30,7 +29,7 @@ jobs:
             os: windows-latest
             compiler: gcc
 
-    steps:
+    steps: # To reproduce what is below, start a powershell with administrative rights, using scoop *is* a good idea
       - uses: actions/checkout@v2
 
       - name: Setup Windows
@@ -45,17 +44,10 @@ jobs:
           echo "::set-env name=CC::gcc"
           echo "::set-env name=CXX::g++"
           echo "::set-env name=PATH::$env:PATH"
-      - name: Build and Test x86
-        run: |
-          mkdir build
-          cd build
-          cmake $CMAKE_FLAGS ..
-          cmake --build . $BUILD_FLAGS32
-          ctest $CTEST_FLAGS
       - name: Build and Test x64
         run: |
-          mkdir build
-          cd build
+          mkdir build64
+          cd build64
           cmake $CMAKE_FLAGS ..
           cmake --build . $BUILD_FLAGS
           ctest $CTEST_FLAGS

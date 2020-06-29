@@ -1957,6 +1957,11 @@ int main(int argc, char *argv[]) {
   if (simdjson::active_implementation->name() == "unsupported") {
     printf("unsupported CPU\n");
   }
+  // We want to know what we are testing.
+  std::cout << "Detected the best implementation for your machine: " << simdjson::active_implementation->name();
+  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << "------------------------------------------------------------" << std::endl;
+
   std::cout << "Running basic tests." << std::endl;
   if (validate_tests::run() &&
       minify_tests::run() &&
