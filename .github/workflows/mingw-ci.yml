@@ -9,32 +9,26 @@ on: push
 # with a dynamic library, you could get failures due to the fact that the EXE can't find its DLL.
 jobs:
   ci:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
+    name: windows-gcc
+    runs-on: windows-2016
 
     env:
       CMAKE_GENERATOR: Ninja # This is critical, try ' cmake  -GNinja-DSIMDJSON_BUILD_STATIC=ON .. ' if using the command line
       CC: gcc
       CXX: g++
 
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [windows-gcc]
-
-        include:
-          - name: windows-gcc
-            os: windows-2016
-            compiler: gcc
-
-          - name: windows-gcc
-            os: windows-latest
-            compiler: gcc
-
     steps: # To reproduce what is below, start a powershell with administrative rights, using scoop *is* a good idea
       - uses: actions/checkout@v2
 
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: C:/ProgramData/scoop
+          key: scoop32
+
+
       - name: Setup Windows
+        if: steps.cache.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
@@ -46,6 +40,7 @@ jobs:
           echo "::set-env name=CC::gcc"
           echo "::set-env name=CXX::g++"
           echo "::set-env name=PATH::$env:PATH"
+
       - name: Build and Test 32-bit x86
         run: |
           mkdir build32
