@@ -11,9 +11,6 @@ jobs:
       CMAKE_GENERATOR: Ninja # This is critical, try ' cmake  -GNinja-DSIMDJSON_BUILD_STATIC=ON .. ' if using the command line
       CC: gcc
       CXX: g++
-      BUILD_FLAGS: --verbose
-      CMAKE_FLAGS: -DSIMDJSON_BUILD_STATIC=ON
-      CTEST_FLAGS: -j4 --output-on-failure -E checkperf
 
     strategy:
       fail-fast: false
@@ -48,6 +45,6 @@ jobs:
         run: |
           mkdir build64
           cd build64
-          cmake $CMAKE_FLAGS ..
-          cmake --build . $BUILD_FLAGS
-          ctest $CTEST_FLAGS
+          cmake -DSIMDJSON_BUILD_STATIC=ON ..
+          cmake --build . --verbose
+          ctest --output-on-failure -E checkperf
