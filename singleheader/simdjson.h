@@ -1,4 +1,4 @@
-/* auto-generated on Sun Jun 28 16:09:13 EDT 2020. Do not edit! */
+/* auto-generated on Sun 28 Jun 2020 20:08:45 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -374,7 +374,7 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   // Get rid of Intellisense-only warnings (Code Analysis)
   // Though __has_include is C++17, it is supported in Visual Studio 2017 or better (_MSC_VER>=1910).
   #if defined(_MSC_VER) && (_MSC_VER>=1910) 
-  #if __has_include(<CppCoreCheck\Warnings.h>
+  #if __has_include(<CppCoreCheck\Warnings.h>)
   #include <CppCoreCheck\Warnings.h>
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_VS_WARNING(ALL_CPPCORECHECK_WARNINGS)
   #endif
