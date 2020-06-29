@@ -21,7 +21,12 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   // return (char *) malloc(length + SIMDJSON_PADDING);
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
+#if defined(_MSC_VER) && _MSC_VER < 1910
+  // For legacy Visual Studio 2015 since it does not have proper C++11 support
+  char *padded_buffer = new[totalpaddedlength];
+#else
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+#endif
 #ifndef NDEBUG
   if (padded_buffer == nullptr) {
     return nullptr;

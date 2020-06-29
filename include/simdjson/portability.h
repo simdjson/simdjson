@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cfloat>
-
+#include <cassert>
 
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
@@ -232,7 +232,6 @@ static inline void aligned_free_char(char *mem_block) {
 
 #else // NDEBUG
 
-#include <cassert>
 #define SIMDJSON_UNREACHABLE() assert(0);
 #define SIMDJSON_ASSUME(COND) assert(COND)
 
