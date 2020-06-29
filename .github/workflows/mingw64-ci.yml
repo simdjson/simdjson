@@ -29,7 +29,7 @@ jobs:
           key: scoop64  # static key: should be good forever
 
 
-      - name: Setup Windows
+      - name: Setup Windows # This should almost never run if the cache works.
         if: steps.cache.outputs.cache-hit != 'true'
         shell: powershell
         run: |
@@ -38,10 +38,8 @@ jobs:
           scoop install sudo --global
           sudo scoop install git --global 
           sudo scoop install ninja --global
-          sudo scoop install gcc --arch 64bit --global 
-          echo "::set-env name=CC::gcc"
-          echo "::set-env name=CXX::g++"
-          echo "::set-env name=PATH::$env:PATH"
+          sudo scoop install gcc --arch 64bit --global
+          Write-Host 'Everything has been installed, you are good!'
 
       - name: Build and Test 64-bit x64
         run: |
@@ -49,7 +47,7 @@ jobs:
           cd build64
           cmake -DSIMDJSON_BUILD_STATIC=ON ..
           cmake --build . --target basictests --verbose
-          ctest . -R basictests  --output-on-failure
 
+#ctest . -R basictests  --output-on-failure
 # You might wonder why we are running only one test (basictests). Well, it is because
 # otherwise, github actions timeout on us.
