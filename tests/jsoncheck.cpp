@@ -1,7 +1,3 @@
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 700
-#endif 
-
 #include <cstring>
 #ifndef _MSC_VER
 #include <dirent.h>
