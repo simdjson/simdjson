@@ -3,7 +3,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/ae77wp5v3lebmu6n/branch/master?svg=true)](https://ci.appveyor.com/project/lemire/simdjson-jmmti/branch/master)
 [![CirrusCI](https://api.cirrus-ci.com/github/simdjson/simdjson.svg)](https://cirrus-ci.com/github/simdjson/simdjson)
 ![MinGW64-CI](https://github.com/simdjson/simdjson/workflows/MinGW64-CI/badge.svg)
-[![][license img]][license]  [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](https://simdjson.org/api/0.3.1/index.html)
+[![][license img]][license]  [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](https://simdjson.org/api/0.4.0/index.html)
 
 simdjson : Parsing gigabytes of JSON per second
 ===============================================
