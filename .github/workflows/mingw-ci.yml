@@ -47,8 +47,4 @@ jobs:
           cd build32
           cmake -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_ENABLE_THREADS=OFF ..
           cmake --build . --target basictests numberparsingcheck stringparsingcheck errortests integer_tests pointercheck --verbose
-          ctest . -R stringparsingcheck  --output-on-failure
-          ctest . -R numberparsingcheck  --output-on-failure
-          ctest . -R errortests  --output-on-failure
-          ctest . -R integer_tests  --output-on-failure
-          ctest . -R pointercheck  --output-on-failure
+          ctest . -R "(basictests|stringparsingcheck|numberparsingcheck|errortests|integer_tests|pointercheck)"  --output-on-failure
