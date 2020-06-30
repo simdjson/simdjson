@@ -18,6 +18,7 @@
 #include "test_macros.h"
 
 const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
+#define SIMDJSON_SHOW_DEFINE(x) printf("%s=%s\n", #x, STRINGIFY(x))
 
 namespace number_tests {
 
@@ -68,7 +69,9 @@ namespace number_tests {
       uint64_t ulp = f64_ulp_dist(actual,expected);
       if(ulp > maxulp) maxulp = ulp;
       if(ulp > 0) {
-        std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
+        std::cerr << "JSON '" << buf << " parsed to ";
+        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
       }
     }
@@ -152,18 +155,25 @@ namespace number_tests {
     std::cout << __func__ << std::endl;
     char buf[1024];
     simdjson::dom::parser parser;
-    for (int i = -1000000; i <= 308; ++i) {// large negative values should be zero.
+
+    bool is_pow_correct{1e-308 == std::pow(10,-308)};
+    int start_point = is_pow_correct ? -10000 : -307;
+    if(!is_pow_correct) {
+      std::cout << "On your system, the pow function is busted. Sorry about that. " << std::endl;
+    }
+    for (int i = start_point; i <= 308; ++i) {// large negative values should be zero.
       size_t n = snprintf(buf, sizeof(buf), "1e%d", i);
       if (n >= sizeof(buf)) { abort(); }
       fflush(NULL);
-
       double actual;
       auto error = parser.parse(buf, n).get(actual);
       if (error) { std::cerr << error << std::endl; return false; }
       double expected = ((i >= -307) ? testing_power_of_ten[i + 307]: std::pow(10, i));
       int ulp = (int) f64_ulp_dist(actual, expected);
       if(ulp > 0) {
-        std::cerr << "JSON '" << buf << " parsed to " << actual << " instead of " << expected << std::endl;
+        std::cerr << "JSON '" << buf << " parsed to ";
+        fprintf( stderr," %18.18g instead of %18.18g\n", actual, expected); // formatting numbers is easier with printf
+        SIMDJSON_SHOW_DEFINE(FLT_EVAL_METHOD);
         return false;
       }
     }
@@ -1924,6 +1934,7 @@ namespace format_tests {
   }
 }
 
+
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
   int c;
@@ -1949,6 +1960,11 @@ int main(int argc, char *argv[]) {
   if (simdjson::active_implementation->name() == "unsupported") {
     printf("unsupported CPU\n");
   }
+  // We want to know what we are testing.
+  std::cout << "Running tests against this implementation: " << simdjson::active_implementation->name();
+  std::cout << "(" << simdjson::active_implementation->description() << ")" << std::endl;
+  std::cout << "------------------------------------------------------------" << std::endl;
+
   std::cout << "Running basic tests." << std::endl;
   if (validate_tests::run() &&
       minify_tests::run() &&

@@ -62,9 +62,12 @@ add_cpp_test(unicode_tests LABELS acceptance per_implementation)
 
 find_program(BASH bash)
 
+# Below we skip anything on Windows, not just visual studio, because running bash under Windows requires you to 
+# map app paths to their "mounted" equivalent (e.g., /mnt/c/...). So even if you have bash under Windows, extra work would be
+# required to make things work robustly. Simply put: bash is not quite portable.
 
 # Script tests
-if (BASH AND (NOT MSVC) AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
+if (BASH AND (NOT WIN32) AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
   #
   # json2json test
   #

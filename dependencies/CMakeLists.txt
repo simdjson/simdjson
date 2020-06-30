@@ -18,6 +18,7 @@ if ((Git_FOUND) AND (SIMDJSON_IS_UNDER_GIT))
   endfunction(initialize_submodule)
 
   if (SIMDJSON_GOOGLE_BENCHMARKS)
+    message (STATUS "'SIMDJSON_GOOGLE_BENCHMARKS' is requested, configuring..." )
     option(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_TESTING OFF)
     option(BENCHMARK_ENABLE_INSTALL OFF)

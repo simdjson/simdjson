@@ -1,5 +1,5 @@
 #include <cstring>
-#ifndef _MSC_VER
+#if (!(_MSC_VER) && !(__MINGW32__) && !(__MINGW64__))
 #include <dirent.h>
 #else
 // Microsoft can't be bothered to provide standard utils.
