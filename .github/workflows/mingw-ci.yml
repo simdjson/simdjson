@@ -42,7 +42,13 @@ jobs:
       - name: Build and Test 32-bit x86
         shell: powershell
         run: |
-          $ENV:PATH="C:\ProgramData\scoop\apps\gcc\current\bin;$ENV:PATH"
+          Set-PSDebug -Trace 1
+          $ENV:PATH="C:\ProgramData\scoop\shims;$ENV:PATH"
+          $ENV:PATH
+          scoop reset git
+          scoop reset ninja
+          scoop reset cmake
+          scoop reset gcc
           g++ --version
           mkdir build32
           cd build32
