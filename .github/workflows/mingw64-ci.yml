@@ -27,7 +27,6 @@ jobs:
         with:
           path: |
             C:\ProgramData\scoop
-            C:\Users\runneradmin\scoop
           key: scoop64  # static key: should be good forever
       - name: Setup Windows # This should almost never run if the cache works.
         if: steps.cache.outputs.cache-hit != 'true'
@@ -47,9 +46,11 @@ jobs:
           $ENV:PATH="$ENV:PATH;C:\ProgramData\scoop\apps\gcc\current\bin;C:\ProgramData\scoop\shims;C:\Users\runneradmin\scoop\shims"
           mkdir build64
           cd build64
-          cmake -DSIMDJSON_BUILD_STATIC=ON ..
+          cmake -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF ..
           cmake --build . --target basictests --verbose
-          ctest . -R basictests  --output-on-failure
+          ctest . -R basictests    --verbose
+
+# could also be --output-on-failure
 
 # You might wonder why we are running only one test (basictests). Well, it is because
 # otherwise, github actions timeout on us.
