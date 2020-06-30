@@ -48,7 +48,7 @@ jobs:
           cd build32
           cmake -DSIMDJSON_BUILD_STATIC=ON ..
           cmake --build . --target basictests --verbose
+          ctest . -R basictests  --output-on-failure
 
-#ctest . -R basictests  --output-on-failure
 # You might wonder why we are running only one test (basictests). Well, it is because
 # otherwise, github actions timeout on us.
