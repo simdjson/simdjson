@@ -43,9 +43,7 @@ jobs:
       - name: Build and Test 64-bit x64
         shell: powershell
         run: |
-          Set-PSDebug -Trace 1
           $ENV:PATH="C:\ProgramData\scoop\shims;C:\ProgramData\scoop\apps\gcc\current\bin;C:\ProgramData\scoop\apps\ninja\current;$ENV:PATH"
-          $ENV:PATH
           g++ --version
           cmake --version
           ninja --version
