@@ -178,6 +178,11 @@ endif()
 # add_test(singleheader singleheader)
 
 if(NOT MSVC)
+  ######
+  # This tests is to guard us against ever again removing the soversion
+  # and version numbers from the library. See Bug
+  # https://github.com/simdjson/simdjson/issues/1014
+  #####
   get_target_property(REPORTED_SIMDJSON_VERSION simdjson VERSION)
   get_target_property(REPORTED_SIMDJSON_SOVERSION simdjson SOVERSION)
   if(NOT ${REPORTED_SIMDJSON_VERSION} STREQUAL ${SIMDJSON_LIB_VERSION})
