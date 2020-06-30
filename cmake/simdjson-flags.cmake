@@ -77,7 +77,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 
 if(MSVC)
-if(${CMAKE_VS_PLATFORM_TOOLSET} STREQUAL "v140")
+if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
   # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
   target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
 else()
