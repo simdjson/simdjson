@@ -7,8 +7,8 @@ project(simdjson
 
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 4)
-set(PROJECT_VERSION_PATCH 2)
-set(SIMDJSON_LIB_VERSION "0.4.2" CACHE STRING "simdjson library version")
+set(PROJECT_VERSION_PATCH 3)
+set(SIMDJSON_LIB_VERSION "0.4.3" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "2" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
 
