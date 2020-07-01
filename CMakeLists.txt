@@ -8,13 +8,10 @@ project(simdjson
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 4)
 set(PROJECT_VERSION_PATCH 5)
-set(SIMDJSON_LIB_VERSION "0.4.5" CACHE STRING "simdjson library version")
+set(SIMDJSON_SEMANTIC_VERSION "0.4.5" CACHE STRING "simdjson semantic version")
+set(SIMDJSON_LIB_VERSION "2.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "2" CACHE STRING "simdjson library soversion")
 set(SIMDJSON_GITHUB_REPOSITORY https://github.com/simdjson/simdjson)
-
-# The SIMDJSON_LIB_SOVERSION is 0 for versions before 0.3.0.
-# The SIMDJSON_LIB_SOVERSION is 1 for version 0.3.
-# The SIMDJSON_LIB_SOVERSION is 2 for version 0.4.
 
 include(GNUInstallDirs)
 include(cmake/simdjson-flags.cmake)

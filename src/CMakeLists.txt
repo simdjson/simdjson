@@ -85,23 +85,7 @@ if(NOT MSVC)
   # https://github.com/simdjson/simdjson/issues/1014
   # https://github.com/simdjson/simdjson/issues/52
   ########### 
-  # We deliberately omit VERSION ${SIMDJSON_LIB_VERSION} since our version numbers do not follow
-  # the sonumber. The important point is that the soversion matches ABI compatibility. In simdjson
-  # version 0.2.0, 0.3.0 and 0.4.0 are not binary compatible. This is allowed as per the
-  # semantic versioning specification.
-  # 
-  # The soversion and the library version numbers are different numbers. It is common but
-  # not universal that the major version number is also the soversion number. However, there
-  # are notable exceptions. For example, glibc version 2.23 has a soversion of 6. It is
-  # ok because the linker (e.g., ldd) does not need to know 2.23, it only cares about the
-  # soversion number (6). 
-  #
-  # The important part is that if you built against a library that has soname x, named
-  # libsimdson.x, then you can also load dynamically against another file named libsimdson.x.
-  # Hence, it is ok if the soversion goes up fast. It is not ok to keep the soversion the
-  # same and break ABI compatibility (that is very bad).
-  ############
-  set_target_properties(simdjson PROPERTIES SOVERSION ${SIMDJSON_LIB_SOVERSION})
+  set_target_properties(simdjson PROPERTIES VERSION ${SIMDJSON_LIB_VERSION}	SOVERSION ${SIMDJSON_LIB_SOVERSION})
   ##########
   # End of the do-not-delete message.
   #########
