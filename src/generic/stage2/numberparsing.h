@@ -268,9 +268,9 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p
   // z that fits in 53 bits, then we will be able to convert back the
   // the integer into a float in a lossless manner.
   const char *const first_after_period = p;
-  if (!is_integer(*p)) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
 
   unsigned char digit = static_cast<unsigned char>(*p - '0');
+  if (digit > 9) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
   ++p;
   i = i * 10 + digit; // might overflow + multiplication by 10 is likely
                       // cheaper than arbitrary mult.
@@ -283,14 +283,34 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p
     p += 8;
   }
 #endif
-  while (is_integer(*p)) {
-    digit = static_cast<unsigned char>(*p - '0');
+  digit = static_cast<unsigned char>(*p - '0');
+  while (digit <= 9) {
     ++p;
     i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
                         // because we have parse_highprecision_float later.
+    digit = static_cast<unsigned char>(*p - '0');
   }
   exponent = first_after_period - p;
   return true;
+}
+
+template<typename I>
+really_inline bool parse_digit(const char c, I &i) {
+  const unsigned char digit = static_cast<unsigned char>(c - '0');
+  if (digit <= 9) {
+    // a multiplication by 10 is cheaper than an arbitrary integer
+    // multiplication
+    i = 10 * i + digit; // might overflow, we will handle the overflow later
+    return true;
+  } else {
+    return false;
+  }
+}
+template<typename I>
+really_inline bool parse_first_digit(const char c, I &i) {
+  const unsigned char digit = static_cast<unsigned char>(c - '0');
+  i = digit;
+  return digit <= 9;
 }
 
 really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&p, int64_t &exponent) {
@@ -303,26 +323,15 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&
   }
 
   // e[+-] must be followed by a number
-  if (!is_integer(*p)) { return INVALID_NUMBER(src); }
-  unsigned char digit = static_cast<unsigned char>(*p - '0');
-  int64_t exp_number = digit;
-  p++;
-  if (is_integer(*p)) {
-    digit = static_cast<unsigned char>(*p - '0');
-    exp_number = 10 * exp_number + digit;
+  int64_t exp_number;
+  if (!parse_first_digit(*p, exp_number)) { return INVALID_NUMBER(src); }
+  ++p;
+  if (parse_digit(*p, exp_number)) { ++p; }
+  if (parse_digit(*p, exp_number)) { ++p; }
+  while (parse_digit(*p, exp_number)) {
     ++p;
-  }
-  if (is_integer(*p)) {
-    digit = static_cast<unsigned char>(*p - '0');
-    exp_number = 10 * exp_number + digit;
-    ++p;
-  }
-  while (is_integer(*p)) {
     // we need to check for overflows; we refuse to parse this
     if (exp_number > 0x100000000) { return INVALID_NUMBER(src); }
-    digit = static_cast<unsigned char>(*p - '0');
-    exp_number = 10 * exp_number + digit;
-    ++p;
   }
   exponent += (neg_exp ? -exp_number : exp_number);
   return true;
@@ -403,34 +412,23 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   if (found_minus) {
     ++p;
     negative = true;
-    // a negative sign must be followed by an integer
-    if (!is_integer(*p)) { return INVALID_NUMBER(src); }
   }
-  const char *const start_digits = p;
 
-  uint64_t i;      // an unsigned int avoids signed overflows (which are bad)
-  if (*p == '0') {
-    ++p;
-    if (is_integer(*p)) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
-    i = 0;
+  //
+  // Parse the integer part.
+  //
+  const char *const start_digits = p;
+  uint64_t i;
+  if (!parse_first_digit(*p, i)) { return INVALID_NUMBER(src); }
+  ++p;
+
+  if (i == 0) {
+    // If the integer starts with 0, just check that there are no more digits.
+    if (static_cast<unsigned char>(*p - '0') <= 9) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
   } else {
-    // NOTE: This is a redundant check--either we're negative, in which case we checked whether this
-    // is a digit above, or the caller already determined we start with a digit. But removing this
-    // check seems to make things slower: https://github.com/simdjson/simdjson/pull/990#discussion_r448512448
-    // Please do try yourself, or think of ways to explain it--we'd love to understand :)
-    if (!is_integer(*p)) { return INVALID_NUMBER(src); } // must start with an integer
-    unsigned char digit = static_cast<unsigned char>(*p - '0');
-    i = digit;
-    p++;
-    // the is_made_of_eight_digits_fast routine is unlikely to help here because
-    // we rarely see large integer parts like 123456789
-    while (is_integer(*p)) {
-      digit = static_cast<unsigned char>(*p - '0');
-      // a multiplication by 10 is cheaper than an arbitrary integer
-      // multiplication
-      i = 10 * i + digit; // might overflow, we will handle the overflow later
-      ++p;
-    }
+    // Integer starts with 1-9. Parse the rest of the integer
+    // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+    while (parse_digit(*p, i)) { p++; }
   }
 
   //
