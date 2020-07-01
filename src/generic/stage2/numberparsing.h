@@ -383,6 +383,17 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   return true;
 }
 
+// for performance analysis, it is sometimes  useful to skip parsing
+#ifdef SIMDJSON_SKIPNUMBERPARSING
+
+template<typename W>
+really_inline bool parse_number(const uint8_t *const, W &writer) {
+  writer.append_s64(0);        // always write zero
+  return true;                 // always succeeds
+}
+
+#else
+
 // parse the number at src
 // define JSON_TEST_NUMBERS for unit testing
 //
@@ -393,13 +404,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(UNUSED const uint8_t *const src,
-                                W &writer) {
-#ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
-                                  // useful to skip parsing
-  writer.append_s64(0);        // always write zero
-  return true;                    // always succeeds
-#else
+really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -478,9 +483,9 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     WRITE_INTEGER(negative ? 0 - i : i, src, writer);
   }
   return is_structural_or_whitespace(*p);
+}
 
 #endif // SIMDJSON_SKIPNUMBERPARSING
-}
 
 } // namespace numberparsing
 } // namespace stage2
