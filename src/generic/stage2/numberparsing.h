@@ -416,19 +416,14 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   //
   // Parse the integer part.
   //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const char *const start_digits = p;
-  uint64_t i;
-  if (!parse_first_digit(*p, i)) { return INVALID_NUMBER(src); }
-  ++p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
 
-  // If the integer starts with 0, just check that there are no more digits.
-  if (i == 0) {
-    if (static_cast<unsigned char>(*p - '0') <= 9) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
-  } else {
-    // Integer starts with 1-9. Parse the rest of the integer
-    // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
-    while (parse_digit(*p, i)) { p++; }
-  }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
 
   //
   // Handle floats if there is a . or e (or both)
@@ -439,8 +434,8 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     is_float = true;
     ++p;
     if (!parse_decimal(src, p, i, exponent)) { return false; }
+    digit_count = int(p - start_digits); // used later to guard against overflows
   }
-  int digit_count = int(p - start_digits); // used later to guard against overflows
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
