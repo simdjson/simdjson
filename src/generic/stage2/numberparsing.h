@@ -400,19 +400,18 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 really_inline bool parse_number(UNUSED const uint8_t *const src,
-                                UNUSED bool found_minus,
                                 W &writer) {
 #ifdef SIMDJSON_SKIPNUMBERPARSING // for performance analysis, it is sometimes
                                   // useful to skip parsing
   writer.append_s64(0);        // always write zero
   return true;                    // always succeeds
 #else
-  const char *p = reinterpret_cast<const char *>(src);
-  bool negative = false;
-  if (found_minus) {
-    ++p;
-    negative = true;
-  }
+
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const char *p = reinterpret_cast<const char *>(src) + negative;
 
   //
   // Parse the integer part.
@@ -422,8 +421,8 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
   if (!parse_first_digit(*p, i)) { return INVALID_NUMBER(src); }
   ++p;
 
+  // If the integer starts with 0, just check that there are no more digits.
   if (i == 0) {
-    // If the integer starts with 0, just check that there are no more digits.
     if (static_cast<unsigned char>(*p - '0') <= 9) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
   } else {
     // Integer starts with 1-9. Parse the rest of the integer
