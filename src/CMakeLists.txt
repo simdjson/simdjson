@@ -84,7 +84,7 @@ if(NOT MSVC)
   # Please do not delete the following, our users want version numbers. See
   # https://github.com/simdjson/simdjson/issues/1014
   # https://github.com/simdjson/simdjson/issues/52
-  ###########
+  ########### 
   set_target_properties(simdjson PROPERTIES VERSION ${SIMDJSON_LIB_VERSION}	SOVERSION ${SIMDJSON_LIB_SOVERSION})
   ##########
   # End of the do-not-delete message.
