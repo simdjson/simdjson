@@ -143,7 +143,7 @@ if(atleastminor):
 
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
     line = re.sub('SIMDJSON_SEMANTIC_VERSION "\d+\.\d+\.\d+','SIMDJSON_SEMANTIC_VERSION "'+newversionstring, line.rstrip())
-    line = re.sub('SIMDJSON_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+str(sonumber), line)
+    line = re.sub('SIMDJSON_LIB_VERSION "\d+','SIMDJSON_LIB_VERSION "'+str(sonumber), line)
     line = re.sub('set\(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
