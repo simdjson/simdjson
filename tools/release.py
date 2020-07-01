@@ -8,6 +8,9 @@ import subprocess
 import io
 import os
 import fileinput
+if sys.version_info < (3, 0):
+    sys.stdout.write("Sorry, requires Python 3.x or better\n")
+    sys.exit(1)
 
 def colored(r, g, b, text):
     return "\033[38;2;{};{};{}m{} \033[38;2;255;255;255m".format(r, g, b, text)
