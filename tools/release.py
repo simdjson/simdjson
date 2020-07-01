@@ -161,19 +161,16 @@ print("modified "+doxyfile+", a backup was made")
 
 
 
-ret = subprocess.call(["doxygen"], cwd=maindir)
-if(ret != 0):
-    print("I could not execute doxygen?")
+cp = subprocess.run(["bash", "amalgamate.sh"], stdout=subprocess.DEVNULL, cwd=maindir+ os.sep + "singleheader")  # doesn't capture output
+if(cp.returncode != 0):
+    print("Failed to run amalgamate")
 
-ret = subprocess.call(["bash", "amalgamate.sh"], cwd=maindir+ os.sep + "singleheader")
-if(ret != 0):
-    print("Failed to run amalgamate.sh")
+cp = subprocess.run(["doxygen"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=maindir)  # doesn't capture output
+if(cp.returncode != 0):
+    print("Failed to run doxygen")
 
-
-
-
-pipe = subprocess.Popen(["doxygen"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=maindir)
-branchresult = pipe.communicate()[0].decode().strip()
+#ipe = subprocess.Popen(["doxygen"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=maindir)
+#doxygenresult = pipe.communicate()[0].decode().strip()
 
 pattern = re.compile("https://simdjson.org/api/(\d+\.\d+\.\d+)/index.html")
 readmefile = maindir + os.sep + "README.md"
@@ -182,10 +179,12 @@ m = pattern.search(readmedata)
 if m == None:
     print(colored(255, 0, 0, 'I cannot find a link to the API documentation in your README?????'))
 else: 
+    detectedreadme = m.group(1)
+    print("found a link to your API documentation in the README file: "+detectedreadme+" ("+toversionstring(*newversion)+")")
     if(atleastminor):
-       print("found a link to your API documentation in the README file: "+m.group(1))
-       if(m.group(1) != toversionstring(*newversion)):
-           print("Consider updating to "+toversionstring(*newversion))
+       if(detectedreadme != toversionstring(*newversion)):
+           print(colored(255, 0, 0, "Consider updating the readme link to "+toversionstring(*newversion)))
+
 
 
 print("Please run the tests before issuing a release. \n")
