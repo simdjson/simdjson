@@ -228,12 +228,6 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   return true;
 }
 
-really_inline bool is_integer(char c) {
-  return (c >= '0' && c <= '9');
-  // this gets compiled to (uint8_t)(c - '0') <= 9 on all decent compilers
-}
-
-
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
