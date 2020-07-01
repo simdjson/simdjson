@@ -358,9 +358,10 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
       return success;
     }
   }
-  // TODO unlikely wraps the wrong thing here
-  if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) ||
-      (exponent > FASTFLOAT_LARGEST_POWER)) { // this is uncommon!!!
+  // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
+  // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
+  // To future reader: we'd love if someone found a better way, or at least could explain this result!
+  if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
     bool success = slow_float_parsing((const char *) src, writer);
@@ -403,7 +404,6 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     ++p;
     negative = true;
     // a negative sign must be followed by an integer
-    // TODO this is a redundant check
     if (!is_integer(*p)) { return INVALID_NUMBER(src); }
   }
   const char *const start_digits = p;
@@ -414,6 +414,10 @@ really_inline bool parse_number(UNUSED const uint8_t *const src,
     if (is_integer(*p)) { return INVALID_NUMBER(src); } // 0 cannot be followed by an integer
     i = 0;
   } else {
+    // NOTE: This is a redundant check--either we're negative, in which case we checked whether this
+    // is a digit above, or the caller already determined we start with a digit. But removing this
+    // check seems to make things slower: https://github.com/simdjson/simdjson/pull/990#discussion_r448512448
+    // Please do try yourself, or think of ways to explain it--we'd love to understand :)
     if (!is_integer(*p)) { return INVALID_NUMBER(src); } // must start with an integer
     unsigned char digit = static_cast<unsigned char>(*p - '0');
     i = digit;
