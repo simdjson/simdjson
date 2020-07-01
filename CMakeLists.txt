@@ -47,8 +47,9 @@ add_subdirectory(windows)
 if(NOT(SIMDJSON_JUST_LIBRARY))
   add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
   add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
+  add_subdirectory(singleheader)
 endif()
-add_subdirectory(singleheader)
+install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #
 # Compile tools / tests / benchmarks
