@@ -256,6 +256,18 @@ bool slow_float_parsing(UNUSED const char * src, W writer) {
   return INVALID_NUMBER((const uint8_t *)src);
 }
 
+template<typename I>
+NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+really_inline bool parse_digit(const char c, I &i) {
+  const unsigned char digit = static_cast<unsigned char>(c - '0');
+  if (digit > 9) {
+    return false;
+  }
+  // PERF NOTE: multiplication by 10 is cheaper than arbitrary integer multiplication
+  i = 10 * i + digit; // might overflow, we will handle the overflow later
+  return true;
+}
+
 really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
@@ -263,12 +275,6 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p
   // the integer into a float in a lossless manner.
   const char *const first_after_period = p;
 
-  unsigned char digit = static_cast<unsigned char>(*p - '0');
-  if (digit > 9) { return INVALID_NUMBER(src); } // There must be at least one digit after the .
-  ++p;
-  i = i * 10 + digit; // might overflow + multiplication by 10 is likely
-                      // cheaper than arbitrary mult.
-  // we will handle the overflow later
 #ifdef SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
   // this turns out to be frequent enough.
@@ -277,57 +283,38 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p
     p += 8;
   }
 #endif
-  digit = static_cast<unsigned char>(*p - '0');
-  while (digit <= 9) {
-    ++p;
-    i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
-                        // because we have parse_highprecision_float later.
-    digit = static_cast<unsigned char>(*p - '0');
-  }
+  // Unrolling the first digit makes a small difference on some implementations (e.g. westmere)
+  if (parse_digit(*p, i)) { ++p; }
+  while (parse_digit(*p, i)) { p++; }
   exponent = first_after_period - p;
+  // Decimal without digits (123.) is illegal
+  if (exponent == 0) {
+    return INVALID_NUMBER(src);
+  }
   return true;
 }
 
-template<typename I>
-really_inline bool parse_digit(const char c, I &i) {
-  const unsigned char digit = static_cast<unsigned char>(c - '0');
-  if (digit <= 9) {
-    // a multiplication by 10 is cheaper than an arbitrary integer
-    // multiplication
-    i = 10 * i + digit; // might overflow, we will handle the overflow later
-    return true;
-  } else {
-    return false;
-  }
-}
-template<typename I>
-really_inline bool parse_first_digit(const char c, I &i) {
-  const unsigned char digit = static_cast<unsigned char>(c - '0');
-  i = digit;
-  return digit <= 9;
-}
-
 really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&p, int64_t &exponent) {
-  bool neg_exp = false;
-  if ('-' == *p) {
-    neg_exp = true;
-    ++p;
-  } else if ('+' == *p) {
-    ++p;
-  }
+  // Exp Sign: -123.456e[-]78
+  bool neg_exp = ('-' == *p);
+  if (neg_exp || '+' == *p) { p++; } // Skip + as well
 
-  // e[+-] must be followed by a number
-  int64_t exp_number;
-  if (!parse_first_digit(*p, exp_number)) { return INVALID_NUMBER(src); }
-  ++p;
-  if (parse_digit(*p, exp_number)) { ++p; }
-  if (parse_digit(*p, exp_number)) { ++p; }
-  while (parse_digit(*p, exp_number)) {
-    ++p;
-    // we need to check for overflows; we refuse to parse this
-    if (exp_number > 0x100000000) { return INVALID_NUMBER(src); }
-  }
+  // Exponent: -123.456e-[78]
+  auto start_exp = p;
+  int64_t exp_number = 0;
+  while (parse_digit(*p, exp_number)) { ++p; }
   exponent += (neg_exp ? -exp_number : exp_number);
+
+  // If there were no digits, it's an error.
+  // If there were more than 18 digits, we may have overflowed the integer.
+  if (unlikely(p == start_exp || p > start_exp+18)) {
+    // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
+    while (*start_exp == '0') { start_exp++; }
+    // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
+    // support exponents smaller than -9,999,999,999,999,999,999 and bigger
+    // than 9,999,999,999,999,999,999.
+    if (p == start_exp || p > start_exp+18) { return INVALID_NUMBER(src); }
+  }
   return true;
 }
 
