@@ -81,6 +81,12 @@ else()
   # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
 endif()
+if(${CMAKE_VS_PLATFORM_TOOLSET} STRGREATER "v141")
+  string(REPLACE "/Ob2" "/Ob2" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}") #VS 2019
+  message(STATUS " Visual Studio 2019 detected, new compile flags ${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
+
+
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
   target_compile_options(simdjson-internal-flags INTERFACE -Werror -Wall -Wextra -Weffc++)
