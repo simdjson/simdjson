@@ -9,7 +9,7 @@
 #define JSON_TEST_NUMBERS
 #endif
 
-#ifndef _MSC_VER
+#if (!(_MSC_VER) && !(__MINGW32__) && !(__MINGW64__))
 #include <dirent.h>
 #else
 #include <dirent_portable.h>
@@ -87,7 +87,11 @@ void found_integer(int64_t result, const uint8_t *buf) {
   char *endptr;
   long long expected = strtoll((const char *)buf, &endptr, 10);
   if ((endptr == (const char *)buf) || (expected != result)) {
+#if (!(__MINGW32__) && !(__MINGW64__))
     fprintf(stderr, "Error: parsed %" PRId64 " out of %.32s, ", result, buf);
+#else // mingw is busted since we include #include <inttypes.h>
+    fprintf(stderr, "Error: parsed %lld out of %.32s, ", (long long)result, buf);
+#endif
     fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }
@@ -98,7 +102,11 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf) {
   char *endptr;
   unsigned long long expected = strtoull((const char *)buf, &endptr, 10);
   if ((endptr == (const char *)buf) || (expected != result)) {
+#if (!(__MINGW32__) && !(__MINGW64__))
     fprintf(stderr, "Error: parsed %" PRIu64 " out of %.32s, ", result, buf);
+#else // mingw is busted since we include #include <inttypes.h>
+    fprintf(stderr, "Error: parsed %llu out of %.32s, ", (unsigned long long)result, buf);
+#endif
     fprintf(stderr, " while parsing %s \n", fullpath);
     parse_error |= PARSE_ERROR;
   }

@@ -2,6 +2,23 @@
 
 ## Highlights
 
+- Test coverage has been greatly improved and we have resolved many static-analysis warnings on different systems.
+- We added a fast (8GB/s) minifier that works directly on JSON strings.
+- We added fast (10GB/s) UTF-8 validator that works directly on strings (any strings, including non-JSON).
+- The array and object elements have a constant-time size() method.
+- Performance improvements to the API (type(), get<>()).
+- The parse_many function (ndjson) has been entirely reworked. It now uses a single secondary thread instead of several new threads.
+- We have introduced a faster UTF-8 validation algorithm (lookup3) for all kernels (ARM, x64 SSE, x64 AVX).
+- C++11 support for older compilers and systems.
+- FreeBSD support (and tests).
+- We support the clang front-end compiler (clangcl) under Visual Studio.
+- It is now possible to target ARM platforms under Visual Studio.
+- The simdjson library will never abort or print to standard output/error.
+
+# 0.3
+
+## Highlights
+
 - **Multi-Document Parsing:** Read a bundle of JSON documents (ndjson) 2-4x faster than doing it
   individually. [API docs](https://github.com/simdjson/simdjson/blob/master/doc/basics.md#newline-delimited-json-ndjson-and-json-lines) / [Design Details](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md)
 - **Simplified API:** The API has been completely revamped for ease of use, including a new JSON

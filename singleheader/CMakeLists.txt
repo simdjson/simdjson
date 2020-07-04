@@ -20,7 +20,10 @@ set_source_files_properties(${SINGLEHEADER_FILES} PROPERTIES GENERATED TRUE)
 
 find_program(BASH bash)
 
-if (BASH)
+# Under Windows, exectuting a bash script works, except that you cannot generally
+# do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
+
+if (BASH AND (NOT WIN32))
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
@@ -69,7 +72,7 @@ if (BASH)
   # add_custom_target(amalgamate DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
   ##
 
-else(BASH)
+else()
 
   # We do not have bash, so we use existing amalgamated files instead of generating them ...
   # (Do not do this if the source and destination are the same!)
@@ -83,7 +86,7 @@ else(BASH)
     )
   endif()
 
-endif(BASH)
+endif()
 
 #
 # Do not depend on singleheader files directly: depend on this target instead.

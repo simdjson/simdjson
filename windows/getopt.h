@@ -1,4 +1,5 @@
 #ifndef __GETOPT_H__
+/** This file has been modified by D. Lemire for use in simdjson. **/
 /* From https://github.com/skandhurkat/Getopt-for-Visual-Studio/blob/master/getopt.h */
 /**
  * DISCLAIMER
@@ -56,8 +57,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
+#ifdef _MSC_VER
 #pragma warning(disable:4996)
+#endif
 
 #define __GETOPT_H__
 
@@ -110,7 +112,9 @@ char    *optarg;		/* argument associated with option */
 extern char __declspec(dllimport) *__progname;
 #endif
 
-#if defined(__CYGWIN__) || defined(__clang__) // D. Lemire (April 2020): adding __clang__
+// D. Lemire (April 2020): adding __clang__
+// D. Lemire (June 2020): adding __MINGW32__ and __MINGW64__
+#if defined(__CYGWIN__) || defined(__clang__) || defined(__MINGW32__) || defined(__MINGW64__) 
 static char EMSG[] = "";
 #else
 #define	EMSG		""

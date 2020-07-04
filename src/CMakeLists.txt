@@ -78,7 +78,17 @@ if(NOT MSVC)
   ## We output the library at the root of the current directory where cmake is invoked
   ## This is handy but Visual Studio will happily ignore us
   set_target_properties(simdjson PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  MESSAGE( STATUS "Library output directory (does not apply to Visual Studio): " ${PROJECT_BINARY_DIR})
+  MESSAGE( STATUS "Library output directory: " ${PROJECT_BINARY_DIR})
+
+  ############
+  # Please do not delete the following, our users want version numbers. See
+  # https://github.com/simdjson/simdjson/issues/1014
+  # https://github.com/simdjson/simdjson/issues/52
+  ########### 
+  set_target_properties(simdjson PROPERTIES VERSION ${SIMDJSON_LIB_VERSION}	SOVERSION ${SIMDJSON_LIB_SOVERSION})
+  ##########
+  # End of the do-not-delete message.
+  #########
 endif()
 
 #

@@ -7,7 +7,13 @@ import re
 import subprocess
 import io
 import os
+import fileinput
+if sys.version_info < (3, 0):
+    sys.stdout.write("Sorry, requires Python 3.x or better\n")
+    sys.exit(1)
 
+def colored(r, g, b, text):
+    return "\033[38;2;{};{};{}m{} \033[38;2;255;255;255m".format(r, g, b, text)
 
 def extractnumbers(s):
     return tuple(map(int,re.findall("(\d+)\.(\d+)\.(\d+)",str(s))[0]))
@@ -22,16 +28,12 @@ pipe = subprocess.Popen(["git", "rev-parse", "--abbrev-ref", "HEAD"], stdout=sub
 branchresult = pipe.communicate()[0].decode().strip()
 
 if(branchresult != "master"):
-    print("release on master, you are on '"+branchresult+"'")
-    #sys.exit(-1)
-
+    print(colored(255, 0, 0, "We recommend that you release on master, you are on '"+branchresult+"'"))
 
 ret = subprocess.call(["git", "remote", "update"])
 
 if(ret != 0):
     sys.exit(ret)
-
-
 
 pipe = subprocess.Popen(["git", "log", "HEAD..", "--oneline"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 uptodateresult = pipe.communicate()[0].decode().strip()
@@ -42,7 +44,7 @@ if(len(uptodateresult) != 0):
 
 pipe = subprocess.Popen(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 maindir = pipe.communicate()[0].decode().strip()
-
+scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 print("repository: "+maindir)
 
@@ -79,7 +81,14 @@ else :
 atleastminor= (currentv[0] != newversion[0]) or (currentv[1] != newversion[1])
 
 if(atleastminor):
-    print("This is more than a revision.")
+    print(colored(0, 255, 0, "This is more than a revision."))
+    releasefile = maindir + os.sep + "RELEASES.md"
+    releasedata = open(releasefile).read()
+    pattern = re.compile("#\s+\d+\.\d+")
+    m = pattern.search(releasedata)
+    if(m == None):
+        print(colored(255, 0, 0, "You are preparing a new minor release and you have not yet updated RELEASES.md."))
+        sys.exit(-1)
 
 versionfilerel = os.sep + "include" + os.sep + "simdjson" + os.sep + "simdjson_version.h"
 versionfile = maindir + versionfilerel
@@ -114,10 +123,6 @@ with open(versionfile, 'w') as file:
 
 print(versionfile + " modified")
 
-import fileinput
-import re
-
-
 newmajorversionstring = str(newversion[0])
 mewminorversionstring = str(newversion[1])
 newrevversionstring = str(newversion[2])
@@ -140,24 +145,53 @@ if(atleastminor):
     sonumber += 1
 
 for line in fileinput.input(cmakefile, inplace=1, backup='.bak'):
-    line = re.sub('SIMDJSON_LIB_VERSION "\d+\.\d+\.\d+','SIMDJSON_LIB_VERSION "'+newversionstring, line.rstrip())
-    line = re.sub('SIMDJSON_LIB_SOVERSION "\d+','SIMDJSON_LIB_SOVERSION "'+newmajorversionstring, line)
+    line = re.sub('SIMDJSON_SEMANTIC_VERSION "\d+\.\d+\.\d+','SIMDJSON_SEMANTIC_VERSION "'+newversionstring, line.rstrip())
+    line = re.sub('SIMDJSON_LIB_VERSION "\d+','SIMDJSON_LIB_VERSION "'+str(sonumber), line)
     line = re.sub('set\(PROJECT_VERSION_MAJOR \d+','set(PROJECT_VERSION_MAJOR '+newmajorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_MINOR \d+','set(PROJECT_VERSION_MINOR '+mewminorversionstring, line)
     line = re.sub('set\(PROJECT_VERSION_PATCH \d+','set(PROJECT_VERSION_PATCH '+newrevversionstring, line)
     line = re.sub('set\(SIMDJSON_LIB_SOVERSION \"\d+\"','set(SIMDJSON_LIB_SOVERSION \"'+str(sonumber)+'\"', line)
     print(line)
 
-
 print("modified "+cmakefile+", a backup was made")
+
+
 doxyfile = maindir + os.sep + "Doxyfile"
 for line in fileinput.input(doxyfile, inplace=1, backup='.bak'):
     line = re.sub('PROJECT_NUMBER         = "\d+\.\d+\.\d+','PROJECT_NUMBER         = "'+newversionstring, line.rstrip())
     print(line)
 print("modified "+doxyfile+", a backup was made")
 
-scriptlocation = os.path.dirname(os.path.abspath(__file__))
 
 
-print("Please run the tests before issuing a release, do make test && make amalgamate_test \n")
+cp = subprocess.run(["bash", "amalgamate.sh"], stdout=subprocess.DEVNULL, cwd=maindir+ os.sep + "singleheader")  # doesn't capture output
+if(cp.returncode != 0):
+    print("Failed to run amalgamate")
+
+cp = subprocess.run(["doxygen"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=maindir)  # doesn't capture output
+if(cp.returncode != 0):
+    print("Failed to run doxygen")
+
+#ipe = subprocess.Popen(["doxygen"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=maindir)
+#doxygenresult = pipe.communicate()[0].decode().strip()
+
+pattern = re.compile("https://simdjson.org/api/(\d+\.\d+\.\d+)/index.html")
+readmefile = maindir + os.sep + "README.md"
+readmedata = open(readmefile).read()
+m = pattern.search(readmedata)
+if m == None:
+    print(colored(255, 0, 0, 'I cannot find a link to the API documentation in your README?????'))
+else: 
+    detectedreadme = m.group(1)
+    print("found a link to your API documentation in the README file: "+detectedreadme+" ("+toversionstring(*newversion)+")")
+    if(atleastminor):
+       if(detectedreadme != toversionstring(*newversion)):
+           print(colored(255, 0, 0, "Consider updating the readme link to "+toversionstring(*newversion)))
+
+
+
+print("Please run the tests before issuing a release. \n")
 print("to issue release, enter \n git commit -a && git push  &&  git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\" &&  git push --tags \n")
+
+
+

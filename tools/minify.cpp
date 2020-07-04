@@ -1,5 +1,5 @@
 #include <iostream>
-#ifndef _MSC_VER
+#if (!(_MSC_VER) && !(__MINGW32__) && !(__MINGW64__))
 #include <dirent.h>
 #endif
 #include <unistd.h>
