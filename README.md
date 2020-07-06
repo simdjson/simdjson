@@ -1,4 +1,3 @@
-[![Build Status](https://cloud.drone.io/api/badges/simdjson/simdjson/status.svg)](https://cloud.drone.io/simdjson/simdjson) 
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&q=proj%3Asimdjson&can=2)
 [![simdjson](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
 [![CirrusCI](https://api.cirrus-ci.com/github/simdjson/simdjson.svg)](https://cirrus-ci.com/github/simdjson/simdjson)
