@@ -82,7 +82,7 @@ if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
   target_compile_options(simdjson-internal-flags INTERFACE /W0 /sdl)
 else()
   # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
-  target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
+  target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl /w34714) # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4714?view=vs-2019
 endif()
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
