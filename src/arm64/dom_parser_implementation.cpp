@@ -57,7 +57,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
         in.chunks[0].any_bits_set(0x7),
         in.chunks[1].any_bits_set(0x7),
         in.chunks[2].any_bits_set(0x7),
-        in.chunks[3].any_bits_set(0x7))
+        in.chunks[3].any_bits_set(0x7)
   ).to_bitmask();
 
   // Functional programming causes trouble with Visual Studio:
