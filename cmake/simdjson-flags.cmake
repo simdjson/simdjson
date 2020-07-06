@@ -75,7 +75,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 #  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 #endif()
 
-
+option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to add debugging information to the release build for easier profiling inside tools like VTune" OFF)
 if(MSVC)
 if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
   # Visual Studio 2015 issues warnings and we tolerate it,  cmake -G"Visual Studio 14" ..
@@ -83,6 +83,10 @@ if("${MSVC_TOOLSET_VERSION}" STREQUAL "140")
 else()
   # Recent version of Visual Studio expected (2017, 2019...). Prior versions are unsupported.
   target_compile_options(simdjson-internal-flags INTERFACE /WX /W3 /sdl)
+endif()
+if(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING)
+  target_link_options(simdjson-flags  INTERFACE    /DEBUG ) 
+  target_compile_options(simdjson-flags INTERFACE  /Zi    )
 endif()
 else()
   target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
