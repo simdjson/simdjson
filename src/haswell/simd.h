@@ -324,7 +324,7 @@ namespace simd {
       each_chunk(this->chunks[1]);
     }
     */
-
+    /*
     template <typename R=bool, typename F>
     really_inline simd8x64<R> map(F const& map_chunk) const {
       return simd8x64<R>(
@@ -342,6 +342,7 @@ namespace simd {
         map_chunk(this->chunks[1], b.chunks[1])
       );
     }
+    */
 
     /*template <typename F>
     really_inline simd8<T> reduce(F const& reduce_pair) const {

@@ -453,7 +453,7 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
     }
     */
 
-    template <typename R=bool, typename F>
+    /*template <typename R=bool, typename F>
     really_inline simd8x64<R> map(F const& map_chunk) const {
       return simd8x64<R>(
         map_chunk(this->chunks[0]),
@@ -471,7 +471,7 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
         map_chunk(this->chunks[2], b.chunks[2]),
         map_chunk(this->chunks[3], b.chunks[3])
       );
-    }
+    }*/
 
     /*
     template <typename F>
