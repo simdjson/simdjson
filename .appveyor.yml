@@ -8,8 +8,6 @@ environment:
   matrix:
     - job_name: VS2019
       CMAKE_ARGS:  -A %Platform%
-    - job_name: VS2019CLANG
-      CMAKE_ARGS:  -A %Platform% -T ClangCL
     - job_name: VS2019ARM
       CMAKE_ARGS: -A ARM64 -DCMAKE_CROSSCOMPILING=1 -D SIMDJSON_GOOGLE_BENCHMARKS=OFF # Does Google Benchmark builds under VS ARM?
     - job_name: VS2017 (Static, No Threads)
