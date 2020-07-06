@@ -1,4 +1,4 @@
-/* auto-generated on Mon, Jul  6, 2020  3:03:34 PM. Do not edit! */
+/* auto-generated on Mon Jul  6 18:16:52 EDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -359,7 +359,7 @@ static const uint64_t thintable_epi8[256] = {
 #ifndef SIMDJSON_HASWELL_IMPLEMENTATION_H
 #define SIMDJSON_HASWELL_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace haswell {
@@ -393,7 +393,7 @@ namespace simdjson { namespace internal { const haswell::implementation haswell_
 #ifndef SIMDJSON_WESTMERE_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace westmere {
@@ -425,7 +425,7 @@ namespace simdjson { namespace internal { const westmere::implementation westmer
 #ifndef SIMDJSON_ARM64_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -457,7 +457,7 @@ namespace simdjson { namespace internal { const arm64::implementation arm64_sing
 #ifndef SIMDJSON_FALLBACK_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -620,7 +620,7 @@ WARN_UNUSED bool validate_utf8(const char *buf, size_t len) noexcept {
 
 // Anything in the top level directory MUST be included outside of the #if statements
 // below, or amalgamation will screw them up!
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 /* begin file src/jsoncharutils.h */
 #ifndef SIMDJSON_JSONCHARUTILS_H
 #define SIMDJSON_JSONCHARUTILS_H
@@ -1958,16 +1958,16 @@ const uint64_t mantissa_128[] = {
 
 #endif // SIMDJSON_JSONCHARUTILS_H
 /* end file src/jsoncharutils.h */
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 
 #if SIMDJSON_IMPLEMENTATION_ARM64
 /* begin file src/arm64/implementation.cpp */
-/* arm64/implementation.h already included: #include "arm64/implementation.h" */
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
 /* begin file src/arm64/dom_parser_implementation.h */
 #ifndef SIMDJSON_ARM64_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_ARM64_DOM_PARSER_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -2100,8 +2100,8 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 UNTARGET_REGION
 /* end file src/generic/stage2/allocate.h */
 /* begin file src/arm64/dom_parser_implementation.cpp */
-/* arm64/implementation.h already included: #include "arm64/implementation.h" */
-/* arm64/dom_parser_implementation.h already included: #include "arm64/dom_parser_implementation.h" */
+/* arm64/implementation.h already included: #include "arm64/implementation.h" */
+/* arm64/dom_parser_implementation.h already included: #include "arm64/dom_parser_implementation.h" */
 
 //
 // Stage 1
@@ -2164,12 +2164,12 @@ UNTARGET_REGION
 #ifndef SIMDJSON_ARM64_SIMD_H
 #define SIMDJSON_ARM64_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file src/arm64/bitmanipulation.h */
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -2239,7 +2239,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H
 /* end file src/arm64/bitmanipulation.h */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
 #include <type_traits>
 
 
@@ -2677,43 +2677,6 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
       each(3);
     }
 
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-      each_chunk(this->chunks[2]);
-      each_chunk(this->chunks[3]);
-    }
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1]),
-        map_chunk(this->chunks[2]),
-        map_chunk(this->chunks[3])
-      );
-    }
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(const simd8x64<T> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1]),
-        map_chunk(this->chunks[2], b.chunks[2]),
-        map_chunk(this->chunks[3], b.chunks[3])
-      );
-    }
-
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(
-        reduce_pair(this->chunks[0], this->chunks[1]),
-        reduce_pair(this->chunks[2], this->chunks[3])
-      );
-    }
-
     really_inline uint64_t to_bitmask() const {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
       const uint8x16_t bit_mask = make_uint8x16_t(
@@ -2736,17 +2699,32 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask,
+        this->chunks[2] | mask,
+        this->chunks[3] | mask
+      );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] == mask,
+        this->chunks[1] == mask,
+        this->chunks[2] == mask,
+        this->chunks[3] == mask
+      ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] <= mask,
+        this->chunks[1] <= mask,
+        this->chunks[2] <= mask,
+        this->chunks[3] <= mask
+      ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
@@ -2756,7 +2734,7 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
 
 #endif // SIMDJSON_ARM64_SIMD_H
 /* end file src/arm64/bitmanipulation.h */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -2775,13 +2753,24 @@ struct json_character_block {
 };
 
 really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
-  auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
-    auto nib_lo = chunk & 0xf;
-    auto nib_hi = chunk.shr<4>();
-    auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-    auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
-    return shuf_lo & shuf_hi;
-  });
+  // Functional programming causes trouble with Visual Studio.
+  // Keeping this version in comments since it is much nicer:
+  // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
+  //  auto nib_lo = chunk & 0xf;
+  //  auto nib_hi = chunk.shr<4>();
+  //  auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  //  auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+  //  return shuf_lo & shuf_hi;
+  // });
+  const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+
+  auto v = simd8x64<uint8_t>(
+     (in.chunks[0] & 0xf).lookup_16(table1) & (in.chunks[0].shr<4>()).lookup_16(table2),
+     (in.chunks[1] & 0xf).lookup_16(table1) & (in.chunks[1].shr<4>()).lookup_16(table2),
+     (in.chunks[2] & 0xf).lookup_16(table1) & (in.chunks[2].shr<4>()).lookup_16(table2),
+     (in.chunks[3] & 0xf).lookup_16(table1) & (in.chunks[3].shr<4>()).lookup_16(table2)
+  );
 
 
   // We compute whitespace and op separately. If the code later only use one or the
@@ -2800,13 +2789,25 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // there is a small untaken optimization opportunity here. We deliberately
   // do not pick it up.
 
-  uint64_t op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
-  uint64_t whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
+  uint64_t op = simd8x64<bool>(
+        v.chunks[0].any_bits_set(0x7),
+        v.chunks[1].any_bits_set(0x7),
+        v.chunks[2].any_bits_set(0x7),
+        v.chunks[3].any_bits_set(0x7)
+  ).to_bitmask();
+
+  uint64_t whitespace = simd8x64<bool>(
+        v.chunks[0].any_bits_set(0x18),
+        v.chunks[1].any_bits_set(0x18),
+        v.chunks[2].any_bits_set(0x18),
+        v.chunks[3].any_bits_set(0x18)
+  ).to_bitmask();
+
   return { whitespace, op };
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
+    simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
     return bits.max() < 0b10000000u;
 }
 
@@ -3820,10 +3821,10 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #ifndef SIMDJSON_ARM64_STRINGPARSING_H
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* arm64/simd.h already included: #include "arm64/simd.h" */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* arm64/simd.h already included: #include "arm64/simd.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 
 namespace simdjson {
 namespace arm64 {
@@ -3998,9 +3999,9 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
-/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* arm64/intrinsics.h already included: #include "arm64/intrinsics.h" */
+/* arm64/bitmanipulation.h already included: #include "arm64/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 
@@ -5315,12 +5316,12 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 /* begin file src/fallback/implementation.cpp */
-/* fallback/implementation.h already included: #include "fallback/implementation.h" */
+/* fallback/implementation.h already included: #include "fallback/implementation.h" */
 /* begin file src/fallback/dom_parser_implementation.h */
 #ifndef SIMDJSON_FALLBACK_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_FALLBACK_DOM_PARSER_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -5453,8 +5454,8 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 UNTARGET_REGION
 /* end file src/generic/stage2/allocate.h */
 /* begin file src/fallback/dom_parser_implementation.cpp */
-/* fallback/implementation.h already included: #include "fallback/implementation.h" */
-/* fallback/dom_parser_implementation.h already included: #include "fallback/dom_parser_implementation.h" */
+/* fallback/implementation.h already included: #include "fallback/implementation.h" */
+/* fallback/dom_parser_implementation.h already included: #include "fallback/dom_parser_implementation.h" */
 
 //
 // Stage 1
@@ -5859,7 +5860,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #ifndef SIMDJSON_FALLBACK_STRINGPARSING_H
 #define SIMDJSON_FALLBACK_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 
 namespace simdjson {
 namespace fallback {
@@ -6019,7 +6020,7 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
 /* begin file src/fallback/bitmanipulation.h */
 #ifndef SIMDJSON_FALLBACK_BITMANIPULATION_H
 #define SIMDJSON_FALLBACK_BITMANIPULATION_H
@@ -7409,12 +7410,12 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 #endif
 #if SIMDJSON_IMPLEMENTATION_HASWELL
 /* begin file src/haswell/implementation.cpp */
-/* haswell/implementation.h already included: #include "haswell/implementation.h" */
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
 /* begin file src/haswell/dom_parser_implementation.h */
 #ifndef SIMDJSON_HASWELL_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_HASWELL_DOM_PARSER_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace haswell {
@@ -7547,8 +7548,8 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 UNTARGET_REGION
 /* end file src/generic/stage2/allocate.h */
 /* begin file src/haswell/dom_parser_implementation.cpp */
-/* haswell/implementation.h already included: #include "haswell/implementation.h" */
-/* haswell/dom_parser_implementation.h already included: #include "haswell/dom_parser_implementation.h" */
+/* haswell/implementation.h already included: #include "haswell/implementation.h" */
+/* haswell/dom_parser_implementation.h already included: #include "haswell/dom_parser_implementation.h" */
 
 //
 // Stage 1
@@ -7642,13 +7643,13 @@ UNTARGET_REGION
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file src/haswell/bitmanipulation.h */
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
 
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -7724,7 +7725,7 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H
 /* end file src/haswell/bitmanipulation.h */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -8036,36 +8037,6 @@ namespace simd {
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
     }
 
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-    }
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1])
-      );
-    }
-
-    
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1])
-      );
-    }
-
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(this->chunks[0], this->chunks[1]);
-    }
-
     really_inline uint64_t to_bitmask() const {
       uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r_hi =                       this->chunks[1].to_bitmask();
@@ -8074,7 +8045,10 @@ namespace simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask
+      );
     }
 
     really_inline uint64_t eq(const T m) const {
@@ -8083,9 +8057,6 @@ namespace simd {
         this->chunks[0] == mask,
         this->chunks[1] == mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019  due to runtime dispatching.  
-      //return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
@@ -8094,9 +8065,6 @@ namespace simd {
         this->chunks[0] <= mask,
         this->chunks[1] <= mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019  due to runtime dispatching.
-      //return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
@@ -8108,7 +8076,7 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_SIMD_H
 /* end file src/haswell/bitmanipulation.h */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -8138,19 +8106,20 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // hope that useless computations will be omitted. This is namely case when
   // minifying (we only need whitespace).
 
-  uint64_t whitespace = in.map([&](simd8<uint8_t> _in) {
-    return _in == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, _in));
-  }).to_bitmask();
-
-  uint64_t op = in.map([&](simd8<uint8_t> _in) {
-    // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
-    return (_in | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, _in-','));
-  }).to_bitmask();
+  uint64_t whitespace = simd8x64<bool>(
+        in.chunks[0] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[0])),
+        in.chunks[1] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[1]))
+  ).to_bitmask();
+  
+  uint64_t op = simd8x64<bool>(
+        (in.chunks[0] | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[0]-',')),
+        (in.chunks[1] | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[1]-','))
+  ).to_bitmask();
   return { whitespace, op };
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
+  simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]);
   return !bits.any_bits_set_anywhere(0b10000000u);
 }
 
@@ -9160,10 +9129,10 @@ UNTARGET_REGION
 #ifndef SIMDJSON_HASWELL_STRINGPARSING_H
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* haswell/simd.h already included: #include "haswell/simd.h" */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* haswell/simd.h already included: #include "haswell/simd.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 
 TARGET_HASWELL
 namespace simdjson {
@@ -9336,9 +9305,9 @@ UNTARGET_REGION
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
-/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* haswell/intrinsics.h already included: #include "haswell/intrinsics.h" */
+/* haswell/bitmanipulation.h already included: #include "haswell/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 
@@ -10664,12 +10633,12 @@ UNTARGET_REGION
 #endif
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 /* begin file src/westmere/implementation.cpp */
-/* westmere/implementation.h already included: #include "westmere/implementation.h" */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 /* begin file src/westmere/dom_parser_implementation.h */
 #ifndef SIMDJSON_WESTMERE_DOM_PARSER_IMPLEMENTATION_H
 #define SIMDJSON_WESTMERE_DOM_PARSER_IMPLEMENTATION_H
 
-/* isadetection.h already included: #include "isadetection.h" */
+/* isadetection.h already included: #include "isadetection.h" */
 
 namespace simdjson {
 namespace westmere {
@@ -10802,8 +10771,8 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 UNTARGET_REGION
 /* end file src/generic/stage2/allocate.h */
 /* begin file src/westmere/dom_parser_implementation.cpp */
-/* westmere/implementation.h already included: #include "westmere/implementation.h" */
-/* westmere/dom_parser_implementation.h already included: #include "westmere/dom_parser_implementation.h" */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
+/* westmere/dom_parser_implementation.h already included: #include "westmere/dom_parser_implementation.h" */
 
 //
 // Stage 1
@@ -10870,12 +10839,12 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-/* simdprune_tables.h already included: #include "simdprune_tables.h" */
+/* simdprune_tables.h already included: #include "simdprune_tables.h" */
 /* begin file src/westmere/bitmanipulation.h */
 #ifndef SIMDJSON_WESTMERE_BITMANIPULATION_H
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -10961,7 +10930,7 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H
 /* end file src/westmere/bitmanipulation.h */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
 
 
 
@@ -11249,43 +11218,6 @@ namespace simd {
       each(3);
     }
 
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-      each_chunk(this->chunks[2]);
-      each_chunk(this->chunks[3]);
-    }
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1]),
-        map_chunk(this->chunks[2]),
-        map_chunk(this->chunks[3])
-      );
-    }
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1]),
-        map_chunk(this->chunks[2], b.chunks[2]),
-        map_chunk(this->chunks[3], b.chunks[3])
-      );
-    }
-
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(
-        reduce_pair(this->chunks[0], this->chunks[1]),
-        reduce_pair(this->chunks[2], this->chunks[3])
-      );
-    }
-
     really_inline uint64_t to_bitmask() const {
       uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r1 =                       this->chunks[1].to_bitmask();
@@ -11296,7 +11228,12 @@ namespace simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask,
+        this->chunks[2] | mask,
+        this->chunks[3] | mask
+      );
     }
 
     really_inline uint64_t eq(const T m) const {
@@ -11307,9 +11244,6 @@ namespace simd {
         this->chunks[2] == mask,
         this->chunks[3] == mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019 due to runtime dispatching.
-      // return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
@@ -11320,9 +11254,6 @@ namespace simd {
         this->chunks[2] <= mask,
         this->chunks[3] <= mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019 due to runtime dispatching.   
-      // return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
@@ -11334,8 +11265,8 @@ UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
 /* end file src/westmere/bitmanipulation.h */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
-/* westmere/implementation.h already included: #include "westmere/implementation.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* westmere/implementation.h already included: #include "westmere/implementation.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -11365,19 +11296,25 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // hope that useless computations will be omitted. This is namely case when
   // minifying (we only need whitespace).
 
-  uint64_t whitespace = in.map([&](simd8<uint8_t> _in) {
-    return _in == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, _in));
-  }).to_bitmask();
+  uint64_t whitespace = simd8x64<bool>(
+        in.chunks[0] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[0])),
+        in.chunks[1] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[1])),
+        in.chunks[2] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[2])),
+        in.chunks[3] == simd8<uint8_t>(_mm_shuffle_epi8(whitespace_table, in.chunks[3]))
+  ).to_bitmask();
 
-  uint64_t op = in.map([&](simd8<uint8_t> _in) {
-    // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
-    return (_in | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, _in-','));
-  }).to_bitmask();
+  // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
+  uint64_t op = simd8x64<bool>(
+        (in.chunks[0] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[0]-',')),
+        (in.chunks[1] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[1]-',')),
+        (in.chunks[2] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[2]-',')),
+        (in.chunks[3] | 32) == simd8<uint8_t>(_mm_shuffle_epi8(op_table, in.chunks[3]-','))
+  ).to_bitmask();
   return { whitespace, op };
 }
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
+  simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
   return !bits.any_bits_set_anywhere(0b10000000u);
 }
 
@@ -12387,10 +12324,10 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* westmere/simd.h already included: #include "westmere/simd.h" */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* westmere/simd.h already included: #include "westmere/simd.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 
 TARGET_WESTMERE
 namespace simdjson {
@@ -12564,9 +12501,9 @@ UNTARGET_REGION
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
-/* jsoncharutils.h already included: #include "jsoncharutils.h" */
-/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
-/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
+/* jsoncharutils.h already included: #include "jsoncharutils.h" */
+/* westmere/intrinsics.h already included: #include "westmere/intrinsics.h" */
+/* westmere/bitmanipulation.h already included: #include "westmere/bitmanipulation.h" */
 #include <cmath>
 #include <limits>
 

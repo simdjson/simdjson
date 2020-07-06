@@ -81,7 +81,6 @@ really_inline json_character_block json_character_block::classify(const simd::si
 
 really_inline bool is_ascii(simd8x64<uint8_t> input) {
     simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
-    // input.reduce([&](simd8<uint8_t> a,simd8<uint8_t> b) { return a|b; });
     return bits.max() < 0b10000000u;
 }
 
