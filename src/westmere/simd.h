@@ -344,12 +344,28 @@ namespace simd {
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] == mask,
+        this->chunks[1] == mask,
+        this->chunks[2] == mask,
+        this->chunks[3] == mask
+      ).to_bitmask();
+      // The lambdas fail to compile under clang for visual studio, under some really
+      // recent version of Visual Studio 2019 due to runtime dispatching.
+      // return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] <= mask,
+        this->chunks[1] <= mask,
+        this->chunks[2] <= mask,
+        this->chunks[3] <= mask
+      ).to_bitmask();
+      // The lambdas fail to compile under clang for visual studio, under some really
+      // recent version of Visual Studio 2019 due to runtime dispatching.   
+      // return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 

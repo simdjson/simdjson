@@ -30,7 +30,6 @@
       event_count allocate_count = collector.end();                            \
       aggregate << allocate_count;                                             \
     }                                                                          \
-    uint64_t S = size;                                                         \
     if (collector.has_events()) {                                              \
       printf("%7.3f", aggregate.best.cycles() / static_cast<double>(size));    \
       if (verbose) {                                                           \
@@ -76,7 +75,6 @@
       event_count allocate_count = collector.end();                            \
       aggregate << allocate_count;                                             \
     }                                                                          \
-    uint64_t S = size;                                                         \
     if (collector.has_events()) {                                              \
       printf("%7.3f", aggregate.best.cycles() / static_cast<double>(size));    \
       if (verbose) {                                                           \
