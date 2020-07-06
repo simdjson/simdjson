@@ -1,0 +1,25 @@
+name: VS16-CLANG-CI
+
+on: push
+
+jobs:
+  ci:
+    name: windows-vs16
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Run CMake with VS16'
+      uses: lukka/run-cmake@v2
+      with:
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+        buildDirectory: "${{ github.workspace }}/../../_temp/windows"
+        cmakeBuildType: Release   
+        buildWithCMake: true
+        cmakeGenerator: VS16Win64 
+        cmakeAppendedArgs:  -T ClangCL -DSIMDJSON_COMPETITION=OFF  -DSIMDJSON_BUILD_STATIC=ON
+        buildWithCMakeArgs: --config Release  
+        
+    - name: 'Run CTest'
+      run: ctest -C Release -E checkperf  --output-on-failure 
+      working-directory: "${{ github.workspace }}/../../_temp/windows"

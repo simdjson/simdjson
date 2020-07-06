@@ -169,6 +169,31 @@ struct structural_parser : structural_iterator {
     return parse_number(current(), found_minus);
   }
 
+  really_inline bool parse_number_with_space_terminated_copy(const bool is_negative) {
+    /**
+    * We need to make a copy to make sure that the string is space terminated.
+    * This is not about padding the input, which should already padded up
+    * to len + SIMDJSON_PADDING. However, we have no control at this stage
+    * on how the padding was done. What if the input string was padded with nulls?
+    * It is quite common for an input string to have an extra null character (C string).
+    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    * document, but the string "9\0" by itself is fine. So we make a copy and
+    * pad the input with spaces when we know that there is just one input element.
+    * This copy is relatively expensive, but it will almost never be called in
+    * practice unless you are in the strange scenario where you have many JSON
+    * documents made of single atoms.
+    */
+    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.len + SIMDJSON_PADDING));
+    if (copy == nullptr) {
+      return true;
+    }
+    memcpy(copy, buf, parser.len);
+    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
+    size_t idx = *current_structural;
+    bool result = parse_number(&copy[idx], is_negative); // parse_number does not throw
+    free(copy);
+    return result;
+  }
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
     switch (advance_char()) {
     case '"':
@@ -306,6 +331,7 @@ struct structural_parser : structural_iterator {
 #undef FAIL_IF
 #define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
 
+
 template<bool STREAMING>
 WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
@@ -351,18 +377,16 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     goto finish;
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
-    FAIL_IF(
-      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], false);
-      })
-    );
+    // Next line used to be an interesting functional programming exercise with
+    // a lambda that gets passed to another function via a closure. This would confuse the
+    // clangcl compiler under Visual Studio 2019 (recent release).
+    { if(parser.parse_number_with_space_terminated_copy(false)) { goto error; }}
     goto finish;
   case '-':
-    FAIL_IF(
-      parser.with_space_terminated_copy([&](const uint8_t *copy, size_t idx) {
-        return parser.parse_number(&copy[idx], true);
-      })
-    );
+    // Next line used to be an interesting functional programming exercise with
+    // a lambda that gets passed to another function via a closure. This would confuse the
+    // clangcl compiler under Visual Studio 2019 (recent release).
+    { if(parser.parse_number_with_space_terminated_copy(true)) { goto error; }}
     goto finish;
   default:
     parser.log_error("Document starts with a non-value character");
