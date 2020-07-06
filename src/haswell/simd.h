@@ -315,13 +315,15 @@ namespace simd {
       this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
     }
-
+    // lamdbas are bad under Visual Studio
+    /*
     template <typename F>
     really_inline void each(F const& each_chunk) const
     {
       each_chunk(this->chunks[0]);
       each_chunk(this->chunks[1]);
     }
+    */
 
     template <typename R=bool, typename F>
     really_inline simd8x64<R> map(F const& map_chunk) const {
@@ -341,10 +343,11 @@ namespace simd {
       );
     }
 
-    template <typename F>
+    /*template <typename F>
     really_inline simd8<T> reduce(F const& reduce_pair) const {
       return reduce_pair(this->chunks[0], this->chunks[1]);
     }
+    */
 
     really_inline uint64_t to_bitmask() const {
       uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
@@ -354,7 +357,12 @@ namespace simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](simd8<T> a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask
+      );
+      // lambdas are a problem under Visual Studio
+      // return this->map( [&](simd8<T> a) { return a | mask; } );
     }
 
     really_inline uint64_t eq(const T m) const {
