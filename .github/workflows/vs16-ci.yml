@@ -1,0 +1,26 @@
+name: VS16-CI
+
+on: push
+
+jobs:
+  ci:
+    name: windows-vs16
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: 'Run CMake with VS16'
+      uses: lukka/run-cmake@v2
+      with:
+        cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
+        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+        buildDirectory: "${{ github.workspace }}/../../_temp/windows"
+        cmakeBuildType: Release   
+        buildWithCMake: true
+        cmakeGenerator: VS16Win64 
+        cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF
+        buildWithCMakeArgs: --config Release  
+        
+    - name: 'Run CTest'
+      run: ctest -C Release  -E checkperf  --output-on-failure 
+      working-directory: "${{ github.workspace }}/../../_temp/windows"
+  
