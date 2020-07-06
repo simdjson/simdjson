@@ -1,4 +1,4 @@
-name: VS16-CLANG-CI
+name: VS16-Ninja-CI
 
 on: push
 
@@ -17,7 +17,7 @@ jobs:
         cmakeBuildType: Release   
         buildWithCMake: true
         cmakeGenerator: VS16Win64 
-        cmakeAppendedArgs:  -T ClangCL -G Ninja
+        cmakeAppendedArgs:  -G Ninja
         buildWithCMakeArgs: --config Release  
         
     - name: 'Run CTest'
