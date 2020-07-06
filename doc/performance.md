@@ -158,9 +158,9 @@ When compiling with Visual Studio, we recommend the flags `/Ob2 /O2` or better. 
 
 
 
-Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component. You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler.
+Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component (ClangCL). You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler.
 
-In our experience, you will get much better performance compiling with GNU GCC under Windows via MSYS2. If that is a possibility, you should consider it.
+In our experience under Windows, you will get much better performance compiling with GNU GCC via MSYS2 or with ClangCL/Visual Studio than by using the regular Visual Studio compiler. We encourage you to experiment and compare the results.
 
 
 Downclocking
