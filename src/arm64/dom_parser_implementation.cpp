@@ -26,13 +26,23 @@ struct json_character_block {
 };
 
 really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
-  auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
-    auto nib_lo = chunk & 0xf;
-    auto nib_hi = chunk.shr<4>();
-    auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-    auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
-    return shuf_lo & shuf_hi;
-  });
+  // Functional programming causes trouble with Visual Studio:
+  // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
+  //  auto nib_lo = chunk & 0xf;
+  //  auto nib_hi = chunk.shr<4>();
+  //  auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  //  auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+  //  return shuf_lo & shuf_hi;
+  // });
+  const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
+  const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
+
+  auto v = simd8x64<uint8_t>(
+     (v.chunks[0] & 0xf).lookup_16(table1) & (v.chunks[0].shr<4>()).lookup_16(table2),
+     (v.chunks[1] & 0xf).lookup_16(table1) & (v.chunks[1].shr<4>()).lookup_16(table2),
+     (v.chunks[2] & 0xf).lookup_16(table1) & (v.chunks[2].shr<4>()).lookup_16(table2),
+     (v.chunks[3] & 0xf).lookup_16(table1) & (v.chunks[3].shr<4>()).lookup_16(table2)
+  );
 
 
   // We compute whitespace and op separately. If the code later only use one or the
@@ -54,19 +64,19 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // Functional programming causes trouble with Visual Studio:
   // uint64_t op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
   uint64_t op = simd8x64<bool>(
-        in.chunks[0].any_bits_set(0x7),
-        in.chunks[1].any_bits_set(0x7),
-        in.chunks[2].any_bits_set(0x7),
-        in.chunks[3].any_bits_set(0x7)
+        v.chunks[0].any_bits_set(0x7),
+        v.chunks[1].any_bits_set(0x7),
+        v.chunks[2].any_bits_set(0x7),
+        v.chunks[3].any_bits_set(0x7)
   ).to_bitmask();
 
   // Functional programming causes trouble with Visual Studio:
   // uint64_t whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
   uint64_t whitespace = simd8x64<bool>(
-        in.chunks[0].any_bits_set(0x18),
-        in.chunks[1].any_bits_set(0x18),
-        in.chunks[2].any_bits_set(0x18),
-        in.chunks[3].any_bits_set(0x18)
+        v.chunks[0].any_bits_set(0x18),
+        v.chunks[1].any_bits_set(0x18),
+        v.chunks[2].any_bits_set(0x18),
+        v.chunks[3].any_bits_set(0x18)
   ).to_bitmask();
 
   return { whitespace, op };
