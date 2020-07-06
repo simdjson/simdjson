@@ -291,48 +291,6 @@ namespace simd {
       each(2);
       each(3);
     }
-    // lamdbas are bad under Visual Studio
-    /*
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-      each_chunk(this->chunks[2]);
-      each_chunk(this->chunks[3]);
-    }
-    */
-   /*
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1]),
-        map_chunk(this->chunks[2]),
-        map_chunk(this->chunks[3])
-      );
-    }
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1]),
-        map_chunk(this->chunks[2], b.chunks[2]),
-        map_chunk(this->chunks[3], b.chunks[3])
-      );
-    }
-    */
-    /*
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(
-        reduce_pair(this->chunks[0], this->chunks[1]),
-        reduce_pair(this->chunks[2], this->chunks[3])
-      );
-    }
-    */
 
     really_inline uint64_t to_bitmask() const {
       uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
@@ -350,8 +308,6 @@ namespace simd {
         this->chunks[2] | mask,
         this->chunks[3] | mask
       );
-      // lambdas are a problem under Visual Studio
-      //return this->map( [&](simd8<T> a) { return a | mask; } );
     }
 
     really_inline uint64_t eq(const T m) const {
@@ -362,9 +318,6 @@ namespace simd {
         this->chunks[2] == mask,
         this->chunks[3] == mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019 due to runtime dispatching.
-      // return this->map( [&](simd8<T> a) { return a == mask; } ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
@@ -375,9 +328,6 @@ namespace simd {
         this->chunks[2] <= mask,
         this->chunks[3] <= mask
       ).to_bitmask();
-      // The lambdas fail to compile under clang for visual studio, under some really
-      // recent version of Visual Studio 2019 due to runtime dispatching.   
-      // return this->map( [&](simd8<T> a) { return a <= mask; } ).to_bitmask();
     }
   }; // struct simd8x64<T>
 

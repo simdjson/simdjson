@@ -26,7 +26,8 @@ struct json_character_block {
 };
 
 really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
-  // Functional programming causes trouble with Visual Studio:
+  // Functional programming causes trouble with Visual Studio.
+  // Keeping this version in comments since it is much nicer:
   // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
   //  auto nib_lo = chunk & 0xf;
   //  auto nib_hi = chunk.shr<4>();
@@ -61,8 +62,6 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // there is a small untaken optimization opportunity here. We deliberately
   // do not pick it up.
 
-  // Functional programming causes trouble with Visual Studio:
-  // uint64_t op = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x7); }).to_bitmask();
   uint64_t op = simd8x64<bool>(
         v.chunks[0].any_bits_set(0x7),
         v.chunks[1].any_bits_set(0x7),
@@ -70,8 +69,6 @@ really_inline json_character_block json_character_block::classify(const simd::si
         v.chunks[3].any_bits_set(0x7)
   ).to_bitmask();
 
-  // Functional programming causes trouble with Visual Studio:
-  // uint64_t whitespace = v.map([&](simd8<uint8_t> _v) { return _v.any_bits_set(0x18); }).to_bitmask();
   uint64_t whitespace = simd8x64<bool>(
         v.chunks[0].any_bits_set(0x18),
         v.chunks[1].any_bits_set(0x18),

@@ -36,21 +36,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   // other, given the fact that all functions are aggressively inlined, we can
   // hope that useless computations will be omitted. This is namely case when
   // minifying (we only need whitespace).
-  
-  // Functional programming causes trouble with Visual Studio:
-  //uint64_t whitespace = in.map([&](simd8<uint8_t> _in) {
-  //  return _in == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, _in));
-  //}).to_bitmask();
+
   uint64_t whitespace = simd8x64<bool>(
         in.chunks[0] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[0])),
         in.chunks[1] == simd8<uint8_t>(_mm256_shuffle_epi8(whitespace_table, in.chunks[1]))
   ).to_bitmask();
   
-  // Functional programming causes trouble with Visual Studio:
-  //uint64_t op = in.map([&](simd8<uint8_t> _in) {
-  //  return (_in | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, _in-','));
-  //}).to_bitmask();
-  // | 32 handles the fact that { } and [ ] are exactly 32 bytes apart
   uint64_t op = simd8x64<bool>(
         (in.chunks[0] | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[0]-',')),
         (in.chunks[1] | 32) == simd8<uint8_t>(_mm256_shuffle_epi8(op_table, in.chunks[1]-','))
