@@ -4,7 +4,7 @@ namespace utf8_validation {
 
 using namespace simd;
 
-  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t>& input, const simd8<uint8_t>& prev1) {
 // Bit 0 = Too Short (lead byte/ASCII followed by lead byte/ASCII)
 // Bit 1 = Too Long (ASCII followed by continuation)
 // Bit 2 = Overlong 3-byte
@@ -94,7 +94,8 @@ using namespace simd;
     );
     return (byte_1_high & byte_1_low & byte_2_high);
   }
-  really_inline simd8<uint8_t> check_multibyte_lengths(simd8<uint8_t> input, simd8<uint8_t> prev_input, simd8<uint8_t> sc) {
+  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t>& input,
+      const simd8<uint8_t>& prev_input, const simd8<uint8_t>& sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
     simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
@@ -106,7 +107,7 @@ using namespace simd;
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t>& input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t max_array[32] = {
@@ -130,7 +131,7 @@ using namespace simd;
     //
     // Check whether the current bytes are valid UTF-8.
     //
-    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+    really_inline void check_utf8_bytes(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input) {
       // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
@@ -145,18 +146,26 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
-    really_inline void check_next_input(simd8x64<uint8_t> input) {
-      if (likely(is_ascii(input))) {
-        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-        // possibly finish them.
-        this->error |= this->prev_incomplete;
-      } else {
-        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
+    really_inline void check_next_input(const simd8x64<uint8_t>& input) {
+      if (unlikely(!is_ascii(input))) {
+        // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
+            "We support either two or four chunks per 64-byte block.");
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+        } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+          this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
+          this->check_utf8_bytes(input.chunks[3], input.chunks[2]);
         }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      } else {
+        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+        // possibly finish them.
+        this->error |= this->prev_incomplete;
       }
     }
 
