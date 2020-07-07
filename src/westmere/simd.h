@@ -265,7 +265,7 @@ namespace simd {
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
-    static_assert(NUM_CHUNKS == 4);
+    static_assert(NUM_CHUNKS == 4, "Westmere kernel should use four registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
     simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
