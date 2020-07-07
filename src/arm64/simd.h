@@ -432,7 +432,7 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
     }
 
     really_inline simd8<T> reduce_or() const {
-      return (his->chunks[0] | his->chunks[1]) | (his->chunks[2] | his->chunks[3]);
+      return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
     }
 
 
