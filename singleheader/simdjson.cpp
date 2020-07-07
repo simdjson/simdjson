@@ -1,4 +1,4 @@
-/* auto-generated on Tue Jul  7 13:32:36 EDT 2020. Do not edit! */
+/* auto-generated on Tue Jul  7 15:13:17 EDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -2808,7 +2808,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-    simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
+    simd8<uint8_t> bits = input.reduce_or();
     return bits.max() < 0b10000000u;
 }
 
@@ -3552,18 +3552,25 @@ namespace utf8_validation {
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (likely(is_ascii(input))) {
+      if (unlikely(!is_ascii(input))) {
+       // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4));
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+        } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+          this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
+          this->check_utf8_bytes(input.chunks[3], input.chunks[2]);
+        } 
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      } else {
         // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
         // possibly finish them.
         this->error |= this->prev_incomplete;
-      } else {
-        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
-        }
-        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
-        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      }
+      }     
     }
 
     really_inline error_code errors() {
@@ -7997,6 +8004,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm256_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm256_testz_si256(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm256_testz_si256(*this, bits); }
@@ -8122,8 +8130,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  simd8<uint8_t> bits = input.reduce_or();;
-  return !bits.any_bits_set_anywhere(0b10000000u);
+  return input.reduce_or().is_ascii();
 }
 
 really_inline simd8<bool> must_be_continuation(const simd8<uint8_t>& prev1, const simd8<uint8_t>& prev2, const simd8<uint8_t>& prev3) {
@@ -8862,18 +8869,25 @@ namespace utf8_validation {
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (likely(is_ascii(input))) {
+      if (unlikely(!is_ascii(input))) {
+       // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4));
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+        } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+          this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
+          this->check_utf8_bytes(input.chunks[3], input.chunks[2]);
+        } 
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      } else {
         // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
         // possibly finish them.
         this->error |= this->prev_incomplete;
-      } else {
-        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
-        }
-        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
-        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      }
+      }     
     }
 
     really_inline error_code errors() {
@@ -11176,6 +11190,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm_testz_si128(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm_testz_si128(*this, bits); }
@@ -11317,8 +11332,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  simd8<uint8_t> bits = input.reduce_or();
-  return !bits.any_bits_set_anywhere(0b10000000u);
+  return input.reduce_or().is_ascii();
 }
 
 really_inline simd8<bool> must_be_continuation(const simd8<uint8_t>& prev1, const simd8<uint8_t>& prev2, const simd8<uint8_t>& prev3) {
@@ -12057,18 +12071,25 @@ namespace utf8_validation {
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (likely(is_ascii(input))) {
+      if (unlikely(!is_ascii(input))) {
+       // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+        static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4));
+        if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+        } else if(simd8x64<uint8_t>::NUM_CHUNKS == 4) {
+          this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
+          this->check_utf8_bytes(input.chunks[1], input.chunks[0]);
+          this->check_utf8_bytes(input.chunks[2], input.chunks[1]);
+          this->check_utf8_bytes(input.chunks[3], input.chunks[2]);
+        } 
+        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
+        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      } else {
         // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
         // possibly finish them.
         this->error |= this->prev_incomplete;
-      } else {
-        this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
-        for (int i=1; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
-          this->check_utf8_bytes(input.chunks[i], input.chunks[i-1]);
-        }
-        this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
-        this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      }
+      }     
     }
 
     really_inline error_code errors() {
