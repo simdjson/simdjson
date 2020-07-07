@@ -77,7 +77,7 @@ namespace utf8_validation {
   // 3 4-bit table lookups, identifying which errors that 4 bits could match, and then &'s them together.
   // If all 3 lookups detect the same error, it's an error.
   //
-  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t>& input, const simd8<uint8_t>& prev1) {
     //
     // These are the errors we're going to match for bytes 1-2, by looking at the first three
     // nibbles of the character: <high bits of byte 1>> & <low bits of byte 1> & <high bits of byte 2>
@@ -140,7 +140,7 @@ namespace utf8_validation {
     return byte_1_high & byte_1_low & byte_2_high;
   }
 
-  really_inline simd8<uint8_t> check_multibyte_lengths(simd8<uint8_t> input, simd8<uint8_t> prev_input, simd8<uint8_t> prev1) {
+  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input, const simd8<uint8_t>& prev1) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
 
@@ -154,7 +154,7 @@ namespace utf8_validation {
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  really_inline simd8<uint8_t> is_incomplete(simd8<uint8_t> input) {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t>& input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t max_array[32] = {
@@ -178,7 +178,7 @@ namespace utf8_validation {
     //
     // Check whether the current bytes are valid UTF-8.
     //
-    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+    really_inline void check_utf8_bytes(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input) {
       // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
@@ -193,7 +193,7 @@ namespace utf8_validation {
       this->error |= this->prev_incomplete;
     }
 
-    really_inline void check_next_input(simd8x64<uint8_t> input) {
+    really_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if (likely(is_ascii(input))) {
         // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
         // possibly finish them.

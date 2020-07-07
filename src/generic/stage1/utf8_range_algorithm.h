@@ -40,7 +40,7 @@ struct utf8_checker {
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(simd8<uint8_t> current_bytes) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t>& current_bytes) {
 
     /* high_nibbles = input >> 4 */
     const simd8<uint8_t> high_nibbles = current_bytes.shr<4>();
@@ -153,7 +153,7 @@ struct utf8_checker {
     this->previous.first_len = first_len;
   }
 
-  really_inline void check_next_input(simd8<uint8_t> in) {
+  really_inline void check_next_input(const simd8<uint8_t>& in) {
     if (likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {
@@ -161,8 +161,8 @@ struct utf8_checker {
     }
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
-    simd8<uint8_t> bits = in.reduce([&](auto a, auto b) { return a | b; });
+  really_inline void check_next_input(const simd8x64<uint8_t>& in) {
+    simd8<uint8_t> bits = in.reduce_or();
     if (likely(!bits.any_bits_set_anywhere(0x80u))) {
       // it is ascii, we just check carried continuations.
       this->check_carried_continuations();

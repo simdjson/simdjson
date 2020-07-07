@@ -15,7 +15,7 @@ namespace arm64 {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
   really_inline uint64_t whitespace() const { return _whitespace; }
   really_inline uint64_t op() const { return _op; }
@@ -25,7 +25,7 @@ struct json_character_block {
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Functional programming causes trouble with Visual Studio.
   // Keeping this version in comments since it is much nicer:
   // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
@@ -79,12 +79,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(simd8x64<uint8_t> input) {
+really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
     return bits.max() < 0b10000000u;
 }
 
-really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_continuation(const simd8<uint8_t>& prev1, const simd8<uint8_t>& prev2, const simd8<uint8_t>& prev3) {
     simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
@@ -96,7 +96,7 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t>& prev2, const simd8<uint8_t>& prev3) {
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
     return is_third_byte ^ is_fourth_byte;

@@ -35,7 +35,7 @@ UNUSED static char * format_input_text_64(const uint8_t *text) {
 }
 
 // Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   in.store((uint8_t*)buf);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
