@@ -206,12 +206,8 @@ namespace utf8_validation {
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (likely(is_ascii(input))) {
-        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-        // possibly finish them.
-        this->error |= this->prev_incomplete;
-      } else {
-        // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+      if (unlikely(!is_ascii(input))) {
+       // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4));
         if(simd8x64<uint8_t>::NUM_CHUNKS == 2) {
           this->check_utf8_bytes(input.chunks[0], this->prev_input_block);
@@ -224,7 +220,11 @@ namespace utf8_validation {
         } 
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      }
+      } else {
+        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
+        // possibly finish them.
+        this->error |= this->prev_incomplete;
+      }     
     }
 
     really_inline error_code errors() {

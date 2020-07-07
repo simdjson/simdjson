@@ -50,8 +50,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
 }
 
 really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
-  simd8<uint8_t> bits = input.reduce_or();;
-  return !bits.any_bits_set_anywhere(0b10000000u);
+  return input.reduce_or().is_ascii();
 }
 
 really_inline simd8<bool> must_be_continuation(const simd8<uint8_t>& prev1, const simd8<uint8_t>& prev2, const simd8<uint8_t>& prev3) {
