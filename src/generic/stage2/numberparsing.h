@@ -199,9 +199,9 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   return d;
 }
 
-static bool parse_float_strtod(const char *ptr, double *outDouble) {
+static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
   char *endptr;
-  *outDouble = strtod(ptr, &endptr);
+  *outDouble = strtod((const char *)ptr, &endptr);
   // Some libraries will set errno = ERANGE when the value is subnormal,
   // yet we may want to be able to parse subnormal values.
   // However, we do not want to tolerate NAN or infinite values.
@@ -222,7 +222,7 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
   // a float that does not fit in binary64. JSON for Modern C++ (nlohmann/json)
   // will flat out throw an exception.
   //
-  if ((endptr == ptr) || (!std::isfinite(*outDouble))) {
+  if ((endptr == (const char *)ptr) || (!std::isfinite(*outDouble))) {
     return false;
   }
   return true;
@@ -231,7 +231,7 @@ static bool parse_float_strtod(const char *ptr, double *outDouble) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-really_inline bool is_made_of_eight_digits_fast(const char *chars) {
+really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -247,19 +247,19 @@ really_inline bool is_made_of_eight_digits_fast(const char *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const char * src, W writer) {
+bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, (const uint8_t *)src, writer);
+    WRITE_DOUBLE(d, src, writer);
     return true;
   }
-  return INVALID_NUMBER((const uint8_t *)src);
+  return INVALID_NUMBER(src);
 }
 
 template<typename I>
 NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
-really_inline bool parse_digit(const char c, I &i) {
-  const unsigned char digit = static_cast<unsigned char>(c - '0');
+really_inline bool parse_digit(const uint8_t c, I &i) {
+  const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
     return false;
   }
@@ -268,12 +268,12 @@ really_inline bool parse_digit(const char c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p, uint64_t &i, int64_t &exponent) {
+really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
   // the integer into a float in a lossless manner.
-  const char *const first_after_period = p;
+  const uint8_t *const first_after_period = p;
 
 #ifdef SWAR_NUMBER_PARSING
   // this helps if we have lots of decimals!
@@ -294,7 +294,7 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const char *&p
   return true;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&p, int64_t &exponent) {
+really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -319,7 +319,7 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const char *&
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const char * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -327,7 +327,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely((digit_count-1 >= 19))) { // this is uncommon
     // It is possible that the integer had an overflow.
     // We have to handle the case where we have 0.0000somenumber.
-    const char *start = start_digits;
+    const uint8_t *start = start_digits;
     while ((*start == '0') || (*start == '.')) {
       start++;
     }
@@ -341,7 +341,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
       // 10000000000000000000000000000000000000000000e+308
       // 3.1415926535897932384626433832795028841971693993751
       //
-      bool success = slow_float_parsing((const char *) src, writer);
+      bool success = slow_float_parsing(src, writer);
       // The number was already written, but we made a copy of the writer
       // when we passed it to the parse_large_integer() function, so
       writer.skip_double();
@@ -354,7 +354,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing((const char *) src, writer);
+    bool success = slow_float_parsing(src, writer);
     // The number was already written, but we made a copy of the writer when we passed it to the
     // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
     writer.skip_double();
@@ -364,7 +364,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   double d = compute_float_64(exponent, i, negative, &success);
   if (!success) {
     // we are almost never going to get here.
-    if (!parse_float_strtod((const char *)src, &d)) { return INVALID_NUMBER(src); }
+    if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
   return true;
@@ -397,13 +397,13 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   // Check for minus sign
   //
   bool negative = (*src == '-');
-  const char *p = reinterpret_cast<const char *>(src) + negative;
+  const uint8_t *p = src + negative;
 
   //
   // Parse the integer part.
   //
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
-  const char *const start_digits = p;
+  const uint8_t *const start_digits = p;
   uint64_t i = 0;
   while (parse_digit(*p, i)) { p++; }
 
