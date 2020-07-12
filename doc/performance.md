@@ -164,11 +164,16 @@ Under Windows, we also support the GNU GCC compiler via MSYS2. The performance i
 Downclocking
 --------------
 
-You should not expect the simdjson library to cause downclocking of your recent Intel CPU cores.
+The SIMD instructions that simdjson relies upon (SSE and AVX under x64, NEON under ARM) [are routinely part of runtime libraries](https://golang.org/src/runtime/memmove_amd64.s). What distinguishes the simdjson library is that it is built from the ground up to benefit from these instructions. 
+
+
+You should not expect the simdjson library to cause *downclocking* of your recent Intel CPU cores.
 
 On some Intel processors, using SIMD instructions in a sustained manner on the same CPU core may result in a phenomenon called downclocking whereas the processor initially runs these instructions at a slow speed before reducing the frequency of the core for a short time (milliseconds). Intel refers to these states as licenses. On some current Intel processors, it occurs under two scenarios:
 
 - [Whenever 512-bit AVX-512 instructions are used](https://lemire.me/blog/2018/09/07/avx-512-when-and-how-to-use-these-new-instructions/).
 - Whenever heavy 256-bit or wider instructions are used. Heavy instructions are those involving floating point operations or integer multiplications (since these execute on the floating point unit).
 
-The simdjson library does not currently support AVX-512 instructions and it does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors. You may still be worried about which SIMD instruction set is used by simdjson.  Thankfully,  [you can always determine and change which architecture-specific implementation is used](implementation-selection.md). Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.
+The simdjson library does not currently support AVX-512 instructions and it does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors. 
+
+You may still be worried about which SIMD instruction set is used by simdjson.  Thankfully,  [you can always determine and change which architecture-specific implementation is used](implementation-selection.md) by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.
