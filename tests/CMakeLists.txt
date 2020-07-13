@@ -52,6 +52,8 @@ target_compile_definitions(stringparsingcheck PRIVATE NOMINMAX)
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
 add_cpp_test(basictests LABELS acceptance per_implementation)
+add_cpp_test(document_stream_tests LABELS acceptance per_implementation)
+add_cpp_test(document_tests LABELS acceptance per_implementation)
 add_cpp_test(errortests LABELS acceptance per_implementation)
 add_cpp_test(integer_tests LABELS acceptance per_implementation)
 add_cpp_test(jsoncheck LABELS acceptance per_implementation)
