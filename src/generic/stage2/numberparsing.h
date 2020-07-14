@@ -437,11 +437,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    // Anything negative above INT64_MAX+1 is invalid
-    if (negative && i > uint64_t(INT64_MAX)+1) {
-      return INVALID_NUMBER(src); 
-    }
-
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) {
+        return INVALID_NUMBER(src); 
+      }
+      WRITE_INTEGER(~i+1, src, writer);
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -454,11 +455,11 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
     //
-    if (!negative && (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX))) { return INVALID_NUMBER(src); }
+    }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
   }
 
   // Write unsigned if it doesn't fit in a signed integer.
-  if (i > uint64_t(INT64_MAX) && !negative) {
+  if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
