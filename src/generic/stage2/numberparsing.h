@@ -443,6 +443,7 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
         return INVALID_NUMBER(src); 
       }
       WRITE_INTEGER(~i+1, src, writer);
+      return is_structural_or_whitespace(*p);
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
