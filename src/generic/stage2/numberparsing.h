@@ -437,15 +437,9 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    // Anything negative above INT64_MAX is either invalid or INT64_MIN.
-    if (negative && i > uint64_t(INT64_MAX)) {
-      // If the number is negative and can't fit in a signed integer, it's invalid.
-      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src); }
-
-      // If it's negative, it has to be INT64_MAX+1 now (or INT64_MIN).
-      // C++ can't reliably negate uint64_t INT64_MIN, it seems. Special case it.
-      WRITE_INTEGER(INT64_MIN, src, writer);
-      return is_structural_or_whitespace(*p);
+    // Anything negative above INT64_MAX+1 is invalid
+    if (negative && i > uint64_t(INT64_MAX)+1) {
+      return INVALID_NUMBER(src); 
     }
 
     // Positive overflow check:
@@ -467,7 +461,7 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
-    WRITE_INTEGER(negative ? 0 - i : i, src, writer);
+    WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
   return is_structural_or_whitespace(*p);
 }
