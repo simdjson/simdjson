@@ -164,7 +164,11 @@ Under Windows, we also support the GNU GCC compiler via MSYS2. The performance o
 Downclocking
 --------------
 
-The SIMD instructions that simdjson relies upon (SSE and AVX under x64, NEON under ARM) [are routinely part of runtime libraries](https://golang.org/src/runtime/memmove_amd64.s). What distinguishes the simdjson library is that it is built from the ground up to benefit from these instructions. 
+
+
+SIMD instructions are the public transportation of computing. Instead of using 4 distinct instructions to add numbers, you can replace them with a single instruction that does the same work. Though the one instruction is slightly more expensive, the energy used per unit of work is much less with SIMD. If you can increase your speed using SIMD instructions (NEON, SSE, AVX), you should expect to reduce your power usage.
+
+The SIMD instructions that simdjson relies upon (SSE and AVX under x64, NEON under ARM) are routinely part of runtime libraries (e.g., [Go](https://golang.org/src/runtime/memmove_amd64.s), [Glibc](https://github.com/ihtsae/glibc/commit/5f3d0b78e011d2a72f9e88b0e9ef5bc081d18f97), [LLVM](https://github.com/llvm/llvm-project/blob/96f3ea0d21b48ca088355db10d4d1a2e9bc9f884/lldb/tools/debugserver/source/MacOSX/i386/DNBArchImplI386.cpp), [Rust](https://github.com/rust-lang/rust/commit/070fad1701fb36b112853b0a6a9787a7bb7ff34c), [Java](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/c1374141598c/src/cpu/x86/vm/stubGenerator_x86_64.cpp#l1297), [PHP](https://github.com/php/php-src/blob/e5cb53ec68603d4dbdd780fd3ecfca943b4fd383/ext/standard/string.c)). What distinguishes the simdjson library is that it is built from the ground up to benefit from these instructions. 
 
 
 You should not expect the simdjson library to cause *downclocking* of your recent Intel CPU cores.
