@@ -458,7 +458,7 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   }
 
   // Write unsigned if it doesn't fit in a signed integer.
-  if (i > uint64_t(INT64_MAX)) {
+  if (i > uint64_t(INT64_MAX) && !negative) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
