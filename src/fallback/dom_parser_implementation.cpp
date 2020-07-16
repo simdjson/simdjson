@@ -1,12 +1,12 @@
-#include "simdjson.h"
-#include "fallback/implementation.h"
+#include "fallback/begin_implementation.h"
 #include "fallback/dom_parser_implementation.h"
 
 //
 // Stage 1
 //
 namespace simdjson {
-namespace fallback {
+namespace SIMDJSON_IMPLEMENTATION {
+
 namespace stage1 {
 
 #include "generic/stage1/find_next_document_index.h"
@@ -308,7 +308,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
   return true;
 }
 
-} // namespace fallback
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 //
@@ -318,7 +318,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #include "fallback/numberparsing.h"
 
 namespace simdjson {
-namespace fallback {
+namespace SIMDJSON_IMPLEMENTATION {
 
 #include "generic/stage2/logger.h"
 #include "generic/stage2/atomparsing.h"
@@ -331,5 +331,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
   return stage2(_doc);
 }
 
-} // namespace fallback
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#include "fallback/end_implementation.h"

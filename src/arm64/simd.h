@@ -4,7 +4,6 @@
 #include "simdjson.h"
 #include "simdprune_tables.h"
 #include "arm64/bitmanipulation.h"
-#include "arm64/intrinsics.h"
 #include <type_traits>
 
 

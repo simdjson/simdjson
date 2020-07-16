@@ -2,7 +2,6 @@
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
 #include "simdjson.h"
-#include "arm64/intrinsics.h"
 
 namespace simdjson {
 namespace arm64 {

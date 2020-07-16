@@ -4,12 +4,10 @@
 #include "simdjson.h"
 #include "jsoncharutils.h"
 #include "haswell/simd.h"
-#include "haswell/intrinsics.h"
 #include "haswell/bitmanipulation.h"
 
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
 
@@ -43,8 +41,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 #include "generic/stage2/stringparsing.h"
 
-} // namespace haswell
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_STRINGPARSING_H

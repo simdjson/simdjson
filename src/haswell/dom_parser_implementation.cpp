@@ -1,5 +1,4 @@
-#include "simdjson.h"
-#include "haswell/implementation.h"
+#include "haswell/begin_implementation.h"
 #include "haswell/dom_parser_implementation.h"
 
 //
@@ -9,9 +8,8 @@
 #include "haswell/simd.h"
 #include "haswell/bitmanipulation.h"
 
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
 
@@ -97,9 +95,9 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   return simdjson::haswell::stage1::generic_validate_utf8(buf,len);
 }
-} // namespace haswell
+
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 //
 // Stage 2
@@ -107,9 +105,8 @@ UNTARGET_REGION
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
 
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 #include "generic/stage2/logger.h"
 #include "generic/stage2/atomparsing.h"
@@ -122,6 +119,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
   return stage2(_doc);
 }
 
-} // namespace haswell
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
+
+#include "haswell/end_implementation.h"

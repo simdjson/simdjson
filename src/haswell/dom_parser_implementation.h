@@ -5,11 +5,11 @@
 #include "isadetection.h"
 
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 #include "generic/dom_parser_implementation.h"
 
-} // namespace haswell
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 #endif // SIMDJSON_HASWELL_DOM_PARSER_IMPLEMENTATION_H

@@ -1,5 +1,4 @@
-#include "simdjson.h"
-#include "arm64/implementation.h"
+#include "arm64/begin_implementation.h"
 #include "arm64/dom_parser_implementation.h"
 
 //
@@ -10,7 +9,7 @@
 #include "arm64/bitmanipulation.h"
 
 namespace simdjson {
-namespace arm64 {
+namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
 
@@ -132,7 +131,8 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   return simdjson::arm64::stage1::generic_validate_utf8(buf,len);
 }
-} // namespace arm64
+
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 //
@@ -143,7 +143,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #include "arm64/numberparsing.h"
 
 namespace simdjson {
-namespace arm64 {
+namespace SIMDJSON_IMPLEMENTATION {
 
 #include "generic/stage2/logger.h"
 #include "generic/stage2/atomparsing.h"
@@ -156,5 +156,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
   return stage2(_doc);
 }
 
-} // namespace arm64
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#include "arm64/end_implementation.h"

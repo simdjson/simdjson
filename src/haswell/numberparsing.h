@@ -4,7 +4,6 @@
 #include "simdjson.h"
 
 #include "jsoncharutils.h"
-#include "haswell/intrinsics.h"
 #include "haswell/bitmanipulation.h"
 #include <cmath>
 #include <limits>
@@ -16,9 +15,9 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
+
 static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -41,9 +40,7 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
 
 #include "generic/stage2/numberparsing.h"
 
-} // namespace haswell
-
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_NUMBERPARSING_H

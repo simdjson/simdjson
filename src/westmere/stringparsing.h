@@ -4,12 +4,10 @@
 #include "simdjson.h"
 #include "jsoncharutils.h"
 #include "westmere/simd.h"
-#include "westmere/intrinsics.h"
 #include "westmere/bitmanipulation.h"
 
-TARGET_WESTMERE
 namespace simdjson {
-namespace westmere {
+namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
 
@@ -45,8 +43,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 
 #include "generic/stage2/stringparsing.h"
 
-} // namespace westmere
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H

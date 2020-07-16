@@ -2,11 +2,9 @@
 #define SIMDJSON_WESTMERE_BITMANIPULATION_H
 
 #include "simdjson.h"
-#include "westmere/intrinsics.h"
 
-TARGET_WESTMERE
 namespace simdjson {
-namespace westmere {
+namespace SIMDJSON_IMPLEMENTATION {
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
@@ -81,9 +79,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-} // namespace westmere
-
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMANIPULATION_H

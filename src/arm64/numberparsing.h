@@ -3,7 +3,6 @@
 
 #include "simdjson.h"
 #include "jsoncharutils.h"
-#include "arm64/intrinsics.h"
 #include "arm64/bitmanipulation.h"
 #include <cmath>
 #include <limits>
