@@ -1,8 +1,6 @@
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
 
-#include "jsoncharutils.h"
-
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {

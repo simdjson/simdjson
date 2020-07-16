@@ -1,5 +1,6 @@
 #include "fallback/begin_implementation.h"
 #include "fallback/dom_parser_implementation.h"
+#include "generic/stage2/jsoncharutils.h"
 
 //
 // Stage 1

@@ -1,4 +1,6 @@
 #include "westmere/begin_implementation.h"
+#include "westmere/dom_parser_implementation.h"
+#include "generic/stage2/jsoncharutils.h"
 
 //
 // Stage 1

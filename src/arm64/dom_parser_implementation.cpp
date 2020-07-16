@@ -1,5 +1,6 @@
 #include "arm64/begin_implementation.h"
 #include "arm64/dom_parser_implementation.h"
+#include "generic/stage2/jsoncharutils.h"
 
 //
 // Stage 1
