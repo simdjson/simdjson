@@ -49,7 +49,7 @@ static inline uint32_t hex_to_u32_nocheck(
 //
 // Note: we assume that surrogates are treated separately
 //
-inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
+really_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
     c[0] = uint8_t(cp);
     return 1; // ascii
@@ -78,28 +78,13 @@ inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   return 0; // bad r
 }
 
-////
-// The following code is used in number parsing. It is not
-// properly "char utils" stuff, but we move it here so that
-// it does not get copied multiple times in the binaries (once
-// per instruction set).
-///
-
-constexpr int FASTFLOAT_SMALLEST_POWER = -325;
-constexpr int FASTFLOAT_LARGEST_POWER = 308;
-
-struct value128 {
-  uint64_t low;
-  uint64_t high;
-};
-
 #ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
-static inline uint64_t __emulu(uint32_t x, uint32_t y) {
+static really_inline uint64_t __emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
 }
-static inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+static really_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
   uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
   uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
   uint64_t adbc = ad + __emulu((uint32_t)ab, (uint32_t)(cd >> 32));
