@@ -41,17 +41,12 @@
 // has it as a macro.
 #ifndef _blsr_u64
 // we roll our own
-#include "haswell/begin_implementation.h"
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
+SIMDJSON_TARGET_HASWELL
 static really_inline uint64_t _blsr_u64(uint64_t n) {
   return (n - 1) & n;
 }
-} // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
-#include "haswell/end_implementation.h"
+SIMDJSON_UNTARGET_REGION
 #endif //  _blsr_u64
-#endif
-
+#endif // SIMDJSON_CLANG_VISUAL_STUDIO
 
 #endif // SIMDJSON_HASWELL_INTRINSICS_H
