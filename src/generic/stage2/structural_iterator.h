@@ -1,3 +1,5 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 class structural_iterator {
@@ -44,3 +46,5 @@ public:
 };
 
 } // namespace stage2
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

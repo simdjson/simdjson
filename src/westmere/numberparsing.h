@@ -36,11 +36,11 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
       t4); // only captures the sum of the first 8 digits, drop the rest
 }
 
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
+
 #define SWAR_NUMBER_PARSING
 
 #include "generic/stage2/numberparsing.h"
-
-} // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H

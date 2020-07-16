@@ -1,3 +1,6 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
 /**
   * This algorithm is used to quickly identify the last structural position that
   * makes up a complete document.
@@ -84,3 +87,6 @@ really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
   if (buf[len-3] >= 0b11110000) { return len-3; } // 4-byte characters with only 3 bytes left
   return len;
 }
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

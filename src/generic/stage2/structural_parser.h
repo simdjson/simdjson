@@ -3,10 +3,13 @@
 // We assume the file in which it is include already includes
 // "simdjson/stage2.h" (this simplifies amalgation)
 
-namespace stage2 {
-namespace { // Make everything here private
-
 #include "generic/stage2/tape_writer.h"
+
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+namespace stage2 {
+
+namespace { // Make everything here private
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -489,3 +492,6 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::parse_structurals<true>(*this, _doc);
 }
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

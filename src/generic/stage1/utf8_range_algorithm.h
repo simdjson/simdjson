@@ -1,3 +1,6 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
 /*
  * legal utf-8 byte sequence
  * http://www.unicode.org/versions/Unicode6.0.0/ch03.pdf - page 94
@@ -178,3 +181,6 @@ struct utf8_checker {
     return this->has_error.any() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

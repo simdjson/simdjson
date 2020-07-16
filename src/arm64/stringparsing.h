@@ -44,9 +44,9 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   };
 }
 
-#include "generic/stage2/stringparsing.h"
-
 } // namespace arm64
 } // namespace simdjson
+
+#include "generic/stage2/stringparsing.h"
 
 #endif // SIMDJSON_ARM64_STRINGPARSING_H

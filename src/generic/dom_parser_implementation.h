@@ -1,3 +1,9 @@
+#include "simdjson.h"
+#include "isadetection.h"
+
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
 // expectation: sizeof(scope_descriptor) = 64/8.
 struct scope_descriptor {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
@@ -38,8 +44,14 @@ public:
   WARN_UNUSED error_code set_max_depth(size_t max_depth) noexcept final;
 };
 
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
+
 #include "generic/stage1/allocate.h"
 #include "generic/stage2/allocate.h"
+
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 
 really_inline dom_parser_implementation::dom_parser_implementation() {}
 
@@ -57,3 +69,6 @@ WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t max_depth
   _max_depth = max_depth;
   return SUCCESS;
 }
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

@@ -41,9 +41,9 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   };
 }
 
-#include "generic/stage2/stringparsing.h"
-
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#include "generic/stage2/stringparsing.h"
 
 #endif // SIMDJSON_WESTMERE_STRINGPARSING_H

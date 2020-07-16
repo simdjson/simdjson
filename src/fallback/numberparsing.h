@@ -15,7 +15,7 @@ void found_float(double result, const uint8_t *buf);
 #endif
 
 namespace simdjson {
-namespace fallback {
+namespace SIMDJSON_IMPLEMENTATION {
 static really_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint32_t result = 0;
   for (int i=0;i<8;i++) {
@@ -27,12 +27,10 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
   return parse_eight_digits_unrolled((const char *)chars);
 }
 
-#define SWAR_NUMBER_PARSING
-
-#include "generic/stage2/numberparsing.h"
-
-} // namespace fallback
-
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#define SWAR_NUMBER_PARSING
+#include "generic/stage2/numberparsing.h"
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H

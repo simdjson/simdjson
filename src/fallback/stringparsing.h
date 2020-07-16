@@ -27,9 +27,9 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   return { src[0] };
 }
 
-#include "generic/stage2/stringparsing.h"
-
 } // namespace fallback
 } // namespace simdjson
+
+#include "generic/stage2/stringparsing.h"
 
 #endif // SIMDJSON_FALLBACK_STRINGPARSING_H

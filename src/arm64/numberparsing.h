@@ -28,11 +28,11 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
   return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
 }
 
+} // namespace arm64
+} // namespace simdjson
+
 #define SWAR_NUMBER_PARSING
 
 #include "generic/stage2/numberparsing.h"
-
-} // namespace arm64
-} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_H
