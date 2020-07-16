@@ -4,6 +4,9 @@
 // "simdjson/stage2.h" (this simplifies amalgation)
 
 #include "generic/stage2/tape_writer.h"
+#include "generic/stage2/logger.h"
+#include "generic/stage2/atomparsing.h"
+#include "generic/stage2/structural_iterator.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

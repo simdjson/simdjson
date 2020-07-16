@@ -104,13 +104,9 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#include "generic/stage1/buf_block_reader.h"
-#include "generic/stage1/json_string_scanner.h"
-#include "generic/stage1/json_scanner.h"
-#include "generic/stage1/json_minifier.h"
-#include "generic/stage1/find_next_document_index.h"
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
+#include "generic/stage1/utf8_validator.h"
 
 //
 // Stage 2
@@ -118,9 +114,6 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 
 #include "arm64/stringparsing.h"
 #include "arm64/numberparsing.h"
-#include "generic/stage2/logger.h"
-#include "generic/stage2/atomparsing.h"
-#include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
 
 //
@@ -149,8 +142,6 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
 }
-
-#include "generic/stage1/utf8_validator.h"
 
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   return simdjson::arm64::stage1::generic_validate_utf8(buf,len);

@@ -1,6 +1,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
+
 /**
  * Validates that the string is actual UTF-8.
  */
