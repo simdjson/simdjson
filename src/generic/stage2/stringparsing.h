@@ -1,7 +1,7 @@
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "stringparsing.h" (this simplifies amalgation)
+
+#include "jsoncharutils.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

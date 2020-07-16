@@ -1,20 +1,6 @@
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
-#include "simdjson.h"
-
-#include "jsoncharutils.h"
-#include "haswell/bitmanipulation.h"
-#include <cmath>
-#include <limits>
-
-#ifdef JSON_TEST_NUMBERS // for unit testing
-void found_invalid_number(const uint8_t *buf);
-void found_integer(int64_t result, const uint8_t *buf);
-void found_unsigned_integer(uint64_t result, const uint8_t *buf);
-void found_float(double result, const uint8_t *buf);
-#endif
-
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 

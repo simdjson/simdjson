@@ -1,3 +1,7 @@
+#include "jsoncharutils.h"
+#include <cmath>
+#include <limits>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {

@@ -1,9 +1,7 @@
 #ifndef SIMDJSON_HASWELL_SIMD_H
 #define SIMDJSON_HASWELL_SIMD_H
 
-#include "simdjson.h"
 #include "simdprune_tables.h"
-#include "haswell/bitmanipulation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

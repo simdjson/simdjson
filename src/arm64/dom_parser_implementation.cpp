@@ -4,10 +4,6 @@
 //
 // Stage 1
 //
-#include "arm64/bitmask.h"
-#include "arm64/simd.h"
-#include "arm64/bitmanipulation.h"
-
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 

@@ -1,8 +1,6 @@
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-#include "simdjson.h"
-
 namespace simdjson {
 namespace arm64 {
 

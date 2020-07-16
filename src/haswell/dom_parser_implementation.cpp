@@ -4,9 +4,6 @@
 //
 // Stage 1
 //
-#include "haswell/bitmask.h"
-#include "haswell/simd.h"
-#include "haswell/bitmanipulation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

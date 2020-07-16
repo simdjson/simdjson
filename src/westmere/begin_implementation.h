@@ -4,3 +4,7 @@
 
 #define SIMDJSON_IMPLEMENTATION westmere
 SIMDJSON_TARGET_REGION("sse4.2,pclmul")
+
+#include "westmere/bitmanipulation.h"
+#include "westmere/bitmask.h"
+#include "westmere/simd.h"

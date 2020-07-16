@@ -2,7 +2,6 @@
 #define SIMDJSON_HASWELL_STRINGPARSING_H
 
 #include "simdjson.h"
-#include "jsoncharutils.h"
 #include "haswell/simd.h"
 #include "haswell/bitmanipulation.h"
 

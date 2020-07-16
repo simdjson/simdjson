@@ -3,10 +3,6 @@
 //
 // Stage 1
 //
-#include "westmere/bitmask.h"
-#include "westmere/simd.h"
-#include "westmere/bitmanipulation.h"
-#include "westmere/implementation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

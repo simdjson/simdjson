@@ -1,11 +1,6 @@
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_H
 
-#include "simdjson.h"
-#include "jsoncharutils.h"
-#include "westmere/simd.h"
-#include "westmere/bitmanipulation.h"
-
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 

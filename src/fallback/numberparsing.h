@@ -1,12 +1,6 @@
 #ifndef SIMDJSON_FALLBACK_NUMBERPARSING_H
 #define SIMDJSON_FALLBACK_NUMBERPARSING_H
 
-#include "simdjson.h"
-#include "jsoncharutils.h"
-#include "fallback/bitmanipulation.h"
-#include <cmath>
-#include <limits>
-
 #ifdef JSON_TEST_NUMBERS // for unit testing
 void found_invalid_number(const uint8_t *buf);
 void found_integer(int64_t result, const uint8_t *buf);

@@ -1,9 +1,7 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-#include "simdjson.h"
 #include "simdprune_tables.h"
-#include "westmere/bitmanipulation.h"
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {

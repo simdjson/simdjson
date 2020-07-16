@@ -2,7 +2,6 @@
 #define SIMDJSON_ARM64_STRINGPARSING_H
 
 #include "simdjson.h"
-#include "jsoncharutils.h"
 #include "arm64/simd.h"
 #include "arm64/bitmanipulation.h"
 
