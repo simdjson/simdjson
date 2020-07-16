@@ -159,17 +159,17 @@ struct structural_parser : structural_iterator {
     return false;
   }
 
-  WARN_UNUSED really_inline bool parse_number(const uint8_t *src, bool found_minus) {
+  WARN_UNUSED really_inline bool parse_number(const uint8_t *src) {
     log_value("number");
-    bool succeeded = numberparsing::parse_number(src, found_minus, tape);
+    bool succeeded = numberparsing::parse_number(src, tape);
     if (!succeeded) { log_error("Invalid number"); }
     return !succeeded;
   }
-  WARN_UNUSED really_inline bool parse_number(bool found_minus) {
-    return parse_number(current(), found_minus);
+  WARN_UNUSED really_inline bool parse_number() {
+    return parse_number(current());
   }
 
-  really_inline bool parse_number_with_space_terminated_copy(const bool is_negative) {
+  really_inline bool parse_number_with_space_terminated_copy() {
     /**
     * We need to make a copy to make sure that the string is space terminated.
     * This is not about padding the input, which should already padded up
@@ -190,7 +190,7 @@ struct structural_parser : structural_iterator {
     memcpy(copy, buf, parser.len);
     memset(copy + parser.len, ' ', SIMDJSON_PADDING);
     size_t idx = *current_structural;
-    bool result = parse_number(&copy[idx], is_negative); // parse_number does not throw
+    bool result = parse_number(&copy[idx]); // parse_number does not throw
     free(copy);
     return result;
   }
@@ -214,12 +214,10 @@ struct structural_parser : structural_iterator {
       FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
       tape.append(0, internal::tape_type::NULL_VALUE);
       return continue_state;
+    case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      FAIL_IF( parse_number(false) );
-      return continue_state;
-    case '-':
-      FAIL_IF( parse_number(true) );
+      FAIL_IF( parse_number() );
       return continue_state;
     case '{':
       FAIL_IF( start_object(continue_state) );
@@ -375,18 +373,13 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
     FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
     parser.tape.append(0, internal::tape_type::NULL_VALUE);
     goto finish;
+  case '-':
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     // Next line used to be an interesting functional programming exercise with
     // a lambda that gets passed to another function via a closure. This would confuse the
     // clangcl compiler under Visual Studio 2019 (recent release).
-    { if(parser.parse_number_with_space_terminated_copy(false)) { goto error; }}
-    goto finish;
-  case '-':
-    // Next line used to be an interesting functional programming exercise with
-    // a lambda that gets passed to another function via a closure. This would confuse the
-    // clangcl compiler under Visual Studio 2019 (recent release).
-    { if(parser.parse_number_with_space_terminated_copy(true)) { goto error; }}
+    FAIL_IF(parser.parse_number_with_space_terminated_copy());
     goto finish;
   default:
     parser.log_error("Document starts with a non-value character");
