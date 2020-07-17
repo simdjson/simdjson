@@ -143,6 +143,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
+- [fast_jsonparser](https://github.com/anilmaurya/fast_jsonparser): Ruby bindings for the simdjson project.
 - [simdjson-go](https://github.com/minio/simdjson-go): Go port using Golang assembly.
 - [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
 
