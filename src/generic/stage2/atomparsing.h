@@ -2,7 +2,7 @@ namespace stage2 {
 namespace atomparsing {
 
 namespace{
-// The string_to_uint32 is exclusively used to map litteral strings to 32-bit values.
+// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
 // We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
 // be certain that the character pointer will be properly aligned.
 // You might think that using memcpy makes this function expensive, but you'd be wrong.
