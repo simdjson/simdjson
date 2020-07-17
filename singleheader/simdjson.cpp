@@ -1,4 +1,4 @@
-/* auto-generated on Wed Jul  1 14:00:57 EDT 2020. Do not edit! */
+/* auto-generated on Fri Jul 17 14:52:28 EDT 2020. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -520,7 +520,6 @@ private:
 
 const detect_best_supported_implementation_on_first_use detect_best_supported_implementation_on_first_use_singleton;
 
-internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
 const std::initializer_list<const implementation *> available_implementation_pointers {
 #if SIMDJSON_IMPLEMENTATION_HASWELL
