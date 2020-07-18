@@ -40,6 +40,12 @@ public:
      * Part of the std::iterator interface.
      */
     inline bool operator!=(const iterator& other) const noexcept;
+    /**
+     * Check if these values come from the same place in the JSON.
+     *
+     * Part of the std::iterator interface.
+     */
+    inline bool operator==(const iterator& other) const noexcept;
   private:
     really_inline iterator(const internal::tape_ref &tape) noexcept;
     internal::tape_ref tape;

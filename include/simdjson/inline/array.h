@@ -109,6 +109,9 @@ inline element array::iterator::operator*() const noexcept {
 inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
   return tape.json_index != other.tape.json_index;
 }
+inline bool array::iterator::operator==(const array::iterator& other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
 inline array::iterator& array::iterator::operator++() noexcept {
   tape.json_index = tape.after_element();
   return *this;

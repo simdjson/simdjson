@@ -149,6 +149,9 @@ inline const key_value_pair object::iterator::operator*() const noexcept {
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
   return tape.json_index != other.tape.json_index;
 }
+inline bool object::iterator::operator==(const object::iterator& other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
 inline object::iterator& object::iterator::operator++() noexcept {
   tape.json_index++;
   tape.json_index = tape.after_element();

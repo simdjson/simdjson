@@ -42,6 +42,12 @@ public:
      */
     inline bool operator!=(const iterator& other) const noexcept;
     /**
+     * Check if these key value pairs come from the same place in the JSON.
+     *
+     * Part of the std::iterator interface.
+     */
+    inline bool operator==(const iterator& other) const noexcept;
+    /**
      * Get the key of this key/value pair.
      */
     inline std::string_view key() const noexcept;
