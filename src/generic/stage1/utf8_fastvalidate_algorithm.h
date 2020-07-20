@@ -30,7 +30,7 @@ struct utf8_checker {
   processed_utf_bytes previous;
 
   // all byte values must be no larger than 0xF4
-  really_inline void check_smaller_than_0xF4(const simd8<uint8_t>& current_bytes) {
+  really_inline void check_smaller_than_0xF4(const simd8<uint8_t> current_bytes) {
     // unsigned, saturates to 0 below max
     this->has_error |= current_bytes.saturating_sub(0xF4u);
   }
@@ -76,8 +76,8 @@ struct utf8_checker {
   // when 0xED is found, next byte must be no larger than 0x9F
   // when 0xF4 is found, next byte must be no larger than 0x8F
   // next byte must be continuation, ie sign bit is set, so signed < is ok
-  really_inline void check_first_continuation_max(const simd8<uint8_t>& current_bytes,
-                                                  const simd8<uint8_t>& off1_current_bytes) {
+  really_inline void check_first_continuation_max(const simd8<uint8_t> current_bytes,
+                                                  const simd8<uint8_t> off1_current_bytes) {
     simd8<bool> prev_ED = off1_current_bytes == 0xEDu;
     simd8<bool> prev_F4 = off1_current_bytes == 0xF4u;
     // Check if ED is followed by A0 or greater
@@ -94,8 +94,8 @@ struct utf8_checker {
   // E       => < E1 && < A0
   // F       => < F1 && < 90
   // else      false && false
-  really_inline void check_overlong(const simd8<uint8_t>& current_bytes,
-                                    const simd8<uint8_t>& off1_current_bytes,
+  really_inline void check_overlong(const simd8<uint8_t> current_bytes,
+                                    const simd8<uint8_t> off1_current_bytes,
                                     const simd8<int8_t>& high_nibbles) {
     simd8<int8_t> off1_high_nibbles = high_nibbles.prev(this->previous.high_nibbles);
 
@@ -132,7 +132,7 @@ struct utf8_checker {
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(const simd8<uint8_t>& current_bytes) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t> current_bytes) {
     struct processed_utf_bytes pb {};
     this->count_nibbles(current_bytes, &pb);
 
@@ -151,7 +151,7 @@ struct utf8_checker {
     this->previous = pb;
   }
 
-  really_inline void check_next_input(const simd8<uint8_t>& in) {
+  really_inline void check_next_input(const simd8<uint8_t> in) {
     if (likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {

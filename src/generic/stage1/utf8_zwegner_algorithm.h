@@ -137,7 +137,7 @@ struct utf8_checker {
   // boundaries, so we need to keep a "carry" mask of the bits that were shifted
   // past the boundary in the last loop iteration.
   //
-  really_inline void check_length_errors(const simd8<uint8_t>& bytes, const vmask_t bit_7) {
+  really_inline void check_length_errors(const simd8<uint8_t> bytes, const vmask_t bit_7) {
     // Compute the continuation byte mask by finding bytes that start with
     // 11x, 111x, and 1111. For each of these prefixes, we get a bitmask
     // and shift it forward by 1, 2, or 3. This loop should be unrolled by
@@ -258,7 +258,7 @@ struct utf8_checker {
   // bytes, we AND them together. Only when all three have an error bit in common
   // do we fail validation.
   //
-  really_inline void check_special_cases(const simd8<uint8_t>& bytes) {
+  really_inline void check_special_cases(const simd8<uint8_t> bytes) {
     const simd8<uint8_t> shifted_bytes = bytes.prev<1>(this->prev_bytes);
     this->prev_bytes = bytes;
 
@@ -330,12 +330,12 @@ struct utf8_checker {
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(const simd8<uint8_t>& bytes, const vmask_t bit_7) {
+  really_inline void check_utf8_bytes(const simd8<uint8_t> bytes, const vmask_t bit_7) {
     this->check_length_errors(bytes, bit_7);
     this->check_special_cases(bytes);
   }
 
-  really_inline void check_next_input(const simd8<uint8_t>& bytes) {
+  really_inline void check_next_input(const simd8<uint8_t> bytes) {
     vmask_t bit_7 = bytes.get_bit<7>();
     if (unlikely(bit_7)) {
       // TODO (@jkeiser): To work with simdjson's caller model, I moved the calculation of
