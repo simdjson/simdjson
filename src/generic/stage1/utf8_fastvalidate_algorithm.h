@@ -35,7 +35,7 @@ struct utf8_checker {
     this->has_error |= current_bytes.saturating_sub(0xF4u);
   }
 
-  really_inline simd8<int8_t> continuation_lengths(const simd8<int8_t>& high_nibbles) {
+  really_inline simd8<int8_t> continuation_lengths(const simd8<int8_t> high_nibbles) {
     return high_nibbles.lookup_16<int8_t>(
       1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
       0, 0, 0, 0,             // 10xx (continuation)
@@ -151,7 +151,7 @@ struct utf8_checker {
     this->previous = pb;
   }
 
-  really_inline void check_next_input(const simd8<uint8_t> in) {
+  really_inline void check_next_input(const simd8<uint8_t>& in) {
     if (likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {
