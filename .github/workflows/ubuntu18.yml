@@ -16,7 +16,7 @@ jobs:
           mkdir build &&
           cd build &&
           cmake -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
-          cmake --build -j -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON  .  &&
+          cmake --build . -j -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON    &&
           ctest  -j4 --output-on-failure .  &&
           make install  &&
           echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Ibuild/destination/include -Lbuild/destination/lib -std=c++17 -Wl,-rpath,build/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
