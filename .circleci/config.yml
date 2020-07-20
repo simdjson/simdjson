@@ -2,15 +2,6 @@ version: 2.1
 
 # Reusable image / compiler definitions
 executors:
-  gcc7:
-    docker:
-      - image: gcc:7
-        environment:
-          CXX: g++
-          CC: gcc
-          BUILD_FLAGS: -j
-          CTEST_FLAGS: -j4 --output-on-failure
-
   gcc8:
     docker:
       - image: conanio/gcc8
@@ -113,11 +104,6 @@ commands:
 jobs:
 
   # static
-  gcc7:
-    description: Build and run tests on GCC 7 and AVX 2 with a cmake static build
-    executor: gcc7
-    environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ install_cmake, cmake_test, cmake_install_test ]
   justlib-gcc10:
     description: Build just the library, install it and do a basic test
     executor: gcc10
@@ -218,7 +204,7 @@ workflows:
   build_and_test:
     jobs:
       # full multi-implementation tests
-      - gcc7
+      #- gcc7 tested on GitHub actions
       - gcc10 # do not delete this as it tests our performance
       - clang6
       #- clang10 # this gets tested a lot below
