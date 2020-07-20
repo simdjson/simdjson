@@ -11,7 +11,7 @@ jobs:
       with:
         cmake-version: '3.9.x'
     - name: Use cmake
-       run:|
+      run: |
         mkdir build &&
         cd build &&
         cmake -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
