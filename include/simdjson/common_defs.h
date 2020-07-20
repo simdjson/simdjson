@@ -98,8 +98,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
-  #define really_inline inline __attribute__((always_inline, unused))
-  #define never_inline inline __attribute__((noinline, unused))
+  #define really_inline inline __attribute__((always_inline))
+  #define never_inline inline __attribute__((noinline))
 
   #define UNUSED __attribute__((unused))
   #define WARN_UNUSED __attribute__((warn_unused_result))

@@ -1,5 +1,4 @@
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&q=proj%3Asimdjson&can=2)
-[![simdjson](https://circleci.com/gh/simdjson/simdjson.svg?style=svg)](https://circleci.com/gh/simdjson/simdjson)
 [![CirrusCI](https://api.cirrus-ci.com/github/simdjson/simdjson.svg)](https://cirrus-ci.com/github/simdjson/simdjson)
 ![MinGW64-CI](https://github.com/simdjson/simdjson/workflows/MinGW64-CI/badge.svg)
 [![][license img]][license]  [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](https://simdjson.org/api/0.4.0/index.html)
@@ -136,6 +135,7 @@ Bindings and Ports of simdjson
 We distinguish between "bindings" (which just wrap the C++ code) and a port to another programming language (which reimplements everything).
 
 - [ZippyJSON](https://github.com/michaeleisel/zippyjson): Swift bindings for the simdjson project.
+- [libpy_simdjson](https://github.com/gerrymanoim/libpy_simdjson/): high-speed Python bindings for simdjson using [libpy](https://github.com/quantopian/libpy).
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
@@ -143,6 +143,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.
+- [fast_jsonparser](https://github.com/anilmaurya/fast_jsonparser): Ruby bindings for the simdjson project.
 - [simdjson-go](https://github.com/minio/simdjson-go): Go port using Golang assembly.
 - [rcppsimdjson](https://github.com/eddelbuettel/rcppsimdjson): R bindings.
 

@@ -121,7 +121,7 @@ WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, ui
 }
 
 #include "generic/stage1/find_next_document_index.h"
-#include "generic/stage1/utf8_lookup3_algorithm.h"
+#include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
 WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
   this->buf = _buf;

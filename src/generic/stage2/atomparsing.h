@@ -1,15 +1,26 @@
 namespace stage2 {
 namespace atomparsing {
 
-really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
+namespace{
+// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
+// We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
+// be certain that the character pointer will be properly aligned.
+// You might think that using memcpy makes this function expensive, but you'd be wrong.
+// All decent optimizing compilers (GCC, clang, Visual Studio) will compile string_to_uint32("false");
+// to the compile-time constant 1936482662.
+really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
+
+// Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
+// Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.
 WARN_UNUSED
 really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
-  uint32_t srcval; // we want to avoid unaligned 64-bit loads (undefined in C/C++)
+  uint32_t srcval; // we want to avoid unaligned 32-bit loads (undefined in C/C++)
   static_assert(sizeof(uint32_t) <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be larger than 4 bytes");
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
+} // anonymous namespace
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *src) {

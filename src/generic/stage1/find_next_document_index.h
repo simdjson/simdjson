@@ -23,7 +23,7 @@
   * complete document, therefore the last json buffer location is the end of the
   * batch.
   */
-really_inline static uint32_t find_next_document_index(dom_parser_implementation &parser) {
+really_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
   // TODO don't count separately, just figure out depth
   auto arr_cnt = 0;
   auto obj_cnt = 0;
@@ -65,7 +65,7 @@ really_inline static uint32_t find_next_document_index(dom_parser_implementation
 }
 
 // Skip the last character if it is partial
-really_inline static size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
+really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
   if (unlikely(len < 3)) {
     switch (len) {
       case 2:
