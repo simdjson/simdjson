@@ -1,4 +1,4 @@
-/* auto-generated on Mon Jul  6 18:16:52 EDT 2020. Do not edit! */
+/* auto-generated on Sun 19 Jul 2020 11:55:45 PM EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3073,10 +3073,13 @@ public:
 
   class iterator {
   public:
+    using value_type = element;
+    using difference_type = std::ptrdiff_t;
+
     /**
      * Get the actual value
      */
-    inline element operator*() const noexcept;
+    inline value_type operator*() const noexcept;
     /**
      * Get the next value.
      *
@@ -3085,11 +3088,27 @@ public:
      */
     inline iterator& operator++() noexcept;
     /**
+     * Get the next value.
+     *
+     * Part of the  std::iterator interface.
+     */
+    inline iterator operator++(int) noexcept;
+    /**
      * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
     inline bool operator!=(const iterator& other) const noexcept;
+    inline bool operator==(const iterator& other) const noexcept;
+
+    inline bool operator<(const iterator& other) const noexcept;
+    inline bool operator<=(const iterator& other) const noexcept;
+    inline bool operator>=(const iterator& other) const noexcept;
+    inline bool operator>(const iterator& other) const noexcept;
+
+    iterator() noexcept = default;
+    iterator(const iterator&) noexcept = default;
+    iterator& operator=(const iterator&) noexcept = default;
   private:
     really_inline iterator(const internal::tape_ref &tape) noexcept;
     internal::tape_ref tape;
@@ -3204,6 +3223,18 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 #endif
 
 } // namespace simdjson
+
+#if defined(__cpp_lib_ranges)
+#include <ranges>
+
+namespace std::ranges {
+template<>
+inline constexpr bool enable_view<simdjson::dom::array> = true;
+}
+
+static_assert(std::ranges::view<simdjson::dom::array>);
+static_assert(std::ranges::sized_range<simdjson::dom::array>);
+#endif
 
 #endif // SIMDJSON_DOM_ARRAY_H
 /* end file include/simdjson/minify.h */
@@ -4539,10 +4570,13 @@ public:
 
   class iterator {
   public:
+    using value_type = key_value_pair;
+    using difference_type = std::ptrdiff_t;
+
     /**
      * Get the actual key/value pair
      */
-    inline const key_value_pair operator*() const noexcept;
+    inline const value_type operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
@@ -4551,11 +4585,24 @@ public:
      */
     inline iterator& operator++() noexcept;
     /**
-     * Check if these key value pairs come from the same place in the JSON.
+     * Get the next key/value pair.
+     *
+     * Part of the std::iterator interface.
+     *
+     */
+    inline iterator operator++(int) noexcept;
+    /**
+     * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
     inline bool operator!=(const iterator& other) const noexcept;
+    inline bool operator==(const iterator& other) const noexcept;
+
+    inline bool operator<(const iterator& other) const noexcept;
+    inline bool operator<=(const iterator& other) const noexcept;
+    inline bool operator>=(const iterator& other) const noexcept;
+    inline bool operator>(const iterator& other) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
@@ -4584,6 +4631,10 @@ public:
      * Get the value of this key/value pair.
      */
     inline element value() const noexcept;
+
+    iterator() noexcept = default;
+    iterator(const iterator&) noexcept = default;
+    iterator& operator=(const iterator&) noexcept = default;
   private:
     really_inline iterator(const internal::tape_ref &tape) noexcept;
 
@@ -4775,6 +4826,18 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ob
 #endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
+
+#if defined(__cpp_lib_ranges)
+#include <ranges>
+
+namespace std::ranges {
+template<>
+inline constexpr bool enable_view<simdjson::dom::object> = true;
+}
+
+static_assert(std::ranges::view<simdjson::dom::object>);
+static_assert(std::ranges::sized_range<simdjson::dom::object>);
+#endif
 
 #endif // SIMDJSON_DOM_OBJECT_H
 /* end file include/simdjson/dom/object.h */
@@ -5379,14 +5442,33 @@ really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcep
 inline element array::iterator::operator*() const noexcept {
   return element(tape);
 }
-inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
-  return tape.json_index != other.tape.json_index;
-}
 inline array::iterator& array::iterator::operator++() noexcept {
   tape.json_index = tape.after_element();
   return *this;
 }
-
+inline array::iterator array::iterator::operator++(int) noexcept {
+  array::iterator out = *this;
+  ++*this;
+  return out;
+}
+inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
+  return tape.json_index != other.tape.json_index;
+}
+inline bool array::iterator::operator==(const array::iterator& other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
+inline bool array::iterator::operator<(const array::iterator& other) const noexcept {
+  return tape.json_index < other.tape.json_index;
+}
+inline bool array::iterator::operator<=(const array::iterator& other) const noexcept {
+  return tape.json_index <= other.tape.json_index;
+}
+inline bool array::iterator::operator>=(const array::iterator& other) const noexcept {
+  return tape.json_index >= other.tape.json_index;
+}
+inline bool array::iterator::operator>(const array::iterator& other) const noexcept {
+  return tape.json_index > other.tape.json_index;
+}
 inline std::ostream& operator<<(std::ostream& out, const array &value) {
   return out << minify<array>(value);
 }
@@ -6659,10 +6741,30 @@ inline const key_value_pair object::iterator::operator*() const noexcept {
 inline bool object::iterator::operator!=(const object::iterator& other) const noexcept {
   return tape.json_index != other.tape.json_index;
 }
+inline bool object::iterator::operator==(const object::iterator& other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
+inline bool object::iterator::operator<(const object::iterator& other) const noexcept {
+  return tape.json_index < other.tape.json_index;
+}
+inline bool object::iterator::operator<=(const object::iterator& other) const noexcept {
+  return tape.json_index <= other.tape.json_index;
+}
+inline bool object::iterator::operator>=(const object::iterator& other) const noexcept {
+  return tape.json_index >= other.tape.json_index;
+}
+inline bool object::iterator::operator>(const object::iterator& other) const noexcept {
+  return tape.json_index > other.tape.json_index;
+}
 inline object::iterator& object::iterator::operator++() noexcept {
   tape.json_index++;
   tape.json_index = tape.after_element();
   return *this;
+}
+inline object::iterator object::iterator::operator++(int) noexcept {
+  object::iterator out = *this;
+  ++*this;
+  return out;
 }
 inline std::string_view object::iterator::key() const noexcept {
   return tape.get_string_view();

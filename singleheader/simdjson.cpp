@@ -1,4 +1,4 @@
-/* auto-generated on Mon Jul  6 18:16:52 EDT 2020. Do not edit! */
+/* auto-generated on Sun 19 Jul 2020 11:55:45 PM EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -4610,7 +4610,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
+really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
 WARN_UNUSED
 really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
@@ -6704,7 +6704,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
+really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
 WARN_UNUSED
 really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
@@ -9926,7 +9926,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
+really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
 WARN_UNUSED
 really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
@@ -13124,7 +13124,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-really_inline uint32_t string_to_uint32(const char* str) { return *reinterpret_cast<const uint32_t *>(str); }
+really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
 WARN_UNUSED
 really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
