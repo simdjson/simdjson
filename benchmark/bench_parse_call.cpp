@@ -10,6 +10,36 @@ const char *GSOC_JSON = SIMDJSON_BENCHMARK_DATA_DIR "gsoc-2018.json";
 
 
 
+static void unicode_validate_twitter(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  auto error = padded_string::load(TWITTER_JSON).get(docdata);
+  if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+  }
+  // we do not want mem. alloc. in the loop.
+  error = parser.allocate(docdata.size());
+  if(error) {
+      cout << error << endl;
+      return;
+  }
+  size_t bytes = 0;
+  for (UNUSED auto _ : state) {
+    bool is_ok = simdjson::validate_utf8(docdata.data(), docdata.size());
+    bytes += docdata.size();
+    benchmark::DoNotOptimize(is_ok);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(unicode_validate_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
 static void parse_twitter(State& state) {
   dom::parser parser;
   padded_string docdata;
@@ -28,7 +58,6 @@ static void parse_twitter(State& state) {
   for (UNUSED auto _ : state) {
     dom::element doc;
     bytes += docdata.size();
-    ;
     if ((error = parser.parse(docdata).get(doc))) {
       cerr << "could not parse twitter.json" << error << endl;
       return;
