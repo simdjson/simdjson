@@ -8,7 +8,7 @@ executors:
         environment:
           CXX: g++
           CC: gcc
-          BUILD_FLAGS: -j
+          BUILD_FLAGS:
           CTEST_FLAGS: -j4 --output-on-failure
 
   gcc8:
