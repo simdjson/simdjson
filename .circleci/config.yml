@@ -101,6 +101,10 @@ commands:
       - run: cd build && make install
       - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Ibuild/destination/include -Lbuild/destination/lib -std=c++17 -Wl,-rpath,build/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
 
+  cmake_installed_test_c20: # assuming that it was installed, this tries to build using C++20
+    steps:
+      - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Ibuild/destination/include -Lbuild/destination/lib -std=c++20 -Wl,-rpath,build/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
+
 jobs:
 
   # static
@@ -108,12 +112,12 @@ jobs:
     description: Build just the library, install it and do a basic test
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
-    steps: [ cmake_build, cmake_install_test ]
+    steps: [ cmake_build, cmake_install_test, cmake_install_test_c20 ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
     executor: gcc10
     environment: { CMAKE_FLAGS: -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_BUILD_STATIC=ON }
-    steps: [ cmake_test_all, cmake_install_test ]
+    steps: [ cmake_test_all, cmake_install_test, cmake_install_test_c20 ]
   clang6:
     description: Build and run tests on clang 6 and AVX 2 with a cmake static build
     executor: clang6
