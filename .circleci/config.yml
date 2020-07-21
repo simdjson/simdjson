@@ -201,21 +201,6 @@ jobs:
     executor: clang5
     environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
     steps: [ cmake_build, cmake_install_test ]
-  justlib-clang3:
-    description: Build just the library, install it and do a basic test
-    executor: clang3
-    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
-    steps: [ cmake_build, cmake_install_test ]
-  justlib-clang4:
-    description: Build just the library, install it and do a basic test
-    executor: clang4
-    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
-    steps: [ cmake_build, cmake_install_test ]
-  justlib-clang5:
-    description: Build just the library, install it and do a basic test
-    executor: clang5
-    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
-    steps: [ cmake_build, cmake_install_test ]
   justlib-gcc48:
     description: Build just the library, install it and do a basic test
     executor: gcc48
@@ -366,9 +351,6 @@ workflows:
       - justlib-gcc10
 
       # legacy compilers
-      - justlib-clang3
-      - justlib-clang4
-      - justlib-clang5
       - justlib-clang3
       - justlib-clang4
       - justlib-clang5
