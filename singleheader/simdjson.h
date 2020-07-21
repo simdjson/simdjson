@@ -1,4 +1,4 @@
-/* auto-generated on Sun 19 Jul 2020 11:55:45 PM EDT. Do not edit! */
+/* auto-generated on Tue 21 Jul 2020 15:17:46 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3511,7 +3511,7 @@ public:
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
-   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   *                   Defaults to 1MB (as simdjson::dom::DEFAULT_BATCH_SIZE), which has been a reasonable sweet spot in our tests.
    * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
    *         - IO_ERROR if there was an error opening or reading the file.
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
