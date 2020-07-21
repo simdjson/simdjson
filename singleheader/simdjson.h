@@ -1,4 +1,4 @@
-/* auto-generated on Sun 19 Jul 2020 11:55:45 PM EDT. Do not edit! */
+/* auto-generated on Tue 21 Jul 2020 16:54:49 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -389,8 +389,8 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
-  #define really_inline inline __attribute__((always_inline, unused))
-  #define never_inline inline __attribute__((noinline, unused))
+  #define really_inline inline __attribute__((always_inline))
+  #define never_inline inline __attribute__((noinline))
 
   #define UNUSED __attribute__((unused))
   #define WARN_UNUSED __attribute__((warn_unused_result))
@@ -3224,6 +3224,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 
 } // namespace simdjson
 
+/*
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
@@ -3235,6 +3236,7 @@ inline constexpr bool enable_view<simdjson::dom::array> = true;
 static_assert(std::ranges::view<simdjson::dom::array>);
 static_assert(std::ranges::sized_range<simdjson::dom::array>);
 #endif
+*/
 
 #endif // SIMDJSON_DOM_ARRAY_H
 /* end file include/simdjson/minify.h */
@@ -3511,7 +3513,7 @@ public:
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
-   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   *                   Defaults to 1MB (as simdjson::dom::DEFAULT_BATCH_SIZE), which has been a reasonable sweet spot in our tests.
    * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
    *         - IO_ERROR if there was an error opening or reading the file.
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails.
@@ -4827,6 +4829,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ob
 
 } // namespace simdjson
 
+/*
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
@@ -4838,6 +4841,7 @@ inline constexpr bool enable_view<simdjson::dom::object> = true;
 static_assert(std::ranges::view<simdjson::dom::object>);
 static_assert(std::ranges::sized_range<simdjson::dom::object>);
 #endif
+*/
 
 #endif // SIMDJSON_DOM_OBJECT_H
 /* end file include/simdjson/dom/object.h */
