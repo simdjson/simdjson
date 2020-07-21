@@ -3305,7 +3305,7 @@ class document_stream;
 class element;
 
 /** The default batch size for parser.parse_many() and parser.load_many() */
-static constexpr size_t DEFAULT_BATCH_SIZE = 1000000;
+static constexpr size_t DEFAULT_BATCH_SIZE = 10000000;
 
 /**
   * A persistent document parser.
