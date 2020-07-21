@@ -1,4 +1,4 @@
-/* auto-generated on Mon 20 Jul 2020 18:53:18 EDT. Do not edit! */
+/* auto-generated on Sun 19 Jul 2020 11:55:45 PM EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -4531,13 +4531,6 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-namespace{
-// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
-// We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
-// be certain that the character pointer will be properly aligned.
-// You might think that using memcpy makes this function expensive, but you'd be wrong.
-// All decent optimizing compilers (GCC, clang, Visual Studio) will compile string_to_uint32("false");
-// to the compile-time constant 1936482662.
 really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
 
 
@@ -6606,15 +6599,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-namespace{
-// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
-// We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
-// be certain that the character pointer will be properly aligned.
-// You might think that using memcpy makes this function expensive, but you'd be wrong.
-// All decent optimizing compilers (GCC, clang, Visual Studio) will compile string_to_uint32("false");
-// to the compile-time constant 1936482662.
 really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
-
 
 // Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
 // Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.
@@ -9756,15 +9741,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-namespace{
-// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
-// We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
-// be certain that the character pointer will be properly aligned.
-// You might think that using memcpy makes this function expensive, but you'd be wrong.
-// All decent optimizing compilers (GCC, clang, Visual Studio) will compile string_to_uint32("false");
-// to the compile-time constant 1936482662.
 really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
-
 
 // Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
 // Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.
@@ -12880,15 +12857,7 @@ namespace logger {
 namespace stage2 {
 namespace atomparsing {
 
-namespace{
-// The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
-// We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
-// be certain that the character pointer will be properly aligned.
-// You might think that using memcpy makes this function expensive, but you'd be wrong.
-// All decent optimizing compilers (GCC, clang, Visual Studio) will compile string_to_uint32("false");
-// to the compile-time constant 1936482662.
 really_inline uint32_t string_to_uint32(const char* str) { uint32_t val; std::memcpy(&val, str, sizeof(uint32_t)); return val; }
-
 
 // Again in str4ncmp we use a memcpy to avoid undefined behavior. The memcpy may appear expensive.
 // Yet all decent optimizing compilers will compile memcpy to a single instruction, just about.

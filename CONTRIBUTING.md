@@ -71,6 +71,12 @@ Pull requests are always invited. However, we ask that you follow these guidelin
 
 If the benefits of your proposed code remain unclear, we may choose to discard your code: that is not an insult, we frequently discard our own code. We may also consider various alternatives and choose another path. Again, that is not an insult or a sign that you have wasted your time.
 
+Style
+-----
+
+Our formatting style is inspired by the LLVM style.
+The simdjson library is written using the snake case: when a variable or a function is a phrase,  each space is replaced by an underscore character, and the first letter of each word written in lowercase.  Compile-time constants are written entirely in uppercase with the same underscore convention.
+
 Code of Conduct
 ---------------
 
