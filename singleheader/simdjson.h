@@ -1,4 +1,4 @@
-/* auto-generated on Tue 21 Jul 2020 15:20:03 EDT. Do not edit! */
+/* auto-generated on Tue 21 Jul 2020 17:54:23 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -3224,6 +3224,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 
 } // namespace simdjson
 
+/*
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
@@ -3235,6 +3236,7 @@ inline constexpr bool enable_view<simdjson::dom::array> = true;
 static_assert(std::ranges::view<simdjson::dom::array>);
 static_assert(std::ranges::sized_range<simdjson::dom::array>);
 #endif
+*/
 
 #endif // SIMDJSON_DOM_ARRAY_H
 /* end file include/simdjson/minify.h */
@@ -4827,6 +4829,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ob
 
 } // namespace simdjson
 
+/*
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
@@ -4838,6 +4841,7 @@ inline constexpr bool enable_view<simdjson::dom::object> = true;
 static_assert(std::ranges::view<simdjson::dom::object>);
 static_assert(std::ranges::sized_range<simdjson::dom::object>);
 #endif
+*/
 
 #endif // SIMDJSON_DOM_OBJECT_H
 /* end file include/simdjson/dom/object.h */
