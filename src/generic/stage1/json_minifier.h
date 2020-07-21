@@ -16,13 +16,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-really_inline void json_minifier::next(simd::simd8x64<uint8_t> in, json_block block) {
+really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);

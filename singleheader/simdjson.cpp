@@ -1,4 +1,4 @@
-/* auto-generated on Tue 21 Jul 2020 16:54:49 EDT. Do not edit! */
+/* auto-generated on Tue 21 Jul 2020 17:54:23 EDT. Do not edit! */
 /* begin file src/simdjson.cpp */
 #include "simdjson.h"
 
@@ -2646,10 +2646,14 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
 
   template<typename T>
   struct simd8x64 {
-    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static_assert(NUM_CHUNKS == 4, "ARM kernel should use four registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
-    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
+    simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
+    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64() = delete; // no default constructor allowed
+    
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
@@ -2660,19 +2664,16 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
+    really_inline simd8<T> reduce_or() const {
+      return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
+    }
+
+
     really_inline void compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
       this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
       this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
       this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
-    }
-
-    template <typename F>
-    static really_inline void each_index(F const& each) {
-      each(0);
-      each(1);
-      each(2);
-      each(3);
     }
 
     really_inline uint64_t to_bitmask() const {
@@ -2740,7 +2741,7 @@ namespace arm64 {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
   really_inline uint64_t whitespace() const { return _whitespace; }
   really_inline uint64_t op() const { return _op; }
@@ -2750,7 +2751,7 @@ struct json_character_block {
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Functional programming causes trouble with Visual Studio.
   // Keeping this version in comments since it is much nicer:
   // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
@@ -2763,7 +2764,7 @@ really_inline json_character_block json_character_block::classify(const simd::si
   const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
   const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
 
-  auto v = simd8x64<uint8_t>(
+  simd8x64<uint8_t> v(
      (in.chunks[0] & 0xf).lookup_16(table1) & (in.chunks[0].shr<4>()).lookup_16(table2),
      (in.chunks[1] & 0xf).lookup_16(table1) & (in.chunks[1].shr<4>()).lookup_16(table2),
      (in.chunks[2] & 0xf).lookup_16(table1) & (in.chunks[2].shr<4>()).lookup_16(table2),
@@ -2804,12 +2805,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(simd8x64<uint8_t> input) {
-    simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
+really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+    simd8<uint8_t> bits = input.reduce_or();
     return bits.max() < 0b10000000u;
 }
 
-really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
@@ -2821,7 +2822,7 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
     return is_third_byte ^ is_fourth_byte;
@@ -2865,7 +2866,7 @@ UNUSED static char * format_input_text_64(const uint8_t *text) {
 }
 
 // Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   in.store((uint8_t*)buf);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
@@ -2948,7 +2949,7 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  really_inline json_string_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -3014,7 +3015,7 @@ really_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t bac
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = find_escaped(backslash);
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -3105,7 +3106,7 @@ private:
 class json_scanner {
 public:
   json_scanner() {}
-  really_inline json_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -3142,7 +3143,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   json_character_block characters = json_character_block::classify(in);
   uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
@@ -3188,13 +3189,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-really_inline void json_minifier::next(simd::simd8x64<uint8_t> in, json_block block) {
+really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -3347,7 +3348,7 @@ namespace utf8_validation {
 
 using namespace simd;
 
-  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t>& input, const simd8<uint8_t>& prev1) {
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
 // Bit 0 = Too Short (lead byte/ASCII followed by lead byte/ASCII)
 // Bit 1 = Too Long (ASCII followed by continuation)
 // Bit 2 = Overlong 3-byte
@@ -3437,8 +3438,8 @@ using namespace simd;
     );
     return (byte_1_high & byte_1_low & byte_2_high);
   }
-  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t>& input,
-      const simd8<uint8_t>& prev_input, const simd8<uint8_t>& sc) {
+  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t> input,
+      const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
     simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
@@ -3450,7 +3451,7 @@ using namespace simd;
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t>& input) {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t max_array[32] = {
@@ -3474,7 +3475,7 @@ using namespace simd;
     //
     // Check whether the current bytes are valid UTF-8.
     //
-    really_inline void check_utf8_bytes(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input) {
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
       // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
@@ -3490,7 +3491,9 @@ using namespace simd;
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (unlikely(!is_ascii(input))) {
+      if(likely(is_ascii(input))) {
+        this->error |= this->prev_incomplete;
+      } else {
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
             "We support either two or four chunks per 64-byte block.");
@@ -3505,10 +3508,7 @@ using namespace simd;
         }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      } else {
-        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-        // possibly finish them.
-        this->error |= this->prev_incomplete;
+
       }
     }
 
@@ -3595,7 +3595,7 @@ private:
   really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
   really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -3664,7 +3664,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
   reader.advance();
 }
 
-really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
+really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -7902,6 +7902,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm256_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm256_testz_si256(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm256_testz_si256(*this, bits); }
@@ -7918,18 +7919,16 @@ namespace simd {
 
   template<typename T>
   struct simd8x64 {
-    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static_assert(NUM_CHUNKS == 2, "Haswell kernel should use two registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
-    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>()} {}
+    simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
+    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64() = delete; // no default constructor allowed
+
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
-
-    template <typename F>
-    static really_inline void each_index(F const& each) {
-      each(0);
-      each(1);
-    }
 
     really_inline void compress(uint64_t mask, T * output) const {
       uint32_t mask1 = uint32_t(mask);
@@ -7947,6 +7946,10 @@ namespace simd {
       uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r_hi =                       this->chunks[1].to_bitmask();
       return r_lo | (r_hi << 32);
+    }
+
+    really_inline simd8<T> reduce_or() const {
+      return this->chunks[0] | this->chunks[1];
     }
 
     really_inline simd8x64<T> bit_or(const T m) const {
@@ -7991,7 +7994,7 @@ namespace haswell {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
   really_inline uint64_t whitespace() const { return _whitespace; }
   really_inline uint64_t op() const { return _op; }
@@ -8001,7 +8004,7 @@ struct json_character_block {
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
   auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
@@ -8024,12 +8027,11 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]);
-  return !bits.any_bits_set_anywhere(0b10000000u);
+really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+  return input.reduce_or().is_ascii();
 }
 
-really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
@@ -8037,7 +8039,7 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
   // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
@@ -8083,7 +8085,7 @@ UNUSED static char * format_input_text_64(const uint8_t *text) {
 }
 
 // Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   in.store((uint8_t*)buf);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
@@ -8166,7 +8168,7 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  really_inline json_string_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -8232,7 +8234,7 @@ really_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t bac
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = find_escaped(backslash);
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -8323,7 +8325,7 @@ private:
 class json_scanner {
 public:
   json_scanner() {}
-  really_inline json_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -8360,7 +8362,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   json_character_block characters = json_character_block::classify(in);
   uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
@@ -8404,13 +8406,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-really_inline void json_minifier::next(simd::simd8x64<uint8_t> in, json_block block) {
+really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -8563,7 +8565,7 @@ namespace utf8_validation {
 
 using namespace simd;
 
-  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t>& input, const simd8<uint8_t>& prev1) {
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
 // Bit 0 = Too Short (lead byte/ASCII followed by lead byte/ASCII)
 // Bit 1 = Too Long (ASCII followed by continuation)
 // Bit 2 = Overlong 3-byte
@@ -8653,8 +8655,8 @@ using namespace simd;
     );
     return (byte_1_high & byte_1_low & byte_2_high);
   }
-  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t>& input,
-      const simd8<uint8_t>& prev_input, const simd8<uint8_t>& sc) {
+  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t> input,
+      const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
     simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
@@ -8666,7 +8668,7 @@ using namespace simd;
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t>& input) {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t max_array[32] = {
@@ -8690,7 +8692,7 @@ using namespace simd;
     //
     // Check whether the current bytes are valid UTF-8.
     //
-    really_inline void check_utf8_bytes(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input) {
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
       // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
@@ -8706,7 +8708,9 @@ using namespace simd;
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (unlikely(!is_ascii(input))) {
+      if(likely(is_ascii(input))) {
+        this->error |= this->prev_incomplete;
+      } else {
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
             "We support either two or four chunks per 64-byte block.");
@@ -8721,10 +8725,7 @@ using namespace simd;
         }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      } else {
-        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-        // possibly finish them.
-        this->error |= this->prev_incomplete;
+
       }
     }
 
@@ -8811,7 +8812,7 @@ private:
   really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
   really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -8880,7 +8881,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
   reader.advance();
 }
 
-really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
+really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
@@ -11006,6 +11007,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm_testz_si128(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm_testz_si128(*this, bits); }
@@ -11022,10 +11024,14 @@ namespace simd {
 
   template<typename T>
   struct simd8x64 {
-    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static_assert(NUM_CHUNKS == 4, "Westmere kernel should use four registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
-    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
+    simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
+    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64() = delete; // no default constructor allowed
+
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
@@ -11036,19 +11042,15 @@ namespace simd {
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
+    really_inline simd8<T> reduce_or() const {
+      return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
+    }
+
     really_inline void compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
       this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
       this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
       this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
-    }
-
-    template <typename F>
-    static really_inline void each_index(F const& each) {
-      each(0);
-      each(1);
-      each(2);
-      each(3);
     }
 
     really_inline uint64_t to_bitmask() const {
@@ -11108,7 +11110,7 @@ namespace westmere {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t> in);
+  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
   really_inline uint64_t whitespace() const { return _whitespace; }
   really_inline uint64_t op() const { return _op; }
@@ -11118,7 +11120,7 @@ struct json_character_block {
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t> in) {
+really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
   auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
@@ -11146,12 +11148,11 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(simd8x64<uint8_t> input) {
-  simd8<uint8_t> bits = (input.chunks[0] | input.chunks[1]) | (input.chunks[2] | input.chunks[3]);
-  return !bits.any_bits_set_anywhere(0b10000000u);
+really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+  return input.reduce_or().is_ascii();
 }
 
-really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
@@ -11159,7 +11160,7 @@ really_inline simd8<bool> must_be_continuation(simd8<uint8_t> prev1, simd8<uint8
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(simd8<uint8_t> prev2, simd8<uint8_t> prev3) {
+really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
   // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
@@ -11205,7 +11206,7 @@ UNUSED static char * format_input_text_64(const uint8_t *text) {
 }
 
 // Routines to print masks and text for debugging bitmask operations
-UNUSED static char * format_input_text(const simd8x64<uint8_t> in) {
+UNUSED static char * format_input_text(const simd8x64<uint8_t>& in) {
   static char *buf = (char*)malloc(sizeof(simd8x64<uint8_t>) + 1);
   in.store((uint8_t*)buf);
   for (size_t i=0; i<sizeof(simd8x64<uint8_t>); i++) {
@@ -11288,7 +11289,7 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  really_inline json_string_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -11354,7 +11355,7 @@ really_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t bac
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = find_escaped(backslash);
   const uint64_t quote = in.eq('"') & ~escaped;
@@ -11445,7 +11446,7 @@ private:
 class json_scanner {
 public:
   json_scanner() {}
-  really_inline json_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -11482,7 +11483,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   json_character_block characters = json_character_block::classify(in);
   uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);
@@ -11526,13 +11527,13 @@ private:
   {}
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
   really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-really_inline void json_minifier::next(simd::simd8x64<uint8_t> in, json_block block) {
+really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
@@ -11685,7 +11686,7 @@ namespace utf8_validation {
 
 using namespace simd;
 
-  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t>& input, const simd8<uint8_t>& prev1) {
+  really_inline simd8<uint8_t> check_special_cases(const simd8<uint8_t> input, const simd8<uint8_t> prev1) {
 // Bit 0 = Too Short (lead byte/ASCII followed by lead byte/ASCII)
 // Bit 1 = Too Long (ASCII followed by continuation)
 // Bit 2 = Overlong 3-byte
@@ -11775,8 +11776,8 @@ using namespace simd;
     );
     return (byte_1_high & byte_1_low & byte_2_high);
   }
-  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t>& input,
-      const simd8<uint8_t>& prev_input, const simd8<uint8_t>& sc) {
+  really_inline simd8<uint8_t> check_multibyte_lengths(const simd8<uint8_t> input,
+      const simd8<uint8_t> prev_input, const simd8<uint8_t> sc) {
     simd8<uint8_t> prev2 = input.prev<2>(prev_input);
     simd8<uint8_t> prev3 = input.prev<3>(prev_input);
     simd8<uint8_t> must23 = simd8<uint8_t>(must_be_2_3_continuation(prev2, prev3));
@@ -11788,7 +11789,7 @@ using namespace simd;
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t>& input) {
+  really_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
     static const uint8_t max_array[32] = {
@@ -11812,7 +11813,7 @@ using namespace simd;
     //
     // Check whether the current bytes are valid UTF-8.
     //
-    really_inline void check_utf8_bytes(const simd8<uint8_t>& input, const simd8<uint8_t>& prev_input) {
+    really_inline void check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
       // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
@@ -11828,7 +11829,9 @@ using namespace simd;
     }
 
     really_inline void check_next_input(const simd8x64<uint8_t>& input) {
-      if (unlikely(!is_ascii(input))) {
+      if(likely(is_ascii(input))) {
+        this->error |= this->prev_incomplete;
+      } else {
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 2) || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
             "We support either two or four chunks per 64-byte block.");
@@ -11843,10 +11846,7 @@ using namespace simd;
         }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
-      } else {
-        // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
-        // possibly finish them.
-        this->error |= this->prev_incomplete;
+
       }
     }
 
@@ -11933,7 +11933,7 @@ private:
   really_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   really_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(simd::simd8x64<uint8_t> in, json_block block, size_t idx);
+  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx);
   really_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, bool partial);
 
   json_scanner scanner{};
@@ -12002,7 +12002,7 @@ really_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_b
   reader.advance();
 }
 
-really_inline void json_structural_indexer::next(simd::simd8x64<uint8_t> in, json_block block, size_t idx) {
+really_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, json_block block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
   checker.check_next_input(in);
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser

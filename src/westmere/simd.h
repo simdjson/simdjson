@@ -247,6 +247,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm_testz_si128(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm_testz_si128(*this, bits); }
@@ -263,10 +264,14 @@ namespace simd {
 
   template<typename T>
   struct simd8x64 {
-    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static_assert(NUM_CHUNKS == 4, "Westmere kernel should use four registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
-    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>(), simd8<T>(), simd8<T>()} {}
+    simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
+    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64() = delete; // no default constructor allowed
+
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
 
@@ -277,19 +282,15 @@ namespace simd {
       this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
     }
 
+    really_inline simd8<T> reduce_or() const {
+      return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
+    }
+
     really_inline void compress(uint64_t mask, T * output) const {
       this->chunks[0].compress(uint16_t(mask), output);
       this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
       this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
       this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
-    }
-
-    template <typename F>
-    static really_inline void each_index(F const& each) {
-      each(0);
-      each(1);
-      each(2);
-      each(3);
     }
 
     really_inline uint64_t to_bitmask() const {

@@ -335,7 +335,7 @@ struct utf8_checker {
     this->check_special_cases(bytes);
   }
 
-  really_inline void check_next_input(simd8<uint8_t> bytes) {
+  really_inline void check_next_input(const simd8<uint8_t> bytes) {
     vmask_t bit_7 = bytes.get_bit<7>();
     if (unlikely(bit_7)) {
       // TODO (@jkeiser): To work with simdjson's caller model, I moved the calculation of
@@ -348,7 +348,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline void check_next_input(simd8x64<uint8_t> in) {
+  really_inline void check_next_input(const simd8x64<uint8_t>& in) {
     for (int i=0; i<simd8x64<uint8_t>::NUM_CHUNKS; i++) {
       this->check_next_input(in.chunks[i]);
     }

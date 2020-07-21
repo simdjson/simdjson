@@ -275,6 +275,7 @@ namespace simd {
     really_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
     really_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     really_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    really_inline bool is_ascii() const { return _mm256_movemask_epi8(*this) == 0; }
     really_inline bool bits_not_set_anywhere() const { return _mm256_testz_si256(*this, *this); }
     really_inline bool any_bits_set_anywhere() const { return !bits_not_set_anywhere(); }
     really_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return _mm256_testz_si256(*this, bits); }
@@ -291,18 +292,16 @@ namespace simd {
 
   template<typename T>
   struct simd8x64 {
-    static const int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
+    static_assert(NUM_CHUNKS == 2, "Haswell kernel should use two registers per 64-byte block.");
     const simd8<T> chunks[NUM_CHUNKS];
 
-    really_inline simd8x64() : chunks{simd8<T>(), simd8<T>()} {}
+    simd8x64(const simd8x64<T>& o) = delete; // no copy allowed
+    simd8x64<T>& operator=(const simd8<T> other) = delete; // no assignment allowed
+    simd8x64() = delete; // no default constructor allowed
+
     really_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1) : chunks{chunk0, chunk1} {}
     really_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+32)} {}
-
-    template <typename F>
-    static really_inline void each_index(F const& each) {
-      each(0);
-      each(1);
-    }
 
     really_inline void compress(uint64_t mask, T * output) const {
       uint32_t mask1 = uint32_t(mask);
@@ -320,6 +319,10 @@ namespace simd {
       uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r_hi =                       this->chunks[1].to_bitmask();
       return r_lo | (r_hi << 32);
+    }
+
+    really_inline simd8<T> reduce_or() const {
+      return this->chunks[0] | this->chunks[1];
     }
 
     really_inline simd8x64<T> bit_or(const T m) const {

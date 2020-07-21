@@ -49,7 +49,7 @@ private:
 class json_scanner {
 public:
   json_scanner() {}
-  really_inline json_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -86,7 +86,7 @@ really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint
   return result;
 }
 
-really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   json_character_block characters = json_character_block::classify(in);
   uint64_t follows_scalar = follows(characters.scalar(), prev_scalar);

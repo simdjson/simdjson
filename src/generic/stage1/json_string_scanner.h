@@ -33,7 +33,7 @@ struct json_string_block {
 // Scans blocks for string characters, storing the state necessary to do so
 class json_string_scanner {
 public:
-  really_inline json_string_block next(const simd::simd8x64<uint8_t> in);
+  really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
   really_inline error_code finish(bool streaming);
 
 private:
@@ -99,7 +99,7 @@ really_inline uint64_t json_string_scanner::find_escaped_branchless(uint64_t bac
 //
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
-really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t> in) {
+really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = find_escaped(backslash);
   const uint64_t quote = in.eq('"') & ~escaped;
