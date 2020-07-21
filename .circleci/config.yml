@@ -2,6 +2,52 @@ version: 2.1
 
 # Reusable image / compiler definitions
 executors:
+
+  gcc48:
+    docker:
+      - image: conanio/gcc48
+        environment:
+          CXX: g++-4
+          CC: gcc-4
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  gcc49:
+    docker:
+      - image: conanio/gcc49
+        environment:
+          CXX: g++-4
+          CC: gcc-4
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  gcc5:
+    docker:
+      - image: conanio/gcc54
+        environment:
+          CXX: g++-5
+          CC: gcc-5
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  gcc6:
+    docker:
+      - image: conanio/gcc64
+        environment:
+          CXX: g++-6
+          CC: gcc-6
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  gcc7:
+    docker:
+      - image: conanio/gcc72
+        environment:
+          CXX: g++-7
+          CC: gcc-7
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
   gcc8:
     docker:
       - image: conanio/gcc8
@@ -29,12 +75,39 @@ executors:
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
-  clang10:
+  clang3:
     docker:
-      - image: conanio/clang10
+      - image: conanio/clang39
         environment:
-          CXX: clang++-10
-          CC: clang-10
+          CXX: clang++-3.9
+          CC: clang-3.9
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  clang4:
+    docker:
+      - image: conanio/clang40
+        environment:
+          CXX: clang++-4.0
+          CC: clang-4.0
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  clang5:
+    docker:
+      - image: conanio/clang50
+        environment:
+          CXX: clang++-5.0
+          CC: clang-5.0
+          BUILD_FLAGS: -j
+          CTEST_FLAGS: -j4 --output-on-failure
+
+  clang6:
+    docker:
+      - image: conanio/clang60
+        environment:
+          CXX: clang++-6.0
+          CC: clang-6.0
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
@@ -47,14 +120,20 @@ executors:
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
 
-  clang6:
+  clang10:
     docker:
-      - image: conanio/clang60
+      - image: conanio/clang10
         environment:
-          CXX: clang++-6.0
-          CC: clang-6.0
+          CXX: clang++-10
+          CC: clang-10
           BUILD_FLAGS: -j
           CTEST_FLAGS: -j4 --output-on-failure
+
+
+
+
+
+
 
 # Reusable test commands (and initializer for clang 6)
 commands:
@@ -106,12 +185,62 @@ commands:
       - run: echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Ibuild/destination/include -Lbuild/destination/lib -std=c++20 -Wl,-rpath,build/destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json
 
 jobs:
-
+  # legacy compilers
+  justlib-clang3:
+    description: Build just the library, install it and do a basic test
+    executor: clang3
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-clang4:
+    description: Build just the library, install it and do a basic test
+    executor: clang4
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-clang5:
+    description: Build just the library, install it and do a basic test
+    executor: clang5
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-clang3:
+    description: Build just the library, install it and do a basic test
+    executor: clang3
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-clang4:
+    description: Build just the library, install it and do a basic test
+    executor: clang4
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-clang5:
+    description: Build just the library, install it and do a basic test
+    executor: clang5
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-gcc48:
+    description: Build just the library, install it and do a basic test
+    executor: gcc48
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-gcc49:
+    description: Build just the library, install it and do a basic test
+    executor: gcc49
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-gcc5:
+    description: Build just the library, install it and do a basic test
+    executor: gcc5
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
+  justlib-gcc6:
+    description: Build just the library, install it and do a basic test
+    executor: gcc6
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    steps: [ cmake_build, cmake_install_test ]
   # static
   justlib-gcc10:
     description: Build just the library, install it and do a basic test
     executor: gcc10
-    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON }
+    environment: { CMAKE_FLAGS: -DSIMDJSON_JUST_LIBRARY=ON -DSIMDJSON_BUILD_STATIC=ON }
     steps: [ cmake_build, cmake_install_test, cmake_installed_test_cxx20 ]
   gcc10:
     description: Build and run tests on GCC 10 and AVX 2 with a cmake static build, this test performance regression
@@ -235,5 +364,17 @@ workflows:
 
       # testing "just the library"
       - justlib-gcc10
+
+      # legacy compilers
+      - justlib-clang3
+      - justlib-clang4
+      - justlib-clang5
+      - justlib-clang3
+      - justlib-clang4
+      - justlib-clang5
+      - justlib-gcc48
+      - justlib-gcc49
+      - justlib-gcc5
+      - justlib-gcc6
 
       # TODO add windows: https://circleci.com/docs/2.0/configuration-reference/#windows
