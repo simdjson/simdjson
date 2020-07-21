@@ -174,7 +174,6 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 
 } // namespace simdjson
 
-/*
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
@@ -186,6 +185,5 @@ inline constexpr bool enable_view<simdjson::dom::array> = true;
 static_assert(std::ranges::view<simdjson::dom::array>);
 static_assert(std::ranges::sized_range<simdjson::dom::array>);
 #endif
-*/
 
 #endif // SIMDJSON_DOM_ARRAY_H
