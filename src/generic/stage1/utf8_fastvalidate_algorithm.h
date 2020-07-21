@@ -151,7 +151,7 @@ struct utf8_checker {
     this->previous = pb;
   }
 
-  really_inline void check_next_input(const simd8<uint8_t>& in) {
+  really_inline void check_next_input(Dconst simd8<uint8_t> in) {
     if (likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {
