@@ -23,10 +23,13 @@ public:
 
   class iterator {
   public:
+    using value_type = element;
+    using difference_type = std::ptrdiff_t;
+
     /**
      * Get the actual value
      */
-    inline element operator*() const noexcept;
+    inline value_type operator*() const noexcept;
     /**
      * Get the next value.
      *
@@ -35,11 +38,27 @@ public:
      */
     inline iterator& operator++() noexcept;
     /**
+     * Get the next value.
+     *
+     * Part of the  std::iterator interface.
+     */
+    inline iterator operator++(int) noexcept;
+    /**
      * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
     inline bool operator!=(const iterator& other) const noexcept;
+    inline bool operator==(const iterator& other) const noexcept;
+
+    inline bool operator<(const iterator& other) const noexcept;
+    inline bool operator<=(const iterator& other) const noexcept;
+    inline bool operator>=(const iterator& other) const noexcept;
+    inline bool operator>(const iterator& other) const noexcept;
+
+    iterator() noexcept = default;
+    iterator(const iterator&) noexcept = default;
+    iterator& operator=(const iterator&) noexcept = default;
   private:
     really_inline iterator(const internal::tape_ref &tape) noexcept;
     internal::tape_ref tape;
@@ -154,5 +173,17 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 #endif
 
 } // namespace simdjson
+
+#if defined(__cpp_lib_ranges)
+#include <ranges>
+
+namespace std::ranges {
+template<>
+inline constexpr bool enable_view<simdjson::dom::array> = true;
+}
+
+static_assert(std::ranges::view<simdjson::dom::array>);
+static_assert(std::ranges::sized_range<simdjson::dom::array>);
+#endif
 
 #endif // SIMDJSON_DOM_ARRAY_H

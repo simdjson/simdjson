@@ -24,10 +24,13 @@ public:
 
   class iterator {
   public:
+    using value_type = key_value_pair;
+    using difference_type = std::ptrdiff_t;
+
     /**
      * Get the actual key/value pair
      */
-    inline const key_value_pair operator*() const noexcept;
+    inline const value_type operator*() const noexcept;
     /**
      * Get the next key/value pair.
      *
@@ -36,11 +39,24 @@ public:
      */
     inline iterator& operator++() noexcept;
     /**
-     * Check if these key value pairs come from the same place in the JSON.
+     * Get the next key/value pair.
+     *
+     * Part of the std::iterator interface.
+     *
+     */
+    inline iterator operator++(int) noexcept;
+    /**
+     * Check if these values come from the same place in the JSON.
      *
      * Part of the std::iterator interface.
      */
     inline bool operator!=(const iterator& other) const noexcept;
+    inline bool operator==(const iterator& other) const noexcept;
+
+    inline bool operator<(const iterator& other) const noexcept;
+    inline bool operator<=(const iterator& other) const noexcept;
+    inline bool operator>=(const iterator& other) const noexcept;
+    inline bool operator>(const iterator& other) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
@@ -69,6 +85,10 @@ public:
      * Get the value of this key/value pair.
      */
     inline element value() const noexcept;
+
+    iterator() noexcept = default;
+    iterator(const iterator&) noexcept = default;
+    iterator& operator=(const iterator&) noexcept = default;
   private:
     really_inline iterator(const internal::tape_ref &tape) noexcept;
 
@@ -260,5 +280,17 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ob
 #endif // SIMDJSON_EXCEPTIONS
 
 } // namespace simdjson
+
+#if defined(__cpp_lib_ranges)
+#include <ranges>
+
+namespace std::ranges {
+template<>
+inline constexpr bool enable_view<simdjson::dom::object> = true;
+}
+
+static_assert(std::ranges::view<simdjson::dom::object>);
+static_assert(std::ranges::sized_range<simdjson::dom::object>);
+#endif
 
 #endif // SIMDJSON_DOM_OBJECT_H

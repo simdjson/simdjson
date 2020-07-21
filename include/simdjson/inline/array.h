@@ -106,14 +106,33 @@ really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcep
 inline element array::iterator::operator*() const noexcept {
   return element(tape);
 }
-inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
-  return tape.json_index != other.tape.json_index;
-}
 inline array::iterator& array::iterator::operator++() noexcept {
   tape.json_index = tape.after_element();
   return *this;
 }
-
+inline array::iterator array::iterator::operator++(int) noexcept {
+  array::iterator out = *this;
+  ++*this;
+  return out;
+}
+inline bool array::iterator::operator!=(const array::iterator& other) const noexcept {
+  return tape.json_index != other.tape.json_index;
+}
+inline bool array::iterator::operator==(const array::iterator& other) const noexcept {
+  return tape.json_index == other.tape.json_index;
+}
+inline bool array::iterator::operator<(const array::iterator& other) const noexcept {
+  return tape.json_index < other.tape.json_index;
+}
+inline bool array::iterator::operator<=(const array::iterator& other) const noexcept {
+  return tape.json_index <= other.tape.json_index;
+}
+inline bool array::iterator::operator>=(const array::iterator& other) const noexcept {
+  return tape.json_index >= other.tape.json_index;
+}
+inline bool array::iterator::operator>(const array::iterator& other) const noexcept {
+  return tape.json_index > other.tape.json_index;
+}
 inline std::ostream& operator<<(std::ostream& out, const array &value) {
   return out << minify<array>(value);
 }
