@@ -310,7 +310,8 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // Performance notes: it may seem like combining the two "unlikely checks" below into
   // a single unlikely path would be faster. The reasoning is sound, but the compiler may
   // not oblige and may, in fact, generate two distinct paths in any case. It might be
-  // possible to do uint64_t(p - start_exp) <= 18.
+  // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off 
+  // instructions for a likely branch, an unconclusive gain.
 
   // If there were no digits, it's an error.
   if (unlikely(p == start_exp)) {
