@@ -1,5 +1,7 @@
 // This is for an internal-only stage 2 specific logger.
 // Set LOG_ENABLED = true to log what stage 2 is doing!
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace logger {
   static constexpr const char * DASHES = "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
@@ -61,4 +63,5 @@ namespace logger {
     }
   }
 } // namespace logger
-
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

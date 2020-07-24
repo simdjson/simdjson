@@ -3,6 +3,14 @@
 // We assume the file in which it is included already includes
 // "simdjson/stage1.h" (this simplifies amalgation)
 
+#include "generic/stage1/buf_block_reader.h"
+#include "generic/stage1/json_string_scanner.h"
+#include "generic/stage1/json_scanner.h"
+#include "generic/stage1/json_minifier.h"
+#include "generic/stage1/find_next_document_index.h"
+
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
 class bit_indexer {
@@ -196,3 +204,5 @@ really_inline error_code json_structural_indexer::finish(dom_parser_implementati
 }
 
 } // namespace stage1
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

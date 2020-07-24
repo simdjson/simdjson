@@ -1,3 +1,6 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
 //
 // Detect Unicode errors.
 //
@@ -297,3 +300,6 @@ struct utf8_checker {
   }
 
 }; // struct utf8_checker
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

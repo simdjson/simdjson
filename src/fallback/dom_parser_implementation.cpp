@@ -1,15 +1,15 @@
-#include "simdjson.h"
-#include "fallback/implementation.h"
+#include "fallback/begin_implementation.h"
 #include "fallback/dom_parser_implementation.h"
+#include "generic/stage2/jsoncharutils.h"
 
 //
 // Stage 1
 //
-namespace simdjson {
-namespace fallback {
-namespace stage1 {
-
 #include "generic/stage1/find_next_document_index.h"
+
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+namespace stage1 {
 
 class structural_scanner {
 public:
@@ -180,7 +180,6 @@ private:
 
 } // namespace stage1
 
-
 WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool partial) noexcept {
   this->buf = _buf;
   this->len = _len;
@@ -308,7 +307,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
   return true;
 }
 
-} // namespace fallback
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 //
@@ -316,14 +315,10 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 //
 #include "fallback/stringparsing.h"
 #include "fallback/numberparsing.h"
+#include "generic/stage2/structural_parser.h"
 
 namespace simdjson {
-namespace fallback {
-
-#include "generic/stage2/logger.h"
-#include "generic/stage2/atomparsing.h"
-#include "generic/stage2/structural_iterator.h"
-#include "generic/stage2/structural_parser.h"
+namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -331,5 +326,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
   return stage2(_doc);
 }
 
-} // namespace fallback
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+#include "fallback/end_implementation.h"

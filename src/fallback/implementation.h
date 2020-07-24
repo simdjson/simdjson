@@ -26,7 +26,6 @@ public:
 };
 
 } // namespace fallback
-
 } // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H

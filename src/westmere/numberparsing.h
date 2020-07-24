@@ -1,25 +1,9 @@
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
-#include "simdjson.h"
-#include "jsoncharutils.h"
-#include "westmere/intrinsics.h"
-#include "westmere/bitmanipulation.h"
-#include <cmath>
-#include <limits>
-
-
-#ifdef JSON_TEST_NUMBERS // for unit testing
-void found_invalid_number(const uint8_t *buf);
-void found_integer(int64_t result, const uint8_t *buf);
-void found_unsigned_integer(uint64_t result, const uint8_t *buf);
-void found_float(double result, const uint8_t *buf);
-#endif
-
-
-TARGET_WESTMERE
 namespace simdjson {
-namespace westmere {
+namespace SIMDJSON_IMPLEMENTATION {
+
 static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -38,13 +22,11 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
       t4); // only captures the sum of the first 8 digits, drop the rest
 }
 
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
+
 #define SWAR_NUMBER_PARSING
 
 #include "generic/stage2/numberparsing.h"
-
-} // namespace westmere
-
-} // namespace simdjson
-UNTARGET_REGION
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H

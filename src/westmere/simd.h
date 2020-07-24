@@ -1,16 +1,10 @@
 #ifndef SIMDJSON_WESTMERE_SIMD_H
 #define SIMDJSON_WESTMERE_SIMD_H
 
-#include "simdjson.h"
 #include "simdprune_tables.h"
-#include "westmere/bitmanipulation.h"
-#include "westmere/intrinsics.h"
 
-
-
-TARGET_WESTMERE
 namespace simdjson {
-namespace westmere {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace simd {
 
   template<typename Child>
@@ -333,9 +327,7 @@ namespace simd {
   }; // struct simd8x64<T>
 
 } // namespace simd
-
-} // namespace westmere
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

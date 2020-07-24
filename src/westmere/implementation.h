@@ -5,6 +5,7 @@
 #include "simdjson/implementation.h"
 #include "isadetection.h"
 
+// The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_REGION
 namespace simdjson {
 namespace westmere {
 

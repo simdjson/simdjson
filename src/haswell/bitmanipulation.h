@@ -1,13 +1,8 @@
 #ifndef SIMDJSON_HASWELL_BITMANIPULATION_H
 #define SIMDJSON_HASWELL_BITMANIPULATION_H
 
-#include "simdjson.h"
-
-#include "haswell/intrinsics.h"
-
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
@@ -73,8 +68,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-} // namespace haswell
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_BITMANIPULATION_H

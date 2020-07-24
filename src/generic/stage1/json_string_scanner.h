@@ -1,3 +1,5 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
 struct json_string_block {
@@ -137,3 +139,5 @@ really_inline error_code json_string_scanner::finish(bool streaming) {
 }
 
 } // namespace stage1
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

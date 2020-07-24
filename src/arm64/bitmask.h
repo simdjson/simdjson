@@ -1,10 +1,6 @@
 #ifndef SIMDJSON_ARM64_BITMASK_H
 #define SIMDJSON_ARM64_BITMASK_H
 
-#include "simdjson.h"
-
-#include "arm64/intrinsics.h"
-
 namespace simdjson {
 namespace arm64 {
 
@@ -38,6 +34,6 @@ really_inline uint64_t prefix_xor(uint64_t bitmask) {
 
 } // namespace arm64
 } // namespace simdjson
-UNTARGET_REGION
+SIMDJSON_UNTARGET_REGION
 
 #endif

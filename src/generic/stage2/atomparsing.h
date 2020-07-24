@@ -1,3 +1,5 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 namespace atomparsing {
 
@@ -60,3 +62,5 @@ really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 } // namespace atomparsing
 } // namespace stage2
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

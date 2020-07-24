@@ -1,17 +1,13 @@
-#include "simdjson.h"
-#include "haswell/implementation.h"
+#include "haswell/begin_implementation.h"
 #include "haswell/dom_parser_implementation.h"
+#include "generic/stage2/jsoncharutils.h"
 
 //
 // Stage 1
 //
-#include "haswell/bitmask.h"
-#include "haswell/simd.h"
-#include "haswell/bitmanipulation.h"
 
-TARGET_HASWELL
 namespace simdjson {
-namespace haswell {
+namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
 
@@ -68,53 +64,48 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
   return simd8<int8_t>(is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
 
-#include "generic/stage1/buf_block_reader.h"
-#include "generic/stage1/json_string_scanner.h"
-#include "generic/stage1/json_scanner.h"
-
-namespace stage1 {
-really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
-  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
-  return find_escaped_branchless(backslash);
-}
-}
-
-#include "generic/stage1/json_minifier.h"
-WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
-  return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
-}
-
-#include "generic/stage1/find_next_document_index.h"
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
-WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
-  this->buf = _buf;
-  this->len = _len;
-  return haswell::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
-}
 #include "generic/stage1/utf8_validator.h"
-WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  return simdjson::haswell::stage1::generic_validate_utf8(buf,len);
-}
-} // namespace haswell
-} // namespace simdjson
-UNTARGET_REGION
 
 //
 // Stage 2
 //
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
-
-TARGET_HASWELL
-namespace simdjson {
-namespace haswell {
-
-#include "generic/stage2/logger.h"
-#include "generic/stage2/atomparsing.h"
-#include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/structural_parser.h"
+
+//
+// Implementation-specific overrides
+//
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
+namespace stage1 {
+
+really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+  if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
+  return find_escaped_branchless(backslash);
+}
+
+} // namespace stage1
+
+WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+  return haswell::stage1::json_minifier::minify<128>(buf, len, dst, dst_len);
+}
+
+WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+  return haswell::stage1::json_structural_indexer::index<128>(_buf, _len, *this, streaming);
+}
+
+WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  return simdjson::haswell::stage1::generic_validate_utf8(buf,len);
+}
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   error_code err = stage1(_buf, _len, false);
@@ -122,6 +113,7 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
   return stage2(_doc);
 }
 
-} // namespace haswell
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
+
+#include "haswell/end_implementation.h"

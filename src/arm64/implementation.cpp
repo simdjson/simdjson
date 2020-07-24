@@ -1,11 +1,8 @@
-#include "simdjson.h"
-#include "arm64/implementation.h"
+#include "arm64/begin_implementation.h"
 #include "arm64/dom_parser_implementation.h"
 
-TARGET_HASWELL
-
 namespace simdjson {
-namespace arm64 {
+namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -19,7 +16,7 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   return SUCCESS;
 }
 
-} // namespace arm64
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-UNTARGET_REGION
+#include "arm64/end_implementation.h"

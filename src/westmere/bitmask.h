@@ -1,12 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_BITMASK_H
 #define SIMDJSON_WESTMERE_BITMASK_H
 
-#include "simdjson.h"
-#include "westmere/intrinsics.h"
-
-TARGET_WESTMERE
 namespace simdjson {
-namespace westmere {
+namespace SIMDJSON_IMPLEMENTATION {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
@@ -21,9 +17,7 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
   return _mm_cvtsi128_si64(result);
 }
 
-} // namespace westmere
-
+} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_BITMASK_H

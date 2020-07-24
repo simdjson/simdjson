@@ -1,3 +1,6 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+
 //
 // Detect Unicode errors.
 //
@@ -236,3 +239,6 @@ namespace utf8_validation {
 }
 
 using utf8_validation::utf8_checker;
+
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson

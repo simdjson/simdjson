@@ -1,3 +1,7 @@
+namespace simdjson {
+namespace SIMDJSON_IMPLEMENTATION {
+namespace stage2 {
+
 struct tape_writer {
   /** The next place to write to tape */
   uint64_t *next_tape_loc;
@@ -93,3 +97,7 @@ really_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_typ
 really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
   tape_loc = val | ((uint64_t(char(t))) << 56);
 }
+
+} // namespace stage2
+} // namespace SIMDJSON_IMPLEMENTATION
+} // namespace simdjson
