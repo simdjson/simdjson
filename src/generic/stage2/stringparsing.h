@@ -1,9 +1,8 @@
 // This file contains the common code every implementation uses
 // It is intended to be included multiple times and compiled multiple times
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 namespace stringparsing {
 
@@ -122,6 +121,5 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
 
 } // namespace stringparsing
 } // namespace stage2
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

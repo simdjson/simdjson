@@ -4,9 +4,8 @@
 #include "simdjson.h"
 #include <limits>
 
-namespace simdjson {
-namespace fallback {
 namespace {
+namespace fallback {
 
 #if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
 static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
@@ -72,8 +71,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
   return value2 > 0 && value1 > std::numeric_limits<uint64_t>::max() / value2;
 }
 
-} // namespace {
 } // namespace fallback
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

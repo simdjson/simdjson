@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-namespace simdjson {
-namespace arm64 {
 namespace {
+namespace arm64 {
 
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
@@ -65,8 +64,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 #endif
 }
 
-} // namespace {
 } // namespace arm64
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

@@ -1,6 +1,5 @@
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 namespace allocate {
 
@@ -18,6 +17,5 @@ really_inline error_code set_capacity(internal::dom_parser_implementation &parse
 
 } // namespace allocate
 } // namespace stage1
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

@@ -1,6 +1,5 @@
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 
 /**
   * This algorithm is used to quickly identify the last structural position that
@@ -89,6 +88,5 @@ really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
   return len;
 }
 
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

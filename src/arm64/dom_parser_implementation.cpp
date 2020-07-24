@@ -5,7 +5,7 @@
 //
 // Stage 1
 //
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
@@ -98,9 +98,8 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
     return is_third_byte ^ is_fourth_byte;
 }
 
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -117,11 +116,9 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 //
 // Implementation-specific overrides
 //
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
-
-namespace stage1 {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
+namespace stage1 {
 
 really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
@@ -130,7 +127,6 @@ really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   return find_escaped_branchless(backslash);
 }
 
-} // namespace {
 } // namespace stage1
 
 WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
@@ -171,6 +167,6 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "arm64/end_implementation.h"

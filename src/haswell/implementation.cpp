@@ -1,9 +1,8 @@
 #include "haswell/begin_implementation.h"
 #include "haswell/dom_parser_implementation.h"
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -17,9 +16,8 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   return SUCCESS;
 }
 
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "haswell/end_implementation.h"
 
