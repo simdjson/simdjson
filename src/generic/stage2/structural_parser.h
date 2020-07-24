@@ -8,9 +8,8 @@
 #include "generic/stage2/atomparsing.h"
 #include "generic/stage2/structural_iterator.h"
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace { // Make everything here private
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
@@ -468,6 +467,5 @@ error:
 }
 
 } // namespace stage2
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

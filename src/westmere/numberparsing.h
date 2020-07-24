@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_WESTMERE_NUMBERPARSING_H
 #define SIMDJSON_WESTMERE_NUMBERPARSING_H
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 
 static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // this actually computes *16* values so we are being wasteful.
@@ -23,9 +22,8 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
       t4); // only captures the sum of the first 8 digits, drop the rest
 }
 
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #define SWAR_NUMBER_PARSING
 

@@ -4,10 +4,10 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace simdjson {
-namespace fallback {
 namespace {
+namespace fallback {
 
+using namespace simdjson;
 using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
@@ -26,8 +26,7 @@ public:
   WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
-} // namespace {
 } // namespace fallback
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H

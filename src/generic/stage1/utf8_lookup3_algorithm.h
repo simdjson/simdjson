@@ -1,6 +1,5 @@
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace utf8_validation {
 
 //
@@ -237,8 +236,8 @@ using namespace simd;
     }
 
   }; // struct utf8_checker
-} // namespace {
 } // namespace utf8_validation
+} // namespace {
 
 using utf8_validation::utf8_checker;
 

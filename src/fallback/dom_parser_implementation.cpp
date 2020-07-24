@@ -7,9 +7,8 @@
 //
 #include "generic/stage1/find_next_document_index.h"
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
 class structural_scanner {
@@ -308,9 +307,8 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
   return true;
 }
 
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 //
 // Stage 2
@@ -319,7 +317,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #include "fallback/numberparsing.h"
 #include "generic/stage2/structural_parser.h"
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
@@ -346,6 +344,6 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "fallback/end_implementation.h"

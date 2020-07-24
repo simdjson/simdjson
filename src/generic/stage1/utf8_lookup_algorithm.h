@@ -299,6 +299,5 @@ struct utf8_checker {
 }; // struct utf8_checker
 
 } // namespace utf8_validation
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

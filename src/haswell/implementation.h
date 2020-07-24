@@ -5,9 +5,10 @@
 #include "isadetection.h"
 
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_REGION
-namespace simdjson {
-namespace haswell {
 namespace {
+namespace haswell {
+
+using namespace simdjson;
 
 class implementation final : public simdjson::implementation {
 public:
@@ -25,8 +26,7 @@ public:
   WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
-} // namespace {
 } // namespace haswell
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_HASWELL_IMPLEMENTATION_H

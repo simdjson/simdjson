@@ -3,9 +3,8 @@
 
 #include "simdprune_tables.h"
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace simd {
 
   template<typename Child>
@@ -328,8 +327,7 @@ namespace simd {
   }; // struct simd8x64<T>
 
 } // namespace simd
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

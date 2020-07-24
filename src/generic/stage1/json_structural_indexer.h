@@ -9,9 +9,8 @@
 #include "generic/stage1/json_minifier.h"
 #include "generic/stage1/find_next_document_index.h"
 
-namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace {
+namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
 class bit_indexer {
@@ -205,6 +204,5 @@ really_inline error_code json_structural_indexer::finish(dom_parser_implementati
 }
 
 } // namespace stage1
-} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
