@@ -361,5 +361,6 @@ struct utf8_checker {
   }
 }; // struct utf8_checker
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

@@ -1,5 +1,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace utf8_validation {
 
 //
 // Detect Unicode errors.
@@ -65,10 +66,6 @@ namespace SIMDJSON_IMPLEMENTATION {
 //  U+100000..U+10FFFF F4       80..8F   80..BF   80..BF
 //
 using namespace simd;
-
-namespace utf8_validation {
-
-} // namespace utf8_validation
 
 struct utf8_checker {
   // If this is nonzero, there has been a UTF-8 error.
@@ -301,5 +298,7 @@ struct utf8_checker {
 
 }; // struct utf8_checker
 
+} // namespace utf8_validation
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

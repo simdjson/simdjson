@@ -1,5 +1,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 
 // return non-zero if not a structural or whitespace char
@@ -115,5 +116,6 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 }
 
 } // namespace stage2
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

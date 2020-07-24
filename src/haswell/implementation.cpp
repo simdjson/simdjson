@@ -3,6 +3,7 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   size_t capacity,
@@ -16,6 +17,7 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   return SUCCESS;
 }
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 

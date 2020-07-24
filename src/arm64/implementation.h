@@ -6,6 +6,7 @@
 
 namespace simdjson {
 namespace arm64 {
+namespace {
 
 using namespace simdjson::dom;
 
@@ -21,6 +22,7 @@ public:
   WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
+} // namespace {
 } // namespace arm64
 } // namespace simdjson
 

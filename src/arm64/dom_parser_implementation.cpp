@@ -98,6 +98,7 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
     return is_third_byte ^ is_fourth_byte;
 }
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
@@ -120,6 +121,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 
 namespace stage1 {
+namespace {
 
 really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
@@ -128,6 +130,7 @@ really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   return find_escaped_branchless(backslash);
 }
 
+} // namespace {
 } // namespace stage1
 
 WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
@@ -142,6 +145,23 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   return simdjson::arm64::stage1::generic_validate_utf8(buf,len);
+}
+
+WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+  error_code result = stage2::parse_structurals<false>(*this, _doc);
+  if (result) { return result; }
+
+  // If we didn't make it to the end, it's an error
+  if ( next_structural_index != n_structural_indexes ) {
+    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return error = TAPE_ERROR;
+  }
+
+  return SUCCESS;
+}
+
+WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
+  return stage2::parse_structurals<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {

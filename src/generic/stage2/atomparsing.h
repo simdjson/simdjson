@@ -1,9 +1,9 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace stage2 {
 namespace atomparsing {
 
-namespace{
 // The string_to_uint32 is exclusively used to map literal strings to 32-bit values.
 // We use memcpy instead of a pointer cast to avoid undefined behaviors since we cannot
 // be certain that the character pointer will be properly aligned.
@@ -22,7 +22,6 @@ really_inline uint32_t str4ncmp(const uint8_t *src, const char* atom) {
   std::memcpy(&srcval, src, sizeof(uint32_t));
   return srcval ^ string_to_uint32(atom);
 }
-} // anonymous namespace
 
 WARN_UNUSED
 really_inline bool is_valid_true_atom(const uint8_t *src) {
@@ -62,5 +61,6 @@ really_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
 
 } // namespace atomparsing
 } // namespace stage2
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

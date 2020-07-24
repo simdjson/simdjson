@@ -1,5 +1,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
+namespace utf8_validation {
 
 //
 // Detect Unicode errors.
@@ -66,7 +68,6 @@ namespace SIMDJSON_IMPLEMENTATION {
 //
 using namespace simd;
 
-namespace utf8_validation {
   // For a detailed description of the lookup2 algorithm, see the file HACKING.md under "UTF-8 validation (lookup2)".
 
   //
@@ -216,7 +217,8 @@ namespace utf8_validation {
     }
 
   }; // struct utf8_checker
-}
+} // namespace {
+} // namespace utf8_validation
 
 using utf8_validation::utf8_checker;
 

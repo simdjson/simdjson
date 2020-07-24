@@ -6,6 +6,7 @@
 
 namespace simdjson {
 namespace fallback {
+namespace {
 
 using namespace simdjson::dom;
 
@@ -25,6 +26,7 @@ public:
   WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
+} // namespace {
 } // namespace fallback
 } // namespace simdjson
 
