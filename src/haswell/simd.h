@@ -5,6 +5,7 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace simd {
 
   // Forward-declared so they can be used by splat and friends.
@@ -346,6 +347,7 @@ namespace simd {
     }
   }; // struct simd8x64<T>
 
+} // namespace {
 } // namespace simd
 
 } // namespace SIMDJSON_IMPLEMENTATION

@@ -7,6 +7,7 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 using namespace simd;
 
@@ -38,6 +39,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   };
 }
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 

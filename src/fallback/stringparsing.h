@@ -5,6 +5,7 @@
 
 namespace simdjson {
 namespace fallback {
+namespace {
 
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
@@ -26,6 +27,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   return { src[0] };
 }
 
+} // namespace {
 } // namespace fallback
 } // namespace simdjson
 

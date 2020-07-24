@@ -8,6 +8,7 @@
 // The constructor may be executed on any host, so we take care not to use SIMDJSON_TARGET_REGION
 namespace simdjson {
 namespace westmere {
+namespace {
 
 using namespace simdjson::dom;
 
@@ -23,6 +24,7 @@ public:
   WARN_UNUSED bool validate_utf8(const char *buf, size_t len) const noexcept final;
 };
 
+} // namespace {
 } // namespace westmere
 } // namespace simdjson
 

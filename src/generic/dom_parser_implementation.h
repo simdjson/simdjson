@@ -3,6 +3,7 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 // expectation: sizeof(scope_descriptor) = 64/8.
 struct scope_descriptor {
@@ -44,6 +45,7 @@ public:
   WARN_UNUSED error_code set_max_depth(size_t max_depth) noexcept final;
 };
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
@@ -52,6 +54,7 @@ public:
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 
 really_inline dom_parser_implementation::dom_parser_implementation() {}
 
@@ -70,5 +73,6 @@ WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t max_depth
   return SUCCESS;
 }
 
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

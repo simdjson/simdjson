@@ -5,6 +5,7 @@
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace simd {
 
   template<typename Child>
@@ -327,6 +328,7 @@ namespace simd {
   }; // struct simd8x64<T>
 
 } // namespace simd
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 

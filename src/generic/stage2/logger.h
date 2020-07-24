@@ -2,7 +2,9 @@
 // Set LOG_ENABLED = true to log what stage 2 is doing!
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
+namespace {
 namespace logger {
+
   static constexpr const char * DASHES = "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
   static constexpr const bool LOG_ENABLED = false;
@@ -62,6 +64,8 @@ namespace logger {
       printf("|\n");
     }
   }
+
 } // namespace logger
+} // namespace {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

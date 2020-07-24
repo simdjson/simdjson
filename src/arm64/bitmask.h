@@ -3,6 +3,7 @@
 
 namespace simdjson {
 namespace arm64 {
+namespace {
 
 //
 // Perform a "cumulative bitwise xor," flipping bits each time a 1 is encountered.
