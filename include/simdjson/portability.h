@@ -169,6 +169,7 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 // The strcasecmp, strncasecmp, and strcasestr functions do not work with multibyte strings (e.g. UTF-8).
 // So they are only useful for ASCII in our context.
 // https://www.gnu.org/software/libunistring/manual/libunistring.html#char-_002a-strings
+#include <strings.h>
 #define simdjson_strcasecmp strcasecmp
 #define simdjson_strncasecmp strncasecmp
 #endif
