@@ -1,0 +1,29 @@
+name: MSYS2-CI
+
+on: push
+
+jobs:
+  windows-mingw:
+    name: ${{ matrix.mingw }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mingw: ["MINGW32", "MINGW64"]
+    env:
+      CMAKE_GENERATOR: MSYS Makefiles
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v1
+        with:
+          update: true # cache: true
+          msystem: ${{ matrix.mingw }}
+      - name: Build and Test
+        run: |
+          mkdir build
+          cd build
+          cmake -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
+          cmake --build . --verbose
+          ctest -j4 --output-on-failure -E checkperf
+
