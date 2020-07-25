@@ -80,15 +80,15 @@
 .gitignore     export-ignore
 
 # Sources
-*.c     text diff=c
-*.cc    text diff=cpp
-*.cxx   text diff=cpp
-*.cpp   text diff=cpp
-*.c++   text diff=cpp
-*.hpp   text diff=cpp
-*.h     text diff=c
-*.h++   text diff=cpp
-*.hh    text diff=cpp
+*.c     text eol=lf diff=c
+*.cc    text eol=lf diff=cpp
+*.cxx   text eol=lf diff=cpp
+*.cpp   text eol=lf diff=cpp
+*.c++   text eol=lf diff=cpp
+*.hpp   text eol=lf diff=cpp
+*.h     text eol=lf diff=c
+*.h++   text eol=lf diff=cpp
+*.hh    text eol=lf diff=cpp
 
 # Compiled Object files
 *.slo   binary
