@@ -75,19 +75,6 @@ really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
   return result;
 }
 
-//
-// Check if the current character follows a matching character, with possible "filler" between.
-// For example, this checks for empty curly braces, e.g.
-//
-//     in.eq('}') & follows(in.eq('['), in.eq(' '), prev_empty_array) // { <whitespace>* }
-//
-really_inline uint64_t follows(const uint64_t match, const uint64_t filler, uint64_t &overflow) {
-  uint64_t follows_match = follows(match, overflow);
-  uint64_t result;
-  overflow |= uint64_t(add_overflow(follows_match, filler, &result));
-  return result;
-}
-
 really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   json_character_block characters = json_character_block::classify(in);

@@ -80,7 +80,7 @@ really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     return bits.max() < 0b10000000u;
 }
 
-really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
