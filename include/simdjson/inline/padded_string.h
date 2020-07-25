@@ -25,7 +25,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   // For legacy Visual Studio 2015 since it does not have proper C++11 support
   char *padded_buffer = new[totalpaddedlength];
 #else
-  char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+  char *padded_buffer = new (std::nothrow) char[totalpaddedlength];
 #endif
 #ifndef NDEBUG
   if (padded_buffer == nullptr) {
@@ -74,7 +74,7 @@ inline padded_string::padded_string(padded_string &&o) noexcept
 }
 
 inline padded_string &padded_string::operator=(padded_string &&o) noexcept {
-  aligned_free_char(data_ptr);
+  delete[] data_ptr;
   data_ptr = o.data_ptr;
   viable_size = o.viable_size;
   o.data_ptr = nullptr; // we take ownership
@@ -92,7 +92,7 @@ inline void padded_string::swap(padded_string &o) noexcept {
 }
 
 inline padded_string::~padded_string() noexcept {
-  aligned_free_char(data_ptr);
+  delete[] data_ptr;
 }
 
 inline size_t padded_string::size() const noexcept { return viable_size; }

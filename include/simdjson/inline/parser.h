@@ -15,18 +15,10 @@ namespace dom {
 //
 // parser inline implementation
 //
-#if defined(_MSC_VER) && _MSC_VER < 1910
-// older versions of Visual Studio lack proper support for unique_ptr.
 really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
     loaded_bytes(nullptr) {
 }
-#else 
-really_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity},
-    loaded_bytes(nullptr, &aligned_free_char) {
-}
-#endif
 really_inline parser::parser(parser &&other) noexcept = default;
 really_inline parser &parser::operator=(parser &&other) noexcept = default;
 
@@ -101,19 +93,14 @@ inline simdjson_result<document_stream> parser::load_many(const std::string &pat
 inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
   error_code _error = ensure_capacity(len);
   if (_error) { return _error; }
+  std::unique_ptr<uint8_t[]> tmp_buf;
 
   if (realloc_if_needed) {
-    const uint8_t *tmp_buf = buf;
-    buf = (uint8_t *)internal::allocate_padded_buffer(len);
-    if (buf == nullptr)
-      return MEMALLOC;
-    memcpy((void *)buf, tmp_buf, len);
+    tmp_buf.reset((uint8_t *)internal::allocate_padded_buffer(len));
+    if (tmp_buf.get() == nullptr) { return MEMALLOC; }
+    memcpy((void *)tmp_buf.get(), buf, len);
   }
-
-  _error = implementation->parse(buf, len, doc);
-  if (realloc_if_needed) {
-    aligned_free((void *)buf); // must free before we exit
-  }
+  _error = implementation->parse(realloc_if_needed ? tmp_buf.get() : buf, len, doc);
   if (_error) { return _error; }
 
   return doc.root();

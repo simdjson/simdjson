@@ -395,7 +395,7 @@ private:
   // older versions of Visual Studio lack proper support for unique_ptr.
   std::unique_ptr<char[]> loaded_bytes;
   #else
-  std::unique_ptr<char[], decltype(&aligned_free_char)> loaded_bytes;
+  std::unique_ptr<char[]> loaded_bytes;
   #endif
 
   /** Capacity of loaded_bytes buffer. */
