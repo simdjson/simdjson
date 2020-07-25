@@ -174,13 +174,24 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #endif
 
 namespace simdjson {
-/** @private portable version of  posix_memalign */
+/** @private portable version of posix_memalign.
+alignment, must be a power of two and a multiple of sizeof(void*) */
 static inline void *aligned_malloc(size_t alignment, size_t size) {
   void *p;
 #ifdef SIMDJSON_VISUAL_STUDIO
   p = _aligned_malloc(size, alignment);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
   p = __mingw_aligned_malloc(size, alignment);
+#elif defined(__MSYS__)
+  p = malloc(size + (alignment - 1) + sizeof(void**));
+  if (p)
+  {
+    char *aligned_p = (char *)p + (alignment - 1) + sizeof(void**);
+    aligned_p -= (uintptr_t)aligned_p & (alignment - 1);
+    *((void**)(aligned_p - sizeof(void**))) = p;
+    p = aligned_p;
+  }
+  return p;
 #else
   // somehow, if this is used before including "x86intrin.h", it creates an
   // implicit defined warning.
@@ -198,13 +209,14 @@ static inline char *aligned_malloc_char(size_t alignment, size_t size) {
 
 /** @private */
 static inline void aligned_free(void *mem_block) {
-  if (mem_block == nullptr) {
-    return;
-  }
 #ifdef SIMDJSON_VISUAL_STUDIO
   _aligned_free(mem_block);
 #elif defined(__MINGW32__) || defined(__MINGW64__)
   __mingw_aligned_free(mem_block);
+#elif defined(__MSYS__)
+  if (mem_block) {
+    free(*(((void **)mem_block) - 1));
+  }
 #else
   free(mem_block);
 #endif
