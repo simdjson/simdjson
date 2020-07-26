@@ -9,7 +9,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mingw: ["MINGW32", "MINGW64", "MSYS"]
+        include: [
+          { msystem: MINGW64, arch: x86_64 },
+          { msystem: MINGW32, arch: i686   },
+          { msystem: MSYS, arch: x86_64 },
+          { msystem: MSYS, arch: i686 }
+        ]
     env:
       CMAKE_GENERATOR: MSYS Makefiles
 
