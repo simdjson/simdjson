@@ -1,6 +1,6 @@
 name: MSYS2-CI
 
-on: push
+on: [push, pull_request]
 
 jobs:
   windows-mingw:
