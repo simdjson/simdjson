@@ -27,7 +27,7 @@ jobs:
           path: |
             C:\ProgramData\scoop
           key: scoop32 # static key: should be good forever
-      - name: Setup Windows  # This should almost never run if the cache works.
+      - name: Setup Windows # This should almost never run if the cache works.
         if: steps.cache.outputs.cache-hit != 'true'
         shell: powershell
         run: |
@@ -36,7 +36,7 @@ jobs:
           sudo scoop install git --global 
           sudo scoop install ninja --global
           sudo scoop install cmake --global
-          sudo scoop install gcc --arch 32bit --global 
+          sudo scoop install gcc --arch 32bit --global
           $env:path
           Write-Host 'Everything has been installed, you are good!'
       - name: Build and Test 32-bit x86
