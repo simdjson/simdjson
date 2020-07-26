@@ -20,13 +20,12 @@ jobs:
     steps: # To reproduce what is below, start a powershell with administrative rights, using scoop *is* a good idea
       - uses: actions/checkout@v2
 
-
       - uses: actions/cache@v2 # we cache the scoop setup with 64-bit GCC
         id: cache
         with:
           path: |
             C:\ProgramData\scoop
-          key: scoop64  # static key: should be good forever
+          key: scoop64 # static key: should be good forever
       - name: Setup Windows # This should almost never run if the cache works.
         if: steps.cache.outputs.cache-hit != 'true'
         shell: powershell
@@ -52,4 +51,3 @@ jobs:
           cmake -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_ENABLE_THREADS=OFF ..
           cmake --build . --target parse_many_test jsoncheck basictests numberparsingcheck stringparsingcheck errortests integer_tests pointercheck --verbose
           ctest . -R "(parse_many_test|jsoncheck|basictests|stringparsingcheck|numberparsingcheck|errortests|integer_tests|pointercheck)"  --output-on-failure
-

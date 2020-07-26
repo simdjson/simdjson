@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mingw: ["MINGW32", "MINGW64"]
+        mingw: ["MINGW32", "MINGW64", "MSYS"]
     env:
       CMAKE_GENERATOR: MSYS Makefiles
 
@@ -26,4 +26,3 @@ jobs:
           cmake -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=ON ..
           cmake --build . --verbose
           ctest -j4 --output-on-failure -E checkperf
-
