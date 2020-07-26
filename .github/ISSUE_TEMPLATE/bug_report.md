@@ -25,6 +25,7 @@ Steps to reproduce the behaviour: provide a code sample if possible.
  - Compiler [e.g. Apple clang version 11.0.3 (clang-1103.0.32.59) x86_64-apple-darwin19.4.0]
  - Version [e.g. 22]
 
+We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux systems. Please ensure that your configuration is supported before labelling the issue as a bug. In particular, we do not support legacy 32-bit systems. 
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
