@@ -19,14 +19,14 @@ namespace internal {
 // The length parameter is the maximum size in bytes of the string. 
 // The caller is responsible to free the memory (e.g., delete[] (...)).
 inline char *allocate_padded_buffer(size_t length) noexcept {
-  // we could do a simple malloc
-  // return (char *) malloc(length + SIMDJSON_PADDING);
-  // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
   char *padded_buffer = new (std::nothrow) char[totalpaddedlength];
   if (padded_buffer == nullptr) {
     return nullptr;
   }
+  // We write zeroes in the padded region to avoid having uninitized 
+  // garbage. If nothing else, garbage getting read might trigger a 
+  // warning in a memory checking.
   memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer()
