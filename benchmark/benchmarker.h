@@ -225,8 +225,19 @@ struct progress_bar {
   }
 };
 
+/**
+ * The speed at which we can allocate memory is strictly system specific.
+ * It depends on the OS and the runtime library. It is subject to various
+ * system-specific knobs. It is not something that we can reasonably 
+ * benchmark with crude timings.
+ * If someone wants to optimize how simdjson allocate memory, then it will
+ * almost surely require a distinct benchmarking tool. What is meant by
+ * "memory allocation" also requires a definition. Doing "new char[size]" can
+ * do many different things depending on the system.
+ */
+
 enum class BenchmarkStage {
-  ALL,
+  ALL, // This excludes allocation
   ALLOCATE,
   STAGE1,
   STAGE2
@@ -234,7 +245,7 @@ enum class BenchmarkStage {
 
 const char* benchmark_stage_name(BenchmarkStage stage) {
   switch (stage) {
-    case BenchmarkStage::ALL: return "All";
+    case BenchmarkStage::ALL: return "All (Without Allocation)";
     case BenchmarkStage::ALLOCATE: return "Allocate";
     case BenchmarkStage::STAGE1: return "Stage 1";
     case BenchmarkStage::STAGE2: return "Stage 2";
@@ -253,8 +264,8 @@ struct benchmarker {
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
   json_stats* stats;
-  // Speed and event summary for full parse (including allocation, stage 1 and stage 2)
-  event_aggregate all_stages{};
+  // Speed and event summary for full parse (stage 1 and stage 2, but *excluding* allocation)
+  event_aggregate all_stages_without_allocation{};
   // Speed and event summary for stage 1
   event_aggregate stage1{};
   // Speed and event summary for stage 2
@@ -285,23 +296,24 @@ struct benchmarker {
 
   const event_aggregate& operator[](BenchmarkStage stage) const {
     switch (stage) {
-      case BenchmarkStage::ALL: return this->all_stages;
+      case BenchmarkStage::ALL: return this->all_stages_without_allocation;
       case BenchmarkStage::STAGE1: return this->stage1;
       case BenchmarkStage::STAGE2: return this->stage2;
       case BenchmarkStage::ALLOCATE: return this->allocate_stage;
-      default: exit_error("Unknown stage"); return this->all_stages;
+      default: exit_error("Unknown stage"); return this->all_stages_without_allocation;
     }
   }
 
   int iterations() const {
-    return all_stages.iterations;
+    return all_stages_without_allocation.iterations;
   }
 
   really_inline void run_iteration(bool stage1_only, bool hotbuffers=false) {
     // Allocate dom::parser
     collector.start();
     dom::parser parser;
-    error_code error = parser.allocate(json.size());
+    // We always allocate at least 64KB. Smaller allocations may actually be slower under some systems.
+    error_code error = parser.allocate(json.size() < 65536 ? 65536 : json.size());
     if (error) {
       exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result: " + error_message(error));
     }
@@ -329,7 +341,7 @@ struct benchmarker {
     // Stage 2 (unified machine) and the rest
 
     if (stage1_only) {
-      all_stages << stage1_count;
+      all_stages_without_allocation << stage1_count;
     } else {
       event_count stage2_count;
       collector.start();
@@ -339,7 +351,7 @@ struct benchmarker {
       }
       stage2_count = collector.end();
       stage2 << stage2_count;
-      all_stages << allocate_count + stage1_count + stage2_count;
+      all_stages_without_allocation << stage1_count + stage2_count;
     }
     // Calculate stats the first time we parse
     if (stats == NULL) {
@@ -386,7 +398,7 @@ struct benchmarker {
       prefix,
       "Speed",
       stage.elapsed_ns() / static_cast<double>(stats->blocks), // per block
-      percent(stage.elapsed_sec(), all_stages.elapsed_sec()), // %
+      percent(stage.elapsed_sec(), all_stages_without_allocation.elapsed_sec()), // %
       stage.elapsed_ns() / static_cast<double>(stats->bytes), // per byte
       stage.elapsed_ns() / static_cast<double>(stats->structurals), // per structural
       (static_cast<double>(json.size()) / 1000000000.0) / stage.elapsed_sec() // GB/s
@@ -397,7 +409,7 @@ struct benchmarker {
         prefix,
         "Cycles",
         stage.cycles() / static_cast<double>(stats->blocks),
-        percent(stage.cycles(), all_stages.cycles()),
+        percent(stage.cycles(), all_stages_without_allocation.cycles()),
         stage.cycles() / static_cast<double>(stats->bytes),
         stage.cycles() / static_cast<double>(stats->structurals),
         (stage.cycles() / stage.elapsed_sec()) / 1000000000.0
@@ -406,7 +418,7 @@ struct benchmarker {
         prefix,
         "Instructions",
         stage.instructions() / static_cast<double>(stats->blocks),
-        percent(stage.instructions(), all_stages.instructions()),
+        percent(stage.instructions(), all_stages_without_allocation.instructions()),
         stage.instructions() / static_cast<double>(stats->bytes),
         stage.instructions() / static_cast<double>(stats->structurals),
         stage.instructions() / static_cast<double>(stage.cycles())
@@ -417,9 +429,9 @@ struct benchmarker {
         prefix,
         "Misses",
         stage.branch_misses(),
-        percent(stage.branch_misses(), all_stages.branch_misses()),
+        percent(stage.branch_misses(), all_stages_without_allocation.branch_misses()),
         stage.cache_misses(),
-        percent(stage.cache_misses(), all_stages.cache_misses()),
+        percent(stage.cache_misses(), all_stages_without_allocation.cache_misses()),
         stage.cache_references()
       );
     }
@@ -456,14 +468,14 @@ struct benchmarker {
                 allocate_stage.best.cycles() / static_cast<double>(json.size()),
                 stage1.best.cycles() / static_cast<double>(json.size()),
                 stage2.best.cycles() / static_cast<double>(json.size()),
-                all_stages.best.cycles() / static_cast<double>(json.size()),
-                gb / all_stages.best.elapsed_sec(),
+                all_stages_without_allocation.best.cycles() / static_cast<double>(json.size()),
+                gb / all_stages_without_allocation.best.elapsed_sec(),
                 gb / stage1.best.elapsed_sec(),
                 gb / stage2.best.elapsed_sec());
       } else {
         printf("\"%s\"\t\t\t\t\t%f\t%f\t%f\n",
                 base,
-                gb / all_stages.best.elapsed_sec(),
+                gb / all_stages_without_allocation.best.elapsed_sec(),
                 gb / stage1.best.elapsed_sec(),
                 gb / stage2.best.elapsed_sec());
       }
@@ -490,10 +502,10 @@ struct benchmarker {
           stats->blocks_with_16_structurals_flipped, percent(stats->blocks_with_16_structurals_flipped, stats->blocks));
       }
       printf("\n");
-      printf("All Stages\n");
-      print_aggregate("|    "   , all_stages.best);
+      printf("All Stages (excluding allocation)\n");
+      print_aggregate("|    "   , all_stages_without_allocation.best);
       // frequently, allocation is a tiny fraction of the running time so we omit it
-      if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages.best.elapsed_sec()) {
+      if(allocate_stage.best.elapsed_sec() > 0.01 * all_stages_without_allocation.best.elapsed_sec()) {
         printf("|- Allocation\n");
         print_aggregate("|    ", allocate_stage.best);
       }
@@ -504,17 +516,16 @@ struct benchmarker {
       if (collector.has_events()) {
         double freq1 = (stage1.best.cycles() / stage1.best.elapsed_sec()) / 1000000000.0;
         double freq2 = (stage2.best.cycles() / stage2.best.elapsed_sec()) / 1000000000.0;
-        double freqall = (all_stages.best.cycles() / all_stages.best.elapsed_sec()) / 1000000000.0;
+        double freqall = (all_stages_without_allocation.best.cycles() / all_stages_without_allocation.best.elapsed_sec()) / 1000000000.0;
         double freqmin = min(freq1, freq2);
         double freqmax = max(freq1, freq2);
         if((freqall < 0.95 * freqmin) or (freqall > 1.05 * freqmax)) {
           printf("\nWarning: The processor frequency fluctuates in an expected way!!!\n"
-          "Expect the overall speed not to match stage 1 and stage 2 speeds.\n"
           "Range for stage 1 and stage 2 : [%.3f GHz, %.3f GHz], overall: %.3f GHz.\n",
           freqmin, freqmax, freqall);
         }
       }
-      printf("\n%.1f documents parsed per second (best)\n", 1.0/static_cast<double>(all_stages.best.elapsed_sec()));
+      printf("\n%.1f documents parsed per second (best)\n", 1.0/static_cast<double>(all_stages_without_allocation.best.elapsed_sec()));
     }
   }
 };

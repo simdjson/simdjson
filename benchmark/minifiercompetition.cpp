@@ -93,6 +93,10 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
   }
   char *buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
+  if(buffer == nullptr) {
+    std::cerr << "Out of memory!" << std::endl;
+    abort();
+  }
   memcpy(buffer, p.data(), p.size());
   buffer[p.size()] = '\0';
 
@@ -139,6 +143,10 @@ int main(int argc, char *argv[]) {
             !just_data);
 
   char *mini_buffer = simdjson::internal::allocate_padded_buffer(p.size() + 1);
+  if(mini_buffer == nullptr) {
+    std::cerr << "Out of memory" << std::endl;
+    abort();
+  }
   size_t minisize;
   auto minierror = minify(p.data(), p.size(),mini_buffer, minisize);
   if (!minierror) { std::cerr << minierror << std::endl; exit(1); }

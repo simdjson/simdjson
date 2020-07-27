@@ -12,26 +12,21 @@
 namespace simdjson {
 namespace internal {
 
-// low-level function to allocate memory with padding so we can read past the
-// "length" bytes safely. if you must provide a pointer to some data, create it
-// with this function: length is the max. size in bytes of the string caller is
-// responsible to free the memory (free(...))
+// The allocate_padded_buffer function is a low-level function to allocate memory 
+// with padding so we can read past the "length" bytes safely. It is used by 
+// the padded_string class automatically. It returns nullptr in case
+// of error: the caller should check for a null pointer.
+// The length parameter is the maximum size in bytes of the string. 
+// The caller is responsible to free the memory (e.g., delete[] (...)).
 inline char *allocate_padded_buffer(size_t length) noexcept {
-  // we could do a simple malloc
-  // return (char *) malloc(length + SIMDJSON_PADDING);
-  // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
-#if defined(_MSC_VER) && _MSC_VER < 1910
-  // For legacy Visual Studio 2015 since it does not have proper C++11 support
-  char *padded_buffer = new[totalpaddedlength];
-#else
-  char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
-#endif
-#ifndef NDEBUG
+  char *padded_buffer = new (std::nothrow) char[totalpaddedlength];
   if (padded_buffer == nullptr) {
     return nullptr;
   }
-#endif // NDEBUG
+  // We write zeroes in the padded region to avoid having uninitized 
+  // garbage. If nothing else, garbage getting read might trigger a 
+  // warning in a memory checking.
   memset(padded_buffer + length, 0, totalpaddedlength - length);
   return padded_buffer;
 } // allocate_padded_buffer()
@@ -74,7 +69,7 @@ inline padded_string::padded_string(padded_string &&o) noexcept
 }
 
 inline padded_string &padded_string::operator=(padded_string &&o) noexcept {
-  aligned_free_char(data_ptr);
+  delete[] data_ptr;
   data_ptr = o.data_ptr;
   viable_size = o.viable_size;
   o.data_ptr = nullptr; // we take ownership
@@ -92,7 +87,7 @@ inline void padded_string::swap(padded_string &o) noexcept {
 }
 
 inline padded_string::~padded_string() noexcept {
-  aligned_free_char(data_ptr);
+  delete[] data_ptr;
 }
 
 inline size_t padded_string::size() const noexcept { return viable_size; }
