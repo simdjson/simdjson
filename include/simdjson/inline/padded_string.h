@@ -12,10 +12,12 @@
 namespace simdjson {
 namespace internal {
 
-// low-level function to allocate memory with padding so we can read past the
-// "length" bytes safely. if you must provide a pointer to some data, create it
-// with this function: length is the max. size in bytes of the string caller is
-// responsible to free the memory (free(...))
+// The allocate_padded_buffer function is a low-level function to allocate memory 
+// with padding so we can read past the "length" bytes safely. It is used by 
+// the padded_string class automatically. It returns nullptr in case
+// of error: the caller should check for a null pointer.
+// The length parameter is the maximum size in bytes of the string. 
+// The caller is responsible to free the memory (e.g., delete[] (...)).
 inline char *allocate_padded_buffer(size_t length) noexcept {
   // we could do a simple malloc
   // return (char *) malloc(length + SIMDJSON_PADDING);
