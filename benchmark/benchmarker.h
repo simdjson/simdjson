@@ -301,7 +301,8 @@ struct benchmarker {
     // Allocate dom::parser
     collector.start();
     dom::parser parser;
-    error_code error = parser.allocate(json.size());
+    // We always allocate at least 64KB. Smaller allocations may actually be slower under some systems.
+    error_code error = parser.allocate(json.size() < 65536 ? 65536 : json.size());
     if (error) {
       exit_error(string("Unable to allocate_stage ") + to_string(json.size()) + " bytes for the JSON result: " + error_message(error));
     }
