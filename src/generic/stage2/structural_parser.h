@@ -200,6 +200,12 @@ struct structural_parser : structural_iterator {
   }
   WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
     switch (advance_char()) {
+    case '{':
+      FAIL_IF( start_object(continue_state) );
+      return addresses.object_begin;
+    case '[':
+      FAIL_IF( start_array(continue_state) );
+      return addresses.array_begin;
     case '"':
       FAIL_IF( parse_string() );
       return continue_state;
@@ -223,12 +229,6 @@ struct structural_parser : structural_iterator {
     case '5': case '6': case '7': case '8': case '9':
       FAIL_IF( parse_number() );
       return continue_state;
-    case '{':
-      FAIL_IF( start_object(continue_state) );
-      return addresses.object_begin;
-    case '[':
-      FAIL_IF( start_array(continue_state) );
-      return addresses.array_begin;
     default:
       log_error("Non-value found when value was expected!");
       return addresses.error;
