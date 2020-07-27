@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <cfloat>
 #include <cassert>
+#ifndef _WIN32
+#include <strings.h>
+#endif
 
 #ifdef _MSC_VER
 #define SIMDJSON_VISUAL_STUDIO 1
