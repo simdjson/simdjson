@@ -294,7 +294,7 @@ struct structural_parser : structural_iterator {
 }; // struct structural_parser
 
 template<bool STREAMING>
-WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
   stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
   error_code result = parser.start();
