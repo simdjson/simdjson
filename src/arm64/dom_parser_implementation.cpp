@@ -140,7 +140,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 }
 
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  return simdjson::arm64::stage1::generic_validate_utf8(buf,len);
+  return arm64::stage1::generic_validate_utf8(buf,len);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
