@@ -28,8 +28,6 @@ public:
   size_t len{0};
   /** Document passed to stage 2 */
   dom::document *doc{};
-  /** Error code (TODO remove, this is not even used, we just set it so the g++ optimizer doesn't get confused) */
-  error_code error{UNINITIALIZED};
 
   really_inline dom_parser_implementation();
   dom_parser_implementation(const dom_parser_implementation &) = delete;
