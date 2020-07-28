@@ -20,8 +20,8 @@ class dom_parser_implementation final : public internal::dom_parser_implementati
 public:
   /** Tape location of each open { or [ */
   std::unique_ptr<scope_descriptor[]> containing_scope{};
-  /** Return address of each open { or [ */
-  std::unique_ptr<ret_address_t[]> ret_address{};
+  /** Whether each open container is a [ or { */
+  std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
   const uint8_t *buf{};
   /** Length passed to stage 1 */
