@@ -13,39 +13,23 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
-#define GOTO(address) { goto *(address); }
+#define INIT_ADDRESSES() { &&array_continue, &&finish, &&object_continue }
 #define CONTINUE(address) { goto *(address); }
 #else // SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
-#define GOTO(address)                 \
-  {                                   \
-    switch(address) {                 \
-      case '[': goto array_begin;     \
-      case 'a': goto array_continue;  \
-      case 'e': goto error;           \
-      case 'f': goto finish;          \
-      case '{': goto object_begin;    \
-      case 'o': goto object_continue; \
-    }                                 \
-  }
-// For the more constrained end_xxx() situation
+#define INIT_ADDRESSES() { 0, 1, 2 };
 #define CONTINUE(address)             \
   {                                   \
     switch(address) {                 \
-      case 'a': goto array_continue;  \
-      case 'o': goto object_continue; \
-      case 'f': goto finish;          \
+      case 0: goto array_continue;    \
+      case 1: goto finish;            \
+      case 2: goto object_continue;   \
     }                                 \
   }
 #endif // SIMDJSON_USE_COMPUTED_GOTO
 
 struct unified_machine_addresses {
-  ret_address_t array_begin;
   ret_address_t array_continue;
-  ret_address_t error;
   ret_address_t finish;
-  ret_address_t object_begin;
   ret_address_t object_continue;
 };
 
