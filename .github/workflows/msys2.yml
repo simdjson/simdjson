@@ -4,21 +4,29 @@ on: [push, pull_request]
 
 jobs:
   windows-mingw:
-    name: ${{ matrix.mingw }}
+    name: ${{ matrix.msystem }}
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     strategy:
       fail-fast: false
       matrix:
-        mingw: ["MINGW32", "MINGW64", "MSYS"]
+        include:
+          - msystem: "MINGW64"
+            install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc
+          - msystem: "MINGW32"
+            install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc
     env:
-      CMAKE_GENERATOR: MSYS Makefiles
+      CMAKE_GENERATOR: Ninja
 
     steps:
       - uses: actions/checkout@v2
-      - uses: msys2/setup-msys2@v1
+      - uses: msys2/setup-msys2@v2
         with:
-          update: true # cache: true
-          msystem: ${{ matrix.mingw }}
+          update: true
+          msystem: ${{ matrix.msystem }}
+          install: ${{ matrix.install }}
       - name: Build and Test
         run: |
           mkdir build
