@@ -11,7 +11,7 @@ namespace internal {
   // We store the error code so we can validate the error message is associated with the right code
   struct error_code_info {
     error_code code;
-    std::string message;
+    const char* message; // do not use a fancy std::string where a simple C string will do (no alloc, no destructor)
   };
   // These MUST match the codes in error_code. We check this constraint in basictests.
   extern SIMDJSON_DLLIMPORTEXPORT const error_code_info error_codes[];
@@ -20,10 +20,11 @@ namespace internal {
 
 inline const char *error_message(error_code error) noexcept {
   // If you're using error_code, we're trusting you got it from the enum.
-  return internal::error_codes[int(error)].message.c_str();
+  return internal::error_codes[int(error)].message;
 }
 
-inline const std::string &error_message(int error) noexcept {
+// deprecated function
+inline const std::string error_message(int error) noexcept {
   if (error < 0 || error >= error_code::NUM_ERROR_CODES) {
     return internal::error_codes[UNEXPECTED_ERROR].message;
   }

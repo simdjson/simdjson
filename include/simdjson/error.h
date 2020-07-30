@@ -245,7 +245,7 @@ using ErrorValues [[deprecated("This is an alias and will be removed, use error_
  * @deprecated Error codes should be stored and returned as `error_code`, use `error_message()` instead.
  */
 [[deprecated("Error codes should be stored and returned as `error_code`, use `error_message()` instead.")]]
-inline const std::string &error_message(int error) noexcept;
+inline const std::string error_message(int error) noexcept;
 
 } // namespace simdjson
 
