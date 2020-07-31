@@ -142,7 +142,8 @@ static void GenStatPlus(Stat &stat, const dom::element v) {
     break;
   case dom::element_type::OBJECT:
     for (dom::key_value_pair kv : dom::object(v)) {
-      GenStatPlus(stat, dom::element(kv.value));
+      GenStatPlus(stat, kv.value);
+      stat.stringLength += kv.key.size();
       stat.memberCount++;
       stat.stringCount++;
     }
