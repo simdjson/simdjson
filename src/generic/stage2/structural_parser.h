@@ -353,7 +353,7 @@ object_begin:
   }
 
 object_key_state:
-  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
+  if (unlikely(parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); goto error; }
   switch (parser.advance_char()) {
     case '{': if ( parser.start_object(false) ) { goto error; } else { goto object_begin; }
     case '[': if ( parser.start_array(false) ) { goto error; } else { goto array_begin; }
