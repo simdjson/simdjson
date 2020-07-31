@@ -11,7 +11,68 @@ const padded_string EMPTY_ARRAY("[]", 2);
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const char *NUMBERS_JSON = SIMDJSON_BENCHMARK_DATA_DIR "numbers.json";
 
+static void recover_one_string(State& state) {
+  dom::parser parser;
+  const std::string_view data = "\"one string\"";
+  padded_string docdata{data};
+  // we do not want mem. alloc. in the loop.
+  auto error = parser.allocate(docdata.size());
+  if(error) {
+      cout << error << endl;
+      return;
+  }
+  dom::element doc;
+  if (error = parser.parse(docdata).get(doc)) {
+    cerr << "could not parse string" << error << endl;
+    return;
+  }
+  for (UNUSED auto _ : state) {
+      std::string_view v;
+      error = doc.get(v);
+      if (error) {
+        cerr << "could not get string" << error << endl;
+        return;
+      }
+      benchmark::DoNotOptimize(v);
+  }
+}
+BENCHMARK(recover_one_string);
 
+
+static void serialize_twitter(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  auto error = padded_string::load(TWITTER_JSON).get(docdata);
+  if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+  }
+  // we do not want mem. alloc. in the loop.
+  error = parser.allocate(docdata.size());
+  if(error) {
+      cout << error << endl;
+      return;
+  }
+  dom::element doc;
+  if ((error = parser.parse(docdata).get(doc))) {
+    cerr << "could not parse twitter.json" << error << endl;
+    return;
+  }
+  size_t bytes = 0;
+  for (UNUSED auto _ : state) {
+    std::string serial = simdjson::minify(doc);
+    bytes += serial.size();
+    benchmark::DoNotOptimize(serial);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(serialize_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
 
 static void numbers_scan(State& state) {
   // Prints the number of results in twitter.json
