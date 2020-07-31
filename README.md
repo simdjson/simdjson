@@ -71,7 +71,7 @@ Usage documentation is available:
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
-* [API](https://simdjson.org/api/0.3.1/annotated.html) contains the automatically generated API documentation.
+* [API](https://simdjson.org/api/0.4.0/annotated.html) contains the automatically generated API documentation.
 
 Performance results
 -------------------
