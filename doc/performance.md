@@ -12,7 +12,7 @@ are still some scenarios where tuning can enhance performance.
 * [Number parsing](#number-parsing)
 * [Visual Studio](#visual-studio)
 * [Downclocking](#downclocking)
-
+* [Best Use of the DOM API](#best-use-of-the-dom-api)
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
@@ -181,3 +181,9 @@ On some Intel processors, using SIMD instructions in a sustained manner on the s
 The simdjson library does not currently support AVX-512 instructions and it does not make use of heavy 256-bit instructions. We do use vectorized multiplications, but only using 128-bit registers. Thus there should be no downclocking due to simdjson on recent processors. 
 
 You may still be worried about which SIMD instruction set is used by simdjson.  Thankfully,  [you can always determine and change which architecture-specific implementation is used](implementation-selection.md) by simdjson. Thus even if your CPU supports AVX2, you do not need to use AVX2. You are in control.
+
+Best Use of the DOM API
+-------------------------
+
+The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of `dom::element` instances, each representing an object, an array or an atomic type (null, true, false, number). These `dom::element` instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.
+

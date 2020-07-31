@@ -131,7 +131,7 @@ struct Stat {
   size_t stringLength; // Number of code units in all strings
 };
 
-static void GenStatPlus(Stat &stat, const dom::element &v) {
+static void GenStatPlus(Stat &stat, const dom::element v) {
   switch (v.type()) {
   case dom::element_type::ARRAY:
     for (dom::element child : dom::array(v)) {
