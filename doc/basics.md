@@ -68,6 +68,8 @@ target_link_libraries(myprogram simdjson)
 
 See [our CMake demonstration](https://github.com/simdjson/cmakedemo).
 
+The CMake build in simdjson can be taylored with a few variables. You can see the available variables and their default values by entering the `cmake -LA` command.
+
 The Basics: Loading and Parsing JSON Documents
 ----------------------------------------------
 
