@@ -17,7 +17,7 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #include "haswell/end_implementation.h"
 

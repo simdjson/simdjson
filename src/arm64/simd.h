@@ -495,6 +495,6 @@ really_inline int8x16_t make_int8x16_t(int8_t x1,  int8_t x2,  int8_t x3,  int8_
 
 } // namespace simd
 } // namespace arm64
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_ARM64_SIMD_H

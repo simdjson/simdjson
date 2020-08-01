@@ -308,7 +308,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 //
 // Stage 2
@@ -344,6 +344,6 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #include "fallback/end_implementation.h"

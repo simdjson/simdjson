@@ -68,4 +68,4 @@ really_inline uint32_t find_next_document_index(dom_parser_implementation &parse
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

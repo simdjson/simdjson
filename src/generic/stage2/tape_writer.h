@@ -100,4 +100,4 @@ really_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

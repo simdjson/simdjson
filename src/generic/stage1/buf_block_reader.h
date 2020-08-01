@@ -86,4 +86,4 @@ really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

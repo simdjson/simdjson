@@ -40,6 +40,6 @@ really_inline int leading_zeroes(uint64_t input_num) {
 }
 
 } // namespace fallback
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

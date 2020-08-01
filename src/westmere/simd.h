@@ -328,6 +328,6 @@ namespace simd {
 
 } // namespace simd
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

@@ -45,7 +45,7 @@ public:
 };
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #include "generic/stage1/allocate.h"
 #include "generic/stage2/allocate.h"
@@ -71,4 +71,4 @@ WARN_UNUSED error_code dom_parser_implementation::set_max_depth(size_t max_depth
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

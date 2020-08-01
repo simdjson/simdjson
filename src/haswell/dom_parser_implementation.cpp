@@ -65,7 +65,7 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -130,6 +130,6 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #include "haswell/end_implementation.h"

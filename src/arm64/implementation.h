@@ -23,6 +23,6 @@ public:
 };
 
 } // namespace arm64
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_ARM64_IMPLEMENTATION_H

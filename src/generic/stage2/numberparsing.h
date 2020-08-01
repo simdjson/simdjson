@@ -505,4 +505,4 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 } // namespace numberparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

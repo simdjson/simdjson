@@ -19,4 +19,4 @@ really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t
 } // namespace allocate
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
