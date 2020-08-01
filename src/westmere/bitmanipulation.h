@@ -62,23 +62,6 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2,
 #endif
 }
 
-#if 0 // Currently unused
-#if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
-#pragma intrinsic(_umul128)
-#endif
-really_inline bool mul_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-  uint64_t high;
-  *result = _umul128(value1, value2, &high);
-  return high;
-#else
-  return __builtin_umulll_overflow(value1, value2,
-                                   (unsigned long long *)result);
-#endif
-}
-#endif // Currently unused
-
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace {
 

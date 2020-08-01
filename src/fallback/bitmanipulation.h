@@ -24,29 +24,6 @@ static unsigned char _BitScanReverse64(unsigned long* ret, uint64_t x) {
 }
 #endif
 
-//
-// These are currently unused, but one day will be.
-//
-#if 0 // Currently unused
-NO_SANITIZE_UNDEFINED
-really_inline int trailing_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
-  unsigned long ret;
-  // Search the mask data from least significant bit (LSB) 
-  // to the most significant bit (MSB) for a set bit (1).
-  _BitScanForward64(&ret, input_num);
-  return (int)ret;
-#else // _MSC_VER
-  return __builtin_ctzll(input_num);
-#endif // _MSC_VER
-}
-
-/* result might be undefined when input_num is zero */
-really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
-  return input_num & (input_num-1);
-}
-#endif // Currently unused
-
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
 #ifdef _MSC_VER
@@ -61,19 +38,6 @@ really_inline int leading_zeroes(uint64_t input_num) {
   return __builtin_clzll(input_num);
 #endif// _MSC_VER
 }
-
-#if 0 // Currently unused
-really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-  *result = value1 + value2;
-  return *result < value1;
-}
-
-really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-  *result = value1 * value2;
-  // TODO there must be a faster way
-  return value2 > 0 && value1 > std::numeric_limits<uint64_t>::max() / value2;
-}
-#endif // Currently unused
 
 } // namespace fallback
 } // namespace {
