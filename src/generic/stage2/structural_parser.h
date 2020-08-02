@@ -353,10 +353,10 @@ object_begin:
   }
 
 object_key_state:
-  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
+  if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); goto error; }
   switch (parser.advance_char()) {
-    case '{': if ( parser.start_object(false) ) { goto error; } else { goto object_begin; }
-    case '[': if ( parser.start_array(false) ) { goto error; } else { goto array_begin; }
+    case '{': if ( parser.start_object(false) ) { goto error; }; goto object_begin;
+    case '[': if ( parser.start_array(false) ) { goto error; }; goto array_begin;
     case '"': if ( parser.parse_string() ) { goto error; }; break;
     case 't': if ( parser.parse_true_atom() ) { goto error; }; break;
     case 'f': if ( parser.parse_false_atom() ) { goto error; }; break;
@@ -374,7 +374,7 @@ object_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
+    if (unlikely( parser.advance_char() != '"' )) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
     if ( parser.parse_string(true) ) { goto error; }
     goto object_key_state;
   case '}':
@@ -403,8 +403,8 @@ array_begin:
 
 main_array_switch:
   switch (parser.advance_char()) {
-    case '{': if ( parser.start_object(true) ) { goto error; } else { goto object_begin; }
-    case '[': if ( parser.start_array(true) ) { goto error; } else { goto array_begin; }
+    case '{': if ( parser.start_object(true) ) { goto error; }; goto object_begin;
+    case '[': if ( parser.start_array(true) ) { goto error; }; goto array_begin;
     case '"': if ( parser.parse_string() ) { goto error; }; break;
     case 't': if ( parser.parse_true_atom() ) { goto error; }; break;
     case 'f': if ( parser.parse_false_atom() ) { goto error; }; break;
