@@ -47,4 +47,4 @@ public:
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

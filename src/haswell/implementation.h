@@ -27,6 +27,6 @@ public:
 };
 
 } // namespace haswell
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_HASWELL_IMPLEMENTATION_H

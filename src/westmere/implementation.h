@@ -25,6 +25,6 @@ public:
 };
 
 } // namespace westmere
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_WESTMERE_IMPLEMENTATION_H

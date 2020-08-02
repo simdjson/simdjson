@@ -44,7 +44,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 }
 
 } // namespace arm64
-} // namespace {
+} // unnamed namespace
 
 #include "generic/stage2/stringparsing.h"
 

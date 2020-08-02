@@ -12,46 +12,6 @@ namespace { // Make everything here private
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
-#define GOTO(address) { goto *(address); }
-#define CONTINUE(address) { goto *(address); }
-#else // SIMDJSON_USE_COMPUTED_GOTO
-#define INIT_ADDRESSES() { '[', 'a', 'e', 'f', '{', 'o' };
-#define GOTO(address)                 \
-  {                                   \
-    switch(address) {                 \
-      case '[': goto array_begin;     \
-      case 'a': goto array_continue;  \
-      case 'e': goto error;           \
-      case 'f': goto finish;          \
-      case '{': goto object_begin;    \
-      case 'o': goto object_continue; \
-    }                                 \
-  }
-// For the more constrained end_xxx() situation
-#define CONTINUE(address)             \
-  {                                   \
-    switch(address) {                 \
-      case 'a': goto array_continue;  \
-      case 'o': goto object_continue; \
-      case 'f': goto finish;          \
-    }                                 \
-  }
-#endif // SIMDJSON_USE_COMPUTED_GOTO
-
-struct unified_machine_addresses {
-  ret_address_t array_begin;
-  ret_address_t array_continue;
-  ret_address_t error;
-  ret_address_t finish;
-  ret_address_t object_begin;
-  ret_address_t object_continue;
-};
-
-#undef FAIL_IF
-#define FAIL_IF(EXPR) { if (EXPR) { return addresses.error; } }
-
 struct structural_parser : structural_iterator {
   /** Lets you append to the tape */
   tape_writer tape;
@@ -67,30 +27,30 @@ struct structural_parser : structural_iterator {
       current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
-  WARN_UNUSED really_inline bool start_scope(ret_address_t continue_state) {
+  WARN_UNUSED really_inline bool start_scope(bool parent_is_array) {
     parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
-    parser.ret_address[depth] = continue_state;
+    parser.is_array[depth] = parent_is_array;
     depth++;
     bool exceeded_max_depth = depth >= parser.max_depth();
     if (exceeded_max_depth) { log_error("Exceeded max depth!"); }
     return exceeded_max_depth;
   }
 
-  WARN_UNUSED really_inline bool start_document(ret_address_t continue_state) {
+  WARN_UNUSED really_inline bool start_document() {
     log_start_value("document");
-    return start_scope(continue_state);
+    return start_scope(false);
   }
 
-  WARN_UNUSED really_inline bool start_object(ret_address_t continue_state) {
+  WARN_UNUSED really_inline bool start_object(bool parent_is_array) {
     log_start_value("object");
-    return start_scope(continue_state);
+    return start_scope(parent_is_array);
   }
 
-  WARN_UNUSED really_inline bool start_array(ret_address_t continue_state) {
+  WARN_UNUSED really_inline bool start_array(bool parent_is_array) {
     log_start_value("array");
-    return start_scope(continue_state);
+    return start_scope(parent_is_array);
   }
 
   // this function is responsible for annotating the start of the scope
@@ -173,7 +133,7 @@ struct structural_parser : structural_iterator {
     return parse_number(current());
   }
 
-  really_inline bool parse_number_with_space_terminated_copy() {
+  really_inline bool parse_root_number() {
     /**
     * We need to make a copy to make sure that the string is space terminated.
     * This is not about padding the input, which should already padded up
@@ -198,41 +158,47 @@ struct structural_parser : structural_iterator {
     free(copy);
     return result;
   }
-  WARN_UNUSED really_inline ret_address_t parse_value(const unified_machine_addresses &addresses, ret_address_t continue_state) {
-    switch (advance_char()) {
-    case '"':
-      FAIL_IF( parse_string() );
-      return continue_state;
-    case 't':
-      log_value("true");
-      FAIL_IF( !atomparsing::is_valid_true_atom(current()) );
-      tape.append(0, internal::tape_type::TRUE_VALUE);
-      return continue_state;
-    case 'f':
-      log_value("false");
-      FAIL_IF( !atomparsing::is_valid_false_atom(current()) );
-      tape.append(0, internal::tape_type::FALSE_VALUE);
-      return continue_state;
-    case 'n':
-      log_value("null");
-      FAIL_IF( !atomparsing::is_valid_null_atom(current()) );
-      tape.append(0, internal::tape_type::NULL_VALUE);
-      return continue_state;
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      FAIL_IF( parse_number() );
-      return continue_state;
-    case '{':
-      FAIL_IF( start_object(continue_state) );
-      return addresses.object_begin;
-    case '[':
-      FAIL_IF( start_array(continue_state) );
-      return addresses.array_begin;
-    default:
-      log_error("Non-value found when value was expected!");
-      return addresses.error;
-    }
+
+  WARN_UNUSED really_inline bool parse_true_atom() {
+    log_value("true");
+    if (!atomparsing::is_valid_true_atom(current())) { return true; }
+    tape.append(0, internal::tape_type::TRUE_VALUE);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_root_true_atom() {
+    log_value("true");
+    if (!atomparsing::is_valid_true_atom(current(), remaining_len())) { return true; }
+    tape.append(0, internal::tape_type::TRUE_VALUE);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_false_atom() {
+    log_value("false");
+    if (!atomparsing::is_valid_false_atom(current())) { return true; }
+    tape.append(0, internal::tape_type::FALSE_VALUE);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_root_false_atom() {
+    log_value("false");
+    if (!atomparsing::is_valid_false_atom(current(), remaining_len())) { return true; }
+    tape.append(0, internal::tape_type::FALSE_VALUE);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_null_atom() {
+    log_value("null");
+    if (!atomparsing::is_valid_null_atom(current())) { return true; }
+    tape.append(0, internal::tape_type::NULL_VALUE);
+    return false;
+  }
+
+  WARN_UNUSED really_inline bool parse_root_null_atom() {
+    log_value("null");
+    if (!atomparsing::is_valid_null_atom(current(), remaining_len())) { return true; }
+    tape.append(0, internal::tape_type::NULL_VALUE);
+    return false;
   }
 
   WARN_UNUSED really_inline error_code finish() {
@@ -248,16 +214,14 @@ struct structural_parser : structural_iterator {
   }
 
   WARN_UNUSED really_inline error_code error() {
-    /* We do not need the next line because this is done by parser.init_stage2(),
-    * pessimistically.
-    * parser.is_valid  = false;
-    * At this point in the code, we have all the time in the world.
-    * Note that we know exactly where we are in the document so we could,
-    * without any overhead on the processing code, report a specific
-    * location.
-    * We could even trigger special code paths to assess what happened
-    * carefully,
-    * all without any added cost. */
+    // At this point in the code, we have all the time in the world.
+    // Note that we know exactly where we are in the document so we could,
+    // without any overhead on the processing code, report a specific
+    // location.
+    // We could even trigger special code paths to assess what happened
+    // carefully,
+    // all without any added cost.
+    //
     if (depth >= parser.max_depth()) {
       return parser.error = DEPTH_ERROR;
     }
@@ -292,7 +256,7 @@ struct structural_parser : structural_iterator {
     parser.error = UNINITIALIZED;
   }
 
-  WARN_UNUSED really_inline error_code start(ret_address_t finish_state) {
+  WARN_UNUSED really_inline error_code start() {
     // If there are no structurals left, return EMPTY
     if (at_end(parser.n_structural_indexes)) {
       return parser.error = EMPTY;
@@ -300,7 +264,7 @@ struct structural_parser : structural_iterator {
 
     init();
     // Push the root scope (there is always at least one scope)
-    if (start_document(finish_state)) {
+    if (start_document()) {
       return parser.error = DEPTH_ERROR;
     }
     return SUCCESS;
@@ -329,17 +293,11 @@ struct structural_parser : structural_iterator {
   }
 }; // struct structural_parser
 
-// Redefine FAIL_IF to use goto since it'll be used inside the function now
-#undef FAIL_IF
-#define FAIL_IF(EXPR) { if (EXPR) { goto error; } }
-
-
 template<bool STREAMING>
-WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
-  static constexpr stage2::unified_machine_addresses addresses = INIT_ADDRESSES();
   stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-  error_code result = parser.start(addresses.finish);
+  error_code result = parser.start();
   if (result) { return result; }
 
   //
@@ -347,10 +305,10 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
   //
   switch (parser.current_char()) {
   case '{':
-    FAIL_IF( parser.start_object(addresses.finish) );
+    if ( parser.start_object(false) ) { goto error; };
     goto object_begin;
   case '[':
-    FAIL_IF( parser.start_array(addresses.finish) );
+    if ( parser.start_array(false) ) { goto error; }
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
     if (!STREAMING) {
@@ -359,31 +317,17 @@ WARN_UNUSED static error_code parse_structurals(dom_parser_implementation &dom_p
       }
     }
     goto array_begin;
-  case '"':
-    FAIL_IF( parser.parse_string() );
-    goto finish;
-  case 't':
-    parser.log_value("true");
-    FAIL_IF( !atomparsing::is_valid_true_atom(parser.current(), parser.remaining_len()) );
-    parser.tape.append(0, internal::tape_type::TRUE_VALUE);
-    goto finish;
-  case 'f':
-    parser.log_value("false");
-    FAIL_IF( !atomparsing::is_valid_false_atom(parser.current(), parser.remaining_len()) );
-    parser.tape.append(0, internal::tape_type::FALSE_VALUE);
-    goto finish;
-  case 'n':
-    parser.log_value("null");
-    FAIL_IF( !atomparsing::is_valid_null_atom(parser.current(), parser.remaining_len()) );
-    parser.tape.append(0, internal::tape_type::NULL_VALUE);
-    goto finish;
+  case '"': if ( parser.parse_string() ) { goto error; }; goto finish;
+  case 't': if ( parser.parse_root_true_atom() ) { goto error; }; goto finish;
+  case 'f': if ( parser.parse_root_false_atom() ) { goto error; }; goto finish;
+  case 'n': if ( parser.parse_root_null_atom() ) { goto error; }; goto finish;
   case '-':
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
     // Next line used to be an interesting functional programming exercise with
     // a lambda that gets passed to another function via a closure. This would confuse the
     // clangcl compiler under Visual Studio 2019 (recent release).
-    FAIL_IF(parser.parse_number_with_space_terminated_copy());
+    if ( parser.parse_root_number() ) { goto error; }
     goto finish;
   default:
     parser.log_error("Document starts with a non-value character");
@@ -397,7 +341,7 @@ object_begin:
   switch (parser.advance_char()) {
   case '"': {
     parser.increment_count();
-    FAIL_IF( parser.parse_string(true) );
+    if ( parser.parse_string(true) ) { goto error; }
     goto object_key_state;
   }
   case '}':
@@ -409,15 +353,29 @@ object_begin:
   }
 
 object_key_state:
-  if (parser.advance_char() != ':' ) { parser.log_error("Missing colon after key in object"); goto error; }
-  GOTO( parser.parse_value(addresses, addresses.object_continue) );
+  if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); goto error; }
+  switch (parser.advance_char()) {
+    case '{': if ( parser.start_object(false) ) { goto error; }; goto object_begin;
+    case '[': if ( parser.start_array(false) ) { goto error; }; goto array_begin;
+    case '"': if ( parser.parse_string() ) { goto error; }; break;
+    case 't': if ( parser.parse_true_atom() ) { goto error; }; break;
+    case 'f': if ( parser.parse_false_atom() ) { goto error; }; break;
+    case 'n': if ( parser.parse_null_atom() ) { goto error; }; break;
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      if ( parser.parse_number() ) { goto error; }; break;
+    default:
+      parser.log_error("Non-value found when value was expected!");
+      goto error;
+  }
 
 object_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    if (parser.advance_char() != '"' ) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
-    FAIL_IF( parser.parse_string(true) );
+    if (unlikely( parser.advance_char() != '"' )) { parser.log_error("Key string missing at beginning of field in object"); goto error; }
+    if ( parser.parse_string(true) ) { goto error; }
     goto object_key_state;
   case '}':
     parser.end_object();
@@ -428,7 +386,9 @@ object_continue:
   }
 
 scope_end:
-  CONTINUE( parser.parser.ret_address[parser.depth] );
+  if (parser.depth == 1) { goto finish; }
+  if (parser.parser.is_array[parser.depth]) { goto array_continue; }
+  goto object_continue;
 
 //
 // Array parser states
@@ -442,9 +402,21 @@ array_begin:
   parser.increment_count();
 
 main_array_switch:
-  /* we call update char on all paths in, so we can peek at parser.c on the
-   * on paths that can accept a close square brace (post-, and at start) */
-  GOTO( parser.parse_value(addresses, addresses.array_continue) );
+  switch (parser.advance_char()) {
+    case '{': if ( parser.start_object(true) ) { goto error; }; goto object_begin;
+    case '[': if ( parser.start_array(true) ) { goto error; }; goto array_begin;
+    case '"': if ( parser.parse_string() ) { goto error; }; break;
+    case 't': if ( parser.parse_true_atom() ) { goto error; }; break;
+    case 'f': if ( parser.parse_false_atom() ) { goto error; }; break;
+    case 'n': if ( parser.parse_null_atom() ) { goto error; }; break;
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      if ( parser.parse_number() ) { goto error; }; break; 
+    default:
+      parser.log_error("Non-value found when value was expected!");
+      goto error;
+  }
 
 array_continue:
   switch (parser.advance_char()) {
@@ -468,4 +440,4 @@ error:
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

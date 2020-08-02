@@ -226,4 +226,4 @@ really_inline error_code json_structural_indexer::finish(dom_parser_implementati
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

@@ -349,6 +349,6 @@ namespace simd {
 } // namespace simd
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_HASWELL_SIMD_H

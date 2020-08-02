@@ -66,4 +66,4 @@ namespace logger {
 
 } // namespace logger
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

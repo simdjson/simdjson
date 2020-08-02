@@ -92,4 +92,4 @@ really_inline error_code json_scanner::finish(bool streaming) {
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

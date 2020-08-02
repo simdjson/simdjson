@@ -78,4 +78,4 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace

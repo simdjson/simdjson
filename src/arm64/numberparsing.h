@@ -15,7 +15,7 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
 }
 
 } // namespace arm64
-} // namespace {
+} // unnamed namespace
 
 #define SWAR_NUMBER_PARSING
 

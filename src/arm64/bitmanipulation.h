@@ -56,6 +56,6 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 }
 
 } // namespace arm64
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

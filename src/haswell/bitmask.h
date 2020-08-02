@@ -18,6 +18,6 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace {
+} // unnamed namespace
 
 #endif // SIMDJSON_HASWELL_BITMASK_H
