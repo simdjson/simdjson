@@ -1,21 +1,11 @@
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace_or_null(uint8_t c) {
-  return structural_or_whitespace_or_null_negated[c];
-}
-
-// return non-zero if not a structural or whitespace char
-// zero otherwise
 really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
-}
-
-really_inline uint32_t is_structural_or_whitespace_or_null(uint8_t c) {
-  return structural_or_whitespace_or_null[c];
 }
 
 really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
@@ -116,4 +106,4 @@ really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

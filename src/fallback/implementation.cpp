@@ -1,7 +1,7 @@
 #include "fallback/begin_implementation.h"
 #include "fallback/dom_parser_implementation.h"
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code implementation::create_dom_parser_implementation(
@@ -17,6 +17,6 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "fallback/end_implementation.h"

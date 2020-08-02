@@ -4,9 +4,10 @@
 #include "simdjson.h"
 #include "isadetection.h"
 
-namespace simdjson {
+namespace {
 namespace fallback {
 
+using namespace simdjson;
 using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
@@ -26,6 +27,6 @@ public:
 };
 
 } // namespace fallback
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_FALLBACK_IMPLEMENTATION_H

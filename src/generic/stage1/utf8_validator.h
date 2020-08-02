@@ -1,4 +1,4 @@
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
@@ -28,4 +28,4 @@ bool generic_validate_utf8(const char * input, size_t length) {
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

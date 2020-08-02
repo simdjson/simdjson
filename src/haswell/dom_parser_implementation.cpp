@@ -6,7 +6,7 @@
 // Stage 1
 //
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 using namespace simd;
@@ -49,7 +49,7 @@ really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
   return input.reduce_or().is_ascii();
 }
 
-really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
@@ -65,7 +65,7 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "generic/stage1/utf8_lookup4_algorithm.h"
 #include "generic/stage1/json_structural_indexer.h"
@@ -81,9 +81,8 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 //
 // Implementation-specific overrides
 //
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
-
 namespace stage1 {
 
 really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
@@ -104,7 +103,24 @@ WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, si
 }
 
 WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
-  return simdjson::haswell::stage1::generic_validate_utf8(buf,len);
+  return haswell::stage1::generic_validate_utf8(buf,len);
+}
+
+WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+  error_code result = stage2::parse_structurals<false>(*this, _doc);
+  if (result) { return result; }
+
+  // If we didn't make it to the end, it's an error
+  if ( next_structural_index != n_structural_indexes ) {
+    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return error = TAPE_ERROR;
+  }
+
+  return SUCCESS;
+}
+
+WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
+  return stage2::parse_structurals<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
@@ -114,6 +130,6 @@ WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, siz
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "haswell/end_implementation.h"

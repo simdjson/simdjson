@@ -1,4 +1,4 @@
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 // Walks through a buffer in block-sized increments, loading the last part with spaces
@@ -86,4 +86,4 @@ really_inline void buf_block_reader<STEP_SIZE>::advance() {
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

@@ -3,7 +3,7 @@
 
 #include "simdprune_tables.h"
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace simd {
 
@@ -328,6 +328,6 @@ namespace simd {
 
 } // namespace simd
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H

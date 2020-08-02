@@ -3,7 +3,7 @@
 
 #include "simdjson.h"
 
-namespace simdjson {
+namespace {
 namespace fallback {
 
 // Holds backslashes and quotes locations.
@@ -27,7 +27,7 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
 }
 
 } // namespace fallback
-} // namespace simdjson
+} // namespace {
 
 #include "generic/stage2/stringparsing.h"
 

@@ -1,4 +1,4 @@
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
@@ -47,4 +47,4 @@ public:
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

@@ -1,7 +1,7 @@
 #include <cmath>
 #include <limits>
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 namespace numberparsing {
@@ -505,4 +505,4 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 } // namespace numberparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

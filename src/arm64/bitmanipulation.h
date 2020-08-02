@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_ARM64_BITMANIPULATION_H
 #define SIMDJSON_ARM64_BITMANIPULATION_H
 
-namespace simdjson {
+namespace {
 namespace arm64 {
 
 // We sometimes call trailing_zero on inputs that are zero,
@@ -55,16 +55,7 @@ really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
 #endif
 }
 
-really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-  *result = value1 * value2;
-  return !!__umulh(value1, value2);
-#else
-  return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
-#endif
-}
-
 } // namespace arm64
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

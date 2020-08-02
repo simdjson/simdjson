@@ -9,7 +9,7 @@
 #include "generic/stage1/json_minifier.h"
 #include "generic/stage1/find_next_document_index.h"
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
@@ -90,6 +90,27 @@ private:
 };
 
 really_inline json_structural_indexer::json_structural_indexer(uint32_t *structural_indexes) : indexer{structural_indexes} {}
+
+// Skip the last character if it is partial
+really_inline size_t trim_partial_utf8(const uint8_t *buf, size_t len) {
+  if (unlikely(len < 3)) {
+    switch (len) {
+      case 2:
+        if (buf[len-1] >= 0b11000000) { return len-1; } // 2-, 3- and 4-byte characters with only 1 byte left
+        if (buf[len-2] >= 0b11100000) { return len-2; } // 3- and 4-byte characters with only 2 bytes left
+        return len;
+      case 1:
+        if (buf[len-1] >= 0b11000000) { return len-1; } // 2-, 3- and 4-byte characters with only 1 byte left
+        return len;
+      case 0:
+        return len;
+    }
+  }
+  if (buf[len-1] >= 0b11000000) { return len-1; } // 2-, 3- and 4-byte characters with only 1 byte left
+  if (buf[len-2] >= 0b11100000) { return len-2; } // 3- and 4-byte characters with only 1 byte left
+  if (buf[len-3] >= 0b11110000) { return len-3; } // 4-byte characters with only 3 bytes left
+  return len;
+}
 
 //
 // PERF NOTES:
@@ -205,4 +226,4 @@ really_inline error_code json_structural_indexer::finish(dom_parser_implementati
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

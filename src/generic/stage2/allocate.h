@@ -1,4 +1,4 @@
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 namespace allocate {
@@ -19,4 +19,4 @@ really_inline error_code set_max_depth(dom_parser_implementation &parser, size_t
 } // namespace allocate
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

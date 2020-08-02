@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_BITMASK_H
 #define SIMDJSON_HASWELL_BITMASK_H
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 //
@@ -18,6 +18,6 @@ really_inline uint64_t prefix_xor(const uint64_t bitmask) {
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #endif // SIMDJSON_HASWELL_BITMASK_H

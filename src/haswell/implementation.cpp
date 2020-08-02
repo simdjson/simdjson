@@ -1,7 +1,7 @@
 #include "haswell/begin_implementation.h"
 #include "haswell/dom_parser_implementation.h"
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code implementation::create_dom_parser_implementation(
@@ -17,7 +17,7 @@ WARN_UNUSED error_code implementation::create_dom_parser_implementation(
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #include "haswell/end_implementation.h"
 

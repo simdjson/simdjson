@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_HASWELL_NUMBERPARSING_H
 #define SIMDJSON_HASWELL_NUMBERPARSING_H
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
@@ -23,7 +23,7 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
 }
 
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
 
 #define SWAR_NUMBER_PARSING
 

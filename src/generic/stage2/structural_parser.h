@@ -8,11 +8,9 @@
 #include "generic/stage2/atomparsing.h"
 #include "generic/stage2/structural_iterator.h"
 
-namespace simdjson {
+namespace { // Make everything here private
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
-
-namespace { // Make everything here private
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 #define INIT_ADDRESSES() { &&array_begin, &&array_continue, &&error, &&finish, &&object_begin, &&object_continue }
@@ -468,33 +466,6 @@ error:
   return parser.error();
 }
 
-} // namespace {}
 } // namespace stage2
-
-/************
- * The JSON is parsed to a tape, see the accompanying tape.md file
- * for documentation.
- ***********/
-WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  error_code result = stage2::parse_structurals<false>(*this, _doc);
-  if (result) { return result; }
-
-  // If we didn't make it to the end, it's an error
-  if ( next_structural_index != n_structural_indexes ) {
-    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-    return error = TAPE_ERROR;
-  }
-
-  return SUCCESS;
-}
-
-/************
- * The JSON is parsed to a tape, see the accompanying tape.md file
- * for documentation.
- ***********/
-WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  return stage2::parse_structurals<true>(*this, _doc);
-}
-
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {

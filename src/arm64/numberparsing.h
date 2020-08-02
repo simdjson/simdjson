@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_ARM64_NUMBERPARSING_H
 #define SIMDJSON_ARM64_NUMBERPARSING_H
 
-namespace simdjson {
+namespace {
 namespace arm64 {
 
 // we don't have SSE, so let us use a scalar function
@@ -15,7 +15,7 @@ static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) 
 }
 
 } // namespace arm64
-} // namespace simdjson
+} // namespace {
 
 #define SWAR_NUMBER_PARSING
 

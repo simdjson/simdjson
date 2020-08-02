@@ -3,7 +3,7 @@
 // We assume the file in which it is included already includes
 // "simdjson/stage1.h" (this simplifies amalgation)
 
-namespace simdjson {
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
@@ -78,4 +78,4 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
 } // namespace stage1
 } // namespace SIMDJSON_IMPLEMENTATION
-} // namespace simdjson
+} // namespace {
