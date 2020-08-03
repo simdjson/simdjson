@@ -238,7 +238,7 @@ struct structural_parser : structural_iterator {
 
   WARN_UNUSED really_inline error_code finish() {
     end_document();
-    parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
+    parser.next_structural_index = uint32_t(next_structural - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -279,7 +279,7 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   // Read first value
   //
   {
-    switch (parser.current_char()) {
+    switch (parser.advance_char()) {
     case '{': {
       if (parser.empty_object()) { goto document_end; }
       SIMDJSON_TRY( parser.start_object() );
