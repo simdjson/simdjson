@@ -84,6 +84,30 @@ struct structural_parser : structural_iterator {
     end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
   }
 
+  really_inline void empty_container(internal::tape_type start, internal::tape_type end) {
+    auto start_index = next_tape_index();
+    tape.append(start_index+2, start);
+    tape.append(start_index, end);
+  }
+  WARN_UNUSED really_inline bool empty_object() {
+    if (peek_next_char() == '}') {
+      advance_char();
+      log_value("empty object");
+      empty_container(internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+      return true;
+    }
+    return false;
+  }
+  WARN_UNUSED really_inline bool empty_array() {
+    if (peek_next_char() == ']') {
+      advance_char();
+      log_value("empty array");
+      empty_container(internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+      return true;
+    }
+    return false;
+  }
+
   // increment_count increments the count of keys in an object or values in an array.
   // Note that if you are at the level of the values or elements, the count
   // must be increment in the preceding depth (depth-1) where the array or
@@ -261,10 +285,13 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   // Read first value
   //
   switch (parser.current_char()) {
-  case '{':
+  case '{': {
+    if (parser.empty_object()) { goto finish; }
     SIMDJSON_TRY( parser.start_object(false) );
     goto object_begin;
-  case '[':
+  }
+  case '[': {
+    if (parser.empty_array()) { goto finish; }
     SIMDJSON_TRY( parser.start_array(false) );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -274,6 +301,7 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
       }
     }
     goto array_begin;
+  }
   case '"': SIMDJSON_TRY( parser.parse_string() ); goto finish;
   case 't': SIMDJSON_TRY( parser.parse_root_true_atom() ); goto finish;
   case 'f': SIMDJSON_TRY( parser.parse_root_false_atom() ); goto finish;
@@ -291,25 +319,27 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
 // Object parser states
 //
 object_begin:
-  switch (parser.advance_char()) {
-  case '"': {
-    parser.increment_count();
-    SIMDJSON_TRY( parser.parse_string(true) );
-    goto object_key_state;
-  }
-  case '}':
-    parser.end_object();
-    goto scope_end;
-  default:
+  if (parser.advance_char() != '"') {
     parser.log_error("Object does not start with a key");
     return TAPE_ERROR;
   }
+  parser.increment_count();
+  SIMDJSON_TRY( parser.parse_string(true) );
+  goto object_key_state;
 
 object_key_state:
   if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); return TAPE_ERROR; }
   switch (parser.advance_char()) {
-    case '{': SIMDJSON_TRY( parser.start_object(false) ); goto object_begin;
-    case '[': SIMDJSON_TRY( parser.start_array(false) ); goto array_begin;
+    case '{': {
+      if (parser.empty_object()) { break; };
+      SIMDJSON_TRY( parser.start_object(false) );
+      goto object_begin;
+    }
+    case '[': {
+      if (parser.empty_array()) { break; };
+      SIMDJSON_TRY( parser.start_array(false) );
+      goto array_begin;
+    }
     case '"': SIMDJSON_TRY( parser.parse_string() ); break;
     case 't': SIMDJSON_TRY( parser.parse_true_atom() ); break;
     case 'f': SIMDJSON_TRY( parser.parse_false_atom() ); break;
@@ -347,17 +377,20 @@ scope_end:
 // Array parser states
 //
 array_begin:
-  if (parser.peek_next_char() == ']') {
-    parser.advance_char();
-    parser.end_array();
-    goto scope_end;
-  }
   parser.increment_count();
 
 main_array_switch:
   switch (parser.advance_char()) {
-    case '{': SIMDJSON_TRY( parser.start_object(true) ); goto object_begin;
-    case '[': SIMDJSON_TRY( parser.start_array(true) ); goto array_begin;
+    case '{': {
+      if (parser.empty_object()) { break; };
+      SIMDJSON_TRY( parser.start_object(true) );
+      goto object_begin;
+    }
+    case '[': {
+      if (parser.empty_array()) { break; };
+      SIMDJSON_TRY( parser.start_array(true) );
+      goto array_begin;
+    }
     case '"': SIMDJSON_TRY( parser.parse_string() ); break;
     case 't': SIMDJSON_TRY( parser.parse_true_atom() ); break;
     case 'f': SIMDJSON_TRY( parser.parse_false_atom() ); break;
