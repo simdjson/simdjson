@@ -77,6 +77,7 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
 #include "generic/stage2/structural_parser.h"
+#include "generic/stage2/tape_builder.h"
 
 //
 // Implementation-specific overrides
@@ -107,7 +108,7 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  if (auto error = stage2::parse_structurals<false>(*this, _doc)) { return error; }
+  if (auto error = stage2::structural_parser<stage2::tape_builder>::parse<false>(*this, _doc)) { return error; }
 
   // If we didn't make it to the end, it's an error
   if ( next_structural_index != n_structural_indexes ) {
@@ -119,7 +120,7 @@ WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) no
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  return stage2::parse_structurals<true>(*this, _doc);
+  return stage2::structural_parser<stage2::tape_builder>::parse<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {

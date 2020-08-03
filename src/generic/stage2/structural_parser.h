@@ -19,6 +19,9 @@ struct structural_parser : structural_iterator {
   /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, dom::document &doc) noexcept;
+
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
     : structural_iterator(_parser, start_structural_index),
@@ -149,20 +152,11 @@ struct structural_parser : structural_iterator {
   }
 }; // struct structural_parser
 
-} // namespace stage2
-} // namespace SIMDJSON_IMPLEMENTATION
-} // unnamed namespace
-
-#include "generic/stage2/tape_builder.h"
-
-namespace { // Make everything here private
-namespace SIMDJSON_IMPLEMENTATION {
-namespace stage2 {
-
+template<typename T>
 template<bool STREAMING>
-WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+WARN_UNUSED really_inline error_code structural_parser<T>::parse(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
   dom_parser.doc = &doc;
-  stage2::structural_parser<stage2::tape_builder> parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  stage2::structural_parser<T> parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
   SIMDJSON_TRY( parser.start() );
 
   //
