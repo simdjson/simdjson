@@ -27,13 +27,13 @@ struct structural_parser : structural_iterator {
       current_string_buf_loc{parser.doc->string_buf.get()} {
   }
 
-  WARN_UNUSED really_inline error_code start_scope(bool parent_is_array) {
+  WARN_UNUSED really_inline error_code start_scope(bool is_array) {
+    depth++;
+    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     parser.containing_scope[depth].tape_index = next_tape_index();
     parser.containing_scope[depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
-    parser.is_array[depth] = parent_is_array;
-    depth++;
-    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+    parser.is_array[depth] = is_array;
     return SUCCESS;
   }
 
@@ -43,24 +43,23 @@ struct structural_parser : structural_iterator {
     parser.containing_scope[depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
     parser.is_array[depth] = false;
-    depth++;
     if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code start_object(bool parent_is_array) {
+  WARN_UNUSED really_inline error_code start_object() {
     log_start_value("object");
-    return start_scope(parent_is_array);
+    return start_scope(false);
   }
 
-  WARN_UNUSED really_inline error_code start_array(bool parent_is_array) {
+  WARN_UNUSED really_inline error_code start_array() {
     log_start_value("array");
-    return start_scope(parent_is_array);
+    return start_scope(true);
   }
 
   // this function is responsible for annotating the start of the scope
   really_inline void end_scope(internal::tape_type start, internal::tape_type end) noexcept {
-    depth--;
+    // SIMDJSON_ASSUME(depth > 0);
     // Write the ending tape element, pointing at the start location
     const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     tape.append(start_tape_index, end);
@@ -70,6 +69,7 @@ struct structural_parser : structural_iterator {
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+    depth--;
   }
 
   really_inline uint32_t next_tape_index() {
@@ -86,7 +86,6 @@ struct structural_parser : structural_iterator {
   }
   really_inline void end_document() {
     log_end_value("document");
-    depth--;
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index(), internal::tape_type::ROOT);
@@ -117,11 +116,8 @@ struct structural_parser : structural_iterator {
   }
 
   // increment_count increments the count of keys in an object or values in an array.
-  // Note that if you are at the level of the values or elements, the count
-  // must be increment in the preceding depth (depth-1) where the array or
-  // the object resides.
   really_inline void increment_count() {
-    parser.containing_scope[depth - 1].count++; // we have a key value pair in the object at parser.depth - 1
+    parser.containing_scope[depth].count++; // we have a key value pair in the object at parser.depth - 1
   }
 
   really_inline uint8_t *on_start_string() noexcept {
@@ -286,12 +282,12 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   switch (parser.current_char()) {
   case '{': {
     if (parser.empty_object()) { goto finish; }
-    SIMDJSON_TRY( parser.start_object(false) );
+    SIMDJSON_TRY( parser.start_object() );
     goto object_begin;
   }
   case '[': {
     if (parser.empty_array()) { goto finish; }
-    SIMDJSON_TRY( parser.start_array(false) );
+    SIMDJSON_TRY( parser.start_array() );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
     if (!STREAMING) {
@@ -331,12 +327,12 @@ object_key_state:
   switch (parser.advance_char()) {
     case '{': {
       if (parser.empty_object()) { break; };
-      SIMDJSON_TRY( parser.start_object(false) );
+      SIMDJSON_TRY( parser.start_object() );
       goto object_begin;
     }
     case '[': {
       if (parser.empty_array()) { break; };
-      SIMDJSON_TRY( parser.start_array(false) );
+      SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
     case '"': SIMDJSON_TRY( parser.parse_string() ); break;
@@ -368,7 +364,7 @@ object_continue:
   }
 
 scope_end:
-  if (parser.depth == 1) { goto finish; }
+  if (parser.depth == 0) { goto finish; }
   if (parser.parser.is_array[parser.depth]) { goto array_continue; }
   goto object_continue;
 
@@ -382,12 +378,12 @@ main_array_switch:
   switch (parser.advance_char()) {
     case '{': {
       if (parser.empty_object()) { break; };
-      SIMDJSON_TRY( parser.start_object(true) );
+      SIMDJSON_TRY( parser.start_object() );
       goto object_begin;
     }
     case '[': {
       if (parser.empty_array()) { break; };
-      SIMDJSON_TRY( parser.start_array(true) );
+      SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
     case '"': SIMDJSON_TRY( parser.parse_string() ); break;
