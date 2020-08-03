@@ -12,54 +12,41 @@ namespace stage2 {
 
 #define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
 
-template<typename T>
 struct structural_parser : structural_iterator {
-  /** Receiver that actually parses the strings and builds the tape */
-  T builder;
   /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
 
-  template<bool STREAMING>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, dom::document &doc) noexcept;
+  template<bool STREAMING, typename T>
+  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
-    : structural_iterator(_parser, start_structural_index),
-      builder{parser.doc->tape.get(), parser.doc->string_buf.get()} {
+    : structural_iterator(_parser, start_structural_index) {
   }
 
   WARN_UNUSED really_inline error_code start_document() {
-    builder.start_document(*this);
     parser.is_array[depth] = false;
     return SUCCESS;
   }
-  WARN_UNUSED really_inline error_code start_object() {
+  template<typename T>
+  WARN_UNUSED really_inline error_code start_object(T &builder) {
     depth++;
     if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_object(*this);
     parser.is_array[depth] = false;
     return SUCCESS;
   }
-  WARN_UNUSED really_inline error_code start_array() {
+  template<typename T>
+  WARN_UNUSED really_inline error_code start_array(T &builder) {
     depth++;
     if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_array(*this);
     parser.is_array[depth] = true;
     return SUCCESS;
   }
-  really_inline void end_object() {
-    builder.end_object(*this);
-    depth--;
-  }
-  really_inline void end_array() {
-    builder.end_array(*this);
-    depth--;
-  }
-  really_inline void end_document() {
-    builder.end_document(*this);
-  }
 
-  WARN_UNUSED really_inline bool empty_object() {
+  template<typename T>
+  WARN_UNUSED really_inline bool empty_object(T &builder) {
     if (peek_next_char() == '}') {
       advance_char();
       builder.empty_object(*this);
@@ -67,7 +54,8 @@ struct structural_parser : structural_iterator {
     }
     return false;
   }
-  WARN_UNUSED really_inline bool empty_array() {
+  template<typename T>
+  WARN_UNUSED really_inline bool empty_array(T &builder) {
     if (peek_next_char() == ']') {
       advance_char();
       builder.empty_array(*this);
@@ -76,57 +64,18 @@ struct structural_parser : structural_iterator {
     return false;
   }
 
-  really_inline void increment_count() {
-    builder.increment_count(*this);
-  }
-
-  WARN_UNUSED really_inline error_code parse_key(const uint8_t *key) {
-    return builder.parse_key(*this, key);
-  }
-  WARN_UNUSED really_inline error_code parse_string(const uint8_t *value) {
-    return builder.parse_string(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_number(const uint8_t *value) {
-    return builder.parse_number(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_root_number(const uint8_t *value) {
-    return builder.parse_root_number(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_true_atom(const uint8_t *value) {
-    return builder.parse_true_atom(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_root_true_atom(const uint8_t *value) {
-    return builder.parse_root_true_atom(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_false_atom(const uint8_t *value) {
-    return builder.parse_false_atom(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_root_false_atom(const uint8_t *value) {
-    return builder.parse_root_false_atom(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_null_atom(const uint8_t *value) {
-    return builder.parse_null_atom(*this, value);
-  }
-  WARN_UNUSED really_inline error_code parse_root_null_atom(const uint8_t *value) {
-    return builder.parse_root_null_atom(*this, value);
-  }
-
-  WARN_UNUSED really_inline error_code start() {
-    logger::log_start();
-
-    // If there are no structurals left, return EMPTY
-    if (at_end()) { return EMPTY; }
-
-    // Push the root scope (there is always at least one scope)
-    return start_document();
-  }
-
+  template<bool STREAMING>
   WARN_UNUSED really_inline error_code finish() {
-    end_document();
     parser.next_structural_index = uint32_t(next_structural - &parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
+      return TAPE_ERROR;
+    }
+
+    // If we didn't make it to the end, it's an error
+    if ( !STREAMING && parser.next_structural_index != parser.n_structural_indexes ) {
+      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
       return TAPE_ERROR;
     }
 
@@ -152,12 +101,17 @@ struct structural_parser : structural_iterator {
   }
 }; // struct structural_parser
 
-template<typename T>
-template<bool STREAMING>
-WARN_UNUSED really_inline error_code structural_parser<T>::parse(dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
-  dom_parser.doc = &doc;
-  stage2::structural_parser<T> parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-  SIMDJSON_TRY( parser.start() );
+template<bool STREAMING, typename T>
+WARN_UNUSED really_inline error_code structural_parser::parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
+  stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+  logger::log_start();
+
+  //
+  // Start the document
+  //
+  if (parser.at_end()) { return EMPTY; }
+  SIMDJSON_TRY( parser.start_document() );
+  builder.start_document(parser);
 
   //
   // Read first value
@@ -166,13 +120,13 @@ WARN_UNUSED really_inline error_code structural_parser<T>::parse(dom_parser_impl
     const uint8_t *value = parser.advance();
     switch (*value) {
     case '{': {
-      if (parser.empty_object()) { goto document_end; }
-      SIMDJSON_TRY( parser.start_object() );
+      if (parser.empty_object(builder)) { goto document_end; }
+      SIMDJSON_TRY( parser.start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array()) { goto document_end; }
-      SIMDJSON_TRY( parser.start_array() );
+      if (parser.empty_array(builder)) { goto document_end; }
+      SIMDJSON_TRY( parser.start_array(builder) );
       // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
       // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
       if (!STREAMING) {
@@ -182,14 +136,14 @@ WARN_UNUSED really_inline error_code structural_parser<T>::parse(dom_parser_impl
       }
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(value) ); goto document_end;
-    case 't': SIMDJSON_TRY( parser.parse_root_true_atom(value) ); goto document_end;
-    case 'f': SIMDJSON_TRY( parser.parse_root_false_atom(value) ); goto document_end;
-    case 'n': SIMDJSON_TRY( parser.parse_root_null_atom(value) ); goto document_end;
+    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); goto document_end;
+    case 't': SIMDJSON_TRY( builder.parse_root_true_atom(parser, value) ); goto document_end;
+    case 'f': SIMDJSON_TRY( builder.parse_root_false_atom(parser, value) ); goto document_end;
+    case 'n': SIMDJSON_TRY( builder.parse_root_null_atom(parser, value) ); goto document_end;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_root_number(value) ); goto document_end;
+      SIMDJSON_TRY( builder.parse_root_number(parser, value) ); goto document_end;
     default:
       parser.log_error("Document starts with a non-value character");
       return TAPE_ERROR;
@@ -205,8 +159,8 @@ object_begin: {
     parser.log_error("Object does not start with a key");
     return TAPE_ERROR;
   }
-  parser.increment_count();
-  SIMDJSON_TRY( parser.parse_key(key) );
+  builder.increment_count(parser);
+  SIMDJSON_TRY( builder.parse_key(parser, key) );
   goto object_field;
 } // object_begin:
 
@@ -215,23 +169,23 @@ object_field: {
   const uint8_t *value = parser.advance();
   switch (*value) {
     case '{': {
-      if (parser.empty_object()) { break; };
-      SIMDJSON_TRY( parser.start_object() );
+      if (parser.empty_object(builder)) { break; };
+      SIMDJSON_TRY( parser.start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array()) { break; };
-      SIMDJSON_TRY( parser.start_array() );
+      if (parser.empty_array(builder)) { break; };
+      SIMDJSON_TRY( parser.start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(value) ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom(value) ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom(value) ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom(value) ); break;
+    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); break;
+    case 't': SIMDJSON_TRY( builder.parse_true_atom(parser, value) ); break;
+    case 'f': SIMDJSON_TRY( builder.parse_false_atom(parser, value) ); break;
+    case 'n': SIMDJSON_TRY( builder.parse_null_atom(parser, value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number(value) ); break;
+      SIMDJSON_TRY( builder.parse_number(parser, value) ); break;
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -241,14 +195,15 @@ object_field: {
 object_continue: {
   switch (parser.advance_char()) {
   case ',': {
-    parser.increment_count();
+    builder.increment_count(parser);
     const uint8_t *key = parser.advance();
     if (unlikely( *key != '"' )) { parser.log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( parser.parse_key(key) );
+    SIMDJSON_TRY( builder.parse_key(parser, key) );
     goto object_field;
   }
   case '}':
-    parser.end_object();
+    builder.end_object(parser);
+    parser.depth--;
     goto scope_end;
   default:
     parser.log_error("No comma between object fields");
@@ -266,30 +221,30 @@ scope_end: {
 // Array parser states
 //
 array_begin: {
-  parser.increment_count();
+  builder.increment_count(parser);
 } // array_begin:
 
 array_value: {
   const uint8_t *value = parser.advance();
   switch (*value) {
     case '{': {
-      if (parser.empty_object()) { break; };
-      SIMDJSON_TRY( parser.start_object() );
+      if (parser.empty_object(builder)) { break; };
+      SIMDJSON_TRY( parser.start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array()) { break; };
-      SIMDJSON_TRY( parser.start_array() );
+      if (parser.empty_array(builder)) { break; };
+      SIMDJSON_TRY( parser.start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(value) ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom(value) ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom(value) ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom(value) ); break;
+    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); break;
+    case 't': SIMDJSON_TRY( builder.parse_true_atom(parser, value) ); break;
+    case 'f': SIMDJSON_TRY( builder.parse_false_atom(parser, value) ); break;
+    case 'n': SIMDJSON_TRY( builder.parse_null_atom(parser, value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number(value) ); break; 
+      SIMDJSON_TRY( builder.parse_number(parser, value) ); break; 
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -299,10 +254,11 @@ array_value: {
 array_continue: {
   switch (parser.advance_char()) {
   case ',':
-    parser.increment_count();
+    builder.increment_count(parser);
     goto array_value;
   case ']':
-    parser.end_array();
+    builder.end_array(parser);
+    parser.depth--;
     goto scope_end;
   default:
     parser.log_error("Missing comma between array values");
@@ -311,7 +267,8 @@ array_continue: {
 } // array_continue:
 
 document_end: {
-  return parser.finish();
+  builder.end_document(parser);
+  return parser.finish<STREAMING>();
 } // document_end:
 
 } // parse_structurals()

@@ -11,47 +11,52 @@ struct tape_builder {
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline void empty_object(structural_parser<tape_builder> &parser) {
+  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+
+private:
+  friend struct structural_parser;
+
+  really_inline void empty_object(structural_parser &parser) {
     parser.log_value("empty object");
     empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  really_inline void empty_array(structural_parser<tape_builder> &parser) {
+  really_inline void empty_array(structural_parser &parser) {
     parser.log_value("empty array");
     empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
-  really_inline void start_document(structural_parser<tape_builder> &parser) {
+  really_inline void start_document(structural_parser &parser) {
     parser.log_start_value("document");
     start_container(parser);
   }
-  really_inline void start_object(structural_parser<tape_builder> &parser) {
+  really_inline void start_object(structural_parser &parser) {
     parser.log_start_value("object");
     start_container(parser);
   }
-  really_inline void start_array(structural_parser<tape_builder> &parser) {
+  really_inline void start_array(structural_parser &parser) {
     parser.log_start_value("array");
     start_container(parser);
   }
 
-  really_inline void end_object(structural_parser<tape_builder> &parser) {
+  really_inline void end_object(structural_parser &parser) {
     parser.log_end_value("object");
     end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  really_inline void end_array(structural_parser<tape_builder> &parser) {
+  really_inline void end_array(structural_parser &parser) {
     parser.log_end_value("array");
     end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
-  really_inline void end_document(structural_parser<tape_builder> &parser) {
+  really_inline void end_document(structural_parser &parser) {
     parser.log_end_value("document");
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(parser.parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
   }
 
-  WARN_UNUSED really_inline error_code parse_key(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
     return parse_string(parser, value, true);
   }
-  WARN_UNUSED really_inline error_code parse_string(structural_parser<tape_builder> &parser, const uint8_t *value, bool key = false) {
+  WARN_UNUSED really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
     parser.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(parser);
     dst = stringparsing::parse_string(value, dst);
@@ -63,13 +68,13 @@ struct tape_builder {
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
     parser.log_value("number");
     if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
     return SUCCESS;
   }
 
-  really_inline error_code parse_root_number(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  really_inline error_code parse_root_number(structural_parser &parser, const uint8_t *value) {
     //
     // We need to make a copy to make sure that the string is space terminated.
     // This is not about padding the input, which should already padded up
@@ -94,42 +99,42 @@ struct tape_builder {
     return error;
   }
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("true");
     if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("true");
     if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("false");
     if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("false");
     if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("null");
     if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser<tape_builder> &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("null");
     if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
@@ -137,29 +142,29 @@ struct tape_builder {
   }
 
   // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser<tape_builder> &parser) {
+  really_inline void increment_count(structural_parser &parser) {
     parser.parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.parser.depth - 1
   }
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser<tape_builder> &parser) {
+  really_inline uint32_t next_tape_index(structural_parser &parser) {
     return uint32_t(tape.next_tape_loc - parser.parser.doc->tape.get());
   }
 
-  really_inline void empty_container(structural_parser<tape_builder> &parser, internal::tape_type start, internal::tape_type end) {
+  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
     auto start_index = next_tape_index(parser);
     tape.append(start_index+2, start);
     tape.append(start_index, end);
   }
 
-  really_inline void start_container(structural_parser<tape_builder> &parser) {
+  really_inline void start_container(structural_parser &parser) {
     parser.parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
     parser.parser.containing_scope[parser.depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
   }
 
-  really_inline void end_container(structural_parser<tape_builder> &parser, internal::tape_type start, internal::tape_type end) noexcept {
+  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
     // Write the ending tape element, pointing at the start location
     const uint32_t start_tape_index = parser.parser.containing_scope[parser.depth].tape_index;
     tape.append(start_tape_index, end);
@@ -171,7 +176,7 @@ struct tape_builder {
     tape_writer::write(parser.parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
   }
 
-  really_inline uint8_t *on_start_string(structural_parser<tape_builder> &parser) noexcept {
+  really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
     tape.append(current_string_buf_loc - parser.parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
