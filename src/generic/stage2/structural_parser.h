@@ -39,7 +39,13 @@ struct structural_parser : structural_iterator {
 
   WARN_UNUSED really_inline error_code start_document() {
     log_start_value("document");
-    return start_scope(false);
+    parser.containing_scope[depth].tape_index = next_tape_index();
+    parser.containing_scope[depth].count = 0;
+    tape.skip(); // We don't actually *write* the start element until the end.
+    parser.is_array[depth] = false;
+    depth++;
+    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+    return SUCCESS;
   }
 
   WARN_UNUSED really_inline error_code start_object(bool parent_is_array) {
@@ -55,15 +61,14 @@ struct structural_parser : structural_iterator {
   // this function is responsible for annotating the start of the scope
   really_inline void end_scope(internal::tape_type start, internal::tape_type end) noexcept {
     depth--;
-    // write our doc->tape location to the header scope
-    // The root scope gets written *at* the previous location.
-    tape.append(parser.containing_scope[depth].tape_index, end);
+    // Write the ending tape element, pointing at the start location
+    const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
+    tape.append(start_tape_index, end);
+    // Write the start tape element, pointing at the end location (and including count)
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t start_tape_index = parser.containing_scope[depth].tape_index;
     const uint32_t count = parser.containing_scope[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    // This is a load and an OR. It would be possible to just write once at doc->tape[d.tape_index]
     tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
   }
 
@@ -81,7 +86,10 @@ struct structural_parser : structural_iterator {
   }
   really_inline void end_document() {
     log_end_value("document");
-    end_scope(internal::tape_type::ROOT, internal::tape_type::ROOT);
+    depth--;
+    constexpr uint32_t start_tape_index = 0;
+    tape.append(start_tape_index, internal::tape_type::ROOT);
+    tape_writer::write(parser.doc->tape[start_tape_index], next_tape_index(), internal::tape_type::ROOT);
   }
 
   really_inline void empty_container(internal::tape_type start, internal::tape_type end) {
