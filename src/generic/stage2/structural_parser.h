@@ -281,12 +281,12 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   //
   switch (parser.current_char()) {
   case '{': {
-    if (parser.empty_object()) { goto finish; }
+    if (parser.empty_object()) { goto document_end; }
     SIMDJSON_TRY( parser.start_object() );
     goto object_begin;
   }
   case '[': {
-    if (parser.empty_array()) { goto finish; }
+    if (parser.empty_array()) { goto document_end; }
     SIMDJSON_TRY( parser.start_array() );
     // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
     // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -297,14 +297,14 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
     }
     goto array_begin;
   }
-  case '"': SIMDJSON_TRY( parser.parse_string() ); goto finish;
-  case 't': SIMDJSON_TRY( parser.parse_root_true_atom() ); goto finish;
-  case 'f': SIMDJSON_TRY( parser.parse_root_false_atom() ); goto finish;
-  case 'n': SIMDJSON_TRY( parser.parse_root_null_atom() ); goto finish;
+  case '"': SIMDJSON_TRY( parser.parse_string() ); goto document_end;
+  case 't': SIMDJSON_TRY( parser.parse_root_true_atom() ); goto document_end;
+  case 'f': SIMDJSON_TRY( parser.parse_root_false_atom() ); goto document_end;
+  case 'n': SIMDJSON_TRY( parser.parse_root_null_atom() ); goto document_end;
   case '-':
   case '0': case '1': case '2': case '3': case '4':
   case '5': case '6': case '7': case '8': case '9':
-    SIMDJSON_TRY( parser.parse_root_number() ); goto finish;
+    SIMDJSON_TRY( parser.parse_root_number() ); goto document_end;
   default:
     parser.log_error("Document starts with a non-value character");
     return TAPE_ERROR;
@@ -320,9 +320,9 @@ object_begin:
   }
   parser.increment_count();
   SIMDJSON_TRY( parser.parse_string(true) );
-  goto object_key_state;
+  goto object_field;
 
-object_key_state:
+object_field:
   if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); return TAPE_ERROR; }
   switch (parser.advance_char()) {
     case '{': {
@@ -354,7 +354,7 @@ object_continue:
     parser.increment_count();
     if (unlikely( parser.advance_char() != '"' )) { parser.log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
     SIMDJSON_TRY( parser.parse_string(true) );
-    goto object_key_state;
+    goto object_field;
   case '}':
     parser.end_object();
     goto scope_end;
@@ -364,7 +364,7 @@ object_continue:
   }
 
 scope_end:
-  if (parser.depth == 0) { goto finish; }
+  if (parser.depth == 0) { goto document_end; }
   if (parser.parser.is_array[parser.depth]) { goto array_continue; }
   goto object_continue;
 
@@ -374,7 +374,7 @@ scope_end:
 array_begin:
   parser.increment_count();
 
-main_array_switch:
+array_value:
   switch (parser.advance_char()) {
     case '{': {
       if (parser.empty_object()) { break; };
@@ -403,7 +403,7 @@ array_continue:
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
-    goto main_array_switch;
+    goto array_value;
   case ']':
     parser.end_array();
     goto scope_end;
@@ -412,9 +412,10 @@ array_continue:
     return TAPE_ERROR;
   }
 
-finish:
+document_end:
   return parser.finish();
-}
+
+} // parse_structurals()
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
