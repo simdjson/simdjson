@@ -138,10 +138,13 @@ struct structural_parser : structural_iterator {
     current_string_buf_loc = dst + 1;
   }
 
-  WARN_UNUSED really_inline error_code parse_string(bool key = false) {
+  WARN_UNUSED really_inline error_code parse_key(const uint8_t *key) {
+    return parse_string(key, true);
+  }
+  WARN_UNUSED really_inline error_code parse_string(const uint8_t *value, bool key = false) {
     log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string();
-    dst = stringparsing::parse_string(current(), dst);
+    dst = stringparsing::parse_string(value, dst);
     if (dst == nullptr) {
       log_error("Invalid escape in string");
       return STRING_ERROR;
@@ -150,79 +153,75 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_number(const uint8_t *src) {
+  WARN_UNUSED really_inline error_code parse_number(const uint8_t *value) {
     log_value("number");
-    if (!numberparsing::parse_number(src, tape)) { log_error("Invalid number"); return NUMBER_ERROR; }
+    if (!numberparsing::parse_number(value, tape)) { log_error("Invalid number"); return NUMBER_ERROR; }
     return SUCCESS;
   }
-  WARN_UNUSED really_inline error_code parse_number() {
-    return parse_number(current());
-  }
 
-  really_inline error_code parse_root_number() {
-    /**
-    * We need to make a copy to make sure that the string is space terminated.
-    * This is not about padding the input, which should already padded up
-    * to len + SIMDJSON_PADDING. However, we have no control at this stage
-    * on how the padding was done. What if the input string was padded with nulls?
-    * It is quite common for an input string to have an extra null character (C string).
-    * We do not want to allow 9\0 (where \0 is the null character) inside a JSON
-    * document, but the string "9\0" by itself is fine. So we make a copy and
-    * pad the input with spaces when we know that there is just one input element.
-    * This copy is relatively expensive, but it will almost never be called in
-    * practice unless you are in the strange scenario where you have many JSON
-    * documents made of single atoms.
-    */
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.len + SIMDJSON_PADDING));
+  really_inline error_code parse_root_number(const uint8_t *value) {
+    //
+    // We need to make a copy to make sure that the string is space terminated.
+    // This is not about padding the input, which should already padded up
+    // to len + SIMDJSON_PADDING. However, we have no control at this stage
+    // on how the padding was done. What if the input string was padded with nulls?
+    // It is quite common for an input string to have an extra null character (C string).
+    // We do not want to allow 9\0 (where \0 is the null character) inside a JSON
+    // document, but the string "9\0" by itself is fine. So we make a copy and
+    // pad the input with spaces when we know that there is just one input element.
+    // This copy is relatively expensive, but it will almost never be called in
+    // practice unless you are in the strange scenario where you have many JSON
+    // documents made of single atoms.
+    //
+    uint8_t *copy = static_cast<uint8_t *>(malloc(remaining_len() + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return MEMALLOC;
     }
-    memcpy(copy, buf, parser.len);
-    memset(copy + parser.len, ' ', SIMDJSON_PADDING);
-    size_t idx = *current_structural;
-    error_code error = parse_number(&copy[idx]); // parse_number does not throw
+    memcpy(copy, value, remaining_len());
+    memset(copy + remaining_len(), ' ', SIMDJSON_PADDING);
+    error_code error = parse_number(copy);
     free(copy);
     return error;
   }
 
-  WARN_UNUSED really_inline error_code parse_true_atom() {
+  WARN_UNUSED really_inline error_code parse_true_atom(const uint8_t *value) {
     log_value("true");
-    if (!atomparsing::is_valid_true_atom(current())) { return T_ATOM_ERROR; }
+    if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom() {
+  WARN_UNUSED really_inline error_code parse_root_true_atom(const uint8_t *value) {
     log_value("true");
-    if (!atomparsing::is_valid_true_atom(current(), remaining_len())) { return T_ATOM_ERROR; }
+    if (!atomparsing::is_valid_true_atom(value, remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_false_atom() {
+  WARN_UNUSED really_inline error_code parse_false_atom(const uint8_t *value) {
     log_value("false");
-    if (!atomparsing::is_valid_false_atom(current())) { return F_ATOM_ERROR; }
+    if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom() {
+  WARN_UNUSED really_inline error_code parse_root_false_atom(const uint8_t *value) {
     log_value("false");
-    if (!atomparsing::is_valid_false_atom(current(), remaining_len())) { return F_ATOM_ERROR; }
+    if (!atomparsing::is_valid_false_atom(value, remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_null_atom() {
+  WARN_UNUSED really_inline error_code parse_null_atom(const uint8_t *value) {
     log_value("null");
-    if (!atomparsing::is_valid_null_atom(current())) { return N_ATOM_ERROR; }
+    if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom() {
+  WARN_UNUSED really_inline error_code parse_root_null_atom(const uint8_t *value) {
     log_value("null");
-    if (!atomparsing::is_valid_null_atom(current(), remaining_len())) { return N_ATOM_ERROR; }
+    if (!atomparsing::is_valid_null_atom(value, remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
@@ -279,50 +278,54 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   //
   // Read first value
   //
-  switch (parser.current_char()) {
-  case '{': {
-    if (parser.empty_object()) { goto document_end; }
-    SIMDJSON_TRY( parser.start_object() );
-    goto object_begin;
-  }
-  case '[': {
-    if (parser.empty_array()) { goto document_end; }
-    SIMDJSON_TRY( parser.start_array() );
-    // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-    // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-    if (!STREAMING) {
-      if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-        return TAPE_ERROR;
-      }
+  {
+    switch (parser.current_char()) {
+    case '{': {
+      if (parser.empty_object()) { goto document_end; }
+      SIMDJSON_TRY( parser.start_object() );
+      goto object_begin;
     }
-    goto array_begin;
-  }
-  case '"': SIMDJSON_TRY( parser.parse_string() ); goto document_end;
-  case 't': SIMDJSON_TRY( parser.parse_root_true_atom() ); goto document_end;
-  case 'f': SIMDJSON_TRY( parser.parse_root_false_atom() ); goto document_end;
-  case 'n': SIMDJSON_TRY( parser.parse_root_null_atom() ); goto document_end;
-  case '-':
-  case '0': case '1': case '2': case '3': case '4':
-  case '5': case '6': case '7': case '8': case '9':
-    SIMDJSON_TRY( parser.parse_root_number() ); goto document_end;
-  default:
-    parser.log_error("Document starts with a non-value character");
-    return TAPE_ERROR;
+    case '[': {
+      if (parser.empty_array()) { goto document_end; }
+      SIMDJSON_TRY( parser.start_array() );
+      // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
+      // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+      if (!STREAMING) {
+        if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+          return TAPE_ERROR;
+        }
+      }
+      goto array_begin;
+    }
+    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); goto document_end;
+    case 't': SIMDJSON_TRY( parser.parse_root_true_atom(parser.current()) ); goto document_end;
+    case 'f': SIMDJSON_TRY( parser.parse_root_false_atom(parser.current()) ); goto document_end;
+    case 'n': SIMDJSON_TRY( parser.parse_root_null_atom(parser.current()) ); goto document_end;
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      SIMDJSON_TRY( parser.parse_root_number(parser.current()) ); goto document_end;
+    default:
+      parser.log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+    }
   }
 
 //
 // Object parser states
 //
-object_begin:
-  if (parser.advance_char() != '"') {
+object_begin: {
+  const uint8_t *key = parser.advance();
+  if (*key != '"') {
     parser.log_error("Object does not start with a key");
     return TAPE_ERROR;
   }
   parser.increment_count();
-  SIMDJSON_TRY( parser.parse_string(true) );
+  SIMDJSON_TRY( parser.parse_key(key) );
   goto object_field;
+} // object_begin:
 
-object_field:
+object_field: {
   if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); return TAPE_ERROR; }
   switch (parser.advance_char()) {
     case '{': {
@@ -335,26 +338,29 @@ object_field:
       SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string() ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom() ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom() ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom() ); break;
+    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); break;
+    case 't': SIMDJSON_TRY( parser.parse_true_atom(parser.current()) ); break;
+    case 'f': SIMDJSON_TRY( parser.parse_false_atom(parser.current()) ); break;
+    case 'n': SIMDJSON_TRY( parser.parse_null_atom(parser.current()) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number() ); break;
+      SIMDJSON_TRY( parser.parse_number(parser.current()) ); break;
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
   }
+} // object_field:
 
-object_continue:
+object_continue: {
   switch (parser.advance_char()) {
-  case ',':
+  case ',': {
     parser.increment_count();
-    if (unlikely( parser.advance_char() != '"' )) { parser.log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( parser.parse_string(true) );
+    const uint8_t *key = parser.advance();
+    if (unlikely( *key != '"' )) { parser.log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+    SIMDJSON_TRY( parser.parse_key(key) );
     goto object_field;
+  }
   case '}':
     parser.end_object();
     goto scope_end;
@@ -362,19 +368,22 @@ object_continue:
     parser.log_error("No comma between object fields");
     return TAPE_ERROR;
   }
+} // object_continue:
 
-scope_end:
+scope_end: {
   if (parser.depth == 0) { goto document_end; }
   if (parser.parser.is_array[parser.depth]) { goto array_continue; }
   goto object_continue;
+} // scope_end:
 
 //
 // Array parser states
 //
-array_begin:
+array_begin: {
   parser.increment_count();
+} // array_begin:
 
-array_value:
+array_value: {
   switch (parser.advance_char()) {
     case '{': {
       if (parser.empty_object()) { break; };
@@ -386,20 +395,21 @@ array_value:
       SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string() ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom() ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom() ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom() ); break;
+    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); break;
+    case 't': SIMDJSON_TRY( parser.parse_true_atom(parser.current()) ); break;
+    case 'f': SIMDJSON_TRY( parser.parse_false_atom(parser.current()) ); break;
+    case 'n': SIMDJSON_TRY( parser.parse_null_atom(parser.current()) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number() ); break; 
+      SIMDJSON_TRY( parser.parse_number(parser.current()) ); break; 
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
   }
+} // array_value:
 
-array_continue:
+array_continue: {
   switch (parser.advance_char()) {
   case ',':
     parser.increment_count();
@@ -411,9 +421,11 @@ array_continue:
     parser.log_error("Missing comma between array values");
     return TAPE_ERROR;
   }
+} // array_continue:
 
-document_end:
+document_end: {
   return parser.finish();
+} // document_end:
 
 } // parse_structurals()
 

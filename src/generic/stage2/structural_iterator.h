@@ -26,6 +26,10 @@ public:
   really_inline char peek_next_char() {
     return buf[*(current_structural+1)];
   }
+  really_inline const uint8_t* advance() {
+    current_structural++;
+    return &buf[*current_structural];
+  }
   really_inline char advance_char() {
     current_structural++;
     return buf[*current_structural];
