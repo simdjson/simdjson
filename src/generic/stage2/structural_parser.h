@@ -279,7 +279,8 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
   // Read first value
   //
   {
-    switch (parser.advance_char()) {
+    const uint8_t *value = parser.advance();
+    switch (*value) {
     case '{': {
       if (parser.empty_object()) { goto document_end; }
       SIMDJSON_TRY( parser.start_object() );
@@ -297,14 +298,14 @@ WARN_UNUSED static really_inline error_code parse_structurals(dom_parser_impleme
       }
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); goto document_end;
-    case 't': SIMDJSON_TRY( parser.parse_root_true_atom(parser.current()) ); goto document_end;
-    case 'f': SIMDJSON_TRY( parser.parse_root_false_atom(parser.current()) ); goto document_end;
-    case 'n': SIMDJSON_TRY( parser.parse_root_null_atom(parser.current()) ); goto document_end;
+    case '"': SIMDJSON_TRY( parser.parse_string(value) ); goto document_end;
+    case 't': SIMDJSON_TRY( parser.parse_root_true_atom(value) ); goto document_end;
+    case 'f': SIMDJSON_TRY( parser.parse_root_false_atom(value) ); goto document_end;
+    case 'n': SIMDJSON_TRY( parser.parse_root_null_atom(value) ); goto document_end;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_root_number(parser.current()) ); goto document_end;
+      SIMDJSON_TRY( parser.parse_root_number(value) ); goto document_end;
     default:
       parser.log_error("Document starts with a non-value character");
       return TAPE_ERROR;
@@ -327,7 +328,8 @@ object_begin: {
 
 object_field: {
   if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  switch (parser.advance_char()) {
+  const uint8_t *value = parser.advance();
+  switch (*value) {
     case '{': {
       if (parser.empty_object()) { break; };
       SIMDJSON_TRY( parser.start_object() );
@@ -338,14 +340,14 @@ object_field: {
       SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom(parser.current()) ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom(parser.current()) ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom(parser.current()) ); break;
+    case '"': SIMDJSON_TRY( parser.parse_string(value) ); break;
+    case 't': SIMDJSON_TRY( parser.parse_true_atom(value) ); break;
+    case 'f': SIMDJSON_TRY( parser.parse_false_atom(value) ); break;
+    case 'n': SIMDJSON_TRY( parser.parse_null_atom(value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number(parser.current()) ); break;
+      SIMDJSON_TRY( parser.parse_number(value) ); break;
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
@@ -384,7 +386,8 @@ array_begin: {
 } // array_begin:
 
 array_value: {
-  switch (parser.advance_char()) {
+  const uint8_t *value = parser.advance();
+  switch (*value) {
     case '{': {
       if (parser.empty_object()) { break; };
       SIMDJSON_TRY( parser.start_object() );
@@ -395,14 +398,14 @@ array_value: {
       SIMDJSON_TRY( parser.start_array() );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( parser.parse_string(parser.current()) ); break;
-    case 't': SIMDJSON_TRY( parser.parse_true_atom(parser.current()) ); break;
-    case 'f': SIMDJSON_TRY( parser.parse_false_atom(parser.current()) ); break;
-    case 'n': SIMDJSON_TRY( parser.parse_null_atom(parser.current()) ); break;
+    case '"': SIMDJSON_TRY( parser.parse_string(value) ); break;
+    case 't': SIMDJSON_TRY( parser.parse_true_atom(value) ); break;
+    case 'f': SIMDJSON_TRY( parser.parse_false_atom(value) ); break;
+    case 'n': SIMDJSON_TRY( parser.parse_null_atom(value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( parser.parse_number(parser.current()) ); break; 
+      SIMDJSON_TRY( parser.parse_number(value) ); break; 
     default:
       parser.log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
