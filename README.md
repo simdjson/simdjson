@@ -129,6 +129,7 @@ Real-world usage
 - [Microsoft FishStore](https://github.com/microsoft/FishStore)
 - [Yandex ClickHouse](https://github.com/yandex/ClickHouse)
 - [Clang Build Analyzer](https://github.com/aras-p/ClangBuildAnalyzer)
+- [Shopify HeapProfiler](https://github.com/Shopify/heap-profiler)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
