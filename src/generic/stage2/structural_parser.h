@@ -223,6 +223,16 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
+  WARN_UNUSED really_inline error_code start() {
+    logger::log_start();
+
+    // If there are no structurals left, return EMPTY
+    if (at_end()) { return EMPTY; }
+
+    // Push the root scope (there is always at least one scope)
+    return start_document();
+  }
+
   WARN_UNUSED really_inline error_code finish() {
     end_document();
     parser.next_structural_index = uint32_t(current_structural + 1 - &parser.structural_indexes[0]);
@@ -235,27 +245,8 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
-  really_inline void init() {
-    log_start();
-  }
-
-  WARN_UNUSED really_inline error_code start() {
-    // If there are no structurals left, return EMPTY
-    if (at_end(parser.n_structural_indexes)) {
-      return EMPTY;
-    }
-
-    init();
-    // Push the root scope (there is always at least one scope)
-    return start_document();
-  }
-
   really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
-  }
-
-  static really_inline void log_start() {
-    logger::log_start();
   }
 
   really_inline void log_start_value(const char *type) {
