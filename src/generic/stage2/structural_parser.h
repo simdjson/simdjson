@@ -17,7 +17,12 @@ struct structural_parser : structural_iterator {
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept;
+  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
+  template<bool STREAMING, typename T>
+  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
+    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+    return parser.parse<STREAMING>(builder);
+  }
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
@@ -102,50 +107,49 @@ struct structural_parser : structural_iterator {
 }; // struct structural_parser
 
 template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-  stage2::structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
-  if (parser.at_end()) { return EMPTY; }
-  SIMDJSON_TRY( parser.start_document() );
-  builder.start_document(parser);
+  if (at_end()) { return EMPTY; }
+  SIMDJSON_TRY( start_document() );
+  builder.start_document(*this);
 
   //
   // Read first value
   //
   {
-    const uint8_t *value = parser.advance();
+    const uint8_t *value = advance();
     switch (*value) {
     case '{': {
-      if (parser.empty_object(builder)) { goto document_end; }
-      SIMDJSON_TRY( parser.start_object(builder) );
+      if (empty_object(builder)) { goto document_end; }
+      SIMDJSON_TRY( start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array(builder)) { goto document_end; }
-      SIMDJSON_TRY( parser.start_array(builder) );
+      if (empty_array(builder)) { goto document_end; }
+      SIMDJSON_TRY( start_array(builder) );
       // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
       // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
       if (!STREAMING) {
-        if (parser.buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+        if (buf[parser.structural_indexes[parser.n_structural_indexes - 1]] != ']') {
           return TAPE_ERROR;
         }
       }
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); goto document_end;
-    case 't': SIMDJSON_TRY( builder.parse_root_true_atom(parser, value) ); goto document_end;
-    case 'f': SIMDJSON_TRY( builder.parse_root_false_atom(parser, value) ); goto document_end;
-    case 'n': SIMDJSON_TRY( builder.parse_root_null_atom(parser, value) ); goto document_end;
+    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); goto document_end;
+    case 't': SIMDJSON_TRY( builder.parse_root_true_atom(*this, value) ); goto document_end;
+    case 'f': SIMDJSON_TRY( builder.parse_root_false_atom(*this, value) ); goto document_end;
+    case 'n': SIMDJSON_TRY( builder.parse_root_null_atom(*this, value) ); goto document_end;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_root_number(parser, value) ); goto document_end;
+      SIMDJSON_TRY( builder.parse_root_number(*this, value) ); goto document_end;
     default:
-      parser.log_error("Document starts with a non-value character");
+      log_error("Document starts with a non-value character");
       return TAPE_ERROR;
     }
   }
@@ -154,66 +158,66 @@ WARN_UNUSED really_inline error_code structural_parser::parse(dom_parser_impleme
 // Object parser states
 //
 object_begin: {
-  const uint8_t *key = parser.advance();
+  const uint8_t *key = advance();
   if (*key != '"') {
-    parser.log_error("Object does not start with a key");
+    log_error("Object does not start with a key");
     return TAPE_ERROR;
   }
-  builder.increment_count(parser);
-  SIMDJSON_TRY( builder.parse_key(parser, key) );
+  builder.increment_count(*this);
+  SIMDJSON_TRY( builder.parse_key(*this, key) );
   goto object_field;
 } // object_begin:
 
 object_field: {
-  if (unlikely( parser.advance_char() != ':' )) { parser.log_error("Missing colon after key in object"); return TAPE_ERROR; }
-  const uint8_t *value = parser.advance();
+  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  const uint8_t *value = advance();
   switch (*value) {
     case '{': {
-      if (parser.empty_object(builder)) { break; };
-      SIMDJSON_TRY( parser.start_object(builder) );
+      if (empty_object(builder)) { break; };
+      SIMDJSON_TRY( start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array(builder)) { break; };
-      SIMDJSON_TRY( parser.start_array(builder) );
+      if (empty_array(builder)) { break; };
+      SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); break;
-    case 't': SIMDJSON_TRY( builder.parse_true_atom(parser, value) ); break;
-    case 'f': SIMDJSON_TRY( builder.parse_false_atom(parser, value) ); break;
-    case 'n': SIMDJSON_TRY( builder.parse_null_atom(parser, value) ); break;
+    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); break;
+    case 't': SIMDJSON_TRY( builder.parse_true_atom(*this, value) ); break;
+    case 'f': SIMDJSON_TRY( builder.parse_false_atom(*this, value) ); break;
+    case 'n': SIMDJSON_TRY( builder.parse_null_atom(*this, value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_number(parser, value) ); break;
+      SIMDJSON_TRY( builder.parse_number(*this, value) ); break;
     default:
-      parser.log_error("Non-value found when value was expected!");
+      log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
   }
 } // object_field:
 
 object_continue: {
-  switch (parser.advance_char()) {
+  switch (advance_char()) {
   case ',': {
-    builder.increment_count(parser);
-    const uint8_t *key = parser.advance();
-    if (unlikely( *key != '"' )) { parser.log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(parser, key) );
+    builder.increment_count(*this);
+    const uint8_t *key = advance();
+    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+    SIMDJSON_TRY( builder.parse_key(*this, key) );
     goto object_field;
   }
   case '}':
-    builder.end_object(parser);
-    parser.depth--;
+    builder.end_object(*this);
+    depth--;
     goto scope_end;
   default:
-    parser.log_error("No comma between object fields");
+    log_error("No comma between object fields");
     return TAPE_ERROR;
   }
 } // object_continue:
 
 scope_end: {
-  if (parser.depth == 0) { goto document_end; }
-  if (parser.parser.is_array[parser.depth]) { goto array_continue; }
+  if (depth == 0) { goto document_end; }
+  if (parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
 } // scope_end:
 
@@ -221,54 +225,54 @@ scope_end: {
 // Array parser states
 //
 array_begin: {
-  builder.increment_count(parser);
+  builder.increment_count(*this);
 } // array_begin:
 
 array_value: {
-  const uint8_t *value = parser.advance();
+  const uint8_t *value = advance();
   switch (*value) {
     case '{': {
-      if (parser.empty_object(builder)) { break; };
-      SIMDJSON_TRY( parser.start_object(builder) );
+      if (empty_object(builder)) { break; };
+      SIMDJSON_TRY( start_object(builder) );
       goto object_begin;
     }
     case '[': {
-      if (parser.empty_array(builder)) { break; };
-      SIMDJSON_TRY( parser.start_array(builder) );
+      if (empty_array(builder)) { break; };
+      SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( builder.parse_string(parser, value) ); break;
-    case 't': SIMDJSON_TRY( builder.parse_true_atom(parser, value) ); break;
-    case 'f': SIMDJSON_TRY( builder.parse_false_atom(parser, value) ); break;
-    case 'n': SIMDJSON_TRY( builder.parse_null_atom(parser, value) ); break;
+    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); break;
+    case 't': SIMDJSON_TRY( builder.parse_true_atom(*this, value) ); break;
+    case 'f': SIMDJSON_TRY( builder.parse_false_atom(*this, value) ); break;
+    case 'n': SIMDJSON_TRY( builder.parse_null_atom(*this, value) ); break;
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_number(parser, value) ); break; 
+      SIMDJSON_TRY( builder.parse_number(*this, value) ); break; 
     default:
-      parser.log_error("Non-value found when value was expected!");
+      log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
   }
 } // array_value:
 
 array_continue: {
-  switch (parser.advance_char()) {
+  switch (advance_char()) {
   case ',':
-    builder.increment_count(parser);
+    builder.increment_count(*this);
     goto array_value;
   case ']':
-    builder.end_array(parser);
-    parser.depth--;
+    builder.end_array(*this);
+    depth--;
     goto scope_end;
   default:
-    parser.log_error("Missing comma between array values");
+    log_error("Missing comma between array values");
     return TAPE_ERROR;
   }
 } // array_continue:
 
 document_end: {
-  builder.end_document(parser);
-  return parser.finish<STREAMING>();
+  builder.end_document(*this);
+  return finish<STREAMING>();
 } // document_end:
 
 } // parse_structurals()
