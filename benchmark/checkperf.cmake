@@ -43,7 +43,7 @@ if (SIMDJSON_IS_UNDER_GIT AND Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER 
   endfunction(sync_git_repository)
 
   set(SIMDJSON_CHECKPERF_REMOTE origin CACHE STRING "Remote repository to compare performance against")
-  set(SIMDJSON_CHECKPERF_BRANCH master CACHE STRING "Branch to compare performance against")
+  set(SIMDJSON_CHECKPERF_BRANCH v0.4.7 CACHE STRING "Branch to compare performance against")
   set(SIMDJSON_CHECKPERF_DIR ${CMAKE_CURRENT_BINARY_DIR}/checkperf-reference/${SIMDJSON_CHECKPERF_BRANCH} CACHE STRING "Location to put checkperf performance comparison repository")
   set(SIMDJSON_CHECKPERF_ARGS ${EXAMPLE_JSON} CACHE STRING "Arguments to pass to parse during checkperf")
   sync_git_repository(checkperf-repo ${SIMDJSON_CHECKPERF_DIR} ${SIMDJSON_CHECKPERF_REMOTE} ${SIMDJSON_CHECKPERF_BRANCH} ${SIMDJSON_GITHUB_REPOSITORY})
