@@ -125,12 +125,10 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
     switch (*value) {
       case '{': {
         if (empty_object(builder)) { goto document_end; }
-        SIMDJSON_TRY( start_object(builder) );
         goto object_begin;
       }
       case '[': {
         if (empty_array(builder)) { goto document_end; }
-        SIMDJSON_TRY( start_array(builder) );
         // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
         // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
         if (!STREAMING) {
@@ -151,6 +149,7 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
 // Object parser states
 //
 object_begin: {
+  SIMDJSON_TRY( start_object(builder) );
   const uint8_t *key = advance();
   if (*key != '"') {
     log_error("Object does not start with a key");
@@ -167,12 +166,10 @@ object_field: {
   switch (*value) {
     case '{': {
       if (empty_object(builder)) { break; };
-      SIMDJSON_TRY( start_object(builder) );
       goto object_begin;
     }
     case '[': {
       if (empty_array(builder)) { break; };
-      SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
     default: {
@@ -210,6 +207,7 @@ scope_end: {
 // Array parser states
 //
 array_begin: {
+  SIMDJSON_TRY( start_array(builder) );
   builder.increment_count(*this);
 } // array_begin:
 
@@ -218,12 +216,10 @@ array_value: {
   switch (*value) {
     case '{': {
       if (empty_object(builder)) { break; };
-      SIMDJSON_TRY( start_object(builder) );
       goto object_begin;
     }
     case '[': {
       if (empty_array(builder)) { break; };
-      SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
     default: {
