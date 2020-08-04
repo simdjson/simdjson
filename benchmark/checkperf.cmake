@@ -12,7 +12,7 @@ if (SIMDJSON_IS_UNDER_GIT AND Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER 
   # sync_git_repository(myrepo ...) creates two targets:
   # myrepo - if the repo does not exist, creates and syncs it against the origin branch
   # update_myrepo - will update the repo against the origin branch (and create if needed)
-  function(sync_git_repository name dir remote branch url)
+  function(sync_git_repository name dir remote branch tag url)
     # This conditionally creates the git repository
     add_custom_command(
       OUTPUT ${dir}/.git/config
@@ -24,8 +24,10 @@ if (SIMDJSON_IS_UNDER_GIT AND Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER 
     add_custom_command(
       OUTPUT ${dir}/.git/FETCH_HEAD
       COMMAND ${GIT_EXECUTABLE} remote set-url ${remote} ${url}
-      COMMAND ${GIT_EXECUTABLE} fetch --depth=1 ${remote} ${branch}
+      COMMAND ${GIT_EXECUTABLE} fetch  ${remote} ${branch}
       COMMAND ${GIT_EXECUTABLE} reset --hard ${remote}/${branch}
+      COMMAND ${GIT_EXECUTABLE} fetch --tags
+      COMMAND ${GIT_EXECUTABLE} checkout tags/${tag}
       WORKING_DIRECTORY ${dir}
       DEPENDS init-${name}
     )
@@ -35,18 +37,21 @@ if (SIMDJSON_IS_UNDER_GIT AND Git_FOUND AND (GIT_VERSION_STRING VERSION_GREATER 
     add_custom_target(
       update-${name}
       COMMAND ${GIT_EXECUTABLE} remote set-url ${remote} ${url}
-      COMMAND ${GIT_EXECUTABLE} fetch --depth=1 ${remote} ${branch}
+      COMMAND ${GIT_EXECUTABLE} fetch  ${remote} ${branch}
       COMMAND ${GIT_EXECUTABLE} reset --hard ${remote}/${branch}
+      COMMAND ${GIT_EXECUTABLE} fetch --tags
+      COMMAND ${GIT_EXECUTABLE} checkout tags/${tag}
       WORKING_DIRECTORY ${dir}
       DEPENDS init-${name}
     )
   endfunction(sync_git_repository)
 
   set(SIMDJSON_CHECKPERF_REMOTE origin CACHE STRING "Remote repository to compare performance against")
-  set(SIMDJSON_CHECKPERF_BRANCH v0.4.7 CACHE STRING "Branch to compare performance against")
+  set(SIMDJSON_CHECKPERF_BRANCH master CACHE STRING "Branch to compare performance against")
+  set(SIMDJSON_CHECKPERF_TAG "v0.4.6" CACHE STRING "Tag to compare performance against")
   set(SIMDJSON_CHECKPERF_DIR ${CMAKE_CURRENT_BINARY_DIR}/checkperf-reference/${SIMDJSON_CHECKPERF_BRANCH} CACHE STRING "Location to put checkperf performance comparison repository")
   set(SIMDJSON_CHECKPERF_ARGS ${EXAMPLE_JSON} CACHE STRING "Arguments to pass to parse during checkperf")
-  sync_git_repository(checkperf-repo ${SIMDJSON_CHECKPERF_DIR} ${SIMDJSON_CHECKPERF_REMOTE} ${SIMDJSON_CHECKPERF_BRANCH} ${SIMDJSON_GITHUB_REPOSITORY})
+  sync_git_repository(checkperf-repo ${SIMDJSON_CHECKPERF_DIR} ${SIMDJSON_CHECKPERF_REMOTE} ${SIMDJSON_CHECKPERF_BRANCH} ${SIMDJSON_CHECKPERF_TAG} ${SIMDJSON_GITHUB_REPOSITORY})
 
   # Commands to cause cmake on benchmark/checkperf-master/build/
   # - first, copy CMakeCache.txt
