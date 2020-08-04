@@ -316,24 +316,21 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 #include "fallback/stringparsing.h"
 #include "fallback/numberparsing.h"
 #include "generic/stage2/structural_parser.h"
+#include "generic/stage2/tape_builder.h"
 
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  if (auto error = stage2::parse_structurals<false>(*this, _doc)) { return error; }
-
-  // If we didn't make it to the end, it's an error
-  if ( next_structural_index != n_structural_indexes ) {
-    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-    return TAPE_ERROR;
-  }
-
-  return SUCCESS;
+  doc = &_doc;
+  stage2::tape_builder builder(*doc);
+  return stage2::structural_parser::parse<false>(*this, builder);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  return stage2::parse_structurals<true>(*this, _doc);
+  doc = &_doc;
+  stage2::tape_builder builder(_doc);
+  return stage2::structural_parser::parse<true>(*this, builder);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
