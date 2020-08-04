@@ -25,28 +25,28 @@ struct structural_parser : structural_iterator {
   }
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_parser, uint32_t start_structural_index)
-    : structural_iterator(_parser, start_structural_index) {
+  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
+    : structural_iterator(_dom_parser, start_structural_index) {
   }
 
   WARN_UNUSED really_inline error_code start_document() {
-    parser.is_array[depth] = false;
+    dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   template<typename T>
   WARN_UNUSED really_inline error_code start_object(T &builder) {
     depth++;
-    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_object(*this);
-    parser.is_array[depth] = false;
+    dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   template<typename T>
   WARN_UNUSED really_inline error_code start_array(T &builder) {
     depth++;
-    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_array(*this);
-    parser.is_array[depth] = true;
+    dom_parser.is_array[depth] = true;
     return SUCCESS;
   }
 
@@ -71,7 +71,7 @@ struct structural_parser : structural_iterator {
 
   template<bool STREAMING>
   WARN_UNUSED really_inline error_code finish() {
-    parser.next_structural_index = uint32_t(next_structural - &parser.structural_indexes[0]);
+    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
     if (depth != 0) {
       log_error("Unclosed objects or arrays!");
@@ -79,7 +79,7 @@ struct structural_parser : structural_iterator {
     }
 
     // If we didn't make it to the end, it's an error
-    if ( !STREAMING && parser.next_structural_index != parser.n_structural_indexes ) {
+    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
       logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
       return TAPE_ERROR;
     }
@@ -134,7 +134,7 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
       // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
       // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
       if (!STREAMING) {
-        if (buf[parser.structural_indexes[parser.n_structural_indexes - 1]] != ']') {
+        if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
           return TAPE_ERROR;
         }
       }
@@ -217,7 +217,7 @@ object_continue: {
 
 scope_end: {
   if (depth == 0) { goto document_end; }
-  if (parser.is_array[depth]) { goto array_continue; }
+  if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
 } // scope_end:
 
