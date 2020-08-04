@@ -123,34 +123,27 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
   {
     const uint8_t *value = advance();
     switch (*value) {
-    case '{': {
-      if (empty_object(builder)) { goto document_end; }
-      SIMDJSON_TRY( start_object(builder) );
-      goto object_begin;
-    }
-    case '[': {
-      if (empty_array(builder)) { goto document_end; }
-      SIMDJSON_TRY( start_array(builder) );
-      // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-      // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-      if (!STREAMING) {
-        if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-          return TAPE_ERROR;
-        }
+      case '{': {
+        if (empty_object(builder)) { goto document_end; }
+        SIMDJSON_TRY( start_object(builder) );
+        goto object_begin;
       }
-      goto array_begin;
-    }
-    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); goto document_end;
-    case 't': SIMDJSON_TRY( builder.parse_root_true_atom(*this, value) ); goto document_end;
-    case 'f': SIMDJSON_TRY( builder.parse_root_false_atom(*this, value) ); goto document_end;
-    case 'n': SIMDJSON_TRY( builder.parse_root_null_atom(*this, value) ); goto document_end;
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_root_number(*this, value) ); goto document_end;
-    default:
-      log_error("Document starts with a non-value character");
-      return TAPE_ERROR;
+      case '[': {
+        if (empty_array(builder)) { goto document_end; }
+        SIMDJSON_TRY( start_array(builder) );
+        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
+        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+        if (!STREAMING) {
+          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+            return TAPE_ERROR;
+          }
+        }
+        goto array_begin;
+      }
+      default: {
+        SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
+        goto document_end;
+      }
     }
   }
 
@@ -182,17 +175,9 @@ object_field: {
       SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); break;
-    case 't': SIMDJSON_TRY( builder.parse_true_atom(*this, value) ); break;
-    case 'f': SIMDJSON_TRY( builder.parse_false_atom(*this, value) ); break;
-    case 'n': SIMDJSON_TRY( builder.parse_null_atom(*this, value) ); break;
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_number(*this, value) ); break;
-    default:
-      log_error("Non-value found when value was expected!");
-      return TAPE_ERROR;
+    default: {
+      SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+    }
   }
 } // object_field:
 
@@ -241,17 +226,9 @@ array_value: {
       SIMDJSON_TRY( start_array(builder) );
       goto array_begin;
     }
-    case '"': SIMDJSON_TRY( builder.parse_string(*this, value) ); break;
-    case 't': SIMDJSON_TRY( builder.parse_true_atom(*this, value) ); break;
-    case 'f': SIMDJSON_TRY( builder.parse_false_atom(*this, value) ); break;
-    case 'n': SIMDJSON_TRY( builder.parse_null_atom(*this, value) ); break;
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      SIMDJSON_TRY( builder.parse_number(*this, value) ); break; 
-    default:
-      log_error("Non-value found when value was expected!");
-      return TAPE_ERROR;
+    default: {
+      SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+    }
   }
 } // array_value:
 

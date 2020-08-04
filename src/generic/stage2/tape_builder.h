@@ -16,6 +16,36 @@ struct tape_builder {
 private:
   friend struct structural_parser;
 
+  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
+    switch (*value) {
+      case '"': return parse_string(parser, value);
+      case 't': return parse_root_true_atom(parser, value);
+      case 'f': return parse_root_false_atom(parser, value);
+      case 'n': return parse_root_null_atom(parser, value);
+      case '-':
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        return parse_root_number(parser, value);
+      default:
+        parser.log_error("Document starts with a non-value character");
+        return TAPE_ERROR;
+    }
+  }
+  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
+    switch (*value) {
+      case '"': return parse_string(parser, value);
+      case 't': return parse_true_atom(parser, value);
+      case 'f': return parse_false_atom(parser, value);
+      case 'n': return parse_null_atom(parser, value);
+      case '-':
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        return parse_number(parser, value);
+      default:
+        parser.log_error("Non-value found when value was expected!");
+        return TAPE_ERROR;
+    }
+  }
   really_inline void empty_object(structural_parser &parser) {
     parser.log_value("empty object");
     empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
