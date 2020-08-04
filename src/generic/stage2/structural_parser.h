@@ -29,19 +29,6 @@ struct structural_parser : structural_iterator {
     : structural_iterator(_dom_parser, start_structural_index) {
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_document() {
-    dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
-  template<typename T>
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_array(T &builder) {
-    depth++;
-    if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-    builder.start_array(*this);
-    dom_parser.is_array[depth] = true;
-    return SUCCESS;
-  }
-
   template<typename T>
   SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_object(T &builder) {
     if (peek_next_char() == '}') {
@@ -110,7 +97,6 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::parse(
   // Start the document
   //
   if (at_end()) { return EMPTY; }
-  SIMDJSON_TRY( start_document() );
   builder.start_document(*this);
 
   //
@@ -151,7 +137,6 @@ object_begin: {
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
   builder.start_object(*this);
-  dom_parser.is_array[depth] = false;
 
   const uint8_t *key = advance();
   if (*key != '"') {
@@ -205,7 +190,6 @@ array_begin: {
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
   builder.start_array(*this);
-  dom_parser.is_array[depth] = true;
 
   builder.increment_count(*this);
 } // array_begin:

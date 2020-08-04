@@ -58,14 +58,17 @@ private:
   simdjson_really_inline void start_document(structural_parser &parser) {
     parser.log_start_value("document");
     start_container(parser);
+    parser.dom_parser.is_array[parser.depth] = false;
   }
   simdjson_really_inline void start_object(structural_parser &parser) {
     parser.log_start_value("object");
     start_container(parser);
+    parser.dom_parser.is_array[parser.depth] = false;
   }
   simdjson_really_inline void start_array(structural_parser &parser) {
     parser.log_start_value("array");
     start_container(parser);
+    parser.dom_parser.is_array[parser.depth] = true;
   }
 
   simdjson_really_inline void end_object(structural_parser &parser) {
