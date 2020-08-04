@@ -115,12 +115,8 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
   {
     const uint8_t *value = advance();
     switch (*value) {
-      case '{': {
-        if (empty_object(builder)) { goto document_end; }
-        goto object_begin;
-      }
+      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
       case '[': {
-        if (empty_array(builder)) { goto document_end; }
         // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
         // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
         if (!STREAMING) {
@@ -128,13 +124,11 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
             return TAPE_ERROR;
           }
         }
-        goto array_begin;
+        if (!empty_array(builder)) { goto array_begin; }; break;
       }
-      default: {
-        SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
-        goto document_end;
-      }
+      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
+    goto document_end;
   }
 
 //
@@ -160,17 +154,9 @@ object_field: {
   if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
   const uint8_t *value = advance();
   switch (*value) {
-    case '{': {
-      if (empty_object(builder)) { break; };
-      goto object_begin;
-    }
-    case '[': {
-      if (empty_array(builder)) { break; };
-      goto array_begin;
-    }
-    default: {
-      SIMDJSON_TRY( builder.parse_primitive(*this, value) );
-    }
+    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
+    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
   }
 } // object_field:
 
@@ -214,17 +200,9 @@ array_begin: {
 array_value: {
   const uint8_t *value = advance();
   switch (*value) {
-    case '{': {
-      if (empty_object(builder)) { break; };
-      goto object_begin;
-    }
-    case '[': {
-      if (empty_array(builder)) { break; };
-      goto array_begin;
-    }
-    default: {
-      SIMDJSON_TRY( builder.parse_primitive(*this, value) );
-    }
+    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
+    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
   }
 } // array_value:
 
