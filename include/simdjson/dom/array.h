@@ -181,9 +181,6 @@ namespace std::ranges {
 template<>
 inline constexpr bool enable_view<simdjson::dom::array> = true;
 }
-
-static_assert(std::ranges::view<simdjson::dom::array>);
-static_assert(std::ranges::sized_range<simdjson::dom::array>);
-#endif
+#endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_DOM_ARRAY_H

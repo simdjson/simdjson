@@ -169,4 +169,11 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 
 } // namespace simdjson
 
+#include "simdjson/inline/element.h"
+
+#if defined(__cpp_lib_ranges)
+static_assert(std::ranges::view<simdjson::dom::array>);
+static_assert(std::ranges::sized_range<simdjson::dom::array>);
+#endif // defined(__cpp_lib_ranges)
+
 #endif // SIMDJSON_INLINE_ARRAY_H
