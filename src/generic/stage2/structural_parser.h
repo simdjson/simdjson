@@ -171,7 +171,6 @@ object_continue: {
   }
   case '}':
     builder.end_object(*this);
-    depth--;
     goto scope_end;
   default:
     log_error("No comma between object fields");
@@ -180,6 +179,7 @@ object_continue: {
 } // object_continue:
 
 scope_end: {
+  depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_continue; }
   goto object_continue;
@@ -213,7 +213,6 @@ array_continue: {
     goto array_value;
   case ']':
     builder.end_array(*this);
-    depth--;
     goto scope_end;
   default:
     log_error("Missing comma between array values");
