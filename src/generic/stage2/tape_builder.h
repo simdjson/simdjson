@@ -173,7 +173,7 @@ private:
 
   // increment_count increments the count of keys in an object or values in an array.
   really_inline void increment_count(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+    parser.dom_parser.open_containers[parser.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
   }
 
 // private:
@@ -189,19 +189,19 @@ private:
   }
 
   really_inline void start_container(structural_parser &parser) {
-    parser.dom_parser.containing_scope[parser.depth].tape_index = next_tape_index(parser);
-    parser.dom_parser.containing_scope[parser.depth].count = 0;
+    parser.dom_parser.open_containers[parser.depth].tape_index = next_tape_index(parser);
+    parser.dom_parser.open_containers[parser.depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
   }
 
   really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
     // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.containing_scope[parser.depth].tape_index;
+    const uint32_t start_tape_index = parser.dom_parser.open_containers[parser.depth].tape_index;
     tape.append(start_tape_index, end);
     // Write the start tape element, pointing at the end location (and including count)
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.containing_scope[parser.depth].count;
+    const uint32_t count = parser.dom_parser.open_containers[parser.depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
   }

@@ -4,11 +4,13 @@
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-// expectation: sizeof(scope_descriptor) = 64/8.
-struct scope_descriptor {
+// expectation: sizeof(open_container) = 64/8.
+struct open_container {
   uint32_t tape_index; // where, on the tape, does the scope ([,{) begins
   uint32_t count; // how many elements in the scope
-}; // struct scope_descriptor
+}; // struct open_container
+
+static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
 #ifdef SIMDJSON_USE_COMPUTED_GOTO
 typedef void* ret_address_t;
@@ -19,7 +21,7 @@ typedef char ret_address_t;
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */
-  std::unique_ptr<scope_descriptor[]> containing_scope{};
+  std::unique_ptr<open_container[]> open_containers{};
   /** Whether each open container is a [ or { */
   std::unique_ptr<bool[]> is_array{};
   /** Buffer passed to stage 1 */
