@@ -177,10 +177,16 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 
-namespace std::ranges {
+namespace std {
+namespace ranges {
 template<>
 inline constexpr bool enable_view<simdjson::dom::array> = true;
-}
+#if SIMDJSON_EXCEPTIONS
+template<>
+inline constexpr bool enable_view<simdjson::simdjson_result<simdjson::dom::array>> = true;
+#endif // SIMDJSON_EXCEPTIONS
+} // namespace ranges
+} // namespace std
 #endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_DOM_ARRAY_H
