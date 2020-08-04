@@ -34,11 +34,8 @@ public:
     return parser.len - *current_structural;
   }
 
-  really_inline bool past_end(uint32_t n_structural_indexes) {
-    return current_structural >= &parser.structural_indexes[n_structural_indexes];
-  }
-  really_inline bool at_end(uint32_t n_structural_indexes) {
-    return current_structural == &parser.structural_indexes[n_structural_indexes];
+  really_inline bool at_end() {
+    return current_structural == &parser.structural_indexes[parser.n_structural_indexes];
   }
   really_inline bool at_beginning() {
     return current_structural == parser.structural_indexes.get();
