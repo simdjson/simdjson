@@ -43,7 +43,6 @@ struct structural_parser : structural_iterator {
     parser.containing_scope[depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
     parser.is_array[depth] = false;
-    if (depth >= parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     return SUCCESS;
   }
 
