@@ -49,9 +49,6 @@ struct tape_builder {
         return error(TAPE_ERROR, "Non-value found when value was expected!");
     }
   }
-  WARN_UNUSED really_inline error_code string_value(const uint8_t *value) {
-    return parse_string(value);
-  }
   WARN_UNUSED really_inline error_code empty_object() {
     increment_count();
     log_value("empty object");
@@ -100,6 +97,8 @@ struct tape_builder {
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(), internal::tape_type::ROOT);
+    iter.dom_parser.next_structural_index = uint32_t(iter.next_structural - &iter.dom_parser.structural_indexes[0]);
+    if (depth != 0) { return error(TAPE_ERROR, "Unclosed objects or arrays!"); }
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_end_object() {
@@ -159,10 +158,9 @@ private:
   tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
-  friend struct structural_iterator;
 
   really_inline tape_builder(dom_parser_implementation &dom_parser) noexcept
-    : iter(dom_parser),
+    : iter(dom_parser, dom_parser.next_structural_index),
       tape{dom_parser.doc->tape.get()},
       current_string_buf_loc{dom_parser.doc->string_buf.get()}
   {

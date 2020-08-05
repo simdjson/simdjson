@@ -9,9 +9,9 @@ public:
   dom_parser_implementation &dom_parser;
 
   // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser)
+  really_inline structural_iterator(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
     : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[_dom_parser.next_structural_index]},
+      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
       dom_parser{_dom_parser} {
   }
 
@@ -39,14 +39,15 @@ public:
 
 template<typename T>
 WARN_UNUSED really_inline error_code structural_iterator::walk_document(T &visitor) noexcept {
+  // Variable used when one state reads a JSON value that the next state needs
+  const uint8_t *value;
+
   //
   // Start the document
   //
   if (at_end()) { return visitor.error(EMPTY, "Empty document"); }
 
   SIMDJSON_TRY( visitor.start_document() );
-
-  const uint8_t *value;
 
   //
   // Read first value
@@ -101,14 +102,14 @@ object_next: {
       if (*value != '"') { return visitor.error(TAPE_ERROR, "No key in object field"); }
       goto object_colon;
     case '}': SIMDJSON_TRY( visitor.end_object() ); goto generic_next;
-    default: return visitor.error(TAPE_ERROR, "No comma between object fields");
+    default:  return visitor.error(TAPE_ERROR, "No comma between object fields");
   }
 } // object_next:
 
 generic_array_begin: {
   switch (*(value = advance())) {
     case ']': SIMDJSON_TRY( visitor.empty_array() ); goto generic_next;
-    default: SIMDJSON_TRY( visitor.start_array() ); goto array_value;
+    default:  SIMDJSON_TRY( visitor.start_array() ); goto array_value;
   }
 } // generic_array_begin:
 
@@ -125,22 +126,17 @@ array_value: {
     case '[':
       switch (*(value = advance())) {
         case ']': SIMDJSON_TRY( visitor.empty_array() ); goto array_next;
-        default: SIMDJSON_TRY( visitor.start_array() ); goto array_value;
+        default:  SIMDJSON_TRY( visitor.start_array() ); goto array_value;
       }
-    default:
-      SIMDJSON_TRY( visitor.primitive(value) ); goto array_next;
+    default: SIMDJSON_TRY( visitor.primitive(value) ); goto array_next;
   }
 } // array_value:
 
 array_next: {
   switch (advance_char()) {
-    case ',':
-      value = advance();
-      goto array_value;
-    case ']':
-      SIMDJSON_TRY( visitor.end_array() ); goto generic_next;
-    default:
-      return visitor.error(TAPE_ERROR, "Missing comma between fields");
+    case ',': value = advance(); goto array_value;
+    case ']': SIMDJSON_TRY( visitor.end_array() ); goto generic_next;
+    default:  return visitor.error(TAPE_ERROR, "Missing comma between fields");
   }
 } // array_next:
 
@@ -190,13 +186,7 @@ generic_next: {
 } // generic_next:
 
 document_end: {
-  SIMDJSON_TRY( visitor.end_document() );
-
-  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
-
-  if (visitor.depth != 0) { return visitor.error(TAPE_ERROR, "Unclosed objects or arrays!"); }
-
-  return SUCCESS;
+  return visitor.end_document();
 } // document_end:
 } // structural_iterator::walk_document()
 
