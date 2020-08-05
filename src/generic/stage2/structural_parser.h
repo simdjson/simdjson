@@ -16,33 +16,10 @@ struct structural_parser : structural_iterator {
 
   template<bool STREAMING, typename T>
   WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
     : structural_iterator(_dom_parser, start_structural_index) {
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
@@ -53,9 +30,9 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
   //
   // Start the document
   //
-  if (at_end()) { return builder.error(*this, EMPTY, "Empty document"); }
+  if (at_end()) { return builder.error(EMPTY, "Empty document"); }
 
-  SIMDJSON_TRY( builder.start_document(*this) );
+  SIMDJSON_TRY( builder.start_document() );
 
   const uint8_t *value;
 
@@ -76,7 +53,7 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
         }
         goto generic_array_begin;
       }
-      default: SIMDJSON_TRY( builder.root_primitive(*this, value) );
+      default: SIMDJSON_TRY( builder.root_primitive(value) );
     }
     goto document_end;
   }
@@ -86,14 +63,14 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
 //
 generic_object_begin: {
   switch (*(value = advance())) {
-    case '}': SIMDJSON_TRY( builder.empty_object(*this) ); goto generic_next;
-    case '"': SIMDJSON_TRY( builder.start_object(*this) ); goto object_colon;
-    default: return builder.error(*this, TAPE_ERROR, "First field of object missing key");
+    case '}': SIMDJSON_TRY( builder.empty_object() ); goto generic_next;
+    case '"': SIMDJSON_TRY( builder.start_object() ); goto object_colon;
+    default: return builder.error(TAPE_ERROR, "First field of object missing key");
   }
 } // generic_object_begin:
 
 object_colon: {
-  if (advance_char() != ':') { return builder.error(*this, TAPE_ERROR, "First field of object missing :"); }
+  if (advance_char() != ':') { return builder.error(TAPE_ERROR, "First field of object missing :"); }
 } // object_colon:
 
 object_value: {
@@ -101,17 +78,17 @@ object_value: {
   switch (*(value = advance())) {
     case '{':
       switch (*(value = advance())) {
-        case '}': SIMDJSON_TRY( builder.empty_object_field(*this, key) ); goto object_next;
-        case '"': SIMDJSON_TRY( builder.start_object_field(*this, key) ); key = value; goto object_colon;
-        default:  return builder.error(*this, TAPE_ERROR, "First field of object missing key");
+        case '}': SIMDJSON_TRY( builder.empty_object_field(key) ); goto object_next;
+        case '"': SIMDJSON_TRY( builder.start_object_field(key) ); key = value; goto object_colon;
+        default:  return builder.error(TAPE_ERROR, "First field of object missing key");
       }
     case '[':
       switch (*(value = advance())) {
-        case ']': SIMDJSON_TRY( builder.empty_array_field(*this, key) ); goto object_next;
-        default: SIMDJSON_TRY( builder.start_array_field(*this, key) ); goto array_value;
+        case ']': SIMDJSON_TRY( builder.empty_array_field(key) ); goto object_next;
+        default: SIMDJSON_TRY( builder.start_array_field(key) ); goto array_value;
       }
     default:
-      SIMDJSON_TRY( builder.primitive_field(*this, key, value) ); goto object_next;
+      SIMDJSON_TRY( builder.primitive_field(key, value) ); goto object_next;
   }
 } // object_value:
 
@@ -119,17 +96,17 @@ object_next: {
   switch (advance_char()) {
     case ',':
       value = advance();
-      if (*value != '"') { return builder.error(*this, TAPE_ERROR, "No key in object field"); }
+      if (*value != '"') { return builder.error(TAPE_ERROR, "No key in object field"); }
       goto object_colon;
-    case '}': SIMDJSON_TRY( builder.end_object(*this) ); goto generic_next;
-    default: return builder.error(*this, TAPE_ERROR, "No comma between object fields");
+    case '}': SIMDJSON_TRY( builder.end_object() ); goto generic_next;
+    default: return builder.error(TAPE_ERROR, "No comma between object fields");
   }
 } // object_next:
 
 generic_array_begin: {
   switch (*(value = advance())) {
-    case ']': SIMDJSON_TRY( builder.empty_array(*this) ); goto generic_next;
-    default: SIMDJSON_TRY( builder.start_array(*this) ); goto array_value;
+    case ']': SIMDJSON_TRY( builder.empty_array() ); goto generic_next;
+    default: SIMDJSON_TRY( builder.start_array() ); goto array_value;
   }
 } // generic_array_begin:
 
@@ -139,17 +116,17 @@ array_value: {
   switch (*value) {
     case '{':
       switch (*(value = advance())) {
-        case '}': SIMDJSON_TRY( builder.empty_object(*this) ); goto array_next;
-        case '"': SIMDJSON_TRY( builder.start_object(*this) ); goto object_colon;
-        default:  return builder.error(*this, TAPE_ERROR, "First field of object missing key");
+        case '}': SIMDJSON_TRY( builder.empty_object() ); goto array_next;
+        case '"': SIMDJSON_TRY( builder.start_object() ); goto object_colon;
+        default:  return builder.error(TAPE_ERROR, "First field of object missing key");
       }
     case '[':
       switch (*(value = advance())) {
-        case ']': SIMDJSON_TRY( builder.empty_array(*this) ); goto array_next;
-        default: SIMDJSON_TRY( builder.start_array(*this) ); goto array_value;
+        case ']': SIMDJSON_TRY( builder.empty_array() ); goto array_next;
+        default: SIMDJSON_TRY( builder.start_array() ); goto array_value;
       }
     default:
-      SIMDJSON_TRY( builder.primitive(*this, value) ); goto array_next;
+      SIMDJSON_TRY( builder.primitive(value) ); goto array_next;
   }
 } // array_value:
 
@@ -159,9 +136,9 @@ array_next: {
       value = advance();
       goto array_value;
     case ']':
-      SIMDJSON_TRY( builder.end_array(*this) ); goto generic_next;
+      SIMDJSON_TRY( builder.end_array() ); goto generic_next;
     default:
-      return builder.error(*this, TAPE_ERROR, "Missing comma between fields");
+      return builder.error(TAPE_ERROR, "Missing comma between fields");
   }
 } // array_next:
 
@@ -185,22 +162,22 @@ generic_next: {
           // "key": ... -> object
           // "value", ... -> array with string value
           // "value"] -> end of array with string value
-          case ':': SIMDJSON_TRY( builder.try_resume_object(*this) ); goto object_value;
-          case ',': SIMDJSON_TRY( builder.try_resume_array(*this, value) ); goto array_value;
-          case ']': SIMDJSON_TRY( builder.try_resume_array(*this, value) ); SIMDJSON_TRY( builder.end_array(*this) ); goto generic_next;
-          default: return builder.error(*this, TAPE_ERROR, "Missing comma or colon between values");
+          case ':': SIMDJSON_TRY( builder.try_resume_object() ); goto object_value;
+          case ',': SIMDJSON_TRY( builder.try_resume_array(value) ); goto array_value;
+          case ']': SIMDJSON_TRY( builder.try_resume_array(value) ); SIMDJSON_TRY( builder.end_array() ); goto generic_next;
+          default: return builder.error(TAPE_ERROR, "Missing comma or colon between values");
         }
       // , [ ... -> array with array value
       // , { ... -> array with object value
       // , <value> -> array with primitive value
-      case '[': SIMDJSON_TRY( builder.try_resume_array(*this) ); goto generic_array_begin;
-      case '{': SIMDJSON_TRY( builder.try_resume_array(*this) ); goto generic_object_begin;
-      default: SIMDJSON_TRY( builder.try_resume_array(*this) ); goto array_value;
+      case '[': SIMDJSON_TRY( builder.try_resume_array() ); goto generic_array_begin;
+      case '{': SIMDJSON_TRY( builder.try_resume_array() ); goto generic_object_begin;
+      default: SIMDJSON_TRY( builder.try_resume_array() ); goto array_value;
     }
   // ] -> end array, still unsure what comes next
   // } -> end object, still unsure what comes next
-  case ']': SIMDJSON_TRY( builder.try_end_array(*this) ); goto generic_next; // TODO while loop?
-  case '}': SIMDJSON_TRY( builder.try_end_object(*this) ); goto generic_next; // TODO while loop?
+  case ']': SIMDJSON_TRY( builder.try_end_array() ); goto generic_next; // TODO while loop?
+  case '}': SIMDJSON_TRY( builder.try_end_object() ); goto generic_next; // TODO while loop?
   default:
     // If we just ended an array or object, and don't get ] } or , then we might be at document end.
     // We are guaranteed ] } and , will never be at document end.
@@ -211,15 +188,15 @@ generic_next: {
 } // generic_next:
 
 document_end: {
-  SIMDJSON_TRY( builder.end_document(*this) );
+  SIMDJSON_TRY( builder.end_document() );
 
   dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
-  if (depth != 0) { return builder.error(*this, TAPE_ERROR, "Unclosed objects or arrays!"); }
+  if (depth != 0) { return builder.error(TAPE_ERROR, "Unclosed objects or arrays!"); }
 
   // If we didn't make it to the end, it's an error
   if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-    return builder.error(*this, TAPE_ERROR, "More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return builder.error(TAPE_ERROR, "More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
   }
 
   return SUCCESS;
