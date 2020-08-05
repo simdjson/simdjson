@@ -109,11 +109,6 @@ struct tape_builder {
     SIMDJSON_TRY( try_resume_array() );
     return end_array();
   }
-  WARN_UNUSED really_inline error_code try_end_array(const uint8_t *string_value) {
-    SIMDJSON_TRY( try_resume_array() );
-    SIMDJSON_TRY( parse_string(string_value) );
-    return end_array();
-  }
   WARN_UNUSED really_inline error_code try_resume_object() {
     if (depth == 0) { return error(TAPE_ERROR, "Extra values in document"); }
     if (iter.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Missing key in object field"); }
@@ -123,10 +118,6 @@ struct tape_builder {
     if (depth == 0) { return error(TAPE_ERROR, "Extra values in document"); }
     if (!iter.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Key/value pair in array"); }
     return SUCCESS;
-  }
-  WARN_UNUSED really_inline error_code try_resume_array(const uint8_t *string_value) {
-    SIMDJSON_TRY( try_resume_array() );
-    return parse_string(string_value);
   }
 
   WARN_UNUSED really_inline error_code primitive_field(const uint8_t *key, const uint8_t *value) {
