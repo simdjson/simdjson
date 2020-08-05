@@ -9,9 +9,9 @@ public:
   dom_parser_implementation &dom_parser;
 
   // Start a structural 
-  really_inline structural_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  really_inline structural_iterator(dom_parser_implementation &_dom_parser)
     : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+      next_structural{&_dom_parser.structural_indexes[_dom_parser.next_structural_index]},
       dom_parser{_dom_parser} {
   }
   // Get the buffer position of the current structural character

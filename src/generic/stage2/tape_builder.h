@@ -7,8 +7,8 @@ namespace stage2 {
 
 struct tape_builder {
   template<bool STREAMING>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, uint32_t start_structural_index) noexcept {
-    tape_builder builder(dom_parser, start_structural_index);
+  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser) noexcept {
+    tape_builder builder(dom_parser);
     return builder.parser.parse<STREAMING>(builder);
   }
 
@@ -150,8 +150,8 @@ private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom_parser_implementation &dom_parser, uint32_t start_structural_index) noexcept
-    : parser(dom_parser, start_structural_index),
+  really_inline tape_builder(dom_parser_implementation &dom_parser) noexcept
+    : parser(dom_parser),
       tape{dom_parser.doc->tape.get()},
       current_string_buf_loc{dom_parser.doc->string_buf.get()}
   {

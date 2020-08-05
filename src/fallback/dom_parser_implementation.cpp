@@ -327,12 +327,12 @@ namespace SIMDJSON_IMPLEMENTATION {
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   doc = &_doc;
   SIMDJSON_ASSUME(next_structural_index == 0);
-  return stage2::tape_builder::parse<false>(*this, 0);
+  return stage2::tape_builder::parse<false>(*this);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   doc = &_doc;
-  return stage2::tape_builder::parse<true>(*this, next_structural_index);
+  return stage2::tape_builder::parse<true>(*this);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {

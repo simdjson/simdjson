@@ -18,8 +18,8 @@ struct structural_parser : structural_iterator {
   WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
+  really_inline structural_parser(dom_parser_implementation &_dom_parser)
+    : structural_iterator(_dom_parser) {
   }
 }; // struct structural_parser
 
