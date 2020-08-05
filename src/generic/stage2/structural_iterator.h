@@ -21,9 +21,6 @@ public:
   really_inline const uint8_t* advance() {
     return &buf[*(next_structural++)];
   }
-  really_inline char advance_char() {
-    return buf[*(next_structural++)];
-  }
   really_inline size_t remaining_len() {
     return dom_parser.len - *(next_structural-1);
   }
@@ -52,31 +49,30 @@ WARN_UNUSED really_inline error_code structural_iterator::walk_document(T &visit
   //
   // Read first value
   //
-  {
-    switch (*(value = advance())) {
-      case '{': goto generic_object_begin;
-      case '[': goto generic_array_begin;
-      default: SIMDJSON_TRY( visitor.root_primitive(value) );
-    }
-    goto document_end;
+  switch (*(value = advance())) {
+    case '{': goto generic_object_begin;
+    case '[': goto generic_array_begin;
+    default: SIMDJSON_TRY( visitor.root_primitive(value) ); goto document_end;
   }
 
 //
 // Object parser states
 //
-generic_object_begin: {
+generic_object_begin:
   switch (*(value = advance())) {
     case '}': SIMDJSON_TRY( visitor.empty_object() ); goto generic_next;
     case '"': SIMDJSON_TRY( visitor.start_object() ); goto object_colon;
     default: return visitor.error(TAPE_ERROR, "First field of object missing key");
   }
-} // generic_object_begin:
 
-object_colon: {
-  if (advance_char() != ':') { return visitor.error(TAPE_ERROR, "First field of object missing :"); }
-} // object_colon:
+object_colon:
+  switch (*advance()) {
+    case ':': goto object_value;
+    default: return visitor.error(TAPE_ERROR, "First field of object missing :");
+  }
 
 object_value: {
+  // Pick up key from previous state
   const uint8_t *key = value;
   switch (*(value = advance())) {
     case '{':
@@ -95,27 +91,25 @@ object_value: {
   }
 } // object_value:
 
-object_next: {
-  switch (advance_char()) {
+object_next:
+  switch (*advance()) {
     case ',':
-      value = advance();
-      if (*value != '"') { return visitor.error(TAPE_ERROR, "No key in object field"); }
-      goto object_colon;
+      switch (*(value = advance())) {
+        case '"': goto object_colon;
+        default: return visitor.error(TAPE_ERROR, "No key in object field");
+      }
     case '}': SIMDJSON_TRY( visitor.end_object() ); goto generic_next;
     default:  return visitor.error(TAPE_ERROR, "No comma between object fields");
   }
-} // object_next:
 
-generic_array_begin: {
+generic_array_begin:
   switch (*(value = advance())) {
     case ']': SIMDJSON_TRY( visitor.empty_array() ); goto generic_next;
     default:  SIMDJSON_TRY( visitor.start_array() ); goto array_value;
   }
-} // generic_array_begin:
 
-array_value: {
-  // TODO this is sort of a hiccup; it forces array_next to advance() to match
-  // the fact that generic_array_begin already advances. See if refactoring that helps or not.
+array_value:
+  // Pick up value from previous state
   switch (*value) {
     case '{':
       switch (*(value = advance())) {
@@ -130,18 +124,17 @@ array_value: {
       }
     default: SIMDJSON_TRY( visitor.primitive(value) ); goto array_next;
   }
-} // array_value:
 
-array_next: {
-  switch (advance_char()) {
+array_next:
+  switch (*advance()) {
     case ',': value = advance(); goto array_value;
     case ']': SIMDJSON_TRY( visitor.end_array() ); goto generic_next;
     default:  return visitor.error(TAPE_ERROR, "Missing comma between fields");
   }
-} // array_next:
 
 //
-// After a value, when we don't know yet what we're going to see ...
+// After an object or array ends, we don't know whether the parent is an array or an object.
+// We figure that out by looking at what comes next.
 //
 // , "key": - object
 // , "key", - array
@@ -150,19 +143,20 @@ array_next: {
 // ]
 // }
 //
-generic_next: {
-  switch (advance_char()) {
+generic_next:
+  switch (*advance()) {
   case ',':
     // The next thing after the comma is either a key or a value.
     switch (*(value = advance())) {
+      // If it's a string, it might be a key ...
       case '"':
-        switch (advance_char()) {
+        switch (*advance()) {
           // "key": ... -> object
           // "value", ... -> array with string value
           // "value"] -> end of array with string value
           case ':': SIMDJSON_TRY( visitor.try_resume_object() ); goto object_value;
           case ',': SIMDJSON_TRY( visitor.try_resume_array(value) ); goto array_value;
-          case ']': SIMDJSON_TRY( visitor.try_resume_array(value) ); SIMDJSON_TRY( visitor.end_array() ); goto generic_next;
+          case ']': SIMDJSON_TRY( visitor.try_end_array(value) ); goto generic_next;
           default: return visitor.error(TAPE_ERROR, "Missing comma or colon between values");
         }
       // , [ ... -> array with array value
@@ -183,11 +177,10 @@ generic_next: {
     next_structural--;
     goto document_end;
   }
-} // generic_next:
 
-document_end: {
+document_end:
   return visitor.end_document();
-} // document_end:
+
 } // structural_iterator::walk_document()
 
 } // namespace stage2
