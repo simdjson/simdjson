@@ -27,24 +27,6 @@ struct structural_parser : structural_iterator {
     : structural_iterator(_dom_parser, start_structural_index) {
   }
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
-
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
   really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
   }
@@ -71,7 +53,8 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
+  if (at_end()) { return builder.error(*this, EMPTY, "Empty document"); }
+
   SIMDJSON_TRY( builder.start_document(*this) );
 
   const uint8_t *value;
@@ -105,12 +88,12 @@ generic_object_begin: {
   switch (*(value = advance())) {
     case '}': SIMDJSON_TRY( builder.empty_object(*this) ); goto generic_next;
     case '"': SIMDJSON_TRY( builder.start_object(*this) ); goto object_colon;
-    default: log_error("First field of object missing key"); return TAPE_ERROR;
+    default: return builder.error(*this, TAPE_ERROR, "First field of object missing key");
   }
 } // generic_object_begin:
 
 object_colon: {
-  if (advance_char() != ':') { log_error("First field of object missing :"); return TAPE_ERROR; }
+  if (advance_char() != ':') { return builder.error(*this, TAPE_ERROR, "First field of object missing :"); }
 } // object_colon:
 
 object_value: {
@@ -120,7 +103,7 @@ object_value: {
       switch (*(value = advance())) {
         case '}': SIMDJSON_TRY( builder.empty_object_field(*this, key) ); goto object_next;
         case '"': SIMDJSON_TRY( builder.start_object_field(*this, key) ); key = value; goto object_colon;
-        default:  log_error("First field of object missing key"); return TAPE_ERROR;
+        default:  return builder.error(*this, TAPE_ERROR, "First field of object missing key");
       }
     case '[':
       switch (*(value = advance())) {
@@ -136,10 +119,10 @@ object_next: {
   switch (advance_char()) {
     case ',':
       value = advance();
-      if (*value != '"') { log_error("No key in object field"); return TAPE_ERROR; }
+      if (*value != '"') { return builder.error(*this, TAPE_ERROR, "No key in object field"); }
       goto object_colon;
     case '}': SIMDJSON_TRY( builder.end_object(*this) ); goto generic_next;
-    default: log_error("No comma between object fields"); return TAPE_ERROR;
+    default: return builder.error(*this, TAPE_ERROR, "No comma between object fields");
   }
 } // object_next:
 
@@ -158,7 +141,7 @@ array_value: {
       switch (*(value = advance())) {
         case '}': SIMDJSON_TRY( builder.empty_object(*this) ); goto array_next;
         case '"': SIMDJSON_TRY( builder.start_object(*this) ); goto object_colon;
-        default:  log_error("First field of object missing key"); return TAPE_ERROR;
+        default:  return builder.error(*this, TAPE_ERROR, "First field of object missing key");
       }
     case '[':
       switch (*(value = advance())) {
@@ -178,7 +161,7 @@ array_next: {
     case ']':
       SIMDJSON_TRY( builder.end_array(*this) ); goto generic_next;
     default:
-      log_error("Missing comma between fields"); return TAPE_ERROR;
+      return builder.error(*this, TAPE_ERROR, "Missing comma between fields");
   }
 } // array_next:
 
@@ -205,7 +188,7 @@ generic_next: {
           case ':': SIMDJSON_TRY( builder.try_resume_object(*this) ); goto object_value;
           case ',': SIMDJSON_TRY( builder.try_resume_array(*this, value) ); goto array_value;
           case ']': SIMDJSON_TRY( builder.try_resume_array(*this, value) ); SIMDJSON_TRY( builder.end_array(*this) ); goto generic_next;
-          default: log_error("Missing comma or colon between values"); return TAPE_ERROR;
+          default: return builder.error(*this, TAPE_ERROR, "Missing comma or colon between values");
         }
       // , [ ... -> array with array value
       // , { ... -> array with object value
@@ -229,7 +212,17 @@ generic_next: {
 
 document_end: {
   SIMDJSON_TRY( builder.end_document(*this) );
-  return finish<STREAMING>();
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  if (depth != 0) { return builder.error(*this, TAPE_ERROR, "Unclosed objects or arrays!"); }
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    return builder.error(*this, TAPE_ERROR, "More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+  }
+
+  return SUCCESS;
 } // document_end:
 
 } // parse_structurals()

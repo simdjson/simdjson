@@ -27,8 +27,7 @@ private:
       case '5': case '6': case '7': case '8': case '9':
         return parse_root_number(parser, value);
       default:
-        parser.log_error("Document starts with a non-value character");
-        return TAPE_ERROR;
+        return error(parser, TAPE_ERROR, "Document starts with a non-value character");
     }
   }
   WARN_UNUSED really_inline error_code primitive(structural_parser &parser, const uint8_t *value) {
@@ -43,8 +42,7 @@ private:
       case '5': case '6': case '7': case '8': case '9':
         return parse_number(parser, value);
       default:
-        parser.log_error("Non-value found when value was expected!");
-        return TAPE_ERROR;
+        return error(parser, TAPE_ERROR, "Non-value found when value was expected!");
     }
   }
   WARN_UNUSED really_inline error_code string_value(structural_parser &parser, const uint8_t *value) {
@@ -109,13 +107,13 @@ private:
     return end_array(parser);
   }
   WARN_UNUSED really_inline error_code try_resume_object(structural_parser &parser) {
-    if (parser.depth == 0) { parser.log_error("Extra values in document"); return TAPE_ERROR; }
-    if (parser.dom_parser.is_array[parser.depth]) { parser.log_error("Missing key in object field"); return TAPE_ERROR; }
+    if (parser.depth == 0) { return error(parser, TAPE_ERROR, "Extra values in document"); }
+    if (parser.dom_parser.is_array[parser.depth]) { return error(parser, TAPE_ERROR, "Missing key in object field"); }
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_resume_array(structural_parser &parser) {
-    if (parser.depth == 0) { parser.log_error("Extra values in document"); return TAPE_ERROR; }
-    if (!parser.dom_parser.is_array[parser.depth]) { parser.log_error("Key/value pair in array"); return TAPE_ERROR; }
+    if (parser.depth == 0) { return error(parser, TAPE_ERROR, "Extra values in document"); }
+    if (!parser.dom_parser.is_array[parser.depth]) { return error(parser, TAPE_ERROR, "Key/value pair in array"); }
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_resume_array(structural_parser &parser, const uint8_t *string_value) {
@@ -143,6 +141,10 @@ private:
     SIMDJSON_TRY( parse_key(parser, key) );
     return empty_array(parser);
   }
+  WARN_UNUSED really_inline error_code error(structural_parser &parser, error_code _error, const char *message) {
+    parser.log_error(message);
+    return _error;
+  }
 
 private:
   WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
@@ -152,17 +154,14 @@ private:
     parser.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(parser);
     dst = stringparsing::parse_string(value, dst);
-    if (dst == nullptr) {
-      parser.log_error("Invalid escape in string");
-      return STRING_ERROR;
-    }
+    if (dst == nullptr) { return error(parser, STRING_ERROR, "Invalid escape in string"); }
     on_end_string(dst);
     return SUCCESS;
   }
 
   WARN_UNUSED really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
     parser.log_value("number");
-    if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
+    if (!numberparsing::parse_number(value, tape)) { return error(parser, NUMBER_ERROR, "Invalid number"); }
     return SUCCESS;
   }
 
