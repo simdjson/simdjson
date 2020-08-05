@@ -318,7 +318,6 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 //
 #include "fallback/stringparsing.h"
 #include "fallback/numberparsing.h"
-#include "generic/stage2/structural_parser.h"
 #include "generic/stage2/tape_builder.h"
 
 namespace {

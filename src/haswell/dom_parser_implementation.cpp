@@ -76,7 +76,6 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 //
 #include "haswell/stringparsing.h"
 #include "haswell/numberparsing.h"
-#include "generic/stage2/structural_parser.h"
 #include "generic/stage2/tape_builder.h"
 
 //

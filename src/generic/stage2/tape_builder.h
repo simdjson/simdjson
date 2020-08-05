@@ -1,3 +1,5 @@
+#include "generic/stage2/logger.h"
+#include "generic/stage2/structural_iterator.h"
 #include "generic/stage2/tape_writer.h"
 #include "generic/stage2/atomparsing.h"
 
@@ -8,8 +10,9 @@ namespace stage2 {
 struct tape_builder {
   template<bool STREAMING>
   WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser) noexcept {
+    logger::log_start();
     tape_builder builder(dom_parser);
-    return builder.parser.parse<STREAMING>(builder);
+    return builder.iter.walk_document<STREAMING>(builder);
   }
 
   WARN_UNUSED really_inline error_code root_primitive(const uint8_t *value) {
@@ -58,25 +61,25 @@ struct tape_builder {
   WARN_UNUSED really_inline error_code start_document() {
     log_start_value("document");
     start_container();
-    parser.dom_parser.is_array[depth] = false;
+    iter.dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code start_object() {
     increment_count();
     depth++;
-    if (depth >= parser.dom_parser.max_depth()) { return DEPTH_ERROR; }
+    if (depth >= iter.dom_parser.max_depth()) { return DEPTH_ERROR; }
     log_start_value("object");
     start_container();
-    parser.dom_parser.is_array[depth] = false;
+    iter.dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code start_array() {
     increment_count();
     depth++;
-    if (depth >= parser.dom_parser.max_depth()) { return DEPTH_ERROR; }
+    if (depth >= iter.dom_parser.max_depth()) { return DEPTH_ERROR; }
     log_start_value("array");
     start_container();
-    parser.dom_parser.is_array[depth] = true;
+    iter.dom_parser.is_array[depth] = true;
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code end_object() {
@@ -91,7 +94,7 @@ struct tape_builder {
     log_end_value("document");
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(), internal::tape_type::ROOT);
+    tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(), internal::tape_type::ROOT);
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_end_object() {
@@ -104,12 +107,12 @@ struct tape_builder {
   }
   WARN_UNUSED really_inline error_code try_resume_object() {
     if (depth == 0) { return error(TAPE_ERROR, "Extra values in document"); }
-    if (parser.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Missing key in object field"); }
+    if (iter.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Missing key in object field"); }
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_resume_array() {
     if (depth == 0) { return error(TAPE_ERROR, "Extra values in document"); }
-    if (!parser.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Key/value pair in array"); }
+    if (!iter.dom_parser.is_array[depth]) { return error(TAPE_ERROR, "Key/value pair in array"); }
     return SUCCESS;
   }
   WARN_UNUSED really_inline error_code try_resume_array(const uint8_t *string_value) {
@@ -144,38 +147,38 @@ struct tape_builder {
 
 private:
   /** Parser we're using to build the tape */
-  structural_parser parser;
+  structural_iterator iter;
   /** Current depth (nested objects and arrays) */
   uint32_t depth{0};
   /** Next location to write to tape */
   tape_writer tape;
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
-  friend struct structural_parser;
+  friend struct structural_iterator;
 
   really_inline tape_builder(dom_parser_implementation &dom_parser) noexcept
-    : parser(dom_parser),
+    : iter(dom_parser),
       tape{dom_parser.doc->tape.get()},
       current_string_buf_loc{dom_parser.doc->string_buf.get()}
   {
   }
 
   really_inline void log_value(const char *type) {
-    logger::log_line(parser, "", type, "");
+    logger::log_line(iter, "", type, "");
   }
 
   really_inline void log_start_value(const char *type) {
-    logger::log_line(parser, "+", type, "");
+    logger::log_line(iter, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
   really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(parser, "-", type, "");
+    logger::log_line(iter, "-", type, "");
   }
 
   really_inline void log_error(const char *error) {
-    logger::log_line(parser, "", "ERROR", error);
+    logger::log_line(iter, "", "ERROR", error);
   }
 
   WARN_UNUSED really_inline error_code parse_key(const uint8_t *value) {
@@ -210,12 +213,12 @@ private:
     // practice unless you are in the strange scenario where you have many JSON
     // documents made of single atoms.
     //
-    uint8_t *copy = static_cast<uint8_t *>(malloc(parser.remaining_len() + SIMDJSON_PADDING));
+    uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
     if (copy == nullptr) {
       return MEMALLOC;
     }
-    memcpy(copy, value, parser.remaining_len());
-    memset(copy + parser.remaining_len(), ' ', SIMDJSON_PADDING);
+    memcpy(copy, value, iter.remaining_len());
+    memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
     error_code error = parse_number(copy);
     free(copy);
     return error;
@@ -230,7 +233,7 @@ private:
 
   WARN_UNUSED really_inline error_code parse_root_true_atom(const uint8_t *value) {
     log_value("true");
-    if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
+    if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
@@ -244,7 +247,7 @@ private:
 
   WARN_UNUSED really_inline error_code parse_root_false_atom(const uint8_t *value) {
     log_value("false");
-    if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
+    if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
@@ -258,18 +261,18 @@ private:
 
   WARN_UNUSED really_inline error_code parse_root_null_atom(const uint8_t *value) {
     log_value("null");
-    if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
+    if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
   // increment_count increments the count of keys in an object or values in an array.
   really_inline void increment_count() {
-    parser.dom_parser.open_containers[depth].count++; // we have a key value pair in the object at parser.dom_depth - 1
+    iter.dom_parser.open_containers[depth].count++; // we have a key value pair in the object at iter.dom_depth - 1
   }
 
   really_inline uint32_t next_tape_index() {
-    return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
+    return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
   }
 
   WARN_UNUSED really_inline error_code empty_container(internal::tape_type start, internal::tape_type end) {
@@ -280,28 +283,28 @@ private:
   }
 
   really_inline void start_container() {
-    parser.dom_parser.open_containers[depth].tape_index = next_tape_index();
-    parser.dom_parser.open_containers[depth].count = 0;
+    iter.dom_parser.open_containers[depth].tape_index = next_tape_index();
+    iter.dom_parser.open_containers[depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
   }
 
   WARN_UNUSED really_inline error_code end_container(internal::tape_type start, internal::tape_type end) noexcept {
     // Write the ending tape element, pointing at the start location
-    const uint32_t start_tape_index = parser.dom_parser.open_containers[depth].tape_index;
+    const uint32_t start_tape_index = iter.dom_parser.open_containers[depth].tape_index;
     tape.append(start_tape_index, end);
     // Write the start tape element, pointing at the end location (and including count)
     // count can overflow if it exceeds 24 bits... so we saturate
     // the convention being that a cnt of 0xffffff or more is undetermined in value (>=  0xffffff).
-    const uint32_t count = parser.dom_parser.open_containers[depth].count;
+    const uint32_t count = iter.dom_parser.open_containers[depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
-    tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
+    tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index() | (uint64_t(cntsat) << 32), start);
     depth--;
     return SUCCESS;
   }
 
   really_inline uint8_t *on_start_string() noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
-    tape.append(current_string_buf_loc - parser.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
+    tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);
   }
 
