@@ -11,9 +11,6 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
-  uint32_t depth{0};
-
   template<bool STREAMING, typename T>
   WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
 
@@ -192,7 +189,7 @@ document_end: {
 
   dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
-  if (depth != 0) { return builder.error(TAPE_ERROR, "Unclosed objects or arrays!"); }
+  if (builder.depth != 0) { return builder.error(TAPE_ERROR, "Unclosed objects or arrays!"); }
 
   // If we didn't make it to the end, it's an error
   if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
