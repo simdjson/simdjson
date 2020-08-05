@@ -53,18 +53,8 @@ WARN_UNUSED really_inline error_code structural_iterator::walk_document(T &visit
   //
   {
     switch (*(value = advance())) {
-      case '{':
-        goto generic_object_begin;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
-            return TAPE_ERROR;
-          }
-        }
-        goto generic_array_begin;
-      }
+      case '{': goto generic_object_begin;
+      case '[': goto generic_array_begin;
       default: SIMDJSON_TRY( visitor.root_primitive(value) );
     }
     goto document_end;
