@@ -163,6 +163,9 @@ really_inline error_code scan() {
       return CAPACITY; // If the buffer is partial but the document is incomplete, it's too big to parse.
     }
     parser.n_structural_indexes = new_structural_indexes;
+    parser.structural_indexes[new_structural_indexes+2] = 0;
+    parser.structural_indexes[new_structural_indexes+1] = parser.structural_indexes[new_structural_indexes];
+    parser.structural_indexes[new_structural_indexes] = parser.structural_indexes[0];
   }
 
   return error;

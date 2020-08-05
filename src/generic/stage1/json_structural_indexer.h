@@ -203,7 +203,7 @@ really_inline error_code json_structural_indexer::finish(dom_parser_implementati
    * starts with [, it should end with ]. If we enforce that rule, then we would get
    * ][[ which is invalid.
    **/
-  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+  parser.structural_indexes[parser.n_structural_indexes] = parser.structural_indexes[0];
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;

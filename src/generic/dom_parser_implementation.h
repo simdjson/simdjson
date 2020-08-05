@@ -12,11 +12,7 @@ struct open_container {
 
 static_assert(sizeof(open_container) == 64/8, "Open container must be 64 bits");
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
+#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
 
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:

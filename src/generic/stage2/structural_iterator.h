@@ -42,6 +42,9 @@ public:
   really_inline bool at_end() {
     return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
   }
+  really_inline bool past_end() {
+    return next_structural > &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+  }
   really_inline bool at_beginning() {
     return next_structural == dom_parser.structural_indexes.get();
   }

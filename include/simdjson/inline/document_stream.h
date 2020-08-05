@@ -177,7 +177,7 @@ inline void document_stream::next() noexcept {
 }
 
 inline size_t document_stream::next_batch_start() const noexcept {
-  return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
+  return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes+1];
 }
 
 inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {

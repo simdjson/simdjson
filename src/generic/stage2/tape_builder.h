@@ -16,7 +16,7 @@ struct tape_builder {
 private:
   friend struct structural_parser;
 
-  really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code root_primitive(structural_parser &parser, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(parser, value);
       case 't': return parse_root_true_atom(parser, value);
@@ -31,7 +31,8 @@ private:
         return TAPE_ERROR;
     }
   }
-  really_inline error_code parse_primitive(structural_parser &parser, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code primitive(structural_parser &parser, const uint8_t *value) {
+    increment_count(parser);
     switch (*value) {
       case '"': return parse_string(parser, value);
       case 't': return parse_true_atom(parser, value);
@@ -46,46 +47,104 @@ private:
         return TAPE_ERROR;
     }
   }
-  really_inline void empty_object(structural_parser &parser) {
-    parser.log_value("empty object");
-    empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+  WARN_UNUSED really_inline error_code string_value(structural_parser &parser, const uint8_t *value) {
+    return parse_string(parser, value);
   }
-  really_inline void empty_array(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code empty_object(structural_parser &parser) {
+    increment_count(parser);
+    parser.log_value("empty object");
+    return empty_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+  }
+  WARN_UNUSED really_inline error_code empty_array(structural_parser &parser) {
+    increment_count(parser);
     parser.log_value("empty array");
-    empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+    return empty_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
-  really_inline void start_document(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code start_document(structural_parser &parser) {
     parser.log_start_value("document");
     start_container(parser);
     parser.dom_parser.is_array[parser.depth] = false;
+    return SUCCESS;
   }
-  really_inline void start_object(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code start_object(structural_parser &parser) {
+    increment_count(parser);
+    parser.depth++;
+    if (parser.depth >= parser.dom_parser.max_depth()) { return DEPTH_ERROR; }
     parser.log_start_value("object");
     start_container(parser);
     parser.dom_parser.is_array[parser.depth] = false;
+    return SUCCESS;
   }
-  really_inline void start_array(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code start_array(structural_parser &parser) {
+    increment_count(parser);
+    parser.depth++;
+    if (parser.depth >= parser.dom_parser.max_depth()) { return DEPTH_ERROR; }
     parser.log_start_value("array");
     start_container(parser);
     parser.dom_parser.is_array[parser.depth] = true;
+    return SUCCESS;
   }
-
-  really_inline void end_object(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code end_object(structural_parser &parser) {
     parser.log_end_value("object");
-    end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+    return end_container(parser, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  really_inline void end_array(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code end_array(structural_parser &parser) {
     parser.log_end_value("array");
-    end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+    return end_container(parser, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
-  really_inline void end_document(structural_parser &parser) {
+  WARN_UNUSED really_inline error_code end_document(structural_parser &parser) {
     parser.log_end_value("document");
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
+    return SUCCESS;
+  }
+  WARN_UNUSED really_inline error_code try_end_object(structural_parser &parser) {
+    SIMDJSON_TRY( try_resume_object(parser) );
+    return end_object(parser);
+  }
+  WARN_UNUSED really_inline error_code try_end_array(structural_parser &parser) {
+    SIMDJSON_TRY( try_resume_array(parser) );
+    return end_array(parser);
+  }
+  WARN_UNUSED really_inline error_code try_resume_object(structural_parser &parser) {
+    if (parser.depth == 0) { parser.log_error("Extra values in document"); return TAPE_ERROR; }
+    if (parser.dom_parser.is_array[parser.depth]) { parser.log_error("Missing key in object field"); return TAPE_ERROR; }
+    return SUCCESS;
+  }
+  WARN_UNUSED really_inline error_code try_resume_array(structural_parser &parser) {
+    if (parser.depth == 0) { parser.log_error("Extra values in document"); return TAPE_ERROR; }
+    if (!parser.dom_parser.is_array[parser.depth]) { parser.log_error("Key/value pair in array"); return TAPE_ERROR; }
+    return SUCCESS;
+  }
+  WARN_UNUSED really_inline error_code try_resume_array(structural_parser &parser, const uint8_t *string_value) {
+    SIMDJSON_TRY( try_resume_array(parser) );
+    return parse_string(parser, string_value);
   }
 
+  WARN_UNUSED really_inline error_code primitive_field(structural_parser &parser, const uint8_t *key, const uint8_t *value) {
+    SIMDJSON_TRY( parse_key(parser, key) );
+    return primitive(parser, value);
+  }
+  WARN_UNUSED really_inline error_code start_object_field(structural_parser &parser, const uint8_t *key) {
+    SIMDJSON_TRY( parse_key(parser, key) );
+    return start_object(parser);
+  }
+  WARN_UNUSED really_inline error_code start_array_field(structural_parser &parser, const uint8_t *key) {
+    SIMDJSON_TRY( parse_key(parser, key) );
+    return start_array(parser);
+  }
+  WARN_UNUSED really_inline error_code empty_object_field(structural_parser &parser, const uint8_t *key) {
+    SIMDJSON_TRY( parse_key(parser, key) );
+    return empty_object(parser);
+  }
+  WARN_UNUSED really_inline error_code empty_array_field(structural_parser &parser, const uint8_t *key) {
+    SIMDJSON_TRY( parse_key(parser, key) );
+    return empty_array(parser);
+  }
+
+private:
   WARN_UNUSED really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
     return parse_string(parser, value, true);
   }
@@ -185,10 +244,11 @@ private:
     return uint32_t(tape.next_tape_loc - parser.dom_parser.doc->tape.get());
   }
 
-  really_inline void empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
+  WARN_UNUSED really_inline error_code empty_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) {
     auto start_index = next_tape_index(parser);
     tape.append(start_index+2, start);
     tape.append(start_index, end);
+    return SUCCESS;
   }
 
   really_inline void start_container(structural_parser &parser) {
@@ -197,7 +257,7 @@ private:
     tape.skip(); // We don't actually *write* the start element until the end.
   }
 
-  really_inline void end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
+  WARN_UNUSED really_inline error_code end_container(structural_parser &parser, internal::tape_type start, internal::tape_type end) noexcept {
     // Write the ending tape element, pointing at the start location
     const uint32_t start_tape_index = parser.dom_parser.open_containers[parser.depth].tape_index;
     tape.append(start_tape_index, end);
@@ -207,6 +267,8 @@ private:
     const uint32_t count = parser.dom_parser.open_containers[parser.depth].count;
     const uint32_t cntsat = count > 0xFFFFFF ? 0xFFFFFF : count;
     tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser) | (uint64_t(cntsat) << 32), start);
+    parser.depth--;
+    return SUCCESS;
   }
 
   really_inline uint8_t *on_start_string(structural_parser &parser) noexcept {
