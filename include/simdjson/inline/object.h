@@ -272,4 +272,13 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ob
 
 } // namespace simdjson
 
+#if defined(__cpp_lib_ranges)
+static_assert(std::ranges::view<simdjson::dom::object>);
+static_assert(std::ranges::sized_range<simdjson::dom::object>);
+#if SIMDJSON_EXCEPTIONS
+static_assert(std::ranges::view<simdjson::simdjson_result<simdjson::dom::object>>);
+static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::object>>);
+#endif // SIMDJSON_EXCEPTIONS
+#endif // defined(__cpp_lib_ranges)
+
 #endif // SIMDJSON_INLINE_OBJECT_H
