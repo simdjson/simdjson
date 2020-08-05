@@ -47,15 +47,6 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
   #define DEBUG_BLOCK(name, block)
 #endif
 
-#if !defined(SIMDJSON_REGULAR_VISUAL_STUDIO) && !defined(SIMDJSON_NO_COMPUTED_GOTO)
-  // We assume here that *only* regular visual studio
-  // does not support computed gotos.
-  // Implemented using Labels as Values which works in GCC and CLANG (and maybe
-  // also in Intel's compiler), but won't work in MSVC.
-  // Compute gotos are good for performance, enable them if you can.
-  #define SIMDJSON_USE_COMPUTED_GOTO
-#endif
-
 // Align to N-byte boundary
 #define ROUNDUP_N(a, n) (((a) + ((n)-1)) & ~((n)-1))
 #define ROUNDDOWN_N(a, n) ((a) & ~((n)-1))
