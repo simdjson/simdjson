@@ -15,7 +15,7 @@ public:
       dom_parser{_dom_parser} {
   }
 
-  template<bool STREAMING, typename T>
+  template<typename T>
   WARN_UNUSED really_inline error_code walk_document(T &visitor) noexcept;
 
   really_inline const uint8_t* advance() {
@@ -37,7 +37,7 @@ public:
 
 }; // struct structural_iterator
 
-template<bool STREAMING, typename T>
+template<typename T>
 WARN_UNUSED really_inline error_code structural_iterator::walk_document(T &visitor) noexcept {
   //
   // Start the document
@@ -195,11 +195,6 @@ document_end: {
   dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
   if (visitor.depth != 0) { return visitor.error(TAPE_ERROR, "Unclosed objects or arrays!"); }
-
-  // If we didn't make it to the end, it's an error
-  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-    return visitor.error(TAPE_ERROR, "More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-  }
 
   return SUCCESS;
 } // document_end:

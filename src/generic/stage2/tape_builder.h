@@ -12,7 +12,12 @@ struct tape_builder {
   WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser) noexcept {
     logger::log_start();
     tape_builder builder(dom_parser);
-    return builder.iter.walk_document<STREAMING>(builder);
+    SIMDJSON_TRY( builder.iter.walk_document(builder) );
+    // If we didn't make it to the end, it's an error
+    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+      return builder.error(TAPE_ERROR, "More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    }
+    return SUCCESS;
   }
 
   WARN_UNUSED really_inline error_code root_primitive(const uint8_t *value) {

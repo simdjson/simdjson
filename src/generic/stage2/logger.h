@@ -38,6 +38,9 @@ namespace logger {
       printf("%s\n", message);
     }
   }
+  static really_inline void log_error(const char *message) {
+    log_string(message);
+  }
 
   // Logs a single line of 
   template<typename S>
