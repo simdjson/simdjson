@@ -33,12 +33,6 @@ namespace logger {
     }
   }
 
-  static really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
-    }
-  }
-
   // Logs a single line of 
   template<typename S>
   static really_inline void log_line(S &structurals, const char *title_prefix, const char *title, const char *detail) {

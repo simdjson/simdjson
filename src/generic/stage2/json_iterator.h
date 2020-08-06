@@ -190,7 +190,7 @@ document_end:
 
   // If we didn't make it to the end, it's an error
   if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
     return TAPE_ERROR;
   }
 
