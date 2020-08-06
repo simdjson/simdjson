@@ -20,6 +20,20 @@ struct tape_builder {
     return SUCCESS;
   }
 
+  WARN_UNUSED really_inline error_code start() {
+    logger::log_start();
+    return SUCCESS;
+  }
+  WARN_UNUSED really_inline error_code start_document() {
+    log_start_value("document");
+    start_container();
+    iter.dom_parser.is_array[depth] = false;
+    return SUCCESS;
+  }
+  WARN_UNUSED really_inline error_code empty_document() {
+    return EMPTY;
+  }
+
   WARN_UNUSED really_inline error_code root_primitive(const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(value);
@@ -60,12 +74,6 @@ struct tape_builder {
     return empty_container(internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
-  WARN_UNUSED really_inline error_code start_document() {
-    log_start_value("document");
-    start_container();
-    iter.dom_parser.is_array[depth] = false;
-    return SUCCESS;
-  }
   WARN_UNUSED really_inline error_code start_object() {
     increment_count();
     depth++;

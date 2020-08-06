@@ -7,12 +7,15 @@ public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
+  // Variable used when one state reads a JSON value that the next state needs
+  const uint8_t *value;
 
   // Start a structural 
   really_inline structural_iterator(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
     : buf{_dom_parser.buf},
       next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
+      dom_parser{_dom_parser},
+      value{} {
   }
 
   template<typename T>
@@ -36,14 +39,11 @@ public:
 
 template<typename T>
 WARN_UNUSED really_inline error_code structural_iterator::walk_document(T &visitor) noexcept {
-  // Variable used when one state reads a JSON value that the next state needs
-  const uint8_t *value;
-
   //
   // Start the document
   //
-  if (at_end()) { return visitor.error(EMPTY, "Empty document"); }
-
+  SIMDJSON_TRY( visitor.start() );
+  if (at_end()) { return visitor.empty_document(); }
   SIMDJSON_TRY( visitor.start_document() );
 
   //
