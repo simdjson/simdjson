@@ -43,24 +43,6 @@ struct structural_parser : structural_iterator {
     return false;
   }
 
-  template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
-    dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
-
-    if (depth != 0) {
-      log_error("Unclosed objects or arrays!");
-      return TAPE_ERROR;
-    }
-
-    // If we didn't make it to the end, it's an error
-    if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
-      logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
-      return TAPE_ERROR;
-    }
-
-    return SUCCESS;
-  }
-
   really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
   }
@@ -201,7 +183,21 @@ array_continue: {
 
 document_end: {
   visitor.end_document(*this);
-  return finish<STREAMING>();
+
+  dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
+
+  if (depth != 0) {
+    log_error("Unclosed objects or arrays!");
+    return TAPE_ERROR;
+  }
+
+  // If we didn't make it to the end, it's an error
+  if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
+    logger::log_string("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
+    return TAPE_ERROR;
+  }
+
+  return SUCCESS;
 } // document_end:
 
 } // parse_structurals()
