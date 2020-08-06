@@ -75,17 +75,15 @@ object_value: {
   // Pick up key from previous state
   const uint8_t *key = value;
   switch (*(value = advance())) {
-    case '{':
-      switch (*(value = advance())) {
-        case '}': SIMDJSON_TRY( visitor.empty_object_field(key) ); goto object_next;
-        case '"': SIMDJSON_TRY( visitor.start_object_field(key) ); key = value; goto object_colon;
-        default:  return visitor.error(TAPE_ERROR, "First field of object missing key");
-      }
-    case '[':
-      switch (*(value = advance())) {
-        case ']': SIMDJSON_TRY( visitor.empty_array_field(key) ); goto object_next;
-        default: SIMDJSON_TRY( visitor.start_array_field(key) ); goto array_value;
-      }
+    case '{': switch (*(value = advance())) {
+      case '}': SIMDJSON_TRY( visitor.empty_object_field(key) ); goto object_next;
+      case '"': SIMDJSON_TRY( visitor.start_object_field(key) ); goto object_colon;
+      default:  return visitor.error(TAPE_ERROR, "First field of object missing key");
+    }
+    case '[': switch (*(value = advance())) {
+      case ']': SIMDJSON_TRY( visitor.empty_array_field(key) ); goto object_next;
+      default: SIMDJSON_TRY( visitor.start_array_field(key) ); goto array_value;
+    }
     default:
       SIMDJSON_TRY( visitor.primitive_field(key, value) ); goto object_next;
   }
@@ -111,17 +109,15 @@ generic_array_begin:
 array_value:
   // Pick up value from previous state
   switch (*value) {
-    case '{':
-      switch (*(value = advance())) {
-        case '}': SIMDJSON_TRY( visitor.empty_object() ); goto array_next;
-        case '"': SIMDJSON_TRY( visitor.start_object() ); goto object_colon;
-        default:  return visitor.error(TAPE_ERROR, "First field of object missing key");
-      }
-    case '[':
-      switch (*(value = advance())) {
-        case ']': SIMDJSON_TRY( visitor.empty_array() ); goto array_next;
-        default:  SIMDJSON_TRY( visitor.start_array() ); goto array_value;
-      }
+    case '{': switch (*(value = advance())) {
+      case '}': SIMDJSON_TRY( visitor.empty_object() ); goto array_next;
+      case '"': SIMDJSON_TRY( visitor.start_object() ); goto object_colon;
+      default:  return visitor.error(TAPE_ERROR, "First field of object missing key");
+    }
+    case '[': switch (*(value = advance())) {
+      case ']': SIMDJSON_TRY( visitor.empty_array() ); goto array_next;
+      default:  SIMDJSON_TRY( visitor.start_array() ); goto array_value;
+    }
     default: SIMDJSON_TRY( visitor.primitive(value) ); goto array_next;
   }
 
@@ -139,8 +135,8 @@ array_next:
 container_end:
   switch (*advance()) {
     case ',':
-      // We have a next element. Check if it's is an object field (, "key" : ....)
       switch (*(value = advance())) {
+        // We have a next element. Check if it's is an object field (, "key" : ....)
         case '"':
           // If it's a string, it is 99% certain it's a key (arrays don't generally mix in strings
           // with arrays/objects). If we detect it's not, we just pretend we didn't advance the

@@ -221,9 +221,7 @@ private:
     // documents made of single atoms.
     //
     uint8_t *copy = static_cast<uint8_t *>(malloc(iter.remaining_len() + SIMDJSON_PADDING));
-    if (copy == nullptr) {
-      return MEMALLOC;
-    }
+    if (copy == nullptr) { return error(MEMALLOC, "Out of memory"); }
     memcpy(copy, value, iter.remaining_len());
     memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
     error_code error = parse_number(copy);
