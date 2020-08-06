@@ -1,4 +1,4 @@
-#include "generic/stage2/structural_parser.h"
+#include "generic/stage2/json_iterator.h"
 #include "generic/stage2/tape_writer.h"
 #include "generic/stage2/atomparsing.h"
 
@@ -12,12 +12,12 @@ struct tape_builder {
       dom_parser_implementation &dom_parser,
       dom::document &doc) noexcept {
     dom_parser.doc = &doc;
-    structural_parser iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+    json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
     tape_builder builder(doc);
     return iter.walk_document<STREAMING>(builder);
   }
 
-  really_inline error_code root_primitive(structural_parser &iter, const uint8_t *value) {
+  really_inline error_code root_primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_root_true_atom(iter, value);
@@ -32,7 +32,7 @@ struct tape_builder {
         return TAPE_ERROR;
     }
   }
-  really_inline error_code primitive(structural_parser &iter, const uint8_t *value) {
+  really_inline error_code primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_true_atom(iter, value);
@@ -47,54 +47,64 @@ struct tape_builder {
         return TAPE_ERROR;
     }
   }
-  really_inline void empty_object(structural_parser &iter) {
+  really_inline void empty_object(json_iterator &iter) {
     iter.log_value("empty object");
     empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  really_inline void empty_array(structural_parser &iter) {
+  really_inline void empty_array(json_iterator &iter) {
     iter.log_value("empty array");
     empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
-  really_inline void start_document(structural_parser &iter) {
+  really_inline void start_document(json_iterator &iter) {
     iter.log_start_value("document");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = false;
   }
-  really_inline void start_object(structural_parser &iter) {
+  really_inline void start_object(json_iterator &iter) {
     iter.log_start_value("object");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = false;
   }
-  really_inline void start_array(structural_parser &iter) {
+  really_inline void start_array(json_iterator &iter) {
     iter.log_start_value("array");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = true;
   }
 
-  really_inline void end_object(structural_parser &iter) {
+  really_inline void end_object(json_iterator &iter) {
     iter.log_end_value("object");
     end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  really_inline void end_array(structural_parser &iter) {
+  really_inline void end_array(json_iterator &iter) {
     iter.log_end_value("array");
     end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
-  really_inline void end_document(structural_parser &iter) {
+  really_inline void end_document(json_iterator &iter) {
     iter.log_end_value("document");
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
   }
-  WARN_UNUSED really_inline error_code key(structural_parser &iter, const uint8_t *key) {
+  WARN_UNUSED really_inline error_code key(json_iterator &iter, const uint8_t *key) {
     return parse_string(iter, key, true);
   }
 
+  // Called after end_object/end_array. Not called after empty_object/empty_array,
+  // as the parent is already known in those cases.
+  //
+  // The object returned from end_container() should support the in_container(),
+  // in_array() and in_object() methods, allowing the iterator to branch to the
+  // correct place.
+  really_inline tape_builder &end_container(json_iterator &iter) {
+    iter.depth--;
+    return *this;
+  }
   // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &iter) {
+  really_inline void increment_count(json_iterator &iter) {
     iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
   }
-  really_inline bool in_array(structural_parser &iter) noexcept {
+  really_inline bool in_array(json_iterator &iter) noexcept {
     return iter.dom_parser.is_array[iter.depth];
   }
 
@@ -106,7 +116,7 @@ private:
 
   really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  WARN_UNUSED really_inline error_code parse_string(structural_parser &iter, const uint8_t *value, bool key = false) {
+  WARN_UNUSED really_inline error_code parse_string(json_iterator &iter, const uint8_t *value, bool key = false) {
     iter.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(iter);
     dst = stringparsing::parse_string(value, dst);
@@ -118,13 +128,13 @@ private:
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_number(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_number(json_iterator &iter, const uint8_t *value) {
     iter.log_value("number");
     if (!numberparsing::parse_number(value, tape)) { iter.log_error("Invalid number"); return NUMBER_ERROR; }
     return SUCCESS;
   }
 
-  really_inline error_code parse_root_number(structural_parser &iter, const uint8_t *value) {
+  really_inline error_code parse_root_number(json_iterator &iter, const uint8_t *value) {
     //
     // We need to make a copy to make sure that the string is space terminated.
     // This is not about padding the input, which should already padded up
@@ -149,42 +159,42 @@ private:
     return error;
   }
 
-  WARN_UNUSED really_inline error_code parse_true_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_true_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("true");
     if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_true_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_true_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("true");
     if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_false_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_false_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("false");
     if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_false_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_false_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("false");
     if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_null_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_null_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("null");
     if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED really_inline error_code parse_root_null_atom(structural_parser &iter, const uint8_t *value) {
+  WARN_UNUSED really_inline error_code parse_root_null_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("null");
     if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
@@ -193,23 +203,23 @@ private:
 
 // private:
 
-  really_inline uint32_t next_tape_index(structural_parser &iter) {
+  really_inline uint32_t next_tape_index(json_iterator &iter) {
     return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
   }
 
-  really_inline void empty_container(structural_parser &iter, internal::tape_type start, internal::tape_type end) {
+  really_inline void empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) {
     auto start_index = next_tape_index(iter);
     tape.append(start_index+2, start);
     tape.append(start_index, end);
   }
 
-  really_inline void start_container(structural_parser &iter) {
+  really_inline void start_container(json_iterator &iter) {
     iter.dom_parser.open_containers[iter.depth].tape_index = next_tape_index(iter);
     iter.dom_parser.open_containers[iter.depth].count = 0;
     tape.skip(); // We don't actually *write* the start element until the end.
   }
 
-  really_inline void end_container(structural_parser &iter, internal::tape_type start, internal::tape_type end) noexcept {
+  really_inline void end_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) noexcept {
     // Write the ending tape element, pointing at the start location
     const uint32_t start_tape_index = iter.dom_parser.open_containers[iter.depth].tape_index;
     tape.append(start_tape_index, end);
@@ -221,7 +231,7 @@ private:
     tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter) | (uint64_t(cntsat) << 32), start);
   }
 
-  really_inline uint8_t *on_start_string(structural_parser &iter) noexcept {
+  really_inline uint8_t *on_start_string(json_iterator &iter) noexcept {
     // we advance the point, accounting for the fact that we have a NULL termination
     tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::STRING);
     return current_string_buf_loc + sizeof(uint32_t);

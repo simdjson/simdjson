@@ -1,27 +1,45 @@
-// This file contains the common code every implementation uses for stage2
-// It is intended to be included multiple times and compiled multiple times
-// We assume the file in which it is include already includes
-// "simdjson/stage2.h" (this simplifies amalgation)
-
 #include "generic/stage2/logger.h"
-#include "generic/stage2/structural_iterator.h"
 
-namespace { // Make everything here private
+namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
-#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
-
-struct structural_parser : structural_iterator {
-  /** Current depth (nested objects and arrays) */
+class json_iterator {
+public:
+  const uint8_t* const buf;
+  uint32_t *next_structural;
+  dom_parser_implementation &dom_parser;
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
   WARN_UNUSED really_inline error_code walk_document(T &visitor) noexcept;
 
-  // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
-    : structural_iterator(_dom_parser, start_structural_index) {
+  // Start a structural 
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+    : buf{_dom_parser.buf},
+      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+      dom_parser{_dom_parser} {
+  }
+
+  // Get the buffer position of the current structural character
+  really_inline char peek_next_char() {
+    return buf[*(next_structural)];
+  }
+  really_inline const uint8_t* advance() {
+    return &buf[*(next_structural++)];
+  }
+  really_inline char advance_char() {
+    return buf[*(next_structural++)];
+  }
+  really_inline size_t remaining_len() {
+    return dom_parser.len - *(next_structural-1);
+  }
+
+  really_inline bool at_end() {
+    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+  }
+  really_inline bool at_beginning() {
+    return next_structural == dom_parser.structural_indexes.get();
   }
 
   template<typename T>
@@ -60,11 +78,11 @@ struct structural_parser : structural_iterator {
   really_inline void log_error(const char *error) {
     logger::log_line(*this, "", "ERROR", error);
   }
-}; // struct structural_parser
+};
 
 template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::walk_document(T &visitor) noexcept {
-  const uint8_t *value;
+WARN_UNUSED really_inline error_code json_iterator::walk_document(T &visitor) noexcept {
+  const uint8_t *value; // Used to keep a value around between states
 
   logger::log_start();
 
