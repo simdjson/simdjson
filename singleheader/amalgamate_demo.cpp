@@ -1,8 +1,7 @@
-/* auto-generated on Tue Aug  4 13:10:22 PDT 2020. Do not edit! */
-
 #include <iostream>
 #include "simdjson.h"
 #include "simdjson.cpp"
+
 int main(int argc, char *argv[]) {
   if(argc < 2) {
     std::cerr << "Please specify at least one file name. " << std::endl;
