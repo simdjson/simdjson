@@ -78,7 +78,7 @@ WARN_UNUSED really_inline error_code structural_parser::walk_document(T &visitor
   // Read first value
   //
   switch (*(value = advance())) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto document_end;
     case '[': {
       // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
       // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -87,11 +87,10 @@ WARN_UNUSED really_inline error_code structural_parser::walk_document(T &visitor
           return TAPE_ERROR;
         }
       }
-      if (!empty_array(visitor)) { goto array_begin; }; break;
+      if (!empty_array(visitor)) { goto array_begin; }; goto document_end;
     }
-    default: SIMDJSON_TRY( visitor.parse_root_primitive(*this, value) );
+    default: SIMDJSON_TRY( visitor.root_primitive(*this, value) ); goto document_end;
   }
-  goto document_end;
 
 //
 // Object parser states
@@ -104,15 +103,15 @@ object_begin:
   value = advance();
   if (*value != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
   visitor.increment_count(*this);
-  SIMDJSON_TRY( visitor.parse_key(*this, value) );
+  SIMDJSON_TRY( visitor.key(*this, value) );
   goto object_field;
 
 object_field:
   if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
   switch (*(value = advance())) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
-    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( visitor.parse_primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto object_continue;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; goto object_continue;
+    default: SIMDJSON_TRY( visitor.primitive(*this, value) );
   }
 
 object_continue:
@@ -121,7 +120,7 @@ object_continue:
     visitor.increment_count(*this);
     value = advance();
     if (unlikely( *value != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( visitor.parse_key(*this, value) );
+    SIMDJSON_TRY( visitor.key(*this, value) );
     goto object_field;
   }
   case '}':
@@ -149,9 +148,9 @@ array_begin:
 
 array_value:
   switch (*(value = advance())) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
-    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( visitor.parse_primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto array_continue;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; goto array_continue;
+    default: SIMDJSON_TRY( visitor.primitive(*this, value) );
   }
 
 array_continue:
@@ -179,7 +178,7 @@ document_end:
 
   return SUCCESS;
 
-} // parse_structurals()
+} // walk_document()
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION

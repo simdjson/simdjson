@@ -7,11 +7,6 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace stage2 {
 
 struct tape_builder {
-  /** Next location to write to tape */
-  tape_writer tape;
-  /** Next write location in the string buf for stage 2 parsing */
-  uint8_t *current_string_buf_loc;
-
   template<bool STREAMING>
   WARN_UNUSED static really_inline error_code parse_document(
       dom_parser_implementation &dom_parser,
@@ -22,12 +17,7 @@ struct tape_builder {
     return iter.walk_document<STREAMING>(builder);
   }
 
-private:
-  friend struct structural_parser;
-
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
-
-  really_inline error_code parse_root_primitive(structural_parser &iter, const uint8_t *value) {
+  really_inline error_code root_primitive(structural_parser &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_root_true_atom(iter, value);
@@ -42,7 +32,7 @@ private:
         return TAPE_ERROR;
     }
   }
-  really_inline error_code parse_primitive(structural_parser &iter, const uint8_t *value) {
+  really_inline error_code primitive(structural_parser &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_true_atom(iter, value);
@@ -96,10 +86,26 @@ private:
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
   }
-
-  WARN_UNUSED really_inline error_code parse_key(structural_parser &iter, const uint8_t *value) {
-    return parse_string(iter, value, true);
+  WARN_UNUSED really_inline error_code key(structural_parser &iter, const uint8_t *key) {
+    return parse_string(iter, key, true);
   }
+
+  // increment_count increments the count of keys in an object or values in an array.
+  really_inline void increment_count(structural_parser &iter) {
+    iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+  }
+  really_inline bool in_array(structural_parser &iter) noexcept {
+    return iter.dom_parser.is_array[iter.depth];
+  }
+
+private:
+  /** Next location to write to tape */
+  tape_writer tape;
+  /** Next write location in the string buf for stage 2 parsing */
+  uint8_t *current_string_buf_loc;
+
+  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+
   WARN_UNUSED really_inline error_code parse_string(structural_parser &iter, const uint8_t *value, bool key = false) {
     iter.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(iter);
@@ -183,11 +189,6 @@ private:
     if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
-  }
-
-  // increment_count increments the count of keys in an object or values in an array.
-  really_inline void increment_count(structural_parser &iter) {
-    iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
   }
 
 // private:
