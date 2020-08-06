@@ -1,3 +1,4 @@
+#include "generic/stage2/structural_parser.h"
 #include "generic/stage2/tape_writer.h"
 #include "generic/stage2/atomparsing.h"
 
@@ -11,10 +12,20 @@ struct tape_builder {
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
-  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
+  template<bool STREAMING>
+  WARN_UNUSED static really_inline error_code parse_document(
+      dom_parser_implementation &dom_parser,
+      dom::document &doc) noexcept {
+    dom_parser.doc = &doc;
+    structural_parser iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
+    tape_builder builder(doc);
+    return iter.walk_document<STREAMING>(builder);
+  }
 
 private:
   friend struct structural_parser;
+
+  really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
   really_inline error_code parse_root_primitive(structural_parser &parser, const uint8_t *value) {
     switch (*value) {

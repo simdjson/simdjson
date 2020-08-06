@@ -111,7 +111,6 @@ really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, c
 
 #include "arm64/stringparsing.h"
 #include "arm64/numberparsing.h"
-#include "generic/stage2/structural_parser.h"
 #include "generic/stage2/tape_builder.h"
 
 //
@@ -145,15 +144,11 @@ WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) cons
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(*doc);
-  return stage2::structural_parser::parse<false>(*this, builder);
+  return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  doc = &_doc;
-  stage2::tape_builder builder(_doc);
-  return stage2::structural_parser::parse<true>(*this, builder);
+  return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
 
 WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {

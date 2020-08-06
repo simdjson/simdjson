@@ -17,12 +17,7 @@ struct structural_parser : structural_iterator {
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
-  template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
-    structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    return parser.parse<STREAMING>(builder);
-  }
+  WARN_UNUSED really_inline error_code walk_document(T &builder) noexcept;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
@@ -86,7 +81,7 @@ struct structural_parser : structural_iterator {
 }; // struct structural_parser
 
 template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+WARN_UNUSED really_inline error_code structural_parser::walk_document(T &builder) noexcept {
   logger::log_start();
 
   //
