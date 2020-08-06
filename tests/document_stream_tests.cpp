@@ -5,6 +5,19 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
+
+std::string trim(const std::string s) {
+	auto start = s.begin();
+	auto end = s.end();
+	while (start != s.end() && std::isspace(*start)) {
+		start++;
+	}
+	do {
+		end--;
+	} while (std::distance(start, end) > 0 && std::isspace(*end));
+	return std::string(start, end + 1);
+}
+
 namespace document_stream_tests {
   static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
     simdjson::dom::document_stream stream;
@@ -19,10 +32,18 @@ namespace document_stream_tests {
   }
   bool test_current_index() {
     std::cout << "Running " << __func__ << std::endl;
-    std::string base("1         ");// one JSON!
+    std::string base1("1         ");// one JSON!
+    std::string base2("{\"k\":1}   ");// one JSON!
+    std::string base3("[1,2]     ");// one JSON!
+    assert(base1.size() == base2.size());
+    assert(base2.size() == base3.size());
+    std::vector<std::string> source_strings = {base1, base2, base3};
+
     std::string json;
     for(size_t k =  0; k < 1000; k++) {
-      json += base;
+      json += base1;
+      json += base2;
+      json += base3;
     }
     simdjson::dom::parser parser;
     const size_t window = 32; // deliberately small
@@ -38,7 +59,13 @@ namespace document_stream_tests {
         std::cout << "expected index:" << count << std::endl;
         return false;
       }
-      count += base.size();
+      std::string answer = source_strings[(count / base1.size()) % source_strings.size()];
+      if(trim(std::string(i.source())) != trim(answer)) {
+        std::cout << "got:       '" << i.source() << "'" << std::endl;
+        std::cout << "expected : '" << answer << "'"  << std::endl;
+        return false;
+      }
+      count += base1.size();
     }
     return true;
   }

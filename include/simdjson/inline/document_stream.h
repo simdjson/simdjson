@@ -150,9 +150,16 @@ inline void document_stream::start() noexcept {
   next();
 }
 
-really_inline size_t document_stream::iterator::current_index() noexcept {
+really_inline size_t document_stream::iterator::current_index() const noexcept {
   return stream.doc_index;
 }
+
+really_inline std::string_view document_stream::iterator::source() const noexcept {
+  size_t next_doc_index = stream.batch_start + stream.parser->implementation->structural_indexes[stream.parser->implementation->next_structural_index];
+  return std::string_view(reinterpret_cast<const char*>(stream.buf) + current_index(), next_doc_index - current_index() - 1);
+}
+
+
 inline void document_stream::next() noexcept {
   if (error) { return; }
 
