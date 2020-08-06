@@ -17,7 +17,7 @@ struct structural_parser : structural_iterator {
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code walk_document(T &builder) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code walk_document(T &visitor) noexcept;
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
   simdjson_really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
@@ -25,19 +25,19 @@ struct structural_parser : structural_iterator {
   }
 
   template<typename T>
-  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_object(T &builder) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_object(T &visitor) {
     if (peek_next_char() == '}') {
       advance_char();
-      builder.empty_object(*this);
+      visitor.empty_object(*this);
       return true;
     }
     return false;
   }
   template<typename T>
-  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_array(T &builder) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_array(T &visitor) {
     if (peek_next_char() == ']') {
       advance_char();
-      builder.empty_array(*this);
+      visitor.empty_array(*this);
       return true;
     }
     return false;
@@ -85,14 +85,14 @@ struct structural_parser : structural_iterator {
 }; // struct structural_parser
 
 template<bool STREAMING, typename T>
-SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::walk_document(T &builder) noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::walk_document(T &visitor) noexcept {
   logger::log_start();
 
   //
   // Start the document
   //
   if (at_end()) { return EMPTY; }
-  builder.start_document(*this);
+  visitor.start_document(*this);
 
   //
   // Read first value
@@ -118,9 +118,9 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::walk_d
     }
 
     switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-      default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
+      case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+      case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+      default: SIMDJSON_TRY( visitor.parse_root_primitive(*this, value) );
     }
     goto document_end;
   }
@@ -131,15 +131,15 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::walk_d
 object_begin: {
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_object(*this);
+  visitor.start_object(*this);
 
   const uint8_t *key = advance();
   if (*key != '"') {
     log_error("Object does not start with a key");
     return TAPE_ERROR;
   }
-  builder.increment_count(*this);
-  SIMDJSON_TRY( builder.parse_key(*this, key) );
+  visitor.increment_count(*this);
+  SIMDJSON_TRY( visitor.parse_key(*this, key) );
   goto object_field;
 } // object_begin:
 
@@ -147,23 +147,23 @@ object_field: {
   if (simdjson_unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
   const uint8_t *value = advance();
   switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( visitor.parse_primitive(*this, value) );
   }
 } // object_field:
 
 object_continue: {
   switch (advance_char()) {
   case ',': {
-    builder.increment_count(*this);
+    visitor.increment_count(*this);
     const uint8_t *key = advance();
     if (simdjson_unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
-    SIMDJSON_TRY( builder.parse_key(*this, key) );
+    SIMDJSON_TRY( visitor.parse_key(*this, key) );
     goto object_field;
   }
   case '}':
-    builder.end_object(*this);
+    visitor.end_object(*this);
     goto scope_end;
   default:
     log_error("No comma between object fields");
@@ -184,27 +184,27 @@ scope_end: {
 array_begin: {
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
-  builder.start_array(*this);
+  visitor.start_array(*this);
 
-  builder.increment_count(*this);
+  visitor.increment_count(*this);
 } // array_begin:
 
 array_value: {
   const uint8_t *value = advance();
   switch (*value) {
-    case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-    case '[': if (!empty_array(builder)) { goto array_begin; }; break;
-    default: SIMDJSON_TRY( builder.parse_primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( visitor.parse_primitive(*this, value) );
   }
 } // array_value:
 
 array_continue: {
   switch (advance_char()) {
   case ',':
-    builder.increment_count(*this);
+    visitor.increment_count(*this);
     goto array_value;
   case ']':
-    builder.end_array(*this);
+    visitor.end_array(*this);
     goto scope_end;
   default:
     log_error("Missing comma between array values");
@@ -213,7 +213,7 @@ array_continue: {
 } // array_continue:
 
 document_end: {
-  builder.end_document(*this);
+  visitor.end_document(*this);
   return finish<STREAMING>();
 } // document_end:
 
