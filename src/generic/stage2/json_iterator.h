@@ -174,8 +174,6 @@ document_end:
 
   dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
-  if (depth != 0) { log_error("Unclosed objects or arrays!"); return TAPE_ERROR; }
-
   // If we didn't make it to the end, it's an error
   if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
     log_error("More than one JSON value at the root of the document, or extra characters at the end of the JSON!");
