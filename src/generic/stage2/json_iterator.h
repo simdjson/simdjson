@@ -41,6 +41,25 @@ public:
     return next_structural == dom_parser.structural_indexes.get();
   }
 
+  really_inline void log_value(const char *type) {
+    logger::log_line(*this, "", type, "");
+  }
+
+  really_inline void log_start_value(const char *type) {
+    logger::log_line(*this, "+", type, "");
+    if (logger::LOG_ENABLED) { logger::log_depth++; }
+  }
+
+  really_inline void log_end_value(const char *type) {
+    if (logger::LOG_ENABLED) { logger::log_depth--; }
+    logger::log_line(*this, "-", type, "");
+  }
+
+  really_inline void log_error(const char *error) {
+    logger::log_line(*this, "", "ERROR", error);
+  }
+
+private:
   template<typename T>
   WARN_UNUSED really_inline bool empty_object(T &visitor) {
     if (peek_next_char() == '}') {
@@ -59,24 +78,6 @@ public:
     }
     return false;
   }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
 };
 
 template<bool STREAMING, typename T>
@@ -93,7 +94,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(T &visitor) no
   // Read first value
   //
   switch (advance()) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto document_end;
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
     case '[':
       // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
       // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -103,9 +104,10 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(T &visitor) no
         }
       }
       if (!empty_array(visitor)) { goto array_begin; };
-      goto document_end;
-    default: SIMDJSON_TRY( visitor.root_primitive(*this, value) ); goto document_end;
+      break;
+    default: SIMDJSON_TRY( visitor.root_primitive(*this, value) ); break;
   }
+  goto document_end;
 
 //
 // Object parser states
@@ -118,14 +120,13 @@ object_begin:
   if (advance() != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
   visitor.increment_count(*this);
   SIMDJSON_TRY( visitor.key(*this, value) );
-  goto object_field;
 
 object_field:
   if (unlikely( advance() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
   switch (advance()) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto object_continue;
-    case '[': if (!empty_array(visitor)) { goto array_begin; }; goto object_continue;
-    default: SIMDJSON_TRY( visitor.primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
   }
 
 object_continue:
@@ -156,9 +157,9 @@ array_begin:
 
 array_value:
   switch (advance()) {
-    case '{': if (!empty_object(visitor)) { goto object_begin; }; goto array_continue;
-    case '[': if (!empty_array(visitor)) { goto array_begin; }; goto array_continue;
-    default: SIMDJSON_TRY( visitor.primitive(*this, value) );
+    case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+    case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+    default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
   }
 
 array_continue:
@@ -173,10 +174,7 @@ document_end:
 
   dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
-  if (depth != 0) {
-    log_error("Unclosed objects or arrays!");
-    return TAPE_ERROR;
-  }
+  if (depth != 0) { log_error("Unclosed objects or arrays!"); return TAPE_ERROR; }
 
   // If we didn't make it to the end, it's an error
   if ( !STREAMING && dom_parser.next_structural_index != dom_parser.n_structural_indexes ) {
