@@ -497,6 +497,227 @@ really_inline error_code parse_number(const uint8_t *const src, V &visitor) {
   return SUCCESS;
 }
 
+// Parse any number from 0 to 18,446,744,073,709,551,615
+really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  if (digit_count > 20) { return NUMBER_ERROR; }
+  if (digit_count == 20) {
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return i;
+}
+
+// Parse any number from 0 to 18,446,744,073,709,551,615
+// Call this version of the method if you regularly expect 8- or 16-digit numbers.
+// really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+//   const uint8_t *p = src;
+
+//   //
+//   // Parse the integer part.
+//   //
+//   const uint8_t *const start_digits = p;
+//   uint64_t i = 0;
+//   if (is_made_of_eight_digits_fast(p)) {
+//     i = i * 100000000 + parse_eight_digits_unrolled(p);
+//     p += 8;
+//     if (is_made_of_eight_digits_fast(p)) {
+//       i = i * 100000000 + parse_eight_digits_unrolled(p);
+//       p += 8;
+//       if (parse_digit(*p, i)) { // digit 17
+//         p++;
+//         if (parse_digit(*p, i)) { // digit 18
+//           p++;
+//           if (parse_digit(*p, i)) { // digit 19
+//             p++;
+//             if (parse_digit(*p, i)) { // digit 20
+//               p++;
+//               if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+//               // Positive overflow check:
+//               // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+//               //   biggest uint64_t.
+//               // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+//               //   If we got here, it's a 20 digit number starting with the digit "1".
+//               // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+//               //   than 1,553,255,926,290,448,384.
+//               // - That is smaller than the smallest possible 20-digit number the user could write:
+//               //   10,000,000,000,000,000,000.
+//               // - Therefore, if the number is positive and lower than that, it's overflow.
+//               // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+//               //
+//               if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+//             }
+//           }
+//         }
+//       }
+//     } // 16 digits
+//   } else { // 8 digits
+//     // Less than 8 digits can't overflow, simpler logic here.
+//     if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+//     while (parse_digit(*p, i)) { p++; }
+//   }
+
+//   if (!is_structural_or_whitespace(*p, i)) { return NUMBER_ERROR; }
+//   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+//   int digit_count = int(p - src);
+//   if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+//   return i;
+// }
+
+// Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + negative;
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return NUMBER_ERROR; }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  int longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return NUMBER_ERROR; }
+  if (digit_count == longest_digit_count) {
+    if(negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return NUMBER_ERROR; }
+      return ~i+1;
+
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+    //
+    } else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+  }
+
+  return negative ? (~i+1) : i;
+}
+
+// really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+//   //
+//   // Check for minus sign
+//   //
+//   bool negative = (*src == '-');
+//   src += negative;
+
+//   //
+//   // Parse the integer part.
+//   //
+//   uint64_t i = 0;
+//   const uint8_t *p = src;
+//   p += parse_digit(*p, i);
+//   bool leading_zero = (i == 0);
+//   while (parse_digit(*p, i)) { p++; }
+//   // no integer digits, or 0123 (zero must be solo)
+//   if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+
+//   //
+//   // Parse the decimal part.
+//   //
+//   int64_t exponent = 0;
+//   bool overflow;
+//   if (likely(*p == '.')) {
+//     p++;
+//     const uint8_t *start_decimal_digits = p;
+//     if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+//     p++;
+//     while (parse_digit(*p, i)) { p++; }
+//     exponent = -(p - start_decimal_digits);
+
+//     // Overflow check. 19 digits (minus the decimal) may be overflow.
+//     overflow = p-src-1 >= 19;
+//     if (unlikely(overflow && leading_zero)) {
+//       // Skip leading 0.00000 and see if it still overflows
+//       const uint8_t *start_digits = src + 2;
+//       while (*start_digits == '0') { start_digits++; }
+//       overflow = start_digits-src >= 19;
+//     }
+//   } else {
+//     overflow = p-src >= 19;
+//   }
+
+//   //
+//   // Parse the exponent
+//   //
+//   if (*p == 'e' || *p == 'E') {
+//     p++;
+//     bool exp_neg = *p == '-';
+//     p += exp_neg || *p == '+';
+
+//     uint64_t exp = 0;
+//     const uint8_t *start_exp_digits = p;
+//     while (parse_digit(*p, exp)) { p++; }
+//     // no exp digits, or 20+ exp digits
+//     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+
+//     exponent += exp_neg ? 0-exp : exp;
+//     overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+//   }
+
+//   //
+//   // Assemble (or slow-parse) the float
+//   //
+//   if (likely(!overflow)) {
+//     bool success = false;
+//     double d = compute_float_64(exponent, i, negative, &success);
+//     if (success) { return d; }
+//   }
+//   double d;
+//   if (!parse_float_strtod(src-negative, &d)) {
+//     return NUMBER_ERROR;
+//   }
+//   return d;
+// }
+
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
