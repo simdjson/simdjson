@@ -1,5 +1,13 @@
 include_directories( . linux )
-link_libraries(simdjson simdjson-flags simdjson-windows-headers test-data)
+link_libraries(simdjson-windows-headers test-data)
+
+
+if (TARGET benchmark::benchmark)
+  add_executable(bench_sax bench_sax.cpp)
+  target_link_libraries(bench_sax simdjson-internal-flags simdjson-include-source benchmark::benchmark)
+endif (TARGET benchmark::benchmark)
+
+link_libraries(simdjson simdjson-flags)
 add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
 add_executable(perfdiff perfdiff.cpp)
@@ -14,12 +22,6 @@ target_compile_definitions(parse_nonumberparsing PRIVATE SIMDJSON_SKIPNUMBERPARS
 add_executable(parse_nostringparsing parse.cpp)
 target_compile_definitions(parse_nostringparsing PRIVATE SIMDJSON_SKIPSTRINGPARSING)
 
-if (TARGET benchmark::benchmark)
-  link_libraries(benchmark::benchmark)
-  add_executable(bench_parse_call bench_parse_call.cpp)
-  add_executable(bench_dom_api bench_dom_api.cpp)
-endif()
-
 if (TARGET competition-all)
   add_executable(distinctuseridcompetition distinctuseridcompetition.cpp)
   target_link_libraries(distinctuseridcompetition competition-core)
@@ -32,6 +34,12 @@ if (TARGET competition-all)
   add_executable(allparsingcompetition parsingcompetition.cpp)
   target_link_libraries(allparsingcompetition competition-all)
   target_compile_definitions(allparsingcompetition PRIVATE ALLPARSER)
+endif()
+
+if (TARGET benchmark::benchmark)
+  link_libraries(benchmark::benchmark)
+  add_executable(bench_parse_call bench_parse_call.cpp)
+  add_executable(bench_dom_api bench_dom_api.cpp)
 endif()
 
 include(checkperf.cmake)
