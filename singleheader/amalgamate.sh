@@ -127,8 +127,8 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
     done
 } >> ${AMAL_C}
 
-cp -u "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}" 2>/dev/null
-cp -u "${SCRIPTPATH}/README.md" "${README}" 2>/dev/null
+cp -u "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}" 2>/dev/null || :
+cp -u "${SCRIPTPATH}/README.md" "${README}" 2>/dev/null || :
 
 echo "Done with all files generation."
 
