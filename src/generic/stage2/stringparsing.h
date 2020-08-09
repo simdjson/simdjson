@@ -119,6 +119,15 @@ WARN_UNUSED really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst
   return nullptr;
 }
 
+WARN_UNUSED really_inline error_code parse_string_to_buffer(const uint8_t *src, uint8_t *&current_string_buf_loc, std::string_view &s) {
+  if (src[0] != '"') { return STRING_ERROR; }
+  auto end = stringparsing::parse_string(src, current_string_buf_loc);
+  if (!end) { return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
+  return SUCCESS;
+}
+
 } // namespace stringparsing
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
