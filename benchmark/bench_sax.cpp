@@ -48,8 +48,7 @@ struct sax_tweet_reader_visitor {
   bool in_user{false};
   std::vector<tweet> &tweets;
   uint8_t *current_string_buf_loc;
-  uint64_t *expect_int{};
-  std::string_view *expect_string{};
+  const uint8_t *current_key{};
 
   sax_tweet_reader_visitor(std::vector<tweet> &_tweets, uint8_t *string_buf);
 
@@ -65,6 +64,11 @@ struct sax_tweet_reader_visitor {
   really_inline error_code visit_empty_object(json_iterator &iter);
   really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value);
   really_inline error_code increment_count(json_iterator &iter);
+
+private:
+  really_inline error_code parse_nullable_unsigned(json_iterator &iter, uint64_t &i, const uint8_t *value, const char *name);
+  really_inline error_code parse_unsigned(json_iterator &iter, uint64_t &i, const uint8_t *value, const char *name);
+  really_inline error_code parse_string(json_iterator &iter, std::string_view &s, const uint8_t *value, const char *name);
 }; // sax_tweet_reader_visitor
 
 sax_tweet_reader::sax_tweet_reader() : tweets{}, string_buf{}, capacity{0}, dom_parser() {}
@@ -104,115 +108,106 @@ sax_tweet_reader_visitor::sax_tweet_reader_visitor(std::vector<tweet> &_tweets, 
     current_string_buf_loc{string_buf} {
 }
 
-really_inline error_code sax_tweet_reader_visitor::visit_document_start(json_iterator &iter) {
-  iter.log_start_value("document");
+really_inline error_code sax_tweet_reader_visitor::visit_document_start(json_iterator &) {
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_array_start(json_iterator &iter) {
-  // iter.log_start_value("array");
   // if we expected an int or string and got an array or object, it's an error
-  if (expect_int || expect_string) { iter.log_error("expected int/string"); return TAPE_ERROR; }
+  if (iter.depth == 2 && KEY_IS(current_key, "statuses")) {
+    iter.log_start_value("statuses");
+    in_statuses = true;
+  }
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_object_start(json_iterator &iter) {
-  // iter.log_start_value("object");
-
-  // if we expected an int or string and got an array or object, it's an error
-  if (expect_int || expect_string) { iter.log_error("expected int/string"); return TAPE_ERROR; }
-
   // { "statuses": [ {
-  if (in_statuses && iter.depth == 3) {
-    iter.log_start_value("tweet");
-    tweets.push_back({});
+  if (in_statuses) {
+    switch (iter.depth) {
+      case 3:
+        iter.log_start_value("tweet");
+        tweets.push_back({});
+        break;
+      case 4:
+        // NOTE: the way we're comparing key (fairly naturally) means the caller doesn't have to check " for us at all
+        if (KEY_IS(current_key, "user")) { iter.log_start_value("user"); in_user = true; }
+    }
   }
   return SUCCESS;
 }
-really_inline error_code sax_tweet_reader_visitor::visit_key(json_iterator &iter, const uint8_t *key) {
-  // iter.log_value("key");
-  if (in_statuses) {
-    switch (iter.depth) {
-      case 3: // in tweet: { "statuses": [ { <key>
-        // NOTE: the way we're comparing key (fairly naturally) means the caller doesn't have to check " for us at all
-        if (KEY_IS(key, "user")) { iter.log_start_value("user"); in_user = true; }
-
-        else if (KEY_IS(key, "id")) { iter.log_value("id"); expect_int = &tweets.back().id; }
-        else if (KEY_IS(key, "in_reply_to_status_id")) { iter.log_value("in_reply_to_status_id"); expect_int = &tweets.back().in_reply_to_status_id; }
-        else if (KEY_IS(key, "retweet_count")) { iter.log_value("retweet_count"); expect_int = &tweets.back().retweet_count; }
-        else if (KEY_IS(key, "favorite_count")) { iter.log_value("favorite_count"); expect_int = &tweets.back().favorite_count; }
-
-        else if (KEY_IS(key, "text")) { iter.log_value("text"); expect_string = &tweets.back().text; }
-        else if (KEY_IS(key, "created_at")) { iter.log_value("created_at"); expect_string = &tweets.back().created_at; }
-        break;
-      case 4:
-        if (in_user) { // in user: { "statuses": [ { "user": { <key>
-          if (KEY_IS(key, "id")) { iter.log_value("id"); expect_int = &tweets.back().user.id; }
-          else if (KEY_IS(key, "screen_name")) { iter.log_value("screen_name"); expect_string = &tweets.back().user.screen_name; }
-        }
-        break;
-      default: break;
-    }
-  } else {
-    if (iter.depth == 1 && KEY_IS(key, "statuses")) {
-      iter.log_start_value("statuses");
-      in_statuses = true;
-    }
+really_inline error_code sax_tweet_reader_visitor::visit_key(json_iterator &, const uint8_t *key) {
+  current_key = key;
+  return SUCCESS;
+}
+really_inline error_code sax_tweet_reader_visitor::parse_nullable_unsigned(json_iterator &iter, uint64_t &i, const uint8_t *value, const char *name) {
+  iter.log_value(name);
+  if (auto error = numberparsing::parse_unsigned(value).get(i)) {
+    // If number parsing failed, check if it's null before returning the error
+    if (!atomparsing::is_valid_null_atom(value)) { iter.log_error("expected number or null"); return error; }
+    i = 0;
   }
+  return SUCCESS;
+}
+really_inline error_code sax_tweet_reader_visitor::parse_unsigned(json_iterator &iter, uint64_t &i, const uint8_t *value, const char *name) {
+  iter.log_value(name);
+  return numberparsing::parse_unsigned(value).get(i);
+}
+really_inline error_code sax_tweet_reader_visitor::parse_string(json_iterator &iter, std::string_view &s, const uint8_t *value, const char *name) {
+  iter.log_value(name);
+  // Must be a string!
+  if (value[0] != '"') { iter.log_error("expected string"); return STRING_ERROR; }
+  auto end = stringparsing::parse_string(value, current_string_buf_loc);
+  if (!end) { iter.log_error("error parsing string"); return STRING_ERROR; }
+  s = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
+  current_string_buf_loc = end;
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_primitive(json_iterator &iter, const uint8_t *value) {
   // iter.log_value("primitive");
-  if (expect_int) {
-    iter.log_value("int");
-    if (auto error = numberparsing::parse_unsigned(value).get(*expect_int)) {
-      // If number parsing failed, check if it's null before returning the error
-      if (!atomparsing::is_valid_null_atom(value)) { iter.log_error("expected number or null"); return error; }
+  // iter.log_value("key");
+  if (in_statuses) {
+    switch (iter.depth) {
+      case 3: // in tweet: { "statuses": [ { <key>
+        if (KEY_IS(current_key, "id")) { return parse_unsigned(iter, tweets.back().id, value, "id"); }
+        else if (KEY_IS(current_key, "in_reply_to_status_id")) { return parse_nullable_unsigned(iter, tweets.back().in_reply_to_status_id, value, "in_reply_to_status_id"); }
+        else if (KEY_IS(current_key, "retweet_count")) { return parse_unsigned(iter, tweets.back().retweet_count, value, "retweet_count"); }
+        else if (KEY_IS(current_key, "favorite_count")) { return parse_unsigned(iter, tweets.back().favorite_count, value, "favorite_count"); }
+        else if (KEY_IS(current_key, "text")) { return parse_string(iter, tweets.back().text, value, "text"); }
+        else if (KEY_IS(current_key, "created_at")) { return parse_string(iter, tweets.back().created_at, value, "created_at"); }
+        break;
+      case 4:
+        if (in_user) { // in user: { "statuses": [ { "user": { <key>
+          if (KEY_IS(current_key, "id")) { return parse_unsigned(iter, tweets.back().user.id, value, "id"); }
+          else if (KEY_IS(current_key, "screen_name")) { { return parse_string(iter, tweets.back().user.screen_name, value, "screen_name"); } }
+        }
+        break;
+      default: break;
     }
-    expect_int = nullptr;
-  } else if (expect_string) {
-    iter.log_value("string");
-    // Must be a string!
-    if (value[0] != '"') { iter.log_error("expected string"); return STRING_ERROR; }
-    auto end = stringparsing::parse_string(value, current_string_buf_loc);
-    if (!end) { iter.log_error("error parsing string"); return STRING_ERROR; }
-    *expect_string = std::string_view((const char *)current_string_buf_loc, end-current_string_buf_loc);
-    current_string_buf_loc = end;
-    expect_string = nullptr;
   }
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_array_end(json_iterator &iter) {
-  // iter.log_end_value("array");
   // When we hit the end of { "statuses": [ ... ], we're done with statuses.
   if (in_statuses && iter.depth == 2) { iter.log_end_value("statuses"); in_statuses = false; }
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_object_end(json_iterator &iter) {
-  // iter.log_end_value("object");
   // When we hit the end of { "statuses": [ { "user": { ... }, we're done with the user
   if (in_user && iter.depth == 4) { iter.log_end_value("user"); in_user = false; }
   if (in_statuses && iter.depth == 3) { iter.log_end_value("tweet"); }
   return SUCCESS;
 }
 
-really_inline error_code sax_tweet_reader_visitor::visit_document_end(json_iterator &iter) {
-  iter.log_end_value("document");
+really_inline error_code sax_tweet_reader_visitor::visit_document_end(json_iterator &) {
   return SUCCESS;
 }
 
-really_inline error_code sax_tweet_reader_visitor::visit_empty_array(json_iterator &iter) {
-  // if we expected an int or string and got an array or object, it's an error
-  // iter.log_value("empty array");
-  if (expect_int || expect_string) { iter.log_error("expected int/string"); return TAPE_ERROR; }
+really_inline error_code sax_tweet_reader_visitor::visit_empty_array(json_iterator &) {
   return SUCCESS;
 }
-really_inline error_code sax_tweet_reader_visitor::visit_empty_object(json_iterator &iter) {
-  // if we expected an int or string and got an array or object, it's an error
-  // iter.log_value("empty object");
-  if (expect_int || expect_string) { iter.log_error("expected int/string"); return TAPE_ERROR; }
+really_inline error_code sax_tweet_reader_visitor::visit_empty_object(json_iterator &) {
   return SUCCESS;
 }
 really_inline error_code sax_tweet_reader_visitor::visit_root_primitive(json_iterator &iter, const uint8_t *) {
-  // iter.log_value("root primitive");
   iter.log_error("unexpected root primitive");
   return TAPE_ERROR;
 }
