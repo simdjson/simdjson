@@ -8,9 +8,11 @@ namespace stage1 {
  * We seek to identify pseudo-structural characters. Anything that is inside
  * a string must be omitted (hence  & ~_string.string_tail()).
  * Otherwise, pseudo-structural characters come in two forms.
- * 1. We have the structural characters ([,],{,},:, comma).
+ * 1. We have the structural characters ([,],{,},:, comma). The 
+ *    term 'structural character' is from the JSON RFC.
  * 2. We have the 'scalar pseudo-structural characters'.
- * Scalars are quotes, and any character except structural characters.
+ *    Scalars are quotes, and any character except structural characters and white space.
+ *
  * To identify the scalar pseudo-structural characters, we must look at what comes
  * before them: it must be a space, a quote or a structural characters.
  * Starting with simdjson v0.3, we identify them by
@@ -36,7 +38,7 @@ public:
 
   // string and escape characters
   json_string_block _string;
-  // whitespace, operators, scalars
+  // whitespace, structural characters ('operators'), scalars
   json_character_block _characters;
   // whether the previous character was a scalar
   uint64_t _follows_potential_nonquote_scalar;
@@ -44,7 +46,7 @@ private:
   // Potential structurals (i.e. disregarding strings)
 
   /**
-   * structural elements ([,],{,},:) plus scalar starts like 123, true and "abc".
+   * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
   really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
@@ -65,7 +67,7 @@ private:
    */
   really_inline uint64_t follows_potential_scalar() {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
-    // that is not a structural element ({,},[,],:) nor a quote (") and that is not a
+    // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
     // It is understood that within quoted region, anything at all could be marked (irrelevant).
     return _follows_potential_nonquote_scalar;
@@ -73,11 +75,12 @@ private:
 };
 
 /**
- * Scans JSON for important bits: operators, strings, and scalars.
+ * Scans JSON for important bits: structural characters or 'operators', strings, and scalars.
  *
  * The scanner starts by calculating two distinct things:
  * - string characters (taking \" into account)
- * - operators ([]{},:) and scalars (runs of non-operators like 123, true and "abc")
+ * - structural characters or 'operators' ([]{},:, comma)
+ *   and scalars (runs of non-operators like 123, true and "abc")
  *
  * To minimize data dependency (a key component of the scanner's speed), it finds these in parallel:
  * in particular, the operator/scalar bit will find plenty of things that are actually part of
@@ -92,7 +95,7 @@ public:
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
-  // (anything except whitespace or an operator).
+  // (anything except whitespace or a structural character/'operator').
   uint64_t prev_scalar = 0ULL;
   json_string_scanner string_scanner{};
 };
@@ -124,9 +127,9 @@ really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   // pseudo-structural character just like we would if we had  ' "a string" true '; otherwise we
   // may need to add an extra check when parsing strings.
   //
-  // Performance note: technically speaking, we should do follows(characters.scalar() & ~strings.quote(),
-  // but under some processors, and not requires two operations.
-  uint64_t follows_nonquote_scalar = follows(characters.scalar() ^ strings.quote(), prev_scalar);
+  // Performance: there are many ways to skin this cat.
+  const uint64_t space_quote_structural = (characters.op() | characters.whitespace() | strings.quote());
+  uint64_t follows_nonquote_scalar = follows(~space_quote_structural, prev_scalar);
   return {
     strings,
     characters,
