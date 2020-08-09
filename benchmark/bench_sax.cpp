@@ -361,4 +361,29 @@ BENCHMARK(dom_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](con
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
+static void dom_parse(State &state) {
+  // Load twitter.json to a buffer
+  padded_string json;
+  if (auto error = padded_string::load(TWITTER_JSON).get(json)) { cerr << error << endl; return; }
+
+  // Allocate
+  dom::parser parser;
+  if (auto error = parser.allocate(json.size())) { cerr << error << endl; return; };
+
+  // Read tweets
+  size_t bytes = 0;
+  for (UNUSED auto _ : state) {
+    if (parser.parse(json).error()) { throw "Parsing failed"; };
+    bytes += json.size();
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(dom_parse)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
 BENCHMARK_MAIN();
