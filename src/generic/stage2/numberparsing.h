@@ -312,8 +312,8 @@ simdjson_really_inline bool parse_exponent(SIMDJSON_UNUSED const uint8_t *const 
   // In particular, it could overflow to INT64_MIN, and we cannot do - INT64_MIN.
   // Thus we *must* check for possible overflow before we negate exp_number.
 
-  // Performance notes: it may seem like combining the two "unlikely checks" below into
-  // a single unlikely path would be faster. The reasoning is sound, but the compiler may
+  // Performance notes: it may seem like combining the two "simdjson_unlikely checks" below into
+  // a single simdjson_unlikely path would be faster. The reasoning is sound, but the compiler may
   // not oblige and may, in fact, generate two distinct paths in any case. It might be
   // possible to do uint64_t(p - start_exp - 1) >= 18 but it could end up trading off 
   // instructions for a likely branch, an unconclusive gain.
@@ -380,7 +380,7 @@ simdjson_really_inline bool write_float(const uint8_t *const src, bool negative,
       return success;
     }
   }
-  // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
+  // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
   if (simdjson_unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
@@ -502,7 +502,7 @@ simdjson_really_inline bool parse_number(const uint8_t *const src, W &writer) {
 }
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
-simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+SIMDJSON_UNUSED simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
 
   //
@@ -597,7 +597,7 @@ simdjson_really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * 
 // }
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
-simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+SIMDJSON_UNUSED simdjson_really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
   //
   // Check for minus sign
   //

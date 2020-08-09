@@ -22,7 +22,7 @@ static void recover_one_string(State& state) {
       return;
   }
   dom::element doc;
-  if (error = parser.parse(docdata).get(doc)) {
+  if ((error = parser.parse(docdata).get(doc))) {
     cerr << "could not parse string" << error << endl;
     return;
   }
@@ -48,8 +48,7 @@ static void serialize_twitter(State& state) {
       return;
   }
   // we do not want mem. alloc. in the loop.
-  error = parser.allocate(docdata.size());
-  if(error) {
+  if((error = parser.allocate(docdata.size()))) {
       cout << error << endl;
       return;
   }

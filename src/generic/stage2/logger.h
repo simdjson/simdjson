@@ -8,7 +8,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
