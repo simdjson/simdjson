@@ -460,7 +460,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
     if (!parse_exponent(src, p, exponent)) { return false; }
   }
   if (is_float) {
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer);
+    return write_float(src, negative, i, start_digits, digit_count, exponent, writer)
+          && is_structural_or_whitespace(*p);
   }
 
   // The longest negative 64-bit number is 19 digits.
