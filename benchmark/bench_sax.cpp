@@ -339,24 +339,24 @@ really_inline uint8_t sax_tweet_reader_visitor::field_lookup::hash(const char * 
   // actually care about.
   return uint8_t((key[0] << 0) ^ (key[1] << 3) ^ (key[2] << 3) ^ (key[3] << 1) ^ depth);
 }
-really_inline sax_tweet_reader_visitor::field sax_tweet_reader_visitor::field_lookup::get(const uint8_t * key, containers container) {
-  auto index = hash((const char *)key, uint32_t(container));
+really_inline sax_tweet_reader_visitor::field sax_tweet_reader_visitor::field_lookup::get(const uint8_t * key, containers c) {
+  auto index = hash((const char *)key, uint32_t(c));
   auto entry = entries[index];
   // TODO if any key is > SIMDJSON_PADDING, this will access inaccessible memory!
-  if (container != entry.container || memcmp(key, entry.key, entry.len)) { return entries[0]; }
+  if (c != entry.container || memcmp(key, entry.key, entry.len)) { return entries[0]; }
   return entry;
 }
-really_inline void sax_tweet_reader_visitor::field_lookup::add(const char * key, size_t len, containers container, field_type type, size_t offset) {
-  auto index = hash(key, uint32_t(container));
+really_inline void sax_tweet_reader_visitor::field_lookup::add(const char * key, size_t len, containers c, field_type type, size_t offset) {
+  auto index = hash(key, uint32_t(c));
   if (index == 0) {
-    fprintf(stderr, "%s (depth %d) hashes to zero, which is used as 'missing value'\n", key, int(container));
+    fprintf(stderr, "%s (depth %d) hashes to zero, which is used as 'missing value'\n", key, int(c));
     assert(false);
   }
   if (entries[index].key) {
-    fprintf(stderr, "%s (depth %d) collides with %s (depth %d) !\n", key, int(container), entries[index].key, int(entries[index].container));
+    fprintf(stderr, "%s (depth %d) collides with %s (depth %d) !\n", key, int(c), entries[index].key, int(entries[index].container));
     assert(false);
   }
-  entries[index] = { key, len, offset, container, type };
+  entries[index] = { key, len, offset, c, type };
 }
 really_inline void sax_tweet_reader_visitor::field_lookup::neg(const char * const key, uint32_t depth) {
   auto index = hash(key, depth);
@@ -592,7 +592,8 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 SIMDJSON_POP_DISABLE_WARNINGS
 
 using namespace benchmark;
-using namespace std;
+using std::cerr;
+using std::endl;
 
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const int REPETITIONS = 10;
