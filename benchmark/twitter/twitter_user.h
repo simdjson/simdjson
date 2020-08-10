@@ -3,8 +3,6 @@
 
 #include "simdjson.h"
 
-SIMDJSON_TARGET_HASWELL
-
 namespace twitter {
 
 struct twitter_user {
@@ -13,7 +11,5 @@ struct twitter_user {
 };
 
 } // namespace twitter
-
-SIMDJSON_UNTARGET_REGION
 
 #endif // TWITTER_USER_H

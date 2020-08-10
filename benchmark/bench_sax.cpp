@@ -46,6 +46,11 @@ static void sax_tweets(State &state) {
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(tweets), benchmark::Counter::kIsRate);
 }
+BENCHMARK(sax_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+#if SIMDJSON_EXCEPTIONS
 
 really_inline uint64_t nullable_int(dom::element element) {
   if (element.is_null()) { return 0; }
@@ -97,6 +102,11 @@ static void dom_tweets(State &state) {
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
   state.counters["tweets"] = Counter(double(num_tweets), benchmark::Counter::kIsRate);
 }
+BENCHMARK(dom_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+#endif // SIMDJSON_EXCEPTIONS
 
 static void dom_parse(State &state) {
   // Load twitter.json to a buffer
@@ -119,13 +129,6 @@ static void dom_parse(State &state) {
 	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
-
-BENCHMARK(sax_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
-    return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
-BENCHMARK(dom_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
-    return *(std::max_element(std::begin(v), std::end(v)));
-  })->DisplayAggregatesOnly(true);
 BENCHMARK(dom_parse)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
