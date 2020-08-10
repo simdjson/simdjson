@@ -367,19 +367,22 @@ really_inline void sax_tweet_reader_visitor::field_lookup::neg(const char * cons
 }
 
 sax_tweet_reader_visitor::field_lookup::field_lookup() {
-  #define ADD(key, container, type, offset) add("\"" #key "\"", strlen("\"" #key "\""), container, type, offset);
-  ADD(statuses, containers::top_object, field_type::array, 0);
-  ADD(id, containers::tweet, field_type::unsigned_integer, offsetof(tweet, id));
-  ADD(in_reply_to_status_id, containers::tweet, field_type::nullable_unsigned_integer, offsetof(tweet, in_reply_to_status_id));
-  ADD(retweet_count, containers::tweet, field_type::unsigned_integer, offsetof(tweet, retweet_count));
-  ADD(favorite_count, containers::tweet, field_type::unsigned_integer, offsetof(tweet, favorite_count));
-  ADD(text, containers::tweet, field_type::string, offsetof(tweet, text));
-  ADD(created_at, containers::tweet, field_type::string, offsetof(tweet, created_at)); // TODO this could be more constrainted
-  ADD(user, containers::tweet, field_type::object, offsetof(tweet, user));
-  ADD(id, containers::user, field_type::unsigned_integer, offsetof(tweet, user)+offsetof(twitter_user, id));
-  ADD(screen_name, containers::user, field_type::string, offsetof(tweet, user)+offsetof(twitter_user, screen_name));
-  #undef ADD
+  add("\"statuses\"", strlen("\"statuses\""), containers::top_object, field_type::array, 0); // { "statuses": [...]
+  #define TWEET_FIELD(KEY, TYPE) add("\"" #KEY "\"", strlen("\"" #KEY "\""), containers::tweet, TYPE, offsetof(tweet, KEY));
+  TWEET_FIELD(id, field_type::unsigned_integer);
+  TWEET_FIELD(in_reply_to_status_id, field_type::nullable_unsigned_integer);
+  TWEET_FIELD(retweet_count, field_type::unsigned_integer);
+  TWEET_FIELD(favorite_count, field_type::unsigned_integer);
+  TWEET_FIELD(text, field_type::string);
+  TWEET_FIELD(created_at, field_type::string);
+  TWEET_FIELD(user, field_type::object)
+  #undef TWEET_FIELD
+  #define USER_FIELD(KEY, TYPE) add("\"" #KEY "\"", strlen("\"" #KEY "\""), containers::user, TYPE, offsetof(tweet, user)+offsetof(twitter_user, KEY));
+  USER_FIELD(id, field_type::unsigned_integer);
+  USER_FIELD(screen_name, field_type::string);
+  #undef USER_FIELD
 
+  // Check for collisions with other (unused) hash keys in typical twitter JSON
   #define NEG(key, depth) neg("\"" #key "\"", depth);
   NEG(display_url, 9);
   NEG(expanded_url, 9);
