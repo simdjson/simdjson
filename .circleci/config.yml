@@ -197,11 +197,6 @@ jobs:
     executor: gcc10
     environment: { CXXFLAGS: -march=nehalem }
     steps: [ cmake_test ]
-  no-computed-goto-gcc10:
-    description: Build, run tests and check performance on GCC 7 with -DSIMDJSON_NO_COMPUTED_GOTO=true
-    executor: gcc10
-    environment: { CXXFLAGS: -DSIMDJSON_NO_COMPUTED_GOTO=true }
-    steps: [ cmake_test ]
 
 workflows:
   version: 2.1
@@ -231,7 +226,6 @@ workflows:
       # quicker make single-implementation tests
       - arch-haswell-gcc10
       - arch-nehalem-gcc10
-      - no-computed-goto-gcc10
 
       # testing "just the library"
       - justlib-gcc10

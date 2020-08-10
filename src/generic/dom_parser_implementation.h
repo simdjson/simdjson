@@ -10,12 +10,6 @@ struct scope_descriptor {
   uint32_t count; // how many elements in the scope
 }; // struct scope_descriptor
 
-#ifdef SIMDJSON_USE_COMPUTED_GOTO
-typedef void* ret_address_t;
-#else
-typedef char ret_address_t;
-#endif
-
 class dom_parser_implementation final : public internal::dom_parser_implementation {
 public:
   /** Tape location of each open { or [ */

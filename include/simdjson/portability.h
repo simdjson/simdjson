@@ -21,7 +21,6 @@
  * Under clang for Windows, we enable:
  *  * target pragmas so that part and only part of the
  *     code gets compiled for advanced instructions.
- *  * computed gotos.
  *
  */
 #ifdef __clang__

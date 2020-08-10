@@ -8,7 +8,6 @@ are still some scenarios where tuning can enhance performance.
   * [Keeping documents around for longer](#keeping-documents-around-for-longer)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Large files and huge page support](#large-files-and-huge-page-support)
-* [Computed GOTOs](#computed-gotos)
 * [Number parsing](#number-parsing)
 * [Visual Studio](#visual-studio)
 * [Downclocking](#downclocking)
@@ -121,18 +120,6 @@ use the `-H` flag to omit the memory allocation cost from the benchmark results.
 ./parse largefile # includes memory allocation cost
 ./parse -H largefile # without memory allocation
 ```
-
-Computed GOTOs
---------------
-
-For best performance, we use a technique called "computed goto" when the compiler supports it, it is
-also sometimes described as "Labels as Values". Though it is not part of the C++ standard, it is
-supported by many major compilers and it brings measurable performance benefits that are difficult
-to achieve otherwise. The computed gotos are  automatically disabled under Visual Studio.
-
-If you wish to forcefully disable computed gotos, you can do so by compiling the code with
-`-DSIMDJSON_NO_COMPUTED_GOTO=1`. It is not recommended to disable computed gotos if your compiler
-supports it. In fact, you should almost never need to be concerned with computed gotos.
 
 Number parsing
 --------------
