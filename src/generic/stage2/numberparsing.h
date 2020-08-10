@@ -502,7 +502,7 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
 }
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
-really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
+UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
 
   //
@@ -597,7 +597,7 @@ really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src
 // }
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
-really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
+UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
   //
   // Check for minus sign
   //

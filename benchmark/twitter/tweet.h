@@ -4,8 +4,6 @@
 #include "simdjson.h"
 #include "twitter_user.h"
 
-SIMDJSON_TARGET_HASWELL
-
 namespace twitter {
 
 struct tweet {
@@ -19,7 +17,5 @@ struct tweet {
 };
 
 } // namespace twitter
-
-SIMDJSON_UNTARGET_REGION
 
 #endif // TWEET_H
