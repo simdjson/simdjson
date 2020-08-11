@@ -56,26 +56,6 @@ public:
   really_inline void log_error(const char *error) {
     logger::log_line(*this, "", "ERROR", error);
   }
-
-private:
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &visitor) {
-    if (peek_next_char() == '}') {
-      advance();
-      visitor.empty_object(*this);
-      return true;
-    }
-    return false;
-  }
-  template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &visitor) {
-    if (peek_next_char() == ']') {
-      advance();
-      visitor.empty_array(*this);
-      return true;
-    }
-    return false;
-  }
 };
 
 template<bool STREAMING, typename T>
@@ -94,7 +74,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(T &visitor) no
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
+      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
       case '[':
         // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
         // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -103,8 +83,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(T &visitor) no
             return TAPE_ERROR;
           }
         }
-        if (!empty_array(visitor)) { goto array_begin; };
-        break;
+        if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.root_primitive(*this, value) ); break;
     }
   }
@@ -130,8 +109,8 @@ object_field:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
-      case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
+      case '[': if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
     }
   }
@@ -169,8 +148,8 @@ array_value:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (!empty_object(visitor)) { goto object_begin; }; break;
-      case '[': if (!empty_array(visitor)) { goto array_begin; }; break;
+      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
+      case '[': if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
     }
   }
