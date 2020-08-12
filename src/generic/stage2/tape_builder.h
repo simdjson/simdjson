@@ -122,40 +122,32 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_primi
   }
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
-  iter.log_value("empty object");
   return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_empty_array(json_iterator &iter) noexcept {
-  iter.log_value("empty array");
   return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
-  iter.log_start_value("document");
   start_container(iter);
   return SUCCESS;
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
-  iter.log_start_value("object");
   start_container(iter);
   return SUCCESS;
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
-  iter.log_start_value("array");
   start_container(iter);
   return SUCCESS;
 }
 
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_object_end(json_iterator &iter) noexcept {
-  iter.log_end_value("object");
   return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_array_end(json_iterator &iter) noexcept {
-  iter.log_end_value("array");
   return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
 }
 SIMDJSON_WARN_UNUSED simdjson_really_inline error_code tape_builder::visit_document_end(json_iterator &iter) noexcept {
-  iter.log_end_value("document");
   constexpr uint32_t start_tape_index = 0;
   tape.append(start_tape_index, internal::tape_type::ROOT);
   tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
