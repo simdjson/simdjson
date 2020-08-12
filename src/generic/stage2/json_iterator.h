@@ -67,6 +67,7 @@ object_begin:
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
   SIMDJSON_TRY( visitor.visit_object_start(*this) );
+  dom_parser.is_array[depth] = false;
 
   {
     auto key = advance();
@@ -113,6 +114,7 @@ array_begin:
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
   SIMDJSON_TRY( visitor.visit_array_start(*this) );
+  dom_parser.is_array[depth] = true;
   SIMDJSON_TRY( visitor.increment_count(*this) );
 
 array_value:

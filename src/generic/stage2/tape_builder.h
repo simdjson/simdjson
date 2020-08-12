@@ -28,7 +28,6 @@ struct tape_builder {
 
   // increment_count increments the count of keys in an object or values in an array.
   WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
-  really_inline bool in_array(json_iterator &iter) noexcept;
 
 private:
   /** Next location to write to tape */
@@ -108,19 +107,16 @@ WARN_UNUSED really_inline error_code tape_builder::visit_empty_array(json_iterat
 WARN_UNUSED really_inline error_code tape_builder::visit_document_start(json_iterator &iter) noexcept {
   iter.log_start_value("document");
   start_container(iter);
-  iter.dom_parser.is_array[iter.depth] = false;
   return SUCCESS;
 }
 WARN_UNUSED really_inline error_code tape_builder::visit_object_start(json_iterator &iter) noexcept {
   iter.log_start_value("object");
   start_container(iter);
-  iter.dom_parser.is_array[iter.depth] = false;
   return SUCCESS;
 }
 WARN_UNUSED really_inline error_code tape_builder::visit_array_start(json_iterator &iter) noexcept {
   iter.log_start_value("array");
   start_container(iter);
-  iter.dom_parser.is_array[iter.depth] = true;
   return SUCCESS;
 }
 
@@ -146,9 +142,6 @@ WARN_UNUSED really_inline error_code tape_builder::visit_key(json_iterator &iter
 WARN_UNUSED really_inline error_code tape_builder::increment_count(json_iterator &iter) noexcept {
   iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
   return SUCCESS;
-}
-really_inline bool tape_builder::in_array(json_iterator &iter) noexcept {
-  return iter.dom_parser.is_array[iter.depth];
 }
 
 really_inline tape_builder::tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
