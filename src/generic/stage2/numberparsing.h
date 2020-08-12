@@ -24,7 +24,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+simdjson_really_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, double &d) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -40,7 +40,7 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
 #endif
     // convert the integer into a double. This is lossless since
     // 0 <= i <= 2^53 - 1.
-    double d = double(i);
+    d = double(i);
     //
     // The general idea is as follows.
     // If 0 <= s < 2^53 and if 10^0 <= p <= 10^22 then
@@ -59,8 +59,7 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
     if (negative) {
       d = -d;
     }
-    *success = true;
-    return d;
+    return true;
   }
   // When 22 < power && power <  22 + 16, we could
   // hope for another, secondary fast path.  It wa
@@ -85,7 +84,8 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
   // In the slow path, we need to adjust i so that it is > 1<<63 which is always
   // possible, except if i == 0, so we handle i == 0 separately.
   if(i == 0) {
-    return 0.0;
+    d = 0.0;
+    return true;
   }
 
   // We are going to need to do some 64-bit arithmetic to get a more precise product.
@@ -135,8 +135,7 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
     // This does happen, e.g. with 7.3177701707893310e+15.
     if (((product_middle + 1 == 0) && ((product_high & 0x1FF) == 0x1FF) &&
          (product_low + i < product_low))) { // let us be prudent and bail out.
-      *success = false;
-      return 0;
+      return false;
     }
     upper = product_high;
     lower = product_middle;
@@ -157,25 +156,24 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
   // floating-point values.
   if (simdjson_unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
-      // if mantissa & 1 == 1 we might need to round up.
-      //
-      // Scenarios:
-      // 1. We are not in the middle. Then we should round up.
-      //
-      // 2. We are right in the middle. Whether we round up depends
-      // on the last significant bit: if it is "one" then we round
-      // up (round to even) otherwise, we do not.
-      //
-      // So if the last significant bit is 1, we can safely round up.
-      // Hence we only need to bail out if (mantissa & 3) == 1.
-      // Otherwise we may need more accuracy or analysis to determine whether
-      // we are exactly between two floating-point numbers.
-      // It can be triggered with 1e23.
-      // Note: because the factor_mantissa and factor_mantissa_low are
-      // almost always rounded down (except for small positive powers),
-      // almost always should round up.
-      *success = false;
-      return 0;
+    // if mantissa & 1 == 1 we might need to round up.
+    //
+    // Scenarios:
+    // 1. We are not in the middle. Then we should round up.
+    //
+    // 2. We are right in the middle. Whether we round up depends
+    // on the last significant bit: if it is "one" then we round
+    // up (round to even) otherwise, we do not.
+    //
+    // So if the last significant bit is 1, we can safely round up.
+    // Hence we only need to bail out if (mantissa & 3) == 1.
+    // Otherwise we may need more accuracy or analysis to determine whether
+    // we are exactly between two floating-point numbers.
+    // It can be triggered with 1e23.
+    // Note: because the factor_mantissa and factor_mantissa_low are
+    // almost always rounded down (except for small positive powers),
+    // almost always should round up.
+    return false;
   }
 
   mantissa += mantissa & 1;
@@ -193,15 +191,12 @@ simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool n
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
   if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
-    *success = false;
-    return 0;
+    return false;
   }
   mantissa |= real_exponent << 52;
   mantissa |= (((uint64_t)negative) << 63);
-  double d;
   memcpy(&d, &mantissa, sizeof(d));
-  *success = true;
-  return d;
+  return true;
 }
 
 static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
@@ -392,9 +387,8 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
     writer.skip_double();
     return error;
   }
-  bool success = true;
-  double d = compute_float_64(exponent, i, negative, &success);
-  if (!success) {
+  double d;
+  if (!compute_float_64(exponent, i, negative, d)) {
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
@@ -713,12 +707,10 @@ SIMDJSON_UNUSED simdjson_really_inline simdjson_result<double> parse_double(cons
   //
   // Assemble (or slow-parse) the float
   //
-  if (simdjson_likely(!overflow)) {
-    bool success = true;
-    double d = compute_float_64(exponent, i, negative, &success);
-    if (success) { return d; }
-  }
   double d;
+  if (simdjson_likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
   if (!parse_float_strtod(src-negative, &d)) {
     return NUMBER_ERROR;
   }
