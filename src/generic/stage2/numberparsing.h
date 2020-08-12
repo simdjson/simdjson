@@ -497,6 +497,7 @@ really_inline error_code parse_number(const uint8_t *const src, V &visitor) {
   return SUCCESS;
 }
 
+// SAX functions
 namespace {
 // Parse any number from 0 to 18,446,744,073,709,551,615
 UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
@@ -539,7 +540,7 @@ UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * co
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
 // Call this version of the method if you regularly expect 8- or 16-digit numbers.
-really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+UNUSED really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
 
   //
@@ -642,7 +643,7 @@ UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) 
   return negative ? (~i+1) : i;
 }
 
-really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+UNUSED really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
   //
   // Check for minus sign
   //
