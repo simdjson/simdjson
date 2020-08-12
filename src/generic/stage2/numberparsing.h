@@ -642,81 +642,79 @@ UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) 
   return negative ? (~i+1) : i;
 }
 
-// really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
-//   //
-//   // Check for minus sign
-//   //
-//   bool negative = (*src == '-');
-//   src += negative;
+really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  src += negative;
 
-//   //
-//   // Parse the integer part.
-//   //
-//   uint64_t i = 0;
-//   const uint8_t *p = src;
-//   p += parse_digit(*p, i);
-//   bool leading_zero = (i == 0);
-//   while (parse_digit(*p, i)) { p++; }
-//   // no integer digits, or 0123 (zero must be solo)
-//   if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  const uint8_t *p = src;
+  p += parse_digit(*p, i);
+  bool leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+  // no integer digits, or 0123 (zero must be solo)
+  if ( p == src || (leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
-//   //
-//   // Parse the decimal part.
-//   //
-//   int64_t exponent = 0;
-//   bool overflow;
-//   if (likely(*p == '.')) {
-//     p++;
-//     const uint8_t *start_decimal_digits = p;
-//     if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-//     p++;
-//     while (parse_digit(*p, i)) { p++; }
-//     exponent = -(p - start_decimal_digits);
+  //
+  // Parse the decimal part.
+  //
+  int64_t exponent = 0;
+  bool overflow;
+  if (likely(*p == '.')) {
+    p++;
+    const uint8_t *start_decimal_digits = p;
+    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
+    p++;
+    while (parse_digit(*p, i)) { p++; }
+    exponent = -(p - start_decimal_digits);
 
-//     // Overflow check. 19 digits (minus the decimal) may be overflow.
-//     overflow = p-src-1 >= 19;
-//     if (unlikely(overflow && leading_zero)) {
-//       // Skip leading 0.00000 and see if it still overflows
-//       const uint8_t *start_digits = src + 2;
-//       while (*start_digits == '0') { start_digits++; }
-//       overflow = start_digits-src >= 19;
-//     }
-//   } else {
-//     overflow = p-src >= 19;
-//   }
+    // Overflow check. 19 digits (minus the decimal) may be overflow.
+    overflow = p-src-1 >= 19;
+    if (unlikely(overflow && leading_zero)) {
+      // Skip leading 0.00000 and see if it still overflows
+      const uint8_t *start_digits = src + 2;
+      while (*start_digits == '0') { start_digits++; }
+      overflow = start_digits-src >= 19;
+    }
+  } else {
+    overflow = p-src >= 19;
+  }
 
-//   //
-//   // Parse the exponent
-//   //
-//   if (*p == 'e' || *p == 'E') {
-//     p++;
-//     bool exp_neg = *p == '-';
-//     p += exp_neg || *p == '+';
+  //
+  // Parse the exponent
+  //
+  if (*p == 'e' || *p == 'E') {
+    p++;
+    bool exp_neg = *p == '-';
+    p += exp_neg || *p == '+';
 
-//     uint64_t exp = 0;
-//     const uint8_t *start_exp_digits = p;
-//     while (parse_digit(*p, exp)) { p++; }
-//     // no exp digits, or 20+ exp digits
-//     if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    uint64_t exp = 0;
+    const uint8_t *start_exp_digits = p;
+    while (parse_digit(*p, exp)) { p++; }
+    // no exp digits, or 20+ exp digits
+    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
 
-//     exponent += exp_neg ? 0-exp : exp;
-//     overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
-//   }
+    exponent += exp_neg ? 0-exp : exp;
+    overflow = overflow || exponent < FASTFLOAT_SMALLEST_POWER || exponent > FASTFLOAT_LARGEST_POWER;
+  }
 
-//   //
-//   // Assemble (or slow-parse) the float
-//   //
-//   if (likely(!overflow)) {
-//     bool success = false;
-//     double d = compute_float_64(exponent, i, negative, &success);
-//     if (success) { return d; }
-//   }
-//   double d;
-//   if (!parse_float_strtod(src-negative, &d)) {
-//     return NUMBER_ERROR;
-//   }
-//   return d;
-// }
+  //
+  // Assemble (or slow-parse) the float
+  //
+  double d;
+  if (likely(!overflow)) {
+    if (compute_float_64(exponent, i, negative, d)) { return d; }
+  }
+  if (!parse_float_strtod(src-negative, &d)) {
+    return NUMBER_ERROR;
+  }
+  return d;
+}
 
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
