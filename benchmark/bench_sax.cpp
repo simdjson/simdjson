@@ -325,16 +325,16 @@ static void sax_parse_largerandom(State &state) {
 
   // Allocate
   largerandom::sax_point_reader reader;
-  reader.set_capacity(json.size());
+  if (auto error = reader.set_capacity(json.size())) { throw error; }
   // warming
   for(size_t i = 0; i < 10; i++) {
-    reader.read_points(json);
+    if (auto error = reader.read_points(json)) { throw error; }
   }
 
   // Read
   size_t bytes = 0;
   for (UNUSED auto _ : state) {
-    reader.read_points(json);
+    if (auto error = reader.read_points(json)) { throw error; }
     bytes += json.size();
     benchmark::DoNotOptimize(reader.points.data());
   }
