@@ -497,6 +497,7 @@ really_inline error_code parse_number(const uint8_t *const src, V &visitor) {
   return SUCCESS;
 }
 
+namespace {
 // Parse any number from 0 to 18,446,744,073,709,551,615
 UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const src) noexcept {
   const uint8_t *p = src;
@@ -538,59 +539,58 @@ UNUSED really_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * co
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
 // Call this version of the method if you regularly expect 8- or 16-digit numbers.
-// really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
-//   const uint8_t *p = src;
+really_inline simdjson_result<uint64_t> parse_large_unsigned(const uint8_t * const src) noexcept {
+  const uint8_t *p = src;
 
-//   //
-//   // Parse the integer part.
-//   //
-//   const uint8_t *const start_digits = p;
-//   uint64_t i = 0;
-//   if (is_made_of_eight_digits_fast(p)) {
-//     i = i * 100000000 + parse_eight_digits_unrolled(p);
-//     p += 8;
-//     if (is_made_of_eight_digits_fast(p)) {
-//       i = i * 100000000 + parse_eight_digits_unrolled(p);
-//       p += 8;
-//       if (parse_digit(*p, i)) { // digit 17
-//         p++;
-//         if (parse_digit(*p, i)) { // digit 18
-//           p++;
-//           if (parse_digit(*p, i)) { // digit 19
-//             p++;
-//             if (parse_digit(*p, i)) { // digit 20
-//               p++;
-//               if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
-//               // Positive overflow check:
-//               // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
-//               //   biggest uint64_t.
-//               // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
-//               //   If we got here, it's a 20 digit number starting with the digit "1".
-//               // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
-//               //   than 1,553,255,926,290,448,384.
-//               // - That is smaller than the smallest possible 20-digit number the user could write:
-//               //   10,000,000,000,000,000,000.
-//               // - Therefore, if the number is positive and lower than that, it's overflow.
-//               // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
-//               //
-//               if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
-//             }
-//           }
-//         }
-//       }
-//     } // 16 digits
-//   } else { // 8 digits
-//     // Less than 8 digits can't overflow, simpler logic here.
-//     if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
-//     while (parse_digit(*p, i)) { p++; }
-//   }
+  //
+  // Parse the integer part.
+  //
+  uint64_t i = 0;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+    if (is_made_of_eight_digits_fast(p)) {
+      i = i * 100000000 + parse_eight_digits_unrolled(p);
+      p += 8;
+      if (parse_digit(*p, i)) { // digit 17
+        p++;
+        if (parse_digit(*p, i)) { // digit 18
+          p++;
+          if (parse_digit(*p, i)) { // digit 19
+            p++;
+            if (parse_digit(*p, i)) { // digit 20
+              p++;
+              if (parse_digit(*p, i)) { return NUMBER_ERROR; } // 21 digits is an error
+              // Positive overflow check:
+              // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+              //   biggest uint64_t.
+              // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+              //   If we got here, it's a 20 digit number starting with the digit "1".
+              // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+              //   than 1,553,255,926,290,448,384.
+              // - That is smaller than the smallest possible 20-digit number the user could write:
+              //   10,000,000,000,000,000,000.
+              // - Therefore, if the number is positive and lower than that, it's overflow.
+              // - The value we are looking at is less than or equal to 9,223,372,036,854,775,808 (INT64_MAX).
+              //
+              if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return NUMBER_ERROR; }
+            }
+          }
+        }
+      }
+    } // 16 digits
+  } else { // 8 digits
+    // Less than 8 digits can't overflow, simpler logic here.
+    if (parse_digit(*p, i)) { p++; } else { return NUMBER_ERROR; }
+    while (parse_digit(*p, i)) { p++; }
+  }
 
-//   if (!is_structural_or_whitespace(*p, i)) { return NUMBER_ERROR; }
-//   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
-//   int digit_count = int(p - src);
-//   if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
-//   return i;
-// }
+  if (!is_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  int digit_count = int(p - src);
+  if (digit_count == 0 || ('0' == *src && digit_count > 1)) { return NUMBER_ERROR; }
+  return i;
+}
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 UNUSED really_inline simdjson_result<int64_t> parse_integer(const uint8_t *src) noexcept {
@@ -715,7 +715,7 @@ really_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept
   }
   return d;
 }
-
+} //namespace {}
 #endif // SIMDJSON_SKIPNUMBERPARSING
 
 } // namespace numberparsing
