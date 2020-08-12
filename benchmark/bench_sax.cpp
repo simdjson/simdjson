@@ -198,7 +198,7 @@ static void dom_parse_largerandom(State &state) {
       std::cerr << "failure: " << error << std::endl;
       throw "Parsing failed"; 
     };
-    for (auto p : simdjson::dom::array(doc)) {
+    for (auto p : doc) {
       container.emplace_back(my_point{p["x"], p["y"], p["z"]});
     }
     bytes += json.size();
