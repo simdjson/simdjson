@@ -17,7 +17,7 @@ struct tape_builder {
     return iter.walk_document<STREAMING>(builder);
   }
 
-  simdjson_really_inline error_code root_primitive(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code root_primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_root_true_atom(iter, value);
@@ -32,7 +32,7 @@ struct tape_builder {
         return TAPE_ERROR;
     }
   }
-  simdjson_really_inline error_code primitive(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
       case '"': return parse_string(iter, value);
       case 't': return parse_true_atom(iter, value);
@@ -47,13 +47,13 @@ struct tape_builder {
         return TAPE_ERROR;
     }
   }
-  simdjson_really_inline void empty_object(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code empty_object(json_iterator &iter) {
     iter.log_value("empty object");
-    empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
+    return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  simdjson_really_inline void empty_array(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code empty_array(json_iterator &iter) {
     iter.log_value("empty array");
-    empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
+    return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
   SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_document(json_iterator &iter) {
@@ -95,8 +95,9 @@ struct tape_builder {
   }
 
   // increment_count increments the count of keys in an object or values in an array.
-  simdjson_really_inline void increment_count(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code increment_count(json_iterator &iter) {
     iter.dom_parser.open_containers[iter.depth].count++; // we have a key value pair in the object at parser.dom_parser.depth - 1
+    return SUCCESS;
   }
   simdjson_really_inline bool in_array(json_iterator &iter) noexcept {
     return iter.dom_parser.is_array[iter.depth];
@@ -128,7 +129,7 @@ private:
     return SUCCESS;
   }
 
-  simdjson_really_inline error_code parse_root_number(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_number(json_iterator &iter, const uint8_t *value) {
     //
     // We need to make a copy to make sure that the string is space terminated.
     // This is not about padding the input, which should already padded up
@@ -201,10 +202,11 @@ private:
     return uint32_t(tape.next_tape_loc - iter.dom_parser.doc->tape.get());
   }
 
-  simdjson_really_inline void empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code empty_container(json_iterator &iter, internal::tape_type start, internal::tape_type end) {
     auto start_index = next_tape_index(iter);
     tape.append(start_index+2, start);
     tape.append(start_index, end);
+    return SUCCESS;
   }
 
   simdjson_really_inline void start_container(json_iterator &iter) {

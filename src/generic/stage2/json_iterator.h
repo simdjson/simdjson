@@ -96,8 +96,8 @@ SIMDJSON_WARN_UNUSED simdjson_really_inline error_code json_iterator::walk_docum
     }
 
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
-      case '[': if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
+      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.empty_object(*this) ); break; } goto object_begin;
+      case '[': if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.root_primitive(*this, value) ); break;
     }
   }
@@ -114,7 +114,7 @@ object_begin:
   {
     auto key = advance();
     if (*key != '"') { log_error("Object does not start with a key"); return TAPE_ERROR; }
-    visitor.increment_count(*this);
+    SIMDJSON_TRY( visitor.increment_count(*this) );
     SIMDJSON_TRY( visitor.key(*this, key) );
   }
 
@@ -123,8 +123,8 @@ object_field:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
-      case '[': if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
+      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.empty_object(*this) ); break; } goto object_begin;
+      case '[': if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
     }
   }
@@ -132,7 +132,7 @@ object_field:
 object_continue:
   switch (*advance()) {
     case ',':
-      visitor.increment_count(*this);
+      SIMDJSON_TRY( visitor.increment_count(*this) );
       {
         auto key = advance();
         if (simdjson_unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
@@ -156,21 +156,21 @@ array_begin:
   depth++;
   if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
   SIMDJSON_TRY( visitor.start_array(*this) );
-  visitor.increment_count(*this);
+  SIMDJSON_TRY( visitor.increment_count(*this) );
 
 array_value:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); visitor.empty_object(*this); break; } goto object_begin;
-      case '[': if (peek_next_char() == ']') { advance(); visitor.empty_array(*this); break; } goto array_begin;
+      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.empty_object(*this) ); break; } goto object_begin;
+      case '[': if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.primitive(*this, value) ); break;
     }
   }
 
 array_continue:
   switch (*advance()) {
-    case ',': visitor.increment_count(*this); goto array_value;
+    case ',': SIMDJSON_TRY( visitor.increment_count(*this) ); goto array_value;
     case ']': SIMDJSON_TRY( visitor.end_array(*this) ); goto scope_end;
     default: log_error("Missing comma between array values"); return TAPE_ERROR;
   }
