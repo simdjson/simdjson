@@ -7,12 +7,12 @@ namespace stage2 {
 namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
-#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), false)
+#define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
 #else
-#define INVALID_NUMBER(SRC) (false)
+#define INVALID_NUMBER(SRC) (NUMBER_ERROR)
 #define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
 #define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
 #define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
@@ -252,11 +252,11 @@ really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
     WRITE_DOUBLE(d, src, writer);
-    return true;
+    return SUCCESS;
   }
   return INVALID_NUMBER(src);
 }
@@ -273,7 +273,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+really_inline error_code parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -296,10 +296,10 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   if (exponent == 0) {
     return INVALID_NUMBER(src);
   }
-  return true;
+  return SUCCESS;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -347,11 +347,11 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // is bounded in magnitude by the size of the JSON input, we are fine in this universe.
   // To sum it up: the next line should never overflow.
   exponent += (neg_exp ? -exp_number : exp_number);
-  return true;
+  return SUCCESS;
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -373,11 +373,11 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
       // 10000000000000000000000000000000000000000000e+308
       // 3.1415926535897932384626433832795028841971693993751
       //
-      bool success = slow_float_parsing(src, writer);
+      error_code error = slow_float_parsing(src, writer);
       // The number was already written, but we made a copy of the writer
       // when we passed it to the parse_large_integer() function, so
       writer.skip_double();
-      return success;
+      return error;
     }
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
@@ -386,11 +386,11 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    bool success = slow_float_parsing(src, writer);
+    error_code error = slow_float_parsing(src, writer);
     // The number was already written, but we made a copy of the writer when we passed it to the
     // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
     writer.skip_double();
-    return success;
+    return error;
   }
   bool success = true;
   double d = compute_float_64(exponent, i, negative, &success);
@@ -399,16 +399,16 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
   WRITE_DOUBLE(d, src, writer);
-  return true;
+  return SUCCESS;
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+really_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
-  return true;                 // always succeeds
+  return SUCCESS;              // always succeeds
 }
 
 #else
@@ -423,7 +423,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign
@@ -451,17 +451,19 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   if ('.' == *p) {
     is_float = true;
     ++p;
-    if (!parse_decimal(src, p, i, exponent)) { return false; }
+    SIMDJSON_TRY( parse_decimal(src, p, i, exponent) );
     digit_count = int(p - start_digits); // used later to guard against overflows
   }
   if (('e' == *p) || ('E' == *p)) {
     is_float = true;
     ++p;
-    if (!parse_exponent(src, p, exponent)) { return false; }
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
   }
   if (is_float) {
     const bool clean_end = is_structural_or_whitespace(*p);
-    return write_float(src, negative, i, start_digits, digit_count, exponent, writer) && clean_end;
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    if (!clean_end) { return INVALID_NUMBER(src); }
+    return SUCCESS;
   }
 
   // The longest negative 64-bit number is 19 digits.
@@ -470,13 +472,12 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   int longest_digit_count = negative ? 19 : 20;
   if (digit_count > longest_digit_count) { return INVALID_NUMBER(src); }
   if (digit_count == longest_digit_count) {
-    if(negative) {
+    if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
-      if (i > uint64_t(INT64_MAX)+1) {
-        return INVALID_NUMBER(src); 
-      }
+      if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
       WRITE_INTEGER(~i+1, src, writer);
-      return is_structural_or_whitespace(*p);
+      if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+      return SUCCESS;
     // Positive overflow check:
     // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
     //   biggest uint64_t.
@@ -498,7 +499,8 @@ really_inline bool parse_number(const uint8_t *const src, W &writer) {
   } else {
     WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
   }
-  return is_structural_or_whitespace(*p);
+  if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
 }
 
 // SAX functions

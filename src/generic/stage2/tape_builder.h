@@ -160,8 +160,7 @@ WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterat
 
 WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  if (!numberparsing::parse_number(value, tape)) { iter.log_error("Invalid number"); return NUMBER_ERROR; }
-  return SUCCESS;
+  return numberparsing::parse_number(value, tape);
 }
 
 WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
