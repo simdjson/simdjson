@@ -99,6 +99,11 @@ public:
    * Set ENABLE_LOGGING=true in logger.h to see logging.
    */
   really_inline void log_error(const char *error) const noexcept;
+
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
 };
 
 template<bool STREAMING, typename V>
@@ -264,6 +269,39 @@ really_inline void json_iterator::log_end_value(const char *type) const noexcept
 
 really_inline void json_iterator::log_error(const char *error) const noexcept {
   logger::log_line(*this, "", "ERROR", error);
+}
+
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_root_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_root_string(*this, value);
+    case 't': return visitor.visit_root_true_atom(*this, value);
+    case 'f': return visitor.visit_root_false_atom(*this, value);
+    case 'n': return visitor.visit_root_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_root_number(*this, value);
+    default:
+      log_error("Document starts with a non-value character");
+      return TAPE_ERROR;
+  }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, const uint8_t *value) noexcept {
+  switch (*value) {
+    case '"': return visitor.visit_string(*this, value);
+    case 't': return visitor.visit_true_atom(*this, value);
+    case 'f': return visitor.visit_false_atom(*this, value);
+    case 'n': return visitor.visit_null_atom(*this, value);
+    case '-':
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+      return visitor.visit_number(*this, value);
+    default:
+      log_error("Non-value found when value was expected!");
+      return TAPE_ERROR;
+  }
 }
 
 } // namespace stage2
