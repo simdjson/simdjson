@@ -52,12 +52,25 @@ struct tape_builder {
    */
   WARN_UNUSED really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
 
-  /** Called each time a new field or element in an array or object is found. */
-  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
+  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
+  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
+
+  WARN_UNUSED really_inline error_code visit_root_string(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
 
   WARN_UNUSED really_inline error_code visit_unsigned_integer(uint64_t value) noexcept;
   WARN_UNUSED really_inline error_code visit_integer(int64_t value) noexcept;
   WARN_UNUSED really_inline error_code visit_double(double value) noexcept;
+
+
+  /** Called each time a new field or element in an array or object is found. */
+  WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
 
   /** Next location to write to tape */
   tape_writer tape;
@@ -66,16 +79,6 @@ private:
   uint8_t *current_string_buf_loc;
 
   really_inline tape_builder(dom::document &doc) noexcept;
-
-  WARN_UNUSED really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) noexcept;
-  WARN_UNUSED really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
-  WARN_UNUSED really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
 
   really_inline uint32_t next_tape_index(json_iterator &iter) const noexcept;
   really_inline void start_container(json_iterator &iter) noexcept;
@@ -96,34 +99,10 @@ WARN_UNUSED really_inline error_code tape_builder::parse_document(
 }
 
 WARN_UNUSED really_inline error_code tape_builder::visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept {
-  switch (*value) {
-    case '"': return visit_string(iter, value);
-    case 't': return visit_root_true_atom(iter, value);
-    case 'f': return visit_root_false_atom(iter, value);
-    case 'n': return visit_root_null_atom(iter, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visit_root_number(iter, value);
-    default:
-      iter.log_error("Document starts with a non-value character");
-      return TAPE_ERROR;
-  }
+  return iter.visit_root_primitive(*this, value);
 }
 WARN_UNUSED really_inline error_code tape_builder::visit_primitive(json_iterator &iter, const uint8_t *value) noexcept {
-  switch (*value) {
-    case '"': return visit_string(iter, value);
-    case 't': return visit_true_atom(iter, value);
-    case 'f': return visit_false_atom(iter, value);
-    case 'n': return visit_null_atom(iter, value);
-    case '-':
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-      return visit_number(iter, value);
-    default:
-      iter.log_error("Non-value found when value was expected!");
-      return TAPE_ERROR;
-  }
+  return iter.visit_primitive(*this, value);
 }
 WARN_UNUSED really_inline error_code tape_builder::visit_empty_object(json_iterator &iter) noexcept {
   return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
@@ -178,6 +157,10 @@ WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &i
   }
   on_end_string(dst);
   return SUCCESS;
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterator &iter, const uint8_t *value) noexcept {
+  return visit_string(iter, value);
 }
 
 WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
