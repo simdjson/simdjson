@@ -8,14 +8,14 @@ namespace numberparsing {
 
 #ifdef JSON_TEST_NUMBERS
 #define INVALID_NUMBER(SRC) (found_invalid_number((SRC)), NUMBER_ERROR)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) (found_integer((VALUE), (SRC)), writer.append_s64((VALUE)))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) (found_unsigned_integer((VALUE), (SRC)), writer.append_u64((VALUE)))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) (found_float((VALUE), (SRC)), writer.append_double((VALUE)))
+#define WRITE_INTEGER(VALUE, SRC, VISITOR) (found_integer((VALUE), (SRC)), (VISITOR).visit_unsigned_integer((VALUE)))
+#define WRITE_UNSIGNED(VALUE, SRC, VISITOR) (found_unsigned_integer((VALUE), (SRC)), (VISITOR).visit_integer((VALUE)))
+#define WRITE_DOUBLE(VALUE, SRC, VISITOR) (found_float((VALUE), (SRC)), (VISITOR).visit_double((VALUE)))
 #else
 #define INVALID_NUMBER(SRC) (NUMBER_ERROR)
-#define WRITE_INTEGER(VALUE, SRC, WRITER) writer.append_s64((VALUE))
-#define WRITE_UNSIGNED(VALUE, SRC, WRITER) writer.append_u64((VALUE))
-#define WRITE_DOUBLE(VALUE, SRC, WRITER) writer.append_double((VALUE))
+#define WRITE_INTEGER(VALUE, SRC, VISITOR) (VISITOR).visit_unsigned_integer((VALUE))
+#define WRITE_UNSIGNED(VALUE, SRC, VISITOR) (VISITOR).visit_integer((VALUE))
+#define WRITE_DOUBLE(VALUE, SRC, VISITOR) (VISITOR).visit_double((VALUE))
 #endif
 
 // Attempts to compute i * 10^(power) exactly; and if "negative" is
@@ -250,7 +250,7 @@ template<typename W>
 error_code slow_float_parsing(UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
-    WRITE_DOUBLE(d, src, writer);
+    writer.append_double(d);
     return SUCCESS;
   }
   return INVALID_NUMBER(src);
@@ -356,8 +356,8 @@ really_inline int significant_digits(const uint8_t * start_digits, int digit_cou
   return digit_count - int(start - start_digits);
 }
 
-template<typename W>
-really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+template<typename V>
+really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, V &visitor) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -370,10 +370,10 @@ really_inline error_code write_float(const uint8_t *const src, bool negative, ui
     // 10000000000000000000000000000000000000000000e+308
     // 3.1415926535897932384626433832795028841971693993751
     //
-    error_code error = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer
+    error_code error = slow_float_parsing(src, visitor.tape);
+    // The number was already written, but we made a copy of the visitor
     // when we passed it to the parse_large_integer() function, so
-    writer.skip_double();
+    visitor.tape.skip_double();
     return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
@@ -382,10 +382,10 @@ really_inline error_code write_float(const uint8_t *const src, bool negative, ui
   if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
-    error_code error = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
+    error_code error = slow_float_parsing(src, visitor.tape);
+    // The number was already written, but we made a copy of the visitor when we passed it to the
     // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
-    writer.skip_double();
+    visitor.tape.skip_double();
     return error;
   }
   double d;
@@ -393,16 +393,15 @@ really_inline error_code write_float(const uint8_t *const src, bool negative, ui
     // we are almost never going to get here.
     if (!parse_float_strtod(src, &d)) { return INVALID_NUMBER(src); }
   }
-  WRITE_DOUBLE(d, src, writer);
-  return SUCCESS;
+  return WRITE_DOUBLE(d, src, visitor);
 }
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
-template<typename W>
-really_inline error_code parse_number(const uint8_t *const, W &writer) {
-  writer.append_s64(0);        // always write zero
+template<typename V>
+really_inline error_code parse_number(const uint8_t *const, V &visitor) {
+  visitor.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
 
@@ -417,8 +416,8 @@ really_inline error_code parse_number(const uint8_t *const, W &writer) {
 // content and append a space before calling this function.
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
-template<typename W>
-really_inline error_code parse_number(const uint8_t *const src, W &writer) {
+template<typename V>
+really_inline error_code parse_number(const uint8_t *const src, V &visitor) {
 
   //
   // Check for minus sign
@@ -456,7 +455,7 @@ really_inline error_code parse_number(const uint8_t *const src, W &writer) {
   }
   if (is_float) {
     const bool clean_end = is_structural_or_whitespace(*p);
-    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, visitor) );
     if (!clean_end) { return INVALID_NUMBER(src); }
     return SUCCESS;
   }
@@ -470,7 +469,7 @@ really_inline error_code parse_number(const uint8_t *const src, W &writer) {
     if (negative) {
       // Anything negative above INT64_MAX+1 is invalid
       if (i > uint64_t(INT64_MAX)+1) { return INVALID_NUMBER(src);  }
-      WRITE_INTEGER(~i+1, src, writer);
+      SIMDJSON_TRY( WRITE_INTEGER(~i+1, src, visitor) );
       if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
       return SUCCESS;
     // Positive overflow check:
@@ -490,9 +489,9 @@ really_inline error_code parse_number(const uint8_t *const src, W &writer) {
 
   // Write unsigned if it doesn't fit in a signed integer.
   if (i > uint64_t(INT64_MAX)) {
-    WRITE_UNSIGNED(i, src, writer);
+    SIMDJSON_TRY( WRITE_UNSIGNED(i, src, visitor) );
   } else {
-    WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
+    SIMDJSON_TRY( WRITE_INTEGER(negative ? (~i+1) : i, src, visitor) );
   }
   if (!is_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
   return SUCCESS;

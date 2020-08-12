@@ -55,9 +55,13 @@ struct tape_builder {
   /** Called each time a new field or element in an array or object is found. */
   WARN_UNUSED really_inline error_code increment_count(json_iterator &iter) noexcept;
 
-private:
+  WARN_UNUSED really_inline error_code visit_unsigned_integer(uint64_t value) noexcept;
+  WARN_UNUSED really_inline error_code visit_integer(int64_t value) noexcept;
+  WARN_UNUSED really_inline error_code visit_double(double value) noexcept;
+
   /** Next location to write to tape */
   tape_writer tape;
+private:
   /** Next write location in the string buf for stage 2 parsing */
   uint8_t *current_string_buf_loc;
 
@@ -178,7 +182,20 @@ WARN_UNUSED really_inline error_code tape_builder::visit_string(json_iterator &i
 
 WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  return numberparsing::parse_number(value, *this);
+}
+
+WARN_UNUSED really_inline error_code tape_builder::visit_unsigned_integer(uint64_t value) noexcept {
+  tape.append_u64(value);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_integer(int64_t value) noexcept {
+  tape.append_s64(value);
+  return SUCCESS;
+}
+WARN_UNUSED really_inline error_code tape_builder::visit_double(double value) noexcept {
+  tape.append_double(value);
+  return SUCCESS;
 }
 
 WARN_UNUSED really_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {
