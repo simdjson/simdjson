@@ -345,35 +345,36 @@ really_inline error_code parse_exponent(UNUSED const uint8_t *const src, const u
   return SUCCESS;
 }
 
+really_inline int significant_digits(const uint8_t * start_digits, int digit_count) {
+  // It is possible that the integer had an overflow.
+  // We have to handle the case where we have 0.0000somenumber.
+  const uint8_t *start = start_digits;
+  while ((*start == '0') || (*start == '.')) {
+    start++;
+  }
+  // we over-decrement by one when there is a '.'
+  return digit_count - int(start - start_digits);
+}
+
 template<typename W>
 really_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
-    // It is possible that the integer had an overflow.
-    // We have to handle the case where we have 0.0000somenumber.
-    const uint8_t *start = start_digits;
-    while ((*start == '0') || (*start == '.')) {
-      start++;
-    }
-    // we over-decrement by one when there is a '.'
-    digit_count -= int(start - start_digits);
-    if (digit_count >= 19) {
-      // Ok, chances are good that we had an overflow!
-      // this is almost never going to get called!!!
-      // we start anew, going slowly!!!
-      // This will happen in the following examples:
-      // 10000000000000000000000000000000000000000000e+308
-      // 3.1415926535897932384626433832795028841971693993751
-      //
-      error_code error = slow_float_parsing(src, writer);
-      // The number was already written, but we made a copy of the writer
-      // when we passed it to the parse_large_integer() function, so
-      writer.skip_double();
-      return error;
-    }
+  if (unlikely(digit_count-1 >= 19 && significant_digits(start_digits, digit_count) >= 19)) {
+    // Ok, chances are good that we had an overflow!
+    // this is almost never going to get called!!!
+    // we start anew, going slowly!!!
+    // This will happen in the following examples:
+    // 10000000000000000000000000000000000000000000e+308
+    // 3.1415926535897932384626433832795028841971693993751
+    //
+    error_code error = slow_float_parsing(src, writer);
+    // The number was already written, but we made a copy of the writer
+    // when we passed it to the parse_large_integer() function, so
+    writer.skip_double();
+    return error;
   }
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
