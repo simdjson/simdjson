@@ -14,48 +14,19 @@ public:
   template<bool STREAMING, typename V>
   WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
-  // Start a structural 
-  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
-    : buf{_dom_parser.buf},
-      next_structural{&_dom_parser.structural_indexes[start_structural_index]},
-      dom_parser{_dom_parser} {
-  }
+  really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
   // Get the buffer position of the current structural character
-  really_inline char peek_next_char() {
-    return buf[*(next_structural)];
-  }
-  really_inline const uint8_t *advance() {
-    return &buf[*(next_structural++)];
-  }
-  really_inline size_t remaining_len() {
-    return dom_parser.len - *(next_structural-1);
-  }
+  really_inline char peek_next_char() const noexcept;
+  really_inline const uint8_t *advance() noexcept;
+  really_inline size_t remaining_len() const noexcept;
+  really_inline bool at_end() const noexcept;
+  really_inline bool at_beginning() const noexcept;
 
-  really_inline bool at_end() {
-    return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
-  }
-  really_inline bool at_beginning() {
-    return next_structural == dom_parser.structural_indexes.get();
-  }
-
-  really_inline void log_value(const char *type) {
-    logger::log_line(*this, "", type, "");
-  }
-
-  really_inline void log_start_value(const char *type) {
-    logger::log_line(*this, "+", type, "");
-    if (logger::LOG_ENABLED) { logger::log_depth++; }
-  }
-
-  really_inline void log_end_value(const char *type) {
-    if (logger::LOG_ENABLED) { logger::log_depth--; }
-    logger::log_line(*this, "-", type, "");
-  }
-
-  really_inline void log_error(const char *error) {
-    logger::log_line(*this, "", "ERROR", error);
-  }
+  really_inline void log_value(const char *type) const noexcept;
+  really_inline void log_start_value(const char *type) const noexcept;
+  really_inline void log_end_value(const char *type) const noexcept;
+  really_inline void log_error(const char *error) const noexcept;
 };
 
 template<bool STREAMING, typename V>
@@ -175,6 +146,47 @@ document_end:
   return SUCCESS;
 
 } // walk_document()
+
+really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
+  : buf{_dom_parser.buf},
+    next_structural{&_dom_parser.structural_indexes[start_structural_index]},
+    dom_parser{_dom_parser} {
+}
+
+really_inline char json_iterator::peek_next_char() const noexcept {
+  return buf[*(next_structural)];
+}
+really_inline const uint8_t *json_iterator::advance() noexcept {
+  return &buf[*(next_structural++)];
+}
+really_inline size_t json_iterator::remaining_len() const noexcept {
+  return dom_parser.len - *(next_structural-1);
+}
+
+really_inline bool json_iterator::at_end() const noexcept {
+  return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
+}
+really_inline bool json_iterator::at_beginning() const noexcept {
+  return next_structural == dom_parser.structural_indexes.get();
+}
+
+really_inline void json_iterator::log_value(const char *type) const noexcept {
+  logger::log_line(*this, "", type, "");
+}
+
+really_inline void json_iterator::log_start_value(const char *type) const noexcept {
+  logger::log_line(*this, "+", type, "");
+  if (logger::LOG_ENABLED) { logger::log_depth++; }
+}
+
+really_inline void json_iterator::log_end_value(const char *type) const noexcept {
+  if (logger::LOG_ENABLED) { logger::log_depth--; }
+  logger::log_line(*this, "-", type, "");
+}
+
+really_inline void json_iterator::log_error(const char *error) const noexcept {
+  logger::log_line(*this, "", "ERROR", error);
+}
 
 } // namespace stage2
 } // namespace SIMDJSON_IMPLEMENTATION
