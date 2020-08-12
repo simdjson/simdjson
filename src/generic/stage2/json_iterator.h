@@ -11,21 +11,93 @@ public:
   dom_parser_implementation &dom_parser;
   uint32_t depth{0};
 
+  /**
+   * Walk the JSON document.
+   *
+   * The visitor receives callbacks when values are encountered. All callbacks pass the iterator as
+   * the first parameter; some callbacks have other parameters as well:
+   *
+   * - visit_document_start() - at the beginning.
+   * - visit_document_end() - at the end (if things were successful).
+   *
+   * - visit_array_start() - at the start `[` of a non-empty array.
+   * - visit_array_end() - at the end `]` of a non-empty array.
+   * - visit_empty_array() - when an empty array is encountered.
+   *
+   * - visit_object_end() - at the start `]` of a non-empty object.
+   * - visit_object_start() - at the end `]` of a non-empty object.
+   * - visit_empty_object() - when an empty object is encountered.
+   * - visit_key(const uint8_t *key) - when a key in an object field is encountered. key is
+   *                                   guaranteed to point at the first quote of the string (`"key"`).
+   * - visit_primitive(const uint8_t *value) - when a value is a string, number, boolean or null.
+   * - visit_root_primitive(iter, uint8_t *value) - when the top-level value is a string, number, boolean or null.
+   *
+   * - increment_count(iter) - each time a value is found in an array or object.
+   */
   template<bool STREAMING, typename V>
   WARN_UNUSED really_inline error_code walk_document(V &visitor) noexcept;
 
+  /**
+   * Create an iterator capable of walking a JSON document.
+   *
+   * The document must have already passed through stage 1.
+   */
   really_inline json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index);
 
-  // Get the buffer position of the current structural character
-  really_inline char peek_next_char() const noexcept;
+  /**
+   * Look at the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
+  really_inline const uint8_t *peek() const noexcept;
+  /**
+   * Advance to the next token.
+   *
+   * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
+   *
+   * They may include invalid JSON as well (such as `1.2.3` or `ture`).
+   */
   really_inline const uint8_t *advance() noexcept;
+  /**
+   * Get the remaining length of the document, from the start of the current token.
+   */
   really_inline size_t remaining_len() const noexcept;
-  really_inline bool at_end() const noexcept;
+  /**
+   * Check if we are at the end of the document.
+   *
+   * If this is true, there are no more tokens.
+   */
+  really_inline bool at_eof() const noexcept;
+  /**
+   * Check if we are at the beginning of the document.
+   */
   really_inline bool at_beginning() const noexcept;
 
+  /**
+   * Log that a value has been found.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
   really_inline void log_value(const char *type) const noexcept;
+  /**
+   * Log the start of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
   really_inline void log_start_value(const char *type) const noexcept;
+  /**
+   * Log the end of a multipart value.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
   really_inline void log_end_value(const char *type) const noexcept;
+  /**
+   * Log an error.
+   *
+   * Set ENABLE_LOGGING=true in logger.h to see logging.
+   */
   really_inline void log_error(const char *error) const noexcept;
 };
 
@@ -36,7 +108,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) no
   //
   // Start the document
   //
-  if (at_end()) { return EMPTY; }
+  if (at_eof()) { return EMPTY; }
   SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
   //
@@ -45,7 +117,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) no
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '{': if (*peek() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
       case '[':
         // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
         // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
@@ -54,7 +126,7 @@ WARN_UNUSED really_inline error_code json_iterator::walk_document(V &visitor) no
             return TAPE_ERROR;
           }
         }
-        if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+        if (*peek() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.visit_root_primitive(*this, value) ); break;
     }
   }
@@ -81,8 +153,8 @@ object_field:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
-      case '[': if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      case '{': if (*peek() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
     }
   }
@@ -121,8 +193,8 @@ array_value:
   {
     auto value = advance();
     switch (*value) {
-      case '{': if (peek_next_char() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
-      case '[': if (peek_next_char() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
+      case '{': if (*peek() == '}') { advance(); SIMDJSON_TRY( visitor.visit_empty_object(*this) ); break; } goto object_begin;
+      case '[': if (*peek() == ']') { advance(); SIMDJSON_TRY( visitor.visit_empty_array(*this) ); break; } goto array_begin;
       default: SIMDJSON_TRY( visitor.visit_primitive(*this, value) ); break;
     }
   }
@@ -155,8 +227,8 @@ really_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parse
     dom_parser{_dom_parser} {
 }
 
-really_inline char json_iterator::peek_next_char() const noexcept {
-  return buf[*(next_structural)];
+really_inline const uint8_t *json_iterator::peek() const noexcept {
+  return &buf[*(next_structural)];
 }
 really_inline const uint8_t *json_iterator::advance() noexcept {
   return &buf[*(next_structural++)];
@@ -165,7 +237,7 @@ really_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
 }
 
-really_inline bool json_iterator::at_end() const noexcept {
+really_inline bool json_iterator::at_eof() const noexcept {
   return next_structural == &dom_parser.structural_indexes[dom_parser.n_structural_indexes];
 }
 really_inline bool json_iterator::at_beginning() const noexcept {
