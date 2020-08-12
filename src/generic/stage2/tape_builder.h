@@ -12,21 +12,47 @@ struct tape_builder {
     dom_parser_implementation &dom_parser,
     dom::document &doc) noexcept;
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
+  /** Called when a non-empty document starts. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty document ends without error. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+
+  /** Called when a non-empty array starts. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty array ends. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_end(json_iterator &iter) noexcept;
+  /** Called when an empty array is found. */
   SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_empty_array(json_iterator &iter) noexcept;
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_start(json_iterator &iter) noexcept;
+  /** Called when a non-empty object starts. */
   SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_object_start(json_iterator &iter) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_start(json_iterator &iter) noexcept;
-
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_object_end(json_iterator &iter) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_end(json_iterator &iter) noexcept;
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_end(json_iterator &iter) noexcept;
+  /**
+   * Called when a key in a field is encountered.
+   *
+   * primitive, visit_object_start, visit_empty_object, visit_array_start, or visit_empty_array
+   * will be called after this with the field value.
+   */
   SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) noexcept;
+  /** Called when a non-empty object ends. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_object_end(json_iterator &iter) noexcept;
+  /** Called when an empty object is found. */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_empty_object(json_iterator &iter) noexcept;
 
-  // increment_count increments the count of keys in an object or values in an array.
+  /**
+   * Called when a string, number, boolean or null is found.
+   */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+  /**
+   * Called when a string, number, boolean or null is found at the top level of a document (i.e.
+   * when there is no array or object and the entire document is a single string, number, boolean or
+   * null.
+   *
+   * This is separate from primitive() because simdjson's normal primitive parsing routines assume
+   * there is at least one more token after the value, which is only true in an array or object.
+   */
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) noexcept;
+
+  /** Called each time a new field or element in an array or object is found. */
   SIMDJSON_WARN_UNUSED simdjson_really_inline error_code increment_count(json_iterator &iter) noexcept;
 
 private:
