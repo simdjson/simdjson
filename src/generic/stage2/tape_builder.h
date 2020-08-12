@@ -17,81 +17,81 @@ struct tape_builder {
     return iter.walk_document<STREAMING>(builder);
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code root_primitive(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
-      case '"': return parse_string(iter, value);
-      case 't': return parse_root_true_atom(iter, value);
-      case 'f': return parse_root_false_atom(iter, value);
-      case 'n': return parse_root_null_atom(iter, value);
+      case '"': return visit_string(iter, value);
+      case 't': return visit_root_true_atom(iter, value);
+      case 'f': return visit_root_false_atom(iter, value);
+      case 'n': return visit_root_null_atom(iter, value);
       case '-':
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
-        return parse_root_number(iter, value);
+        return visit_root_number(iter, value);
       default:
         iter.log_error("Document starts with a non-value character");
         return TAPE_ERROR;
     }
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code primitive(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_primitive(json_iterator &iter, const uint8_t *value) {
     switch (*value) {
-      case '"': return parse_string(iter, value);
-      case 't': return parse_true_atom(iter, value);
-      case 'f': return parse_false_atom(iter, value);
-      case 'n': return parse_null_atom(iter, value);
+      case '"': return visit_string(iter, value);
+      case 't': return visit_true_atom(iter, value);
+      case 'f': return visit_false_atom(iter, value);
+      case 'n': return visit_null_atom(iter, value);
       case '-':
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
-        return parse_number(iter, value);
+        return visit_number(iter, value);
       default:
         iter.log_error("Non-value found when value was expected!");
         return TAPE_ERROR;
     }
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code empty_object(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_empty_object(json_iterator &iter) {
     iter.log_value("empty object");
     return empty_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code empty_array(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_empty_array(json_iterator &iter) {
     iter.log_value("empty array");
     return empty_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_document(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_start(json_iterator &iter) {
     iter.log_start_value("document");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = false;
     return SUCCESS;
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_object(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_object_start(json_iterator &iter) {
     iter.log_start_value("object");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = false;
     return SUCCESS;
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_array(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_start(json_iterator &iter) {
     iter.log_start_value("array");
     start_container(iter);
     iter.dom_parser.is_array[iter.depth] = true;
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code end_object(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_object_end(json_iterator &iter) {
     iter.log_end_value("object");
     return end_container(iter, internal::tape_type::START_OBJECT, internal::tape_type::END_OBJECT);
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code end_array(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_array_end(json_iterator &iter) {
     iter.log_end_value("array");
     return end_container(iter, internal::tape_type::START_ARRAY, internal::tape_type::END_ARRAY);
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code end_document(json_iterator &iter) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_document_end(json_iterator &iter) {
     iter.log_end_value("document");
     constexpr uint32_t start_tape_index = 0;
     tape.append(start_tape_index, internal::tape_type::ROOT);
     tape_writer::write(iter.dom_parser.doc->tape[start_tape_index], next_tape_index(iter), internal::tape_type::ROOT);
     return SUCCESS;
   }
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code key(json_iterator &iter, const uint8_t *key) {
-    return parse_string(iter, key, true);
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_key(json_iterator &iter, const uint8_t *key) {
+    return visit_string(iter, key, true);
   }
 
   // increment_count increments the count of keys in an object or values in an array.
@@ -111,7 +111,7 @@ private:
 
   simdjson_really_inline tape_builder(dom::document &doc) noexcept : tape{doc.tape.get()}, current_string_buf_loc{doc.string_buf.get()} {}
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_string(json_iterator &iter, const uint8_t *value, bool key = false) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_string(json_iterator &iter, const uint8_t *value, bool key = false) {
     iter.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(iter);
     dst = stringparsing::parse_string(value, dst);
@@ -123,13 +123,13 @@ private:
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_number(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_number(json_iterator &iter, const uint8_t *value) {
     iter.log_value("number");
     if (!numberparsing::parse_number(value, tape)) { iter.log_error("Invalid number"); return NUMBER_ERROR; }
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_number(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_number(json_iterator &iter, const uint8_t *value) {
     //
     // We need to make a copy to make sure that the string is space terminated.
     // This is not about padding the input, which should already padded up
@@ -149,47 +149,47 @@ private:
     }
     memcpy(copy, value, iter.remaining_len());
     memset(copy + iter.remaining_len(), ' ', SIMDJSON_PADDING);
-    error_code error = parse_number(iter, copy);
+    error_code error = visit_number(iter, copy);
     free(copy);
     return error;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_true_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_true_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("true");
     if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_true_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_true_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("true");
     if (!atomparsing::is_valid_true_atom(value, iter.remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_false_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_false_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("false");
     if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_false_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("false");
     if (!atomparsing::is_valid_false_atom(value, iter.remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_null_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_null_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("null");
     if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
-  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_null_atom(json_iterator &iter, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) {
     iter.log_value("null");
     if (!atomparsing::is_valid_null_atom(value, iter.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
