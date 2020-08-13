@@ -13,7 +13,6 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #include "simdjson.cpp"
-#include "twitter/sax_tweet_reader.h"
 
 using namespace benchmark;
 using namespace simdjson;
@@ -22,6 +21,10 @@ using std::endl;
 
 const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
 const int REPETITIONS = 10;
+
+#if SIMDJSON_IMPLEMENTATION_HASWELL
+
+#include "twitter/sax_tweet_reader.h"
 
 static void sax_tweets(State &state) {
   // Load twitter.json to a buffer
@@ -54,7 +57,11 @@ BENCHMARK(sax_tweets)->Repetitions(REPETITIONS)->ComputeStatistics("max", [](con
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
+#endif // SIMDJSON_IMPLEMENTATION_HASWELL
+
 #if SIMDJSON_EXCEPTIONS
+
+#include "twitter/tweet.h"
 
 really_inline uint64_t nullable_int(dom::element element) {
   if (element.is_null()) { return 0; }
@@ -216,6 +223,7 @@ BENCHMARK(dom_parse_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("m
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
+#if SIMDJSON_IMPLEMENTATION_HASWELL
 
 /*** 
  * Next we are going to code the SAX approach.
@@ -348,19 +356,6 @@ BENCHMARK(sax_parse_largerandom)->Repetitions(REPETITIONS)->ComputeStatistics("m
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif // SIMDJSON_IMPLEMENTATION_HASWELL
 
 BENCHMARK_MAIN();
