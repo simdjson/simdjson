@@ -6,7 +6,11 @@ namespace logger {
 
   static constexpr const char * DASHES = "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 
+#if SIMDJSON_VERBOSE_LOGGING
+  static constexpr const bool LOG_ENABLED = true;
+#else
   static constexpr const bool LOG_ENABLED = false;
+#endif
   static constexpr const int LOG_EVENT_LEN = 20;
   static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
@@ -33,7 +37,13 @@ namespace logger {
     }
   }
 
-  // Logs a single line of 
+  static simdjson_really_inline void log_string(const char *message) {
+    if (LOG_ENABLED) {
+      printf("%s\n", message);
+    }
+  }
+
+  // Logs a single line from the stage 2 DOM parser
   template<typename S>
   static simdjson_really_inline void log_line(S &structurals, const char *title_prefix, const char *title, const char *detail) {
     if (LOG_ENABLED) {
