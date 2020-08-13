@@ -104,6 +104,8 @@ public:
   WARN_UNUSED really_inline error_code visit_root_primitive(V &visitor, const uint8_t *value) noexcept;
   template<typename V>
   WARN_UNUSED really_inline error_code visit_primitive(V &visitor, const uint8_t *value) noexcept;
+  template<typename V>
+  WARN_UNUSED really_inline error_code visit_number(V &visitor, const uint8_t *value) noexcept;
 };
 
 template<bool STREAMING, typename V>
@@ -302,6 +304,10 @@ WARN_UNUSED really_inline error_code json_iterator::visit_primitive(V &visitor, 
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;
   }
+}
+template<typename V>
+WARN_UNUSED really_inline error_code json_iterator::visit_number(V &visitor, const uint8_t *value) noexcept {
+  return numberparsing::parse_number(value, visitor);
 }
 
 } // namespace stage2

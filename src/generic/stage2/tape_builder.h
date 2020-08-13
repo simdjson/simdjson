@@ -165,7 +165,7 @@ WARN_UNUSED really_inline error_code tape_builder::visit_root_string(json_iterat
 
 WARN_UNUSED really_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  return numberparsing::parse_number(value, *this);
+  return iter.visit_number(*this, value);
 }
 
 WARN_UNUSED really_inline error_code tape_builder::visit_unsigned_integer(uint64_t value) noexcept {
