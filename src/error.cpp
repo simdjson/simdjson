@@ -27,7 +27,8 @@ namespace internal {
     { IO_ERROR, "Error reading the file." },
     { INVALID_JSON_POINTER, "Invalid JSON pointer syntax." },
     { INVALID_URI_FRAGMENT, "Invalid URI fragment syntax." },
-    { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" }
+    { UNEXPECTED_ERROR, "Unexpected error, consider reporting this problem as you may have found a bug in simdjson" },
+    { PARSER_IN_USE, "Cannot parse a new document while a document is still in use." }
   }; // error_messages[]
 
 } // namespace internal

@@ -34,6 +34,7 @@ enum error_code {
   INVALID_JSON_POINTER,     ///< Invalid JSON pointer reference
   INVALID_URI_FRAGMENT,     ///< Invalid URI fragment
   UNEXPECTED_ERROR,         ///< indicative of a bug in simdjson
+  PARSER_IN_USE,            ///< parser is already in use.
   /** @private Number of error codes */
   NUM_ERROR_CODES
 };
