@@ -5,6 +5,7 @@ link_libraries(simdjson-windows-headers test-data)
 if (TARGET benchmark::benchmark)
   add_executable(bench_sax bench_sax.cpp)
   target_link_libraries(bench_sax simdjson-internal-flags simdjson-include-source benchmark::benchmark)
+  target_compile_options(bench_sax PRIVATE -mavx2 -mbmi -mpclmul -mlzcnt)
 endif (TARGET benchmark::benchmark)
 
 link_libraries(simdjson simdjson-flags)

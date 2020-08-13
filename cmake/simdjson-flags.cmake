@@ -133,6 +133,11 @@ if(SIMDJSON_ENABLE_THREADS)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
 endif()
 
+option(SIMDJSON_VERBOSE_LOGGING, "Enable verbose logging for internal simdjson library development." OFF)
+if (SIMDJSON_VERBOSE_LOGGING)
+  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_VERBOSE_LOGGING=1)
+endif()
+
 if(SIMDJSON_USE_LIBCPP)
   target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used
