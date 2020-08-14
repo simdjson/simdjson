@@ -69,7 +69,7 @@ find_program(BASH bash)
 # required to make things work robustly. Simply put: bash is not quite portable.
 
 # Script tests
-if (BASH AND (NOT WIN32) AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
+if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
   #
   # json2json test
   #

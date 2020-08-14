@@ -14,7 +14,7 @@ task:
   build_script:
     - mkdir build
     - cd build
-    - cmake ..
+    - cmake -DSIMDJSON_BASH=OFF ..
     - make
   test_script:
     - cd build
