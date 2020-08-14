@@ -112,8 +112,9 @@ if(NOT SIMDJSON_IMPLEMENTATION_FALLBACK)
   target_compile_definitions(simdjson-internal-flags INTERFACE SIMDJSON_IMPLEMENTATION_FALLBACK=0)
 endif()
 
-option(SIMDJSON_BASH "All usage of bash within CMake" ON)
+option(SIMDJSON_BASH "Allow usage of bash within CMake" ON)
 
+option(SIMDJSON_GIT "Allow usage of git within CMake" ON)
 
 option(SIMDJSON_EXCEPTIONS "Enable simdjson's exception-throwing interface" ON)
 if(NOT SIMDJSON_EXCEPTIONS)

@@ -2,7 +2,7 @@
 
 
 find_package(Git QUIET) # We want the library to build even if git is missing
-if ((Git_FOUND) AND (SIMDJSON_IS_UNDER_GIT))
+if ((Git_FOUND) AND SIMDJSON_GIT AND (SIMDJSON_IS_UNDER_GIT))
   message(STATUS "Git is available.")
   # Does NOT attempt to update or otherwise modify git submodules that are already initialized.
   function(initialize_submodule DIRECTORY)
