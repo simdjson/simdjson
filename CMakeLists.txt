@@ -31,7 +31,7 @@ if(NOT(SIMDJSON_JUST_LIBRARY))
   add_subdirectory(jsonchecker)
   add_subdirectory(jsonexamples)
   add_library(test-data INTERFACE)
-  target_link_libraries(test-data INTERFACE jsonchecker-data jsonexamples-data)
+  target_link_libraries(test-data INTERFACE jsonchecker-data jsonchecker-minefield-data jsonexamples-data)
 endif()
 
 #
