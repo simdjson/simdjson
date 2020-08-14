@@ -127,8 +127,17 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
     done
 } >> ${AMAL_C}
 
-if [ ! "${SCRIPTPATH}/amalgamate_demo.cpp" -ef "${DEMOCPP}" ]; then cp -f "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}"; fi
-if [ ! "${SCRIPTPATH}/README.md" -ef "${README}" ]; then cp -f "${SCRIPTPATH}/README.md" "${README}"; fi
+function docopy()
+{
+  if [ "$1" -ef "$2" ]; then
+    echo "I would normally copy $1 to $2 but they are the same file.";
+  else
+    cp -f "$1" "$2";
+  fi
+}
+
+docopy "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}"
+docopy "${SCRIPTPATH}/README.md" "${README}"
 
 echo "Done with all files generation."
 
