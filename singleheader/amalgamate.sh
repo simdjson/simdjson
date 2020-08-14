@@ -130,7 +130,7 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
 function docopy()
 {
   if [ "$1" -ef "$2" ]; then
-    echo "I would normally copy $1 to $2 but they are the same file.";
+    echo "I would copy $1 to $2 but they are the same file.";
   else
     cp -f "$1" "$2";
   fi
