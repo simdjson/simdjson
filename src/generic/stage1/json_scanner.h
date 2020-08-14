@@ -128,8 +128,8 @@ really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   // may need to add an extra check when parsing strings.
   //
   // Performance: there are many ways to skin this cat.
-  const uint64_t space_quote_structural = (characters.op() | characters.whitespace() | strings.quote());
-  uint64_t follows_nonquote_scalar = follows(~space_quote_structural, prev_scalar);
+  const uint64_t nonquote_scalar = characters.scalar() & ~strings.quote();
+  uint64_t follows_nonquote_scalar = follows(nonquote_scalar, prev_scalar);
   return {
     strings,
     characters,
