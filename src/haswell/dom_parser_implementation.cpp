@@ -13,15 +13,19 @@ using namespace simd;
 
 struct json_character_block {
   static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
-
+  //  ASCII white-space ('\r','\n','\t',' ')
   really_inline uint64_t whitespace() const { return _whitespace; }
+  // non-quote structural characters (comma, colon, braces, brackets)
   really_inline uint64_t op() const { return _op; }
+  // neither a structural character nor a white-space, so letters, numbers and quotes
   really_inline uint64_t scalar() { return ~(op() | whitespace()); }
 
-  uint64_t _whitespace;
-  uint64_t _op;
+  uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
+  uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
 };
 
+// This identifies structural characters (comma, colon, braces, brackets),
+// and ASCII white-space ('\r','\n','\t',' ').
 really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
