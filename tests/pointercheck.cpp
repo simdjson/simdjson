@@ -15,6 +15,35 @@
 
 using namespace simdjson;
 
+bool demo() {
+  std::cout << "demo test" << std::endl;
+  auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+  dom::parser parser;
+  dom::element cars = parser.parse(cars_json);
+  double x = cars.at("/0/tire_pressure/1");
+  if(x != 39.9) return false;
+  double x2 = cars.at("0/tire_pressure/1");
+  if(x2 != 39.9) return false;
+  // Iterating through an array of objects
+  std::vector<double> measured;
+  for (dom::element car_element : cars) {
+    dom::object car;
+    simdjson::error_code error;
+    if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
+    double x3 = car.at("tire_pressure/1");
+    measured.push_back(x3);
+  }
+  std::vector<double> expected = {39.9, 31, 30};
+  if(measured != expected) {
+    return false;
+  }
+  return true;
+}
+
 const padded_string TEST_JSON = R"(
   {
     "/~01abc": [
@@ -84,6 +113,7 @@ bool json_pointer_failure_test(const padded_string & source, const char *json_po
 
 int main() {
   if (true
+    && demo()
     && json_pointer_success_test(TEST_RFC_JSON, "", R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})")
     && json_pointer_success_test(TEST_RFC_JSON, "/foo", "[\"bar\",\"baz\"]")
     && json_pointer_success_test(TEST_RFC_JSON, "/foo/0", "\"bar\"")

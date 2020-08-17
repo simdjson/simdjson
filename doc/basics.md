@@ -294,8 +294,36 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
-cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
+cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
+
+We also extend the JSON Pointer support to include *relative* paths. 
+
+1. You can omit the leading '/'.
+2. You can apply a JSON path to any node and the path gets interpreted relatively.
+
+Consider the following example: 
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+dom::parser parser;
+dom::element cars = parser.parse(cars_json);
+cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
+cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
+for (dom::element car_element : cars) {
+    dom::object car;
+    simdjson::error_code error;
+    if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
+    double x = car.at("tire_pressure/1");
+    cout << x << endl; // Prints 39.9, 31 and 30
+}
+```
+
+
 
 Error Handling
 --------------
