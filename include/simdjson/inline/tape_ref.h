@@ -15,7 +15,7 @@ really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) 
 
 
 really_inline bool tape_ref::is_document_root() const noexcept {
-  return json_index == 1;
+  return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
 
 // Some value types have a specific on-tape word value. It can be faster

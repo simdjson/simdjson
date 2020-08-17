@@ -97,7 +97,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> at(std::string_view json_pointer) const noexcept;
 
   /**
    * Get the value at the given index. This function has linear-time complexity and
@@ -147,7 +147,7 @@ public:
   really_inline simdjson_result(dom::array value) noexcept; ///< @private
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at(std::string_view json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS

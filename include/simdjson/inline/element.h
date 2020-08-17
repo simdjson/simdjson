@@ -101,7 +101,7 @@ really_inline bool simdjson_result<dom::element>::is_null() const noexcept {
   return !error() && first.is_null();
 }
 
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -117,11 +117,11 @@ really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(si
   if (error()) { return error(); }
   return first.at(index);
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(const std::string_view &key) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
@@ -334,7 +334,7 @@ inline array::iterator element::end() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-inline simdjson_result<element> element::operator[](const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> element::operator[](const char *key) const noexcept {
@@ -378,10 +378,10 @@ inline simdjson_result<element> element::at(std::string_view json_pointer) const
 inline simdjson_result<element> element::at(size_t index) const noexcept {
   return get<array>().at(index);
 }
-inline simdjson_result<element> element::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::at_key(std::string_view key) const noexcept {
   return get<object>().at_key(key);
 }
-inline simdjson_result<element> element::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::at_key_case_insensitive(std::string_view key) const noexcept {
   return get<object>().at_key_case_insensitive(key);
 }
 

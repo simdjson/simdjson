@@ -36,7 +36,7 @@ inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-inline simdjson_result<dom::element> simdjson_result<dom::array>::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::array>::at(std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
@@ -61,7 +61,7 @@ inline array::iterator array::end() const noexcept {
 inline size_t array::size() const noexcept {
   return tape.scope_count();
 }
-inline simdjson_result<element> array::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<element> array::at(std::string_view json_pointer) const noexcept {
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
   if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
