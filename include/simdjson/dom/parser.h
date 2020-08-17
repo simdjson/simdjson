@@ -342,6 +342,14 @@ public:
    */
   really_inline void set_max_capacity(size_t max_capacity) noexcept;
 
+#ifdef SIMDJSON_THREADS_ENABLED
+  /**
+   * The parser instance can use threads when they are available to speed up some
+   * operations. It is enabled by default. Changing this attribute will change the
+   * behavior of the parser for future operations.
+   */
+  bool threaded{true};
+#endif
   /** @private Use the new DOM API instead */
   class Iterator;
   /** @private Use simdjson_error instead */
@@ -379,6 +387,7 @@ public:
 
   /** @private Private and deprecated: use `parser.parse(...).doc.dump_raw_tape()` instead */
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
+
 
 private:
   /**
@@ -421,6 +430,8 @@ private:
 
   friend class parser::Iterator;
   friend class document_stream;
+
+
 }; // class parser
 
 } // namespace dom
