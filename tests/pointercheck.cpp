@@ -16,6 +16,7 @@
 using namespace simdjson;
 
 bool demo() {
+#if SIMDJSON_EXCEPTIONS
   std::cout << "demo test" << std::endl;
   auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
@@ -41,6 +42,7 @@ bool demo() {
   if(measured != expected) {
     return false;
   }
+#endif
   return true;
 }
 
