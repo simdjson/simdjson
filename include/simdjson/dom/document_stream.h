@@ -169,6 +169,11 @@ private:
   /**
    * Construct a document_stream. Does not allocate or parse anything until the iterator is
    * used.
+   * 
+   * @param parser is a reference to the parser instance used to generate this document_stream
+   * @param buf is the raw byte buffer we need to process
+   * @param len is the length of the raw byte buffer in bytes
+   * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
    */
   really_inline document_stream(
     dom::parser &parser,
@@ -231,6 +236,9 @@ private:
   size_t doc_index{};
 
 #ifdef SIMDJSON_THREADS_ENABLED
+  /** Indicates whether we use threads. Note that this needs to be a constant during the execution of the parsing. */
+  bool use_thread; 
+
   inline void load_from_stage1_thread() noexcept;
 
   /** Start a thread to run stage 1 on the next batch. */
