@@ -53,7 +53,7 @@ jobs:
           ctest -R "(parse_many_test|jsoncheck|basictests|stringparsingcheck|numberparsingcheck|errortests|integer_tests|pointercheck)"  --output-on-failure
           cd ..
           mkdir build64debug
-          cd build64ebug
+          cd build64debug
           cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_BUILD_STATIC=ON -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_ENABLE_THREADS=OFF ..
           cmake --build . --target parse_many_test jsoncheck basictests numberparsingcheck stringparsingcheck errortests integer_tests pointercheck --verbose
           ctest -R "(parse_many_test|jsoncheck|basictests|stringparsingcheck|numberparsingcheck|errortests|integer_tests|pointercheck)"  --output-on-failure
