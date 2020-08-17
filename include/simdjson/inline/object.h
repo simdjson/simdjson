@@ -83,7 +83,6 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
 inline simdjson_result<element> object::at(const std::string_view &json_pointer) const noexcept {
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
-
   // Grab the child with the given key
   simdjson_result<element> child;
 
@@ -110,6 +109,9 @@ inline simdjson_result<element> object::at(const std::string_view &json_pointer)
     child = at_key(key);
   }
 
+  if(child.error()) {
+    return child; // we do not continue if there was an error
+  }
   // If there is a /, we have to recurse and look up more of the path
   if (slash != std::string_view::npos) {
     child = child.at(json_pointer.substr(slash+1));

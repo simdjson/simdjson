@@ -398,7 +398,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> at(const std::string_view json_pointer) const noexcept;
 
   /**
    * Get the value at the given index.
@@ -505,7 +505,7 @@ public:
 
   really_inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
   really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
-  really_inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
   really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
   really_inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
   really_inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;

@@ -84,6 +84,10 @@ inline simdjson_result<element> array::at(const std::string_view &json_pointer) 
 
   // Get the child
   auto child = array(tape).at(array_index);
+  // If there is an error, it ends here
+  if(child.error()) {
+    return child;
+  }
   // If there is a /, we're not done yet, call recursively.
   if (i < json_pointer.length()) {
     child = child.at(json_pointer.substr(i+1));

@@ -109,7 +109,7 @@ really_inline simdjson_result<dom::element> simdjson_result<dom::element>::opera
   if (error()) { return error(); }
   return first[key];
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view &json_pointer) const noexcept {
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at(json_pointer);
 }
@@ -340,15 +340,40 @@ inline simdjson_result<element> element::operator[](const std::string_view &key)
 inline simdjson_result<element> element::operator[](const char *key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> element::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<element> element::at(std::string_view json_pointer) const noexcept {
+  if(tape.is_document_root()) {
+    // Special handling.
+    if(json_pointer.size() == 0) {
+      dom::element copy(*this);
+      return simdjson_result<element>(std::move(copy));
+    }
+    if(json_pointer[0] == '/') {
+      json_pointer = json_pointer.substr(1,json_pointer.size());
+    } else {
+      /**
+       * A JSON Pointer is a Unicode string 
+       * containing a sequence of zero or more reference tokens, each prefixed
+       * by a '/' (%x2F) character. So we should seek a slash and if not, return
+       * an error. But we decide to be deliberately lenient.
+       */
+      // return INVALID_JSON_POINTER;
+    }
+  }
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(tape).at(json_pointer);
     case internal::tape_type::START_ARRAY:
       return array(tape).at(json_pointer);
-    default:
-      return INCORRECT_TYPE;
+    default: {
+      std::cout <<"fall through on  "<< char(tape.tape_ref_type()) << " with "<< json_pointer  << " got " << *this << std::endl;
+      dom::element copy(*this);
+      return simdjson_result<element>(std::move(copy));
+    }
+  
   }
+
+  //return *this;
+
 }
 inline simdjson_result<element> element::at(size_t index) const noexcept {
   return get<array>().at(index);

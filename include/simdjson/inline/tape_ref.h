@@ -13,6 +13,11 @@ namespace internal {
 really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
 really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
+
+really_inline bool tape_ref::is_document_root() const noexcept {
+  return json_index == 1;
+}
+
 // Some value types have a specific on-tape word value. It can be faster
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.
