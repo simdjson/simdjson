@@ -23,7 +23,7 @@ find_program(BASH bash)
 # Under Windows, exectuting a bash script works, except that you cannot generally
 # do bash C:/path to my script. You need a  "mounted" path: /mnt/c/path
 
-if (BASH AND (NOT WIN32))
+if (BASH AND (NOT WIN32) AND SIMDJSON_BASH)
   add_custom_command(
     OUTPUT ${SINGLEHEADER_FILES}
     COMMAND ${CMAKE_COMMAND} -E env
