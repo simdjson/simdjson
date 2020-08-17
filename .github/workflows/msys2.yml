@@ -13,16 +13,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - msystem: "MINGW64-Release"
+          - msystem: "MINGW64"
             install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc
             type: Release
-          - msystem: "MINGW32-Release"
+          - msystem: "MINGW32"
             install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc
             type: Release
-          - msystem: "MINGW64-Debug"
+          - msystem: "MINGW64"
             install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc
             type: Debug
-          - msystem: "MINGW32-Debug"
+          - msystem: "MINGW32"
             install: mingw-w64-i686-cmake mingw-w64-i686-ninja mingw-w64-i686-gcc
             type: Debug
     env:
