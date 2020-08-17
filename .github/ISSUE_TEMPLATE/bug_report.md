@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: bug (unverified)
 assignees: ''
 
 ---
@@ -17,8 +17,14 @@ Before submitting an issue, please ensure that you have read the documentation:
 **Describe the bug**
 A clear and concise description of what the bug is.
 
+Note that a compiler warning is not a bug. 
+
 **To Reproduce**
 Steps to reproduce the behaviour: provide a code sample if possible.
+
+If we cannot reproduce the issue, then we cannot address it.
+
+Note that a stack trace from your own program is not enough.
 
 **Configuration (please complete the following information if relevant):**
  - OS: [e.g. Ubuntu 16.04.6 LTS]
