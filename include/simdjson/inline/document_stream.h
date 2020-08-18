@@ -75,6 +75,9 @@ really_inline document_stream::document_stream(
     len{_len},
     batch_size{_batch_size},
     error{SUCCESS}
+#ifdef SIMDJSON_THREADS_ENABLED
+    , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
+#endif
 {
 #ifdef SIMDJSON_THREADS_ENABLED
   if(worker.get() == nullptr) {
@@ -88,7 +91,11 @@ really_inline document_stream::document_stream() noexcept
     buf{nullptr},
     len{0},
     batch_size{0},
-    error{UNINITIALIZED} {
+    error{UNINITIALIZED}
+#ifdef SIMDJSON_THREADS_ENABLED
+    , use_thread(false)
+#endif 
+{
 }
 
 really_inline document_stream::~document_stream() noexcept {
@@ -137,7 +144,7 @@ inline void document_stream::start() noexcept {
   if (error) { return; }
 
 #ifdef SIMDJSON_THREADS_ENABLED
-  if (next_batch_start() < len) {
+  if (use_thread && next_batch_start() < len) {
     // Kick off the first thread if needed
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
@@ -172,7 +179,11 @@ inline void document_stream::next() noexcept {
     if (batch_start >= len) { break; }
 
 #ifdef SIMDJSON_THREADS_ENABLED
-    load_from_stage1_thread();
+    if(use_thread) {
+      load_from_stage1_thread();
+    } else {
+      error = run_stage1(*parser, batch_start);
+    }
 #else
     error = run_stage1(*parser, batch_start);
 #endif
