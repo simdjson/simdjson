@@ -79,6 +79,10 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
+  really_inline uint8_t last_structural() {
+    return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+  }
+
   really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
   }
@@ -120,12 +124,12 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
     if (!STREAMING) {
       switch (*value) {
         case '{':
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != '}') {
+          if (last_structural() != '}') {
             return TAPE_ERROR;
           }
           break;
         case '[':
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+          if (last_structural() != ']') {
             return TAPE_ERROR;
           }
           break;
