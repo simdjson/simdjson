@@ -297,10 +297,13 @@ dom::element cars = parser.parse(cars_json);
 cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
-We also extend the JSON Pointer support to include *relative* paths. 
+A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer
+index allows you to select the indexed node. Within objects, the string value of the key allows you to
+select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
+'~0' respectively. An empty JSON Path refers to the whole document.
 
-1. You can omit the leading '/'.
-2. You can apply a JSON path to any node and the path gets interpreted relatively.
+We also extend the JSON Pointer support to include *relative* paths.  
+You can apply a JSON path to any node and the path gets interpreted relatively, as if the currrent node were a whole JSON document.
 
 Consider the following example: 
 
@@ -313,12 +316,11 @@ auto cars_json = R"( [
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
 cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
-cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
 for (dom::element car_element : cars) {
     dom::object car;
     simdjson::error_code error;
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
-    double x = car.at("tire_pressure/1");
+    double x = car.at("/tire_pressure/1");
     cout << x << endl; // Prints 39.9, 31 and 30
 }
 ```

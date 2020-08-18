@@ -341,39 +341,19 @@ inline simdjson_result<element> element::operator[](const char *key) const noexc
   return at_key(key);
 }
 inline simdjson_result<element> element::at(std::string_view json_pointer) const noexcept {
-  if(tape.is_document_root()) {
-    // Special handling.
-    if(json_pointer.size() == 0) {
-      dom::element copy(*this);
-      return simdjson_result<element>(std::move(copy));
-    }
-    if(json_pointer[0] == '/') {
-      json_pointer = json_pointer.substr(1,json_pointer.size());
-    } else {
-      /**
-       * A JSON Pointer is a Unicode string 
-       * containing a sequence of zero or more reference tokens, each prefixed
-       * by a '/' (%x2F) character. So we should seek a slash and if not, return
-       * an error. But we decide to be deliberately lenient.
-       */
-      // return INVALID_JSON_POINTER;
-    }
-  }
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
       return object(tape).at(json_pointer);
     case internal::tape_type::START_ARRAY:
       return array(tape).at(json_pointer);
     default: {
-      std::cout <<"fall through on  "<< char(tape.tape_ref_type()) << " with "<< json_pointer  << " got " << *this << std::endl;
+      if(json_pointer.size() != 0) { // an empty string means that we return the current node
+        return INVALID_JSON_POINTER;
+      }
       dom::element copy(*this);
       return simdjson_result<element>(std::move(copy));
     }
-  
   }
-
-  //return *this;
-
 }
 inline simdjson_result<element> element::at(size_t index) const noexcept {
   return get<array>().at(index);

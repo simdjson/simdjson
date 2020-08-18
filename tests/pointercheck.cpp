@@ -27,15 +27,13 @@ bool demo() {
   dom::element cars = parser.parse(cars_json);
   double x = cars.at("/0/tire_pressure/1");
   if(x != 39.9) return false;
-  double x2 = cars.at("0/tire_pressure/1");
-  if(x2 != 39.9) return false;
   // Iterating through an array of objects
   std::vector<double> measured;
   for (dom::element car_element : cars) {
     dom::object car;
     simdjson::error_code error;
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
-    double x3 = car.at("tire_pressure/1");
+    double x3 = car.at("/tire_pressure/1");
     measured.push_back(x3);
   }
   std::vector<double> expected = {39.9, 31, 30};
@@ -98,14 +96,6 @@ bool json_pointer_success_test(const padded_string & source, const char *json_po
   return true;
 }
 
-bool json_pointer_success_test(const padded_string & source, const char *json_pointer) {
-  std::cout << "Running successful JSON pointer test '" << json_pointer << "' ..." << std::endl;
-  dom::parser parser;
-  ASSERT_SUCCESS( parser.parse(source).at(json_pointer).error() );
-  return true;
-}
-
-
 bool json_pointer_failure_test(const padded_string & source, const char *json_pointer, error_code expected_error) {
   std::cout << "Running invalid JSON pointer test '" << json_pointer << "' ..." << std::endl;
   dom::parser parser;
@@ -128,23 +118,23 @@ int main() {
     && json_pointer_success_test(TEST_RFC_JSON, "/k\"l", "6")
     && json_pointer_success_test(TEST_RFC_JSON, "/ ", "7")
     && json_pointer_success_test(TEST_RFC_JSON, "/m~0n", "8")
-    && json_pointer_success_test(TEST_JSON, "")
-    && json_pointer_success_test(TEST_JSON, "~1~001abc")
-    && json_pointer_success_test(TEST_JSON, "~1~001abc/1")
-    && json_pointer_success_test(TEST_JSON, "~1~001abc/1/\\\" 0")
-    && json_pointer_success_test(TEST_JSON, "~1~001abc/1/\\\" 0/0", "\"value0\"")
-    && json_pointer_success_test(TEST_JSON, "~1~001abc/1/\\\" 0/1", "\"value1\"")
-    && json_pointer_failure_test(TEST_JSON, "~1~001abc/1/\\\" 0/2", INDEX_OUT_OF_BOUNDS) // index actually out of bounds
-    && json_pointer_success_test(TEST_JSON, "arr") // get array
-    && json_pointer_failure_test(TEST_JSON, "arr/0", INDEX_OUT_OF_BOUNDS) // array index 0 out of bounds on empty array
-    && json_pointer_success_test(TEST_JSON, "~1~001abc") // get object
-    && json_pointer_success_test(TEST_JSON, "0", "\"0 ok\"") // object index with integer-ish key
-    && json_pointer_success_test(TEST_JSON, "01", "\"01 ok\"") // object index with key that would be an invalid integer
+    && json_pointer_success_test(TEST_JSON, "",R"({"/~01abc":[0,{"\\\" 0":["value0","value1"]}],"0":"0 ok","01":"01 ok","":"empty ok","arr":[]})")
+    && json_pointer_success_test(TEST_JSON, "/~1~001abc",R"([0,{"\\\" 0":["value0","value1"]}])")
+    && json_pointer_success_test(TEST_JSON, "/~1~001abc/1",R"({"\\\" 0":["value0","value1"]})")
+    && json_pointer_success_test(TEST_JSON, "/~1~001abc/1/\\\" 0",R"(["value0","value1"])")
+    && json_pointer_success_test(TEST_JSON, "/~1~001abc/1/\\\" 0/0", "\"value0\"")
+    && json_pointer_success_test(TEST_JSON, "/~1~001abc/1/\\\" 0/1", "\"value1\"")
+    && json_pointer_failure_test(TEST_JSON, "/~1~001abc/1/\\\" 0/2", INDEX_OUT_OF_BOUNDS) // index actually out of bounds
+    && json_pointer_success_test(TEST_JSON, "/arr", R"([])") // get array
+    && json_pointer_failure_test(TEST_JSON, "/arr/0", INDEX_OUT_OF_BOUNDS) // array index 0 out of bounds on empty array
+    && json_pointer_failure_test(TEST_JSON, "~1~001abc", INVALID_JSON_POINTER)
+    && json_pointer_success_test(TEST_JSON, "/0", "\"0 ok\"") // object index with integer-ish key
+    && json_pointer_success_test(TEST_JSON, "/01", "\"01 ok\"") // object index with key that would be an invalid integer
     && json_pointer_success_test(TEST_JSON, "", R"({"/~01abc":[0,{"\\\" 0":["value0","value1"]}],"0":"0 ok","01":"01 ok","":"empty ok","arr":[]})") // object index with empty key
-    && json_pointer_failure_test(TEST_JSON, "~01abc", NO_SUCH_FIELD) // Test that we don't try to compare the literal key
-    && json_pointer_failure_test(TEST_JSON, "~1~001abc/01", INVALID_JSON_POINTER) // Leading 0 in integer index
-    && json_pointer_failure_test(TEST_JSON, "~1~001abc/", INVALID_JSON_POINTER) // Empty index to array
-    && json_pointer_failure_test(TEST_JSON, "~1~001abc/-", INDEX_OUT_OF_BOUNDS) // End index is always out of bounds
+    && json_pointer_failure_test(TEST_JSON, "/~01abc", NO_SUCH_FIELD) // Test that we don't try to compare the literal key
+    && json_pointer_failure_test(TEST_JSON, "/~1~001abc/01", INVALID_JSON_POINTER) // Leading 0 in integer index
+    && json_pointer_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) // Empty index to array
+    && json_pointer_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) // End index is always out of bounds
   ) {
     std::cout << "Success!" << std::endl;
     return 0;
