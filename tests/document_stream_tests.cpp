@@ -69,6 +69,7 @@ namespace document_stream_tests {
     }
     return true;
   }
+
   bool small_window() {
     std::cout << "Running " << __func__ << std::endl;
     auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
@@ -90,6 +91,31 @@ namespace document_stream_tests {
     }
     return true;
   }
+
+#ifdef SIMDJSON_THREADS_ENABLED
+  bool threaded_disabled() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({"error":[],"result":{"token":"xxx"}}{"error":[],"result":{"token":"xxx"}})"_padded;
+    simdjson::dom::parser parser;
+    parser.threaded = false;
+    size_t count = 0;
+    size_t window_size = 10; // deliberately too small
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json, window_size).get(stream) );
+    for (auto doc : stream) {
+      if (!doc.error()) {
+          std::cerr << "Expected a capacity error " << doc.error() << std::endl;
+          return false;
+      }
+      count++;
+    }
+    if(count == 2) {
+      std::cerr << "Expected a capacity error " << std::endl;
+      return false;
+    }
+    return true;
+  }
+#endif 
 
   bool large_window() {
     std::cout << "Running " << __func__ << std::endl;
@@ -222,6 +248,9 @@ namespace document_stream_tests {
 
   bool run() {
     return test_current_index() &&
+#ifdef SIMDJSON_THREADS_ENABLED
+           threaded_disabled() &&
+#endif
            small_window() &&
            large_window() &&
            json_issue467() &&
