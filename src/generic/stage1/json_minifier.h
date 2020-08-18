@@ -13,24 +13,24 @@ public:
   static error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) noexcept;
 
 private:
-  really_inline json_minifier(uint8_t *_dst)
+  simdjson_really_inline json_minifier(uint8_t *_dst)
   : dst{_dst}
   {}
   template<size_t STEP_SIZE>
-  really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
-  really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
-  really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_really_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
+  simdjson_really_inline void next(const simd::simd8x64<uint8_t>& in, json_block block);
+  simdjson_really_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
 
-really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
+simdjson_really_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, json_block block) {
   uint64_t mask = block.whitespace();
   in.compress(mask, dst);
   dst += 64 - count_ones(mask);
 }
 
-really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   *dst = '\0';
   error_code error = scanner.finish(false);
   if (error) { dst_len = 0; return error; }
@@ -39,7 +39,7 @@ really_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_l
 }
 
 template<>
-really_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_block_reader<128> &reader) noexcept {
+simdjson_really_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_block_reader<128> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block_buf);
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
@@ -50,7 +50,7 @@ really_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_block_
 }
 
 template<>
-really_inline void json_minifier::step<64>(const uint8_t *block_buf, buf_block_reader<64> &reader) noexcept {
+simdjson_really_inline void json_minifier::step<64>(const uint8_t *block_buf, buf_block_reader<64> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block_buf);
   json_block block_1 = scanner.next(in_1);
   this->next(block_buf, block_1);
@@ -69,7 +69,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   uint8_t block[STEP_SIZE];
-  if (likely(reader.get_remainder(block)) > 0) {
+  if (simdjson_likely(reader.get_remainder(block)) > 0) {
     minifier.step<STEP_SIZE>(block, reader);
   }
 

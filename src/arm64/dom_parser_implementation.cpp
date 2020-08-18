@@ -11,17 +11,17 @@ namespace SIMDJSON_IMPLEMENTATION {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
+  static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
-  really_inline uint64_t whitespace() const { return _whitespace; }
-  really_inline uint64_t op() const { return _op; }
-  really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
+  simdjson_really_inline uint64_t op() const { return _op; }
+  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
 
   uint64_t _whitespace;
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Functional programming causes trouble with Visual Studio.
   // Keeping this version in comments since it is much nicer:
   // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
@@ -75,12 +75,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
     return bits.max() < 0b10000000u;
 }
 
-UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+UNUSED simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
@@ -92,7 +92,7 @@ UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
     return is_third_byte ^ is_fourth_byte;
@@ -121,7 +121,7 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
-really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
   // benefit and therefore makes things worse.
   // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }

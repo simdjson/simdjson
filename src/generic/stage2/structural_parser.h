@@ -17,24 +17,24 @@ struct structural_parser : structural_iterator {
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
-  WARN_UNUSED really_inline error_code parse(T &builder) noexcept;
+  WARN_UNUSED simdjson_really_inline error_code parse(T &builder) noexcept;
   template<bool STREAMING, typename T>
-  WARN_UNUSED static really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
+  WARN_UNUSED static simdjson_really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
     structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
     return parser.parse<STREAMING>(builder);
   }
 
   // For non-streaming, to pass an explicit 0 as next_structural, which enables optimizations
-  really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
+  simdjson_really_inline structural_parser(dom_parser_implementation &_dom_parser, uint32_t start_structural_index)
     : structural_iterator(_dom_parser, start_structural_index) {
   }
 
-  WARN_UNUSED really_inline error_code start_document() {
+  WARN_UNUSED simdjson_really_inline error_code start_document() {
     dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   template<typename T>
-  WARN_UNUSED really_inline error_code start_array(T &builder) {
+  WARN_UNUSED simdjson_really_inline error_code start_array(T &builder) {
     depth++;
     if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_array(*this);
@@ -43,7 +43,7 @@ struct structural_parser : structural_iterator {
   }
 
   template<typename T>
-  WARN_UNUSED really_inline bool empty_object(T &builder) {
+  WARN_UNUSED simdjson_really_inline bool empty_object(T &builder) {
     if (peek_next_char() == '}') {
       advance_char();
       builder.empty_object(*this);
@@ -52,7 +52,7 @@ struct structural_parser : structural_iterator {
     return false;
   }
   template<typename T>
-  WARN_UNUSED really_inline bool empty_array(T &builder) {
+  WARN_UNUSED simdjson_really_inline bool empty_array(T &builder) {
     if (peek_next_char() == ']') {
       advance_char();
       builder.empty_array(*this);
@@ -62,7 +62,7 @@ struct structural_parser : structural_iterator {
   }
 
   template<bool STREAMING>
-  WARN_UNUSED really_inline error_code finish() {
+  WARN_UNUSED simdjson_really_inline error_code finish() {
     dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
     if (depth != 0) {
@@ -79,27 +79,27 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
-  really_inline void log_value(const char *type) {
+  simdjson_really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
   }
 
-  really_inline void log_start_value(const char *type) {
+  simdjson_really_inline void log_start_value(const char *type) {
     logger::log_line(*this, "+", type, "");
     if (logger::LOG_ENABLED) { logger::log_depth++; }
   }
 
-  really_inline void log_end_value(const char *type) {
+  simdjson_really_inline void log_end_value(const char *type) {
     if (logger::LOG_ENABLED) { logger::log_depth--; }
     logger::log_line(*this, "-", type, "");
   }
 
-  really_inline void log_error(const char *error) {
+  simdjson_really_inline void log_error(const char *error) {
     logger::log_line(*this, "", "ERROR", error);
   }
 }; // struct structural_parser
 
 template<bool STREAMING, typename T>
-WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexcept {
+WARN_UNUSED simdjson_really_inline error_code structural_parser::parse(T &builder) noexcept {
   logger::log_start();
 
   //
@@ -151,7 +151,7 @@ object_begin: {
 } // object_begin:
 
 object_field: {
-  if (unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
+  if (simdjson_unlikely( advance_char() != ':' )) { log_error("Missing colon after key in object"); return TAPE_ERROR; }
   const uint8_t *value = advance();
   switch (*value) {
     case '{': if (!empty_object(builder)) { goto object_begin; }; break;
@@ -165,7 +165,7 @@ object_continue: {
   case ',': {
     builder.increment_count(*this);
     const uint8_t *key = advance();
-    if (unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
+    if (simdjson_unlikely( *key != '"' )) { log_error("Key string missing at beginning of field in object"); return TAPE_ERROR; }
     SIMDJSON_TRY( builder.parse_key(*this, key) );
     goto object_field;
   }

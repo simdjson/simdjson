@@ -19,19 +19,19 @@ const char *TRUENULL_JSON = SIMDJSON_BENCHMARK_SMALLDATA_DIR  "truenull.json";
 
 // For the ASSERT_EQUAL macro
 template<typename T, typename S>
-really_inline bool equals_expected(T actual, S expected) {
+simdjson_really_inline bool equals_expected(T actual, S expected) {
   return actual == T(expected);
 }
 template<>
-really_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
+simdjson_really_inline bool equals_expected<const char *, const char *>(const char *actual, const char *expected) {
   return !strcmp(actual, expected);
 }
 
-really_inline simdjson::error_code to_error_code(simdjson::error_code error) {
+simdjson_really_inline simdjson::error_code to_error_code(simdjson::error_code error) {
   return error;
 }
 template<typename T>
-really_inline simdjson::error_code to_error_code(const simdjson::simdjson_result<T> &result) {
+simdjson_really_inline simdjson::error_code to_error_code(const simdjson::simdjson_result<T> &result) {
   return result.error();
 }
 

@@ -19,7 +19,7 @@ class element;
 class array {
 public:
   /** Create a new, invalid array */
-  really_inline array() noexcept;
+  simdjson_really_inline array() noexcept;
 
   class iterator {
   public:
@@ -60,7 +60,7 @@ public:
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
-    really_inline iterator(const internal::tape_ref &tape) noexcept;
+    simdjson_really_inline iterator(const internal::tape_ref &tape) noexcept;
     internal::tape_ref tape;
     friend class array;
   };
@@ -118,7 +118,7 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
 private:
-  really_inline array(const internal::tape_ref &tape) noexcept;
+  simdjson_really_inline array(const internal::tape_ref &tape) noexcept;
   internal::tape_ref tape;
   friend class element;
   friend struct simdjson_result<element>;
@@ -143,9 +143,9 @@ inline std::ostream& operator<<(std::ostream& out, const array &value);
 template<>
 struct simdjson_result<dom::array> : public internal::simdjson_result_base<dom::array> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(dom::array value) noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::array value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;

@@ -12,13 +12,13 @@ namespace SIMDJSON_IMPLEMENTATION {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
+  static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
   //  ASCII white-space ('\r','\n','\t',' ')
-  really_inline uint64_t whitespace() const { return _whitespace; }
+  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
   // non-quote structural characters (comma, colon, braces, brackets)
-  really_inline uint64_t op() const { return _op; }
+  simdjson_really_inline uint64_t op() const { return _op; }
   // neither a structural character nor a white-space, so letters, numbers and quotes
-  really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
 
   uint64_t _whitespace; // ASCII white-space ('\r','\n','\t',' ')
   uint64_t _op; // structural characters (comma, colon, braces, brackets but not quotes)
@@ -26,7 +26,7 @@ struct json_character_block {
 
 // This identifies structural characters (comma, colon, braces, brackets),
 // and ASCII white-space ('\r','\n','\t',' ').
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // These lookups rely on the fact that anything < 127 will match the lower 4 bits, which is why
   // we can't use the generic lookup_16.
   auto whitespace_table = simd8<uint8_t>::repeat_16(' ', 100, 100, 100, 17, 100, 113, 2, 100, '\t', '\n', 112, 100, '\r', 100, 100);
@@ -49,11 +49,11 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
   return input.reduce_or().is_ascii();
 }
 
-UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+UNUSED simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_second_byte = prev1.saturating_sub(0b11000000u-1); // Only 11______ will be > 0
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
@@ -61,7 +61,7 @@ UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1
   return simd8<int8_t>(is_second_byte | is_third_byte | is_fourth_byte) > int8_t(0);
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0b11100000u-1); // Only 111_____ will be > 0
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0b11110000u-1); // Only 1111____ will be > 0
   // Caller requires a bool (all 1's). All values resulting from the subtraction will be <= 64, so signed comparison is fine.
@@ -90,7 +90,7 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
-really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
   return find_escaped_branchless(backslash);
 }

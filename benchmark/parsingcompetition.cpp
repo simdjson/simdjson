@@ -65,7 +65,7 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
-never_inline size_t sum_line_lengths(std::stringstream & is) {
+simdjson_never_inline size_t sum_line_lengths(std::stringstream & is) {
   std::string line;
   size_t sumofalllinelengths{0};
   while(std::getline(is, line)) {

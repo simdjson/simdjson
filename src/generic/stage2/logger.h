@@ -15,7 +15,7 @@ namespace logger {
   static int log_depth; // Not threadsafe. Log only.
 
   // Helper to turn unprintable or newline characters into spaces
-  static really_inline char printable_char(char c) {
+  static simdjson_really_inline char printable_char(char c) {
     if (c >= 0x20) {
       return c;
     } else {
@@ -24,7 +24,7 @@ namespace logger {
   }
 
   // Print the header and set up log_start
-  static really_inline void log_start() {
+  static simdjson_really_inline void log_start() {
     if (LOG_ENABLED) {
       log_depth = 0;
       printf("\n");
@@ -33,7 +33,7 @@ namespace logger {
     }
   }
 
-  static really_inline void log_string(const char *message) {
+  static simdjson_really_inline void log_string(const char *message) {
     if (LOG_ENABLED) {
       printf("%s\n", message);
     }
@@ -41,7 +41,7 @@ namespace logger {
 
   // Logs a single line of 
   template<typename S>
-  static really_inline void log_line(S &structurals, const char *title_prefix, const char *title, const char *detail) {
+  static simdjson_really_inline void log_line(S &structurals, const char *title_prefix, const char *title, const char *detail) {
     if (LOG_ENABLED) {
       printf("| %*s%s%-*s ", log_depth*2, "", title_prefix, LOG_EVENT_LEN - log_depth*2 - int(strlen(title_prefix)), title);
       auto current_index = structurals.at_beginning() ? nullptr : structurals.next_structural-1;

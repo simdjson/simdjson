@@ -15,12 +15,12 @@ namespace dom {
 //
 // parser inline implementation
 //
-really_inline parser::parser(size_t max_capacity) noexcept
+simdjson_really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
     loaded_bytes(nullptr) {
 }
-really_inline parser::parser(parser &&other) noexcept = default;
-really_inline parser &parser::operator=(parser &&other) noexcept = default;
+simdjson_really_inline parser::parser(parser &&other) noexcept = default;
+simdjson_really_inline parser &parser::operator=(parser &&other) noexcept = default;
 
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
@@ -105,13 +105,13 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
 
   return doc.root();
 }
-really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
-really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
 
@@ -128,13 +128,13 @@ inline simdjson_result<document_stream> parser::parse_many(const padded_string &
   return parse_many(s.data(), s.length(), batch_size);
 }
 
-really_inline size_t parser::capacity() const noexcept {
+simdjson_really_inline size_t parser::capacity() const noexcept {
   return implementation ? implementation->capacity() : 0;
 }
-really_inline size_t parser::max_capacity() const noexcept {
+simdjson_really_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-really_inline size_t parser::max_depth() const noexcept {
+simdjson_really_inline size_t parser::max_depth() const noexcept {
   return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
 
@@ -173,7 +173,7 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   // If we don't have enough capacity, (try to) automatically bump it.
   // If the document was taken, reallocate that too.
   // Both in one if statement to minimize unlikely branching.
-  if (unlikely(capacity() < desired_capacity || !doc.tape)) {
+  if (simdjson_unlikely(capacity() < desired_capacity || !doc.tape)) {
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
@@ -183,7 +183,7 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   return SUCCESS;
 }
 
-really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   _max_capacity = max_capacity;
 }
 

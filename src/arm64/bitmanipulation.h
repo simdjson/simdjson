@@ -8,7 +8,7 @@ namespace arm64 {
 // but the algorithms do not end up using the returned value.
 // Sadly, sanitizers are not smart enough to figure it out.
 NO_SANITIZE_UNDEFINED
-really_inline int trailing_zeroes(uint64_t input_num) {
+simdjson_really_inline int trailing_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
@@ -21,12 +21,12 @@ really_inline int trailing_zeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
+simdjson_really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num-1);
 }
 
 /* result might be undefined when input_num is zero */
-really_inline int leading_zeroes(uint64_t input_num) {
+simdjson_really_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
@@ -41,11 +41,11 @@ really_inline int leading_zeroes(uint64_t input_num) {
 }
 
 /* result might be undefined when input_num is zero */
-really_inline int count_ones(uint64_t input_num) {
+simdjson_really_inline int count_ones(uint64_t input_num) {
    return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
 }
 
-really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
+simdjson_really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   *result = value1 + value2;
   return *result < value1;

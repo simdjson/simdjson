@@ -24,7 +24,7 @@ namespace numberparsing {
 // set to false. This should work *most of the time* (like 99% of the time).
 // We assume that power is in the [FASTFLOAT_SMALLEST_POWER,
 // FASTFLOAT_LARGEST_POWER] interval: the caller is responsible for this check.
-really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
+simdjson_really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, bool *success) {
   // we start with a fast path
   // It was described in
   // Clinger WD. How to read floating point numbers accurately.
@@ -117,7 +117,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // know that we have an exact computed value for the leading
   // 55 bits because any imprecision would play out as a +1, in
   // the worst case.
-  if (unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
+  if (simdjson_unlikely((upper & 0x1FF) == 0x1FF) && (lower + i < lower)) {
     uint64_t factor_mantissa_low =
         mantissa_128[power - FASTFLOAT_SMALLEST_POWER];
     // next, we compute the 64-bit x 128-bit multiplication, getting a 192-bit
@@ -155,7 +155,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   // which we guard against.
   // If we have lots of trailing zeros, we may fall right between two
   // floating-point values.
-  if (unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
+  if (simdjson_unlikely((lower == 0) && ((upper & 0x1FF) == 0) &&
                ((mantissa & 3) == 1))) {
       // if mantissa & 1 == 1 we might need to round up.
       //
@@ -192,7 +192,7 @@ really_inline double compute_float_64(int64_t power, uint64_t i, bool negative, 
   mantissa &= ~(1ULL << 52);
   uint64_t real_exponent = c.exp - lz;
   // we have to check that real_exponent is in range, otherwise we bail out
-  if (unlikely((real_exponent < 1) || (real_exponent > 2046))) {
+  if (simdjson_unlikely((real_exponent < 1) || (real_exponent > 2046))) {
     *success = false;
     return 0;
   }
@@ -236,7 +236,7 @@ static bool parse_float_strtod(const uint8_t *ptr, double *outDouble) {
 // check quickly whether the next 8 chars are made of digits
 // at a glance, it looks better than Mula's
 // http://0x80.pl/articles/swar-digits-validate.html
-really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
+simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
   uint64_t val;
   // this can read up to 7 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
@@ -263,7 +263,7 @@ bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
 
 template<typename I>
 NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
-really_inline bool parse_digit(const uint8_t c, I &i) {
+simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   const uint8_t digit = static_cast<uint8_t>(c - '0');
   if (digit > 9) {
     return false;
@@ -273,7 +273,7 @@ really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -299,7 +299,7 @@ really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t 
   return true;
 }
 
-really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -319,7 +319,7 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
   // instructions for a likely branch, an unconclusive gain.
 
   // If there were no digits, it's an error.
-  if (unlikely(p == start_exp)) {
+  if (simdjson_unlikely(p == start_exp)) {
     return INVALID_NUMBER(src);
   }
   // We have a valid positive exponent in exp_number at this point, except that
@@ -327,7 +327,7 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
 
   // If there were more than 18 digits, we may have overflowed the integer. We have to do 
   // something!!!!
-  if (unlikely(p > start_exp+18)) {
+  if (simdjson_unlikely(p > start_exp+18)) {
     // Skip leading zeroes: 1e000000000000000000001 is technically valid and doesn't overflow
     while (*start_exp == '0') { start_exp++; }
     // 19 digits could overflow int64_t and is kind of absurd anyway. We don't
@@ -351,12 +351,12 @@ really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t
 }
 
 template<typename W>
-really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
+simdjson_really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, int digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
   // digit count is off by 1 because of the decimal (assuming there was one).
-  if (unlikely((digit_count-1 >= 19))) { // this is uncommon
+  if (simdjson_unlikely((digit_count-1 >= 19))) { // this is uncommon
     // It is possible that the integer had an overflow.
     // We have to handle the case where we have 0.0000somenumber.
     const uint8_t *start = start_digits;
@@ -383,7 +383,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
   // NOTE: it's weird that the unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
   // To future reader: we'd love if someone found a better way, or at least could explain this result!
-  if (unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
+  if (simdjson_unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
     bool success = slow_float_parsing(src, writer);
@@ -406,7 +406,7 @@ really_inline bool write_float(const uint8_t *const src, bool negative, uint64_t
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-really_inline bool parse_number(const uint8_t *const, W &writer) {
+simdjson_really_inline bool parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return true;                 // always succeeds
 }
@@ -423,7 +423,7 @@ really_inline bool parse_number(const uint8_t *const, W &writer) {
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-really_inline bool parse_number(const uint8_t *const src, W &writer) {
+simdjson_really_inline bool parse_number(const uint8_t *const src, W &writer) {
 
   //
   // Check for minus sign

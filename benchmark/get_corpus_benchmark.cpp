@@ -5,7 +5,7 @@
 #include <iostream>
 
 // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
-never_inline
+simdjson_never_inline
 double bench(std::string filename, simdjson::padded_string& p) {
   std::chrono::time_point<std::chrono::steady_clock> start_clock =
       std::chrono::steady_clock::now();

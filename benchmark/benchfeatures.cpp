@@ -158,7 +158,7 @@ struct feature_benchmarker {
 
   }
 
-  really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
+  simdjson_really_inline void run_iterations(size_t iterations, bool stage1_only=false) {
     struct7.run_iterations(iterations, stage1_only);
     struct7_miss.run_iterations(iterations, stage1_only);
     struct7_full.run_iterations(iterations, stage1_only);

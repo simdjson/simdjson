@@ -12,7 +12,7 @@ using namespace simdjson::dom;
 
 class implementation final : public simdjson::implementation {
 public:
-  really_inline implementation() : simdjson::implementation("arm64", "ARM NEON", instruction_set::NEON) {}
+  simdjson_really_inline implementation() : simdjson::implementation("arm64", "ARM NEON", instruction_set::NEON) {}
   WARN_UNUSED error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_length,

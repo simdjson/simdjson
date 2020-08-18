@@ -23,7 +23,7 @@ public:
   /** Document passed to stage 2 */
   dom::document *doc{};
 
-  really_inline dom_parser_implementation();
+  simdjson_really_inline dom_parser_implementation();
   dom_parser_implementation(const dom_parser_implementation &) = delete;
   dom_parser_implementation & operator=(const dom_parser_implementation &) = delete;
 
@@ -45,7 +45,7 @@ public:
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-really_inline dom_parser_implementation::dom_parser_implementation() {}
+simdjson_really_inline dom_parser_implementation::dom_parser_implementation() {}
 
 // Leaving these here so they can be inlined if so desired
 WARN_UNUSED error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {

@@ -119,14 +119,14 @@ public:
    *
    * @return Current capacity, in bytes.
    */
-  really_inline size_t capacity() const noexcept;
+  simdjson_really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  really_inline size_t max_depth() const noexcept;
+  simdjson_really_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -154,11 +154,11 @@ protected:
   size_t _max_depth{0};
 }; // class dom_parser_implementation
 
-really_inline size_t dom_parser_implementation::capacity() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::capacity() const noexcept {
   return _capacity;
 }
 
-really_inline size_t dom_parser_implementation::max_depth() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::max_depth() const noexcept {
   return _max_depth;
 }
 

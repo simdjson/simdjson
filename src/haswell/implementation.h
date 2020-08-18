@@ -12,7 +12,7 @@ using namespace simdjson;
 
 class implementation final : public simdjson::implementation {
 public:
-  really_inline implementation() : simdjson::implementation(
+  simdjson_really_inline implementation() : simdjson::implementation(
       "haswell",
       "Intel/AMD AVX2",
       instruction_set::AVX2 | instruction_set::PCLMULQDQ | instruction_set::BMI1 | instruction_set::BMI2

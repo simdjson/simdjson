@@ -14,7 +14,7 @@ namespace stage1 {
 class structural_scanner {
 public:
 
-really_inline structural_scanner(dom_parser_implementation &_parser, bool _partial)
+simdjson_really_inline structural_scanner(dom_parser_implementation &_parser, bool _partial)
   : buf{_parser.buf},
     next_structural_index{_parser.structural_indexes.get()},
     parser{_parser},
@@ -22,18 +22,18 @@ really_inline structural_scanner(dom_parser_implementation &_parser, bool _parti
     partial{_partial} {
 }
 
-really_inline void add_structural() {
+simdjson_really_inline void add_structural() {
   *next_structural_index = idx;
   next_structural_index++;
 }
 
-really_inline bool is_continuation(uint8_t c) {
+simdjson_really_inline bool is_continuation(uint8_t c) {
   return (c & 0b11000000) == 0b10000000;
 }
 
-really_inline void validate_utf8_character() {
+simdjson_really_inline void validate_utf8_character() {
   // Continuation
-  if (unlikely((buf[idx] & 0b01000000) == 0)) {
+  if (simdjson_unlikely((buf[idx] & 0b01000000) == 0)) {
     // extra continuation
     error = UTF8_ERROR;
     idx++;
@@ -43,7 +43,7 @@ really_inline void validate_utf8_character() {
   // 2-byte
   if ((buf[idx] & 0b00100000) == 0) {
     // missing continuation
-    if (unlikely(idx+1 > len || !is_continuation(buf[idx+1]))) {
+    if (simdjson_unlikely(idx+1 > len || !is_continuation(buf[idx+1]))) {
       if (idx+1 > len && partial) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
@@ -58,7 +58,7 @@ really_inline void validate_utf8_character() {
   // 3-byte
   if ((buf[idx] & 0b00010000) == 0) {
     // missing continuation
-    if (unlikely(idx+2 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
+    if (simdjson_unlikely(idx+2 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
       if (idx+2 > len && partial) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
@@ -74,7 +74,7 @@ really_inline void validate_utf8_character() {
 
   // 4-byte
   // missing continuation
-  if (unlikely(idx+3 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
+  if (simdjson_unlikely(idx+3 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
     if (idx+2 > len && partial) { idx = len; return; }
     error = UTF8_ERROR;
     idx++;
@@ -92,12 +92,12 @@ really_inline void validate_utf8_character() {
   idx += 4;
 }
 
-really_inline void validate_string() {
+simdjson_really_inline void validate_string() {
   idx++; // skip first quote
   while (idx < len && buf[idx] != '"') {
     if (buf[idx] == '\\') {
       idx += 2;
-    } else if (unlikely(buf[idx] & 0b10000000)) {
+    } else if (simdjson_unlikely(buf[idx] & 0b10000000)) {
       validate_utf8_character();
     } else {
       if (buf[idx] < 0x20) { error = UNESCAPED_CHARS; }
@@ -107,7 +107,7 @@ really_inline void validate_string() {
   if (idx >= len && !partial) { error = UNCLOSED_STRING; }
 }
 
-really_inline bool is_whitespace_or_operator(uint8_t c) {
+simdjson_really_inline bool is_whitespace_or_operator(uint8_t c) {
   switch (c) {
     case '{': case '}': case '[': case ']': case ',': case ':':
     case ' ': case '\r': case '\n': case '\t':
@@ -120,7 +120,7 @@ really_inline bool is_whitespace_or_operator(uint8_t c) {
 //
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
-really_inline error_code scan() {
+simdjson_really_inline error_code scan() {
   for (;idx<len;idx++) {
     switch (buf[idx]) {
       // String
@@ -153,7 +153,7 @@ really_inline error_code scan() {
   parser.n_structural_indexes = uint32_t(next_structural_index - parser.structural_indexes.get());
   parser.next_structural_index = 0;
 
-  if (unlikely(parser.n_structural_indexes == 0)) {
+  if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
     return EMPTY;
   }
 
