@@ -127,8 +127,11 @@ echo "/* auto-generated on ${timestamp}. Do not edit! */" > ${AMAL_C}
     done
 } >> ${AMAL_C}
 
-cp -f "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}"
-cp -f "${SCRIPTPATH}/README.md" "${README}"
+# copy amalgamate_demo.cpp and README.md only if AMALGAMATE_OUTPUT_PATH is not the same as SCRIPTPATH
+if [ ! ${SCRIPTPATH} -ef ${AMALGAMATE_OUTPUT_PATH} ]; then
+    cp -f "${SCRIPTPATH}/amalgamate_demo.cpp" "${DEMOCPP}"
+    cp -f "${SCRIPTPATH}/README.md" "${README}"
+fi
 
 echo "Done with all files generation."
 
