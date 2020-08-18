@@ -80,13 +80,13 @@ public:
    *  error = parser.parse_many(json).get(docs);
    *  ```
    */
-  really_inline document_stream() noexcept;
+  simdjson_really_inline document_stream() noexcept;
   /** Move one document_stream to another. */
-  really_inline document_stream(document_stream &&other) noexcept = default;
+  simdjson_really_inline document_stream(document_stream &&other) noexcept = default;
   /** Move one document_stream to another. */
-  really_inline document_stream &operator=(document_stream &&other) noexcept = default;
+  simdjson_really_inline document_stream &operator=(document_stream &&other) noexcept = default;
 
-  really_inline ~document_stream() noexcept;
+  simdjson_really_inline ~document_stream() noexcept;
 
   /**
    * An iterator through a forward-only stream of documents.
@@ -96,7 +96,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    really_inline simdjson_result<element> operator*() noexcept;
+    simdjson_really_inline simdjson_result<element> operator*() noexcept;
     /**
      * Advance to the next document.
      */
@@ -105,7 +105,7 @@ public:
      * Check if we're at the end yet.
      * @param other the end iterator to compare to.
      */
-    really_inline bool operator!=(const iterator &other) const noexcept;
+    simdjson_really_inline bool operator!=(const iterator &other) const noexcept;
     /**
      * @private
      * 
@@ -121,7 +121,7 @@ public:
      * may change in future versions of simdjson: we find the API somewhat
      * awkward and we would like to offer something friendlier.  
      */
-     really_inline size_t current_index() const noexcept;
+     simdjson_really_inline size_t current_index() const noexcept;
     /**
      * @private
      * 
@@ -141,10 +141,10 @@ public:
      * may change in future versions of simdjson: we find the API somewhat
      * awkward and we would like to offer something friendlier.  
      */
-     really_inline std::string_view source() const noexcept;
+     simdjson_really_inline std::string_view source() const noexcept;
 
   private:
-    really_inline iterator(document_stream &s, bool finished) noexcept;
+    simdjson_really_inline iterator(document_stream &s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
     document_stream& stream;
     /** Whether we're finished or not. */
@@ -155,11 +155,11 @@ public:
   /**
    * Start iterating the documents in the stream.
    */
-  really_inline iterator begin() noexcept;
+  simdjson_really_inline iterator begin() noexcept;
   /**
    * The end of the stream, for iterator comparison purposes.
    */
-  really_inline iterator end() noexcept;
+  simdjson_really_inline iterator end() noexcept;
 
 private:
 
@@ -175,7 +175,7 @@ private:
    * @param len is the length of the raw byte buffer in bytes
    * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
    */
-  really_inline document_stream(
+  simdjson_really_inline document_stream(
     dom::parser &parser,
     const uint8_t *buf,
     size_t len,
@@ -270,18 +270,18 @@ private:
 template<>
 struct simdjson_result<dom::document_stream> : public internal::simdjson_result_base<dom::document_stream> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
-  really_inline simdjson_result(dom::document_stream &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::document_stream &&value) noexcept; ///< @private
 
 #if SIMDJSON_EXCEPTIONS
-  really_inline dom::document_stream::iterator begin() noexcept(false);
-  really_inline dom::document_stream::iterator end() noexcept(false);
+  simdjson_really_inline dom::document_stream::iterator begin() noexcept(false);
+  simdjson_really_inline dom::document_stream::iterator end() noexcept(false);
 #else // SIMDJSON_EXCEPTIONS
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
-  really_inline dom::document_stream::iterator begin() noexcept;
+  simdjson_really_inline dom::document_stream::iterator begin() noexcept;
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
-  really_inline dom::document_stream::iterator end() noexcept;
+  simdjson_really_inline dom::document_stream::iterator end() noexcept;
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result<dom::document_stream>
 

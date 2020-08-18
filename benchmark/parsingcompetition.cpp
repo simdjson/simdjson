@@ -53,7 +53,7 @@ using namespace rapidjson;
 
 #ifdef ALLPARSER
 // fastjson has a tricky interface
-void on_json_error(void *, UNUSED const fastjson::ErrorContext &ec) {
+void on_json_error(void *, SIMDJSON_UNUSED const fastjson::ErrorContext &ec) {
   // std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
 }
 bool fastjson_parse(const char *input) {
@@ -65,7 +65,7 @@ bool fastjson_parse(const char *input) {
 // end of fastjson stuff
 #endif
 
-never_inline size_t sum_line_lengths(std::stringstream & is) {
+simdjson_never_inline size_t sum_line_lengths(std::stringstream & is) {
   std::string line;
   size_t sumofalllinelengths{0};
   while(std::getline(is, line)) {

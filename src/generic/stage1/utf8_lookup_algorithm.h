@@ -95,7 +95,7 @@ struct utf8_checker {
   static const uint8_t LEAD_1111   = 0x80; // [1111]____ ...
 
   // Prepare fast_path_error in case the next block is ASCII
-  really_inline void set_fast_path_error() {
+  simdjson_really_inline void set_fast_path_error() {
     // If any of the last 3 bytes in the input needs a continuation at the start of the next input,
     // it is an error for the next input to be ASCII.
     // static const uint8_t incomplete_long[32] = {
@@ -119,7 +119,7 @@ struct utf8_checker {
     this->prev_incomplete = this->prev_input_block.saturating_sub(max_value);
   }
 
-  really_inline simd8<uint8_t> get_lead_flags(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
+  simdjson_really_inline simd8<uint8_t> get_lead_flags(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
     // Total: 2 instructions, 1 constant
     // - 1 byte shift (shuffle)
     // - 1 table lookup (shuffle)
@@ -138,7 +138,7 @@ struct utf8_checker {
   }
 
   // Find errors in bytes 1 and 2 together (one single multi-nibble &)
-  really_inline simd8<uint8_t> get_byte_1_2_errors(const simd8<uint8_t> input, const simd8<uint8_t> prev_input, const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
+  simdjson_really_inline simd8<uint8_t> get_byte_1_2_errors(const simd8<uint8_t> input, const simd8<uint8_t> prev_input, const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
     //
     // These are the errors we're going to match for bytes 1-2, by looking at the first three
     // nibbles of the character: lead_flags & <low bits of byte 1> & <high bits of byte 2>
@@ -196,7 +196,7 @@ struct utf8_checker {
     return byte_1_flags & byte_2_flags;
   }
 
-  really_inline simd8<uint8_t> get_byte_3_4_5_errors(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
+  simdjson_really_inline simd8<uint8_t> get_byte_3_4_5_errors(const simd8<uint8_t> high_bits, const simd8<uint8_t> prev_high_bits) {
     // Total 7 instructions, 3 simd constants:
     // - 3 table lookups (shuffles)
     // - 2 byte shifts (shuffles)
@@ -224,7 +224,7 @@ struct utf8_checker {
   // Check whether the current bytes are valid UTF-8.
   // At the end of the function, previous gets updated
   // This should come down to 22 instructions if table definitions are in registers--30 if not.
-  really_inline simd8<uint8_t> check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
+  simdjson_really_inline simd8<uint8_t> check_utf8_bytes(const simd8<uint8_t> input, const simd8<uint8_t> prev_input) {
     // When we process bytes M through N, we look for lead characters in M-4 through N-4. This allows
     // us to look for all errors related to any lead character at one time (since UTF-8 characters
     // can only be up to 4 bytes, and the next byte after a character finishes must be another lead,
@@ -270,15 +270,15 @@ struct utf8_checker {
   // TODO special case start of file, too, so that small documents are efficient! No shifting needed ...
 
   // The only problem that can happen at EOF is that a multibyte character is too short.
-  really_inline void check_eof() {
+  simdjson_really_inline void check_eof() {
     // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
     // possibly finish them.
     this->error |= this->prev_incomplete;
   }
 
-  really_inline void check_next_input(const simd8x64<uint8_t>& input) {
+  simdjson_really_inline void check_next_input(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    if (likely(!bits.any_bits_set_anywhere(0b10000000u))) {
+    if (simdjson_likely(!bits.any_bits_set_anywhere(0b10000000u))) {
       // If the previous block had incomplete UTF-8 characters at the end, an ASCII block can't
       // possibly finish them.
       this->error |= this->prev_incomplete;
@@ -292,7 +292,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline error_code errors() {
+  simdjson_really_inline error_code errors() {
     return this->error.any_bits_set_anywhere() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 

@@ -35,7 +35,7 @@ public:
    * @param len The length of the json document.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -51,7 +51,7 @@ public:
    * @param streaming Whether this is being called by parser::parse_many.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -65,7 +65,7 @@ public:
    * @param doc The document to output to.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage2(dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage2(dom::document &doc) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -78,7 +78,7 @@ public:
    * @param doc The document to output to.
    * @return The error code, SUCCESS if there was no error, or EMPTY if all documents have been parsed.
    */
-  WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
 
   /**
    * Change the capacity of this parser.
@@ -119,14 +119,14 @@ public:
    *
    * @return Current capacity, in bytes.
    */
-  really_inline size_t capacity() const noexcept;
+  simdjson_really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  really_inline size_t max_depth() const noexcept;
+  simdjson_really_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -136,7 +136,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
+  SIMDJSON_WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
 
 protected:
   /**
@@ -154,15 +154,15 @@ protected:
   size_t _max_depth{0};
 }; // class dom_parser_implementation
 
-really_inline size_t dom_parser_implementation::capacity() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::capacity() const noexcept {
   return _capacity;
 }
 
-really_inline size_t dom_parser_implementation::max_depth() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::max_depth() const noexcept {
   return _max_depth;
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline error_code dom_parser_implementation::allocate(size_t capacity, size_t max_depth) noexcept {
   if (this->max_depth() != max_depth) {
     error_code err = set_max_depth(max_depth);

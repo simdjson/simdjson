@@ -6,7 +6,7 @@ namespace arm64 {
 
 // we don't have SSE, so let us use a scalar function
 // credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
-static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
+static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   uint64_t val;
   memcpy(&val, chars, sizeof(uint64_t));
   val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;

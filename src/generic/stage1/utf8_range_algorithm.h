@@ -31,7 +31,7 @@ struct utf8_checker {
   simd8<bool> has_error;
   processed_utf_bytes previous;
 
-  really_inline void check_carried_continuations() {
+  simdjson_really_inline void check_carried_continuations() {
     static const int8_t last_len[32] = {
       9, 9, 9, 9, 9, 9, 9, 9,
       9, 9, 9, 9, 9, 9, 9, 9,
@@ -43,7 +43,7 @@ struct utf8_checker {
 
   // check whether the current bytes are valid UTF-8
   // at the end of the function, previous gets updated
-  really_inline void check_utf8_bytes(const simd8<uint8_t> current_bytes) {
+  simdjson_really_inline void check_utf8_bytes(const simd8<uint8_t> current_bytes) {
 
     /* high_nibbles = input >> 4 */
     const simd8<uint8_t> high_nibbles = current_bytes.shr<4>();
@@ -156,17 +156,17 @@ struct utf8_checker {
     this->previous.first_len = first_len;
   }
 
-  really_inline void check_next_input(const simd8<uint8_t> in) {
-    if (likely(!in.any_bits_set_anywhere(0x80u))) {
+  simdjson_really_inline void check_next_input(const simd8<uint8_t> in) {
+    if (simdjson_likely(!in.any_bits_set_anywhere(0x80u))) {
       this->check_carried_continuations();
     } else {
       this->check_utf8_bytes(in);
     }
   }
 
-  really_inline void check_next_input(const simd8x64<uint8_t>& in) {
+  simdjson_really_inline void check_next_input(const simd8x64<uint8_t>& in) {
     simd8<uint8_t> bits = in.reduce_or();
-    if (likely(!bits.any_bits_set_anywhere(0x80u))) {
+    if (simdjson_likely(!bits.any_bits_set_anywhere(0x80u))) {
       // it is ascii, we just check carried continuations.
       this->check_carried_continuations();
     } else {
@@ -177,7 +177,7 @@ struct utf8_checker {
     }
   }
 
-  really_inline error_code errors() {
+  simdjson_really_inline error_code errors() {
     return this->has_error.any() ? simdjson::UTF8_ERROR : simdjson::SUCCESS;
   }
 }; // struct utf8_checker

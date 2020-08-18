@@ -20,7 +20,7 @@ inline element document::root() const noexcept {
   return element(internal::tape_ref(this, 1));
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline error_code document::allocate(size_t capacity) noexcept {
   if (capacity == 0) {
     string_buf.reset();
@@ -33,10 +33,10 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where len + 1 tape elements are
   // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t tape_capacity = ROUNDUP_N(capacity + 3, 64);
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
-  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + 32, 64);
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   return string_buf && tape ? SUCCESS : MEMALLOC;

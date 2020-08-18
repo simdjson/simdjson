@@ -10,14 +10,14 @@ void found_float(double result, const uint8_t *buf);
 
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
-static really_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
+static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint32_t result = 0;
   for (int i=0;i<8;i++) {
     result = result*10 + (chars[i] - '0');
   }
   return result;
 }
-static really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
+static simdjson_really_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   return parse_eight_digits_unrolled((const char *)chars);
 }
 

@@ -38,10 +38,10 @@ enum class element_type {
 class element {
 public:
   /** Create a new, invalid element. */
-  really_inline element() noexcept;
+  simdjson_really_inline element() noexcept;
 
   /** The type of this element. */
-  really_inline element_type type() const noexcept;
+  simdjson_really_inline element_type type() const noexcept;
 
   /**
    * Cast this element to an array.
@@ -207,7 +207,7 @@ public:
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
-  really_inline bool is() const noexcept;
+  simdjson_really_inline bool is() const noexcept;
 
   /**
    * Get the value as the provided type (T).
@@ -244,7 +244,7 @@ public:
    * @returns The error that occurred, or SUCCESS if there was no error.
    */
   template<typename T>
-  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
   /**
    * Get the value as the provided type (T), setting error if it's not the given type.
@@ -466,7 +466,7 @@ public:
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
-  really_inline element(const internal::tape_ref &tape) noexcept;
+  simdjson_really_inline element(const internal::tape_ref &tape) noexcept;
   internal::tape_ref tape;
   friend class document;
   friend class object;
@@ -502,58 +502,58 @@ inline std::ostream& operator<<(std::ostream& out, element_type type);
 template<>
 struct simdjson_result<dom::element> : public internal::simdjson_result_base<dom::element> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  really_inline simdjson_result<dom::element_type> type() const noexcept;
+  simdjson_really_inline simdjson_result<dom::element_type> type() const noexcept;
   template<typename T>
-  really_inline bool is() const noexcept;
+  simdjson_really_inline bool is() const noexcept;
   template<typename T>
-  really_inline simdjson_result<T> get() const noexcept;
+  simdjson_really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
-  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
-  really_inline simdjson_result<dom::array> get_array() const noexcept;
-  really_inline simdjson_result<dom::object> get_object() const noexcept;
-  really_inline simdjson_result<const char *> get_c_str() const noexcept;
-  really_inline simdjson_result<size_t> get_string_length() const noexcept;
-  really_inline simdjson_result<std::string_view> get_string() const noexcept;
-  really_inline simdjson_result<int64_t> get_int64() const noexcept;
-  really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
-  really_inline simdjson_result<double> get_double() const noexcept;
-  really_inline simdjson_result<bool> get_bool() const noexcept;
+  simdjson_really_inline simdjson_result<dom::array> get_array() const noexcept;
+  simdjson_really_inline simdjson_result<dom::object> get_object() const noexcept;
+  simdjson_really_inline simdjson_result<const char *> get_c_str() const noexcept;
+  simdjson_really_inline simdjson_result<size_t> get_string_length() const noexcept;
+  simdjson_really_inline simdjson_result<std::string_view> get_string() const noexcept;
+  simdjson_really_inline simdjson_result<int64_t> get_int64() const noexcept;
+  simdjson_really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
+  simdjson_really_inline simdjson_result<double> get_double() const noexcept;
+  simdjson_really_inline simdjson_result<bool> get_bool() const noexcept;
 
-  really_inline bool is_array() const noexcept;
-  really_inline bool is_object() const noexcept;
-  really_inline bool is_string() const noexcept;
-  really_inline bool is_int64() const noexcept;
-  really_inline bool is_uint64() const noexcept;
-  really_inline bool is_double() const noexcept;
-  really_inline bool is_bool() const noexcept;
-  really_inline bool is_null() const noexcept;
+  simdjson_really_inline bool is_array() const noexcept;
+  simdjson_really_inline bool is_object() const noexcept;
+  simdjson_really_inline bool is_string() const noexcept;
+  simdjson_really_inline bool is_int64() const noexcept;
+  simdjson_really_inline bool is_uint64() const noexcept;
+  simdjson_really_inline bool is_double() const noexcept;
+  simdjson_really_inline bool is_bool() const noexcept;
+  simdjson_really_inline bool is_null() const noexcept;
 
-  really_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
-  really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
-  really_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
   [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
-  really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
-  really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
-  really_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
-  really_inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
-  really_inline operator bool() const noexcept(false);
-  really_inline explicit operator const char*() const noexcept(false);
-  really_inline operator std::string_view() const noexcept(false);
-  really_inline operator uint64_t() const noexcept(false);
-  really_inline operator int64_t() const noexcept(false);
-  really_inline operator double() const noexcept(false);
-  really_inline operator dom::array() const noexcept(false);
-  really_inline operator dom::object() const noexcept(false);
+  simdjson_really_inline operator bool() const noexcept(false);
+  simdjson_really_inline explicit operator const char*() const noexcept(false);
+  simdjson_really_inline operator std::string_view() const noexcept(false);
+  simdjson_really_inline operator uint64_t() const noexcept(false);
+  simdjson_really_inline operator int64_t() const noexcept(false);
+  simdjson_really_inline operator double() const noexcept(false);
+  simdjson_really_inline operator dom::array() const noexcept(false);
+  simdjson_really_inline operator dom::object() const noexcept(false);
 
-  really_inline dom::array::iterator begin() const noexcept(false);
-  really_inline dom::array::iterator end() const noexcept(false);
+  simdjson_really_inline dom::array::iterator begin() const noexcept(false);
+  simdjson_really_inline dom::array::iterator end() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
@@ -569,7 +569,7 @@ public:
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
+simdjson_really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
 #endif
 
 } // namespace simdjson

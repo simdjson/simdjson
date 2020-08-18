@@ -48,7 +48,7 @@ void print_stat(const stat_t &s) {
          s.true_count, s.false_count);
 }
 
-really_inline void simdjson_process_atom(stat_t &s,
+simdjson_really_inline void simdjson_process_atom(stat_t &s,
                                          simdjson::dom::element element) {
   if (element.is<double>()) {
     s.number_count++;
@@ -102,7 +102,7 @@ void simdjson_recurse(stat_t &s, simdjson::dom::element element) {
   }
 }
 
-never_inline stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
+simdjson_never_inline stat_t simdjson_compute_stats(const simdjson::padded_string &p) {
   stat_t s{};
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
@@ -212,13 +212,13 @@ static void RapidGenStat(Stat &stat, const rapidjson::Value &v) {
     break;
   }
 }
-never_inline Stat rapidjson_compute_stats_ref(const rapidjson::Value &doc) {
+simdjson_never_inline Stat rapidjson_compute_stats_ref(const rapidjson::Value &doc) {
   Stat s{};
   RapidGenStat(s, doc);
   return s;
 }
 
-never_inline Stat
+simdjson_never_inline Stat
 simdjson_compute_stats_refplus(const simdjson::dom::element &doc) {
   Stat s{};
   GenStatPlus(s, doc);
@@ -268,7 +268,7 @@ void sajson_traverse(stat_t &stats, const sajson::value &node) {
   }
 }
 
-never_inline stat_t sasjon_compute_stats(const simdjson::padded_string &p) {
+simdjson_never_inline stat_t sasjon_compute_stats(const simdjson::padded_string &p) {
   stat_t answer{};
   char *buffer = (char *)malloc(p.size());
   if (buffer == nullptr) {
@@ -329,7 +329,7 @@ void rapid_traverse(stat_t &stats, const rapidjson::Value &v) {
   }
 }
 
-never_inline stat_t rapid_compute_stats(const simdjson::padded_string &p) {
+simdjson_never_inline stat_t rapid_compute_stats(const simdjson::padded_string &p) {
   stat_t answer{};
   char *buffer = (char *)malloc(p.size() + 1);
   if (buffer == nullptr) {
@@ -355,7 +355,7 @@ never_inline stat_t rapid_compute_stats(const simdjson::padded_string &p) {
   return answer;
 }
 
-never_inline stat_t
+simdjson_never_inline stat_t
 rapid_accurate_compute_stats(const simdjson::padded_string &p) {
   stat_t answer{};
   char *buffer = (char *)malloc(p.size() + 1);
