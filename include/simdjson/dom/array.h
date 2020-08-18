@@ -84,12 +84,14 @@ public:
    */
   inline size_t size() const noexcept;
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given JSON pointer.  We use the RFC 6901
+   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
+   * as the root of its own JSON document.
    *
    *   dom::parser parser;
    *   array a = parser.parse(R"([ { "foo": { "a": [ 10, 20, 30 ] }} ])"_padded);
-   *   a.at("0/foo/a/1") == 20
-   *   a.at("0")["foo"]["a"].at(1) == 20
+   *   a.at_pointer("/0/foo/a/1") == 20
+   *   a.at_pointer("0")["foo"]["a"].at(1) == 20
    *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
@@ -97,7 +99,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
   /**
    * Get the value at the given index. This function has linear-time complexity and
@@ -147,7 +149,7 @@ public:
   really_inline simdjson_result(dom::array value) noexcept; ///< @private
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS

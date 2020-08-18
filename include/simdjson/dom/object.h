@@ -70,13 +70,13 @@ public:
      * Returns true if the key in this key/value pair is equal
      * to the provided string_view.
      */
-    inline bool key_equals(const std::string_view & o) const noexcept;
+    inline bool key_equals(std::string_view o) const noexcept;
     /**
      * Returns true if the key in this key/value pair is equal
      * to the provided string_view in a case-insensitive manner.
      * Case comparisons may only be handled correctly for ASCII strings.
      */
-    inline bool key_equals_case_insensitive(const std::string_view & o) const noexcept;
+    inline bool key_equals_case_insensitive(std::string_view o) const noexcept;
     /**
      * Get the key of this key/value pair.
      */
@@ -130,7 +130,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const std::string_view &key) const noexcept;
+  inline simdjson_result<element> operator[](std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -150,12 +150,21 @@ public:
   inline simdjson_result<element> operator[](const char *key) const noexcept;
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given JSON pointer. We use the RFC 6901
+   * https://tools.ietf.org/html/rfc6901 standard, interpreting the current node
+   * as the root of its own JSON document.
    *
    *   dom::parser parser;
    *   object obj = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
-   *   obj.at("foo/a/1") == 20
-   *   obj.at("foo")["a"].at(1) == 20
+   *   obj.at_pointer("/foo/a/1") == 20
+   *   obj.at_pointer("/foo")["a"].at(1) == 20
+   *
+   * It is allowed for a key to be the empty string:
+   *
+   *   dom::parser parser;
+   *   object obj = parser.parse(R"({ "": { "a": [ 10, 20, 30 ] }})"_padded);
+   *   obj.at_pointer("//a/1") == 20
+   *   obj.at_pointer("/")["a"].at(1) == 20
    *
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
@@ -163,7 +172,7 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
-  inline simdjson_result<element> at(const std::string_view &json_pointer) const noexcept;
+  inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -179,7 +188,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline simdjson_result<element> at_key(const std::string_view &key) const noexcept;
+  inline simdjson_result<element> at_key(std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key in a case-insensitive manner.
@@ -192,7 +201,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline simdjson_result<element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+  inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 private:
   really_inline object(const internal::tape_ref &tape) noexcept;
@@ -216,7 +225,7 @@ public:
   element value;
 
 private:
-  really_inline key_value_pair(const std::string_view &_key, element _value) noexcept;
+  really_inline key_value_pair(std::string_view _key, element _value) noexcept;
   friend class object;
 };
 
@@ -251,11 +260,11 @@ public:
   really_inline simdjson_result(dom::object value) noexcept; ///< @private
   really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  inline simdjson_result<dom::element> operator[](const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
-  inline simdjson_result<dom::element> at(const std::string_view &json_pointer) const noexcept;
-  inline simdjson_result<dom::element> at_key(const std::string_view &key) const noexcept;
-  inline simdjson_result<dom::element> at_key_case_insensitive(const std::string_view &key) const noexcept;
+  inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
+  inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
+  inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline dom::object::iterator begin() const noexcept(false);
