@@ -83,10 +83,10 @@ private:
     tape_writer::write(parser.dom_parser.doc->tape[start_tape_index], next_tape_index(parser), internal::tape_type::ROOT);
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_key(structural_parser &parser, const uint8_t *value) {
     return parse_string(parser, value, true);
   }
-  WARN_UNUSED simdjson_really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_string(structural_parser &parser, const uint8_t *value, bool key = false) {
     parser.log_value(key ? "key" : "string");
     uint8_t *dst = on_start_string(parser);
     dst = stringparsing::parse_string(value, dst);
@@ -98,7 +98,7 @@ private:
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_number(structural_parser &parser, const uint8_t *value) {
     parser.log_value("number");
     if (!numberparsing::parse_number(value, tape)) { parser.log_error("Invalid number"); return NUMBER_ERROR; }
     return SUCCESS;
@@ -129,42 +129,42 @@ private:
     return error;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_true_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("true");
     if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_true_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("true");
     if (!atomparsing::is_valid_true_atom(value, parser.remaining_len())) { return T_ATOM_ERROR; }
     tape.append(0, internal::tape_type::TRUE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_false_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("false");
     if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_false_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("false");
     if (!atomparsing::is_valid_false_atom(value, parser.remaining_len())) { return F_ATOM_ERROR; }
     tape.append(0, internal::tape_type::FALSE_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_null_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("null");
     if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);
     return SUCCESS;
   }
 
-  WARN_UNUSED simdjson_really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse_root_null_atom(structural_parser &parser, const uint8_t *value) {
     parser.log_value("null");
     if (!atomparsing::is_valid_null_atom(value, parser.remaining_len())) { return N_ATOM_ERROR; }
     tape.append(0, internal::tape_type::NULL_VALUE);

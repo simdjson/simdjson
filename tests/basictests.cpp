@@ -212,7 +212,7 @@ namespace parse_api_tests {
     simdjson::dom::document_stream stream;
     ASSERT_SUCCESS( parser.parse_many(BASIC_NDJSON).get(stream) );
     for (auto doc : stream) {
-      UNUSED dom::array array;
+      SIMDJSON_UNUSED dom::array array;
       ASSERT_SUCCESS( doc.get(array) );
       count++;
     }
@@ -227,7 +227,7 @@ namespace parse_api_tests {
     dom::parser parser;
     int count = 0;
     for (auto doc : parser.parse_many(BASIC_NDJSON)) {
-      UNUSED dom::array array;
+      SIMDJSON_UNUSED dom::array array;
       ASSERT_SUCCESS( doc.get(array) );
       count++;
     }
@@ -326,14 +326,14 @@ namespace parse_api_tests {
   bool parser_parse_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-    UNUSED dom::array array = parser.parse(BASIC_JSON);
+    SIMDJSON_UNUSED dom::array array = parser.parse(BASIC_JSON);
     return true;
   }
   bool parser_parse_many_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (UNUSED dom::array doc : parser.parse_many(BASIC_NDJSON)) {
+    for (SIMDJSON_UNUSED dom::array doc : parser.parse_many(BASIC_NDJSON)) {
       count++;
     }
     ASSERT_EQUAL(count, 2);
@@ -345,7 +345,7 @@ namespace parse_api_tests {
     dom::parser parser;
     size_t count = 0;
     dom::object object = parser.load(TWITTER_JSON);
-    for (UNUSED auto field : object) {
+    for (SIMDJSON_UNUSED auto field : object) {
       count++;
     }
     ASSERT_EQUAL( count, object.size() );
@@ -355,7 +355,7 @@ namespace parse_api_tests {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
     int count = 0;
-    for (UNUSED dom::array doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
+    for (SIMDJSON_UNUSED dom::array doc : parser.load_many(AMAZON_CELLPHONES_NDJSON)) {
       count++;
     }
     ASSERT_EQUAL( count, AMAZON_CELLPHONES_NDJSON_DOC_COUNT );
@@ -538,7 +538,7 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
-    for (UNUSED auto field : object) {
+    for (SIMDJSON_UNUSED auto field : object) {
       TEST_FAIL("Unexpected field");
       i++;
     }
@@ -554,7 +554,7 @@ namespace dom_api_tests {
     dom::parser parser;
     dom::array array;
     ASSERT_SUCCESS( parser.parse(json).get(array) );
-    for (UNUSED auto value : array) {
+    for (SIMDJSON_UNUSED auto value : array) {
       TEST_FAIL("Unexpected value");
       i++;
     }
@@ -645,7 +645,7 @@ namespace dom_api_tests {
     ASSERT_EQUAL( object["a"].get<uint64_t>().first, 1 );
 
     simdjson::error_code error;
-    UNUSED element val;
+    SIMDJSON_UNUSED element val;
 #ifndef _LIBCPP_VERSION // should work everywhere but with libc++, must include the <ciso646> header.
     std::tie(val,error) = object["d"];
     ASSERT_ERROR( error, NO_SUCH_FIELD );
@@ -681,7 +681,7 @@ namespace dom_api_tests {
     ASSERT_EQUAL( obj["b"].get<uint64_t>().first, 2 );
     ASSERT_EQUAL( obj["a"].get<uint64_t>().first, 1 );
 
-    UNUSED element val;
+    SIMDJSON_UNUSED element val;
     ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
     return true;
   }

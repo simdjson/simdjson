@@ -98,7 +98,7 @@ void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::object object) {
   }
 }
 simdjson_really_inline void simdjson_recurse(std::vector<int64_t> & v, simdjson::dom::element element) {
-  UNUSED simdjson::error_code error;
+  SIMDJSON_UNUSED simdjson::error_code error;
   simdjson::dom::array array;
   simdjson::dom::object object;
   if (not (error = element.get(array))) {

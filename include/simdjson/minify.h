@@ -24,7 +24,7 @@ namespace simdjson {
  * @param dst_len the number of bytes written. Output only.
  * @return the error code, or SUCCESS if there was no error.
  */
-WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
+SIMDJSON_WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
 
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.

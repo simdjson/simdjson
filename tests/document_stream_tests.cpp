@@ -21,11 +21,11 @@ std::string trim(const std::string s) {
 namespace document_stream_tests {
   static simdjson::dom::document_stream parse_many_stream_return(simdjson::dom::parser &parser, simdjson::padded_string &str) {
     simdjson::dom::document_stream stream;
-    UNUSED auto error = parser.parse_many(str).get(stream);
+    SIMDJSON_UNUSED auto error = parser.parse_many(str).get(stream);
     return stream;
   }
   // this is a compilation test
-  UNUSED static void parse_many_stream_assign() {
+  SIMDJSON_UNUSED static void parse_many_stream_assign() {
       simdjson::dom::parser parser;
       simdjson::padded_string str("{}",2);
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);

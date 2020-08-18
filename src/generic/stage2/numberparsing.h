@@ -252,7 +252,7 @@ simdjson_really_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
 }
 
 template<typename W>
-bool slow_float_parsing(UNUSED const uint8_t * src, W writer) {
+bool slow_float_parsing(SIMDJSON_UNUSED const uint8_t * src, W writer) {
   double d;
   if (parse_float_strtod(src, &d)) {
     WRITE_DOUBLE(d, src, writer);
@@ -273,7 +273,7 @@ simdjson_really_inline bool parse_digit(const uint8_t c, I &i) {
   return true;
 }
 
-simdjson_really_inline bool parse_decimal(UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_really_inline bool parse_decimal(SIMDJSON_UNUSED const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -299,7 +299,7 @@ simdjson_really_inline bool parse_decimal(UNUSED const uint8_t *const src, const
   return true;
 }
 
-simdjson_really_inline bool parse_exponent(UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_really_inline bool parse_exponent(SIMDJSON_UNUSED const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well

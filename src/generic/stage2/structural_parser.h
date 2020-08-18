@@ -17,9 +17,9 @@ struct structural_parser : structural_iterator {
   uint32_t depth{0};
 
   template<bool STREAMING, typename T>
-  WARN_UNUSED simdjson_really_inline error_code parse(T &builder) noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code parse(T &builder) noexcept;
   template<bool STREAMING, typename T>
-  WARN_UNUSED static simdjson_really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
+  SIMDJSON_WARN_UNUSED static simdjson_really_inline error_code parse(dom_parser_implementation &dom_parser, T &builder) noexcept {
     structural_parser parser(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
     return parser.parse<STREAMING>(builder);
   }
@@ -29,12 +29,12 @@ struct structural_parser : structural_iterator {
     : structural_iterator(_dom_parser, start_structural_index) {
   }
 
-  WARN_UNUSED simdjson_really_inline error_code start_document() {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_document() {
     dom_parser.is_array[depth] = false;
     return SUCCESS;
   }
   template<typename T>
-  WARN_UNUSED simdjson_really_inline error_code start_array(T &builder) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code start_array(T &builder) {
     depth++;
     if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
     builder.start_array(*this);
@@ -43,7 +43,7 @@ struct structural_parser : structural_iterator {
   }
 
   template<typename T>
-  WARN_UNUSED simdjson_really_inline bool empty_object(T &builder) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_object(T &builder) {
     if (peek_next_char() == '}') {
       advance_char();
       builder.empty_object(*this);
@@ -52,7 +52,7 @@ struct structural_parser : structural_iterator {
     return false;
   }
   template<typename T>
-  WARN_UNUSED simdjson_really_inline bool empty_array(T &builder) {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline bool empty_array(T &builder) {
     if (peek_next_char() == ']') {
       advance_char();
       builder.empty_array(*this);
@@ -62,7 +62,7 @@ struct structural_parser : structural_iterator {
   }
 
   template<bool STREAMING>
-  WARN_UNUSED simdjson_really_inline error_code finish() {
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code finish() {
     dom_parser.next_structural_index = uint32_t(next_structural - &dom_parser.structural_indexes[0]);
 
     if (depth != 0) {
@@ -99,7 +99,7 @@ struct structural_parser : structural_iterator {
 }; // struct structural_parser
 
 template<bool STREAMING, typename T>
-WARN_UNUSED simdjson_really_inline error_code structural_parser::parse(T &builder) noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code structural_parser::parse(T &builder) noexcept {
   logger::log_start();
 
   //

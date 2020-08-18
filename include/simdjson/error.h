@@ -203,7 +203,7 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  WARN_UNUSED simdjson_really_inline error_code get(T &value) && noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.

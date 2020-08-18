@@ -53,7 +53,7 @@ using namespace rapidjson;
 
 #ifdef ALLPARSER
 // fastjson has a tricky interface
-void on_json_error(void *, UNUSED const fastjson::ErrorContext &ec) {
+void on_json_error(void *, SIMDJSON_UNUSED const fastjson::ErrorContext &ec) {
   // std::cerr<<"ERROR: "<<ec.mesg<<std::endl;
 }
 bool fastjson_parse(const char *input) {

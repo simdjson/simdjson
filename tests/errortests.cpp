@@ -117,14 +117,14 @@ namespace parser_load {
   bool parser_load_chain() {
     TEST_START();
     dom::parser parser;
-    UNUSED uint64_t foo;
+    SIMDJSON_UNUSED uint64_t foo;
     ASSERT_ERROR( parser.load(NONEXISTENT_FILE)["foo"].get(foo), IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_chain() {
     TEST_START();
     dom::parser parser;
-    UNUSED dom::document_stream stream;
+    SIMDJSON_UNUSED dom::document_stream stream;
     ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).get(stream), IO_ERROR );
     TEST_SUCCEED();
   }

@@ -244,7 +244,7 @@ public:
    * @returns The error that occurred, or SUCCESS if there was no error.
    */
   template<typename T>
-  WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
   /**
    * Get the value as the provided type (T), setting error if it's not the given type.
@@ -482,7 +482,7 @@ public:
   template<typename T>
   simdjson_really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
-  WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
   simdjson_really_inline simdjson_result<dom::array> get_array() const noexcept;
   simdjson_really_inline simdjson_result<dom::object> get_object() const noexcept;

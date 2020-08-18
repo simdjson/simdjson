@@ -38,7 +38,7 @@ static const uint8_t escape_map[256] = {
 // dest will advance a variable amount (return via pointer)
 // return true if the unicode codepoint was valid
 // We work in little-endian then swap at write time
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
                                             uint8_t **dst_ptr) {
   // hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
@@ -72,7 +72,7 @@ simdjson_really_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
   return offset > 0;
 }
 
-WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
+SIMDJSON_WARN_UNUSED simdjson_really_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst) {
   src++;
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
