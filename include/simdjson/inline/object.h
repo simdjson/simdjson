@@ -27,9 +27,9 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](co
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at(std::string_view json_pointer) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
-  return first.at(json_pointer);
+  return first.at_pointer(json_pointer);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
@@ -80,7 +80,7 @@ inline simdjson_result<element> object::operator[](std::string_view key) const n
 inline simdjson_result<element> object::operator[](const char *key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> object::at(std::string_view json_pointer) const noexcept {
+inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
   if(json_pointer[0] != '/') {
     if(json_pointer.size() == 0) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
@@ -121,10 +121,11 @@ inline simdjson_result<element> object::at(std::string_view json_pointer) const 
   }
   // If there is a /, we have to recurse and look up more of the path
   if (slash != std::string_view::npos) {
-    child = child.at(json_pointer.substr(slash));
+    child = child.at_pointer(json_pointer.substr(slash));
   }
   return child;
 }
+
 inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {

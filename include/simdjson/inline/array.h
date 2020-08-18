@@ -36,9 +36,9 @@ inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-inline simdjson_result<dom::element> simdjson_result<dom::array>::at(std::string_view json_pointer) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::array>::at_pointer(std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
-  return first.at(json_pointer);
+  return first.at_pointer(json_pointer);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::array>::at(size_t index) const noexcept {
   if (error()) { return error(); }
@@ -61,7 +61,7 @@ inline array::iterator array::end() const noexcept {
 inline size_t array::size() const noexcept {
   return tape.scope_count();
 }
-inline simdjson_result<element> array::at(std::string_view json_pointer) const noexcept {
+inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
   if(json_pointer[0] != '/') {
     if(json_pointer.size() == 0) { // an empty string means that we return the current node
       return element(this->tape); // copy the current node
@@ -98,7 +98,7 @@ inline simdjson_result<element> array::at(std::string_view json_pointer) const n
   }
   // If there is a /, we're not done yet, call recursively.
   if (i < json_pointer.length()) {
-    child = child.at(json_pointer.substr(i));
+    child = child.at_pointer(json_pointer.substr(i));
   }
   return child;
 }

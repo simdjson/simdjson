@@ -284,7 +284,7 @@ JSON Pointer
 ------------
 
 The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the
-at() method, letting you reach further down into the document in a single call:
+`at_pointer()` method, letting you reach further down into the document in a single call:
 
 ```c++
 auto cars_json = R"( [
@@ -294,7 +294,7 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
-cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
+cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
 
 A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer
@@ -315,12 +315,12 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
-cout << cars.at("/0/tire_pressure/1") << endl; // Prints 39.9
+cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 for (dom::element car_element : cars) {
     dom::object car;
     simdjson::error_code error;
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
-    double x = car.at("/tire_pressure/1");
+    double x = car.at_pointer("/tire_pressure/1");
     cout << x << endl; // Prints 39.9, 31 and 30
 }
 ```

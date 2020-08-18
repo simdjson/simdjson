@@ -1,3 +1,9 @@
+/***************
+ * We refer the programmer to 
+ * JavaScript Object Notation (JSON) Pointer
+ * https://tools.ietf.org/html/rfc6901
+ */
+
 #include <iostream>
 
 #include "simdjson.h"
@@ -25,7 +31,7 @@ bool demo() {
 ] )"_padded;
   dom::parser parser;
   dom::element cars = parser.parse(cars_json);
-  double x = cars.at("/0/tire_pressure/1");
+  double x = cars.at_pointer("/0/tire_pressure/1");
   if(x != 39.9) return false;
   // Iterating through an array of objects
   std::vector<double> measured;
@@ -33,7 +39,7 @@ bool demo() {
     dom::object car;
     simdjson::error_code error;
     if ((error = car_element.get(car))) { std::cerr << error << std::endl; return false; }
-    double x3 = car.at("/tire_pressure/1");
+    double x3 = car.at_pointer("/tire_pressure/1");
     measured.push_back(x3);
   }
   std::vector<double> expected = {39.9, 31, 30};
@@ -84,7 +90,7 @@ bool json_pointer_success_test(const padded_string & source, const char *json_po
   auto error = parser.parse(source).get(doc);
   if(error) { std::cerr << "cannot parse: " << error << std::endl; return false; }
   dom::element answer;
-  error = doc.at(json_pointer).get(answer);
+  error = doc.at_pointer(json_pointer).get(answer);
   if(error) { std::cerr << "cannot access pointer: " << error << std::endl; return false; }
   std::string str_answer = simdjson::minify(answer);
   if(str_answer != expected_value) {
@@ -99,13 +105,60 @@ bool json_pointer_success_test(const padded_string & source, const char *json_po
 bool json_pointer_failure_test(const padded_string & source, const char *json_pointer, error_code expected_error) {
   std::cout << "Running invalid JSON pointer test '" << json_pointer << "' ..." << std::endl;
   dom::parser parser;
-  ASSERT_ERROR(parser.parse(source).at(json_pointer).error(), expected_error);
+  ASSERT_ERROR(parser.parse(source).at_pointer(json_pointer).error(), expected_error);
+  return true;
+}
+
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
+// for pre 0.4 users (not standard compliant)
+bool legacy_support() {
+#if SIMDJSON_EXCEPTIONS
+  std::cout << "legacy test" << std::endl;
+  auto legacy_json = R"({"key": "value", "array": [0, 1, 2]})"_padded;
+  dom::parser parser;
+  dom::element legacy = parser.parse(legacy_json);
+  std::string_view value_str = legacy.at("key");
+  ASSERT_EQUAL(value_str, "value");
+  int64_t array0 = legacy.at("array/0");
+  ASSERT_EQUAL(array0, 0);
+  array0 = legacy.at("array").at("0");
+  ASSERT_EQUAL(array0, 0);
+  ASSERT_ERROR(legacy.at("no_such_key").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(legacy.at("array/9").error(), INDEX_OUT_OF_BOUNDS);
+  ASSERT_ERROR(legacy.at("array/not_a_num").error(), INCORRECT_TYPE);
+  ASSERT_ERROR(legacy.at("array/").error(), INVALID_JSON_POINTER);
+#endif
+  return true;
+}
+SIMDJSON_POP_DISABLE_WARNINGS
+
+// for 0.5 version and following (standard compliant)
+bool modern_support() {
+#if SIMDJSON_EXCEPTIONS
+  std::cout << "modern test" << std::endl;
+  auto example_json = R"({"key": "value", "array": [0, 1, 2]})"_padded;
+  dom::parser parser;
+  dom::element example = parser.parse(example_json);
+  std::string_view value_str = example.at_pointer("/key");
+  ASSERT_EQUAL(value_str, "value");
+  int64_t array0 = example.at_pointer("/array/0");
+  ASSERT_EQUAL(array0, 0);
+  array0 = example.at_pointer("/array").at_pointer("/0");
+  ASSERT_EQUAL(array0, 0);
+  ASSERT_ERROR(example.at_pointer("/no_such_key").error(), NO_SUCH_FIELD);
+  ASSERT_ERROR(example.at_pointer("/array/9").error(), INDEX_OUT_OF_BOUNDS);
+  ASSERT_ERROR(example.at_pointer("/array/not_a_num").error(), INCORRECT_TYPE);
+  ASSERT_ERROR(example.at_pointer("/array/").error(), INVALID_JSON_POINTER);
+#endif
   return true;
 }
 
 int main() {
   if (true
     && demo()
+    && legacy_support()
+    && modern_support()
     && json_pointer_success_test(TEST_RFC_JSON, "", R"({"foo":["bar","baz"],"":0,"a/b":1,"c%d":2,"e^f":3,"g|h":4,"i\\j":5,"k\"l":6," ":7,"m~n":8})")
     && json_pointer_success_test(TEST_RFC_JSON, "/foo", "[\"bar\",\"baz\"]")
     && json_pointer_success_test(TEST_RFC_JSON, "/foo/0", "\"bar\"")

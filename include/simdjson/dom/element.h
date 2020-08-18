@@ -384,20 +384,50 @@ public:
   inline simdjson_result<element> operator[](const char *key) const noexcept;
 
   /**
-   * Get the value associated with the given JSON pointer.
+   * Get the value associated with the given JSON pointer.  We use the RFC 6901
+   * https://tools.ietf.org/html/rfc6901 standard.
    *
    *   dom::parser parser;
    *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
-   *   doc.at("/foo/a/1") == 20
-   *   doc.at("/")["foo"]["a"].at(1) == 20
-   *   doc.at("")["foo"]["a"].at(1) == 20
+   *   doc.at_pointer("/foo/a/1") == 20
+   *   doc.at_pointer("/foo")["a"].at(1) == 20
+   *   doc.at_pointer("")["foo"]["a"].at(1) == 20
    *
+   * It is allowed for a key to be the empty string:
+   *
+   *   dom::parser parser;
+   *   object obj = parser.parse(R"({ "": { "a": [ 10, 20, 30 ] }})"_padded);
+   *   obj.at_pointer("//a/1") == 20
+   * 
    * @return The value associated with the given JSON pointer, or:
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
+  inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
+  
+  /**
+   * 
+   * Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard
+   * and allowed the following :
+   * 
+   *   dom::parser parser;
+   *   element doc = parser.parse(R"({ "foo": { "a": [ 10, 20, 30 ] }})"_padded);
+   *   doc.at("foo/a/1") == 20
+   * 
+   * Though it is intuitive, it is not compliant with RFC 6901
+   * https://tools.ietf.org/html/rfc6901 
+   * 
+   * For standard compliance, use the at_pointer function instead.
+   * 
+   * @return The value associated with the given JSON pointer, or:
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+   *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   */
+  [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
   inline simdjson_result<element> at(const std::string_view json_pointer) const noexcept;
 
   /**
@@ -505,6 +535,8 @@ public:
 
   really_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  really_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
+  [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
   really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
   really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
   really_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
