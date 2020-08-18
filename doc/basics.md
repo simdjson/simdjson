@@ -241,7 +241,7 @@ padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::parser parser;
 dom::object object;
 auto error = parser.parse(json).get(object);
-if (!error) { cerr << error << endl; return; }
+if (error) { cerr << error << endl; return; }
 for (dom::key_value_pair field : object) {
   cout << field.key << " = " << field.value << endl;
 }
