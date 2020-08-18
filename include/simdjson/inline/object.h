@@ -19,7 +19,7 @@ simdjson_really_inline simdjson_result<dom::object>::simdjson_result(dom::object
 simdjson_really_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const std::string_view &key) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -27,15 +27,15 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](co
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
-  return first.at(json_pointer);
+  return first.at_pointer(json_pointer);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
@@ -74,16 +74,23 @@ inline size_t object::size() const noexcept {
   return tape.scope_count();
 }
 
-inline simdjson_result<element> object::operator[](const std::string_view &key) const noexcept {
+inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> object::operator[](const char *key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> object::at(const std::string_view &json_pointer) const noexcept {
+inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
+  if(json_pointer[0] != '/') {
+    if(json_pointer.size() == 0) { // an empty string means that we return the current node
+      return element(this->tape); // copy the current node
+    } else { // otherwise there is an error
+      return INVALID_JSON_POINTER;
+    }
+  }
+  json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
-
   // Grab the child with the given key
   simdjson_result<element> child;
 
@@ -109,15 +116,17 @@ inline simdjson_result<element> object::at(const std::string_view &json_pointer)
   } else {
     child = at_key(key);
   }
-
+  if(child.error()) {
+    return child; // we do not continue if there was an error
+  }
   // If there is a /, we have to recurse and look up more of the path
   if (slash != std::string_view::npos) {
-    child = child.at(json_pointer.substr(slash+1));
+    child = child.at_pointer(json_pointer.substr(slash));
   }
-
   return child;
 }
-inline simdjson_result<element> object::at_key(const std::string_view &key) const noexcept {
+
+inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (field.key_equals(key)) {
@@ -129,7 +138,7 @@ inline simdjson_result<element> object::at_key(const std::string_view &key) cons
 // In case you wonder why we need this, please see
 // https://github.com/simdjson/simdjson/issues/323
 // People do seek keys in a case-insensitive manner.
-inline simdjson_result<element> object::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<element> object::at_key_case_insensitive(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (field.key_equals_case_insensitive(key)) {
@@ -200,7 +209,7 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
-inline bool object::iterator::key_equals(const std::string_view & o) const noexcept {
+inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
   // without access to the string buffer.
   const uint32_t len = key_length();
@@ -211,7 +220,7 @@ inline bool object::iterator::key_equals(const std::string_view & o) const noexc
   return false;
 }
 
-inline bool object::iterator::key_equals_case_insensitive(const std::string_view & o) const noexcept {
+inline bool object::iterator::key_equals_case_insensitive(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
   // without access to the string buffer.
   const uint32_t len = key_length();
@@ -226,7 +235,7 @@ inline bool object::iterator::key_equals_case_insensitive(const std::string_view
 //
 // key_value_pair inline implementation
 //
-inline key_value_pair::key_value_pair(const std::string_view &_key, element _value) noexcept :
+inline key_value_pair::key_value_pair(std::string_view _key, element _value) noexcept :
   key(_key), value(_value) {}
 
 inline std::ostream& operator<<(std::ostream& out, const object &value) {

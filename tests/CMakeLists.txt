@@ -59,7 +59,7 @@ add_cpp_test(integer_tests LABELS acceptance per_implementation)
 add_cpp_test(jsoncheck LABELS acceptance per_implementation)
 add_cpp_test(minefieldcheck LABELS acceptance per_implementation)
 add_cpp_test(parse_many_test LABELS acceptance per_implementation)
-add_cpp_test(pointercheck LABELS acceptance per_implementation)
+add_cpp_test(pointercheck LABELS acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(extracting_values_example LABELS acceptance per_implementation)
 add_cpp_test(unicode_tests LABELS acceptance per_implementation)
 

@@ -101,7 +101,7 @@ simdjson_really_inline bool simdjson_result<dom::element>::is_null() const noexc
   return !error() && first.is_null();
 }
 
-simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const std::string_view &key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -109,19 +109,27 @@ simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::elemen
   if (error()) { return error(); }
   return first[key];
 }
-simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view &json_pointer) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_pointer(const std::string_view json_pointer) const noexcept {
+  if (error()) { return error(); }
+  return first.at_pointer(json_pointer);
+}
+[[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
+really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
+SIMDJSON_PUSH_DISABLE_WARNINGS
+SIMDJSON_DISABLE_DEPRECATED_WARNING
   if (error()) { return error(); }
   return first.at(json_pointer);
+SIMDJSON_POP_DISABLE_WARNINGS
 }
 simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(size_t index) const noexcept {
   if (error()) { return error(); }
   return first.at(index);
 }
-simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(const std::string_view &key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(const std::string_view &key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
@@ -334,29 +342,43 @@ inline array::iterator element::end() const noexcept(false) {
 
 #endif // SIMDJSON_EXCEPTIONS
 
-inline simdjson_result<element> element::operator[](const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> element::operator[](const char *key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> element::at(const std::string_view &json_pointer) const noexcept {
+
+inline simdjson_result<element> element::at_pointer(std::string_view json_pointer) const noexcept {
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
-      return object(tape).at(json_pointer);
+      return object(tape).at_pointer(json_pointer);
     case internal::tape_type::START_ARRAY:
-      return array(tape).at(json_pointer);
-    default:
-      return INCORRECT_TYPE;
+      return array(tape).at_pointer(json_pointer);
+    default: {
+      if(json_pointer.empty()) { // an empty string means that we return the current node
+        return INVALID_JSON_POINTER;
+      }
+      dom::element copy(*this);
+      return simdjson_result<element>(std::move(copy));
+    }
   }
 }
+
+[[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
+inline simdjson_result<element> element::at(std::string_view json_pointer) const noexcept {
+  // version 0.4 of simdjson allowed non-compliant pointers
+  auto std_pointer = (json_pointer.empty() ? "" : "/") + std::string(json_pointer.begin(), json_pointer.end());
+  return at_pointer(std_pointer);
+}
+
 inline simdjson_result<element> element::at(size_t index) const noexcept {
   return get<array>().at(index);
 }
-inline simdjson_result<element> element::at_key(const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::at_key(std::string_view key) const noexcept {
   return get<object>().at_key(key);
 }
-inline simdjson_result<element> element::at_key_case_insensitive(const std::string_view &key) const noexcept {
+inline simdjson_result<element> element::at_key_case_insensitive(std::string_view key) const noexcept {
   return get<object>().at_key_case_insensitive(key);
 }
 

@@ -287,7 +287,7 @@ JSON Pointer
 ------------
 
 The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the
-at() method, letting you reach further down into the document in a single call:
+`at_pointer()` method, letting you reach further down into the document in a single call:
 
 ```c++
 auto cars_json = R"( [
@@ -297,8 +297,38 @@ auto cars_json = R"( [
 ] )"_padded;
 dom::parser parser;
 dom::element cars = parser.parse(cars_json);
-cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
+cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
 ```
+
+A JSON Path is a sequence of segments each starting with the '/' character. Within arrays, an integer
+index allows you to select the indexed node. Within objects, the string value of the key allows you to
+select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
+'~0' respectively. An empty JSON Path refers to the whole document.
+
+We also extend the JSON Pointer support to include *relative* paths.  
+You can apply a JSON path to any node and the path gets interpreted relatively, as if the currrent node were a whole JSON document.
+
+Consider the following example: 
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+dom::parser parser;
+dom::element cars = parser.parse(cars_json);
+cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
+for (dom::element car_element : cars) {
+    dom::object car;
+    simdjson::error_code error;
+    if ((error = car_element.get(car))) { std::cerr << error << std::endl; return; }
+    double x = car.at_pointer("/tire_pressure/1");
+    cout << x << endl; // Prints 39.9, 31 and 30
+}
+```
+
+
 
 Error Handling
 --------------

@@ -37,6 +37,7 @@ public:
   simdjson_really_inline uint32_t get_string_length() const noexcept;
   simdjson_really_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
+  really_inline bool is_document_root() const noexcept;
 
   /** The document this element references. */
   const dom::document *doc;
