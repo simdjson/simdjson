@@ -370,9 +370,12 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
     // 10000000000000000000000000000000000000000000e+308
     // 3.1415926535897932384626433832795028841971693993751
     //
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
     error_code error = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer
-    // when we passed it to the parse_large_integer() function, so
     writer.skip_double();
     return error;
   }
@@ -382,9 +385,12 @@ simdjson_really_inline error_code write_float(const uint8_t *const src, bool neg
   if (simdjson_unlikely(exponent < FASTFLOAT_SMALLEST_POWER) || (exponent > FASTFLOAT_LARGEST_POWER)) {
     // this is almost never going to get called!!!
     // we start anew, going slowly!!!
+    // NOTE: This makes a *copy* of the writer and passes it to slow_float_parsing. This happens
+    // because slow_float_parsing is a non-inlined function. If we passed our writer reference to
+    // it, it would force it to be stored in memory, preventing the compiler from picking it apart
+    // and putting into registers. i.e. if we pass it as reference, it gets slow.
+    // This is what forces the skip_double, as well.
     error_code error = slow_float_parsing(src, writer);
-    // The number was already written, but we made a copy of the writer when we passed it to the
-    // slow_float_parsing() function, so we have to skip those tape spots now that we've returned
     writer.skip_double();
     return error;
   }
