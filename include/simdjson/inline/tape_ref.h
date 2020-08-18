@@ -14,7 +14,7 @@ simdjson_really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{
 simdjson_really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
 
-really_inline bool tape_ref::is_document_root() const noexcept {
+simdjson_really_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
 

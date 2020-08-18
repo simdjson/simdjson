@@ -114,7 +114,7 @@ simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::elemen
   return first.at_pointer(json_pointer);
 }
 [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
   if (error()) { return error(); }

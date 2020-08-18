@@ -512,7 +512,7 @@ public:
   template<typename T>
   simdjson_really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
-  SIMDJSON_WARN_UNUSED really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
   simdjson_really_inline simdjson_result<dom::array> get_array() const noexcept;
   simdjson_really_inline simdjson_result<dom::object> get_object() const noexcept;
