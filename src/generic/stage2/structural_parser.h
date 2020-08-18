@@ -79,6 +79,10 @@ struct structural_parser : structural_iterator {
     return SUCCESS;
   }
 
+  really_inline uint8_t last_structural() {
+    return buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]];
+  }
+
   really_inline void log_value(const char *type) {
     logger::log_line(*this, "", type, "");
   }
@@ -114,18 +118,27 @@ WARN_UNUSED really_inline error_code structural_parser::parse(T &builder) noexce
   //
   {
     const uint8_t *value = advance();
-    switch (*value) {
-      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
-      case '[': {
-        // Make sure the outer array is closed before continuing; otherwise, there are ways we could get
-        // into memory corruption. See https://github.com/simdjson/simdjson/issues/906
-        if (!STREAMING) {
-          if (buf[dom_parser.structural_indexes[dom_parser.n_structural_indexes - 1]] != ']') {
+
+    // Make sure the outer hash or array is closed before continuing; otherwise, there are ways we
+    // could get into memory corruption. See https://github.com/simdjson/simdjson/issues/906
+    if (!STREAMING) {
+      switch (*value) {
+        case '{':
+          if (last_structural() != '}') {
             return TAPE_ERROR;
           }
-        }
-        if (!empty_array(builder)) { goto array_begin; }; break;
+          break;
+        case '[':
+          if (last_structural() != ']') {
+            return TAPE_ERROR;
+          }
+          break;
       }
+    }
+
+    switch (*value) {
+      case '{': if (!empty_object(builder)) { goto object_begin; }; break;
+      case '[': if (!empty_array(builder)) { goto array_begin; }; break;
       default: SIMDJSON_TRY( builder.parse_root_primitive(*this, value) );
     }
     goto document_end;
