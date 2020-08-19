@@ -23,8 +23,8 @@ private:
   friend class object;
 };
 
-simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
-simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
+SIMDJSON_UNUSED simdjson_really_inline bool operator==(const raw_json_string &a, std::string_view b) noexcept;
+SIMDJSON_UNUSED simdjson_really_inline bool operator==(std::string_view a, const raw_json_string &b) noexcept;
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
