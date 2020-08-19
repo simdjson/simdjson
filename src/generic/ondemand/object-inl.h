@@ -133,6 +133,12 @@ simdjson_really_inline object object::end() noexcept {
 }
 
 simdjson_really_inline simdjson_result<field> object::operator*() noexcept {
+  // For people who use the iterator raw
+  if (at_start) { first_field(); }
+  if (finished()) {
+    logger::log_error(doc->iter, "Attempt to get field from empty object");
+    return { doc, NO_SUCH_FIELD };
+  }
   if (error) { finish(); return { doc, error }; }
   return field::start(doc);
 }
