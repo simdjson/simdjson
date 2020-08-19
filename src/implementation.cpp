@@ -4,6 +4,8 @@
 
 #include <initializer_list>
 
+#define SIMDJSON_TRY(EXPR) { auto _err = (EXPR); if (_err) { return _err; } }
+
 // Static array of known implementations. We're hoping these get baked into the executable
 // without requiring a static initializer.
 

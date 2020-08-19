@@ -8,7 +8,7 @@ namespace logger {
 
   static constexpr const bool LOG_ENABLED = false;
   static constexpr const int LOG_EVENT_LEN = 20;
-  static constexpr const int LOG_BUFFER_LEN = 10;
+  static constexpr const int LOG_BUFFER_LEN = 30;
   static constexpr const int LOG_SMALL_BUFFER_LEN = 10;
   static constexpr const int LOG_INDEX_LEN = 5;
 
@@ -30,12 +30,6 @@ namespace logger {
       printf("\n");
       printf("| %-*s | %-*s | %-*s | %-*s | Detail |\n", LOG_EVENT_LEN, "Event", LOG_BUFFER_LEN, "Buffer", LOG_SMALL_BUFFER_LEN, "Next", 5, "Next#");
       printf("|%.*s|%.*s|%.*s|%.*s|--------|\n", LOG_EVENT_LEN+2, DASHES, LOG_BUFFER_LEN+2, DASHES, LOG_SMALL_BUFFER_LEN+2, DASHES, 5+2, DASHES);
-    }
-  }
-
-  static simdjson_really_inline void log_string(const char *message) {
-    if (LOG_ENABLED) {
-      printf("%s\n", message);
     }
   }
 
