@@ -1,4 +1,4 @@
-/* auto-generated on Tue Aug 18 17:35:47 PDT 2020. Do not edit! */
+/* auto-generated on Wed 19 Aug 2020 17:23:29 EDT. Do not edit! */
 /* begin file include/simdjson.h */
 #ifndef SIMDJSON_H
 #define SIMDJSON_H
@@ -229,12 +229,6 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #endif
 
 
-#if SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT
-// No matter what happened, we undefine SIMDJSON_THREADS_ENABLED and so disable threads.
-#undef SIMDJSON_THREADS_ENABLED
-#endif
-
-
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
@@ -311,34 +305,34 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #if defined(__GNUC__)
   // Marks a block with a name so that MCA analysis can see it.
-  #define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
-  #define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
-  #define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
+  #define SIMDJSON_BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
+  #define SIMDJSON_END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
+  #define SIMDJSON_DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
 #else
-  #define BEGIN_DEBUG_BLOCK(name)
-  #define END_DEBUG_BLOCK(name)
-  #define DEBUG_BLOCK(name, block)
+  #define SIMDJSON_BEGIN_DEBUG_BLOCK(name)
+  #define SIMDJSON_END_DEBUG_BLOCK(name)
+  #define SIMDJSON_DEBUG_BLOCK(name, block)
 #endif
 
 // Align to N-byte boundary
-#define ROUNDUP_N(a, n) (((a) + ((n)-1)) & ~((n)-1))
-#define ROUNDDOWN_N(a, n) ((a) & ~((n)-1))
+#define SIMDJSON_ROUNDUP_N(a, n) (((a) + ((n)-1)) & ~((n)-1))
+#define SIMDJSON_ROUNDDOWN_N(a, n) ((a) & ~((n)-1))
 
-#define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
+#define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
 
-  #define really_inline __forceinline
-  #define never_inline __declspec(noinline)
+  #define simdjson_really_inline __forceinline
+  #define simdjson_never_inline __declspec(noinline)
 
-  #define UNUSED
-  #define WARN_UNUSED
+  #define SIMDJSON_UNUSED
+  #define SIMDJSON_WARN_UNUSED
 
-  #ifndef likely
-  #define likely(x) x
+  #ifndef simdjson_likely
+  #define simdjson_likely(x) x
   #endif
-  #ifndef unlikely
-  #define unlikely(x) x
+  #ifndef simdjson_unlikely
+  #define simdjson_unlikely(x) x
   #endif
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
@@ -362,17 +356,17 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
-  #define really_inline inline __attribute__((always_inline))
-  #define never_inline inline __attribute__((noinline))
+  #define simdjson_really_inline inline __attribute__((always_inline))
+  #define simdjson_never_inline inline __attribute__((noinline))
 
-  #define UNUSED __attribute__((unused))
-  #define WARN_UNUSED __attribute__((warn_unused_result))
+  #define SIMDJSON_UNUSED __attribute__((unused))
+  #define SIMDJSON_WARN_UNUSED __attribute__((warn_unused_result))
 
-  #ifndef likely
-  #define likely(x) __builtin_expect(!!(x), 1)
+  #ifndef simdjson_likely
+  #define simdjson_likely(x) __builtin_expect(!!(x), 1)
   #endif
-  #ifndef unlikely
-  #define unlikely(x) __builtin_expect(!!(x), 0)
+  #ifndef simdjson_unlikely
+  #define simdjson_unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
@@ -2013,7 +2007,7 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION 0.4.6
+#define SIMDJSON_VERSION 0.5.0
 
 namespace simdjson {
 enum {
@@ -2024,11 +2018,11 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 4,
+  SIMDJSON_VERSION_MINOR = 5,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 6
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -2137,22 +2131,22 @@ struct simdjson_result_base : public std::pair<T, error_code> {
   /**
    * Create a new empty result with error = UNINITIALIZED.
    */
-  really_inline simdjson_result_base() noexcept;
+  simdjson_really_inline simdjson_result_base() noexcept;
 
   /**
    * Create a new error result.
    */
-  really_inline simdjson_result_base(error_code error) noexcept;
+  simdjson_really_inline simdjson_result_base(error_code error) noexcept;
 
   /**
    * Create a new successful result.
    */
-  really_inline simdjson_result_base(T &&value) noexcept;
+  simdjson_really_inline simdjson_result_base(T &&value) noexcept;
 
   /**
    * Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  really_inline simdjson_result_base(T &&value, error_code error) noexcept;
+  simdjson_really_inline simdjson_result_base(T &&value, error_code error) noexcept;
 
   /**
    * Move the value and the error to the provided variables.
@@ -2160,19 +2154,19 @@ struct simdjson_result_base : public std::pair<T, error_code> {
    * @param value The variable to assign the value to. May not be set if there is an error.
    * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
-  really_inline void tie(T &value, error_code &error) && noexcept;
+  simdjson_really_inline void tie(T &value, error_code &error) && noexcept;
 
   /**
    * Move the value to the provided variable.
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  really_inline error_code get(T &value) && noexcept;
+  simdjson_really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  really_inline error_code error() const noexcept;
+  simdjson_really_inline error_code error() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -2181,21 +2175,21 @@ struct simdjson_result_base : public std::pair<T, error_code> {
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T& value() noexcept(false);
+  simdjson_really_inline T& value() noexcept(false);
 
   /**
    * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T&& take_value() && noexcept(false);
+  simdjson_really_inline T&& take_value() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline operator T&&() && noexcept(false);
+  simdjson_really_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result_base
@@ -2212,19 +2206,19 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
   /**
    * @private Create a new empty result with error = UNINITIALIZED.
    */
-  really_inline simdjson_result() noexcept;
+  simdjson_really_inline simdjson_result() noexcept;
   /**
    * @private Create a new error result.
    */
-  really_inline simdjson_result(T &&value) noexcept;
+  simdjson_really_inline simdjson_result(T &&value) noexcept;
   /**
    * @private Create a new successful result.
    */
-  really_inline simdjson_result(error_code error_code) noexcept;
+  simdjson_really_inline simdjson_result(error_code error_code) noexcept;
   /**
    * @private Create a new result with both things (use if you don't want to branch when creating the result).
    */
-  really_inline simdjson_result(T &&value, error_code error) noexcept;
+  simdjson_really_inline simdjson_result(T &&value, error_code error) noexcept;
 
   /**
    * Move the value and the error to the provided variables.
@@ -2232,19 +2226,19 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    * @param value The variable to assign the value to. May not be set if there is an error.
    * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
-  really_inline void tie(T &value, error_code &error) && noexcept;
+  simdjson_really_inline void tie(T &value, error_code &error) && noexcept;
 
   /**
    * Move the value to the provided variable.
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  WARN_UNUSED really_inline error_code get(T &value) && noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  really_inline error_code error() const noexcept;
+  simdjson_really_inline error_code error() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -2253,21 +2247,21 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T& value() noexcept(false);
+  simdjson_really_inline T& value() noexcept(false);
 
   /**
    * Take the result value (move it).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline T&& take_value() && noexcept(false);
+  simdjson_really_inline T&& take_value() && noexcept(false);
 
   /**
    * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  really_inline operator T&&() && noexcept(false);
+  simdjson_really_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result
@@ -2484,7 +2478,7 @@ public:
    * @param len The length of the json document.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -2500,7 +2494,7 @@ public:
    * @param streaming Whether this is being called by parser::parse_many.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage1(const uint8_t *buf, size_t len, bool streaming) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -2514,7 +2508,7 @@ public:
    * @param doc The document to output to.
    * @return The error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code stage2(dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage2(dom::document &doc) noexcept = 0;
 
   /**
    * @private For internal implementation use
@@ -2527,7 +2521,7 @@ public:
    * @param doc The document to output to.
    * @return The error code, SUCCESS if there was no error, or EMPTY if all documents have been parsed.
    */
-  WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code stage2_next(dom::document &doc) noexcept = 0;
 
   /**
    * Change the capacity of this parser.
@@ -2568,14 +2562,14 @@ public:
    *
    * @return Current capacity, in bytes.
    */
-  really_inline size_t capacity() const noexcept;
+  simdjson_really_inline size_t capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  really_inline size_t max_depth() const noexcept;
+  simdjson_really_inline size_t max_depth() const noexcept;
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
@@ -2585,7 +2579,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
+  SIMDJSON_WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
 
 protected:
   /**
@@ -2603,15 +2597,15 @@ protected:
   size_t _max_depth{0};
 }; // class dom_parser_implementation
 
-really_inline size_t dom_parser_implementation::capacity() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::capacity() const noexcept {
   return _capacity;
 }
 
-really_inline size_t dom_parser_implementation::max_depth() const noexcept {
+simdjson_really_inline size_t dom_parser_implementation::max_depth() const noexcept {
   return _max_depth;
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline error_code dom_parser_implementation::allocate(size_t capacity, size_t max_depth) noexcept {
   if (this->max_depth() != max_depth) {
     error_code err = set_max_depth(max_depth);
@@ -2642,7 +2636,7 @@ namespace simdjson {
  * @param len the length of the string in bytes.
  * @return true if the string is valid UTF-8.
  */
-WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
+SIMDJSON_WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
 
 
 /**
@@ -2651,7 +2645,7 @@ WARN_UNUSED bool validate_utf8(const char * buf, size_t len) noexcept;
  * @param sv the string_view to validate.
  * @return true if the string is valid UTF-8.
  */
-really_inline WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept {
+simdjson_really_inline SIMDJSON_WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept {
   return validate_utf8(sv.data(), sv.size());
 }
 
@@ -2661,7 +2655,7 @@ really_inline WARN_UNUSED bool validate_utf8(const std::string_view sv) noexcept
  * @param p the string to validate.
  * @return true if the string is valid UTF-8.
  */
-really_inline WARN_UNUSED bool validate_utf8(const std::string& s) noexcept {
+simdjson_really_inline SIMDJSON_WARN_UNUSED bool validate_utf8(const std::string& s) noexcept {
   return validate_utf8(s.data(), s.size());
 }
 
@@ -2737,7 +2731,7 @@ public:
    * @param dst_len the number of bytes written. Output only.
    * @return the error code, or SUCCESS if there was no error.
    */
-  WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept = 0;
   
   
   /**   
@@ -2749,11 +2743,11 @@ public:
    * @param len the length of the string in bytes.
    * @return true if and only if the string is valid UTF-8.
    */
-  WARN_UNUSED virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
+  SIMDJSON_WARN_UNUSED virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
-  really_inline implementation(
+  simdjson_really_inline implementation(
     std::string_view name,
     std::string_view description,
     uint32_t required_instruction_sets
@@ -2791,7 +2785,7 @@ namespace internal {
 class available_implementation_list {
 public:
   /** Get the list of available implementations compiled into simdjson */
-  really_inline available_implementation_list() {}
+  simdjson_really_inline available_implementation_list() {}
   /** Number of implementations */
   size_t size() const noexcept;
   /** STL const begin() iterator */
@@ -2924,25 +2918,25 @@ constexpr const uint32_t JSON_COUNT_MASK = 0xFFFFFF;
  */
 class tape_ref {
 public:
-  really_inline tape_ref() noexcept;
-  really_inline tape_ref(const dom::document *doc, size_t json_index) noexcept;
+  simdjson_really_inline tape_ref() noexcept;
+  simdjson_really_inline tape_ref(const dom::document *doc, size_t json_index) noexcept;
   inline size_t after_element() const noexcept;
-  really_inline tape_type tape_ref_type() const noexcept;
-  really_inline uint64_t tape_value() const noexcept;
-  really_inline bool is_double() const noexcept;
-  really_inline bool is_int64() const noexcept;
-  really_inline bool is_uint64() const noexcept;
-  really_inline bool is_false() const noexcept;
-  really_inline bool is_true() const noexcept;
-  really_inline bool is_null_on_tape() const noexcept;// different name to avoid clash with is_null.
-  really_inline uint32_t matching_brace_index() const noexcept;
-  really_inline uint32_t scope_count() const noexcept;
+  simdjson_really_inline tape_type tape_ref_type() const noexcept;
+  simdjson_really_inline uint64_t tape_value() const noexcept;
+  simdjson_really_inline bool is_double() const noexcept;
+  simdjson_really_inline bool is_int64() const noexcept;
+  simdjson_really_inline bool is_uint64() const noexcept;
+  simdjson_really_inline bool is_false() const noexcept;
+  simdjson_really_inline bool is_true() const noexcept;
+  simdjson_really_inline bool is_null_on_tape() const noexcept;// different name to avoid clash with is_null.
+  simdjson_really_inline uint32_t matching_brace_index() const noexcept;
+  simdjson_really_inline uint32_t scope_count() const noexcept;
   template<typename T>
-  really_inline T next_tape_value() const noexcept;
-  really_inline uint32_t get_string_length() const noexcept;
-  really_inline const char * get_c_str() const noexcept;
+  simdjson_really_inline T next_tape_value() const noexcept;
+  simdjson_really_inline uint32_t get_string_length() const noexcept;
+  simdjson_really_inline const char * get_c_str() const noexcept;
   inline std::string_view get_string_view() const noexcept;
-  really_inline bool is_document_root() const noexcept;
+  simdjson_really_inline bool is_document_root() const noexcept;
 
   /** The document this element references. */
   const dom::document *doc;
@@ -2981,7 +2975,7 @@ namespace simdjson {
  * @param dst_len the number of bytes written. Output only.
  * @return the error code, or SUCCESS if there was no error.
  */
-WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
+SIMDJSON_WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept;
 
 /**
  * Minifies a JSON element or document, printing the smallest possible valid JSON.
@@ -3045,7 +3039,7 @@ class element;
 class array {
 public:
   /** Create a new, invalid array */
-  really_inline array() noexcept;
+  simdjson_really_inline array() noexcept;
 
   class iterator {
   public:
@@ -3086,7 +3080,7 @@ public:
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
-    really_inline iterator(const internal::tape_ref &tape) noexcept;
+    simdjson_really_inline iterator(const internal::tape_ref &tape) noexcept;
     internal::tape_ref tape;
     friend class array;
   };
@@ -3146,7 +3140,7 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
 private:
-  really_inline array(const internal::tape_ref &tape) noexcept;
+  simdjson_really_inline array(const internal::tape_ref &tape) noexcept;
   internal::tape_ref tape;
   friend class element;
   friend struct simdjson_result<element>;
@@ -3171,9 +3165,9 @@ inline std::ostream& operator<<(std::ostream& out, const array &value);
 template<>
 struct simdjson_result<dom::array> : public internal::simdjson_result_base<dom::array> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(dom::array value) noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::array value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
@@ -3342,20 +3336,20 @@ public:
   *    to allocate an initial capacity, call allocate() after constructing the parser.
   *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
   */
-  really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
+  simdjson_really_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  really_inline parser(parser &&other) noexcept;
+  simdjson_really_inline parser(parser &&other) noexcept;
   parser(const parser &) = delete; ///< @private Disallow copying
   /**
    * Take another parser's buffers and state.
    *
    * @param other The parser to take. Its capacity is zeroed.
    */
-  really_inline parser &operator=(parser &&other) noexcept;
+  simdjson_really_inline parser &operator=(parser &&other) noexcept;
   parser &operator=(const parser &) = delete; ///< @private Disallow copying
 
   /** Deallocate the JSON parser. */
@@ -3425,17 +3419,17 @@ public:
   inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
   inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
-  really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
-  really_inline simdjson_result<element> parse(const std::string &s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(const std::string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
-  really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
+  simdjson_really_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  simdjson_really_inline simdjson_result<element> parse(const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
-  really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
+  simdjson_really_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
 
   /**
    * Load a file containing many JSON documents.
@@ -3587,7 +3581,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  SIMDJSON_WARN_UNUSED inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   /**
    * @private deprecated because it returns bool instead of error_code, which is our standard for
@@ -3601,14 +3595,14 @@ public:
    * @return true if successful, false if allocation failed.
    */
   [[deprecated("Use allocate() instead.")]]
-  WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  SIMDJSON_WARN_UNUSED inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
 
   /**
    * The largest document this parser can support without reallocating.
    *
    * @return Current capacity, in bytes.
    */
-  really_inline size_t capacity() const noexcept;
+  simdjson_really_inline size_t capacity() const noexcept;
 
   /**
    * The largest document this parser can automatically support.
@@ -3617,14 +3611,14 @@ public:
    *
    * @return Maximum capacity, in bytes.
    */
-  really_inline size_t max_capacity() const noexcept;
+  simdjson_really_inline size_t max_capacity() const noexcept;
 
   /**
    * The maximum level of nested object and arrays supported by this parser.
    *
    * @return Maximum depth, in bytes.
    */
-  really_inline size_t max_depth() const noexcept;
+  simdjson_really_inline size_t max_depth() const noexcept;
 
   /**
    * Set max_capacity. This is the largest document this parser can automatically support.
@@ -3636,7 +3630,7 @@ public:
    *
    * @param max_capacity The new maximum capacity, in bytes.
    */
-  really_inline void set_max_capacity(size_t max_capacity) noexcept;
+  simdjson_really_inline void set_max_capacity(size_t max_capacity) noexcept;
 
 #ifdef SIMDJSON_THREADS_ENABLED
   /**
@@ -3811,13 +3805,13 @@ public:
    *  error = parser.parse_many(json).get(docs);
    *  ```
    */
-  really_inline document_stream() noexcept;
+  simdjson_really_inline document_stream() noexcept;
   /** Move one document_stream to another. */
-  really_inline document_stream(document_stream &&other) noexcept = default;
+  simdjson_really_inline document_stream(document_stream &&other) noexcept = default;
   /** Move one document_stream to another. */
-  really_inline document_stream &operator=(document_stream &&other) noexcept = default;
+  simdjson_really_inline document_stream &operator=(document_stream &&other) noexcept = default;
 
-  really_inline ~document_stream() noexcept;
+  simdjson_really_inline ~document_stream() noexcept;
 
   /**
    * An iterator through a forward-only stream of documents.
@@ -3827,7 +3821,7 @@ public:
     /**
      * Get the current document (or error).
      */
-    really_inline simdjson_result<element> operator*() noexcept;
+    simdjson_really_inline simdjson_result<element> operator*() noexcept;
     /**
      * Advance to the next document.
      */
@@ -3836,7 +3830,7 @@ public:
      * Check if we're at the end yet.
      * @param other the end iterator to compare to.
      */
-    really_inline bool operator!=(const iterator &other) const noexcept;
+    simdjson_really_inline bool operator!=(const iterator &other) const noexcept;
     /**
      * @private
      * 
@@ -3852,7 +3846,7 @@ public:
      * may change in future versions of simdjson: we find the API somewhat
      * awkward and we would like to offer something friendlier.  
      */
-     really_inline size_t current_index() const noexcept;
+     simdjson_really_inline size_t current_index() const noexcept;
     /**
      * @private
      * 
@@ -3872,10 +3866,10 @@ public:
      * may change in future versions of simdjson: we find the API somewhat
      * awkward and we would like to offer something friendlier.  
      */
-     really_inline std::string_view source() const noexcept;
+     simdjson_really_inline std::string_view source() const noexcept;
 
   private:
-    really_inline iterator(document_stream &s, bool finished) noexcept;
+    simdjson_really_inline iterator(document_stream &s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
     document_stream& stream;
     /** Whether we're finished or not. */
@@ -3886,11 +3880,11 @@ public:
   /**
    * Start iterating the documents in the stream.
    */
-  really_inline iterator begin() noexcept;
+  simdjson_really_inline iterator begin() noexcept;
   /**
    * The end of the stream, for iterator comparison purposes.
    */
-  really_inline iterator end() noexcept;
+  simdjson_really_inline iterator end() noexcept;
 
 private:
 
@@ -3906,7 +3900,7 @@ private:
    * @param len is the length of the raw byte buffer in bytes
    * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
    */
-  really_inline document_stream(
+  simdjson_really_inline document_stream(
     dom::parser &parser,
     const uint8_t *buf,
     size_t len,
@@ -4001,18 +3995,18 @@ private:
 template<>
 struct simdjson_result<dom::document_stream> : public internal::simdjson_result_base<dom::document_stream> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
-  really_inline simdjson_result(dom::document_stream &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::document_stream &&value) noexcept; ///< @private
 
 #if SIMDJSON_EXCEPTIONS
-  really_inline dom::document_stream::iterator begin() noexcept(false);
-  really_inline dom::document_stream::iterator end() noexcept(false);
+  simdjson_really_inline dom::document_stream::iterator begin() noexcept(false);
+  simdjson_really_inline dom::document_stream::iterator end() noexcept(false);
 #else // SIMDJSON_EXCEPTIONS
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
-  really_inline dom::document_stream::iterator begin() noexcept;
+  simdjson_really_inline dom::document_stream::iterator begin() noexcept;
   [[deprecated("parse_many() and load_many() may return errors. Use document_stream stream; error = parser.parse_many().get(doc); instead.")]]
-  really_inline dom::document_stream::iterator end() noexcept;
+  simdjson_really_inline dom::document_stream::iterator end() noexcept;
 #endif // SIMDJSON_EXCEPTIONS
 }; // struct simdjson_result<dom::document_stream>
 
@@ -4057,10 +4051,10 @@ enum class element_type {
 class element {
 public:
   /** Create a new, invalid element. */
-  really_inline element() noexcept;
+  simdjson_really_inline element() noexcept;
 
   /** The type of this element. */
-  really_inline element_type type() const noexcept;
+  simdjson_really_inline element_type type() const noexcept;
 
   /**
    * Cast this element to an array.
@@ -4226,7 +4220,7 @@ public:
    * @tparam T bool, double, uint64_t, int64_t, std::string_view, const char *, dom::array, dom::object
    */
   template<typename T>
-  really_inline bool is() const noexcept;
+  simdjson_really_inline bool is() const noexcept;
 
   /**
    * Get the value as the provided type (T).
@@ -4263,7 +4257,7 @@ public:
    * @returns The error that occurred, or SUCCESS if there was no error.
    */
   template<typename T>
-  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
   /**
    * Get the value as the provided type (T), setting error if it's not the given type.
@@ -4485,7 +4479,7 @@ public:
   inline bool dump_raw_tape(std::ostream &out) const noexcept;
 
 private:
-  really_inline element(const internal::tape_ref &tape) noexcept;
+  simdjson_really_inline element(const internal::tape_ref &tape) noexcept;
   internal::tape_ref tape;
   friend class document;
   friend class object;
@@ -4521,58 +4515,58 @@ inline std::ostream& operator<<(std::ostream& out, element_type type);
 template<>
 struct simdjson_result<dom::element> : public internal::simdjson_result_base<dom::element> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::element &&value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  really_inline simdjson_result<dom::element_type> type() const noexcept;
+  simdjson_really_inline simdjson_result<dom::element_type> type() const noexcept;
   template<typename T>
-  really_inline bool is() const noexcept;
+  simdjson_really_inline bool is() const noexcept;
   template<typename T>
-  really_inline simdjson_result<T> get() const noexcept;
+  simdjson_really_inline simdjson_result<T> get() const noexcept;
   template<typename T>
-  WARN_UNUSED really_inline error_code get(T &value) const noexcept;
+  SIMDJSON_WARN_UNUSED simdjson_really_inline error_code get(T &value) const noexcept;
 
-  really_inline simdjson_result<dom::array> get_array() const noexcept;
-  really_inline simdjson_result<dom::object> get_object() const noexcept;
-  really_inline simdjson_result<const char *> get_c_str() const noexcept;
-  really_inline simdjson_result<size_t> get_string_length() const noexcept;
-  really_inline simdjson_result<std::string_view> get_string() const noexcept;
-  really_inline simdjson_result<int64_t> get_int64() const noexcept;
-  really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
-  really_inline simdjson_result<double> get_double() const noexcept;
-  really_inline simdjson_result<bool> get_bool() const noexcept;
+  simdjson_really_inline simdjson_result<dom::array> get_array() const noexcept;
+  simdjson_really_inline simdjson_result<dom::object> get_object() const noexcept;
+  simdjson_really_inline simdjson_result<const char *> get_c_str() const noexcept;
+  simdjson_really_inline simdjson_result<size_t> get_string_length() const noexcept;
+  simdjson_really_inline simdjson_result<std::string_view> get_string() const noexcept;
+  simdjson_really_inline simdjson_result<int64_t> get_int64() const noexcept;
+  simdjson_really_inline simdjson_result<uint64_t> get_uint64() const noexcept;
+  simdjson_really_inline simdjson_result<double> get_double() const noexcept;
+  simdjson_really_inline simdjson_result<bool> get_bool() const noexcept;
 
-  really_inline bool is_array() const noexcept;
-  really_inline bool is_object() const noexcept;
-  really_inline bool is_string() const noexcept;
-  really_inline bool is_int64() const noexcept;
-  really_inline bool is_uint64() const noexcept;
-  really_inline bool is_double() const noexcept;
-  really_inline bool is_bool() const noexcept;
-  really_inline bool is_null() const noexcept;
+  simdjson_really_inline bool is_array() const noexcept;
+  simdjson_really_inline bool is_object() const noexcept;
+  simdjson_really_inline bool is_string() const noexcept;
+  simdjson_really_inline bool is_int64() const noexcept;
+  simdjson_really_inline bool is_uint64() const noexcept;
+  simdjson_really_inline bool is_double() const noexcept;
+  simdjson_really_inline bool is_bool() const noexcept;
+  simdjson_really_inline bool is_null() const noexcept;
 
-  really_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
-  really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
-  really_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
   [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
-  really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
-  really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
-  really_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
-  really_inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
+  simdjson_really_inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
-  really_inline operator bool() const noexcept(false);
-  really_inline explicit operator const char*() const noexcept(false);
-  really_inline operator std::string_view() const noexcept(false);
-  really_inline operator uint64_t() const noexcept(false);
-  really_inline operator int64_t() const noexcept(false);
-  really_inline operator double() const noexcept(false);
-  really_inline operator dom::array() const noexcept(false);
-  really_inline operator dom::object() const noexcept(false);
+  simdjson_really_inline operator bool() const noexcept(false);
+  simdjson_really_inline explicit operator const char*() const noexcept(false);
+  simdjson_really_inline operator std::string_view() const noexcept(false);
+  simdjson_really_inline operator uint64_t() const noexcept(false);
+  simdjson_really_inline operator int64_t() const noexcept(false);
+  simdjson_really_inline operator double() const noexcept(false);
+  simdjson_really_inline operator dom::array() const noexcept(false);
+  simdjson_really_inline operator dom::object() const noexcept(false);
 
-  really_inline dom::array::iterator begin() const noexcept(false);
-  really_inline dom::array::iterator end() const noexcept(false);
+  simdjson_really_inline dom::array::iterator begin() const noexcept(false);
+  simdjson_really_inline dom::array::iterator end() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
@@ -4588,7 +4582,7 @@ public:
  *        underlying output stream, that error will be propagated (simdjson_error will not be
  *        thrown).
  */
-really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
+simdjson_really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false);
 #endif
 
 } // namespace simdjson
@@ -4614,7 +4608,7 @@ class key_value_pair;
 class object {
 public:
   /** Create a new, invalid object */
-  really_inline object() noexcept;
+  simdjson_really_inline object() noexcept;
 
   class iterator {
   public:
@@ -4684,7 +4678,7 @@ public:
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
-    really_inline iterator(const internal::tape_ref &tape) noexcept;
+    simdjson_really_inline iterator(const internal::tape_ref &tape) noexcept;
 
     internal::tape_ref tape;
 
@@ -4798,7 +4792,7 @@ public:
   inline simdjson_result<element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 private:
-  really_inline object(const internal::tape_ref &tape) noexcept;
+  simdjson_really_inline object(const internal::tape_ref &tape) noexcept;
 
   internal::tape_ref tape;
 
@@ -4819,7 +4813,7 @@ public:
   element value;
 
 private:
-  really_inline key_value_pair(std::string_view _key, element _value) noexcept;
+  simdjson_really_inline key_value_pair(std::string_view _key, element _value) noexcept;
   friend class object;
 };
 
@@ -4850,9 +4844,9 @@ inline std::ostream& operator<<(std::ostream& out, const key_value_pair &value);
 template<>
 struct simdjson_result<dom::object> : public internal::simdjson_result_base<dom::object> {
 public:
-  really_inline simdjson_result() noexcept; ///< @private
-  really_inline simdjson_result(dom::object value) noexcept; ///< @private
-  really_inline simdjson_result(error_code error) noexcept; ///< @private
+  simdjson_really_inline simdjson_result() noexcept; ///< @private
+  simdjson_really_inline simdjson_result(dom::object value) noexcept; ///< @private
+  simdjson_really_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
@@ -5000,7 +4994,7 @@ inline int json_parse(const padded_string &s, dom::parser &parser) noexcept {
 }
 
 [[deprecated("Use parser.parse() instead")]]
-WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
+SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, size_t len, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -5012,7 +5006,7 @@ WARN_UNUSED inline dom::parser build_parsed_json(const uint8_t *buf, size_t len,
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
+SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_t len, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(buf, len, realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -5024,7 +5018,7 @@ WARN_UNUSED inline dom::parser build_parsed_json(const char *buf, size_t len, bo
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
+SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, bool realloc_if_needed = true) noexcept {
   dom::parser parser;
   error_code code = parser.parse(s.data(), s.length(), realloc_if_needed).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -5036,7 +5030,7 @@ WARN_UNUSED inline dom::parser build_parsed_json(const std::string &s, bool real
   return parser;
 }
 [[deprecated("Use parser.parse() instead")]]
-WARN_UNUSED inline dom::parser build_parsed_json(const padded_string &s) noexcept {
+SIMDJSON_WARN_UNUSED inline dom::parser build_parsed_json(const padded_string &s) noexcept {
   dom::parser parser;
   error_code code = parser.parse(s).error();
   // The deprecated json_parse API is a signal that the user plans to *use* the error code / valid
@@ -5395,7 +5389,7 @@ public:
 /* end file include/simdjson/internal/jsonformatutils.h */
 
 // Inline functions
-/* begin file include/simdjson/inline/array.h */
+/* begin file include/simdjson/dom/array-inl.h */
 #ifndef SIMDJSON_INLINE_ARRAY_H
 #define SIMDJSON_INLINE_ARRAY_H
 
@@ -5408,11 +5402,11 @@ namespace simdjson {
 //
 // simdjson_result<dom::array> inline implementation
 //
-really_inline simdjson_result<dom::array>::simdjson_result() noexcept
+simdjson_really_inline simdjson_result<dom::array>::simdjson_result() noexcept
     : internal::simdjson_result_base<dom::array>() {}
-really_inline simdjson_result<dom::array>::simdjson_result(dom::array value) noexcept
+simdjson_really_inline simdjson_result<dom::array>::simdjson_result(dom::array value) noexcept
     : internal::simdjson_result_base<dom::array>(std::forward<dom::array>(value)) {}
-really_inline simdjson_result<dom::array>::simdjson_result(error_code error) noexcept
+simdjson_really_inline simdjson_result<dom::array>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::array>(error) {}
 
 #if SIMDJSON_EXCEPTIONS
@@ -5446,8 +5440,8 @@ namespace dom {
 //
 // array inline implementation
 //
-really_inline array::array() noexcept : tape{} {}
-really_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
+simdjson_really_inline array::array() noexcept : tape{} {}
+simdjson_really_inline array::array(const internal::tape_ref &_tape) noexcept : tape{_tape} {}
 inline array::iterator array::begin() const noexcept {
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
@@ -5510,7 +5504,7 @@ inline simdjson_result<element> array::at(size_t index) const noexcept {
 //
 // array::iterator inline implementation
 //
-really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_really_inline array::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline element array::iterator::operator*() const noexcept {
   return element(tape);
 }
@@ -5577,7 +5571,7 @@ inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::ar
 
 } // namespace simdjson
 
-/* begin file include/simdjson/inline/element.h */
+/* begin file include/simdjson/dom/element-inl.h */
 #ifndef SIMDJSON_INLINE_ELEMENT_H
 #define SIMDJSON_INLINE_ELEMENT_H
 
@@ -5589,11 +5583,11 @@ namespace simdjson {
 //
 // simdjson_result<dom::element> inline implementation
 //
-really_inline simdjson_result<dom::element>::simdjson_result() noexcept
+simdjson_really_inline simdjson_result<dom::element>::simdjson_result() noexcept
     : internal::simdjson_result_base<dom::element>() {}
-really_inline simdjson_result<dom::element>::simdjson_result(dom::element &&value) noexcept
+simdjson_really_inline simdjson_result<dom::element>::simdjson_result(dom::element &&value) noexcept
     : internal::simdjson_result_base<dom::element>(std::forward<dom::element>(value)) {}
-really_inline simdjson_result<dom::element>::simdjson_result(error_code error) noexcept
+simdjson_really_inline simdjson_result<dom::element>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::element>(error) {}
 inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() const noexcept {
   if (error()) { return error(); }
@@ -5601,148 +5595,148 @@ inline simdjson_result<dom::element_type> simdjson_result<dom::element>::type() 
 }
 
 template<typename T>
-really_inline bool simdjson_result<dom::element>::is() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is() const noexcept {
   return !error() && first.is<T>();
 }
 template<typename T>
-really_inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
+simdjson_really_inline simdjson_result<T> simdjson_result<dom::element>::get() const noexcept {
   if (error()) { return error(); }
   return first.get<T>();
 }
 template<typename T>
-WARN_UNUSED really_inline error_code simdjson_result<dom::element>::get(T &value) const noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code simdjson_result<dom::element>::get(T &value) const noexcept {
   if (error()) { return error(); }
   return first.get<T>(value);
 }
 
-really_inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
+simdjson_really_inline simdjson_result<dom::array> simdjson_result<dom::element>::get_array() const noexcept {
   if (error()) { return error(); }
   return first.get_array();
 }
-really_inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
+simdjson_really_inline simdjson_result<dom::object> simdjson_result<dom::element>::get_object() const noexcept {
   if (error()) { return error(); }
   return first.get_object();
 }
-really_inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
+simdjson_really_inline simdjson_result<const char *> simdjson_result<dom::element>::get_c_str() const noexcept {
   if (error()) { return error(); }
   return first.get_c_str();
 }
-really_inline simdjson_result<size_t> simdjson_result<dom::element>::get_string_length() const noexcept {
+simdjson_really_inline simdjson_result<size_t> simdjson_result<dom::element>::get_string_length() const noexcept {
   if (error()) { return error(); }
   return first.get_string_length();
 }
-really_inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
+simdjson_really_inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_string() const noexcept {
   if (error()) { return error(); }
   return first.get_string();
 }
-really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64() const noexcept {
+simdjson_really_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64() const noexcept {
   if (error()) { return error(); }
   return first.get_int64();
 }
-really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64() const noexcept {
+simdjson_really_inline simdjson_result<uint64_t> simdjson_result<dom::element>::get_uint64() const noexcept {
   if (error()) { return error(); }
   return first.get_uint64();
 }
-really_inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
+simdjson_really_inline simdjson_result<double> simdjson_result<dom::element>::get_double() const noexcept {
   if (error()) { return error(); }
   return first.get_double();
 }
-really_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
+simdjson_really_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() const noexcept {
   if (error()) { return error(); }
   return first.get_bool();
 }
 
-really_inline bool simdjson_result<dom::element>::is_array() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_array() const noexcept {
   return !error() && first.is_array();
 }
-really_inline bool simdjson_result<dom::element>::is_object() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_object() const noexcept {
   return !error() && first.is_object();
 }
-really_inline bool simdjson_result<dom::element>::is_string() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_string() const noexcept {
   return !error() && first.is_string();
 }
-really_inline bool simdjson_result<dom::element>::is_int64() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_int64() const noexcept {
   return !error() && first.is_int64();
 }
-really_inline bool simdjson_result<dom::element>::is_uint64() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_uint64() const noexcept {
   return !error() && first.is_uint64();
 }
-really_inline bool simdjson_result<dom::element>::is_double() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_double() const noexcept {
   return !error() && first.is_double();
 }
-really_inline bool simdjson_result<dom::element>::is_bool() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_bool() const noexcept {
   return !error() && first.is_bool();
 }
 
-really_inline bool simdjson_result<dom::element>::is_null() const noexcept {
+simdjson_really_inline bool simdjson_result<dom::element>::is_null() const noexcept {
   return !error() && first.is_null();
 }
 
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](std::string_view key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const char *key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](const char *key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_pointer(const std::string_view json_pointer) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_pointer(const std::string_view json_pointer) const noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
 }
 [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_DEPRECATED_WARNING
   if (error()) { return error(); }
   return first.at(json_pointer);
 SIMDJSON_POP_DISABLE_WARNINGS
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(size_t index) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(size_t index) const noexcept {
   if (error()) { return error(); }
   return first.at(index);
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(std::string_view key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
-really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(std::string_view key) const noexcept {
+simdjson_really_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key_case_insensitive(key);
 }
 
 #if SIMDJSON_EXCEPTIONS
 
-really_inline simdjson_result<dom::element>::operator bool() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator bool() const noexcept(false) {
   return get<bool>();
 }
-really_inline simdjson_result<dom::element>::operator const char *() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator const char *() const noexcept(false) {
   return get<const char *>();
 }
-really_inline simdjson_result<dom::element>::operator std::string_view() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator std::string_view() const noexcept(false) {
   return get<std::string_view>();
 }
-really_inline simdjson_result<dom::element>::operator uint64_t() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator uint64_t() const noexcept(false) {
   return get<uint64_t>();
 }
-really_inline simdjson_result<dom::element>::operator int64_t() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator int64_t() const noexcept(false) {
   return get<int64_t>();
 }
-really_inline simdjson_result<dom::element>::operator double() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator double() const noexcept(false) {
   return get<double>();
 }
-really_inline simdjson_result<dom::element>::operator dom::array() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator dom::array() const noexcept(false) {
   return get<dom::array>();
 }
-really_inline simdjson_result<dom::element>::operator dom::object() const noexcept(false) {
+simdjson_really_inline simdjson_result<dom::element>::operator dom::object() const noexcept(false) {
   return get<dom::object>();
 }
 
-really_inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
+simdjson_really_inline dom::array::iterator simdjson_result<dom::element>::begin() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-really_inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
+simdjson_really_inline dom::array::iterator simdjson_result<dom::element>::end() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
@@ -5754,8 +5748,8 @@ namespace dom {
 //
 // element inline implementation
 //
-really_inline element::element() noexcept : tape{} {}
-really_inline element::element(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_really_inline element::element() noexcept : tape{} {}
+simdjson_really_inline element::element(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 
 inline element_type element::type() const noexcept {
   auto tape_type = tape.tape_ref_type();
@@ -5797,7 +5791,7 @@ inline simdjson_result<std::string_view> element::get_string() const noexcept {
   }
 }
 inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
-  if(unlikely(!tape.is_uint64())) { // branch rarely taken
+  if(simdjson_unlikely(!tape.is_uint64())) { // branch rarely taken
     if(tape.is_int64()) {
       int64_t result = tape.next_tape_value<int64_t>();
       if (result < 0) {
@@ -5810,7 +5804,7 @@ inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
   return tape.next_tape_value<int64_t>();
 }
 inline simdjson_result<int64_t> element::get_int64() const noexcept {
-  if(unlikely(!tape.is_int64())) { // branch rarely taken
+  if(simdjson_unlikely(!tape.is_int64())) { // branch rarely taken
     if(tape.is_uint64()) {
       uint64_t result = tape.next_tape_value<uint64_t>();
       // Wrapping max in parens to handle Windows issue: https://stackoverflow.com/questions/11544073/how-do-i-deal-with-the-max-macro-in-windows-h-colliding-with-max-in-std
@@ -5833,7 +5827,7 @@ inline simdjson_result<double> element::get_double() const noexcept {
   // We can expect get<double> to refer to a double type almost all the time.
   // It is important to craft the code accordingly so that the compiler can use this
   // information. (This could also be solved with profile-guided optimization.)
-  if(unlikely(!tape.is_double())) { // branch rarely taken
+  if(simdjson_unlikely(!tape.is_double())) { // branch rarely taken
     if(tape.is_uint64()) {
       return double(tape.next_tape_value<uint64_t>());
     } else if(tape.is_int64()) {
@@ -5862,18 +5856,18 @@ inline simdjson_result<object> element::get_object() const noexcept {
 }
 
 template<typename T>
-WARN_UNUSED really_inline error_code element::get(T &value) const noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code element::get(T &value) const noexcept {
   return get<T>().get(value);
 }
 // An element-specific version prevents recursion with simdjson_result::get<element>(value)
 template<>
-WARN_UNUSED really_inline error_code element::get<element>(element &value) const noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code element::get<element>(element &value) const noexcept {
   value = element(tape);
   return SUCCESS;
 }
 
 template<typename T>
-really_inline bool element::is() const noexcept {
+simdjson_really_inline bool element::is() const noexcept {
   auto result = get<T>();
   return !result.error();
 }
@@ -6018,7 +6012,7 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
     case tape_type::START_ARRAY: {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
-      if (unlikely(depth >= MAX_DEPTH)) {
+      if (simdjson_unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::array>(dom::array(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
@@ -6045,7 +6039,7 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
     case tape_type::START_OBJECT: {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
-      if (unlikely(depth >= MAX_DEPTH)) {
+      if (simdjson_unlikely(depth >= MAX_DEPTH)) {
         out << minify<dom::object>(dom::object(iter));
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
@@ -6119,12 +6113,12 @@ inline std::ostream& minifier<dom::element>::print(std::ostream& out) {
 #if SIMDJSON_EXCEPTIONS
 
 template<>
-really_inline std::ostream& minifier<simdjson_result<dom::element>>::print(std::ostream& out) {
+simdjson_really_inline std::ostream& minifier<simdjson_result<dom::element>>::print(std::ostream& out) {
   if (value.error()) { throw simdjson_error(value.error()); }
   return out << minify<dom::element>(value.first);
 }
 
-really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) {
+simdjson_really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<dom::element> &value) noexcept(false) {
   return out << minify<simdjson_result<dom::element>>(value);
 }
 #endif
@@ -6132,7 +6126,7 @@ really_inline std::ostream& operator<<(std::ostream& out, const simdjson_result<
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_ELEMENT_H
-/* end file include/simdjson/inline/element.h */
+/* end file include/simdjson/dom/element-inl.h */
 
 #if defined(__cpp_lib_ranges)
 static_assert(std::ranges::view<simdjson::dom::array>);
@@ -6144,8 +6138,8 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_INLINE_ARRAY_H
-/* end file include/simdjson/inline/element.h */
-/* begin file include/simdjson/inline/document_stream.h */
+/* end file include/simdjson/dom/element-inl.h */
+/* begin file include/simdjson/dom/document_stream-inl.h */
 #ifndef SIMDJSON_INLINE_DOCUMENT_STREAM_H
 #define SIMDJSON_INLINE_DOCUMENT_STREAM_H
 
@@ -6211,7 +6205,7 @@ inline void stage1_worker::run(document_stream * ds, dom::parser * stage1, size_
 }
 #endif
 
-really_inline document_stream::document_stream(
+simdjson_really_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
@@ -6233,7 +6227,7 @@ really_inline document_stream::document_stream(
 #endif
 }
 
-really_inline document_stream::document_stream() noexcept
+simdjson_really_inline document_stream::document_stream() noexcept
   : parser{nullptr},
     buf{nullptr},
     len{0},
@@ -6245,37 +6239,37 @@ really_inline document_stream::document_stream() noexcept
 {
 }
 
-really_inline document_stream::~document_stream() noexcept {
+simdjson_really_inline document_stream::~document_stream() noexcept {
 }
 
-really_inline document_stream::iterator document_stream::begin() noexcept {
+simdjson_really_inline document_stream::iterator document_stream::begin() noexcept {
   start();
   // If there are no documents, we're finished.
   return iterator(*this, error == EMPTY);
 }
 
-really_inline document_stream::iterator document_stream::end() noexcept {
+simdjson_really_inline document_stream::iterator document_stream::end() noexcept {
   return iterator(*this, true);
 }
 
-really_inline document_stream::iterator::iterator(document_stream& _stream, bool is_end) noexcept
+simdjson_really_inline document_stream::iterator::iterator(document_stream& _stream, bool is_end) noexcept
   : stream{_stream}, finished{is_end} {
 }
 
-really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
+simdjson_really_inline simdjson_result<element> document_stream::iterator::operator*() noexcept {
   // Once we have yielded any errors, we're finished.
   if (stream.error) { finished = true; return stream.error; }
   return stream.parser->doc.root();
 }
 
-really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
+simdjson_really_inline document_stream::iterator& document_stream::iterator::operator++() noexcept {
   stream.next();
   // If that was the last document, we're finished.
   if (stream.error == EMPTY) { finished = true; }
   return *this;
 }
 
-really_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
+simdjson_really_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
   return finished != other.finished;
 }
 
@@ -6304,11 +6298,11 @@ inline void document_stream::start() noexcept {
   next();
 }
 
-really_inline size_t document_stream::iterator::current_index() const noexcept {
+simdjson_really_inline size_t document_stream::iterator::current_index() const noexcept {
   return stream.doc_index;
 }
 
-really_inline std::string_view document_stream::iterator::source() const noexcept {
+simdjson_really_inline std::string_view document_stream::iterator::source() const noexcept {
   size_t next_doc_index = stream.batch_start + stream.parser->implementation->structural_indexes[stream.parser->implementation->next_structural_index];
   return std::string_view(reinterpret_cast<const char*>(stream.buf) + current_index(), next_doc_index - current_index() - 1);
 }
@@ -6386,31 +6380,31 @@ inline void document_stream::start_stage1_thread() noexcept {
 
 } // namespace dom
 
-really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
+simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result() noexcept
   : simdjson_result_base() {
 }
-really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
+simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result(error_code error) noexcept
   : simdjson_result_base(error) {
 }
-really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
+simdjson_really_inline simdjson_result<dom::document_stream>::simdjson_result(dom::document_stream &&value) noexcept
   : simdjson_result_base(std::forward<dom::document_stream>(value)) {
 }
 
 #if SIMDJSON_EXCEPTIONS
-really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
+simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
+simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
-really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
+simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
   first.error = error();
   return first.begin();
 }
-really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
+simdjson_really_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
   first.error = error();
   return first.end();
 }
@@ -6418,8 +6412,8 @@ really_inline dom::document_stream::iterator simdjson_result<dom::document_strea
 
 } // namespace simdjson
 #endif // SIMDJSON_INLINE_DOCUMENT_STREAM_H
-/* end file include/simdjson/inline/document_stream.h */
-/* begin file include/simdjson/inline/document.h */
+/* end file include/simdjson/dom/document_stream-inl.h */
+/* begin file include/simdjson/dom/document-inl.h */
 #ifndef SIMDJSON_INLINE_DOCUMENT_H
 #define SIMDJSON_INLINE_DOCUMENT_H
 
@@ -6438,7 +6432,7 @@ inline element document::root() const noexcept {
   return element(internal::tape_ref(this, 1));
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline error_code document::allocate(size_t capacity) noexcept {
   if (capacity == 0) {
     string_buf.reset();
@@ -6451,10 +6445,10 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where len + 1 tape elements are
   // generated, see issue https://github.com/lemire/simdjson/issues/345
-  size_t tape_capacity = ROUNDUP_N(capacity + 3, 64);
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
   // a document with only zero-length strings... could have len/3 string
   // and we would need len/3 * 5 bytes on the string buffer
-  size_t string_capacity = ROUNDUP_N(5 * capacity / 3 + 32, 64);
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + 32, 64);
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   return string_buf && tape ? SUCCESS : MEMALLOC;
@@ -6557,8 +6551,8 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_DOCUMENT_H
-/* end file include/simdjson/inline/document.h */
-/* begin file include/simdjson/inline/error.h */
+/* end file include/simdjson/dom/document-inl.h */
+/* begin file include/simdjson/error-inl.h */
 #ifndef SIMDJSON_INLINE_ERROR_H
 #define SIMDJSON_INLINE_ERROR_H
 
@@ -6602,7 +6596,7 @@ namespace internal {
 //
 
 template<typename T>
-really_inline void simdjson_result_base<T>::tie(T &value, error_code &error) && noexcept {
+simdjson_really_inline void simdjson_result_base<T>::tie(T &value, error_code &error) && noexcept {
   // on the clang compiler that comes with current macOS (Apple clang version 11.0.0),
   // tie(width, error) = size["w"].get<uint64_t>();
   // fails with "error: no viable overloaded '='""
@@ -6613,49 +6607,49 @@ really_inline void simdjson_result_base<T>::tie(T &value, error_code &error) && 
 }
 
 template<typename T>
-WARN_UNUSED really_inline error_code simdjson_result_base<T>::get(T &value) && noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code simdjson_result_base<T>::get(T &value) && noexcept {
   error_code error;
   std::forward<simdjson_result_base<T>>(*this).tie(value, error);
   return error;
 }
 
 template<typename T>
-really_inline error_code simdjson_result_base<T>::error() const noexcept {
+simdjson_really_inline error_code simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline T& simdjson_result_base<T>::value() noexcept(false) {
+simdjson_really_inline T& simdjson_result_base<T>::value() noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return this->first;
 }
 
 template<typename T>
-really_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
+simdjson_really_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return std::forward<T>(this->first);
 }
 
 template<typename T>
-really_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
+simdjson_really_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline simdjson_result_base<T>::simdjson_result_base(T &&value, error_code error) noexcept
+simdjson_really_inline simdjson_result_base<T>::simdjson_result_base(T &&value, error_code error) noexcept
     : std::pair<T, error_code>(std::forward<T>(value), error) {}
 template<typename T>
-really_inline simdjson_result_base<T>::simdjson_result_base(error_code error) noexcept
+simdjson_really_inline simdjson_result_base<T>::simdjson_result_base(error_code error) noexcept
     : simdjson_result_base(T{}, error) {}
 template<typename T>
-really_inline simdjson_result_base<T>::simdjson_result_base(T &&value) noexcept
+simdjson_really_inline simdjson_result_base<T>::simdjson_result_base(T &&value) noexcept
     : simdjson_result_base(std::forward<T>(value), SUCCESS) {}
 template<typename T>
-really_inline simdjson_result_base<T>::simdjson_result_base() noexcept
+simdjson_really_inline simdjson_result_base<T>::simdjson_result_base() noexcept
     : simdjson_result_base(T{}, UNINITIALIZED) {}
 
 } // namespace internal
@@ -6665,57 +6659,57 @@ really_inline simdjson_result_base<T>::simdjson_result_base() noexcept
 ///
 
 template<typename T>
-really_inline void simdjson_result<T>::tie(T &value, error_code &error) && noexcept {
+simdjson_really_inline void simdjson_result<T>::tie(T &value, error_code &error) && noexcept {
   std::forward<internal::simdjson_result_base<T>>(*this).tie(value, error);
 }
 
 template<typename T>
-WARN_UNUSED really_inline error_code simdjson_result<T>::get(T &value) && noexcept {
+SIMDJSON_WARN_UNUSED simdjson_really_inline error_code simdjson_result<T>::get(T &value) && noexcept {
   return std::forward<internal::simdjson_result_base<T>>(*this).get(value);
 }
 
 template<typename T>
-really_inline error_code simdjson_result<T>::error() const noexcept {
+simdjson_really_inline error_code simdjson_result<T>::error() const noexcept {
   return internal::simdjson_result_base<T>::error();
 }
 
 #if SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline T& simdjson_result<T>::value() noexcept(false) {
+simdjson_really_inline T& simdjson_result<T>::value() noexcept(false) {
   return internal::simdjson_result_base<T>::value();
 }
 
 template<typename T>
-really_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
+simdjson_really_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
 template<typename T>
-really_inline simdjson_result<T>::operator T&&() && noexcept(false) {
+simdjson_really_inline simdjson_result<T>::operator T&&() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
 
 template<typename T>
-really_inline simdjson_result<T>::simdjson_result(T &&value, error_code error) noexcept
+simdjson_really_inline simdjson_result<T>::simdjson_result(T &&value, error_code error) noexcept
     : internal::simdjson_result_base<T>(std::forward<T>(value), error) {}
 template<typename T>
-really_inline simdjson_result<T>::simdjson_result(error_code error) noexcept
+simdjson_really_inline simdjson_result<T>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<T>(error) {}
 template<typename T>
-really_inline simdjson_result<T>::simdjson_result(T &&value) noexcept
+simdjson_really_inline simdjson_result<T>::simdjson_result(T &&value) noexcept
     : internal::simdjson_result_base<T>(std::forward<T>(value)) {}
 template<typename T>
-really_inline simdjson_result<T>::simdjson_result() noexcept
+simdjson_really_inline simdjson_result<T>::simdjson_result() noexcept
     : internal::simdjson_result_base<T>() {}
 
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_ERROR_H
-/* end file include/simdjson/inline/error.h */
-/* begin file include/simdjson/inline/object.h */
+/* end file include/simdjson/error-inl.h */
+/* begin file include/simdjson/dom/object-inl.h */
 #ifndef SIMDJSON_INLINE_OBJECT_H
 #define SIMDJSON_INLINE_OBJECT_H
 
@@ -6727,11 +6721,11 @@ namespace simdjson {
 //
 // simdjson_result<dom::object> inline implementation
 //
-really_inline simdjson_result<dom::object>::simdjson_result() noexcept
+simdjson_really_inline simdjson_result<dom::object>::simdjson_result() noexcept
     : internal::simdjson_result_base<dom::object>() {}
-really_inline simdjson_result<dom::object>::simdjson_result(dom::object value) noexcept
+simdjson_really_inline simdjson_result<dom::object>::simdjson_result(dom::object value) noexcept
     : internal::simdjson_result_base<dom::object>(std::forward<dom::object>(value)) {}
-really_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
+simdjson_really_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
 inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
@@ -6777,8 +6771,8 @@ namespace dom {
 //
 // object inline implementation
 //
-really_inline object::object() noexcept : tape{} {}
-really_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_really_inline object::object() noexcept : tape{} {}
+simdjson_really_inline object::object(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline object::iterator object::begin() const noexcept {
   return internal::tape_ref(tape.doc, tape.json_index + 1);
 }
@@ -6866,7 +6860,7 @@ inline simdjson_result<element> object::at_key_case_insensitive(std::string_view
 //
 // object::iterator inline implementation
 //
-really_inline object::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
+simdjson_really_inline object::iterator::iterator(const internal::tape_ref &_tape) noexcept : tape{_tape} { }
 inline const key_value_pair object::iterator::operator*() const noexcept {
   return key_value_pair(key(), value());
 }
@@ -7006,8 +7000,8 @@ static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::
 #endif // defined(__cpp_lib_ranges)
 
 #endif // SIMDJSON_INLINE_OBJECT_H
-/* end file include/simdjson/inline/object.h */
-/* begin file include/simdjson/inline/padded_string.h */
+/* end file include/simdjson/dom/object-inl.h */
+/* begin file include/simdjson/padded_string-inl.h */
 #ifndef SIMDJSON_INLINE_PADDED_STRING_H
 #define SIMDJSON_INLINE_PADDED_STRING_H
 
@@ -7151,8 +7145,8 @@ inline simdjson_result<padded_string> padded_string::load(const std::string &fil
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_PADDED_STRING_H
-/* end file include/simdjson/inline/padded_string.h */
-/* begin file include/simdjson/inline/parsedjson_iterator.h */
+/* end file include/simdjson/padded_string-inl.h */
+/* begin file include/simdjson/dom/parsedjson_iterator-inl.h */
 #ifndef SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 #define SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
 
@@ -7166,7 +7160,7 @@ SIMDJSON_DISABLE_DEPRECATED_WARNING
 
 // Because of template weirdness, the actual class definition is inline in the document class
 
-WARN_UNUSED bool dom::parser::Iterator::is_ok() const {
+SIMDJSON_WARN_UNUSED bool dom::parser::Iterator::is_ok() const {
   return location < tape_length;
 }
 
@@ -7637,8 +7631,8 @@ SIMDJSON_POP_DISABLE_WARNINGS
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_PARSEDJSON_ITERATOR_H
-/* end file include/simdjson/inline/parsedjson_iterator.h */
-/* begin file include/simdjson/inline/parser.h */
+/* end file include/simdjson/dom/parsedjson_iterator-inl.h */
+/* begin file include/simdjson/dom/parser-inl.h */
 #ifndef SIMDJSON_INLINE_PARSER_H
 #define SIMDJSON_INLINE_PARSER_H
 
@@ -7651,12 +7645,12 @@ namespace dom {
 //
 // parser inline implementation
 //
-really_inline parser::parser(size_t max_capacity) noexcept
+simdjson_really_inline parser::parser(size_t max_capacity) noexcept
   : _max_capacity{max_capacity},
     loaded_bytes(nullptr) {
 }
-really_inline parser::parser(parser &&other) noexcept = default;
-really_inline parser &parser::operator=(parser &&other) noexcept = default;
+simdjson_really_inline parser::parser(parser &&other) noexcept = default;
+simdjson_really_inline parser &parser::operator=(parser &&other) noexcept = default;
 
 inline bool parser::is_valid() const noexcept { return valid; }
 inline int parser::get_error_code() const noexcept { return error; }
@@ -7741,13 +7735,13 @@ inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bo
 
   return doc.root();
 }
-really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse((const uint8_t *)buf, len, realloc_if_needed);
 }
-really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
+simdjson_really_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
   return parse(s.data(), s.length(), false);
 }
 
@@ -7764,17 +7758,17 @@ inline simdjson_result<document_stream> parser::parse_many(const padded_string &
   return parse_many(s.data(), s.length(), batch_size);
 }
 
-really_inline size_t parser::capacity() const noexcept {
+simdjson_really_inline size_t parser::capacity() const noexcept {
   return implementation ? implementation->capacity() : 0;
 }
-really_inline size_t parser::max_capacity() const noexcept {
+simdjson_really_inline size_t parser::max_capacity() const noexcept {
   return _max_capacity;
 }
-really_inline size_t parser::max_depth() const noexcept {
+simdjson_really_inline size_t parser::max_depth() const noexcept {
   return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // Reallocate implementation and document if needed
@@ -7800,7 +7794,7 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   return SUCCESS;
 }
 
-WARN_UNUSED
+SIMDJSON_WARN_UNUSED
 inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
   return !allocate(capacity, max_depth);
 }
@@ -7809,7 +7803,7 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   // If we don't have enough capacity, (try to) automatically bump it.
   // If the document was taken, reallocate that too.
   // Both in one if statement to minimize unlikely branching.
-  if (unlikely(capacity() < desired_capacity || !doc.tape)) {
+  if (simdjson_unlikely(capacity() < desired_capacity || !doc.tape)) {
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
@@ -7819,7 +7813,7 @@ inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
   return SUCCESS;
 }
 
-really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
+simdjson_really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
   _max_capacity = max_capacity;
 }
 
@@ -7827,8 +7821,8 @@ really_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_PARSER_H
-/* end file include/simdjson/inline/parser.h */
-/* begin file include/simdjson/inline/tape_ref.h */
+/* end file include/simdjson/dom/parser-inl.h */
+/* begin file include/simdjson/internal/tape_ref-inl.h */
 #ifndef SIMDJSON_INLINE_TAPE_REF_H
 #define SIMDJSON_INLINE_TAPE_REF_H
 
@@ -7840,11 +7834,11 @@ namespace internal {
 //
 // tape_ref inline implementation
 //
-really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
-really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
+simdjson_really_inline tape_ref::tape_ref() noexcept : doc{nullptr}, json_index{0} {}
+simdjson_really_inline tape_ref::tape_ref(const dom::document *_doc, size_t _json_index) noexcept : doc{_doc}, json_index{_json_index} {}
 
 
-really_inline bool tape_ref::is_document_root() const noexcept {
+simdjson_really_inline bool tape_ref::is_document_root() const noexcept {
   return json_index == 1; // should we ever change the structure of the tape, this should get updated.
 }
 
@@ -7852,27 +7846,27 @@ really_inline bool tape_ref::is_document_root() const noexcept {
 // to check the type by doing a word-to-word comparison instead of extracting the
 // most significant 8 bits.
 
-really_inline bool tape_ref::is_double() const noexcept {
+simdjson_really_inline bool tape_ref::is_double() const noexcept {
   constexpr uint64_t tape_double = uint64_t(tape_type::DOUBLE)<<56;
   return doc->tape[json_index] == tape_double;
 }
-really_inline bool tape_ref::is_int64() const noexcept {
+simdjson_really_inline bool tape_ref::is_int64() const noexcept {
   constexpr uint64_t tape_int64 = uint64_t(tape_type::INT64)<<56;
   return doc->tape[json_index] == tape_int64;
 }
-really_inline bool tape_ref::is_uint64() const noexcept {
+simdjson_really_inline bool tape_ref::is_uint64() const noexcept {
   constexpr uint64_t tape_uint64 = uint64_t(tape_type::UINT64)<<56;
   return doc->tape[json_index] == tape_uint64;
 }
-really_inline bool tape_ref::is_false() const noexcept {
+simdjson_really_inline bool tape_ref::is_false() const noexcept {
   constexpr uint64_t tape_false = uint64_t(tape_type::FALSE_VALUE)<<56;
   return doc->tape[json_index] == tape_false;
 }
-really_inline bool tape_ref::is_true() const noexcept {
+simdjson_really_inline bool tape_ref::is_true() const noexcept {
   constexpr uint64_t tape_true = uint64_t(tape_type::TRUE_VALUE)<<56;
   return doc->tape[json_index] == tape_true;
 }
-really_inline bool tape_ref::is_null_on_tape() const noexcept {
+simdjson_really_inline bool tape_ref::is_null_on_tape() const noexcept {
   constexpr uint64_t tape_null = uint64_t(tape_type::NULL_VALUE)<<56;
   return doc->tape[json_index] == tape_null;
 }
@@ -7890,21 +7884,21 @@ inline size_t tape_ref::after_element() const noexcept {
       return json_index + 1;
   }
 }
-really_inline tape_type tape_ref::tape_ref_type() const noexcept {
+simdjson_really_inline tape_type tape_ref::tape_ref_type() const noexcept {
   return static_cast<tape_type>(doc->tape[json_index] >> 56);
 }
-really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
+simdjson_really_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }
-really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
+simdjson_really_inline uint32_t internal::tape_ref::matching_brace_index() const noexcept {
   return uint32_t(doc->tape[json_index]);
 }
-really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
+simdjson_really_inline uint32_t internal::tape_ref::scope_count() const noexcept {
   return uint32_t((doc->tape[json_index] >> 32) & internal::JSON_COUNT_MASK);
 }
 
 template<typename T>
-really_inline T tape_ref::next_tape_value() const noexcept {
+simdjson_really_inline T tape_ref::next_tape_value() const noexcept {
   static_assert(sizeof(T) == sizeof(uint64_t), "next_tape_value() template parameter must be 64-bit");
   // Though the following is tempting...
   //  return *reinterpret_cast<const T*>(&doc->tape[json_index + 1]);
@@ -7915,14 +7909,14 @@ really_inline T tape_ref::next_tape_value() const noexcept {
   return x;
 }
 
-really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
+simdjson_really_inline uint32_t internal::tape_ref::get_string_length() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   uint32_t len;
   memcpy(&len, &doc->string_buf[string_buf_index], sizeof(len));
   return len;
 }
 
-really_inline const char * internal::tape_ref::get_c_str() const noexcept {
+simdjson_really_inline const char * internal::tape_ref::get_c_str() const noexcept {
   size_t string_buf_index = size_t(tape_value());
   return reinterpret_cast<const char *>(&doc->string_buf[string_buf_index + sizeof(uint32_t)]);
 }
@@ -7938,9 +7932,9 @@ inline std::string_view internal::tape_ref::get_string_view() const noexcept {
 } // namespace simdjson
 
 #endif // SIMDJSON_INLINE_TAPE_REF_H
-/* end file include/simdjson/inline/tape_ref.h */
+/* end file include/simdjson/internal/tape_ref-inl.h */
 
 SIMDJSON_POP_DISABLE_WARNINGS
 
 #endif // SIMDJSON_H
-/* end file include/simdjson/inline/tape_ref.h */
+/* end file include/simdjson/internal/tape_ref-inl.h */

@@ -1,4 +1,23 @@
-# 0.3
+# 0.5
+
+## Highlights
+
+Performance
+* Faster and simpler UTF-8 validation with the lookup4 algorithm https://github.com/simdjson/simdjson/pull/993
+* We improved the performance of simdjson under Visual Studio by about 25%. Users will still get better performance with clang-cl (+30%) but the gap has been reduced. https://github.com/simdjson/simdjson/pull/1031
+
+Code usability
+* In `parse_many`, when parsing streams of JSON documetns, we give to the users runtime control as to whether threads are used (via the parser.threaded attribute). https://github.com/simdjson/simdjson/issues/925
+* Prefixed public macros to avoid name clashes with other libraries. https://github.com/simdjson/simdjson/issues/1035
+* Better documentation regarding package managers (brew, MSYS2, conan, apt, vcpkg, FreeBSD package manager, etc.).
+* Better documentation regarding  CMake usage.
+
+Standards
+* We improved standard compliance with respect to both the JSON RFC 8259 and JSON Pointer RFC 6901. We added the at_pointer method to nodes for standard-compliant JSON Pointer queries. The legacy `at(std::string_view)` method remains but is deprecated since it is not standard-compliant as per  RFC 6901.
+* We removed computed GOTOs without sacrificing performance thus improving the C++ standard compliance (since computed GOTOs are compiler-specific extensions).
+* Better support for C++20 https://github.com/simdjson/simdjson/pull/1050
+
+# 0.4
 
 ## Highlights
 
