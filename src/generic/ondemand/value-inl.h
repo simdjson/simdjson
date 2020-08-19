@@ -60,8 +60,9 @@ simdjson_really_inline simdjson_result<raw_json_string> value::get_raw_json_stri
   return result;
 }
 simdjson_really_inline simdjson_result<std::string_view> value::get_string() noexcept {
-  auto [str, error] = get_raw_json_string();
-  if (error) { return error; }
+  error_code error;
+  raw_json_string str;
+  if ((error = get_raw_json_string().get(str))) { return error; }
   return str.unescape(doc->parser->current_string_buf_loc);
 }
 simdjson_really_inline simdjson_result<double> value::get_double() noexcept {
