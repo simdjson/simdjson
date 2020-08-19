@@ -84,6 +84,8 @@ add_executable(myprogram myprogram.cpp)
 target_link_libraries(myprogram simdjson)
 ```
 
+We recommend CMake version 3.15 or better.
+
 See [our CMake demonstration](https://github.com/simdjson/cmake_demo_single_file). It works under Linux, FreeBSD, macOS and Windows (including Visual Studio).
 
 
