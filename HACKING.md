@@ -43,7 +43,7 @@ simdjson's source structure, from the top level, looks like this:
   * simdjson.h: A "main include" that includes files from include/simdjson/. This is equivalent to
     the distributed simdjson.h.
   * simdjson/*.h: Declarations for public simdjson classes and functions.
-  * simdjson/inline/*.h: Definitions for public simdjson classes and functions.
+  * simdjson/*-inl.h: Definitions for public simdjson classes and functions.
 * **src:** The source files for non-inlined functionality (e.g. the architecture-specific parser
   implementations).
   * simdjson.cpp: A "main source" that includes all implementation files from src/. This is

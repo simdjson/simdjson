@@ -58,16 +58,16 @@ SIMDJSON_DISABLE_UNDESIRED_WARNINGS
 #include "simdjson/dom/parsedjson_iterator.h"
 
 // Inline functions
-#include "simdjson/inline/array.h"
-#include "simdjson/inline/document_stream.h"
-#include "simdjson/inline/document.h"
-#include "simdjson/inline/element.h"
-#include "simdjson/inline/error.h"
-#include "simdjson/inline/object.h"
-#include "simdjson/inline/padded_string.h"
-#include "simdjson/inline/parsedjson_iterator.h"
-#include "simdjson/inline/parser.h"
-#include "simdjson/inline/tape_ref.h"
+#include "simdjson/dom/array-inl.h"
+#include "simdjson/dom/document_stream-inl.h"
+#include "simdjson/dom/document-inl.h"
+#include "simdjson/dom/element-inl.h"
+#include "simdjson/error-inl.h"
+#include "simdjson/dom/object-inl.h"
+#include "simdjson/padded_string-inl.h"
+#include "simdjson/dom/parsedjson_iterator-inl.h"
+#include "simdjson/dom/parser-inl.h"
+#include "simdjson/internal/tape_ref-inl.h"
 
 SIMDJSON_POP_DISABLE_WARNINGS
 
