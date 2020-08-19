@@ -133,17 +133,6 @@ if(SIMDJSON_ENABLE_THREADS)
   target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_THREADS_ENABLED=1) # This will be set in the code automatically.
 endif()
 
-# Some users compile simdjson with thread support but still do not want simdjson to use threads.
-#
-#  Important : Expect this option to disappear in the future.
-#
-option(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT "Whether we enabled thread support or not (SIMDJSON_ENABLE_THREADS), do not use threads.\
- This option does nothing when thread support is not enabled. We reserve the right to remove this option in a future release in\
- favor of a runtime approach." OFF)
-if(SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT)
-  target_compile_definitions(simdjson-flags INTERFACE SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT=1)
-endif()
-
 if(SIMDJSON_USE_LIBCPP)
   target_link_libraries(simdjson-flags INTERFACE -stdlib=libc++ -lc++abi)
   # instead of the above line, we could have used

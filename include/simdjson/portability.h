@@ -148,12 +148,6 @@ use a 64-bit target such as x64 or 64-bit ARM.")
 #endif
 
 
-#if SIMDJSON_DO_NOT_USE_THREADS_NO_MATTER_WHAT
-// No matter what happened, we undefine SIMDJSON_THREADS_ENABLED and so disable threads.
-#undef SIMDJSON_THREADS_ENABLED
-#endif
-
-
 #if defined(__clang__)
 #define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #elif defined(__GNUC__)
