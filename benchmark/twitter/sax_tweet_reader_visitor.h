@@ -163,6 +163,7 @@ simdjson_really_inline error_code sax_tweet_reader_visitor::visit_object_start(j
       return INCORRECT_TYPE;
   }
   SIMDJSON_UNREACHABLE();
+  return UNINITIALIZED;
 }
 simdjson_really_inline error_code sax_tweet_reader_visitor::visit_key(json_iterator &, const uint8_t *key) {
   current_key = key;
