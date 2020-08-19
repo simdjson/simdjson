@@ -99,7 +99,7 @@ std::vector<uint8_t> RandomUTF8::generate(size_t output_bytes, long seed) {
 }
 
 // credit: based on code from Google Fuchsia (Apache Licensed)
-WARN_UNUSED bool basic_validate_utf8(const char *buf, size_t len) noexcept {
+SIMDJSON_WARN_UNUSED bool basic_validate_utf8(const char *buf, size_t len) noexcept {
   const uint8_t *data = (const uint8_t *)buf;
   uint64_t pos = 0;
   uint64_t next_pos = 0;

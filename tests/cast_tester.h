@@ -168,7 +168,7 @@ bool cast_tester<T>::test_implicit_cast(simdjson_result<element> element, T expe
 template<typename T>
 bool cast_tester<T>::test_implicit_cast_error(element element, error_code expected_error) {
   try {
-    UNUSED T actual;
+    SIMDJSON_UNUSED T actual;
     actual = element;
     return false;
   } catch(simdjson_error &e) {
@@ -180,7 +180,7 @@ bool cast_tester<T>::test_implicit_cast_error(element element, error_code expect
 template<typename T>
 bool cast_tester<T>::test_implicit_cast_error(simdjson_result<element> element, error_code expected_error) {
   try {
-    UNUSED T actual;
+    SIMDJSON_UNUSED T actual;
     actual = element;
     return false;
   } catch(simdjson_error &e) {

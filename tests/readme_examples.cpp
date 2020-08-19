@@ -62,7 +62,14 @@ void basics_dom_2() {
   ] )"_padded;
   dom::parser parser;
   dom::element cars = parser.parse(cars_json);
-  cout << cars.at("0/tire_pressure/1") << endl; // Prints 39.9
+  cout << cars.at_pointer("/0/tire_pressure/1") << endl; // Prints 39.9
+  for (dom::element car_element : cars) {
+    dom::object car;
+    simdjson::error_code error;
+    if ((error = car_element.get(car))) { std::cerr << error << std::endl; return; }
+    double x = car.at_pointer("/tire_pressure/1");
+    cout << x << endl; // Prints 39.9, 31 and 30
+  }
 }
 
 void basics_dom_3() {

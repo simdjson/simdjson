@@ -25,16 +25,16 @@ public:
    * The start of structurals.
    * In simdjson prior to v0.3, these were called the pseudo-structural characters.
    **/
-  really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
+  simdjson_really_inline uint64_t structural_start() { return potential_structural_start() & ~_string.string_tail(); }
   /** All JSON whitespace (i.e. not in a string) */
-  really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
+  simdjson_really_inline uint64_t whitespace() { return non_quote_outside_string(_characters.whitespace()); }
 
   // Helpers
 
   /** Whether the given characters are inside a string (only works on non-quotes) */
-  really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_inside_string(uint64_t mask) { return _string.non_quote_inside_string(mask); }
   /** Whether the given characters are outside a string (only works on non-quotes) */
-  really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
+  simdjson_really_inline uint64_t non_quote_outside_string(uint64_t mask) { return _string.non_quote_outside_string(mask); }
 
   // string and escape characters
   json_string_block _string;
@@ -49,12 +49,12 @@ private:
    * structural elements ([,],{,},:, comma) plus scalar starts like 123, true and "abc".
    * They may reside inside a string.
    **/
-  really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
+  simdjson_really_inline uint64_t potential_structural_start() { return _characters.op() | potential_scalar_start(); }
   /**
    * The start of non-operator runs, like 123, true and "abc".
    * It main reside inside a string.
    **/
-  really_inline uint64_t potential_scalar_start() {
+  simdjson_really_inline uint64_t potential_scalar_start() {
     // The term "scalar" refers to anything except structural characters and white space
     // (so letters, numbers, quotes).
     // Whenever it is preceded by something that is not a structural element ({,},[,],:, ") nor a white-space
@@ -65,7 +65,7 @@ private:
    * Whether the given character is immediately after a non-operator like 123, true.
    * The characters following a quote are not included.
    */
-  really_inline uint64_t follows_potential_scalar() {
+  simdjson_really_inline uint64_t follows_potential_scalar() {
     // _follows_potential_nonquote_scalar: is defined as marking any character that follows a character
     // that is not a structural element ({,},[,],:, comma) nor a quote (") and that is not a
     // white space.
@@ -90,8 +90,8 @@ private:
 class json_scanner {
 public:
   json_scanner() {}
-  really_inline json_block next(const simd::simd8x64<uint8_t>& in);
-  really_inline error_code finish(bool streaming);
+  simdjson_really_inline json_block next(const simd::simd8x64<uint8_t>& in);
+  simdjson_really_inline error_code finish(bool streaming);
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -108,13 +108,13 @@ private:
 //
 //     const uint64_t backslashed_quote = in.eq('"') & immediately_follows(in.eq('\'), prev_backslash);
 //
-really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
+simdjson_really_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
   const uint64_t result = match << 1 | overflow;
   overflow = match >> 63;
   return result;
 }
 
-really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   json_string_block strings = string_scanner.next(in);
   // identifies the white-space and the structurat characters
   json_character_block characters = json_character_block::classify(in);
@@ -137,7 +137,7 @@ really_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
   };
 }
 
-really_inline error_code json_scanner::finish(bool streaming) {
+simdjson_really_inline error_code json_scanner::finish(bool streaming) {
   return string_scanner.finish(streaming);
 }
 

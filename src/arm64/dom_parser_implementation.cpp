@@ -11,17 +11,17 @@ namespace SIMDJSON_IMPLEMENTATION {
 using namespace simd;
 
 struct json_character_block {
-  static really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
+  static simdjson_really_inline json_character_block classify(const simd::simd8x64<uint8_t>& in);
 
-  really_inline uint64_t whitespace() const { return _whitespace; }
-  really_inline uint64_t op() const { return _op; }
-  really_inline uint64_t scalar() { return ~(op() | whitespace()); }
+  simdjson_really_inline uint64_t whitespace() const { return _whitespace; }
+  simdjson_really_inline uint64_t op() const { return _op; }
+  simdjson_really_inline uint64_t scalar() { return ~(op() | whitespace()); }
 
   uint64_t _whitespace;
   uint64_t _op;
 };
 
-really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+simdjson_really_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
   // Functional programming causes trouble with Visual Studio.
   // Keeping this version in comments since it is much nicer:
   // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
@@ -75,12 +75,12 @@ really_inline json_character_block json_character_block::classify(const simd::si
   return { whitespace, op };
 }
 
-really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
+simdjson_really_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
     return bits.max() < 0b10000000u;
 }
 
-UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+SIMDJSON_UNUSED simdjson_really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_second_byte = prev1 >= uint8_t(0b11000000u);
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
@@ -92,7 +92,7 @@ UNUSED really_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1
     return is_second_byte ^ is_third_byte ^ is_fourth_byte;
 }
 
-really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
+simdjson_really_inline simd8<bool> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
     simd8<bool> is_third_byte  = prev2 >= uint8_t(0b11100000u);
     simd8<bool> is_fourth_byte = prev3 >= uint8_t(0b11110000u);
     return is_third_byte ^ is_fourth_byte;
@@ -121,7 +121,7 @@ namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace stage1 {
 
-really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
+simdjson_really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
   // On ARM, we don't short-circuit this if there are no backslashes, because the branch gives us no
   // benefit and therefore makes things worse.
   // if (!backslash) { uint64_t escaped = prev_escaped; prev_escaped = 0; return escaped; }
@@ -130,33 +130,33 @@ really_inline uint64_t json_string_scanner::find_escaped(uint64_t backslash) {
 
 } // namespace stage1
 
-WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
+SIMDJSON_WARN_UNUSED error_code implementation::minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept {
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
 }
 
-WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
+SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, bool streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
 }
 
-WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+SIMDJSON_WARN_UNUSED bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
   return arm64::stage1::generic_validate_utf8(buf,len);
 }
 
-WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
+SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   doc = &_doc;
   stage2::tape_builder builder(*doc);
   return stage2::structural_parser::parse<false>(*this, builder);
 }
 
-WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
+SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   doc = &_doc;
   stage2::tape_builder builder(_doc);
   return stage2::structural_parser::parse<true>(*this, builder);
 }
 
-WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+SIMDJSON_WARN_UNUSED error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, false);
   if (error) { return error; }
   return stage2(_doc);

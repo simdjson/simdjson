@@ -41,7 +41,7 @@ using stat_t = struct stat_s;
 
 
 
-really_inline void simdjson_process_atom(stat_t &s,
+simdjson_really_inline void simdjson_process_atom(stat_t &s,
                                          simdjson::dom::element element) {
   if (element.is<int64_t>()) {
     s.integer_count++;

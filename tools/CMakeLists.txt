@@ -3,6 +3,7 @@ if(TARGET cxxopts) # we only build the tools if cxxopts is available
   link_libraries(simdjson simdjson-internal-flags simdjson-windows-headers cxxopts)
   add_executable(json2json json2json.cpp)
   add_executable(jsonstats jsonstats.cpp)
+  add_executable(jsonpointer jsonpointer.cpp)
   add_executable(minify minify.cpp)
 else()
   message(STATUS "We are missing cxxopts as a dependency so the tools (e.g., json2json) are omitted.")

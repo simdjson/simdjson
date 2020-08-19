@@ -4,7 +4,7 @@
 namespace {
 namespace SIMDJSON_IMPLEMENTATION {
 
-WARN_UNUSED error_code implementation::create_dom_parser_implementation(
+SIMDJSON_WARN_UNUSED error_code implementation::create_dom_parser_implementation(
   size_t capacity,
   size_t max_depth,
   std::unique_ptr<internal::dom_parser_implementation>& dst

@@ -38,34 +38,34 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #if defined(__GNUC__)
   // Marks a block with a name so that MCA analysis can see it.
-  #define BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
-  #define END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
-  #define DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
+  #define SIMDJSON_BEGIN_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-BEGIN " #name);
+  #define SIMDJSON_END_DEBUG_BLOCK(name) __asm volatile("# LLVM-MCA-END " #name);
+  #define SIMDJSON_DEBUG_BLOCK(name, block) BEGIN_DEBUG_BLOCK(name); block; END_DEBUG_BLOCK(name);
 #else
-  #define BEGIN_DEBUG_BLOCK(name)
-  #define END_DEBUG_BLOCK(name)
-  #define DEBUG_BLOCK(name, block)
+  #define SIMDJSON_BEGIN_DEBUG_BLOCK(name)
+  #define SIMDJSON_END_DEBUG_BLOCK(name)
+  #define SIMDJSON_DEBUG_BLOCK(name, block)
 #endif
 
 // Align to N-byte boundary
-#define ROUNDUP_N(a, n) (((a) + ((n)-1)) & ~((n)-1))
-#define ROUNDDOWN_N(a, n) ((a) & ~((n)-1))
+#define SIMDJSON_ROUNDUP_N(a, n) (((a) + ((n)-1)) & ~((n)-1))
+#define SIMDJSON_ROUNDDOWN_N(a, n) ((a) & ~((n)-1))
 
-#define ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
+#define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO)
 
-  #define really_inline __forceinline
-  #define never_inline __declspec(noinline)
+  #define simdjson_really_inline __forceinline
+  #define simdjson_never_inline __declspec(noinline)
 
-  #define UNUSED
-  #define WARN_UNUSED
+  #define SIMDJSON_UNUSED
+  #define SIMDJSON_WARN_UNUSED
 
-  #ifndef likely
-  #define likely(x) x
+  #ifndef simdjson_likely
+  #define simdjson_likely(x) x
   #endif
-  #ifndef unlikely
-  #define unlikely(x) x
+  #ifndef simdjson_unlikely
+  #define simdjson_unlikely(x) x
   #endif
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
@@ -89,17 +89,17 @@ constexpr size_t DEFAULT_MAX_DEPTH = 1024;
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
 
-  #define really_inline inline __attribute__((always_inline))
-  #define never_inline inline __attribute__((noinline))
+  #define simdjson_really_inline inline __attribute__((always_inline))
+  #define simdjson_never_inline inline __attribute__((noinline))
 
-  #define UNUSED __attribute__((unused))
-  #define WARN_UNUSED __attribute__((warn_unused_result))
+  #define SIMDJSON_UNUSED __attribute__((unused))
+  #define SIMDJSON_WARN_UNUSED __attribute__((warn_unused_result))
 
-  #ifndef likely
-  #define likely(x) __builtin_expect(!!(x), 1)
+  #ifndef simdjson_likely
+  #define simdjson_likely(x) __builtin_expect(!!(x), 1)
   #endif
-  #ifndef unlikely
-  #define unlikely(x) __builtin_expect(!!(x), 0)
+  #ifndef simdjson_unlikely
+  #define simdjson_unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS _Pragma("GCC diagnostic push")

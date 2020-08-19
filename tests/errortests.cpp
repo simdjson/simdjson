@@ -117,14 +117,14 @@ namespace parser_load {
   bool parser_load_chain() {
     TEST_START();
     dom::parser parser;
-    UNUSED uint64_t foo;
+    SIMDJSON_UNUSED uint64_t foo;
     ASSERT_ERROR( parser.load(NONEXISTENT_FILE)["foo"].get(foo), IO_ERROR);
     TEST_SUCCEED();
   }
   bool parser_load_many_chain() {
     TEST_START();
     dom::parser parser;
-    UNUSED dom::document_stream stream;
+    SIMDJSON_UNUSED dom::document_stream stream;
     ASSERT_ERROR( parser.load_many(NONEXISTENT_FILE).get(stream), IO_ERROR );
     TEST_SUCCEED();
   }
@@ -145,6 +145,49 @@ namespace parser_load {
   }
 }
 
+namespace adversarial {
+  #define PADDING_FILLED_WITH_NUMBERS "222222222222222222222222222222222"
+  bool number_overrun_at_root() {
+    TEST_START();
+    constexpr const char *json = "1" PADDING_FILLED_WITH_NUMBERS ",";
+    constexpr size_t len = 1; // strlen("1");
+
+    dom::parser parser;
+    uint64_t foo;
+    ASSERT_SUCCESS( parser.parse(json, len).get(foo) ); // Parse just the first digit
+    ASSERT_EQUAL( foo, 1 );
+    TEST_SUCCEED();
+  }
+  bool number_overrun_in_array() {
+    TEST_START();
+    constexpr const char *json = "[1" PADDING_FILLED_WITH_NUMBERS "]";
+    constexpr size_t len = 2; // strlen("[1");
+
+    dom::parser parser;
+    uint64_t foo;
+    ASSERT_ERROR( parser.parse(json, len).get(foo), TAPE_ERROR ); // Parse just the first digit
+    TEST_SUCCEED();
+  }
+  bool number_overrun_in_object() {
+    TEST_START();
+    constexpr const char *json = "{\"key\":1" PADDING_FILLED_WITH_NUMBERS "}";
+    constexpr size_t len = 8; // strlen("{\"key\":1");
+
+    dom::parser parser;
+    uint64_t foo;
+    ASSERT_ERROR( parser.parse(json, len).get(foo), TAPE_ERROR ); // Parse just the first digit
+    TEST_SUCCEED();
+  }
+  bool run() {
+    static_assert(33 > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = strlen(PADDING_FILLED_WITH_NUMBERS)
+    return true
+      && number_overrun_at_root()
+      && number_overrun_in_array()
+      && number_overrun_in_object()
+    ;
+  }
+}
+
 int main() {
   // this is put here deliberately to check that the documentation is correct (README),
   // should this fail to compile, you should update the documentation:
@@ -152,7 +195,10 @@ int main() {
     printf("unsupported CPU\n"); 
   }
   std::cout << "Running error tests." << std::endl;
-  if (!parser_load::run()) {
+  if (!(true
+        && parser_load::run()
+        && adversarial::run()
+  )) {
     return EXIT_FAILURE;
   }
   std::cout << "Error tests are ok." << std::endl;

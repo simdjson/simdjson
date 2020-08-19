@@ -38,20 +38,20 @@ public:
   const std::string &name() const noexcept final { return set_best()->name(); }
   const std::string &description() const noexcept final { return set_best()->description(); }
   uint32_t required_instruction_sets() const noexcept final { return set_best()->required_instruction_sets(); }
-  WARN_UNUSED error_code create_dom_parser_implementation(
+  SIMDJSON_WARN_UNUSED error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_length,
     std::unique_ptr<internal::dom_parser_implementation>& dst
   ) const noexcept final {
     return set_best()->create_dom_parser_implementation(capacity, max_length, dst);
   }
-  WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
+  SIMDJSON_WARN_UNUSED error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
   }
-  WARN_UNUSED bool validate_utf8(const char * buf, size_t len) const noexcept final override {
+  SIMDJSON_WARN_UNUSED bool validate_utf8(const char * buf, size_t len) const noexcept final override {
     return set_best()->validate_utf8(buf, len);
   }
-  really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
+  simdjson_really_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
 };
@@ -76,17 +76,17 @@ const std::initializer_list<const implementation *> available_implementation_poi
 // So we can return UNSUPPORTED_ARCHITECTURE from the parser when there is no support
 class unsupported_implementation final : public implementation {
 public:
-  WARN_UNUSED error_code create_dom_parser_implementation(
+  SIMDJSON_WARN_UNUSED error_code create_dom_parser_implementation(
     size_t,
     size_t,
     std::unique_ptr<internal::dom_parser_implementation>&
   ) const noexcept final {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
+  SIMDJSON_WARN_UNUSED error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  WARN_UNUSED bool validate_utf8(const char *, size_t) const noexcept final override {
+  SIMDJSON_WARN_UNUSED bool validate_utf8(const char *, size_t) const noexcept final override {
     return false; // Just refuse to validate. Given that we have a fallback implementation
     // it seems unlikely that unsupported_implementation will ever be used. If it is used,
     // then it will flag all strings as invalid. The alternative is to return an error_code
@@ -143,10 +143,10 @@ const implementation *detect_best_supported_implementation_on_first_use::set_bes
 SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list available_implementations{};
 SIMDJSON_DLLIMPORTEXPORT internal::atomic_ptr<const implementation> active_implementation{&internal::detect_best_supported_implementation_on_first_use_singleton};
 
-WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
+SIMDJSON_WARN_UNUSED error_code minify(const char *buf, size_t len, char *dst, size_t &dst_len) noexcept {
   return active_implementation->minify((const uint8_t *)buf, len, (uint8_t *)dst, dst_len);
 }
-WARN_UNUSED bool validate_utf8(const char *buf, size_t len) noexcept {
+SIMDJSON_WARN_UNUSED bool validate_utf8(const char *buf, size_t len) noexcept {
   return active_implementation->validate_utf8(buf, len);
 }
 

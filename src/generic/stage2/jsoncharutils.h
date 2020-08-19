@@ -4,11 +4,11 @@ namespace stage2 {
 
 // return non-zero if not a structural or whitespace char
 // zero otherwise
-really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
+simdjson_really_inline uint32_t is_not_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace_negated[c];
 }
 
-really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
+simdjson_really_inline uint32_t is_structural_or_whitespace(uint8_t c) {
   return structural_or_whitespace[c];
 }
 
@@ -39,7 +39,7 @@ static inline uint32_t hex_to_u32_nocheck(
 //
 // Note: we assume that surrogates are treated separately
 //
-really_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
+simdjson_really_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
   if (cp <= 0x7F) {
     c[0] = uint8_t(cp);
     return 1; // ascii
@@ -71,10 +71,10 @@ really_inline size_t codepoint_to_utf8(uint32_t cp, uint8_t *c) {
 #ifdef SIMDJSON_IS_32BITS // _umul128 for x86, arm
 // this is a slow emulation routine for 32-bit
 //
-static really_inline uint64_t __emulu(uint32_t x, uint32_t y) {
+static simdjson_really_inline uint64_t __emulu(uint32_t x, uint32_t y) {
   return x * (uint64_t)y;
 }
-static really_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+static simdjson_really_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
   uint64_t ad = __emulu((uint32_t)(ab >> 32), (uint32_t)cd);
   uint64_t bd = __emulu((uint32_t)ab, (uint32_t)cd);
   uint64_t adbc = ad + __emulu((uint32_t)ab, (uint32_t)(cd >> 32));
@@ -86,7 +86,7 @@ static really_inline uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
 }
 #endif
 
-really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
+simdjson_really_inline value128 full_multiplication(uint64_t value1, uint64_t value2) {
   value128 answer;
 #if defined(SIMDJSON_REGULAR_VISUAL_STUDIO) || defined(SIMDJSON_IS_32BITS)
 #ifdef _M_ARM64
