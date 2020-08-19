@@ -233,6 +233,7 @@ simdjson_really_inline bool sax_tweet_reader_visitor::in_container_child(json_it
 simdjson_really_inline void sax_tweet_reader_visitor::start_container(json_iterator &iter) {
   SIMDJSON_ASSUME(iter.depth <= MAX_SUPPORTED_DEPTH); // Asserts in debug mode
   container = containers(iter.depth);
+  if (container == containers::tweet) { tweets.push_back({}); }
   if (logger::LOG_ENABLED) { iter.log_start_value(STATE_NAMES[iter.depth]); }
 }
 simdjson_really_inline void sax_tweet_reader_visitor::end_container(json_iterator &iter) {
